@@ -291,11 +291,15 @@ compile the mysql client libraries, you will need to have libssl and libcrypto o
 system as well. To satisfy these requirements on a Debian-based install, run the
 following command:
 
-  sudo apt install libssl-dev zlib1g-dev mysql-server mysql-client libmysqlclient-dev
+```
+sudo apt install libssl-dev zlib1g-dev mysql-server mysql-client libmysqlclient-dev
+```
 
 Once you have all of the above present, run the following command:
 
-  pip install -r requirements.txt
+```
+pip install -r requirements.txt
+```
 
 Installing MySQL is outside the scope of this readme, so it is assumed that you have
 a MySQL database with access to create a new DB and tables within it. Note that this
@@ -308,7 +312,9 @@ customized if you've done so. The config file that you use here should also be u
 with "api", "services", and "frontend" as well as various other utilities documented
 above.
 
-  ./dbutils --config config/server.yaml create
+```
+./dbutils --config config/server.yaml create
+```
 
 In order to run the frontend, Python will need to find a javascript runtime. This
 is so it can precompile react components at render time so there doesn't need to be
@@ -353,8 +359,9 @@ a complete initialization. If you wish to update your initial setup with newer d
 perhaps because a new supported game is available, you can run the following script and
 append the `--update` flag to it. Otherwise, run the following command like so:
 
-  ./bootstrap --config config/server.yaml \
-      --server http://some-server.here/ --token some-token-here
+```
+./bootstrap --config config/server.yaml --server http://some-server.here/ --token some-token-here
+```
 
 If you do not have a BEMAPI-compatible server, you can initialize the server from the
 game files of the games you wish to run. See the following sections for how exactly to
@@ -366,7 +373,9 @@ For Pop'n Music, get the game DLL from the version of the game you want to impor
 run a command like so. This network supports versions 19-24 so you will want to run this
 command once for every version, giving the correct DLL file:
 
-  ./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll
+```
+./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll
+```
 
 ### Jubeat
 
@@ -374,22 +383,24 @@ For Jubeat, get the music XML out of the data directory of the mix you are impor
 and then use "read" with `--series jubeat` and `--version` corresponding to the following
 table:
 
-  Saucer:         saucer
-  Saucer Fulfill: saucer-fulfill
-  Prop:           prop
-  Qubell:         qubell
-  Clan:           clan
+* Saucer:         saucer
+* Saucer Fulfill: saucer-fulfill
+* Prop:           prop
+* Qubell:         qubell
+* Clan:           clan
 
 An example is as follows:
 
-  ./read --config config/server.yaml --series jubeat --version saucer --xml \
-      music_info.xml
+```
+./read --config config/server.yaml --series jubeat --version saucer --xml music_info.xml
+```
 
 You will also want to populate the Jubeat name database with the following command
 after importing all mixes:
 
-  ./read --config config/server.yaml --series jubeat --version all --tsv \
-      data/jubeat.tsv
+```
+./read --config config/server.yaml --series jubeat --version all --tsv data/jubeat.tsv
+```
 
 ### IIDX
 
@@ -399,21 +410,27 @@ difficulty, notecounts and BPM. For a normal mix, you will want to run the comma
 so. This network supports versions 20-24 so you will want to run this command once for
 every version, giving the correct bin file:
 
-  ./read --config config/server.yaml --series iidx --version 22 --bin \
+```
+./read --config config/server.yaml --series iidx --version 22 --bin \
       gamedata/data/info/music_data.bin --assets gamedata/data/sound/
+```
 
 Note that for omnimix mixes, you will need to point at the omnimix version of
 `music_data.bin`, normally named `music_omni.bin`. For the version, prepend "omni-" to the
 number, like so:
 
-  ./read --config config/server.yaml --series iidx --version omni-22 --bin \
+```
+./read --config config/server.yaml --series iidx --version omni-22 --bin \
       gamedata/data/info/music_omni.bin --assets gamedata/data/sound/
+```
 
 You will also want to update the IIDX name database with the following command
 after importing all mixes (this fixes some inconsistencies in names):
 
-  ./read --config config/server.yaml --series iidx --version all --tsv \
+```
+./read --config config/server.yaml --series iidx --version all --tsv \
       data/iidx.tsv
+```
 
 ### DDR
 
@@ -421,20 +438,22 @@ For DDR, you will need the game DLL and `musicdb.xml` from the game you wish to 
 and then run a command similar to the following. You will want to use the version
 corresponding to version in the following table:
 
-  X2:            12
-  X3 vs. 2ndMix: 13
-  2013:          14
-  2014:          15
-  Ace:           16
+* X2:            12
+* X3 vs. 2ndMix: 13
+* 2013:          14
+* 2014:          15
+* Ace:           16
 
-  ./read --config config/server.yaml --series ddr --version 15 --bin ddr.dll \
-      --xml data/musicdb.xml
+```
+./read --config config/server.yaml --series ddr --version 15 --bin ddr.dll --xml data/musicdb.xml
+```
 
 For DDR Ace, there is no `musicdb.xml` or game DLL needed. Instead, you will need the
 `startup.arc` file, like the following example:
 
-  ./read --config config/server.yaml --series ddr --version 16 \
-      --bin data/arc/startup.arc
+```
+./read --config config/server.yaml --series ddr --version 16 --bin data/arc/startup.arc
+```
 
 ### SDVX
 
@@ -443,35 +462,45 @@ and then run the following command, modifying the version parameter as required.
 Note that for SDVX 1, you want the `music_db.xml` file in `data/others/music_db/` directory,
 but for SDVX 2 and onward, you will want the file in `data/others/` instead.
 
-  ./read --config config/server.yaml --series sdvx --version 1 \
+```
+./read --config config/server.yaml --series sdvx --version 1 \
       --xml data/others/music_db.xml
+```
 
 For SDVX 1, you will also need to import the item DB, or appeal cards will not work
 properly. To do so, run the following command.
 
-  ./read --config config/server.yaml --series sdvx --version 1 \
+```
+./read --config config/server.yaml --series sdvx --version 1 \
       --bin soundvoltex.dll
+```
 
 For SDVX 2 and 3, you will also need to import the appeal message DB, or appeal cards
 will not work properly. To do so, run the following command, substituting the correct
 version number.
 
-  ./read --config config/server.yaml --series sdvx --version 2 \
+```
+./read --config config/server.yaml --series sdvx --version 2 \
       --csv data/others/appealmessage.csv
+```
 
 For SDVX 4, you will also need to import the appeal card DB, or appeal cards will not
 work properly. To do so, run the following command.
 
-  ./read --config config/server.yaml --series sdvx --version 4 \
+```
+./read --config config/server.yaml --series sdvx --version 4 \
       --xml data/others/appeal_card.xml
+```
 
 ### MÚSECA
 
 For MÚSECA, you will need the `music-info.xml` file from the game you wish to import.
 Then, run the following command, modifying the version parameter as required.
 
-  ./read --config config/server.yaml --series museca --version 1 \
+```
+./read --config config/server.yaml --series museca --version 1 \
       --xml data/museca/xml/music-info.xml
+```
 
 ### Reflec Beat
 
@@ -479,22 +508,30 @@ For Reflec Beat, get the game DLL from the version of the game you want to impor
 run a command like so. This network supports Reflec Beat up through Volzza 2, so you
 will want to run this with versions 1-6 to completely initialize:
 
-  ./read --config config/server.yaml --series reflec --version 1 --bin reflecbeat.dll
+```
+./read --config config/server.yaml --series reflec --version 1 --bin reflecbeat.dll
+```
 
 ## Running Locally
 
 Once you've set all of this up, you can start the network in debug mode using a command
 similar to:
 
-  ./services --port 5730 --config config/server.yaml
+```
+./services --port 5730 --config config/server.yaml
+```
 
 You can start the frontend in debug mode using another similar command as such:
 
-  ./frontend --port 8573 --config config/server.yaml
+```
+./frontend --port 8573 --config config/server.yaml
+```
 
 You can start the BEMAPI REST server in debug mode using a command similar to:
 
-  ./api --port 18573 --config config/server.yaml
+```
+./api --port 18573 --config config/server.yaml
+```
 
 The network config for any particular game should look similar to the following, with
 the correct hostname or IP filled in for the services URL. No path is necessary. Note
@@ -503,12 +540,14 @@ that if you wish to switch between an existing network and one you serve using t
 by that network. This code does not examine nor care about anything after the initial
 slash, so it can be whatever.
 
-  <network>
+```
+<network>
     <timeout __type="u32">30000</timeout>
     <sz_xrpc_buf __type="u32">102400</sz_xrpc_buf>
     <ssl __type="bool">0</ssl>
     <services __type="str">http://127.0.0.1:5730/</services>
-  </network>
+</network>
+```
 
 If you wish to verify the network's operation with some test traffic, feel free to
 point the traffic generator at your development network. You should run it similar to
@@ -516,7 +555,9 @@ the command below, substituting the correct port to connect to your network and 
 one of the supported games. If you don't know a supported game, you can use the `--list`
 option to print them. If "Success!" is printed after all checks, you're good to go!
 
-  ./trafficgen --config config/trafficgen.yaml --port 5730 --game pnm-22 && echo Success!
+```
+./trafficgen --config config/trafficgen.yaml --port 5730 --game pnm-22 && echo Success!
+```
 
 You will want to set up a cron job or similar scheduling agent to call "scheduler"
 on a regular basis. It is recommended to call it every five minutes since there are cache
@@ -524,7 +565,9 @@ warming portions for the front-end that expire every 10 minutes. Game code will 
 with internal handlers to perform daily/weekly actions which are kicked off by this script.
 An example invocation of the tool is as follows:
 
-  ./scheduler --config config/server.yaml
+```
+./scheduler --config config/server.yaml
+```
 
 Once your network is up and running, if you pull new code down, the DB schema may have
 changed. For that, use the same DB util script detailed above in the following manner.
@@ -533,14 +576,18 @@ up to spec. It is recommended to create a deploy script that knows how to restar
 install a new version of these utilities to your production virtualenv and then runs this
 script to ensure that your production DB is kept in sync:
 
-  ./dbutils --config config/server.yaml upgrade
+```
+./dbutils --config config/server.yaml upgrade
+```
 
 Since the network provided is player-first, in order to promote an account to administrator
 you will have to create an account on a game first. Once you have done that, you can sign
 up for the front-end using those credentials (your card and PIN), and then use the dbutils
 script to promote yourself to admin, similar to this command:
 
-  ./dbutils --config config/server.yaml add-admin --username <your-name-here>
+```
+./dbutils --config config/server.yaml add-admin --username <your-name-here>
+```
 
 ## Production Setup
 
@@ -593,7 +640,9 @@ you will want to augment that migration with addtional data transformations. Var
 existing migrations do just that, so have a look at them under
 `bemani/data/migrations/versions/`. An example is as follows:
 
-  ./dbutils --config config/server.yaml generate --message "Adding timestamp column to user."
+```
+./dbutils --config config/server.yaml generate --message "Adding timestamp column to user."
+```
 
 Once the script finishes, check out the created migration script to be sure its correct
 and then check it in.
