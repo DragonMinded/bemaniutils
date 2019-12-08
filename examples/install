@@ -1,0 +1,17 @@
+#! /bin/bash
+# A utility that will install the latest version of the code in the repo
+# to your virtualenv, run any upgrade scripts to update your production
+# MySQL instance and then preload the JSX cache. Effectively, a one-liner
+# to deploying a new version.
+
+set -e
+
+pushd /path/to/git/checkout
+source /path/to/your/virtualenv/bin/activate
+pip install --upgrade pip
+pip install . -U --force-reinstall
+
+./dbutils --config /path/to/your/root/server.yaml upgrade
+deactivate
+popd
+sudo service uwsgi restart && ./preload

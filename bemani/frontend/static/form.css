@@ -1,0 +1,107 @@
+form.inline {
+    margin: 0px;
+}
+
+form.inline label {
+    display: block;
+}
+
+form.inline label.inline {
+    display: inline-block;
+}
+
+form.inline div.row {
+    padding-bottom: 5px;
+}
+
+form.inline select {
+    vertical-align: bottom;
+    margin-right: 5px;
+}
+
+input.inline {
+    margin-right: 5px;
+}
+
+button::-moz-focus-inner, input::-moz-focus-inner {
+    border:0;
+    padding:0;
+}
+
+form div.action {
+    margin-top: 5px;
+}
+
+input[type="submit"] {
+    border: 1px solid #cddcc1;
+    background: #e7ffd4;
+    cursor: pointer;
+    border-radius: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-right: 5px;
+}
+
+input[type="button"], button.nav, button.toggle, button.edit, button.add, button.viewmore {
+    border: 1px solid #dadada;
+    background: #ffffff;
+    cursor: pointer;
+    border-radius: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+input[type="button"] {
+    margin-right: 5px;
+}
+
+button.toggle:not(:last-child):not(:only-child), button.edit:not(:last-child):not(:only-child), button.delete:not(:last-child):not(:only-child), button.add:not(:last-child):not(:only-child) {
+    margin-right: 5px;
+}
+
+button.nav:not(:last-child) {
+    margin-right: 5px;
+}
+
+button.nav {
+    margin-bottom: 5px;
+}
+
+button.active {
+    font-weight: bold;
+}
+
+button.delete {
+    border: 1px solid #d6caca;
+    background: #ffe4e4;
+    cursor: pointer;
+    border-radius: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+input[type="text"], input[type="password"], textarea {
+    border: 1px solid #dadada;
+    padding: 2px;
+    border-radius: 3px;
+}
+
+select {
+    border: 1px solid #dadada;
+    padding: 1px;
+    border-radius: 3px;
+}
+
+option.placeholder {
+    font-style: italic;
+}
+
+div.buttons {
+    padding-top:5px;
+}

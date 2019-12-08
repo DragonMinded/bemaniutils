@@ -1,0 +1,7 @@
+core:
+    # The PCBID that is used for all communication between the server and us
+    pcbid: '00010203040506070809'
+    # Whether we request to encrypt when talking to the server
+    encryption: True
+    # Whether we compress when talking to the server
+    compression: False

@@ -1,0 +1,9 @@
+server {
+    listen 80;
+    server_tokens off;
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/path/to/your/root/proxy.sock;
+    }
+}

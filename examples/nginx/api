@@ -1,0 +1,17 @@
+server {
+    server_name your-domain.com;
+    listen 9573 ssl;
+    server_tokens off;
+
+    gzip on;
+    gzip_types application/json;
+    gzip_min_length 1000;
+
+    ssl_certificate /path/to/certboot/your-domain.com/fullchain.pem;
+    ssl_certificate_key /path/to/certboot/your-domain.com/privkey.pem;
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/path/to/your/root/api.sock;
+    }
+}

@@ -1,0 +1,4 @@
+#! /bin/bash
+
+export PYTHONPATH=$(python -c "import os; print(os.path.realpath('.'))")
+python3 -m bemani.utils.psmap "$@"

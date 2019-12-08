@@ -1,0 +1,6 @@
+#! /bin/bash
+# Version of the scheduler utility that can be called from a crontab.
+# Place this in the root of your installation to run scheduled events.
+
+source /path/to/your/virtualenv/bin/activate
+python3 -m bemani.utils.scheduler "$@"

@@ -1,0 +1,46 @@
+#! /bin/bash
+
+set -e
+
+declare -a arr=(
+    "pnm-19"
+    "pnm-20"
+    "pnm-21"
+    "pnm-22"
+    "pnm-23"
+    "pnm-24"
+    "iidx-20"
+    "iidx-21"
+    "iidx-22"
+    "iidx-23"
+    "iidx-24"
+    "jubeat-5"
+    "jubeat-5+"
+    "jubeat-6"
+    "jubeat-7"
+    "jubeat-8"
+    "ddr-12"
+    "ddr-13"
+    "ddr-2013"
+    "ddr-2014"
+    "ddr-ace"
+    "bishi"
+    "sdvx-1"
+    "sdvx-2"
+    "sdvx-3s1"
+    "sdvx-3s2"
+    "sdvx-4"
+    "museca-1"
+    "museca-1+1/2"
+    "reflec-1"
+    "reflec-2"
+    "reflec-3"
+    "reflec-4"
+    "reflec-5"
+    "reflec-6"
+)
+
+for project in "${arr[@]}"
+do
+    ./trafficgen --game $project "$@"
+done

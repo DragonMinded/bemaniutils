@@ -1,0 +1,25 @@
+local:
+    # Advertised server IP or DNS entry games will connect to, overwrites remote host.
+    host: '192.168.0.1'
+    # Advertised port games will connect to, overwrites remote port.
+    port: 80,
+
+remote:
+    # List of servers that we recognized, with the host and port that the service is
+    # located at for each server.
+    server1:
+        host: '127.0.0.1'
+        port: 1234
+    server2:
+        host: '127.0.0.1'
+        port: 1573
+
+# Default server, when PCBID doesn't match below. Should be one of the above remote servers.
+default: 'server1'
+# Whether we log verbosely to web server logs.
+verbose: true
+
+# List of PCBIDs and the server they should be redirected to. Servers should be one of the
+# above remote servers.
+pcbid:
+    00010203040506070809: 'server2'

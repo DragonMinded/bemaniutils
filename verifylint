@@ -1,0 +1,3 @@
+#! /bin/bash
+
+flake8 bemani/ --ignore E501 | grep -v "migrations\/" | grep -v "__init__.*F401"

@@ -1,0 +1,40 @@
+#! /bin/bash
+
+declare -a arr=(
+    "api"
+    "arcutils"
+    "bemanishark"
+    "binutils"
+    "cardconvert"
+    "dbutils"
+    "frontend"
+    "ifsutils"
+    "iidxutils"
+    "proxy"
+    "psmap"
+    "read"
+    "replay"
+    "responsegen"
+    "scheduler"
+    "services"
+    "struct"
+    "trafficgen"
+    "twodxutils"
+)
+
+declare -a cmdline=()
+
+for project in "${arr[@]}"
+do
+    cmdline+=('-m')
+    cmdline+=("bemani.utils.$project")
+done
+
+echo "Verifying type information..."
+MYPYPATH=$(python -c "import os; print(os.path.realpath('.'))") mypy \
+    "${cmdline[@]}" \
+    --warn-redundant-casts \
+    --disallow-untyped-calls \
+    --disallow-untyped-defs \
+    --no-strict-optional
+echo "Done!"

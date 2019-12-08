@@ -1,0 +1,6 @@
+from bemani.client.popn.tunestreet import PopnMusicTuneStreetClient
+from bemani.client.popn.fantasia import PopnMusicFantasiaClient
+from bemani.client.popn.sunnypark import PopnMusicSunnyParkClient
+from bemani.client.popn.lapistoria import PopnMusicLapistoriaClient
+from bemani.client.popn.eclale import PopnMusicEclaleClient
+from bemani.client.popn.usaneko import PopnMusicUsaNekoClient

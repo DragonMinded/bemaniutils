@@ -1,0 +1,60 @@
+#! /bin/bash
+
+# Die if we fail to do an import. If you're bootstrapping
+# from a network with partial support, kill this line to
+# do a best-effort.
+set -e
+
+# Init Pop'n Music
+./read --series pnm --version 19 "$@"
+./read --series pnm --version 20 "$@"
+./read --series pnm --version 21 "$@"
+./read --series pnm --version 22 "$@"
+./read --series pnm --version 23 "$@"
+./read --series pnm --version 24 "$@"
+
+# Init Jubeat
+./read --series jubeat --version saucer "$@"
+./read --series jubeat --version saucer-fulfill "$@"
+./read --series jubeat --version prop "$@"
+./read --series jubeat --version qubell "$@"
+./read --series jubeat --version clan "$@"
+
+# Init IIDX
+./read --series iidx --version 20 "$@"
+./read --series iidx --version 21 "$@"
+./read --series iidx --version 22 "$@"
+./read --series iidx --version 23 "$@"
+./read --series iidx --version 24 "$@"
+
+# Init IIDX Omnimix
+./read --series iidx --version omni-20 "$@"
+./read --series iidx --version omni-21 "$@"
+./read --series iidx --version omni-22 "$@"
+./read --series iidx --version omni-23 "$@"
+./read --series iidx --version omni-24 "$@"
+
+# Init DDR
+./read --series ddr --version 12 "$@"
+./read --series ddr --version 13 "$@"
+./read --series ddr --version 14 "$@"
+./read --series ddr --version 15 "$@"
+./read --series ddr --version 16 "$@"
+
+# Init SDVX
+./read --series sdvx --version 1 "$@"
+./read --series sdvx --version 2 "$@"
+./read --series sdvx --version 3 "$@"
+./read --series sdvx --version 4 "$@"
+
+# Init Museca
+./read --series museca --version 1 "$@"
+./read --series museca --version 1+1/2 "$@"
+
+# Init Reflec Beat
+./read --series reflec --version 1 "$@"
+./read --series reflec --version 2 "$@"
+./read --series reflec --version 3 "$@"
+./read --series reflec --version 4 "$@"
+./read --series reflec --version 5 "$@"
+./read --series reflec --version 6 "$@"

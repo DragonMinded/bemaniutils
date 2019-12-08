@@ -1,0 +1,2 @@
+class ScoreSaveException(Exception):
+    pass

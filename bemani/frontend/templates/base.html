@@ -1,0 +1,170 @@
+<html>
+    <head>
+		{% if title %}
+		<title>{{ title }}</title>
+		{% endif %}
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='site.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='color.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='form.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='section.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='table.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='jquery-confirm.css') }}" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript" src="{{ url_for('static', filename='chart.bundle.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='date.format.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery-1.12.4.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery-confirm.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery.touchSwipe.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='tinynav.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='react.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='react-dom.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='ajax.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='messages.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='history.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='regions.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='iidx-options.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='ddr-options.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='link.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='merge.js') }}"></script>
+        {% for entry in components %}
+        <script type="text/javascript" src="{{ url_for('jsx', filename=entry) }}"></script>
+        {% endfor %}
+        <script type="text/javascript">
+            $(function () {
+                $("#nav").tinyNav();
+            });
+        </script>
+        <script type="text/javascript">
+            window.floaterrors = function(skipheightadjust) {
+                if($(this).scrollTop()>$('div.messages-anchor').position().top){
+                    if (!window.floated) {
+                        var width = $('div.messages').width();
+                        var height = $('div.messages').height();
+                        if (height > 0) {
+                            $('div.messages').css({position:'fixed',top:0, width: width, 'z-index': 1});
+                            if (skipheightadjust) {
+                                $('div.messages-anchor').css({height: ''});
+                            } else {
+                                $('div.messages-anchor').css({height: height + 10});
+                            }
+                            window.floated = true;
+                        }
+                    }
+                } else {
+                    $('div.messages').css({position:'', width: '', top: ''});
+                    $('div.messages-anchor').css({height: ''});
+                    window.floated = false;
+                }
+            };
+            $(window).scroll(function() { window.floaterrors(false); });
+            $(document).on('click', 'div.close', function(event) {
+                $(event.target).parent().hide();
+                if (window.floated) {
+                    var height = $('div.messages').height();
+                    if (height > 0) {
+                        $('div.messages-anchor').css({height: height + 10});
+                    } else {
+                        $('div.messages-anchor').css({height: ''});
+                    }
+                }
+            });
+        </script>
+        <script type="text/javascript">
+            window.uris = {};
+            {% if links is defined %}
+                {% for name, link in links.items() %}
+                    window.uris[{{name|tojson|safe}}] = {{ link|tojson|safe }};
+                {% endfor %}
+            {% endif %}
+            {% if inits is defined %}
+                {% for name, val in inits.items() %}
+                    window.{{name}} = {{ val|tojson|safe }};
+                {% endfor %}
+            {% endif %}
+        </script>
+        <script type="text/javascript">
+            $(function () {
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                    $(".container").swipe(
+                        {
+                            swipeLeft: function(event) {
+                                $("button.next").trigger("click");
+                                event.preventDefault();
+                            },
+                            swipeRight: function(event) {
+                                $("button.prev").trigger("click");
+                                event.preventDefault();
+                            },
+                            threshold: 30,
+                            fingers: 'all',
+                        }
+                    );
+                }
+            });
+        </script>
+        {% block scripts %}{% endblock %}
+	</head>
+	<body>
+        {% if show_navigation %}
+        <div class="navigation">
+            <ul class="navigation" id="nav">
+                {% for entry in navigation %}
+                <li class="{{ 'right' if entry.get('right_justify') else 'left' }} {{ 'selected' if entry['uri'] == current_path or (((entry.get('base_uri', '/nonexistent') or '/nonexistent') in current_path) and not (any(entry.get('entries'), 'uri', current_path))) else '' }}">
+                        {% with uri = entry.get('uri') %}
+                            {% with label = entry.get('label') %}
+                                {% if label %}
+                                    {% if uri %}
+                                    <a
+                                        class="{{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or ((entry.get('base_uri', '/nonexistent') or '/nonexistent') in current_path) else ''}} {{entry['gamecode']}} border"
+                                        href="{{ entry['uri'] }}"
+                                    >{{ entry['label'] }}</a>
+                                    {% else %}
+                                    <a
+                                        class="cursor {{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or ((entry.get('base_uri', '/nonexistent') or '/nonexistent') in current_path) else ''}} {{entry['gamecode']}} border"
+                                    >{{ entry['label'] }}</a>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="separator">&nbsp;</div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                        {% with subentries = entry.get('entries') %}
+                            {% if subentries %}
+                                <ul class="navigation_sub">
+                                    {% for subentry in subentries %}
+                                        <li class="{{ 'selected' if subentry['uri'] == current_path else '' }}">
+                                            <a
+                                                class="{{ 'current' if (subentry['uri'] == current_path) else '' }}"
+                                                href="{{ subentry['uri'] }}"
+                                            >{{ subentry['label'] }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        {% endwith %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="messages-anchor"></div>
+        <div class="messages">
+            <ul class="messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <li class="{{ category }}">
+                            {{ message }}
+                            <div class="close">&#10005;</div>
+                        </li>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </ul>
+        </div>
+        <div class="container">
+    	    {% block content %}{% endblock %}
+        </div>
+	</body>
+</html>

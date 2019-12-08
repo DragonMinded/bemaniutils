@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="section">
+        <h2>Login</h2>
+        <form action="{{ url_for('account_pages.login') }}" method="post">
+            <dl>
+                <dt>Username</dt>
+                <dd><input type="text" name="username" value="{{ username }}"/></dd>
+                <dt>Password</dt>
+                <dd><input type="password" name="password" /></dd>
+                <dt></dt>
+                <dd><input type="submit" value="login" /></dd>
+            </dl>
+        </form>
+    </div>
+    <div class="section">
+        Don't have an account? <a href="{{ url_for('account_pages.viewregister') }}">Create one!</a>
+    </div>
+{% endblock %}

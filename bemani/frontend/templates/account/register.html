@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="section">
+        <h2>Register New Account</h2>
+
+        <form action="{{ url_for('account_pages.register') }}" method=post>
+            <dl>
+                <dt>Card Number (found on back of e-AMUSEMENT card)</dt>
+                <dd><input type="text" name="card_number" value="{{ card_number }}" /></dd>
+                <dt>PIN</dt>
+                <dd><input type="password" name="pin" /></dd>
+                <dt>&nbsp;</dt>
+                <dd></dd>
+                <dt>Desired Username</dt>
+                <dd><input type="text" name="username" value="{{ username }}" /></dd>
+                <dt>Email Address (used for password and pin resetting)</dt>
+                <dd><input type="text" name="email" value="{{ email }}" /></dd>
+                <dt>Desired Password</dt>
+                <dd><input type="password" name="password1" /></dd>
+                <dt>Desired Password (again)</dt>
+                <dd><input type="password" name="password2" /></dd>
+                <dt></dt>
+                <dd><input type="submit" value="create account" /></dd>
+            </dl>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,13 @@
+__pycache__
+*.swp
+*.swo
+*.pyc
+*.pyo
+.mypy_cache/
+*.c
+*.o
+*.so
+build/
+.hg/
+.hgignore
+.venv/

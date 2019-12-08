@@ -1,0 +1,5 @@
+www-data
+*/5 * * * * /path/to/your/root/scheduler --config /path/to/your/root/server.yaml
+
+root
+5 0 * * *            mysqldump -h localhost <database> --extended-insert=FALSE --result-file /path/to/backup/backup_$(date +"\%Y_\%m_\%d").sql

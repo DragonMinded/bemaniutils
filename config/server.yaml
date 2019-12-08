@@ -1,0 +1,59 @@
+database:
+    # IP or DNS entry for MySQL instance
+    address: "localhost"
+    # Database that will be used
+    database: "bemani"
+    # User who has full credentials to the above DB
+    user: "bemani"
+    # Password of said user
+    password: "bemani"
+
+server:
+    # Advertised server IP or DNS entry games will connect to
+    address: "192.168.0.1"
+    # Advertised keepalive address, must be globally pingable
+    keepalive: "127.0.0.1"
+    # What port games will connect to
+    port: 80
+    # Whether games should connect over HTTPS
+    https: False
+    # Advertised frontend URI. Delete this to mask the frontend address.
+    uri: "https://eagate.573.jp"
+    # URI that users hitting the GET interface will be redirected to.
+    # Delete this to return an HTTP error instead.
+    redirect: "https://eagate.573.jp"
+    # Whether PCBIDs must be added to the network before games will work.
+    enforce_pcbid: False
+
+paseli:
+    # Whether PASELI is enabled on the network.
+    enabled: True
+    # Whether infinite PASELI balance is enabled on the network.
+    infinite: True
+
+support:
+    # Bishi Bashi frontend/backend enabled
+    bishi: True
+    # DDR frontend/backend enabled
+    ddr: True
+    # IIDX frontend/backend enabled
+    iidx: True
+    # Jubeat frontend/backend enabled
+    jubeat: True
+    # Museca frontend/backend enabled
+    museca: True
+    # Pop'n Music frontend/backend enabled
+    pnm: True
+    # Reflec Beat frontend/backend enabled
+    reflec: True
+    # SDVX frontend/backend enabled
+    sdvx: True
+
+# Key used to encrypt cookies, should be unique per instance
+secret_key: 'this_is_a_secret_please_change_me'
+# Name of this network
+name: 'e-AMUSEMENT Network'
+# Administrative contact for this network
+email: 'nobody@nowhere.com'
+# Cache DIR, should point somewhere other than /tmp for production instances
+cache_dir: '/tmp'

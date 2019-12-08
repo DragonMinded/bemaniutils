@@ -1,0 +1,13 @@
+#! /bin/bash
+# A utility that hits your web frontend, causing the cache for JSX
+# translations to be rendered. Call this after/during your installation
+# so that the first web request after an installation doesn't need to
+# warm the cache.
+
+cd /path/to/your/virtualenv/lib/python3.6/site-packages/bemani/frontend/static
+for url in $(find -name "*.react.js" | sed 's,^\.,https://your-domain.com/jsx,'); do
+    echo "Priming $url..."
+    curl $url --silent -H 'Cache-Control: no-cache' > /dev/null
+done
+
+echo "Done!"

@@ -1,0 +1,268 @@
+import json
+import requests
+from typing import Tuple, Dict, List, Any, Optional
+
+from bemani.common import GameConstants, VersionConstants, DBConstants, ValidatedDict
+
+
+class APIException(Exception):
+    pass
+
+
+class NotAuthorizedAPIException(APIException):
+    pass
+
+
+class UnsupportedRequestAPIException(APIException):
+    pass
+
+
+class UnrecognizedRequestAPIException(APIException):
+    pass
+
+
+class UnsupportedVersionAPIException(APIException):
+    pass
+
+
+class RemoteServerErrorAPIException(APIException):
+    pass
+
+
+class APIClient:
+    """
+    A client that fully speaks BEMAPI and can pull information from a remote server.
+    """
+
+    API_VERSION = 'v1'
+
+    def __init__(self, base_uri: str, token: str, allow_stats: bool, allow_scores: bool) -> None:
+        self.base_uri = base_uri
+        self.token = token
+        self.allow_stats = allow_stats
+        self.allow_scores = allow_scores
+
+    def __exchange_data(self, request_uri: str, request_args: Dict[str, Any]) -> Dict[str, Any]:
+        if self.base_uri[-1:] != '/':
+            uri = '{}/{}'.format(self.base_uri, request_uri)
+        else:
+            uri = '{}{}'.format(self.base_uri, request_uri)
+
+        headers = {
+            'Authorization': 'Token {}'.format(self.token),
+            'Content-Type': 'application/json; charset=utf-8',
+        }
+        data = json.dumps(request_args).encode('utf8')
+
+        try:
+            r = requests.request(
+                'GET',
+                uri,
+                headers=headers,
+                data=data,
+                allow_redirects=False,
+                timeout=10,
+            )
+        except Exception:
+            raise APIException('Failed to query remote server!')
+
+        if r.headers['content-type'] != 'application/json; charset=utf-8':
+            raise APIException('API returned invalid content type \'{}\'!'.format(r.headers['content-type']))
+
+        jsondata = r.json()
+
+        if r.status_code == 200:
+            return jsondata
+
+        if 'error' not in jsondata:
+            raise APIException('API returned error code {} but did not include \'error\' attribute in response JSON!'.format(r.status_code))
+        error = jsondata['error']
+
+        if r.status_code == 401:
+            raise NotAuthorizedAPIException('The API token used is not authorized against this server!')
+        if r.status_code == 404:
+            raise UnsupportedRequestAPIException('The server does not support this game/version or request object!')
+        if r.status_code == 405:
+            raise UnrecognizedRequestAPIException('The server did not recognize the request!')
+        if r.status_code == 500:
+            raise RemoteServerErrorAPIException('The server had an error processing the request and returned \'{}\''.format(error))
+        if r.status_code == 501:
+            raise UnsupportedVersionAPIException('The server does not support this version of the API!')
+        raise APIException('The server returned an invalid status code {}!', format(r.status_code))
+
+    def __translate(self, game: str, version: int) -> Tuple[str, str]:
+        servergame = {
+            GameConstants.DDR: 'ddr',
+            GameConstants.IIDX: 'iidx',
+            GameConstants.JUBEAT: 'jubeat',
+            GameConstants.MUSECA: 'museca',
+            GameConstants.POPN_MUSIC: 'popnmusic',
+            GameConstants.REFLEC_BEAT: 'reflecbeat',
+            GameConstants.SDVX: 'soundvoltex',
+        }.get(game)
+        if servergame is None:
+            raise UnsupportedRequestAPIException('The client does not support this game/version!')
+
+        if version >= DBConstants.OMNIMIX_VERSION_BUMP:
+            version = version - DBConstants.OMNIMIX_VERSION_BUMP
+            omnimix = True
+        else:
+            omnimix = False
+
+        serverversion = {
+            GameConstants.DDR: {
+                VersionConstants.DDR_X2: '12',
+                VersionConstants.DDR_X3_VS_2NDMIX: '13',
+                VersionConstants.DDR_2013: '14',
+                VersionConstants.DDR_2014: '15',
+                VersionConstants.DDR_ACE: '16',
+            },
+            GameConstants.IIDX: {
+                VersionConstants.IIDX_TRICORO: '20',
+                VersionConstants.IIDX_SPADA: '21',
+                VersionConstants.IIDX_PENDUAL: '22',
+                VersionConstants.IIDX_COPULA: '23',
+                VersionConstants.IIDX_SINOBUZ: '24',
+                VersionConstants.IIDX_CANNON_BALLERS: '25',
+            },
+            GameConstants.JUBEAT: {
+                VersionConstants.JUBEAT_SAUCER: '5',
+                VersionConstants.JUBEAT_SAUCER_FULFILL: '5a',
+                VersionConstants.JUBEAT_PROP: '6',
+                VersionConstants.JUBEAT_QUBELL: '7',
+                VersionConstants.JUBEAT_CLAN: '8',
+            },
+            GameConstants.MUSECA: {
+                VersionConstants.MUSECA: '1',
+                VersionConstants.MUSECA_1_PLUS: '1p',
+            },
+            GameConstants.POPN_MUSIC: {
+                VersionConstants.POPN_MUSIC_TUNE_STREET: '19',
+                VersionConstants.POPN_MUSIC_FANTASIA: '20',
+                VersionConstants.POPN_MUSIC_SUNNY_PARK: '21',
+                VersionConstants.POPN_MUSIC_LAPISTORIA: '22',
+                VersionConstants.POPN_MUSIC_ECLALE: '23',
+                VersionConstants.POPN_MUSIC_USANEKO: '24',
+            },
+            GameConstants.REFLEC_BEAT: {
+                VersionConstants.REFLEC_BEAT: '1',
+                VersionConstants.REFLEC_BEAT_LIMELIGHT: '2',
+                VersionConstants.REFLEC_BEAT_COLETTE: '3as',
+                VersionConstants.REFLEC_BEAT_GROOVIN: '4u',
+                VersionConstants.REFLEC_BEAT_VOLZZA: '5',
+                VersionConstants.REFLEC_BEAT_VOLZZA_2: '5a',
+                VersionConstants.REFLEC_BEAT_REFLESIA: '6',
+            },
+            GameConstants.SDVX: {
+                VersionConstants.SDVX_BOOTH: '1',
+                VersionConstants.SDVX_INFINITE_INFECTION: '2',
+                VersionConstants.SDVX_GRAVITY_WARS: '3',
+                VersionConstants.SDVX_HEAVENLY_HAVEN: '4',
+            },
+        }.get(game, {}).get(version)
+        if serverversion is None:
+            raise UnsupportedRequestAPIException('The client does not support this game/version!')
+
+        if omnimix:
+            serverversion = 'o' + serverversion
+
+        return (servergame, serverversion)
+
+    def get_server_info(self) -> ValidatedDict:
+        resp = self.__exchange_data('', {})
+        return ValidatedDict({
+            'name': resp['name'],
+            'email': resp['email'],
+            'versions': resp['versions'],
+        })
+
+    def get_profiles(self, game: str, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
+        # Allow remote servers to be disabled
+        if not self.allow_scores:
+            return []
+
+        try:
+            servergame, serverversion = self.__translate(game, version)
+            resp = self.__exchange_data(
+                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                {
+                    'ids': ids,
+                    'type': idtype,
+                    'objects': ['profile'],
+                },
+            )
+            return resp['profile']
+        except APIException:
+            # Couldn't talk to server, assume empty profiles
+            return []
+
+    def get_records(
+        self,
+        game: str,
+        version: int,
+        idtype: str,
+        ids: List[str],
+        since: Optional[int]=None,
+        until: Optional[int]=None,
+    ) -> List[Dict[str, Any]]:
+        # Allow remote servers to be disabled
+        if not self.allow_scores:
+            return []
+
+        try:
+            servergame, serverversion = self.__translate(game, version)
+            data: Dict[str, Any] = {
+                'ids': ids,
+                'type': idtype,
+                'objects': ['records'],
+            }
+            if since is not None:
+                data['since'] = since
+            if until is not None:
+                data['until'] = until
+            resp = self.__exchange_data(
+                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                data,
+            )
+            return resp['records']
+        except APIException:
+            # Couldn't talk to server, assume empty records
+            return []
+
+    def get_statistics(self, game: str, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
+        # Allow remote servers to be disabled
+        if not self.allow_stats:
+            return []
+
+        try:
+            servergame, serverversion = self.__translate(game, version)
+            resp = self.__exchange_data(
+                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                {
+                    'ids': ids,
+                    'type': idtype,
+                    'objects': ['statistics'],
+                },
+            )
+            return resp['statistics']
+        except APIException:
+            # Couldn't talk to server, assume empty statistics
+            return []
+
+    def get_catalog(self, game: str, version: int) -> Dict[str, List[Dict[str, Any]]]:
+        # No point disallowing this, since its only ever used for bootstrapping.
+
+        try:
+            servergame, serverversion = self.__translate(game, version)
+            resp = self.__exchange_data(
+                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                {
+                    'ids': [],
+                    'type': 'server',
+                    'objects': ['catalog'],
+                },
+            )
+            return resp['catalog']
+        except APIException:
+            # Couldn't talk to server, assume empty catalog
+            return {}
