@@ -8,3 +8,8 @@ Things that I have not gotten around to doing.
  - Make the frontend work better on mobile. It works well enough, but it could be a much better experience.
  - Support for DanEvo. I meant to do this but my DanEvo ended up in storage before I could tackle it, so the only thing that exists at the moment is a rudimentary music DB parser.
  - Figure out phase/unlock/etc bits for some older IIDX and Pop'n Music versions and hook them up to the Arcade panel to allow switching events.
+
+General maintenance that I have not yet performed.
+
+ - Unpin flake8 and address new lint errors from newer version of flake8.
+ - Upgrade legacy uses of .format() to use f-strings instead.

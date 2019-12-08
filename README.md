@@ -1,5 +1,5 @@
-Introduction
-------------
+# Introduction
+
 A collection of programs for working with various games in the BEMANI series. This
 could be untangled quite a bit into various modules that provide simpler pieces.
 However, this is how it ended up evolving over time. This repository includes
@@ -20,15 +20,15 @@ for being good RE partners for several games, and sharing good finds. Thanks to
 helvetica for helping with game RE and retweeting cute anime ladies onto my feed
 every goddamn night.
 
-2dxutils
-========
+## 2dxutils
+
 A utility for unpacking and repacking `.2dx` files. This isn't the best utility and
 I think there are more complete and more accurate programs out there. However,
 they all lack source as far as I could tell, so I developed this. Run it like
 `./2dxutils --help` to see help output and determine how to use this.
 
-api
-===
+## api
+
 Development version of this repository's BEMAPI implementation. Run it like
 `./api --help` to see help output and determine how to use this. Much like
 "services" and "frontend", this should be pointed at the development version of
@@ -40,14 +40,14 @@ Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with uWSGI
 and nginx.
 
-arcutils
-========
+## arcutils
+
 A utility for unpacking `.arc` files. This does not currently repack files. However,
 the format is so trivial that adding such a feature would be fairly easy. Run it
 like `./arcutils --help` to see help output and determine how to use this.
 
-bemanishark
-===========
+## bemanishark
+
 A wire sniffer that can decode eAmuse packets and print them. Run it on a computer
 that can sniff traffic between an eAmusement server and a supported game and it will
 spit out the requests and responses XML-formatted identically to the legacy easerver
@@ -66,23 +66,29 @@ TCP stream.
 This utility might be better if rewritten to be a plugin for Wireshark instead of
 a standalone sniffing utility, but I don't have the time.
 
-binutils
-========
+## binutils
+
 A utility for unpacking raw binxml files (files that use the same encoding scheme
 as the binary network protocol) to their XML representation. This is useful for
 examining raw binary blobs or digging into unknown file formats that contain binxml.
 Run it like `./binutils --help` to see help and learn how to use this.
 
-cardconvert
-===========
+## bootstrap
+
+A utility for quickly bootstrapping a local setup's music database from an already
+running BEMAPI-compatible server. This is more documented in the below "Database
+Initialization" section.
+
+## cardconvert
+
 A command-line utility for converting between card numbers written on the back of a
 card and the card ID stored in the RFID of the card. Run it like `./cardconvert --help`
 to see how to use this. This will sanitize input, so you can feed it card numbers
 with or without spaces, and you can mix up 1 and I as well as 0 and O, and it will
 properly handle decoding. This supports both new and old style cards.
 
-dbutils
-=======
+## dbutils
+
 A command-line utility for working with the DB used by "api", "services" and "frontend".
 This utility includes options for creating tables in a newly-created DB, granting and
 revoking admin rights to the frontend, generating migration scripts for live DBs, and
@@ -95,8 +101,8 @@ bring your production DB up to sync with the code you are deploying. Run it like
 `./dbutils --help` to see all options. The config file that this works on is the same
 that is given to "api", "services" and "frontend".
 
-frontend
-========
+## frontend
+
 Development version of a frontend server allowing for account and server administration
 as well as score viewing and profile editing. Run it like `./frontend --help` to see
 help output and determine how to use this. Much like "services" and "api", this should
@@ -108,22 +114,22 @@ Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/frontend.wsgi` for a ready-to-go WSGI file that can be used with uWSGI
 and nginx.
 
-ifsutils
-========
+## ifsutils
+
 A mediocre utility that can extract `.ifs` files. This has a lot of baked in
 assumptions and is not nearly as good as other open-source utilities for extracting
 files. It also cannot repack files. This is included for posterity, and because some
 bootstrapping code requires it in order to fully start a production server.
 Run it like `./ifsutils --help` to see help output and learn how to use it.
 
-iidxutils
-=========
+## iidxutils
+
 A utility for patching IIDX music database files. Note that this currently can only
 apply a "hide leggendarias from normal folders" patch, although its probable that it
 can be extended for other uses.
 
-proxy
-=====
+## proxy
+
 A utility to MITM an eAmuse session. Point a game at the port this listens on, and
 point it at another network to see the packets flowing between the two. Takes care
 of rewriting the facility message to MITM all messages. Has the ability to rewrite
@@ -144,8 +150,8 @@ of this utility located at `bemani/wsgi/proxy.wsgi` along with uWSGI and nginx.
 
 Run it like `./proxy --help` to see how to use this utility.
 
-psmap
-=====
+## psmap
+
 A utility to take an offset from a DLL file and produce python code that would generate
 a suitable response that said DLL will properly parse. Essentially, if you are
 reversing a new game and they use the `psmap` utility to decode all or part of a
@@ -155,8 +161,8 @@ Note that this doesn't currently work on 64bit games, but it should be trivial t
 figure out the differences in the 64-bit psmap implementation. Run it like
 `./psmap --help` to see how to use this utility.
 
-read
-====
+## read
+
 A utility to read music DB information out of game files and populate a database.
 This should be given the same config file as "api", "services" or "frontend" and
 assumes that "dbutils" has already been used to instantiate a valid MySQL DB. It
@@ -164,16 +170,16 @@ also assumes you have the correct game files to read out of. Run it like
 `./read --help` to see how to use it. This utility's uses are extensively documented
 below in the "Installation" section.
 
-replay
-======
+## replay
+
 A utility to take a packet as logged by proxy, services, trafficgen or bemanishark,
 and replay that packet against a particular server. Useful for quickly grabbing
 packets that caused a crash and debugging the crash (and verifying the fix). It also
 lets you replay that packet against your production instance once you fixed the issue
 in case that packet was a score or profile update that you care about.
 
-responsegen
-===========
+## responsegen
+
 A utility to take a packet as logged by proxy, services, trafficgen or bemanishark,
 and generate python code that would have generated that exact packet. Useful for
 quickly grabbing packets sniffed from another network and prototyping new game support.
@@ -181,8 +187,8 @@ Think of this as a combination of "replay" and "psmap". This is also extremely u
 when building new integration test clients. Run it like `./responsegen --help` to
 see all information and usage.
 
-scheduler
-=========
+## scheduler
+
 A command-line utility for kicking off scheduled work that must be performed against a
 DB. This includes picking new dailies/weeklies, new courses, etc... depending on the
 game and any requirements that the server perform some actual calculation based on
@@ -192,8 +198,8 @@ should be seen as a utility-specific cron handler. You can safely run this repea
 and as frequently as desired. Run like `./scheduler --help` to see how to ues this.
 This should be given the same config file as "api", "frontend" and "services".
 
-services
-========
+## services
+
 Development version of an eAmusement protocol server using flask and the protocol
 libraries also used in "bemanishark" and "trafficgen". Currently it lets most modern
 BEMANI games boot and supports full profile and events for Beatmania IIDX 20-24,
@@ -206,14 +212,14 @@ Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/services.wsgi` for a ready-to-go WSGI file that can be used with uWSGI
 and nginx.
 
-shell
-=====
+## shell
+
 A convenience wrapper to invoke a Python 3 shell that has paths set up to import the
 modules in this repository. If you want to tinker or write a quick one-off, this is
 probably the easiest way to do so.
 
-struct
-======
+## struct
+
 A convenience utility for helping reverse-engineer structures out of game DLLs. You
 can give this a physical DLL offset or a virtual memory address for the start and
 end of the data as well as a python struct format (documentation at
@@ -221,8 +227,8 @@ https://docs.python.org/3.6/library/struct.html) and this will print the decoded
 data to the screen as a series of tuples. Run it like `./struct --help` to see how
 to use this.
 
-trafficgen
-==========
+## trafficgen
+
 A utility for simulating traffic to an eAmusement service. Given a particular game,
 this will run through and attempt to verify simple operation of that service. No
 guarantees are made on the accuracy of the emulation though I've strived to be
@@ -234,21 +240,21 @@ Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚS
 Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper, Volzza 1 and
 Volzza 2 and can verify card events and score events, as well as PASELI transactions.
 
-verifylibs
-==========
+## verifylibs
+
 Unit test frontend utility. This will invoke nosetests on the embarrasingly small
 collection of unit tests for this repository. If you are making modifications, it can
 be useful to write a test first (placed in the `bemani/tests/` directory) and code
 from there. It is also useful when optimizing or profiling, and also to verify that
 you haven't regressed anything.
 
-verifylint
-==========
+## verifylint
+
 Lint invocation utility. This simply invokes flake8 with various options so that you
 can see you haven't introduced any lint errors.
 
-verifytraffic
-=============
+## verifytraffic
+
 A utility which attempts to call "trafficgen" for each supported game on the network.
 Think of this as a full integration test suite, as it will sweep through each supported
 game and verify that network services are actually working. This assumes that you are
@@ -257,17 +263,16 @@ submit bogus cards, scores, names and the like and mess up your network. This ta
 a config file which sets up how the client should behave. See `config/trafficgen.yaml`
 for a sample file that can be used.
 
-verifytyping
-============
+## verifytyping
+
 Typing invocation utility. Since this repository is fully typed, this verifies that you
 haven't introduced any type errors and often catches bugs far faster than attemping to
 play a round only to see that you misused a class or misspelled a variable.
 
-Installation
-------------
+# Installation
 
-Dependency Setup
-================
+## Dependency Setup
+
 The code contained here assumes Python 3.6 as the base. If you don't have or don't
 want to install Python 3.6 as your system python, it is recommended to use
 virtualenv to create a virtual environment. The rest of the installation will assume
@@ -319,8 +324,8 @@ This is due to the way `/tmp` on Linux restricts file access to the creator only
 if you share your cache with multiple utilities running under different users, it will
 fail to reuse the cache and drastically slow down the frontend.
 
-Database Initialization
-=======================
+## Database Initialization
+
 At this point, games will boot when pointed at the network, but you won't be able
 to save scores. This is due to the missing song/chart -> score mapping. You will find
 default configuration files for the traffic generator and the services backend in
@@ -355,16 +360,16 @@ If you do not have a BEMAPI-compatible server, you can initialize the server fro
 game files of the games you wish to run. See the following sections for how exactly to
 do that.
 
-Pop'n Music
-~~~~~~~~~~~
+### Pop'n Music
+
 For Pop'n Music, get the game DLL from the version of the game you want to import and
 run a command like so. This network supports versions 19-24 so you will want to run this
 command once for every version, giving the correct DLL file:
 
   ./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll
 
-Jubeat
-~~~~~~
+### Jubeat
+
 For Jubeat, get the music XML out of the data directory of the mix you are importing,
 and then use "read" with `--series jubeat` and `--version` corresponding to the following
 table:
@@ -386,8 +391,8 @@ after importing all mixes:
   ./read --config config/server.yaml --series jubeat --version all --tsv \
       data/jubeat.tsv
 
-IIDX
-~~~~
+### IIDX
+
 For IIDX, you will need the data directory of the mix you wish to support. The import
 script automatically scrapes the music DB as well as the song charts to determine
 difficulty, notecounts and BPM. For a normal mix, you will want to run the command like
@@ -410,8 +415,8 @@ after importing all mixes (this fixes some inconsistencies in names):
   ./read --config config/server.yaml --series iidx --version all --tsv \
       data/iidx.tsv
 
-DDR
-~~~
+### DDR
+
 For DDR, you will need the game DLL and `musicdb.xml` from the game you wish to import,
 and then run a command similar to the following. You will want to use the version
 corresponding to version in the following table:
@@ -431,8 +436,8 @@ For DDR Ace, there is no `musicdb.xml` or game DLL needed. Instead, you will nee
   ./read --config config/server.yaml --series ddr --version 16 \
       --bin data/arc/startup.arc
 
-SDVX
-~~~~
+### SDVX
+
 For SDVX, you will need the game DLL and `music_db.xml` from the game you wish to import,
 and then run the following command, modifying the version parameter as required.
 Note that for SDVX 1, you want the `music_db.xml` file in `data/others/music_db/` directory,
@@ -460,24 +465,24 @@ work properly. To do so, run the following command.
   ./read --config config/server.yaml --series sdvx --version 4 \
       --xml data/others/appeal_card.xml
 
-MÚSECA
-~~~~~~
+### MÚSECA
+
 For MÚSECA, you will need the `music-info.xml` file from the game you wish to import.
 Then, run the following command, modifying the version parameter as required.
 
   ./read --config config/server.yaml --series museca --version 1 \
       --xml data/museca/xml/music-info.xml
 
-Reflec Beat
-~~~~~~~~~~~
+### Reflec Beat
+
 For Reflec Beat, get the game DLL from the version of the game you want to import and
 run a command like so. This network supports Reflec Beat up through Volzza 2, so you
 will want to run this with versions 1-6 to completely initialize:
 
   ./read --config config/server.yaml --series reflec --version 1 --bin reflecbeat.dll
 
-Running Locally
-===============
+## Running Locally
+
 Once you've set all of this up, you can start the network in debug mode using a command
 similar to:
 
@@ -537,8 +542,8 @@ script to promote yourself to admin, similar to this command:
 
   ./dbutils --config config/server.yaml add-admin --username <your-name-here>
 
-Production Setup
-================
+## Production Setup
+
 As alluded to several times in this README, the recommended way to run a production
 instance of this code is to set up uWSGI fronted by nginx. You should SSL-encrypt
 the frontend and the API services, and its recommended to use LetsEncrypt for a
@@ -555,8 +560,8 @@ set up a nginx directory to serve the static resources directly.
 For example configurations, an example install script, and an example script to back
 up your MySQL instance, see the `examples/` directory.
 
-Contributing
-------------
+# Contributing
+
 Contributions are welcome! Before submitting a pull request, ensure that your code
 is type-hint clean by running `./verifytyping` and ensure that it hasn't broken basic
 libraries with `./verifylibs`. Make sure that it is also lint-clean with `./verifylint`.
