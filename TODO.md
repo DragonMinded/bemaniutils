@@ -11,5 +11,4 @@ Things that I have not gotten around to doing.
 
 General maintenance that I have not yet performed.
 
- - Unpin flake8 and address new lint errors from newer version of flake8.
  - Upgrade legacy uses of .format() to use f-strings instead.
