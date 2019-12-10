@@ -30,11 +30,9 @@ do
     cmdline+=("bemani.utils.$project")
 done
 
-echo "Verifying type information..."
 MYPYPATH=$(python -c "import os; print(os.path.realpath('.'))") mypy \
     "${cmdline[@]}" \
     --warn-redundant-casts \
     --disallow-untyped-calls \
     --disallow-untyped-defs \
     --no-strict-optional
-echo "Done!"

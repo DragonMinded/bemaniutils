@@ -857,7 +857,7 @@ class Node:
                     return False
 
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def __ne__(self, other: object) -> bool:

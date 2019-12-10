@@ -4,7 +4,7 @@ Requests
 mysqlclient
 passlib
 mypy
-flake8==3.5.0
+flake8
 typed-ast
 SQLAlchemy
 alembic

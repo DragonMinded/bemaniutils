@@ -4,3 +4,13 @@ from bemani.client.popn.sunnypark import PopnMusicSunnyParkClient
 from bemani.client.popn.lapistoria import PopnMusicLapistoriaClient
 from bemani.client.popn.eclale import PopnMusicEclaleClient
 from bemani.client.popn.usaneko import PopnMusicUsaNekoClient
+
+
+__all__ = [
+    "PopnMusicTuneStreetClient",
+    "PopnMusicFantasiaClient",
+    "PopnMusicSunnyParkClient",
+    "PopnMusicLapistoriaClient",
+    "PopnMusicEclaleClient",
+    "PopnMusicUsaNekoClient",
+]

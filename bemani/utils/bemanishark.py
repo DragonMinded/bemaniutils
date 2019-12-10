@@ -35,7 +35,7 @@ def mainloop(address: Optional[str]=None, port: int=80, verbose: bool=False) -> 
                         inbound['headers'].get('x-eamuse-info'),
                         inbound['data']
                     )
-                except EAmuseException as e:
+                except EAmuseException:
                     in_req = None
 
             print("Inbound request (from {}:{} to {}:{}):".format(
@@ -63,7 +63,7 @@ def mainloop(address: Optional[str]=None, port: int=80, verbose: bool=False) -> 
                         outbound['headers'].get('x-eamuse-info'),
                         outbound['data']
                     )
-                except EAmuseException as e:
+                except EAmuseException:
                     out_req = None
 
             print("Outbound response (from {}:{} to {}:{}):".format(
