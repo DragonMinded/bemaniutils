@@ -93,7 +93,7 @@ A command-line utility for working with the DB used by "api", "services" and "fr
 This utility includes options for creating tables in a newly-created DB, granting and
 revoking admin rights to the frontend, generating migration scripts for live DBs, and
 upgrading live DBs based on previously created migration scripts. Its driven by alembic
-under the hood. You will use `create on initial setup to generate a working MySQL
+under the hood. You will use `create` on initial setup to generate a working MySQL
 database. If you change the schema in code, you can use this again with the `generate`
 option to generate a migration sript. Whenever you run an upgrade to your production
 instance, you should run this against your production DB with the `upgrade` option to
