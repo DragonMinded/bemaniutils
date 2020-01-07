@@ -38,7 +38,7 @@ class TwoDX:
             wavOffset = offset + headerSize
             wavData = data[wavOffset:(wavOffset + wavSize)]
 
-            self.__files['{}_{}.wav'.format(self.__name, fileno)] = wavData
+            self.__files[f'{self.__name}_{fileno}.wav'] = wavData
             fileno = fileno + 1
 
     @property

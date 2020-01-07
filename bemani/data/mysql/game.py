@@ -298,10 +298,7 @@ class GameData(BaseData):
             if result['start_time'] == start_time and result['end_time'] == end_time:
                 # This is just this event being updated, that's fine.
                 continue
-            raise Exception('This event overlaps an existing one with start time {} and end time {}'.format(
-                result['start_time'],
-                result['end_time'],
-            ))
+            raise Exception(f'This event overlaps an existing one with start time {result["start_time"]} and end time {result["end_time"]}')
 
         # Insert or update this setting
         sql = (

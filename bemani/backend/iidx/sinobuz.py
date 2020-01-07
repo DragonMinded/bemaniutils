@@ -551,7 +551,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             if rivalid == -1:
                 attr = 'iidxid'
             else:
-                attr = 'iidxid{}'.format(rivalid)
+                attr = f'iidxid{rivalid}'
 
             try:
                 extid = int(request.attribute(attr))

@@ -141,7 +141,7 @@ class Dispatch:
 
         # First, try to handle with specific service/method function
         try:
-            handler = getattr(game, 'handle_{}_{}_request'.format(request.name, method))
+            handler = getattr(game, f'handle_{request.name}_{method}_request')
         except AttributeError:
             handler = None
         if handler is not None:
@@ -150,7 +150,7 @@ class Dispatch:
         if response is None:
             # Now, try to pass it off to a generic service handler
             try:
-                handler = getattr(game, 'handle_{}_request'.format(request.name))
+                handler = getattr(game, f'handle_{request.name}_request')
             except AttributeError:
                 handler = None
             if handler is not None:
@@ -158,7 +158,7 @@ class Dispatch:
 
         if response is None:
             # Unrecognized handler
-            self.log("Unrecognized service {} method {}".format(request.name, method))
+            self.log(f"Unrecognized service {request.name} method {method}")
             return None
 
         # Make sure we have a status value if one wasn't provided

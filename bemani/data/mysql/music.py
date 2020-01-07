@@ -101,12 +101,7 @@ class MusicData(BaseData):
         cursor = self.execute(sql, {'songid': songid, 'chart': songchart, 'game': game, 'version': version})
         if cursor.rowcount != 1:
             # music doesn't exist
-            raise Exception('Song {} chart {} doesn\'t exist for game {} version {}'.format(
-                songid,
-                songchart,
-                game,
-                version,
-            ))
+            raise Exception(f'Song {songid} chart {songchart} doesn\'t exist for game {game} version {version}')
         result = cursor.fetchone()
         return result['id']
 
@@ -226,11 +221,7 @@ class MusicData(BaseData):
             )
         except IntegrityError:
             raise ScoreSaveException(
-                'There is already an attempt by {} for music id {} at {}'.format(
-                    userid if userid is not None else 0,
-                    musicid,
-                    ts,
-                )
+                f'There is already an attempt by {userid if userid is not None else 0} for music id {musicid} at {ts}'
             )
 
     def get_score(self, game: str, version: int, userid: UserID, songid: int, songchart: int) -> Optional[Score]:
@@ -584,7 +575,7 @@ class MusicData(BaseData):
             "WHERE music.id = :musicid"
         )
         if interested_versions is not None:
-            sql += " AND music.version in ({})".format(",".join(str(int(v)) for v in interested_versions))
+            sql += f" AND music.version in ({','.join(str(int(v)) for v in interested_versions)})"
         cursor = self.execute(sql, {'musicid': musicid})
         all_songs = []
         for result in cursor.fetchall():
@@ -764,17 +755,11 @@ class MusicData(BaseData):
             if len(userlist) == 0:
                 # We don't have any users, but SQL will shit the bed, so lets add a fake one.
                 userlist.append(UserID(-1))
-            user_sql = (
-                "SELECT userid FROM score WHERE score.musicid = played.musicid AND score.userid IN :userlist {} ORDER BY points DESC, timestamp DESC LIMIT 1"
-            ).format(location_sql)
+            user_sql = f"SELECT userid FROM score WHERE score.musicid = played.musicid AND score.userid IN :userlist {location_sql} ORDER BY points DESC, timestamp DESC LIMIT 1"
             params['userlist'] = tuple(userlist)
         else:
-            user_sql = (
-                "SELECT userid FROM score WHERE score.musicid = played.musicid {} ORDER BY points DESC, timestamp DESC LIMIT 1"
-            ).format(location_sql)
-        records_sql = (
-            "SELECT ({}) AS userid, musicid FROM ({}) played"
-        ).format(user_sql, musicid_sql)
+            user_sql = f"SELECT userid FROM score WHERE score.musicid = played.musicid {location_sql} ORDER BY points DESC, timestamp DESC LIMIT 1"
+        records_sql = f"SELECT ({user_sql}) AS userid, musicid FROM ({musicid_sql}) played"
 
         # Now, join it up against the score and music table to grab the info we need
         sql = (

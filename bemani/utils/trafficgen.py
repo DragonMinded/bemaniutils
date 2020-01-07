@@ -267,7 +267,7 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             config,
         )
 
-    raise Exception('Unknown game {}'.format(game))
+    raise Exception(f'Unknown game {game}')
 
 
 def mainloop(address: str, port: int, configfile: str, action: str, game: str, cardid: Optional[str], verbose: bool) -> None:
@@ -456,16 +456,16 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
     }
     if action == 'list':
         for game in sorted([game for game in games]):
-            print('{} - {}'.format(game, games[game]['name']))
+            print(f'{game} - {games[game]["name"]}')
         sys.exit(0)
     if action == 'game':
         if game not in games:
-            print('Unknown game {}'.format(game))
+            print(f'Unknown game {game}')
             sys.exit(2)
 
         config = yaml.safe_load(open(configfile))  # type: ignore
 
-        print('Emulating {}'.format(games[game]['name']))
+        print(f'Emulating {games[game]["name"]}')
         emu = get_client(
             ClientProtocol(
                 address,

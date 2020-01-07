@@ -41,12 +41,7 @@ class BaseClient:
         method = tree.children[0].attribute('method')
 
         return self.__proto.exchange(
-            '{}?model={}&module={}&method={}'.format(
-                path,
-                self.config['model'],
-                module,
-                method,
-            ),
+            f'{path}?model={self.config["model"]}&module={module}&method={method}',
             tree,
         )
 
@@ -92,7 +87,7 @@ class BaseClient:
         """
 
         if not self.__assert_path(root, path):
-            raise Exception('Path \'{}\' not found in root node:\n{}'.format(path, root))
+            raise Exception(f'Path \'{path}\' not found in root node:\n{root}')
 
     def verify_services_get(self, expected_services: List[str]=[]) -> None:
         call = self.call_node()
@@ -126,7 +121,7 @@ class BaseClient:
 
         for service in expected_services:
             if service not in returned_services:
-                raise Exception('Service \'{}\' expected but not returned'.format(service))
+                raise Exception(f'Service \'{service}\' expected but not returned')
 
     def verify_pcbtracker_alive(self, ecflag: int = 1) -> bool:
         call = self.call_node()
@@ -262,7 +257,7 @@ class BaseClient:
             # Verify that we weren't found
             status = int(resp.child('cardmng').attribute('status'))
             if status != self.CARD_NEW:
-                raise Exception('Card \'{}\' returned invalid status \'{}\''.format(card_id, status))
+                raise Exception(f'Card \'{card_id}\' returned invalid status \'{status}\'')
 
             # Nothing to return
             return None
@@ -278,11 +273,11 @@ class BaseClient:
             ecflag = int(resp.child('cardmng').attribute('ecflag'))
 
             if binded != 0:
-                raise Exception('Card \'{}\' returned invalid binded value \'{}\''.format(card_id, binded))
+                raise Exception(f'Card \'{card_id}\' returned invalid binded value \'{binded}\'')
             if newflag != 1:
-                raise Exception('Card \'{}\' returned invalid newflag value \'{}\''.format(card_id, newflag))
+                raise Exception(f'Card \'{card_id}\' returned invalid newflag value \'{newflag}\'')
             if ecflag != (1 if paseli_enabled else 0):
-                raise Exception('Card \'{}\' returned invalid ecflag value \'{}\''.format(card_id, newflag))
+                raise Exception(f'Card \'{card_id}\' returned invalid ecflag value \'{newflag}\'')
 
             # Return the refid
             return resp.child('cardmng').attribute('refid')
@@ -298,16 +293,16 @@ class BaseClient:
             ecflag = int(resp.child('cardmng').attribute('ecflag'))
 
             if binded != 1:
-                raise Exception('Card \'{}\' returned invalid binded value \'{}\''.format(card_id, binded))
+                raise Exception(f'Card \'{card_id}\' returned invalid binded value \'{binded}\'')
             if newflag != 1:
-                raise Exception('Card \'{}\' returned invalid newflag value \'{}\''.format(card_id, newflag))
+                raise Exception(f'Card \'{card_id}\' returned invalid newflag value \'{newflag}\'')
             if ecflag != (1 if paseli_enabled else 0):
-                raise Exception('Card \'{}\' returned invalid ecflag value \'{}\''.format(card_id, newflag))
+                raise Exception(f'Card \'{card_id}\' returned invalid ecflag value \'{newflag}\'')
 
             # Return the refid
             return resp.child('cardmng').attribute('refid')
         else:
-            raise Exception('Unrecognized message type \'{}\''.format(msg_type))
+            raise Exception(f'Unrecognized message type \'{msg_type}\'')
 
     def verify_cardmng_getrefid(self, card_id: str) -> str:
         call = self.call_node()
@@ -347,7 +342,7 @@ class BaseClient:
 
         status = int(resp.child('cardmng').attribute('status'))
         if status != (self.CARD_OK if correct else self.CARD_BAD_PIN):
-            raise Exception('Ref ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+            raise Exception(f'Ref ID \'{ref_id}\' returned invalid status \'{status}\'')
 
     def verify_eacoin_checkin(self, card_id: str) -> Tuple[str, int]:
         call = self.call_node()
@@ -392,7 +387,7 @@ class BaseClient:
 
         newbalance = resp.child('eacoin').child_value('balance')
         if balance - amount != newbalance:
-            raise Exception("Expected to get back balance {} but got {}".format(balance - amount, newbalance))
+            raise Exception(f"Expected to get back balance {balance - amount} but got {newbalance}")
 
     def verify_eacoin_checkout(self, session: str) -> None:
         call = self.call_node()

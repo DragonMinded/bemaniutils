@@ -220,7 +220,7 @@ class CardCipher:
         """
         if len(cardid) != 16:
             raise CardCipherException(
-                'Expected 16-character card ID, got {}'.format(len(cardid)),
+                f'Expected 16-character card ID, got {len(cardid)}',
             )
 
         cardint = [int(cardid[i:(i + 2)], 16) for i in range(0, len(cardid), 2)]
@@ -284,13 +284,13 @@ class CardCipher:
 
         if len(cardid) != 16:
             raise CardCipherException(
-                'Expected 16-character card ID, got {}'.format(len(cardid)),
+                f'Expected 16-character card ID, got {len(cardid)}',
             )
 
         for c in cardid:
             if c not in CardCipher.VALID_CHARS:
                 raise CardCipherException(
-                    'Got unexpected character {} in card ID'.format(c),
+                    f'Got unexpected character {c} in card ID',
                 )
 
         # Convert chars to groups
@@ -365,7 +365,7 @@ class CardCipher:
     def __encode(inbytes: bytes) -> bytes:
         if len(inbytes) != 8:
             raise CardCipherException(
-                'Expected 8-byte input, got {}'.format(len(inbytes)),
+                f'Expected 8-byte input, got {len(inbytes)}',
             )
 
         inp = [b for b in inbytes]
@@ -381,7 +381,7 @@ class CardCipher:
     def __decode(inbytes: bytes) -> bytes:
         if len(inbytes) != 8:
             raise CardCipherException(
-                'Expected 8-byte input, got {}'.format(len(inbytes)),
+                f'Expected 8-byte input, got {len(inbytes)}',
             )
 
         inp = [b for b in inbytes]

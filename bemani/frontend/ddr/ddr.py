@@ -26,7 +26,7 @@ class DDRFrontend(FrontendBase):
         DDRBase.CHART_DOUBLE_CHALLENGE,
     ]
 
-    valid_rival_types = ['friend_{}'.format(i) for i in range(10)]
+    valid_rival_types = [f'friend_{i}' for i in range(10)]
 
     max_active_rivals = {
         VersionConstants.DDR_X2: 1,

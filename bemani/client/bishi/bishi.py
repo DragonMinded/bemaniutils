@@ -187,15 +187,15 @@ class TheStarBishiBashiClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             # Bishi doesn't read a new profile, it just writes out CSV for a blank one
             self.verify_usergamedata_send(ref_id, msg_type='new')
         else:
@@ -206,7 +206,7 @@ class TheStarBishiBashiClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify profile saving

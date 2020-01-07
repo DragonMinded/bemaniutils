@@ -215,7 +215,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.CHART_DOUBLE_EXPERT,
             self.CHART_DOUBLE_CHALLENGE,
         ]:
-            raise Exception('Invalid chart {}'.format(chart))
+            raise Exception(f'Invalid chart {chart}')
         if halo not in [
             self.HALO_NONE,
             self.HALO_GOOD_FULL_COMBO,
@@ -223,7 +223,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.HALO_PERFECT_FULL_COMBO,
             self.HALO_MARVELOUS_FULL_COMBO,
         ]:
-            raise Exception('Invalid halo {}'.format(halo))
+            raise Exception(f'Invalid halo {halo}')
         if rank not in [
             self.RANK_E,
             self.RANK_D,
@@ -242,7 +242,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.RANK_AA_PLUS,
             self.RANK_AAA,
         ]:
-            raise Exception('Invalid rank {}'.format(rank))
+            raise Exception(f'Invalid rank {rank}')
 
         if userid is not None:
             oldscore = self.data.local.music.get_score(

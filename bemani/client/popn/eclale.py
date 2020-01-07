@@ -39,12 +39,12 @@ class PopnMusicEclaleClient(BaseClient):
         self.assert_path(resp, "response/pcb23/@status")
 
     def __verify_common(self, root: str, resp: Node) -> None:
-        self.assert_path(resp, "response/{}/phase/event_id".format(root))
-        self.assert_path(resp, "response/{}/phase/phase".format(root))
-        self.assert_path(resp, "response/{}/area/area_id".format(root))
-        self.assert_path(resp, "response/{}/area/end_date".format(root))
-        self.assert_path(resp, "response/{}/area/medal_id".format(root))
-        self.assert_path(resp, "response/{}/area/is_limit".format(root))
+        self.assert_path(resp, f"response/{root}/phase/event_id")
+        self.assert_path(resp, f"response/{root}/phase/phase")
+        self.assert_path(resp, f"response/{root}/area/area_id")
+        self.assert_path(resp, f"response/{root}/area/end_date")
+        self.assert_path(resp, f"response/{root}/area/medal_id")
+        self.assert_path(resp, f"response/{root}/area/is_limit")
 
     def verify_info23_common(self, loc: str) -> None:
         call = self.call_node()
@@ -135,7 +135,7 @@ class PopnMusicEclaleClient(BaseClient):
             self.assert_path(resp, "response/player23/result")
             status = resp.child_value('player23/result')
             if status != 2:
-                raise Exception('Reference ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+                raise Exception(f'Reference ID \'{ref_id}\' returned invalid status \'{status}\'')
 
             return {
                 'medals': {},
@@ -150,10 +150,10 @@ class PopnMusicEclaleClient(BaseClient):
             self.assert_path(resp, "response/player23/result")
             status = resp.child_value('player23/result')
             if status != 0:
-                raise Exception('Reference ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+                raise Exception(f'Reference ID \'{ref_id}\' returned invalid status \'{status}\'')
             name = resp.child_value('player23/account/name')
             if name != self.NAME:
-                raise Exception('Invalid name \'{}\' returned for Ref ID \'{}\''.format(name, ref_id))
+                raise Exception(f'Invalid name \'{name}\' returned for Ref ID \'{ref_id}\'')
 
             # Medals and items
             items: Dict[int, Dict[str, int]] = {}
@@ -182,7 +182,7 @@ class PopnMusicEclaleClient(BaseClient):
                 'lumina': {0: {'lumina': resp.child_value('player23/account/lumina')}},
             }
         else:
-            raise Exception('Unrecognized message type \'{}\''.format(msg_type))
+            raise Exception(f'Unrecognized message type \'{msg_type}\'')
 
     def verify_player23_read_score(self, ref_id: str) -> Dict[str, Dict[int, Dict[int, int]]]:
         call = self.call_node()
@@ -405,15 +405,15 @@ class PopnMusicEclaleClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_player23_read(ref_id, msg_type='new')
             self.verify_player23_new(ref_id)
         else:
@@ -424,7 +424,7 @@ class PopnMusicEclaleClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         # Verify proper handling of basic stuff
         self.verify_player23_read(ref_id, msg_type='query')
@@ -478,7 +478,7 @@ class PopnMusicEclaleClient(BaseClient):
         if unlocks['items'][6]['param'] != 8:
             raise Exception('Expecting to see item ID 6 to have param 8 in items!')
         if unlocks['lumina'][0]['lumina'] != 150:
-            raise Exception('Got wrong value for lumina {} after purchase!'.format(unlocks['lumina'][0]['lumina']))
+            raise Exception(f'Got wrong value for lumina {unlocks["lumina"][0]["lumina"]} after purchase!')
 
         if cardid is None:
             # Verify score handling
@@ -568,13 +568,9 @@ class PopnMusicEclaleClient(BaseClient):
                         expected_medal = expected['medal']
 
                     if newscore != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, expected['id'], expected['chart'], newscore,
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got score \'{newscore}\'')
                     if newmedal != expected_medal:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            expected_medal, expected['id'], expected['chart'], newmedal,
-                        ))
+                        raise Exception(f'Expected a medal of \'{expected_medal}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got medal \'{newmedal}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

@@ -195,7 +195,7 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.CLEAR_TYPE_CLEARED,
             self.CLEAR_TYPE_FULL_COMBO,
         ]:
-            raise Exception("Invalid clear type value {}".format(clear_type))
+            raise Exception(f"Invalid clear type value {clear_type}")
 
         # Range check grade
         if grade not in [
@@ -209,7 +209,7 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.GRADE_MASTERPIECE,
             self.GRADE_PERFECT,
         ]:
-            raise Exception("Invalid grade value {}".format(grade))
+            raise Exception(f"Invalid grade value {grade}")
 
         if userid is not None:
             oldscore = self.data.local.music.get_score(

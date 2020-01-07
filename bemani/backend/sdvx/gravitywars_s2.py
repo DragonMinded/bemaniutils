@@ -4180,7 +4180,7 @@ class SoundVoltexGravityWarsSeason2(
                     self.version,
                     userid,
                     item_id,
-                    'item_{}'.format(item_type),
+                    f'item_{item_type}',
                     {
                         'param': param,
                     },
@@ -4225,7 +4225,7 @@ class SoundVoltexGravityWarsSeason2(
                     self.version,
                     userid,
                     param_id,
-                    'param_{}'.format(param_type),
+                    f'param_{param_type}',
                     {
                         'param': param_param,
                     },

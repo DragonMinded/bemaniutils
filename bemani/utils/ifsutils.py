@@ -40,7 +40,7 @@ def main() -> None:
 
     ifs = IFS(data, args.convert_xml_files, args.convert_texture_files)
     for fn in ifs.filenames:
-        print('Extracting {} to disk...'.format(fn))
+        print(f'Extracting {fn} to disk...')
         realfn = os.path.join(root, fn)
         dirof = os.path.dirname(realfn)
         os.makedirs(dirof, exist_ok=True)

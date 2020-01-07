@@ -82,7 +82,7 @@ class IIDXMusicDB:
             leap = 0x340
 
         if sig[0] != b'IIDX':
-            raise Exception('Invalid signature \'{}\' found!'.format(sig[0]))
+            raise Exception(f'Invalid signature \'{sig[0]}\' found!')
 
         def parse_string(string: bytes) -> str:
             for i in range(len(string)):

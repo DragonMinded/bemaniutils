@@ -121,12 +121,7 @@ class Data:
 
     @classmethod
     def sqlalchemy_url(cls, config: Dict[str, Any]) -> str:
-        return "mysql://{}:{}@{}/{}?charset=utf8mb4".format(
-            config['database']['user'],
-            config['database']['password'],
-            config['database']['address'],
-            config['database']['database'],
-        )
+        return f"mysql://{config['database']['user']}:{config['database']['password']}@{config['database']['address']}/{config['database']['database']}?charset=utf8mb4"
 
     @classmethod
     def create_engine(cls, config: Dict[str, Any]) -> Engine:
@@ -149,9 +144,9 @@ class Data:
             '-c',
             os.path.join(base_dir, 'alembic.ini'),
             '-x',
-            'script_location={}'.format(base_dir),
+            f'script_location={base_dir}',
             '-x',
-            'sqlalchemy.url={}'.format(self.__url),
+            f'sqlalchemy.url={self.__url}',
             command,
         ]
         alembicArgs.extend(args)

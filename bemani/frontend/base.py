@@ -39,7 +39,7 @@ class FrontendBase:
         self.cache = cache
 
     def make_index(self, songid: int, chart: int) -> str:
-        return '{}-{}'.format(songid, chart)
+        return f'{songid}-{chart}'
 
     def get_duplicate_id(self, musicid: int, chart: int) -> Optional[Tuple[int, int]]:
         return None
@@ -105,7 +105,7 @@ class FrontendBase:
 
     def get_all_songs(self, force_db_load: bool=False) -> Dict[int, Dict[str, Any]]:
         if not force_db_load:
-            cached_songs = self.cache.get('{}.sorted_songs'.format(self.game))
+            cached_songs = self.cache.get(f'{self.game}.sorted_songs')
             if cached_songs is not None:
                 return cached_songs
 
@@ -120,7 +120,7 @@ class FrontendBase:
             else:
                 songs[song.id] = self.merge_song(songs[song.id], song)
 
-        self.cache.set('{}.sorted_songs'.format(self.game), songs, timeout=600)
+        self.cache.set(f'{self.game}.sorted_songs', songs, timeout=600)
         return songs
 
     def get_all_player_info(self, userids: List[UserID], limit: Optional[int]=None, allow_remote: bool=False) -> Dict[UserID, Dict[int, Dict[str, Any]]]:

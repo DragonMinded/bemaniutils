@@ -44,12 +44,12 @@ class APIClient:
 
     def __exchange_data(self, request_uri: str, request_args: Dict[str, Any]) -> Dict[str, Any]:
         if self.base_uri[-1:] != '/':
-            uri = '{}/{}'.format(self.base_uri, request_uri)
+            uri = f'{self.base_uri}/{request_uri}'
         else:
-            uri = '{}{}'.format(self.base_uri, request_uri)
+            uri = f'{self.base_uri}{request_uri}'
 
         headers = {
-            'Authorization': 'Token {}'.format(self.token),
+            'Authorization': f'Token {self.token}',
             'Content-Type': 'application/json; charset=utf-8',
         }
         data = json.dumps(request_args).encode('utf8')
@@ -67,7 +67,7 @@ class APIClient:
             raise APIException('Failed to query remote server!')
 
         if r.headers['content-type'] != 'application/json; charset=utf-8':
-            raise APIException('API returned invalid content type \'{}\'!'.format(r.headers['content-type']))
+            raise APIException(f'API returned invalid content type \'{r.headers["content-type"]}\'!')
 
         jsondata = r.json()
 
@@ -75,7 +75,7 @@ class APIClient:
             return jsondata
 
         if 'error' not in jsondata:
-            raise APIException('API returned error code {} but did not include \'error\' attribute in response JSON!'.format(r.status_code))
+            raise APIException(f'API returned error code {r.status_code} but did not include \'error\' attribute in response JSON!')
         error = jsondata['error']
 
         if r.status_code == 401:
@@ -85,7 +85,7 @@ class APIClient:
         if r.status_code == 405:
             raise UnrecognizedRequestAPIException('The server did not recognize the request!')
         if r.status_code == 500:
-            raise RemoteServerErrorAPIException('The server had an error processing the request and returned \'{}\''.format(error))
+            raise RemoteServerErrorAPIException(f'The server had an error processing the request and returned \'{error}\'')
         if r.status_code == 501:
             raise UnsupportedVersionAPIException('The server does not support this version of the API!')
         raise APIException('The server returned an invalid status code {}!', format(r.status_code))
@@ -184,7 +184,7 @@ class APIClient:
         try:
             servergame, serverversion = self.__translate(game, version)
             resp = self.__exchange_data(
-                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                f'{self.API_VERSION}/{servergame}/{serverversion}',
                 {
                     'ids': ids,
                     'type': idtype,
@@ -221,7 +221,7 @@ class APIClient:
             if until is not None:
                 data['until'] = until
             resp = self.__exchange_data(
-                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                f'{self.API_VERSION}/{servergame}/{serverversion}',
                 data,
             )
             return resp['records']
@@ -237,7 +237,7 @@ class APIClient:
         try:
             servergame, serverversion = self.__translate(game, version)
             resp = self.__exchange_data(
-                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                f'{self.API_VERSION}/{servergame}/{serverversion}',
                 {
                     'ids': ids,
                     'type': idtype,
@@ -255,7 +255,7 @@ class APIClient:
         try:
             servergame, serverversion = self.__translate(game, version)
             resp = self.__exchange_data(
-                '{}/{}/{}'.format(self.API_VERSION, servergame, serverversion),
+                f'{self.API_VERSION}/{servergame}/{serverversion}',
                 {
                     'ids': [],
                     'type': 'server',

@@ -340,7 +340,7 @@ class Museca1(
                     self.version,
                     userid,
                     item_id,
-                    'item_{}'.format(item_type),
+                    f'item_{item_type}',
                     paramvals,
                 )
 

@@ -14,7 +14,7 @@ class AESCipher:
         self.__key = hashlib.sha256(key.encode('utf-8')).digest()
 
     def __pad(self, s: str) -> str:
-        intermediate = "{}.{}".format(len(s), s)
+        intermediate = f"{len(s)}.{s}"
         while len(intermediate) % self.__padamt != 0:
             intermediate = intermediate + '-'
         return intermediate

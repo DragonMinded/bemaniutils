@@ -55,7 +55,7 @@ class PopnMusicTuneStreetClient(BaseClient):
             'psp_phase',
         ]:
             if name not in resp.child('game').attributes:
-                raise Exception('Missing attribute \'{}\' in response!'.format(name))
+                raise Exception(f'Missing attribute \'{name}\' in response!')
 
     def verify_playerdata_get(self, ref_id: str, msg_type: str) -> Optional[Dict[str, Any]]:
         call = self.call_node()
@@ -80,7 +80,7 @@ class PopnMusicTuneStreetClient(BaseClient):
 
             status = int(resp.child('playerdata').attribute('status'))
             if status != 109:
-                raise Exception('Reference ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+                raise Exception(f'Reference ID \'{ref_id}\' returned invalid status \'{status}\'')
 
             # No score data
             return None
@@ -92,7 +92,7 @@ class PopnMusicTuneStreetClient(BaseClient):
 
             name = resp.child('playerdata').child('b').value[0:12].decode('SHIFT_JIS').replace("\x00", "")
             if name != self.NAME:
-                raise Exception('Invalid name \'{}\' returned for Ref ID \'{}\''.format(name, ref_id))
+                raise Exception(f'Invalid name \'{name}\' returned for Ref ID \'{ref_id}\'')
 
             medals = resp.child('playerdata').child('b').value[108:]
             medals = [(medals[x] + (medals[x + 1] << 8)) for x in range(0, len(medals), 2)]
@@ -137,7 +137,7 @@ class PopnMusicTuneStreetClient(BaseClient):
             return {'medals': medals, 'scores': scores}
 
         else:
-            raise Exception('Unrecognized message type \'{}\''.format(msg_type))
+            raise Exception(f'Unrecognized message type \'{msg_type}\'')
 
     def verify_playerdata_set(self, ref_id: str, scores: List[Dict[str, Any]]) -> None:
         call = self.call_node()
@@ -241,15 +241,15 @@ class PopnMusicTuneStreetClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_playerdata_get(ref_id, msg_type='new')
             self.verify_playerdata_new(card, ref_id)
         else:
@@ -260,7 +260,7 @@ class PopnMusicTuneStreetClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify score handling
@@ -355,13 +355,9 @@ class PopnMusicTuneStreetClient(BaseClient):
                         expected_medal = score['medal']
 
                     if newscore != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], newscore,
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{newscore}\'')
                     if newmedal != expected_medal:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            expected_medal, score['id'], score['chart'], newmedal,
-                        ))
+                        raise Exception(f'Expected a medal of \'{expected_medal}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got medal \'{newmedal}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

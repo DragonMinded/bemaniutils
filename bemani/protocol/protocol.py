@@ -141,7 +141,7 @@ class EAmuseProtocol:
                 lz = Lz77()
                 return lz.decompress(data)
             else:
-                raise EAmuseException('Unknown compression {}'.format(compression))
+                raise EAmuseException(f'Unknown compression {compression}')
 
         # No compression
         return data
@@ -171,7 +171,7 @@ class EAmuseProtocol:
                 lz = Lz77()
                 return lz.compress(data)
             else:
-                raise EAmuseException('Unknown compression {}'.format(compression))
+                raise EAmuseException(f'Unknown compression {compression}')
 
         # No compression
         return data
@@ -235,7 +235,7 @@ class EAmuseProtocol:
             xml = XmlEncoding()
             return xml.encode(tree, encoding=text_encoding)
         else:
-            raise EAmuseException("Invalid packet encoding {}".format(packet_encoding))
+            raise EAmuseException(f"Invalid packet encoding {packet_encoding}")
 
     def decode(self, compression: Optional[str], encryption: Optional[str], data: bytes) -> Node:
         """

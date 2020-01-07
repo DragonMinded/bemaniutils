@@ -65,7 +65,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
             return self.COMBO_TYPE_FULL_COMBO
         if game_combo == self.GAME_COMBO_TYPE_FULL_COMBO_ALL_JUST:
             return self.COMBO_TYPE_FULL_COMBO_ALL_JUST
-        raise Exception('Invalid game_combo value {}'.format(game_combo))
+        raise Exception(f'Invalid game_combo value {game_combo}')
 
     def _add_event_info(self, root: Node) -> None:
         # Overridden in subclasses

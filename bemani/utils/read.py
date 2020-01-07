@@ -62,12 +62,7 @@ class ImportBase:
         self.update = update
         self.no_combine = no_combine
         self.__config = config
-        self.__url = "mysql://{}:{}@{}/{}?charset=utf8mb4".format(
-            config['database']['user'],
-            config['database']['password'],
-            config['database']['address'],
-            config['database']['database'],
-        )
+        self.__url = f"mysql://{config['database']['user']}:{config['database']['password']}@{config['database']['address']}/{config['database']['database']}?charset=utf8mb4"
         self.__engine = create_engine(self.__url)  # type: ignore
         self.__sessionmanager = sessionmaker(self.__engine)
         self.__conn = self.__engine.connect()
@@ -243,9 +238,7 @@ class ImportBase:
             updates.append("genre = :genre")
         if len(updates) == 0:
             return
-        sql = "UPDATE `music` SET {} WHERE songid = :songid AND chart = :chart AND game = :game".format(
-            ", ".join(updates),
-        )
+        sql = f"UPDATE `music` SET {', '.join(updates)} WHERE songid = :songid AND chart = :chart AND game = :game"
         if version is not None:
             sql = sql + " AND version = :version"
         self.execute(
@@ -288,9 +281,7 @@ class ImportBase:
             updates.append("genre = :genre")
         if len(updates) == 0:
             return
-        sql = "UPDATE `music` SET {} WHERE id = :musicid AND game = :game".format(
-            ", ".join(updates),
-        )
+        sql = f"UPDATE `music` SET {', '.join(updates)} WHERE id = :musicid AND game = :game"
         if version is not None:
             sql = sql + " AND version = :version"
         self.execute(
@@ -990,7 +981,7 @@ class ImportPopn(ImportBase):
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
         else:
-            raise Exception('Unsupported version {}'.format(self.version))
+            raise Exception(f'Unsupported version {self.version}')
 
         def read_string(offset: int) -> str:
             # First, translate load offset in memory to disk offset
@@ -1196,10 +1187,10 @@ class ImportPopn(ImportBase):
 
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} {} ({} chart {})".format(artist, title, song['id'], chart))
+                    print(f"New entry for {artist} {title} ({song['id']} chart {chart})")
                     next_id = self.get_next_music_id()
                 else:
-                    print("Reused entry for {} {} ({} chart {})".format(artist, title, song['id'], chart))
+                    print(f"Reused entry for {artist} {title} ({song['id']} chart {chart})")
                     next_id = old_id
                 self.insert_music_id_for_song(
                     next_id,
@@ -1351,11 +1342,11 @@ class ImportJubeat(ImportBase):
                 old_id = self.get_music_id_for_song(songid, chart)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(songid, chart))
+                    print(f"New entry for {songid} chart {chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(songid, chart))
+                    print(f"Reused entry for {songid} chart {chart}")
                     next_id = old_id
                 data = {
                     'difficulty': song['difficulty'][chart_map[chart]],
@@ -1376,7 +1367,7 @@ class ImportJubeat(ImportBase):
                 name = row[1]
                 artist = row[2]
 
-                print("Setting name/artist for {} all charts".format(songid))
+                print(f"Setting name/artist for {songid} all charts")
                 self.start_batch()
                 for chart in self.charts:
                     self.update_metadata_for_song(songid, chart, name, artist)
@@ -1588,9 +1579,9 @@ class ImportIIDX(ImportBase):
                         bpm = (bpm_min, bpm_max)
                         notecounts = iidxchart.notecounts
                     else:
-                        print("Could not find chart information for song {}!".format(song.id))
+                        print(f"Could not find chart information for song {song.id}!")
                 else:
-                    print("No chart information because chart for song {} is missing!".format(song.id))
+                    print(f"No chart information because chart for song {song.id} is missing!")
 
             songs.append({
                 'id': song.id,
@@ -1705,11 +1696,11 @@ class ImportIIDX(ImportBase):
                 old_id = self.__revivals(song['id'], self.__charts(song['id'], chart))
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(song['id'], chart))
+                    print(f"New entry for {song['id']} chart {chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(song['id'], chart))
+                    print(f"Reused entry for {song['id']} chart {chart}")
                     next_id = old_id
                 self.insert_music_id_for_song(next_id, song['id'], chart, song['title'], song['artist'], song['genre'], songdata)
             self.finish_batch()
@@ -1733,7 +1724,7 @@ class ImportIIDX(ImportBase):
                 if len(genre) == 0:
                     genre = None
 
-                print("Setting name/artist/genre for {} all charts".format(songid))
+                print(f"Setting name/artist/genre for {songid} all charts")
                 self.start_batch()
                 for chart in self.charts:
                     self.update_metadata_for_song(songid, chart, name, artist, genre)
@@ -2371,10 +2362,10 @@ class ImportDDR(ImportBase):
                 old_id = self.get_music_id_for_song(song['edit_id'], chart, version=0)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} {} ({} chart {})".format(song['title'], song['artist'], song['id'], chart))
+                    print(f"New entry for {song['title']} {song['artist']} ({song['id']} chart {chart})")
                     next_id = self.get_next_music_id()
                 else:
-                    print("Reused entry for {} {} ({} chart {})".format(song['title'], song['artist'], song['id'], chart))
+                    print(f"Reused entry for {song['title']} {song['artist']} ({song['id']} chart {chart})")
                     next_id = old_id
                 # Add the virtual entry we talked about above, so we can link this song in the future.
                 self.insert_music_id_for_song(
@@ -2501,7 +2492,7 @@ class ImportSDVX(ImportBase):
 
         for entry in entries:
             self.start_batch()
-            print("New catalog entry for {} chart {}".format(entry['musicid'], entry['chart']))
+            print(f"New catalog entry for {entry['musicid']} chart {entry['chart']}")
             self.insert_catalog_entry(
                 'song_unlock',
                 entry['catalogid'],
@@ -2532,11 +2523,11 @@ class ImportSDVX(ImportBase):
                 except (TypeError, ValueError):
                     pass
             else:
-                raise Exception('Cannot import appeal cards for SDVX version {}'.format(self.version))
+                raise Exception(f'Cannot import appeal cards for SDVX version {self.version}')
 
             self.start_batch()
             for appealid in appealids:
-                print("New catalog entry for appeal card {}".format(appealid))
+                print(f"New catalog entry for appeal card {appealid}")
                 self.insert_catalog_entry(
                     'appealcard',
                     appealid,
@@ -2576,7 +2567,7 @@ class ImportSDVX(ImportBase):
                         limited = [int(info.text), int(info.text), int(info.text), int(info.text)]
                 # Make sure we got everything
                 if title is None or artist is None or bpm_min is None or bpm_max is None:
-                    raise Exception('Couldn\'t parse info for song {}'.format(songid))
+                    raise Exception(f'Couldn\'t parse info for song {songid}')
 
                 # Grab valid difficulties
                 for difficulty in music_entry.findall('difficulty'):
@@ -2662,11 +2653,11 @@ class ImportSDVX(ImportBase):
                 old_id = self.get_music_id_for_song(songid, chart)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(songid, chart))
+                    print(f"New entry for {songid} chart {chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(songid, chart))
+                    print(f"Reused entry for {songid} chart {chart}")
                     next_id = old_id
                 data = {
                     'limited': limited[chart],
@@ -2685,7 +2676,7 @@ class ImportSDVX(ImportBase):
         if appealids:
             self.start_batch()
             for appealid in appealids:
-                print("New catalog entry for appeal card {}".format(appealid))
+                print(f"New catalog entry for appeal card {appealid}")
                 self.insert_catalog_entry(
                     'appealcard',
                     appealid,
@@ -2722,11 +2713,11 @@ class ImportSDVX(ImportBase):
                 old_id = self.get_music_id_for_song(song.id, song.chart)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(song.id, song.chart))
+                    print(f"New entry for {song.id} chart {song.chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(song.id, song.chart))
+                    print(f"Reused entry for {song.id} chart {song.chart}")
                     next_id = old_id
                 data = {
                     'limited': song.data.get_int('limited'),
@@ -2742,14 +2733,14 @@ class ImportSDVX(ImportBase):
         self.start_batch()
         for item in game.get_items(self.game, self.version):
             if item.type == "appealcard":
-                print("New catalog entry for appeal card {}".format(item.id))
+                print(f"New catalog entry for appeal card {item.id}")
                 self.insert_catalog_entry(
                     'appealcard',
                     item.id,
                     {},
                 )
             elif item.type == "song_unlock":
-                print("New catalog entry for {} chart {}".format(item.data.get_int('musicid'), item.data.get_int('chart')))
+                print(f"New catalog entry for {item.data.get_int('musicid')} chart {item.data.get_int('chart')}")
                 self.insert_catalog_entry(
                     'song_unlock',
                     item.id,
@@ -2829,11 +2820,11 @@ class ImportMuseca(ImportBase):
                 old_id = self.get_music_id_for_song(songid, chart)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(songid, chart))
+                    print(f"New entry for {songid} chart {chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(songid, chart))
+                    print(f"Reused entry for {songid} chart {chart}")
                     next_id = old_id
                 data = {
                     'limited': limited[chart],
@@ -2874,11 +2865,11 @@ class ImportMuseca(ImportBase):
                 old_id = self.get_music_id_for_song(song.id, song.chart)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(song.id, song.chart))
+                    print(f"New entry for {song.id} chart {song.chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(song.id, song.chart))
+                    print(f"Reused entry for {song.id} chart {song.chart}")
                     next_id = old_id
                 data = {
                     'limited': song.data.get_int('limited'),
@@ -3009,7 +3000,7 @@ class ImportReflecBeat(ImportBase):
             chart_length = 0x20
             difficulties_offset = 0x1CC
         else:
-            raise Exception('Unsupported ReflecBeat version {}'.format(self.version))
+            raise Exception(f'Unsupported ReflecBeat version {self.version}')
 
         def convert_string(inb: bytes) -> str:
             end = None
@@ -3103,11 +3094,11 @@ class ImportReflecBeat(ImportBase):
                 old_id = self.get_music_id_for_song_data(None, None, chartid, chart, version=0)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print("New entry for {} chart {}".format(songid, chart))
+                    print(f"New entry for {songid} chart {chart}")
                     next_id = self.get_next_music_id()
                 else:
                     # Insert pointing at same ID so scores transfer
-                    print("Reused entry for {} chart {}".format(songid, chart))
+                    print(f"Reused entry for {songid} chart {chart}")
                     next_id = old_id
                 if old_id is None:
                     # Add the virtual music entry we talked about above. Use the song ID when we discover
@@ -3261,11 +3252,11 @@ class ImportDanceEvolution(ImportBase):
             old_id = self.get_music_id_for_song(song['id'], 0)
             if self.no_combine or old_id is None:
                 # Insert original
-                print("New entry for {} chart {}".format(song['id'], 0))
+                print(f"New entry for {song['id']} chart {0}")
                 next_id = self.get_next_music_id()
             else:
                 # Insert pointing at same ID so scores transfer
-                print("Reused entry for {} chart {}".format(song['id'], 0))
+                print(f"Reused entry for {song['id']} chart {0}")
                 next_id = old_id
             data = {
                 'level': song['level'],

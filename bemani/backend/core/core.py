@@ -22,11 +22,7 @@ class CoreHandler(Base):
             node.set_attribute('url', url)
             return node
 
-        url = '{}://{}:{}/'.format(
-            'https' if self.config['server']['https'] else 'http',
-            self.config['server']['address'],
-            self.config['server']['port'],
-        )
+        url = f'{"https" if self.config["server"]["https"] else "http"}://{self.config["server"]["address"]}:{self.config["server"]["port"]}/'
         root = Node.void('services')
         root.set_attribute('expire', '600')
         # This can be set to 'operation', 'debug', 'test', and 'factory'.
@@ -58,13 +54,7 @@ class CoreHandler(Base):
         keepalive = socket.gethostbyname(keepalive)
         root.add_child(item(
             'keepalive',
-            'http://{}/core/keepalive?pa={}&ia={}&ga={}&ma={}&t1=2&t2=10'.format(
-                keepalive,
-                keepalive,
-                keepalive,
-                keepalive,
-                keepalive,
-            ),
+            f'http://{keepalive}/core/keepalive?pa={keepalive}&ia={keepalive}&ga={keepalive}&ma={keepalive}&t1=2&t2=10',
         ))
         return root
 

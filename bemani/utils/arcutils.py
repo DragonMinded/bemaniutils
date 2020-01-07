@@ -39,7 +39,7 @@ def main() -> None:
         if args.list_only:
             print(fn)
         else:
-            print('Extracting {} to disk...'.format(fn))
+            print(f'Extracting {fn} to disk...')
             realfn = os.path.join(root, fn)
             dirof = os.path.dirname(realfn)
             os.makedirs(dirof, exist_ok=True)

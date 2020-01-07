@@ -595,7 +595,7 @@ class DDRAceClient(BaseClient):
             profiledata['COMMON'][25] = self.NAME.encode('shift-jis')
 
         else:
-            raise Exception('Unknown message type {}!'.format(msg_type))
+            raise Exception(f'Unknown message type {msg_type}!')
 
         if send_only_common:
             profiledata = {'COMMON': profiledata['COMMON']}
@@ -707,16 +707,16 @@ class DDRAceClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             self.verify_system_convcardnumber(card)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             extid = self.verify_playerdata_usergamedata_advanced_usernew(ref_id)
             self.verify_usergamedata_send(ref_id, extid, 'new')
             self.verify_playerdata_usergamedata_advanced_inheritance(ref_id, location)
@@ -735,7 +735,7 @@ class DDRAceClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             is_new, music = self.verify_playerdata_usergamedata_advanced_userload(ref_id)
@@ -836,7 +836,7 @@ class DDRAceClient(BaseClient):
                             break
 
                     if actual is None:
-                        raise Exception("Didn't find song {} chart {} in response!".format(expected['id'], expected['chart']))
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if 'expected_score' in expected:
                         expected_score = expected['expected_score']
@@ -852,17 +852,11 @@ class DDRAceClient(BaseClient):
                         expected_halo = expected['halo']
 
                     if actual['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, expected['id'], expected['chart'], actual['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got score \'{actual["score"]}\'')
                     if actual['rank'] != expected_rank:
-                        raise Exception('Expected a rank of \'{}\' for song \'{}\' chart \'{}\' but got rank \'{}\''.format(
-                            expected_rank, expected['id'], expected['chart'], actual['rank'],
-                        ))
+                        raise Exception(f'Expected a rank of \'{expected_rank}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got rank \'{actual["rank"]}\'')
                     if actual['halo'] != expected_halo:
-                        raise Exception('Expected a halo of \'{}\' for song \'{}\' chart \'{}\' but got halo \'{}\''.format(
-                            expected_halo, expected['id'], expected['chart'], actual['halo'],
-                        ))
+                        raise Exception(f'Expected a halo of \'{expected_halo}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got halo \'{actual["halo"]}\'')
 
                     # Now verify that the ghost for this score is what we saved
                     ghost = self.verify_playerdata_usergamedata_advanced_ghostload(ref_id, received['ghostid'])
@@ -872,21 +866,13 @@ class DDRAceClient(BaseClient):
                         expected_ghost = expected['ghost']
 
                     if ghost['id'] != received['id']:
-                        raise Exception('Wrong song ID \'{}\' returned for ghost, expected ID \'{}\''.format(
-                            ghost['id'], received['id'],
-                        ))
+                        raise Exception(f'Wrong song ID \'{ghost["id"]}\' returned for ghost, expected ID \'{received["id"]}\'')
                     if ghost['chart'] != received['chart']:
-                        raise Exception('Wrong song chart \'{}\' returned for ghost, expected chart \'{}\''.format(
-                            ghost['chart'], received['chart'],
-                        ))
+                        raise Exception(f'Wrong song chart \'{ghost["chart"]}\' returned for ghost, expected chart \'{received["chart"]}\'')
                     if ghost['ghost'] != expected_ghost:
-                        raise Exception('Wrong ghost data \'{}\' returned for ghost, expected \'{}\''.format(
-                            ghost['ghost'], expected_ghost,
-                        ))
+                        raise Exception(f'Wrong ghost data \'{ghost["ghost"]}\' returned for ghost, expected \'{expected_ghost}\'')
                     if ghost['extid'] != extid:
-                        raise Exception('Wrong extid \'{}\' returned for ghost, expected \'{}\''.format(
-                            ghost['extid'], extid,
-                        ))
+                        raise Exception(f'Wrong extid \'{ghost["extid"]}\' returned for ghost, expected \'{extid}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

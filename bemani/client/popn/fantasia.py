@@ -93,9 +93,9 @@ class PopnMusicFantasiaClient(BaseClient):
             node = resp.child('game').child(name)
 
             if node is None:
-                raise Exception('Missing node \'{}\' in response!'.format(name))
+                raise Exception(f'Missing node \'{name}\' in response!')
             if node.data_type != 's32':
-                raise Exception('Node \'{}\' has wrong data type!'.format(name))
+                raise Exception(f'Node \'{name}\' has wrong data type!')
 
         sel_ranking = resp.child('game').child('sel_ranking')
         up_ranking = resp.child('game').child('up_ranking')
@@ -111,13 +111,13 @@ class PopnMusicFantasiaClient(BaseClient):
             dtype = nodepair[2]
 
             if node is None:
-                raise Exception('Missing node \'{}\' in response!'.format(name))
+                raise Exception(f'Missing node \'{name}\' in response!')
             if node.data_type != dtype:
-                raise Exception('Node \'{}\' has wrong data type!'.format(name))
+                raise Exception(f'Node \'{name}\' has wrong data type!')
             if not node.is_array:
-                raise Exception('Node \'{}\' is not array!'.format(name))
+                raise Exception(f'Node \'{name}\' is not array!')
             if len(node.value) != 10:
-                raise Exception('Node \'{}\' is wrong array length!'.format(name))
+                raise Exception(f'Node \'{name}\' is wrong array length!')
 
     def verify_playerdata_get(self, ref_id: str, msg_type: str) -> Optional[Dict[str, Any]]:
         call = self.call_node()
@@ -143,7 +143,7 @@ class PopnMusicFantasiaClient(BaseClient):
 
             status = int(resp.child('playerdata').attribute('status'))
             if status != 109:
-                raise Exception('Reference ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+                raise Exception(f'Reference ID \'{ref_id}\' returned invalid status \'{status}\'')
 
             # No score data
             return None
@@ -165,7 +165,7 @@ class PopnMusicFantasiaClient(BaseClient):
 
             name = resp.child('playerdata').child('base').child('name').value
             if name != self.NAME:
-                raise Exception('Invalid name \'{}\' returned for Ref ID \'{}\''.format(name, ref_id))
+                raise Exception(f'Invalid name \'{name}\' returned for Ref ID \'{ref_id}\'')
 
             # Extract and return score data
             self.assert_path(resp, "response/playerdata/base/clear_medal")
@@ -198,7 +198,7 @@ class PopnMusicFantasiaClient(BaseClient):
             return {'medals': medals, 'scores': scores}
 
         else:
-            raise Exception('Unrecognized message type \'{}\''.format(msg_type))
+            raise Exception(f'Unrecognized message type \'{msg_type}\'')
 
     def verify_playerdata_set(self, ref_id: str, scores: List[Dict[str, Any]]) -> None:
         call = self.call_node()
@@ -238,7 +238,7 @@ class PopnMusicFantasiaClient(BaseClient):
 
         name = resp.child('playerdata').child('name').value
         if name != self.NAME:
-            raise Exception('Invalid name \'{}\' returned for Ref ID \'{}\''.format(name, ref_id))
+            raise Exception(f'Invalid name \'{name}\' returned for Ref ID \'{ref_id}\'')
 
     def verify_playerdata_new(self, ref_id: str) -> None:
         call = self.call_node()
@@ -304,15 +304,15 @@ class PopnMusicFantasiaClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_playerdata_get(ref_id, msg_type='new')
             self.verify_playerdata_new(ref_id)
         else:
@@ -323,7 +323,7 @@ class PopnMusicFantasiaClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify score handling
@@ -418,13 +418,9 @@ class PopnMusicFantasiaClient(BaseClient):
                         expected_medal = score['medal']
 
                     if newscore != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], newscore,
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{newscore}\'')
                     if newmedal != expected_medal:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            expected_medal, score['id'], score['chart'], newmedal,
-                        ))
+                        raise Exception(f'Expected a medal of \'{expected_medal}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got medal \'{newmedal}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

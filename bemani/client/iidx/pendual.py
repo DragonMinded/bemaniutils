@@ -85,12 +85,12 @@ class IIDXPendualClient(BaseClient):
         self.assert_path(resp, "response/IIDX22music")
         for child in resp.child("IIDX22music").children:
             if child.name != 'c':
-                raise Exception('Invalid node {} in clear rate response!'.format(child))
+                raise Exception(f'Invalid node {child} in clear rate response!')
             if len(child.value) != 12:
-                raise Exception('Invalid node data {} in clear rate response!'.format(child))
+                raise Exception(f'Invalid node data {child} in clear rate response!')
             for v in child.value:
                 if v < 0 or v > 101:
-                    raise Exception('Invalid clear percent {} in clear rate response!'.format(child))
+                    raise Exception(f'Invalid clear percent {child} in clear rate response!')
 
     def verify_iidx22shop_getconvention(self, lid: str) -> None:
         call = self.call_node()
@@ -210,7 +210,7 @@ class IIDXPendualClient(BaseClient):
 
         name = resp.child('IIDX22pc/pcdata').attribute('name')
         if name != self.NAME:
-            raise Exception('Invalid name \'{}\' returned for Ref ID \'{}\''.format(name, ref_id))
+            raise Exception(f'Invalid name \'{name}\' returned for Ref ID \'{ref_id}\'')
 
         # Extract and return account data
         ir_data: Dict[int, Dict[int, Dict[str, int]]] = {}
@@ -658,15 +658,15 @@ class IIDXPendualClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_iidx22pc_reg(ref_id, card, lid)
             self.verify_iidx22pc_get(ref_id, card, lid)
         else:
@@ -677,7 +677,7 @@ class IIDXPendualClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify score handling
@@ -771,7 +771,7 @@ class IIDXPendualClient(BaseClient):
                 for score in dummyscores:
                     data = scores.get(score['id'], {}).get(score['chart'], None)
                     if data is None:
-                        raise Exception('Expected to get score back for song {} chart {}!'.format(score['id'], score['chart']))
+                        raise Exception(f'Expected to get score back for song {score["id"]} chart {score["chart"]}!')
 
                     if 'expected_ex_score' in score:
                         expected_score = score['expected_ex_score']
@@ -787,30 +787,22 @@ class IIDXPendualClient(BaseClient):
                         expected_miss_count = score['mnum']
 
                     if data['ex_score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], data['ex_score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["ex_score"]}\'')
                     if data['clear_status'] != expected_clear_status:
-                        raise Exception('Expected a clear status of \'{}\' for song \'{}\' chart \'{}\' but got clear status \'{}\''.format(
-                            expected_clear_status, score['id'], score['chart'], data['clear_status'],
-                        ))
+                        raise Exception(f'Expected a clear status of \'{expected_clear_status}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got clear status \'{data["clear_status"]}\'')
                     if data['miss_count'] != expected_miss_count:
-                        raise Exception('Expected a miss count of \'{}\' for song \'{}\' chart \'{}\' but got miss count \'{}\''.format(
-                            expected_miss_count, score['id'], score['chart'], data['miss_count'],
-                        ))
+                        raise Exception(f'Expected a miss count of \'{expected_miss_count}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got miss count \'{data["miss_count"]}\'')
 
                     # Verify we can fetch our own ghost
                     ex_score, ghost = self.verify_iidx22music_appoint(profile['extid'], score['id'], score['chart'])
                     if ex_score != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], data['ex_score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["ex_score"]}\'')
 
                     if len(ghost) != 64:
-                        raise Exception('Wrong ghost length {} for ghost!'.format(len(ghost)))
+                        raise Exception(f'Wrong ghost length {len(ghost)} for ghost!')
                     for g in ghost:
                         if g != 0x01:
-                            raise Exception('Got back wrong ghost data for song \'{}\' chart \'{}\''.format(score['id'], score['chart']))
+                            raise Exception(f'Got back wrong ghost data for song \'{score["id"]}\' chart \'{score["chart"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
@@ -867,9 +859,9 @@ class IIDXPendualClient(BaseClient):
             })
             scores = self.verify_iidx22music_getrank(profile['extid'])
             if 1000 not in scores:
-                raise Exception('Didn\'t get expected scores back for song {} beginner chart!'.format(1000))
+                raise Exception(f'Didn\'t get expected scores back for song {1000} beginner chart!')
             if 6 not in scores[1000]:
-                raise Exception('Didn\'t get beginner score back for song {}!'.format(1000))
+                raise Exception(f'Didn\'t get beginner score back for song {1000}!')
             if scores[1000][6] != {'clear_status': 4, 'ex_score': -1, 'miss_count': -1}:
                 raise Exception('Didn\'t get correct status back from beginner save!')
 
@@ -888,7 +880,7 @@ class IIDXPendualClient(BaseClient):
             profile = self.verify_iidx22pc_get(ref_id, card, lid)
             for ptype in ['ir_data', 'secret_course_data']:
                 if profile[ptype] != {2: {1: {'clear_status': 4, 'pgnum': 1771, 'gnum': 967}}}:
-                    raise Exception('Invalid data {} returned on profile load for {}!'.format(profile[ptype], ptype))
+                    raise Exception(f'Invalid data {profile[ptype]} returned on profile load for {ptype}!')
         else:
             print("Skipping score checks for existing card")
 

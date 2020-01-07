@@ -34,7 +34,7 @@ def main() -> None:
                 song.difficulties[1] == 0 and
                 song.difficulties[2] == 12
             ):
-                print('Patching \'{}\' to only appear in leggendaria folder!'.format(song.title))
+                print(f'Patching \'{song.title}\' to only appear in leggendaria folder!')
                 song.folder = 0x5C
 
     print('Generating new database file...')

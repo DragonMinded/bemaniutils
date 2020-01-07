@@ -294,7 +294,7 @@ class JubeatProp(
         elif direction == 'demote':
             new_class, new_subclass = cls.__decrement_class(cur_class, cur_subclass)
         else:
-            raise Exception('Logic error, unknown direction {}!'.format(direction))
+            raise Exception(f'Logic error, unknown direction {direction}!')
 
         if new_class != cur_class or new_subclass != cur_subclass:
             # If they've checked last time, set up the new old class.

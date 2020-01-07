@@ -539,7 +539,7 @@ class DDRAce(
 
         for userid, score in scores:
             if profiles_by_userid.get(userid) is None:
-                raise Exception('Logic error, couldn\'t find any profile for {}'.format(userid))
+                raise Exception(f'Logic error, couldn\'t find any profile for {userid}')
             profiledata = profiles_by_userid[userid]
 
             record = Node.void('record')
@@ -756,7 +756,7 @@ class DDRAce(
                                     3: self.GAME_RIVAL_SLOT_3_ACTIVE_OFFSET,
                                 }[rivalno]
 
-                                whichfriend = lastdict.get_int('rival{}'.format(rivalno)) - 1
+                                whichfriend = lastdict.get_int(f'rival{rivalno}') - 1
                                 if whichfriend < 0:
                                     # This rival isn't active
                                     rival[activeslot] = b'0'

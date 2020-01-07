@@ -67,7 +67,7 @@ def viewscores(userid: UserID) -> Response:
         scores = frontend.round_to_ten(scores)
 
     return render_react(
-        '{}\'s Pop\'n Music Scores'.format(info['name']),
+        f'{info["name"]}\'s Pop\'n Music Scores',
         'popn/scores.react.js',
         {
             'attempts': scores,
@@ -142,7 +142,7 @@ def viewrecords(userid: UserID) -> Response:
     versions[0] = 'CS and Licenses'
 
     return render_react(
-        '{}\'s Pop\'n Music Records'.format(info['name']),
+        f'{info["name"]}\'s Pop\'n Music Records',
         'popn/records.react.js',
         {
             'records': frontend.get_records(userid),
@@ -206,7 +206,7 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        'Top Pop\'n Music Scores for {} - {}'.format(artist, name),
+        f'Top Pop\'n Music Scores for {artist} - {name}',
         'popn/topscores.react.js',
         {
             'name': name,
@@ -268,7 +268,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(info.keys(), reverse=True)[0]
 
     return render_react(
-        '{}\'s Pop\'n Music Profile'.format(info[latest_version]['name']),
+        f'{info[latest_version]["name"]}\'s Pop\'n Music Profile',
         'popn/player.react.js',
         {
             'playerid': userid,

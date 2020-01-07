@@ -187,7 +187,7 @@ class DDRGameScoreHandler(DDRBase):
         # Return the most recent five scores
         game = Node.void('game')
         for i in range(len(recentscores)):
-            game.set_attribute('sc{}'.format(i + 1), str(recentscores[i]))
+            game.set_attribute(f'sc{i + 1}', str(recentscores[i]))
         return game
 
 
@@ -396,14 +396,14 @@ class DDRGameFriendHandler(DDRBase):
         game.add_child(gr_s)
         index = 1
         for entry in friend.get_int_array('gr_s', 5):
-            gr_s.set_attribute('gr{}'.format(index), str(entry))
+            gr_s.set_attribute(f'gr{index}', str(entry))
             index = index + 1
 
         gr_d = Node.void('gr_d')
         game.add_child(gr_d)
         index = 1
         for entry in friend.get_int_array('gr_d', 5):
-            gr_d.set_attribute('gr{}'.format(index), str(entry))
+            gr_d.set_attribute(f'gr{index}', str(entry))
             index = index + 1
         return game
 

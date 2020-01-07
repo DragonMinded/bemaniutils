@@ -270,7 +270,7 @@ class NetworkData(BaseData):
         if until_id is not None:
             wheres.append("id < :until_id")
         if len(wheres) > 0:
-            sql = sql + "WHERE {} ".format(' AND '.join(wheres))
+            sql = sql + f"WHERE {' AND '.join(wheres)} "
 
         # Order it newest to oldest
         sql = sql + "ORDER BY id DESC"

@@ -67,7 +67,7 @@ def viewscores(userid: UserID) -> Response:
         scores = frontend.round_to_ten(scores)
 
     return render_react(
-        '{}\'s SDVX Scores'.format(info['name']),
+        f'{info["name"]}\'s SDVX Scores',
         'sdvx/scores.react.js',
         {
             'attempts': scores,
@@ -141,7 +141,7 @@ def viewrecords(userid: UserID) -> Response:
     versions = {version: name for (game, version, name) in frontend.all_games()}
 
     return render_react(
-        '{}\'s SDVX Records'.format(info['name']),
+        f'{info["name"]}\'s SDVX Records',
         'sdvx/records.react.js',
         {
             'records': frontend.get_records(userid),
@@ -202,7 +202,7 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        'Top SDVX Scores for {} - {}'.format(artist, name),
+        f'Top SDVX Scores for {artist} - {name}',
         'sdvx/topscores.react.js',
         {
             'name': name,
@@ -263,7 +263,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(info.keys(), reverse=True)[0]
 
     return render_react(
-        '{}\'s SDVX Profile'.format(info[latest_version]['name']),
+        f'{info[latest_version]["name"]}\'s SDVX Profile',
         'sdvx/player.react.js',
         {
             'playerid': userid,

@@ -279,7 +279,7 @@ class Museca1Client(BaseClient):
                 'items': items,
             }
         else:
-            raise Exception("Invalid game load type {}".format(msg_type))
+            raise Exception(f"Invalid game load type {msg_type}")
 
     def verify_game_play_e(self, location: str, refid: str) -> None:
         call = self.call_node()
@@ -412,15 +412,15 @@ class Museca1Client(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             # Museca doesn't read the new profile, it asks for the profile itself after calling new
             self.verify_game_load(card, ref_id, msg_type='new')
             self.verify_game_new(location, ref_id)
@@ -433,7 +433,7 @@ class Museca1Client(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         # Verify account freezing
         self.verify_game_frozen(ref_id, 900)
@@ -444,7 +444,7 @@ class Museca1Client(BaseClient):
             # Verify profile loading and saving
             profile = self.verify_game_load(card, ref_id, msg_type='existing')
             if profile['name'] != self.NAME:
-                raise Exception('Profile has incorrect name {} associated with it!'.format(profile['name']))
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile['packet'] != 0:
                 raise Exception('Profile has nonzero blocks associated with it!')
             if profile['block'] != 0:
@@ -455,7 +455,7 @@ class Museca1Client(BaseClient):
             self.verify_game_save(location, ref_id, packet=123, block=234, blaster_energy=42)
             profile = self.verify_game_load(card, ref_id, msg_type='existing')
             if profile['name'] != self.NAME:
-                raise Exception('Profile has incorrect name {} associated with it!'.format(profile['name']))
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile['packet'] != 123:
                 raise Exception('Profile has invalid blocks associated with it!')
             if profile['block'] != 234:
@@ -539,7 +539,7 @@ class Museca1Client(BaseClient):
                             break
 
                     if actual is None:
-                        raise Exception("Didn't find song {} chart {} in response!".format(expected['id'], expected['chart']))
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if 'expected_score' in expected:
                         expected_score = expected['expected_score']
@@ -555,17 +555,11 @@ class Museca1Client(BaseClient):
                         expected_clear_type = expected['clear_type']
 
                     if actual['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, expected['id'], expected['chart'], actual['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got score \'{actual["score"]}\'')
                     if actual['grade'] != expected_grade:
-                        raise Exception('Expected a grade of \'{}\' for song \'{}\' chart \'{}\' but got grade \'{}\''.format(
-                            expected_grade, expected['id'], expected['chart'], actual['grade'],
-                        ))
+                        raise Exception(f'Expected a grade of \'{expected_grade}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got grade \'{actual["grade"]}\'')
                     if actual['clear_type'] != expected_clear_type:
-                        raise Exception('Expected a clear_type of \'{}\' for song \'{}\' chart \'{}\' but got clear_type \'{}\''.format(
-                            expected_clear_type, expected['id'], expected['chart'], actual['clear_type'],
-                        ))
+                        raise Exception(f'Expected a clear_type of \'{expected_clear_type}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got clear_type \'{actual["clear_type"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

@@ -198,7 +198,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.CLEAR_TYPE_ULTIMATE_CHAIN,
             self.CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN,
         ]:
-            raise Exception("Invalid clear type value {}".format(clear_type))
+            raise Exception(f"Invalid clear type value {clear_type}")
 
         #  Range check grade
         if grade not in [
@@ -214,7 +214,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.GRADE_AAA_PLUS,
             self.GRADE_S,
         ]:
-            raise Exception("Invalid clear type value {}".format(grade))
+            raise Exception(f"Invalid clear type value {grade}")
 
         if userid is not None:
             oldscore = self.data.local.music.get_score(

@@ -314,7 +314,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.CLEAR_STATUS_EX_HARD_CLEAR,
             self.CLEAR_STATUS_FULL_COMBO,
         ]:
-            raise Exception("Invalid clear status value {}".format(clear_status))
+            raise Exception(f"Invalid clear status value {clear_status}")
 
         # Calculate ex score
         ex_score = (2 * pgreats) + greats
@@ -419,7 +419,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.DAN_RANKING_SINGLE,
             self.DAN_RANKING_DOUBLE,
         ]:
-            raise Exception("Invalid dan rank type value {}".format(dantype))
+            raise Exception(f"Invalid dan rank type value {dantype}")
 
         # Range check rank
         if rank not in [
@@ -443,7 +443,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.DAN_RANK_CHUDEN,
             self.DAN_RANK_KAIDEN,
         ]:
-            raise Exception("Invalid dan rank {}".format(rank))
+            raise Exception(f"Invalid dan rank {rank}")
 
         if cleared:
             # Update profile if needed

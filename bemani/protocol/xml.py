@@ -59,7 +59,7 @@ class XmlDecoder:
             # Get the data value
             type_int = Node.typename_to_type(data_type)
             if type_int is None:
-                raise XmlEncodingException('Invalid node type {} for node {}'.format(data_type, tag.decode('ascii')))
+                raise XmlEncodingException(f'Invalid node type {data_type} for node {tag.decode("ascii")}')
 
             node = Node(name=tag.decode('ascii'), type=type_int, array=array)
 
@@ -84,7 +84,7 @@ class XmlDecoder:
         node = self.current.pop()
 
         if node.name != tag.decode('ascii'):
-            raise Exception('Logic error, expected {} but got {}'.format(tag.decode('ascii'), node.name))
+            raise Exception(f'Logic error, expected {tag.decode("ascii")} but got {node.name}')
 
         if len(self.current) == 0:
             self.root = node
@@ -344,7 +344,7 @@ class XmlEncoder:
         self.encoding = encoding
 
     def get_data(self) -> bytes:
-        magic = '<?xml version="1.0" encoding="{}"?>'.format(self.encoding).encode('ascii')
+        magic = f'<?xml version="1.0" encoding="{self.encoding}"?>'.encode('ascii')
         payload = self.to_xml(self.tree)
 
         return magic + payload
@@ -540,7 +540,7 @@ class XmlEncoding:
         encoding = self.__fix_encoding(encoding)
         if encoding not in XmlEncoding.ACCEPTED_ENCODINGS:
             # XML pages only support shift-jis
-            raise XmlEncodingException("Invalid text encoding {}".format(encoding))
+            raise XmlEncodingException(f"Invalid text encoding {encoding}")
 
         xml = XmlEncoder(tree, encoding)
         return xml.get_data()

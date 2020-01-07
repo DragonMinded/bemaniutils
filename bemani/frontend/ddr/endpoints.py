@@ -68,7 +68,7 @@ def viewscores(userid: UserID) -> Response:
         scores = frontend.round_to_ten(scores)
 
     return render_react(
-        '{}\'s DDR Scores'.format(info['name']),
+        f'{info["name"]}\'s DDR Scores',
         'ddr/scores.react.js',
         {
             'attempts': scores,
@@ -140,7 +140,7 @@ def viewrecords(userid: UserID) -> Response:
         abort(404)
 
     return render_react(
-        '{}\'s DDR Records'.format(info['name']),
+        f'{info["name"]}\'s DDR Records',
         'ddr/records.react.js',
         {
             'records': frontend.get_records(userid),
@@ -197,7 +197,7 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        'Top DDR Scores for {} - {}'.format(artist, name),
+        f'Top DDR Scores for {artist} - {name}',
         'ddr/topscores.react.js',
         {
             'name': name,
@@ -260,7 +260,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(info.keys(), reverse=True)[0]
 
     return render_react(
-        '{}\'s DDR Profile'.format(info[latest_version]['name']),
+        f'{info[latest_version]["name"]}\'s DDR Profile',
         'ddr/player.react.js',
         {
             'playerid': userid,
@@ -551,7 +551,7 @@ def addrival() -> Dict[str, Any]:
         GameConstants.DDR,
         version,
         userid,
-        'friend_{}'.format(newrivalpos),
+        f'friend_{newrivalpos}',
         other_userid,
         {},
     )
@@ -580,7 +580,7 @@ def removerival() -> Dict[str, Any]:
         GameConstants.DDR,
         version,
         userid,
-        'friend_{}'.format(position),
+        f'friend_{position}',
         other_userid,
     )
 

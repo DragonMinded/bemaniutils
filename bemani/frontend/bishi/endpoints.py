@@ -57,7 +57,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(djinfo.keys(), reverse=True)[0]
 
     return render_react(
-        '{}\'s BishiBashi Profile'.format(djinfo[latest_version]['name']),
+        f'{djinfo[latest_version]["name"]}\'s BishiBashi Profile',
         'bishi/player.react.js',
         {
             'playerid': userid,

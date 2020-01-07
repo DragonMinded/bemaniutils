@@ -45,7 +45,7 @@ def main() -> None:
         twodx = TwoDX(data)
 
         for fn in twodx.filenames:
-            print('Extracting {} to disk...'.format(fn))
+            print(f'Extracting {fn} to disk...')
             realfn = os.path.join(root, fn)
             dirof = os.path.dirname(realfn)
             os.makedirs(dirof, exist_ok=True)

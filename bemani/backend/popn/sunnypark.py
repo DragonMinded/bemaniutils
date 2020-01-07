@@ -210,7 +210,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         netvs.add_child(Node.u8('netvs_play_cnt', 0))
         for dialog in [0, 1, 2, 3, 4, 5]:
             # TODO: Configure this, maybe?
-            netvs.add_child(Node.string('dialog', 'dialog#{}'.format(dialog)))
+            netvs.add_child(Node.string('dialog', f'dialog#{dialog}'))
 
         sp_data = Node.void('sp_data')
         root.add_child(sp_data)

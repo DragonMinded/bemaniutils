@@ -335,7 +335,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         netvs.add_child(Node.u32('netvs_play_cnt', 0))
         for dialog in [0, 1, 2, 3, 4, 5]:
             # TODO: Configure this, maybe?
-            netvs.add_child(Node.string('dialog', 'dialog#{}'.format(dialog)))
+            netvs.add_child(Node.string('dialog', f'dialog#{dialog}'))
 
         # Set up config
         config = Node.void('config')

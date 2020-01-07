@@ -309,7 +309,7 @@ def updatearcade(arcadeid: int, attribute: str) -> Dict[str, Any]:
     elif attribute == 'mask_services_url':
         arcade.data.replace_bool('mask_services_url', new_value)
     else:
-        raise Exception('Unknown attribute {} to update!'.format(attribute))
+        raise Exception(f'Unknown attribute {attribute} to update!')
 
     g.data.local.machine.put_arcade(arcade)
 

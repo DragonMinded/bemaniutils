@@ -32,12 +32,7 @@ class User:
         self.admin = admin
 
     def __repr__(self) -> str:
-        return "User(userid={}, username={}, email={}, admin={})".format(
-            self.id,
-            self.username,
-            self.email,
-            self.admin,
-        )
+        return f"User(userid={self.id}, username={self.username}, email={self.email}, admin={self.admin})"
 
 
 class Achievement:
@@ -64,12 +59,7 @@ class Achievement:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Achievement(achievementid={}, achievementtype={}, timestamp={}, data={})".format(
-            self.id,
-            self.type,
-            self.timestamp,
-            self.data,
-        )
+        return f"Achievement(achievementid={self.id}, achievementtype={self.type}, timestamp={self.timestamp}, data={self.data})"
 
 
 class Link:
@@ -94,12 +84,7 @@ class Link:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Link(userid={}, linktype={}, other_userid={}, data={})".format(
-            self.userid,
-            self.type,
-            self.other_userid,
-            self.data,
-        )
+        return f"Link(userid={self.userid}, linktype={self.type}, other_userid={self.other_userid}, data={self.data})"
 
 
 class Machine:
@@ -147,17 +132,7 @@ class Machine:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Machine(machineid={}, pcbid={}, name={}, description={}, arcade={}, port={}, game={}, version={}, data={})".format(
-            self.id,
-            self.pcbid,
-            self.name,
-            self.description,
-            self.arcade,
-            self.port,
-            self.game,
-            self.version,
-            self.data,
-        )
+        return f"Machine(machineid={self.id}, pcbid={self.pcbid}, name={self.name}, description={self.description}, arcade={self.arcade}, port={self.port}, game={self.game}, version={self.version}, data={self.data})"
 
 
 class Arcade:
@@ -189,14 +164,7 @@ class Arcade:
         self.owners = owners
 
     def __repr__(self) -> str:
-        return "Arcade(arcadeid={}, name={}, description={}, pin={}, data={}, owners={})".format(
-            self.id,
-            self.name,
-            self.description,
-            self.pin,
-            self.data,
-            self.owners,
-        )
+        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, data={self.data}, owners={self.owners})"
 
 
 class Song:
@@ -238,16 +206,7 @@ class Song:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Song(game={}, version={}, songid={}, songchart={}, name={}, artist={}, genre={}, data={})".format(
-            self.game,
-            self.version,
-            self.id,
-            self.chart,
-            self.name,
-            self.artist,
-            self.genre,
-            self.data,
-        )
+        return f"Song(game={self.game}, version={self.version}, songid={self.id}, songchart={self.chart}, name={self.name}, artist={self.artist}, genre={self.genre}, data={self.data})"
 
 
 class Score:
@@ -292,17 +251,7 @@ class Score:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Score(key={}, songid={}, songchart={}, points={}, timestamp={}, update={}, location={}, plays={}, data={})".format(
-            self.key,
-            self.id,
-            self.chart,
-            self.points,
-            self.timestamp,
-            self.update,
-            self.location,
-            self.plays,
-            self.data,
-        )
+        return f"Score(key={self.key}, songid={self.id}, songchart={self.chart}, points={self.points}, timestamp={self.timestamp}, update={self.update}, location={self.location}, plays={self.plays}, data={self.data})"
 
 
 class Attempt:
@@ -344,16 +293,7 @@ class Attempt:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Attempt(key={}, songid={}, songchart={}, points={}, timestamp={}, location={}, new_record={}, data={})".format(
-            self.key,
-            self.id,
-            self.chart,
-            self.points,
-            self.timestamp,
-            self.location,
-            self.new_record,
-            self.data,
-        )
+        return f"Attempt(key={self.key}, songid={self.id}, songchart={self.chart}, points={self.points}, timestamp={self.timestamp}, location={self.location}, new_record={self.new_record}, data={self.data})"
 
 
 class News:
@@ -378,12 +318,7 @@ class News:
         self.body = body
 
     def __repr__(self) -> str:
-        return "News(newsid={}, timestamp={}, title={}, body={})".format(
-            self.id,
-            self.timestamp,
-            self.title,
-            self.body,
-        )
+        return f"News(newsid={self.id}, timestamp={self.timestamp}, title={self.title}, body={self.body})"
 
 
 class Event:
@@ -412,14 +347,7 @@ class Event:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Event(auditid={}, timestamp={}, userid={}, arcadeid={}, event={}, data={})".format(
-            self.id,
-            self.timestamp,
-            self.userid,
-            self.arcadeid,
-            self.type,
-            self.data,
-        )
+        return f"Event(auditid={self.id}, timestamp={self.timestamp}, userid={self.userid}, arcadeid={self.arcadeid}, event={self.type}, data={self.data})"
 
 
 class Item:
@@ -441,11 +369,7 @@ class Item:
         self.data = ValidatedDict(data)
 
     def __repr__(self) -> str:
-        return "Item(cattype={}, catid={}, data={})".format(
-            self.type,
-            self.id,
-            self.data,
-        )
+        return f"Item(cattype={self.type}, catid={self.id}, data={self.data})"
 
 
 class Client:
@@ -470,12 +394,7 @@ class Client:
         self.token = token
 
     def __repr__(self) -> str:
-        return "Client(clientid={}, timestamp={}, name={}, token={})".format(
-            self.id,
-            self.timestamp,
-            self.name,
-            self.token,
-        )
+        return f"Client(clientid={self.id}, timestamp={self.timestamp}, name={self.name}, token={self.token})"
 
 
 class Server:
@@ -504,11 +423,4 @@ class Server:
         self.allow_scores = allow_scores
 
     def __repr__(self) -> str:
-        return "Server(serverid={}, timestamp={}, uri={}, token={}, allow_stats={}, allow_scores={})".format(
-            self.id,
-            self.timestamp,
-            self.uri,
-            self.token,
-            self.allow_stats,
-            self.allow_scores,
-        )
+        return f"Server(serverid={self.id}, timestamp={self.timestamp}, uri={self.uri}, token={self.token}, allow_stats={self.allow_stats}, allow_scores={self.allow_scores})"

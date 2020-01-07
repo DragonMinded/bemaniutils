@@ -363,7 +363,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 achievements.append(
                     Achievement(
                         itemid,
-                        'item_{}'.format(itemtype),
+                        f'item_{itemtype}',
                         0,
                         {
                             'param': param,
@@ -622,7 +622,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                     self.version,
                     userid,
                     itemid,
-                    'item_{}'.format(itemtype),
+                    f'item_{itemtype}',
                     {
                         'param': itemparam,
                         'is_new': True,
@@ -1124,7 +1124,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                     self.version,
                     userid,
                     itemid,
-                    'item_{}'.format(itemtype),
+                    f'item_{itemtype}',
                     {
                         'param': param,
                         'is_new': is_new,

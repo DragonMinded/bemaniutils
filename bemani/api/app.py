@@ -301,7 +301,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
 
         inst = handler(g.data, game, version, omnimix)
         try:
-            fetchmethod = getattr(inst, 'fetch_{}'.format(protoversion))
+            fetchmethod = getattr(inst, f'fetch_{protoversion}')
         except AttributeError:
             # Don't know how to handle this object for this version
             abort(501)

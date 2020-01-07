@@ -235,28 +235,28 @@ class Node:
     def __validate(nodetype: int, name: str, value: int) -> None:
         if nodetype == Node.NODE_TYPE_U8:
             if value < 0 or value > 255:
-                raise NodeException('Invalid value {} for u8 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for u8 {name}')
         elif nodetype == Node.NODE_TYPE_S8:
             if value < -128 or value > 127:
-                raise NodeException('Invalid value {} for s8 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for s8 {name}')
         elif nodetype == Node.NODE_TYPE_U16:
             if value < 0 or value > 65535:
-                raise NodeException('Invalid value {} for u16 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for u16 {name}')
         elif nodetype == Node.NODE_TYPE_S16:
             if value < -32768 or value > 32767:
-                raise NodeException('Invalid value {} for s16 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for s16 {name}')
         elif nodetype == Node.NODE_TYPE_U32:
             if value < 0 or value > 4294967295:
-                raise NodeException('Invalid value {} for u32 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for u32 {name}')
         elif nodetype == Node.NODE_TYPE_S32:
             if value < -2147483648 or value > 2147483647:
-                raise NodeException('Invalid value {} for s32 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for s32 {name}')
         elif nodetype == Node.NODE_TYPE_U64:
             if value < 0 or value > 18446744073709551615:
-                raise NodeException('Invalid value {} for u64 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for u64 {name}')
         elif nodetype == Node.NODE_TYPE_S64:
             if value < -9223372036854775808 or value > 9223372036854775807:
-                raise NodeException('Invalid value {} for s32 {}'.format(value, name))
+                raise NodeException(f'Invalid value {value} for s32 {name}')
 
     @staticmethod
     def u8(name: str, value: int) -> 'Node':
@@ -399,7 +399,7 @@ class Node:
         # Ensure it isn't a violation
         for char in name:
             if char not in Node.NODE_NAME_CHARS:
-                raise NodeException('Invalid node name {}'.format(name))
+                raise NodeException(f'Invalid node name {name}')
 
         self.__name = name
 
@@ -437,7 +437,7 @@ class Node:
             self.__translated_type = Node.NODE_TYPES[type & (~Node.ARRAY_BIT)]
             self.__type = type
         except KeyError:
-            raise NodeException('Unknown node type {}'.format(type))
+            raise NodeException(f'Unknown node type {type}')
 
     @property
     def type(self) -> int:
@@ -629,13 +629,10 @@ class Node:
             if not is_array:
                 raise NodeException('Input is not array, expected array')
             if len(val) != len(self.__translated_type['enc']):
-                raise NodeException('Input array for {} expected to be {} elements!'.format(
-                    self.__translated_type['name'],
-                    len(self.__translated_type['enc']),
-                ))
+                raise NodeException(f'Input array for {self.__translated_type["name"]} expected to be {len(self.__translated_type["enc"])} elements!')
             is_array = False
         if is_array != self.__array:
-            raise NodeException('Input {} array, expected {}'.format('is' if is_array else 'is not', 'array' if self.__array else 'scalar'))
+            raise NodeException(f'Input {"is" if is_array else "is not"} array, expected {"array" if self.__array else "scalar"}')
 
         def val_to_str(val: Any) -> str:
             if self.__translated_type['name'] == 'bool':
@@ -653,14 +650,14 @@ class Node:
                 try:
                     # Support construction from binary
                     ip = struct.unpack('BBBB', val)
-                    return '{}.{}.{}.{}'.format(ip[0], ip[1], ip[2], ip[3])
+                    return f'{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}'
                 except (struct.error, TypeError):
                     # Assume that its user-built string?
                     if isinstance(val, str):
                         if len(val.split('.')) == 4:
                             return val
 
-                    raise NodeException('Invalid value {} for IP4 type'.format(val))
+                    raise NodeException(f'Invalid value {val} for IP4 type')
             elif self.__translated_type['int']:
                 return str(val)
             else:
@@ -737,7 +734,7 @@ class Node:
                 return str(val)
 
         if attrs_dict:
-            attrs = ' ' + ' '.join(['{name}="{val}"'.format(name=attr, val=escape(attrs_dict[attr], attr=True)) for attr in order])
+            attrs = ' ' + ' '.join([f'{attr}="{escape(attrs_dict[attr], attr=True)}"' for attr in order])
         else:
             attrs = ''
 
@@ -769,35 +766,18 @@ class Node:
             if self.__translated_type['len'] != 0:
                 # Has children and a value
                 children = [
-                    '{depth}{vals}\n'.format(
-                        depth=' ' * ((depth + 1) * 4),
-                        vals=get_val(),
-                    ),
+                    f'{" " * ((depth + 1) * 4)}{get_val()}\n',
                 ] + children
 
-            string = '{depth}<{name}{attrs}>\n{children}{depth}</{name}>\n'.format(
-                depth=' ' * (depth * 4),
-                name=self.__name,
-                attrs=attrs,
-                children=''.join(children),
-            )
+            string = f'{" " * (depth * 4)}<{self.__name}{attrs}>\n{"".join(children)}{" " * (depth * 4)}</{self.__name}>\n'
         else:
             # Doesn't have children nodes
             if self.__translated_type['len'] == 0:
                 # Void node
-                string = '{depth}<{name}{attrs} />\n'.format(
-                    depth=' ' * (depth * 4),
-                    name=self.__name,
-                    attrs=attrs,
-                )
+                string = f'{" " * (depth * 4)}<{self.__name}{attrs} />\n'
             else:
                 # Node with values
-                string = '{depth}<{name}{attrs}>{vals}</{name}>\n'.format(
-                    depth=' ' * (depth * 4),
-                    name=self.__name,
-                    attrs=attrs,
-                    vals=get_val(),
-                )
+                string = f'{" " * (depth * 4)}<{self.__name}{attrs}>{get_val()}</{self.__name}>\n'
 
         return string
 

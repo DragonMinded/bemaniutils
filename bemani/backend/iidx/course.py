@@ -31,7 +31,7 @@ class IIDXCourse(IIDXBase):
             self.COURSE_TYPE_INTERNET_RANKING,
             self.COURSE_TYPE_CLASSIC,
         ]:
-            raise Exception("Invalid course type value {}".format(coursetype))
+            raise Exception(f"Invalid course type value {coursetype}")
 
         # Range check medals
         if clear_status not in [
@@ -44,7 +44,7 @@ class IIDXCourse(IIDXBase):
             self.CLEAR_STATUS_EX_HARD_CLEAR,
             self.CLEAR_STATUS_FULL_COMBO,
         ]:
-            raise Exception("Invalid clear status value {}".format(clear_status))
+            raise Exception(f"Invalid clear status value {clear_status}")
 
         # Update achievement to track course statistics
         course_score = self.data.local.user.get_achievement(

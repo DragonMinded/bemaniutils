@@ -343,7 +343,7 @@ class DDR2014Client(BaseClient):
             self.assert_path(resp, "response/game/target/@flag")
             self.assert_path(resp, "response/game/target/@setnum")
             for i in range(55):
-                self.assert_path(resp, "response/game/play_area/@play_cnt{}".format(i))
+                self.assert_path(resp, f"response/game/play_area/@play_cnt{i}")
 
             gr_s = resp.child('game/gr_s')
             gr_d = resp.child('game/gr_d')
@@ -539,15 +539,15 @@ class DDR2014Client(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             # Bishi doesn't read a new profile, it just writes out CSV for a blank one
             self.verify_game_load(ref_id, msg_type='new')
             self.verify_game_new(ref_id)
@@ -559,7 +559,7 @@ class DDR2014Client(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         # Verify locking and unlocking profile ability
         self.verify_game_lock(ref_id, 1)
@@ -695,7 +695,7 @@ class DDR2014Client(BaseClient):
                 for score in dummyscores:
                     data = scores.get(score['id'], {}).get(score['chart'], None)
                     if data is None:
-                        raise Exception('Expected to get score back for song {} chart {}!'.format(score['id'], score['chart']))
+                        raise Exception(f'Expected to get score back for song {score["id"]} chart {score["chart"]}!')
 
                     # Verify the attributes of the score
                     expected_score = score.get('expected_score', score['score'])
@@ -703,17 +703,11 @@ class DDR2014Client(BaseClient):
                     expected_halo = score.get('expected_halo', score['halo'])
 
                     if data['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], data['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["score"]}\'')
                     if data['rank'] != expected_rank:
-                        raise Exception('Expected a rank of \'{}\' for song \'{}\' chart \'{}\' but got rank \'{}\''.format(
-                            expected_rank, score['id'], score['chart'], data['rank'],
-                        ))
+                        raise Exception(f'Expected a rank of \'{expected_rank}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got rank \'{data["rank"]}\'')
                     if data['halo'] != expected_halo:
-                        raise Exception('Expected a halo of \'{}\' for song \'{}\' chart \'{}\' but got halo \'{}\''.format(
-                            expected_halo, score['id'], score['chart'], data['halo'],
-                        ))
+                        raise Exception(f'Expected a halo of \'{expected_halo}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got halo \'{data["halo"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

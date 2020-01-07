@@ -19,7 +19,7 @@ class ID:
         extid_str = str(extid)
         while len(extid_str) < 8:
             extid_str = '0' + extid_str
-        return '{}-{}'.format(extid_str[0:4], extid_str[4:8])
+        return f'{extid_str[0:4]}-{extid_str[4:8]}'
 
     @staticmethod
     def parse_extid(extid: str) -> Optional[int]:
@@ -46,7 +46,7 @@ class ID:
         """
         Take a machine ID as an integer, format it as a string.
         """
-        return 'US-{}'.format(machine_id)
+        return f'US-{machine_id}'
 
     @staticmethod
     def parse_machine_id(machine_id: str) -> Optional[int]:

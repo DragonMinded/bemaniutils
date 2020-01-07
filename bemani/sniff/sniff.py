@@ -267,12 +267,12 @@ class Sniffer:
 
         if ihl < Sniffer.IP_HEADER_LENGTH:
             raise InvalidPacketException(
-                'Invalid IP length {}'.format(ihl),
+                f'Invalid IP length {ihl}',
             )
 
         if version != 4:
             raise UnknownPacketException(
-                'Unknown IP version {}'.format(version),
+                f'Unknown IP version {version}',
             )
 
         s_addr = socket.inet_ntoa(iph[8])
@@ -391,7 +391,7 @@ class Sniffer:
         if eth_header['protocol'] != 8:
             # Not IP
             raise UnknownPacketException(
-                'Unknown frame {}'.format(eth_header['protocol'])
+                f'Unknown frame {eth_header["protocol"]}'
             )
 
         # Get the IP header
@@ -401,7 +401,7 @@ class Sniffer:
         if ip_header['protocol'] != 6:
             # Not TCP
             raise UnknownPacketException(
-                'Unknown protocol {}'.format(ip_header['protocol']),
+                f'Unknown protocol {ip_header["protocol"]}',
             )
 
         # Get TCP header

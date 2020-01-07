@@ -60,8 +60,8 @@ class ReflecBeatColette(ReflecBeatBase):
                 self.COMBO_TYPE_FULL_COMBO_ALL_JUST,
             ]:
                 return self.GAME_CLEAR_TYPE_FULL_COMBO
-            raise Exception('Invalid db_combo_type {}'.format(db_combo_type))
-        raise Exception('Invalid db_clear_type {}'.format(db_clear_type))
+            raise Exception(f'Invalid db_combo_type {db_combo_type}')
+        raise Exception(f'Invalid db_clear_type {db_clear_type}')
 
     def __game_to_db_clear_type(self, game_clear_type: int) -> Tuple[int, int]:
         if game_clear_type == self.GAME_CLEAR_TYPE_NO_PLAY:
@@ -75,7 +75,7 @@ class ReflecBeatColette(ReflecBeatBase):
         if game_clear_type == self.GAME_CLEAR_TYPE_FULL_COMBO:
             return (self.CLEAR_TYPE_CLEARED, self.COMBO_TYPE_FULL_COMBO)
 
-        raise Exception('Invalid game_clear_type {}'.format(game_clear_type))
+        raise Exception(f'Invalid game_clear_type {game_clear_type}')
 
     def handle_pcb_error_request(self, request: Node) -> Node:
         return Node.void('pcb')
@@ -1068,7 +1068,7 @@ class ReflecBeatColette(ReflecBeatBase):
                     self.version,
                     userid,
                     item_id,
-                    'item_{}'.format(item_type),
+                    f'item_{item_type}',
                     {
                         'param': param,
                     },
@@ -1170,7 +1170,7 @@ class ReflecBeatColette(ReflecBeatBase):
                     self.version,
                     userid,
                     eqpexp_id,
-                    'eqpexp_{}'.format(eqpexp_stype),
+                    f'eqpexp_{eqpexp_stype}',
                 ) or ValidatedDict()
 
                 self.data.local.user.put_achievement(
@@ -1178,7 +1178,7 @@ class ReflecBeatColette(ReflecBeatBase):
                     self.version,
                     userid,
                     eqpexp_id,
-                    'eqpexp_{}'.format(eqpexp_stype),
+                    f'eqpexp_{eqpexp_stype}',
                     {
                         'exp': data.get_int('exp') + eqpexp_exp,
                     },

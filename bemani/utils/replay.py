@@ -35,14 +35,11 @@ class Protocol:
         elif packet_encoding == "binary":
             _packet_encoding = EAmuseProtocol.BINARY
         else:
-            raise Exception("Unknown packet encoding {}".format(packet_encoding))
+            raise Exception(f"Unknown packet encoding {packet_encoding}")
 
         # Handle encryption
         if self.__encryption:
-            encryption = '1-{}-{}'.format(
-                hex_string(8),
-                hex_string(4),
-            )
+            encryption = f'1-{hex_string(8)}-{hex_string(4)}'
             headers['X-Eamuse-Info'] = encryption
         else:
             encryption = None
@@ -66,12 +63,7 @@ class Protocol:
 
         # Send the request, get the response
         r = requests.post(
-            'http://{}:{}{}{}'.format(
-                self.__address,
-                self.__port,
-                '/' if uri[0] != '/' else '',
-                uri,
-            ),
+            f'http://{self.__address}:{self.__port}{"/" if uri[0] != "/" else ""}{uri}',
             headers=headers,
             data=req,
         )
@@ -112,7 +104,7 @@ def main() -> None:
     # Add an XML special node to force encoding (will be overwritten if there
     # is one in the packet).
     packet = b''.join([
-        '<?xml encoding="{}"?>'.format(args.encoding).encode(args.encoding),
+        f'<?xml encoding="{args.encoding}"?>'.encode(args.encoding),
         packet,
     ])
 
@@ -134,12 +126,7 @@ def main() -> None:
 
     server = Protocol(args.address, args.port, False, False, False)
     server.exchange(
-        '{}?model={}&module={}&method={}'.format(
-            args.path,
-            model,
-            module,
-            method,
-        ),
+        f'{args.path}?model={model}&module={module}&method={method}',
         tree,
     )
 

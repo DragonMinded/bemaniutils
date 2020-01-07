@@ -69,7 +69,7 @@ def viewscores(userid: UserID) -> Response:
         scores = frontend.round_to_ten(scores)
 
     return render_react(
-        '{}\'s Reflec Beat Scores'.format(info['name']),
+        f'{info["name"]}\'s Reflec Beat Scores',
         'reflec/scores.react.js',
         {
             'attempts': scores,
@@ -143,7 +143,7 @@ def viewrecords(userid: UserID) -> Response:
     versions = {version: name for (game, version, name) in frontend.all_games()}
 
     return render_react(
-        '{}\'s Reflec Beat Records'.format(info['name']),
+        f'{info["name"]}\'s Reflec Beat Records',
         'reflec/records.react.js',
         {
             'records': frontend.get_records(userid),
@@ -199,7 +199,7 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        'Top Reflec Beat Scores for {} - {}'.format(artist, name),
+        f'Top Reflec Beat Scores for {artist} - {name}',
         'reflec/topscores.react.js',
         {
             'name': name,
@@ -260,7 +260,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(info.keys(), reverse=True)[0]
 
     return render_react(
-        '{}\'s Reflec Beat Profile'.format(info[latest_version]['name']),
+        f'{info[latest_version]["name"]}\'s Reflec Beat Profile',
         'reflec/player.react.js',
         {
             'playerid': userid,

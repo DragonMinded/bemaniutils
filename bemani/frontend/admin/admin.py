@@ -687,7 +687,7 @@ def updatepcbid() -> Dict[str, Any]:
     # Make sure we don't duplicate port assignments
     other_pcbid = g.data.local.machine.from_port(machine['port'])
     if other_pcbid is not None and other_pcbid != machine['pcbid']:
-        raise Exception('This port is already in use by \'{}\'!'.format(other_pcbid))
+        raise Exception(f'This port is already in use by \'{other_pcbid}\'!')
 
     if machine['port'] < 1 or machine['port'] > 65535:
         raise Exception('The specified port is out of range!')

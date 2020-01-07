@@ -68,7 +68,7 @@ def viewscores(userid: UserID) -> Response:
         scores = frontend.round_to_ten(scores)
 
     return render_react(
-        'dj {}\'s IIDX Scores'.format(djinfo['name']),
+        f'dj {djinfo["name"]}\'s IIDX Scores',
         'iidx/scores.react.js',
         {
             'attempts': scores,
@@ -140,7 +140,7 @@ def viewrecords(userid: UserID) -> Response:
         abort(404)
 
     return render_react(
-        'dj {}\'s IIDX Records'.format(djinfo['name']),
+        f'dj {djinfo["name"]}\'s IIDX Records',
         'iidx/records.react.js',
         {
             'records': frontend.get_records(userid),
@@ -203,7 +203,7 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        'Top IIDX Scores for {} - {}'.format(artist, name),
+        f'Top IIDX Scores for {artist} - {name}',
         'iidx/topscores.react.js',
         {
             'name': name,
@@ -272,7 +272,7 @@ def viewplayer(userid: UserID) -> Response:
         djinfo[version]['dp_rival'] = dp_rival is not None
 
     return render_react(
-        'dj {}\'s IIDX Profile'.format(djinfo[latest_version]['name']),
+        f'dj {djinfo[latest_version]["name"]}\'s IIDX Profile',
         'iidx/player.react.js',
         {
             'playerid': userid,
@@ -557,7 +557,7 @@ def addrival() -> Dict[str, Any]:
 
     # Add this rival link
     if rivaltype != 'sp_rival' and rivaltype != 'dp_rival':
-        raise Exception('Invalid rival type {}!'.format(rivaltype))
+        raise Exception(f'Invalid rival type {rivaltype}!')
     profile = g.data.remote.user.get_profile(GameConstants.IIDX, version, other_userid)
     if profile is None:
         raise Exception('Unable to find profile for rival!')
@@ -592,7 +592,7 @@ def removerival() -> Dict[str, Any]:
 
     # Remove this rival link
     if rivaltype != 'sp_rival' and rivaltype != 'dp_rival':
-        raise Exception('Invalid rival type {}!'.format(rivaltype))
+        raise Exception(f'Invalid rival type {rivaltype}!')
 
     g.data.local.user.destroy_link(
         GameConstants.IIDX,

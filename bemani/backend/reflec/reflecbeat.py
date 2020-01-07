@@ -56,8 +56,8 @@ class ReflecBeat(ReflecBeatBase):
             ]:
                 return self.GAME_CLEAR_TYPE_FULL_COMBO
 
-            raise Exception('Invalid db_combo_type {}'.format(db_combo_type))
-        raise Exception('Invalid db_clear_type {}'.format(db_clear_type))
+            raise Exception(f'Invalid db_combo_type {db_combo_type}')
+        raise Exception(f'Invalid db_clear_type {db_clear_type}')
 
     def __game_to_db_clear_type(self, game_clear_type: int, game_achievement_rate: int) -> Tuple[int, int]:
         if game_clear_type == self.GAME_CLEAR_TYPE_NO_PLAY:
@@ -70,7 +70,7 @@ class ReflecBeat(ReflecBeatBase):
         if game_clear_type == self.GAME_CLEAR_TYPE_FULL_COMBO:
             return (self.CLEAR_TYPE_CLEARED, self.COMBO_TYPE_FULL_COMBO)
 
-        raise Exception('Invalid game_clear_type {}'.format(game_clear_type))
+        raise Exception(f'Invalid game_clear_type {game_clear_type}')
 
     def handle_log_pcb_status_request(self, request: Node) -> Node:
         return Node.void('log')
@@ -450,7 +450,7 @@ class ReflecBeat(ReflecBeatBase):
                     self.version,
                     userid,
                     item_id,
-                    'item_{}'.format(item_type),
+                    f'item_{item_type}',
                     {},
                 )
 

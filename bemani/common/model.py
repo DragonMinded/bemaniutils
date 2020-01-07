@@ -43,10 +43,10 @@ class Model:
         elif len(parts) == 4:
             game, dest, spec, rev = parts
             return Model(game, dest, spec, rev, None)
-        raise Exception('Couldn\'t parse model {}'.format(model))
+        raise Exception(f'Couldn\'t parse model {model}')
 
     def __str__(self) -> str:
         if self.version is None:
-            return '{}:{}:{}:{}'.format(self.game, self.dest, self.spec, self.rev)
+            return f'{self.game}:{self.dest}:{self.spec}:{self.rev}'
         else:
-            return '{}:{}:{}:{}:{}'.format(self.game, self.dest, self.spec, self.rev, self.version)
+            return f'{self.game}:{self.dest}:{self.spec}:{self.rev}:{self.version}'

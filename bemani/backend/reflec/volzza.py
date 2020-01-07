@@ -637,7 +637,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
                     self.version,
                     userid,
                     bank,
-                    'player_param_{}'.format(item_type),
+                    f'player_param_{item_type}',
                     {
                         'data': data,
                     },
@@ -653,7 +653,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
                 # I assume this is copypasta, but I want to be sure
                 extid = child.child_value('user_id')
                 if extid != newprofile.get_int('extid'):
-                    raise Exception('Unexpected user ID, got {} expecting {}'.format(extid, newprofile.get_int('extid')))
+                    raise Exception(f'Unexpected user ID, got {extid} expecting {newprofile.get_int("extid")}')
 
                 episode_type = child.child_value('type')
                 episode_value0 = child.child_value('value0')
@@ -693,7 +693,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
                     self.version,
                     userid,
                     item_id,
-                    'item_{}'.format(item_type),
+                    f'item_{item_type}',
                     {
                         'param': param,
                     },
@@ -715,7 +715,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
                     self.version,
                     userid,
                     announce_id,
-                    'announcement_{}'.format(announce_type),
+                    f'announcement_{announce_type}',
                     {
                         'param': param,
                         'need': need,

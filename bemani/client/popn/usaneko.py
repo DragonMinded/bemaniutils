@@ -39,18 +39,18 @@ class PopnMusicUsaNekoClient(BaseClient):
         self.assert_path(resp, "response/pcb24/@status")
 
     def __verify_common(self, root: str, resp: Node) -> None:
-        self.assert_path(resp, "response/{}/phase/event_id".format(root))
-        self.assert_path(resp, "response/{}/phase/phase".format(root))
-        self.assert_path(resp, "response/{}/area/area_id".format(root))
-        self.assert_path(resp, "response/{}/area/end_date".format(root))
-        self.assert_path(resp, "response/{}/area/medal_id".format(root))
-        self.assert_path(resp, "response/{}/area/is_limit".format(root))
-        self.assert_path(resp, "response/{}/choco/choco_id".format(root))
-        self.assert_path(resp, "response/{}/choco/param".format(root))
-        self.assert_path(resp, "response/{}/goods/item_id".format(root))
-        self.assert_path(resp, "response/{}/goods/item_type".format(root))
-        self.assert_path(resp, "response/{}/goods/price".format(root))
-        self.assert_path(resp, "response/{}/goods/goods_type".format(root))
+        self.assert_path(resp, f"response/{root}/phase/event_id")
+        self.assert_path(resp, f"response/{root}/phase/phase")
+        self.assert_path(resp, f"response/{root}/area/area_id")
+        self.assert_path(resp, f"response/{root}/area/end_date")
+        self.assert_path(resp, f"response/{root}/area/medal_id")
+        self.assert_path(resp, f"response/{root}/area/is_limit")
+        self.assert_path(resp, f"response/{root}/choco/choco_id")
+        self.assert_path(resp, f"response/{root}/choco/param")
+        self.assert_path(resp, f"response/{root}/goods/item_id")
+        self.assert_path(resp, f"response/{root}/goods/item_type")
+        self.assert_path(resp, f"response/{root}/goods/price")
+        self.assert_path(resp, f"response/{root}/goods/goods_type")
 
     def verify_info24_common(self, loc: str) -> None:
         call = self.call_node()
@@ -152,7 +152,7 @@ class PopnMusicUsaNekoClient(BaseClient):
             self.assert_path(resp, "response/player24/result")
             status = resp.child_value('player24/result')
             if status != 2:
-                raise Exception('Reference ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+                raise Exception(f'Reference ID \'{ref_id}\' returned invalid status \'{status}\'')
 
             return {
                 'items': {},
@@ -166,10 +166,10 @@ class PopnMusicUsaNekoClient(BaseClient):
             self.assert_path(resp, "response/player24/result")
             status = resp.child_value('player24/result')
             if status != 0:
-                raise Exception('Reference ID \'{}\' returned invalid status \'{}\''.format(ref_id, status))
+                raise Exception(f'Reference ID \'{ref_id}\' returned invalid status \'{status}\'')
             name = resp.child_value('player24/account/name')
             if name != self.NAME:
-                raise Exception('Invalid name \'{}\' returned for Ref ID \'{}\''.format(name, ref_id))
+                raise Exception(f'Invalid name \'{name}\' returned for Ref ID \'{ref_id}\'')
 
             # Medals and items
             items: Dict[int, Dict[str, int]] = {}
@@ -201,7 +201,7 @@ class PopnMusicUsaNekoClient(BaseClient):
                 'points': {0: {'points': resp.child_value('player24/account/player_point')}},
             }
         else:
-            raise Exception('Unrecognized message type \'{}\''.format(msg_type))
+            raise Exception(f'Unrecognized message type \'{msg_type}\'')
 
     def verify_player24_read_score(self, ref_id: str) -> Dict[str, Dict[int, Dict[int, int]]]:
         call = self.call_node()
@@ -452,15 +452,15 @@ class PopnMusicUsaNekoClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_player24_read(ref_id, msg_type='new')
             self.verify_player24_new(ref_id)
         else:
@@ -471,7 +471,7 @@ class PopnMusicUsaNekoClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         # Verify proper handling of basic stuff
         self.verify_player24_read(ref_id, msg_type='query')
@@ -520,7 +520,7 @@ class PopnMusicUsaNekoClient(BaseClient):
             if unlocks['items'][6]['param'] != 8:
                 raise Exception('Expecting to see item ID 6 to have param 8 in items!')
             if unlocks['points'][0]['points'] != 150:
-                raise Exception('Got wrong value for points {} after purchase!'.format(unlocks['points'][0]['points']))
+                raise Exception(f'Got wrong value for points {unlocks["points"][0]["points"]} after purchase!')
 
             # Verify course handling
             self.verify_player24_update_ranking(ref_id, location)
@@ -643,17 +643,11 @@ class PopnMusicUsaNekoClient(BaseClient):
                         expected_rank = 8
 
                     if newscore != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, expected['id'], expected['chart'], newscore,
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got score \'{newscore}\'')
                     if newmedal != expected_medal:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            expected_medal, expected['id'], expected['chart'], newmedal,
-                        ))
+                        raise Exception(f'Expected a medal of \'{expected_medal}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got medal \'{newmedal}\'')
                     if newrank != expected_rank:
-                        raise Exception('Expected a rank of \'{}\' for song \'{}\' chart \'{}\' but got rank \'{}\''.format(
-                            expected_rank, expected['id'], expected['chart'], newrank,
-                        ))
+                        raise Exception(f'Expected a rank of \'{expected_rank}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got rank \'{newrank}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

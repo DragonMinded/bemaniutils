@@ -22,19 +22,19 @@ class TestProtocol(unittest.TestCase):
 
             binary = proto.encode(None, None, root, text_encoding=EAmuseProtocol.SHIFT_JIS, packet_encoding=encoding)
             newroot = proto.decode(None, None, binary)
-            self.assertEqual(newroot, root, "Round trip with {} and no encryption/compression doesn't match!".format(loop_name))
+            self.assertEqual(newroot, root, f"Round trip with {loop_name} and no encryption/compression doesn't match!")
 
             binary = proto.encode(None, '1-abcdef-0123', root, text_encoding=EAmuseProtocol.SHIFT_JIS, packet_encoding=encoding)
             newroot = proto.decode(None, '1-abcdef-0123', binary)
-            self.assertEqual(newroot, root, "Round trip with {}, encryption and no compression doesn't match!".format(loop_name))
+            self.assertEqual(newroot, root, f"Round trip with {loop_name}, encryption and no compression doesn't match!")
 
             binary = proto.encode('none', None, root, text_encoding=EAmuseProtocol.SHIFT_JIS, packet_encoding=encoding)
             newroot = proto.decode('none', None, binary)
-            self.assertEqual(newroot, root, "Round trip with {}, encryption and no compression doesn't match!".format(loop_name))
+            self.assertEqual(newroot, root, f"Round trip with {loop_name}, encryption and no compression doesn't match!")
 
             binary = proto.encode('lz77', None, root, text_encoding=EAmuseProtocol.SHIFT_JIS, packet_encoding=encoding)
             newroot = proto.decode('lz77', None, binary)
-            self.assertEqual(newroot, root, "Round trip with {}, no encryption and lz77 compression doesn't match!".format(loop_name))
+            self.assertEqual(newroot, root, f"Round trip with {loop_name}, no encryption and lz77 compression doesn't match!")
 
     def test_game_packet1(self) -> Node:
         root = Node.void('call')

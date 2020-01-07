@@ -79,7 +79,7 @@ class IFS:
                 files[node_name] = (node.value[0] + data_index, node.value[1], node.value[2])
             else:
                 for subchild in node.children:
-                    get_children(os.path.join(parent, "{}/".format(real_name)), subchild)
+                    get_children(os.path.join(parent, f"{real_name}/"), subchild)
 
         get_children("/", header)
 
@@ -110,7 +110,7 @@ class IFS:
 
                             if md5sum == filename:
                                 if textfmt == "argb8888rev":
-                                    name = '{}.png'.format(subchild.attribute('name'))
+                                    name = f'{subchild.attribute("name")}.png'
                                 else:
                                     name = subchild.attribute('name')
                                 newpath = os.path.join(path, name)

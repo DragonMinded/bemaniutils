@@ -191,7 +191,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.PLAY_MEDAL_STAR_FULL_COMBO,
             self.PLAY_MEDAL_PERFECT,
         ]:
-            raise Exception("Invalid medal value {}".format(medal))
+            raise Exception(f"Invalid medal value {medal}")
 
         oldscore = self.data.local.music.get_score(
             self.game,

@@ -338,7 +338,7 @@ class SoundVoltexGravityWars(
                         self.version,
                         userid,
                         item_id[i],
-                        'item_{}'.format(item_type[i]),
+                        f'item_{item_type[i]}',
                         {
                             'param': param[i],
                         },

@@ -39,7 +39,7 @@ def change_password(config: Dict[str, Any], username: Optional[str]) -> None:
     if userid is None:
         raise Exception('User not found!')
     data.local.user.update_password(userid, password1)
-    print('User {} changed password.'.format(username))
+    print(f'User {username} changed password.')
 
 
 def add_admin(config: Dict[str, Any], username: Optional[str]) -> None:
@@ -52,7 +52,7 @@ def add_admin(config: Dict[str, Any], username: Optional[str]) -> None:
     user = data.local.user.get_user(userid)
     user.admin = True
     data.local.user.put_user(user)
-    print('User {} gained admin rights.'.format(username))
+    print(f'User {username} gained admin rights.')
 
 
 def remove_admin(config: Dict[str, Any], username: Optional[str]) -> None:
@@ -65,7 +65,7 @@ def remove_admin(config: Dict[str, Any], username: Optional[str]) -> None:
     user = data.local.user.get_user(userid)
     user.admin = False
     data.local.user.put_user(user)
-    print('User {} lost admin rights.'.format(username))
+    print(f'User {username} lost admin rights.')
 
 
 def main() -> None:
@@ -112,7 +112,7 @@ def main() -> None:
         elif args.operation == 'change-password':
             change_password(config, args.username)
         else:
-            raise Exception("Unknown operation '{}'".format(args.operation))
+            raise Exception(f"Unknown operation '{args.operation}'")
     except DBCreateException as e:
         print(str(e))
         sys.exit(1)

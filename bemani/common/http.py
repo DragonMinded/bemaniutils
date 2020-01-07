@@ -130,9 +130,9 @@ class HTTP:
 
         # Add first part of header
         if request:
-            out.append('{} {} {}'.format(parsed_headers['method'], parsed_headers['uri'], parsed_headers['version']))
+            out.append(f'{parsed_headers["method"]} {parsed_headers["uri"]} {parsed_headers["version"]}')
         elif response:
-            out.append('{} {} {}'.format(parsed_headers['version'], parsed_headers['code'], parsed_headers['error']))
+            out.append(f'{parsed_headers["version"]} {parsed_headers["code"]} {parsed_headers["error"]}')
         else:
             raise Exception("Logic error!")
 
@@ -149,9 +149,9 @@ class HTTP:
                     continue
                 else:
                     # Woah, can't figure this out!
-                    raise Exception("Unknown transfer-encodign {}".format(value))
+                    raise Exception(f"Unknown transfer-encodign {value}")
 
-            out.append("{}: {}".format(name, value))
+            out.append(f"{name}: {value}")
 
         # Concatenate it with the binary data
         return "\r\n".join(out).encode('ascii') + b'\r\n\r\n' + data

@@ -104,7 +104,7 @@ class JubeatPropClient(BaseClient):
             'mtg_hold_cnt',
             'mtg_result',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/info/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/info/{item}")
 
         for item in [
             'music_list',
@@ -118,7 +118,7 @@ class JubeatPropClient(BaseClient):
             'new/theme_list',
             'new/marker_list',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/item/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/item/{item}")
 
         for item in [
             'play_time',
@@ -130,7 +130,7 @@ class JubeatPropClient(BaseClient):
             'music_id',
             'seq_id',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/last/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/last/{item}")
 
         for item in [
             'marker',
@@ -144,7 +144,7 @@ class JubeatPropClient(BaseClient):
             'hazard',
             'hard',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/last/settings/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/last/settings/{item}")
 
         # Misc stuff
         self.assert_path(resp, "response/gametop/data/player/session_id")
@@ -411,7 +411,7 @@ class JubeatPropClient(BaseClient):
                 break
 
         if playernode is None:
-            raise Exception("Didn't find any scores for ExtID {}".format(jid))
+            raise Exception(f"Didn't find any scores for ExtID {jid}")
 
         ret = []
         for result in playernode.child('result_list').children:
@@ -458,7 +458,7 @@ class JubeatPropClient(BaseClient):
                 break
 
         if playernode is None:
-            raise Exception("Didn't find any scores for ExtID {}".format(jid))
+            raise Exception(f"Didn't find any scores for ExtID {jid}")
 
         result = playernode.child_value('result/score')
         if result is not None:
@@ -539,15 +539,15 @@ class JubeatPropClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_gametop_regist(card, ref_id)
         else:
             print("Skipping new card checks for existing card")
@@ -557,7 +557,7 @@ class JubeatPropClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify score handling
@@ -677,14 +677,10 @@ class JubeatPropClient(BaseClient):
                         expected_score = score['score']
 
                     if newscore['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], newscore['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{newscore["score"]}\'')
 
                     if newscore['medal'] != score['expected_medal']:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            score['expected_medal'], score['id'], score['chart'], newscore['medal'],
-                        ))
+                        raise Exception(f'Expected a medal of \'{score["expected_medal"]}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got medal \'{newscore["medal"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
@@ -730,7 +726,7 @@ class JubeatPropClient(BaseClient):
                     foundcourses = [c for c in courses if c['course_id'] == course['course_id']]
 
                     if len(foundcourses) == 0:
-                        raise Exception("Didn't find course by ID {}".format(course['course_id']))
+                        raise Exception(f"Didn't find course by ID {course['course_id']}")
                     foundcourse = foundcourses[0]
 
                     if 'expected_rating' in course:
@@ -747,15 +743,11 @@ class JubeatPropClient(BaseClient):
                         raise Exception("Logic error!")
 
                     if foundcourse['rating'] != expected_rating:
-                        raise Exception('Expected a rating of \'{}\' for course \'{}\' but got rating \'{}\''.format(
-                            expected_rating, course['course_id'], foundcourse['rating'],
-                        ))
+                        raise Exception(f'Expected a rating of \'{expected_rating}\' for course \'{course["course_id"]}\' but got rating \'{foundcourse["rating"]}\'')
 
                     for i in range(len(expected_scores)):
                         if foundcourse['scores'][i] != expected_scores[i]:
-                            raise Exception('Expected a score of \'{}\' for course \'{}\' song number \'{}\' but got score \'{}\''.format(
-                                expected_scores[i], course['course_id'], i, foundcourse['scores'][i],
-                            ))
+                            raise Exception(f'Expected a score of \'{expected_scores[i]}\' for course \'{course["course_id"]}\' song number \'{i}\' but got score \'{foundcourse["scores"][i]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
@@ -766,11 +758,7 @@ class JubeatPropClient(BaseClient):
             league = self.verify_gametop_get_league(jid)
 
             if league[1][0] != 123456 or league[1][1] != 234567 or league[1][2] != 345678:
-                raise Exception('League score didn\t save! Got wrong values {}, {}, {} back!'.format(
-                    league[1][0],
-                    league[1][1],
-                    league[1][2],
-                ))
+                raise Exception(f'League score didn\t save! Got wrong values {league[1][0]}, {league[1][1]}, {league[1][2]} back!')
 
             # Play a league course, do worse, make sure it doesn't overwrite
             self.verify_gameend_regist(ref_id, jid, [], {}, (league[0], (12345, 23456, 34567)))
@@ -778,11 +766,7 @@ class JubeatPropClient(BaseClient):
             league = self.verify_gametop_get_league(jid)
 
             if league[1][0] != 123456 or league[1][1] != 234567 or league[1][2] != 345678:
-                raise Exception('League score got overwritten! Got wrong values {}, {}, {} back!'.format(
-                    league[1][0],
-                    league[1][1],
-                    league[1][2],
-                ))
+                raise Exception(f'League score got overwritten! Got wrong values {league[1][0]}, {league[1][1]}, {league[1][2]} back!')
 
         else:
             print("Skipping score checks for existing card")

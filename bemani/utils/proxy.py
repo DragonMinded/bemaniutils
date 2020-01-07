@@ -42,13 +42,7 @@ def modify_response(config: Dict[str, Any], resp_body: Node) -> Optional[Node]:
                     address = socket.gethostbyname(config['keepalive'])
                     child.set_attribute(
                         'url',
-                        'http://{}/core/keepalive?pa={}&ia={}&ga={}&ma={}&t1=2&t2=10'.format(
-                            address,
-                            address,
-                            address,
-                            address,
-                            address,
-                        ),
+                        f'http://{address}/core/keepalive?pa={address}&ia={address}&ga={address}&ma={address}&t1=2&t2=10',
                     )
                 else:
                     # Get netloc to replace
@@ -58,14 +52,9 @@ def modify_response(config: Dict[str, Any], resp_body: Node) -> Optional[Node]:
                         'https': 443,
                     }.get(url.scheme, 0)
                     if config['local_port'] != defaultport:
-                        new_url = child.attribute('url').replace(url.netloc, '{}:{}'.format(
-                            config['local_host'],
-                            config['local_port'],
-                        ))
+                        new_url = child.attribute('url').replace(url.netloc, f'{config["local_host"]}:{config["local_port"]}')
                     else:
-                        new_url = child.attribute('url').replace(url.netloc, '{}'.format(
-                            config['local_host'],
-                        ))
+                        new_url = child.attribute('url').replace(url.netloc, f'{config["local_host"]}')
                     child.set_attribute('url', new_url)
 
         return resp_body
@@ -82,13 +71,13 @@ def receive_healthcheck(path: str) -> Response:
     else:
         return Response("No route for default PCBID", 500)
 
-    actual_path = '/{}'.format(path)
+    actual_path = f'/{path}'
     if request.query_string is not None and len(request.query_string) > 0:
-        actual_path = actual_path + '?{}'.format(request.query_string.decode('ascii'))
+        actual_path = actual_path + f'?{request.query_string.decode("ascii")}'
 
     # Make request to foreign service, using the same parameters
     r = requests.get(
-        'http://{}:{}{}'.format(remote_host, remote_port, actual_path),
+        f'http://{remote_host}:{remote_port}{actual_path}',
         timeout=config['timeout'],
         allow_redirects=False,
     )
@@ -111,14 +100,14 @@ def receive_request(path: str) -> Response:
     request_compression = request.headers.get('X-Compress', None)
     request_encryption = request.headers.get('X-Eamuse-Info', None)
 
-    actual_path = '/{}'.format(path)
+    actual_path = f'/{path}'
     if request.query_string is not None and len(request.query_string) > 0:
-        actual_path = actual_path + '?{}'.format(request.query_string.decode('ascii'))
+        actual_path = actual_path + f'?{request.query_string.decode("ascii")}'
 
     if config['verbose']:
-        print("HTTP request for URI {}".format(actual_path))
-        print("Compression is {}".format(request_compression))
-        print("Encryption key is {}".format(request_encryption))
+        print(f"HTTP request for URI {actual_path}")
+        print(f"Compression is {request_compression}")
+        print(f"Encryption key is {request_encryption}")
 
     req = client_proto.decode(
         request_compression,
@@ -143,7 +132,7 @@ def receive_request(path: str) -> Response:
         remote_host = config['remote']['*']['host']
         remote_port = config['remote']['*']['port']
     else:
-        return Response("No route for PCBID {}".format(pcbid), 500)
+        return Response(f"No route for PCBID {pcbid}", 500)
 
     modified_request = modify_request(config, req)
     if modified_request is None:
@@ -177,7 +166,7 @@ def receive_request(path: str) -> Response:
 
     # Make request to foreign service, using the same parameters
     r = requests.post(
-        'http://{}:{}{}'.format(remote_host, remote_port, actual_path),
+        f'http://{remote_host}:{remote_port}{actual_path}',
         headers=headers,
         data=req_binary,
         timeout=config['timeout'],

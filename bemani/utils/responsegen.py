@@ -12,10 +12,10 @@ def generate_node_name(node: Node, used_names: Dict[str, Node]) -> str:
         return potential_name
 
     loop = 1
-    while '{}_{}'.format(potential_name, loop) in used_names:
+    while f'{potential_name}_{loop}' in used_names:
         loop = loop + 1
 
-    potential_name = '{}_{}'.format(potential_name, loop)
+    potential_name = f'{potential_name}_{loop}'
     used_names[potential_name] = node
     return potential_name
 
@@ -33,29 +33,20 @@ def generate_node_create(node: Node) -> str:
     else:
         method = dtype
     if node.is_array:
-        method = '{}_array'.format(method)
+        method = f'{method}_array'
 
     if dtype != 'void':
         # Format the type for display
         if dtype == 'str':
-            value = ', \'{}\''.format(node.value)
+            value = f', \'{node.value}\''
         elif dtype == 'ip4':
-            value = ', \'{}.{}.{}.{}\''.format(
-                node.value[0],
-                node.value[1],
-                node.value[2],
-                node.value[3],
-            )
+            value = f', \'{node.value[0]}.{node.value[1]}.{node.value[2]}.{node.value[3]}\''
         else:
-            value = ', {}'.format(node.value)
+            value = f', {node.value}'
     else:
         value = ''
 
-    return 'Node.{}(\'{}\'{})'.format(
-        method,
-        node.name,
-        value
-    )
+    return f'Node.{method}(\'{node.name}\'{value})'
 
 
 def generate_node_link(node_name: str, used_names: Dict[str, Node], parent: Node) -> str:
@@ -67,12 +58,9 @@ def generate_node_link(node_name: str, used_names: Dict[str, Node], parent: Node
             break
 
     if found_parent is None:
-        raise Exception('Failed to find parent name for {}'.format(parent))
+        raise Exception(f'Failed to find parent name for {parent}')
 
-    return '{}.add_child({})'.format(
-        found_parent,
-        node_name,
-    )
+    return f'{found_parent}.add_child({node_name})'
 
 
 def generate_lines(node: Node, used_names: Dict[str, Node], parent: Optional[Node]=None) -> List[str]:
@@ -85,7 +73,7 @@ def generate_lines(node: Node, used_names: Dict[str, Node], parent: Optional[Nod
     # Print the node generate itself
     out = []
     node_name = generate_node_name(node, used_names)
-    out.append('{} = {}'.format(node_name, create))
+    out.append(f'{node_name} = {create}')
 
     # Now, generate add to parent if exists
     if parent is not None:
@@ -93,11 +81,7 @@ def generate_lines(node: Node, used_names: Dict[str, Node], parent: Optional[Nod
 
     # Now generate node attributes
     for attr in node.attributes:
-        out.append('{}.set_attribute(\'{}\', \'{}\')'.format(
-            node_name,
-            attr,
-            node.attributes[attr],
-        ))
+        out.append(f'{node_name}.set_attribute(\'{attr}\', \'{node.attributes[attr]}\')')
 
     # Now, do the same for all children
     for child in node.children:
@@ -118,7 +102,7 @@ def generate_code(infile: str, outfile: str, encoding: str) -> None:
     # Add an XML special node to force encoding (will be overwritten if there
     # is one in the packet).
     packet = b''.join([
-        '<?xml encoding="{}"?>'.format(encoding).encode(encoding),
+        f'<?xml encoding="{encoding}"?>'.encode(encoding),
         packet,
     ])
 

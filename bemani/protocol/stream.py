@@ -102,7 +102,7 @@ class InputStream:
             else:
                 return struct.unpack('>i', data)[0]
         else:
-            raise StreamError('Unsupported size {}'.format(size))
+            raise StreamError(f'Unsupported size {size}')
 
 
 class OutputStream:
@@ -169,7 +169,7 @@ class OutputStream:
                 self.__data.append(struct.pack('>i', integer))
             self.__data_len = self.__data_len + 4
         else:
-            raise StreamError('Unsupported size {}'.format(size))
+            raise StreamError(f'Unsupported size {size}')
         self.__formatted_data = None
 
     def write_pad(self, pad_to: int) -> None:

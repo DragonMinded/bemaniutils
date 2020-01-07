@@ -38,16 +38,11 @@ def mainloop(address: Optional[str]=None, port: int=80, verbose: bool=False) -> 
                 except EAmuseException:
                     in_req = None
 
-            print("Inbound request (from {}:{} to {}:{}):".format(
-                packets['source_address'],
-                packets['source_port'],
-                packets['destination_address'],
-                packets['destination_port'],
-            ))
+            print(f"Inbound request (from {packets['source_address']}:{packets['source_port']} to {packets['destination_address']}:{packets['destination_port']}):")
             if verbose:
-                print("HTTP {} request for URI {}".format(inbound['method'], inbound['uri']))
-                print("Compression is {}".format(inbound['headers'].get('x-compress', 'none')))
-                print("Encryption key is {}".format(inbound['headers'].get('x-eamuse-info', 'none')))
+                print(f"HTTP {inbound['method']} request for URI {inbound['uri']}")
+                print(f"Compression is {inbound['headers'].get('x-compress', 'none')}")
+                print(f"Encryption key is {inbound['headers'].get('x-eamuse-info', 'none')}")
             if in_req is None:
                 print("Inbound request was not parseable")
             else:
@@ -66,15 +61,10 @@ def mainloop(address: Optional[str]=None, port: int=80, verbose: bool=False) -> 
                 except EAmuseException:
                     out_req = None
 
-            print("Outbound response (from {}:{} to {}:{}):".format(
-                packets['destination_address'],
-                packets['destination_port'],
-                packets['source_address'],
-                packets['source_port'],
-            ))
+            print(f"Outbound response (from {packets['destination_address']}:{packets['destination_port']} to {packets['source_address']}:{packets['source_port']}):")
             if verbose:
-                print("Compression is {}".format(outbound['headers'].get('x-compress', 'none')))
-                print("Encryption key is {}".format(outbound['headers'].get('x-eamuse-info', 'none')))
+                print(f"Compression is {outbound['headers'].get('x-compress', 'none')}")
+                print(f"Encryption key is {outbound['headers'].get('x-eamuse-info', 'none')}")
             if out_req is None:
                 print("Outbound response was not parseable")
             else:

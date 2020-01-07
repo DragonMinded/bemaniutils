@@ -68,7 +68,7 @@ def viewscores(userid: UserID) -> Response:
         scores = frontend.round_to_ten(scores)
 
     return render_react(
-        '{}\'s Jubeat Scores'.format(info['name']),
+        f'{info["name"]}\'s Jubeat Scores',
         'jubeat/scores.react.js',
         {
             'attempts': scores,
@@ -140,7 +140,7 @@ def viewrecords(userid: UserID) -> Response:
         abort(404)
 
     return render_react(
-        '{}\'s Jubeat Records'.format(info['name']),
+        f'{info["name"]}\'s Jubeat Records',
         'jubeat/records.react.js',
         {
             'records': frontend.get_records(userid),
@@ -200,7 +200,7 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        'Top Jubeat Scores for {} - {}'.format(artist, name),
+        f'Top Jubeat Scores for {artist} - {name}',
         'jubeat/topscores.react.js',
         {
             'name': name,
@@ -262,7 +262,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(info.keys(), reverse=True)[0]
 
     return render_react(
-        '{}\'s Jubeat Profile'.format(info[latest_version]['name']),
+        f'{info[latest_version]["name"]}\'s Jubeat Profile',
         'jubeat/player.react.js',
         {
             'playerid': userid,

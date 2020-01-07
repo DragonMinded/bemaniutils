@@ -155,7 +155,7 @@ class ReflecBeat(BaseClient):
         self.assert_path(resp, "response/player/pdata/cmnt")
 
         if resp.child_value('player/pdata/base/name') != self.NAME:
-            raise Exception('Invalid name {} returned on profile read!'.format(resp.child_value('player/pdata/base/name')))
+            raise Exception(f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!')
 
         scores = []
         for child in resp.child('player/pdata/record').children:
@@ -212,7 +212,7 @@ class ReflecBeat(BaseClient):
 
         # First, filter down to only records that are also in the battle log
         def key(thing: Dict[str, int]) -> str:
-            return '{}-{}'.format(thing['id'], thing['chart'])
+            return f'{thing["id"]}-{thing["chart"]}'
 
         updates = [key(score) for score in scores]
         sortedrecords = {key(record): record for record in records if key(record) in updates}
@@ -450,15 +450,15 @@ class ReflecBeat(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             # Always get a player start, regardless of new profile or not
             self.verify_player_start(ref_id)
             self.verify_player_delete(ref_id)
@@ -477,7 +477,7 @@ class ReflecBeat(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         # Verify lobby functionality
         self.verify_lobby_read(location, extid)
@@ -573,7 +573,7 @@ class ReflecBeat(BaseClient):
                             break
 
                     if actual is None:
-                        raise Exception("Didn't find song {} chart {} in response!".format(expected['id'], expected['chart']))
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if 'expected_score' in expected:
                         expected_score = expected['expected_score']
@@ -597,25 +597,15 @@ class ReflecBeat(BaseClient):
                         expected_miss_count = expected['miss_count']
 
                     if actual['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, expected['id'], expected['chart'], actual['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got score \'{actual["score"]}\'')
                     if actual['achievement_rate'] != expected_achievement_rate:
-                        raise Exception('Expected an achievement rate of \'{}\' for song \'{}\' chart \'{}\' but got achievement rate \'{}\''.format(
-                            expected_achievement_rate, expected['id'], expected['chart'], actual['achievement_rate'],
-                        ))
+                        raise Exception(f'Expected an achievement rate of \'{expected_achievement_rate}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got achievement rate \'{actual["achievement_rate"]}\'')
                     if actual['clear_type'] != expected_clear_type:
-                        raise Exception('Expected a clear_type of \'{}\' for song \'{}\' chart \'{}\' but got clear_type \'{}\''.format(
-                            expected_clear_type, expected['id'], expected['chart'], actual['clear_type'],
-                        ))
+                        raise Exception(f'Expected a clear_type of \'{expected_clear_type}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got clear_type \'{actual["clear_type"]}\'')
                     if actual['combo'] != expected_combo:
-                        raise Exception('Expected a combo of \'{}\' for song \'{}\' chart \'{}\' but got combo \'{}\''.format(
-                            expected_combo, expected['id'], expected['chart'], actual['combo'],
-                        ))
+                        raise Exception(f'Expected a combo of \'{expected_combo}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got combo \'{actual["combo"]}\'')
                     if actual['miss_count'] != expected_miss_count:
-                        raise Exception('Expected a miss count of \'{}\' for song \'{}\' chart \'{}\' but got miss count \'{}\''.format(
-                            expected_miss_count, expected['id'], expected['chart'], actual['miss_count'],
-                        ))
+                        raise Exception(f'Expected a miss count of \'{expected_miss_count}\' for song \'{expected["id"]}\' chart \'{expected["chart"]}\' but got miss count \'{actual["miss_count"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

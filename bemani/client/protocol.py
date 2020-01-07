@@ -25,14 +25,11 @@ class ClientProtocol:
         elif packet_encoding == "binary":
             _packet_encoding = EAmuseProtocol.BINARY
         else:
-            raise Exception("Unknown packet encoding {}".format(packet_encoding))
+            raise Exception(f"Unknown packet encoding {packet_encoding}")
 
         # Handle encryption
         if self.__encryption:
-            encryption = '1-{}-{}'.format(
-                random_hex_string(8),
-                random_hex_string(4),
-            )
+            encryption = f'1-{random_hex_string(8)}-{random_hex_string(4)}'
             headers['X-Eamuse-Info'] = encryption
         else:
             encryption = None
@@ -56,11 +53,7 @@ class ClientProtocol:
 
         # Send the request, get the response
         r = requests.post(
-            'http://{}:{}/{}'.format(
-                self.__address,
-                self.__port,
-                uri,
-            ),
+            f'http://{self.__address}:{self.__port}/{uri}',
             headers=headers,
             data=req,
         )

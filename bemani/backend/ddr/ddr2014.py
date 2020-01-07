@@ -431,21 +431,21 @@ class DDR2014(
         root.add_child(result_star)
         result_stars = profile.get_int_array('result_stars', 9)
         for i in range(9):
-            result_star.set_attribute('slot{}'.format(i + 1), str(result_stars[i]))
+            result_star.set_attribute(f'slot{i + 1}', str(result_stars[i]))
 
         # Groove gauge level-ups
         gr_s = Node.void('gr_s')
         root.add_child(gr_s)
         index = 1
         for entry in profile.get_int_array('gr_s', 5):
-            gr_s.set_attribute('gr{}'.format(index), str(entry))
+            gr_s.set_attribute(f'gr{index}', str(entry))
             index = index + 1
 
         gr_d = Node.void('gr_d')
         root.add_child(gr_d)
         index = 1
         for entry in profile.get_int_array('gr_d', 5):
-            gr_d.set_attribute('gr{}'.format(index), str(entry))
+            gr_d.set_attribute(f'gr{index}', str(entry))
             index = index + 1
 
         # Options in menus
@@ -513,14 +513,14 @@ class DDR2014(
                 friendnode.add_child(gr_s)
                 index = 1
                 for entry in friend.get_int_array('gr_s', 5):
-                    gr_s.set_attribute('gr{}'.format(index), str(entry))
+                    gr_s.set_attribute(f'gr{index}', str(entry))
                     index = index + 1
 
                 gr_d = Node.void('gr_d')
                 friendnode.add_child(gr_d)
                 index = 1
                 for entry in friend.get_int_array('gr_d', 5):
-                    gr_d.set_attribute('gr{}'.format(index), str(entry))
+                    gr_d.set_attribute(f'gr{index}', str(entry))
                     index = index + 1
 
         # Target stuff
@@ -534,7 +534,7 @@ class DDR2014(
         play_area = Node.void('play_area')
         root.add_child(play_area)
         for i in range(len(areas)):
-            play_area.set_attribute('play_cnt{}'.format(i), str(areas[i]))
+            play_area.set_attribute(f'play_cnt{i}', str(areas[i]))
 
         return root
 
@@ -599,7 +599,7 @@ class DDR2014(
             if title_gr is not None:
                 title_grdict.replace_int('s', title.value)
                 newprofile.replace_dict('title_gr', title_grdict)
-        play_stats.increment_int('cnt_m{}'.format(mode))
+        play_stats.increment_int(f'cnt_m{mode}')
 
         # Result stars
         result_star = request.child('result_star')
@@ -756,7 +756,7 @@ class DDR2014(
                     self.game,
                     self.version,
                     userid,
-                    'friend_{}'.format(i),
+                    f'friend_{i}',
                     oldfriends[i],
                 )
             elif oldfriends[i] is None:
@@ -765,7 +765,7 @@ class DDR2014(
                     self.game,
                     self.version,
                     userid,
-                    'friend_{}'.format(i),
+                    f'friend_{i}',
                     newfriends[i],
                     {},
                 )
@@ -775,14 +775,14 @@ class DDR2014(
                     self.game,
                     self.version,
                     userid,
-                    'friend_{}'.format(i),
+                    f'friend_{i}',
                     oldfriends[i],
                 )
                 self.data.local.user.put_link(
                     self.game,
                     self.version,
                     userid,
-                    'friend_{}'.format(i),
+                    f'friend_{i}',
                     newfriends[i],
                     {},
                 )

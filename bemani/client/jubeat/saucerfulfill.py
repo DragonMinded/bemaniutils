@@ -81,7 +81,7 @@ class JubeatSaucerFulfillClient(BaseClient):
             'mtg_hold_cnt',
             'mtg_result',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/info/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/info/{item}")
 
         for item in [
             'secret_list',
@@ -94,7 +94,7 @@ class JubeatSaucerFulfillClient(BaseClient):
             'new/theme_list',
             'new/marker_list',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/item/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/item/{item}")
 
         for item in [
             'music_id',
@@ -115,7 +115,7 @@ class JubeatSaucerFulfillClient(BaseClient):
             'shopname',
             'areaname',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/last/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/last/{item}")
 
         # Misc stuff
         self.assert_path(resp, "response/gametop/data/player/session_id")
@@ -342,7 +342,7 @@ class JubeatSaucerFulfillClient(BaseClient):
                 break
 
         if playernode is None:
-            raise Exception("Didn't find any scores for ExtID {}".format(jid))
+            raise Exception(f"Didn't find any scores for ExtID {jid}")
 
         ret = []
         for result in playernode.child('result_list').children:
@@ -413,15 +413,15 @@ class JubeatSaucerFulfillClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_gametop_regist(card, ref_id)
         else:
             print("Skipping new card checks for existing card")
@@ -431,7 +431,7 @@ class JubeatSaucerFulfillClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify score handling
@@ -543,14 +543,10 @@ class JubeatSaucerFulfillClient(BaseClient):
                         expected_score = score['score']
 
                     if newscore['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], newscore['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{newscore["score"]}\'')
 
                     if newscore['medal'] != score['expected_medal']:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            score['expected_medal'], score['id'], score['chart'], newscore['medal'],
-                        ))
+                        raise Exception(f'Expected a medal of \'{score["expected_medal"]}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got medal \'{newscore["medal"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
@@ -596,7 +592,7 @@ class JubeatSaucerFulfillClient(BaseClient):
                     foundcourses = [c for c in courses if c['course_id'] == course['course_id']]
 
                     if len(foundcourses) == 0:
-                        raise Exception("Didn't find course by ID {}".format(course['course_id']))
+                        raise Exception(f"Didn't find course by ID {course['course_id']}")
                     foundcourse = foundcourses[0]
 
                     if 'expected_rating' in course:
@@ -613,15 +609,11 @@ class JubeatSaucerFulfillClient(BaseClient):
                         raise Exception("Logic error!")
 
                     if foundcourse['rating'] != expected_rating:
-                        raise Exception('Expected a rating of \'{}\' for course \'{}\' but got rating \'{}\''.format(
-                            expected_rating, course['course_id'], foundcourse['rating'],
-                        ))
+                        raise Exception(f'Expected a rating of \'{expected_rating}\' for course \'{course["course_id"]}\' but got rating \'{foundcourse["rating"]}\'')
 
                     for i in range(len(expected_scores)):
                         if foundcourse['scores'][i] != expected_scores[i]:
-                            raise Exception('Expected a score of \'{}\' for course \'{}\' song number \'{}\' but got score \'{}\''.format(
-                                expected_scores[i], course['course_id'], i, foundcourse['scores'][i],
-                            ))
+                            raise Exception(f'Expected a score of \'{expected_scores[i]}\' for course \'{course["course_id"]}\' song number \'{i}\' but got score \'{foundcourse["scores"][i]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

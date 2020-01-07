@@ -1499,7 +1499,7 @@ class JubeatClan(
                 item = Node.void('item')
                 item_list.add_child(item)
                 item.set_attribute('id', str(itemid))
-                item.add_child(Node.s32('num', dropdata.get_int('item_{}'.format(itemid))))
+                item.add_child(Node.s32('num', dropdata.get_int(f'item_{itemid}')))
 
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
@@ -1663,7 +1663,7 @@ class JubeatClan(
                 olddrop.replace_int('exp', exp)
                 olddrop.replace_int('flag', flag)
                 for itemid, num in items.items():
-                    olddrop.replace_int('item_{}'.format(itemid), num)
+                    olddrop.replace_int(f'item_{itemid}', num)
 
                 # Save it as an achievement
                 self.data.local.user.put_achievement(

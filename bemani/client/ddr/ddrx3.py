@@ -312,7 +312,7 @@ class DDRX3Client(BaseClient):
             self.assert_path(resp, "response/game/flag")
             self.assert_path(resp, "response/game/rank")
             for i in range(55):
-                self.assert_path(resp, "response/game/play_area/@play_cnt{}".format(i))
+                self.assert_path(resp, f"response/game/play_area/@play_cnt{i}")
 
             gr_s = resp.child('game/gr_s')
             gr_d = resp.child('game/gr_d')
@@ -574,15 +574,15 @@ class DDRX3Client(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             # Bishi doesn't read a new profile, it just writes out CSV for a blank one
             self.verify_game_load(ref_id, msg_type='new')
             self.verify_game_new(ref_id)
@@ -594,7 +594,7 @@ class DDRX3Client(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         # Verify locking and unlocking profile ability
         self.verify_game_lock(ref_id, 1)
@@ -775,7 +775,7 @@ class DDRX3Client(BaseClient):
                 for score in dummyscores:
                     data = scores.get(score['id'], {}).get(score['chart'], None)
                     if data is None:
-                        raise Exception('Expected to get score back for song {} chart {}!'.format(score['id'], score['chart']))
+                        raise Exception(f'Expected to get score back for song {score["id"]} chart {score["chart"]}!')
 
                     # Verify the attributes of the score
                     expected_score = score.get('expected_score', score['score'])
@@ -786,31 +786,21 @@ class DDRX3Client(BaseClient):
 
                     if score['score'] != 0:
                         if data['score'] != expected_score:
-                            raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                                expected_score, score['id'], score['chart'], data['score'],
-                            ))
+                            raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["score"]}\'')
                         if data['rank'] != expected_rank:
-                            raise Exception('Expected a rank of \'{}\' for song \'{}\' chart \'{}\' but got rank \'{}\''.format(
-                                expected_rank, score['id'], score['chart'], data['rank'],
-                            ))
+                            raise Exception(f'Expected a rank of \'{expected_rank}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got rank \'{data["rank"]}\'')
                         if data['halo'] != expected_halo:
-                            raise Exception('Expected a halo of \'{}\' for song \'{}\' chart \'{}\' but got halo \'{}\''.format(
-                                expected_halo, score['id'], score['chart'], data['halo'],
-                            ))
+                            raise Exception(f'Expected a halo of \'{expected_halo}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got halo \'{data["halo"]}\'')
 
                         # Verify that the last score is our score
                         last_five = self.verify_game_score(ref_id, score['id'], score['chart'])
                         if last_five[0] != score['score']:
-                            raise Exception('Invalid score returned for last five scores on song {} chart {}!'.format(score['id'], score['chart']))
+                            raise Exception(f'Invalid score returned for last five scores on song {score["id"]} chart {score["chart"]}!')
                     if score['score_2nd'] != 0:
                         if data['score_2nd'] != expected_score_2nd:
-                            raise Exception('Expected a score_2nd of \'{}\' for song \'{}\' chart \'{}\' but got score_2nd \'{}\''.format(
-                                expected_score_2nd, score['id'], score['chart'], data['score_2nd'],
-                            ))
+                            raise Exception(f'Expected a score_2nd of \'{expected_score_2nd}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score_2nd \'{data["score_2nd"]}\'')
                         if data['rank_2nd'] != expected_rank_2nd:
-                            raise Exception('Expected a rank_2nd of \'{}\' for song \'{}\' chart \'{}\' but got rank_2nd \'{}\''.format(
-                                expected_rank_2nd, score['id'], score['chart'], data['rank_2nd'],
-                            ))
+                            raise Exception(f'Expected a rank_2nd of \'{expected_rank_2nd}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got rank_2nd \'{data["rank_2nd"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
@@ -874,7 +864,7 @@ class DDRX3Client(BaseClient):
                 for course in dummycourses:
                     data = courses.get(course['id'], {}).get(course['chart'], None)
                     if data is None:
-                        raise Exception('Expected to get course back for course {} chart {}!'.format(course['id'], course['chart']))
+                        raise Exception(f'Expected to get course back for course {course["id"]} chart {course["chart"]}!')
 
                     expected_score = course.get('expected_score', course['score'])
                     expected_combo = course.get('expected_combo', course['combo'])
@@ -883,25 +873,15 @@ class DDRX3Client(BaseClient):
                     expected_combo_type = course.get('expected_combo_type', course['combo_type'])
 
                     if data['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for course \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, course['id'], course['chart'], data['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for course \'{course["id"]}\' chart \'{course["chart"]}\' but got score \'{data["score"]}\'')
                     if data['combo'] != expected_combo:
-                        raise Exception('Expected a combo of \'{}\' for course \'{}\' chart \'{}\' but got combo \'{}\''.format(
-                            expected_combo, course['id'], course['chart'], data['combo'],
-                        ))
+                        raise Exception(f'Expected a combo of \'{expected_combo}\' for course \'{course["id"]}\' chart \'{course["chart"]}\' but got combo \'{data["combo"]}\'')
                     if data['rank'] != expected_rank:
-                        raise Exception('Expected a rank of \'{}\' for course \'{}\' chart \'{}\' but got rank \'{}\''.format(
-                            expected_rank, course['id'], course['chart'], data['rank'],
-                        ))
+                        raise Exception(f'Expected a rank of \'{expected_rank}\' for course \'{course["id"]}\' chart \'{course["chart"]}\' but got rank \'{data["rank"]}\'')
                     if data['stage'] != expected_stage:
-                        raise Exception('Expected a stage of \'{}\' for course \'{}\' chart \'{}\' but got stage \'{}\''.format(
-                            expected_stage, course['id'], course['chart'], data['stage'],
-                        ))
+                        raise Exception(f'Expected a stage of \'{expected_stage}\' for course \'{course["id"]}\' chart \'{course["chart"]}\' but got stage \'{data["stage"]}\'')
                     if data['combo_type'] != expected_combo_type:
-                        raise Exception('Expected a combo_type of \'{}\' for course \'{}\' chart \'{}\' but got combo_type \'{}\''.format(
-                            expected_combo_type, course['id'], course['chart'], data['combo_type'],
-                        ))
+                        raise Exception(f'Expected a combo_type of \'{expected_combo_type}\' for course \'{course["id"]}\' chart \'{course["chart"]}\' but got combo_type \'{data["combo_type"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

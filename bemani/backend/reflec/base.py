@@ -143,7 +143,7 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.CLEAR_TYPE_HARD_CLEARED,
             self.CLEAR_TYPE_S_HARD_CLEARED,
         ]:
-            raise Exception("Invalid clear_type value {}".format(clear_type))
+            raise Exception(f"Invalid clear_type value {clear_type}")
 
         # Range check combo type
         if combo_type not in [
@@ -152,7 +152,7 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.COMBO_TYPE_FULL_COMBO,
             self.COMBO_TYPE_FULL_COMBO_ALL_JUST,
         ]:
-            raise Exception("Invalid combo_type value {}".format(combo_type))
+            raise Exception(f"Invalid combo_type value {combo_type}")
 
         oldscore = self.data.local.music.get_score(
             self.game,

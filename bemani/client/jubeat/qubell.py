@@ -105,7 +105,7 @@ class JubeatQubellClient(BaseClient):
             'mtg_hold_cnt',
             'mtg_result',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/info/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/info/{item}")
 
         for item in [
             'music_list',
@@ -119,7 +119,7 @@ class JubeatQubellClient(BaseClient):
             'new/theme_list',
             'new/marker_list',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/item/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/item/{item}")
 
         for item in [
             'play_time',
@@ -131,7 +131,7 @@ class JubeatQubellClient(BaseClient):
             'music_id',
             'seq_id',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/last/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/last/{item}")
 
         for item in [
             'marker',
@@ -145,7 +145,7 @@ class JubeatQubellClient(BaseClient):
             'hazard',
             'hard',
         ]:
-            self.assert_path(resp, "response/gametop/data/player/last/settings/{}".format(item))
+            self.assert_path(resp, f"response/gametop/data/player/last/settings/{item}")
 
         # Misc stuff
         self.assert_path(resp, "response/gametop/data/player/session_id")
@@ -440,15 +440,15 @@ class JubeatQubellClient(BaseClient):
             card = cardid
         else:
             card = self.random_card()
-            print("Generated random card ID {} for use.".format(card))
+            print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
             self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception('Invalid refid \'{}\' returned when registering card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
             if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
             self.verify_gametop_regist(card, ref_id)
         else:
             print("Skipping new card checks for existing card")
@@ -458,7 +458,7 @@ class JubeatQubellClient(BaseClient):
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
         if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception('Invalid refid \'{}\' returned when querying card'.format(ref_id))
+            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
 
         if cardid is None:
             # Verify score handling
@@ -563,14 +563,10 @@ class JubeatQubellClient(BaseClient):
                         expected_score = score['score']
 
                     if newscore['score'] != expected_score:
-                        raise Exception('Expected a score of \'{}\' for song \'{}\' chart \'{}\' but got score \'{}\''.format(
-                            expected_score, score['id'], score['chart'], newscore['score'],
-                        ))
+                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{newscore["score"]}\'')
 
                     if newscore['medal'] != score['expected_medal']:
-                        raise Exception('Expected a medal of \'{}\' for song \'{}\' chart \'{}\' but got medal \'{}\''.format(
-                            score['expected_medal'], score['id'], score['chart'], newscore['medal'],
-                        ))
+                        raise Exception(f'Expected a medal of \'{score["expected_medal"]}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got medal \'{newscore["medal"]}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)

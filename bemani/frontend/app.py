@@ -119,7 +119,7 @@ def jsx(filename: str) -> Response:
     # Figure out what our update time is to namespace on
     jsxfile = os.path.join(static_location, filename)
     mtime = os.path.getmtime(jsxfile)
-    namespace = '{}.{}'.format(mtime, jsxfile)
+    namespace = f'{mtime}.{jsxfile}'
     jsx = g.cache.get(namespace)
     if jsx is None:
         transformer = JSXTransformer()

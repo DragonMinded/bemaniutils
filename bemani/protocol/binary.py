@@ -330,7 +330,7 @@ class BinaryDecoder:
 
         eod = self.stream.read_int()
         if eod != Node.END_OF_DOCUMENT:
-            raise BinaryEncodingException('Unknown node type {} at end of document'.format(eod))
+            raise BinaryEncodingException(f'Unknown node type {eod} at end of document')
 
         # Skip by any padding
         while self.stream.pos < header_length + 4:
@@ -386,13 +386,13 @@ class BinaryDecoder:
                         loc = loc + 4
 
                         decode_data = body[loc:(loc + size)]
-                        decode_value = '>{}{}'.format(size, enc)
+                        decode_value = f'>{size}{enc}'
                     else:
                         # The size is built-in
                         ordering.mark_used(size, loc)
 
                         decode_data = body[loc:(loc + size)]
-                        decode_value = '>{}'.format(enc)
+                        decode_value = f'>{enc}'
 
                     if composite:
                         val_list = list(struct.unpack(decode_value, decode_data))
@@ -427,7 +427,7 @@ class BinaryDecoder:
                     ordering.mark_used(length + 4, loc, round_to=4)
                     loc = loc + 4
                     decode_data = body[loc:(loc + length)]
-                    decode_value = '>{}'.format(enc * elems)
+                    decode_value = f'>{enc * elems}'
 
                     val = struct.unpack(decode_value, decode_data)
                     node.set_value([v for v in val])
@@ -589,7 +589,7 @@ class BinaryEncoder:
 
                 if val is None:
                     raise BinaryEncodingException(
-                        'Node \'{}\' has invalid value None'.format(value['name']),
+                        f'Node \'{value["name"]}\' has invalid value None',
                     )
 
                 if not array:
@@ -608,14 +608,14 @@ class BinaryEncoder:
                         # Also, need to lob off the trailing null.
                         if not isinstance(val, str):
                             raise BinaryEncodingException(
-                                'Node \'{}\' has non-string value!'.format(value['name']),
+                                f'Node \'{value["name"]}\' has non-string value!',
                             )
 
                         try:
                             valbytes = val.encode(self.encoding) + b'\0'
                         except UnicodeEncodeError:
                             raise BinaryEncodingException(
-                                'Node \'{}\' has un-encodable string value \'{}\''.format(value['name'], val)
+                                f'Node \'{value["name"]}\' has un-encodable string value \'{val}\''
                             )
                         size = len(valbytes)
                         self.__add_data(struct.pack('>I', size) + valbytes, size + 4, loc)
@@ -633,7 +633,7 @@ class BinaryEncoder:
                         continue
                     elif composite:
                         # Array, but not, somewhat silly
-                        encode_value = '>{}'.format(enc)
+                        encode_value = f'>{enc}'
                         self.__add_data(struct.pack(encode_value, *val), size, loc)
                         ordering.mark_used(size, loc)
 
@@ -643,7 +643,7 @@ class BinaryEncoder:
                         val = 1 if val else 0
 
                     # The size is built-in, emit it
-                    encode_value = '>{}'.format(enc)
+                    encode_value = f'>{enc}'
                     self.__add_data(struct.pack(encode_value, val), size, loc)
                     ordering.mark_used(size, loc)
                 else:
@@ -656,7 +656,7 @@ class BinaryEncoder:
 
                     # Write out the header (number of bytes taken up)
                     data = struct.pack('>I', length)
-                    encode_value = '>{}'.format(enc)
+                    encode_value = f'>{enc}'
 
                     # Write out data one element at a time
                     for v in val:
@@ -768,7 +768,7 @@ class BinaryEncoding:
                 break
 
         if encoding_magic is None:
-            raise BinaryEncodingException("Invalid text encoding {}".format(encoding))
+            raise BinaryEncodingException(f"Invalid text encoding {encoding}")
 
         encoder = BinaryEncoder(tree, self.__sanitize_encoding(encoding))
         data = encoder.get_data()
