@@ -404,7 +404,7 @@ class ImportPopn(ImportBase):
 
                 if offset >= start and offset < end:
                     return (offset - start) + section.PointerToRawData
-            raise Exception('Couldn\'t find raw offset for virtual offset 0x{:08x}'.format(offset))
+            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
         if self.version == VersionConstants.POPN_MUSIC_TUNE_STREET:
             # Based on K39:J:A:A:2010122200
@@ -2445,7 +2445,7 @@ class ImportSDVX(ImportBase):
 
                 if offset >= start and offset < end:
                     return (offset - start) + section.PointerToRawData
-            raise Exception('Couldn\'t find raw offset for virtual offset 0x{:08x}'.format(offset))
+            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
         if self.version == VersionConstants.SDVX_BOOTH:
             offset = 0xFFF28

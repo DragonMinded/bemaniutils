@@ -19,7 +19,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
 
             if offset >= start and offset < end:
                 return (offset - start) + section.PointerToRawData
-        raise Exception('Couldn\'t find raw offset for virtual offset 0x{:08x}'.format(offset))
+        raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
     if base >= pe.OPTIONAL_HEADER.ImageBase:
         # Assume this is virtual
@@ -68,7 +68,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
             pass
 
         if nodetype == 0x00:
-            raise Exception('Invalid node type 0x{:02x}'.format(nodetype))
+            raise Exception(f'Invalid node type 0x{nodetype:02x}')
         elif nodetype == 0x01:
             # This is a void node, so we should handle by recursing
             node = Node.void(name)
@@ -171,7 +171,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
             else:
                 node = Node.bool(name, False)
         else:
-            raise Exception('Unimplemented node type 0x{:02x}'.format(nodetype))
+            raise Exception(f'Unimplemented node type 0x{nodetype:02x}')
 
         # Append it
         root.add_child(node)

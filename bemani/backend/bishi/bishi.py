@@ -162,7 +162,7 @@ class TheStarBishiBashi(
 
                 # Reconstruct table
                 unlock_bits = unlock_bits[::-1]
-                csvs[11] = ''.join(['{:02x}'.format(x) for x in unlock_bits]).encode('ascii')
+                csvs[11] = ''.join([f'{x:02x}' for x in unlock_bits]).encode('ascii')
 
             # This is a valid profile node for this type, lets return only the profile values
             strdata = b','.join(csvs[2:])

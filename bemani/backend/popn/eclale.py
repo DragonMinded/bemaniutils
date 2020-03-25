@@ -399,7 +399,7 @@ class PopnMusicEclale(PopnMusicBase):
     def format_extid(self, extid: int) -> str:
         data = str(extid)
         crc = abs(binascii.crc32(data.encode('ascii'))) % 10000
-        return '{}{:04d}'.format(data, crc)
+        return f'{data}{crc:04d}'
 
     def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
         root = Node.void('player23')

@@ -15,7 +15,7 @@ def parse_struct(data: bytes, startaddr: str, endaddr: str, fmt: str) -> None:
 
             if offset >= start and offset < end:
                 return (offset - start) + section.PointerToRawData
-        raise Exception('Couldn\'t find raw offset for virtual offset 0x{:08x}'.format(offset))
+        raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
     if start >= pe.OPTIONAL_HEADER.ImageBase:
         # Assume this is virtual
