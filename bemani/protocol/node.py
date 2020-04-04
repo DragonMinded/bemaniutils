@@ -1,6 +1,6 @@
 import copy
 import struct
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 class NodeException(Exception):
@@ -634,7 +634,7 @@ class Node:
         if is_array != self.__array:
             raise NodeException(f'Input {"is" if is_array else "is not"} array, expected {"array" if self.__array else "scalar"}')
 
-        def val_to_str(val: Any) -> str:
+        def val_to_str(val: Any) -> Union[str, bytes]:
             if self.__translated_type['name'] == 'bool':
                 # Support user-built boolean types
                 if val is True:
@@ -661,6 +661,7 @@ class Node:
             elif self.__translated_type['int']:
                 return str(val)
             else:
+                # This could return either a string or bytes.
                 return val
 
         if is_array or self.__translated_type['composite']:
@@ -676,17 +677,20 @@ class Node:
         Returns:
             A mixed value corresponding to this node's value. The returned value will be of the correct data type.
         """
-        def str_to_val(string: str) -> Any:
+        def str_to_val(string: Union[str, bytes]) -> Any:
             if self.__translated_type['name'] == 'bool':
                 return True if string == 'true' else False
             elif self.__translated_type['name'] == 'float':
                 return float(string)
             elif self.__translated_type['name'] == 'ip4':
+                if not isinstance(string, str):
+                    raise Exception('Logic error, expected a string!')
                 ip = [int(tup) for tup in string.split('.')]
                 return struct.pack('BBBB', ip[0], ip[1], ip[2], ip[3])
             elif self.__translated_type['int']:
                 return int(string)
             else:
+                # At this point, we could be a string or bytes.
                 return string
 
         if self.__array or self.__translated_type['composite']:

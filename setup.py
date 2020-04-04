@@ -75,6 +75,8 @@ setup(
         [
             "bemani/protocol/binary.py",
             "bemani/protocol/lz77.py",
+            "bemani/protocol/node.py",
+            "bemani/protocol/protocol.py",
             "bemani/protocol/stream.py",
             "bemani/protocol/xml.py",
         ],
