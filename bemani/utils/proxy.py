@@ -154,7 +154,7 @@ def receive_request(path: str) -> Response:
         )
 
     # Set up custom headers for remote request
-    headers = {}
+    headers = {key: value for key, value in request.headers.items()}
     if request_compression is not None:
         headers['X-Compress'] = request_compression
     if request_encryption is not None:
@@ -165,12 +165,14 @@ def receive_request(path: str) -> Response:
     headers['X-Remote-Address'] = remote_address or request.remote_addr
 
     # Make request to foreign service, using the same parameters
-    r = requests.post(
-        f'http://{remote_host}:{remote_port}{actual_path}',
-        headers=headers,
-        data=req_binary,
-        timeout=config['timeout'],
-    )
+    prep_req = requests.Request(
+		'POST',
+		url=f'http://{remote_host}:{remote_port}{actual_path}',
+		headers=headers,
+		data=req_binary,
+    ).prepare()
+	
+	r = sess.send(prep_req)
 
     if r.status_code != 200:
         # Failed on remote side
