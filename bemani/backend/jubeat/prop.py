@@ -2,7 +2,7 @@
 import copy
 import math
 import random
-from typing import Optional, Dict, List, Any, Tuple
+from typing import Optional, Dict, List, Any, Set, Tuple
 
 from bemani.backend.base import Status
 from bemani.backend.jubeat.common import (
@@ -486,8 +486,8 @@ class JubeatProp(
         emblem.add_child(normal)
         premium = Node.void('premium')
         emblem.add_child(premium)
-        normal.add_child(Node.s16('index', 0))
-        premium.add_child(Node.s16('index', 0))
+        normal.add_child(Node.s16('index', 2))
+        premium.add_child(Node.s16('index', 1))
 
         return info
 
@@ -950,8 +950,29 @@ class JubeatProp(
         emblem.add_child(normal)
         premium = Node.void('premium')
         emblem.add_child(premium)
-        normal.add_child(Node.s16('index', jboxdict.get_int('normal_index') + 1))
-        premium.add_child(Node.s16('index', jboxdict.get_int('premium_index') + 1))
+
+        # Calculate a random index for normal and premium to give to player
+        # as a gatcha.
+        gameitems = self.data.local.game.get_items(self.game, self.version)
+        normalemblems: Set[int] = set()
+        premiumemblems: Set[int] = set()
+        for gameitem in gameitems:
+            if gameitem.type == 'emblem':
+                if gameitem.data.get_int('rarity') in {1, 2, 3}:
+                    normalemblems.add(gameitem.id)
+                if gameitem.data.get_int('rarity') in {3, 4, 5}:
+                    premiumemblems.add(gameitem.id)
+
+        # Default to some emblems in case the catalog is not available.
+        normalindex = 2
+        premiumindex = 1
+        if normalemblems:
+            normalindex = random.sample(normalemblems, 1)[0]
+        if premiumemblems:
+            premiumindex = random.sample(premiumemblems, 1)[0]
+
+        normal.add_child(Node.s16('index', normalindex))
+        premium.add_child(Node.s16('index', premiumindex))
 
         # Career stuff
         career = Node.void('career')
