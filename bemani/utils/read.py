@@ -1239,15 +1239,22 @@ class ImportJubeat(ImportBase):
 
         super().__init__(config, GameConstants.JUBEAT, actual_version, no_combine, update)
 
-    def scrape(self, xmlfile: str) -> List[Dict[str, Any]]:
+    def scrape(self, xmlfile: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise Exception('Can\'t scrape Jubeat database for \'all\' version!')
 
-        tree = ET.parse(xmlfile)
-        root = tree.getroot()
+        try:
+            # Probably UTF-8 music DB
+            tree = ET.parse(xmlfile)
+            root = tree.getroot()
+        except ValueError:
+            # Probably shift-jis emblems
+            with open(xmlfile, 'rb') as xmlhandle:
+                xmldata = xmlhandle.read().decode('shift_jisx0213')
+            root = ET.fromstring(xmldata)
 
         songs: List[Dict[str, Any]] = []
-        for music_entry in root.find('body'):
+        for music_entry in root.find('body') or []:
             songid = int(music_entry.find('music_id').text)
             bpm_min = float(music_entry.find('bpm_min').text)
             bpm_max = float(music_entry.find('bpm_max').text)
@@ -1278,9 +1285,34 @@ class ImportJubeat(ImportBase):
                     'extreme': difficulties[2],
                 },
             })
-        return songs
 
-    def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
+        emblems: List[Dict[str, Any]] = []
+        if self.version in {
+            VersionConstants.JUBEAT_PROP,
+            VersionConstants.JUBEAT_QUBELL,
+            VersionConstants.JUBEAT_CLAN,
+        }:
+            for emblem_entry in root.find('emblem_list') or []:
+                print(emblem_entry)
+                index = int(emblem_entry.find('index').text)
+                layer = int(emblem_entry.find('layer').text)
+                music_id = int(emblem_entry.find('music_id').text)
+                evolved = int(emblem_entry.find('evolved').text)
+                rarity = int(emblem_entry.find('rarity').text)
+                name = emblem_entry.find('name').text
+
+                emblems.append({
+                    'id': index,
+                    'layer': layer,
+                    'music_id': music_id,
+                    'evolved': evolved,
+                    'rarity': rarity,
+                    'name': name,
+                })
+
+        return songs, emblems
+
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise Exception('Can\'t look up Jubeat database for \'all\' version!')
 
@@ -1316,8 +1348,28 @@ class ImportJubeat(ImportBase):
                 }
             lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_int('difficulty')
 
-        # Return the reassembled data
-        return [val for _, val in lut.items()]
+        # Reassemble the data
+        reassembled_songs = [val for _, val in lut.items()]
+
+        emblems: List[Dict[str, Any]] = []
+        if self.version in {
+            VersionConstants.JUBEAT_PROP,
+            VersionConstants.JUBEAT_QUBELL,
+            VersionConstants.JUBEAT_CLAN,
+        }:
+            game = self.remote_game(server, token)
+            for item in game.get_items(self.game, self.version):
+                if item.type == "emblem":
+                    emblems.append({
+                        'id': item.id,
+                        'layer': item.data.get_int('layer'),
+                        'music_id': item.data.get_int('music_id'),
+                        'evolved': item.data.get_int('evolved'),
+                        'rarity': item.data.get_int('rarity'),
+                        'name': item.data.get_str('name'),
+                    })
+
+        return reassembled_songs, emblems
 
     def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
         if self.version is None:
@@ -1355,6 +1407,32 @@ class ImportJubeat(ImportBase):
                 }
                 self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
             self.finish_batch()
+
+    def import_emblems(self, emblems: List[Dict[str, Any]]) -> None:
+        if self.version is None:
+            raise Exception('Can\'t import Jubeat database for \'all\' version!')
+
+        self.start_batch()
+        for i, emblem in enumerate(emblems):
+            # Make importing faster but still do it in chunks
+            if (i % 16) == 15:
+                self.finish_batch()
+                self.start_batch()
+
+            print(f"New catalog entry for {emblem['music_id']}")
+            self.insert_catalog_entry(
+                'emblem',
+                emblem['id'],
+                {
+                    'layer': emblem['layer'],
+                    'music_id': emblem['music_id'],
+                    'evolved': emblem['evolved'],
+                    'rarity': emblem['rarity'],
+                    'name': emblem['name'],
+                },
+            )
+
+        self.finish_batch()
 
     def import_metadata(self, tsvfile: str) -> None:
         if self.version is not None:
@@ -3381,17 +3459,18 @@ if __name__ == "__main__":
             # hand-populated since its not in the music DB.
             jubeat.import_metadata(args.tsv)
         else:
-            # Normal case, doing a music DB import.
+            # Normal case, doing a music DB or emblem import.
             if args.xml is not None:
-                songs = jubeat.scrape(args.xml)
+                songs, emblems = jubeat.scrape(args.xml)
             elif args.server and args.token:
-                songs = jubeat.lookup(args.server, args.token)
+                songs, emblems = jubeat.lookup(args.server, args.token)
             else:
                 raise Exception(
                     'No music_info.xml or TSV provided and no remote server specified! Please ' +
                     'provide either a --xml, --tsv or a --server and --token option!'
                 )
             jubeat.import_music_db(songs)
+            jubeat.import_emblems(emblems)
         jubeat.close()
 
     elif args.series == GameConstants.IIDX:

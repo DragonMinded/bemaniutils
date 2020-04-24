@@ -402,6 +402,14 @@ after importing all mixes:
 ./read --config config/server.yaml --series jubeat --version all --tsv data/jubeat.tsv
 ```
 
+For Jubeat Prop and later versions, you will also need to import the emblem DB, or emblems
+will not work properly. An example is as follows:
+
+```
+./read --config config/server.yaml --series jubeat --version prop \
+      --xml data/emblem-info/emblem-info.xml
+```
+
 ### IIDX
 
 For IIDX, you will need the data directory of the mix you wish to support. The import

@@ -128,9 +128,38 @@ class CatalogObject(BaseObject):
                 ],
             }
 
+    def __format_jubeat_extras(self) -> Dict[str, List[Dict[str, Any]]]:
+        # Gotta look up the unlock catalog
+        items = self.data.local.game.get_items(self.game, self.version)
+
+        # Format it depending on the version
+        if self.version in {
+            VersionConstants.JUBEAT_PROP,
+            VersionConstants.JUBEAT_QUBELL,
+            VersionConstants.JUBEAT_CLAN,
+        }:
+            return {
+                "emblems": [
+                    {
+                        "index": str(item.id),
+                        "song": item.data.get_int("music_id"),
+                        "layer": item.data.get_int("layer"),
+                        "evolved": item.data.get_int("evolved"),
+                        "rarity": item.data.get_int("rarity"),
+                        "name": item.data.get_str("name"),
+                    }
+                    for item in items
+                    if item.type == "emblem"
+                ],
+            }
+        else:
+            return {"emblems": []}
+
     def __format_extras(self) -> Dict[str, List[Dict[str, Any]]]:
         if self.game == GameConstants.SDVX:
             return self.__format_sdvx_extras()
+        elif self.game == GameConstants.JUBEAT:
+            return self.__format_jubeat_extras()
         else:
             return {}
 

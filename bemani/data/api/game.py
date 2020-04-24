@@ -25,6 +25,19 @@ class GlobalGameData(BaseGlobalData):
             {},
         )
 
+    def __translate_jubeat_emblems(self, entry: Dict[str, Any]) -> Item:
+        return Item(
+            "emblem",
+            int(entry["index"]),
+            {
+                "music_id": int(entry["song"]),
+                "layer": int(entry["layer"]),
+                "evolved": int(entry["evolved"]),
+                "rarity": int(entry["rarity"]),
+                "name": entry["name"],
+            },
+        )
+
     def get_items(self, game: str, version: int) -> List[Item]:
         """
         Given a game/userid, find all items in the catalog.
@@ -50,6 +63,10 @@ class GlobalGameData(BaseGlobalData):
                     translation = {
                         "purchases": self.__translate_sdvx_song_unlock,
                         "appealcards": self.__translate_sdvx_appealcard,
+                    }.get(catalogtype, None)
+                elif game == GameConstants.JUBEAT:
+                    translation = {
+                        "emblems": self.__translate_jubeat_emblems,
                     }.get(catalogtype, None)
                 else:
                     translation = None
