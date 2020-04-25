@@ -166,13 +166,14 @@ def receive_request(path: str) -> Response:
 
     # Make request to foreign service, using the same parameters
     prep_req = requests.Request(
-		'POST',
-		url=f'http://{remote_host}:{remote_port}{actual_path}',
-		headers=headers,
-		data=req_binary,
+        'POST',
+        url=f'http://{remote_host}:{remote_port}{actual_path}',
+        headers=headers,
+        data=req_binary,
     ).prepare()
-	
-	r = sess.send(prep_req)
+
+    sess = requests.Session()
+    r = sess.send(prep_req)
 
     if r.status_code != 200:
         # Failed on remote side
