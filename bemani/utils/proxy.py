@@ -99,6 +99,7 @@ def receive_request(path: str) -> Response:
     remote_address = request.headers.get('X-Remote-Address', None)
     request_compression = request.headers.get('X-Compress', None)
     request_encryption = request.headers.get('X-Eamuse-Info', None)
+    request_client = request.headers.get('User-Agent', None)
 
     actual_path = f'/{path}'
     if request.query_string is not None and len(request.query_string) > 0:
@@ -153,24 +154,33 @@ def receive_request(path: str) -> Response:
             client_proto.last_packet_encoding,
         )
 
-    # Set up custom headers for remote request
-    headers = {}
+    # Set up custom headers for remote request.
+    headers = {
+        # For lobby functionality, make sure the request receives
+        # the original IP address
+        'X-Remote-Address': remote_address or request.remote_addr,
+        # Some remote servers can be somewhat buggy, so we make sure
+        # to specify a range of encodings.
+        'Accept-Encoding': 'identity, deflate, compress, gzip',
+    }
+
+    # Copy over required headers that are sent by game client.
     if request_compression is not None:
         headers['X-Compress'] = request_compression
     if request_encryption is not None:
         headers['X-Eamuse-Info'] = request_encryption
-
-    # For lobby functionality, make sure the request receives
-    # the original IP address
-    headers['X-Remote-Address'] = remote_address or request.remote_addr
+    if request_client is not None:
+        headers['User-Agent'] = request_client
 
     # Make request to foreign service, using the same parameters
-    r = requests.post(
-        f'http://{remote_host}:{remote_port}{actual_path}',
+    prep_req = requests.Request(
+        'POST',
+        url=f'http://{remote_host}:{remote_port}{actual_path}',
         headers=headers,
         data=req_binary,
-        timeout=config['timeout'],
-    )
+    ).prepare()
+    sess = requests.Session()
+    r = sess.send(prep_req, timeout=config['timeout'])  # type: ignore
 
     if r.status_code != 200:
         # Failed on remote side
