@@ -94,13 +94,13 @@ button.nav {
 }
 
 button.prev::before {
-    content: "\2BC7";
+    content: "\2190";
     font-weight: bold;
     margin-right: 5px;
 }
 
 button.next::after {
-    content: "\2BC8";
+    content: "\2192";
     font-weight: bold;
     margin-left: 5px;
 }
