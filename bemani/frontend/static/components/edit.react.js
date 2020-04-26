@@ -9,7 +9,7 @@ var Edit = React.createClass({
                 onClick={function(event) {
                     this.props.onClick(event);
                 }.bind(this)}
-                title={this.props.title ? this.props.title : 'edit'}
+                title={this.props.title ? this.props.title : 'update'}
             />
         );
     },

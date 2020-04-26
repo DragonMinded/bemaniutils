@@ -125,7 +125,7 @@ var settings_view = React.createClass({
             var player = this.state.player[this.state.version];
             return (
                 <div>
-                    <div className="section">
+                    <div className="section popn-nav">
                         {this.state.profiles.map(function(version) {
                             return (
                                 <Nav

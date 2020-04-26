@@ -164,7 +164,7 @@ var network_records = React.createClass({
         return (
             <span>
                 { paginate ?
-                    <div className="section">
+                    <div className="section popn-nav">
                         {songids.map(function(songid) {
                             if (songid < 0) {
                                 curbutton = curbutton + 1;

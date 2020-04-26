@@ -41,7 +41,7 @@ var profile_view = React.createClass({
             var player = this.state.player[this.state.version];
             return (
                 <div>
-                    <div className="section">
+                    <div className="section popn-nav">
                         <h3>{player.name}'s profile</h3>
                         {this.state.profiles.map(function(version) {
                             return (

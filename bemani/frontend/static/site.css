@@ -69,7 +69,7 @@ ul.messages {
 ul.messages li {
     padding: 5px;
     margin-top: 10px;
-    border-radius: 5px;
+    border-radius: 0px;
     font-size: smaller;
 }
 
@@ -80,6 +80,7 @@ ul.messages div.close {
     color: #000000;
     float: right;
     cursor: pointer;
+    margin-right: 3px;
 }
 
 ul.messages li.error {

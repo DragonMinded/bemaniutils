@@ -32,76 +32,89 @@ form div.action {
     margin-top: 5px;
 }
 
-input[type="submit"] {
-    border: 1px solid #cddcc1;
-    background: #e7ffd4;
-    cursor: pointer;
-    border-radius: 3px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    padding-left: 6px;
-    padding-right: 6px;
-    margin-right: 5px;
-}
-
-input[type="button"], button.nav, button.toggle, button.edit, button.add, button.viewmore {
-    border: 1px solid #dadada;
-    background: #ffffff;
-    cursor: pointer;
-    border-radius: 3px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    padding-left: 6px;
-    padding-right: 6px;
-}
-
-input[type="button"] {
-    margin-right: 5px;
-}
-
-button.toggle:not(:last-child):not(:only-child), button.edit:not(:last-child):not(:only-child), button.delete:not(:last-child):not(:only-child), button.add:not(:last-child):not(:only-child) {
-    margin-right: 5px;
-}
-
-button.nav:not(:last-child) {
-    margin-right: 5px;
-}
-
-button.nav {
-    margin-bottom: 5px;
-}
-
-button.active {
-    font-weight: bold;
-}
-
-button.delete {
-    border: 1px solid #d6caca;
-    background: #ffe4e4;
-    cursor: pointer;
-    border-radius: 3px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    padding-left: 6px;
-    padding-right: 6px;
-}
-
-input[type="text"], input[type="password"], textarea {
-    border: 1px solid #dadada;
-    padding: 2px;
-    border-radius: 3px;
-}
-
-select {
-    border: 1px solid #dadada;
-    padding: 1px;
-    border-radius: 3px;
-}
-
 option.placeholder {
     font-style: italic;
 }
 
 div.buttons {
     padding-top:5px;
+}
+
+input[type="submit"] {
+    border: 1px solid #cddcc1;
+    background: #e7ffd4;
+    margin-right: 5px;
+}
+
+input[type="button"], button.nav, button.toggle, button.edit, button.add, button.viewmore, button.btn-default {
+    border: 1px solid #dadada;
+    background: #f8f8f8;
+    margin-right: 5px;
+}
+
+input[type="submit"], input[type="button"], button {
+    border-radius: 0px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+    cursor: pointer;
+}
+
+input[type="text"], input[type="password"], textarea {
+    border: 1px solid #dadada;
+    padding: 4px;
+    border-radius: 0px;
+}
+
+select {
+    border: 1px solid #dadada;
+    padding: 4px 4px 3px 4px;
+    border-radius: 0px;
+}
+
+input[type="button"] {
+    margin-right: 5px;
+}
+
+button.toggle:not(:last-child):not(:only-child), button.edit:not(:last-child):not(:only-child), button.delete:not(:last-child):not(:only-child), button.add:not(:last-child):not(:only-child), button.nav:not(:last-child):not(:only-child) {
+    margin-right: 5px;
+}
+
+span + button.edit, span + button.toggle, span + button.delete, span + button.add,
+div + button.edit, div + button.toggle, div + button.delete, div + button.add {
+    margin-left: 15px;
+}
+
+button.nav {
+    margin-bottom: 5px;
+    margin-right: 0px;
+    border: 1px solid #dadada;
+    background: #f8f8f8;
+}
+
+button.prev::before {
+    content: "\2BC7";
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+button.next::after {
+    content: "\2BC8";
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+button.active {
+    text-shadow: 0.33px 0.33px #000000;
+    border: 1px solid #999999;
+}
+
+button.delete {
+    border: 1px solid #d6caca;
+    background: #ffe4e4;
+}
+
+.popn-nav button {
+    height: 32px;
 }
