@@ -345,7 +345,7 @@ var arcade_management = React.createClass({
                         emptymessage="There are no PCBIDs assigned to this arcade."
                     />
                 </div>
-                <div className="section">
+                <div className="section settings-nav">
                     <h3>Game Settings For This Arcade</h3>
                     { this.state.settings.map(function(game_settings) {
                         var current = makeSettingName(game_settings);

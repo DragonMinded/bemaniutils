@@ -115,6 +115,6 @@ button.delete {
     background: #ffe4e4;
 }
 
-.popn-nav button {
+.popn-nav button, .settings-nav button {
     height: 32px;
 }
