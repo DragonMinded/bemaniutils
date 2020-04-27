@@ -46,6 +46,15 @@ def before_request() -> None:
             g.authorized = g.data.local.api.validate_client(authtoken)
 
 
+@app.after_request
+def after_request(response: Response) -> Response:
+    # Make sure our REST responses don't get cached, so that remote
+    # servers which respect cache headers don't get confused.
+    response.cache_control.no_cache = True
+    response.cache_control.must_revalidate = True
+    response.cache_control.private = True
+
+
 @app.teardown_request
 def teardown_request(exception: Any) -> None:
     data = getattr(g, 'data', None)

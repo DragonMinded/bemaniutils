@@ -47,6 +47,17 @@ def before_request() -> None:
         g.userID = None
 
 
+@app.after_request
+def after_request(response: Response) -> Response:
+    if not response.cache_control.max_age:
+        # Make sure our REST calls don't get cached, so that the
+        # live pages update in real-time.
+        response.cache_control.no_cache = True
+        response.cache_control.must_revalidate = True
+        response.cache_control.private = True
+    return response
+
+
 @app.teardown_request
 def teardown_request(exception: Any) -> None:
     data = getattr(g, 'data', None)
