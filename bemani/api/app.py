@@ -53,6 +53,7 @@ def after_request(response: Response) -> Response:
     response.cache_control.no_cache = True
     response.cache_control.must_revalidate = True
     response.cache_control.private = True
+    return response
 
 
 @app.teardown_request
