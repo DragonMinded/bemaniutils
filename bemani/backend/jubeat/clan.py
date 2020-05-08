@@ -1262,10 +1262,37 @@ class JubeatClan(
         new.add_child(Node.s32_array('theme_list', profile.get_int_array('theme_list_new', 16, [-1] * 16)))
         new.add_child(Node.s32_array('marker_list', profile.get_int_array('marker_list_new', 16, [-1] * 16)))
 
-        # No rival support, yet.
+        # Add rivals to profile.
         rivallist = Node.void('rivallist')
         player.add_child(rivallist)
-        rivallist.set_attribute('count', '0')
+
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        rivalcount = 0
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            rprofile = self.get_profile(link.other_userid)
+            if rprofile is None:
+                continue
+
+            rival = Node.void('rival')
+            rivallist.add_child(rival)
+            rival.add_child(Node.s32('jid', rprofile.get_int('extid')))
+            rival.add_child(Node.string('name', rprofile.get_str('name')))
+
+            # This looks like a carry-over from prop's career and isn't displayed.
+            career = Node.void('career')
+            rival.add_child(career)
+            career.add_child(Node.s16('level', 1))
+
+            # Lazy way of keeping track of rivals, since we can only have 3
+            # or the game with throw up.
+            rivalcount += 1
+            if rivalcount >= 3:
+                break
+
+        rivallist.set_attribute('count', str(rivalcount))
 
         lab_edit_seq = Node.void('lab_edit_seq')
         player.add_child(lab_edit_seq)

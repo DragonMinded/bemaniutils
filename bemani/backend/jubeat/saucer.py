@@ -140,6 +140,16 @@ class JubeatSaucer(
             root.set_attribute('status', str(Status.NO_PROFILE))
         return root
 
+    def handle_gametop_get_rival_mdata_request(self, request: Node) -> Node:
+        data = request.child('data')
+        player = data.child('player')
+        extid = player.child_value('rival')
+        root = self.get_scores_by_extid(extid)
+        if root is None:
+            root = Node.void('gametop')
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
+
     def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
         root = Node.void('gametop')
         data = Node.void('data')
@@ -249,10 +259,37 @@ class JubeatSaucer(
         player.add_child(news)
         news.add_child(Node.s16('checked', 0))
 
-        # No rival support, yet.
+        # Add rivals to profile.
         rivallist = Node.void('rivallist')
         player.add_child(rivallist)
-        rivallist.set_attribute('count', '0')
+
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        rivalcount = 0
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            rprofile = self.get_profile(link.other_userid)
+            if rprofile is None:
+                continue
+
+            rival = Node.void('rival')
+            rivallist.add_child(rival)
+            rival.add_child(Node.s32('jid', rprofile.get_int('extid')))
+            rival.add_child(Node.string('name', rprofile.get_str('name')))
+
+            # Lazy way of keeping track of rivals, since we can only have 4
+            # or the game with throw up. At least, I think Fulfill can have
+            # 4 instead of the 3 found in newer versions, given the size of
+            # the array that it loads the values in. However, to keep things
+            # simple, I only supported three here.
+            rivalcount += 1
+            if rivalcount >= 3:
+                break
+
+        rivallist.set_attribute('count', str(rivalcount))
+
+        # Unclear what this is. Looks related to Jubeat lab.
         mylist = Node.void('mylist')
         player.add_child(mylist)
         mylist.set_attribute('count', '0')
@@ -616,6 +653,7 @@ class JubeatSaucer(
         root.add_child(datanode)
         player = Node.void('player')
         datanode.add_child(player)
+        player.add_child(Node.s32('jid', profile.get_int('extid')))
         playdata = Node.void('playdata')
         player.add_child(playdata)
         playdata.set_attribute('count', str(len(scores)))

@@ -923,10 +923,43 @@ class JubeatProp(
         news.add_child(Node.s16('checked', 0))
         news.add_child(Node.u32('checked_flag', 0))
 
-        # No rival support, yet.
+        # Add rivals to profile.
         rivallist = Node.void('rivallist')
         player.add_child(rivallist)
-        rivallist.set_attribute('count', '0')
+
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        rivalcount = 0
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            rprofile = self.get_profile(link.other_userid)
+            if rprofile is None:
+                continue
+
+            rival = Node.void('rival')
+            rivallist.add_child(rival)
+            rival.add_child(Node.s32('jid', rprofile.get_int('extid')))
+            rival.add_child(Node.string('name', rprofile.get_str('name')))
+
+            rcareerdict = rprofile.get_dict('career')
+            career = Node.void('career')
+            rival.add_child(career)
+            career.add_child(Node.s16('level', rcareerdict.get_int('level', 1)))
+
+            league = Node.void('league')
+            rival.add_child(league)
+            league.add_child(Node.bool('is_first_play', rprofile.get_bool('league_is_first_play', True)))
+            league.add_child(Node.s32('class', rprofile.get_int('league_class', 1)))
+            league.add_child(Node.s32('subclass', rprofile.get_int('league_subclass', 5)))
+
+            # Lazy way of keeping track of rivals, since we can only have 3
+            # or the game with throw up.
+            rivalcount += 1
+            if rivalcount >= 3:
+                break
+
+        rivallist.set_attribute('count', str(rivalcount))
 
         # Nothing in life is free, WTF?
         free_first_play = Node.void('free_first_play')
