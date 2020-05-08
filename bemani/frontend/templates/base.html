@@ -110,18 +110,21 @@
         <div class="navigation">
             <ul class="navigation" id="nav">
                 {% for entry in navigation %}
-                <li class="{{ 'right' if entry.get('right_justify') else 'left' }} {{ 'selected' if entry['uri'] == current_path or (((entry.get('base_uri', '/nonexistent') or '/nonexistent') in current_path) and not (any(entry.get('entries'), 'uri', current_path))) else '' }}">
+                    <li class="{{
+                        'right' if entry.get('right_justify') else 'left' }}
+                        {{ 'selected' if entry['uri'] == current_path or ((current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) and not (any(entry.get('entries'), 'uri', current_path))) else ''
+                    }}">
                         {% with uri = entry.get('uri') %}
                             {% with label = entry.get('label') %}
                                 {% if label %}
                                     {% if uri %}
                                     <a
-                                        class="{{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or ((entry.get('base_uri', '/nonexistent') or '/nonexistent') in current_path) else ''}} {{entry['gamecode']}} border"
+                                        class="{{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or (current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) else ''}} {{entry['gamecode']}} border"
                                         href="{{ entry['uri'] }}"
                                     >{{ entry['label'] }}</a>
                                     {% else %}
                                     <a
-                                        class="cursor {{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or ((entry.get('base_uri', '/nonexistent') or '/nonexistent') in current_path) else ''}} {{entry['gamecode']}} border"
+                                        class="cursor {{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or (current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) else ''}} {{entry['gamecode']}} border"
                                     >{{ entry['label'] }}</a>
                                     {% endif %}
                                 {% else %}
