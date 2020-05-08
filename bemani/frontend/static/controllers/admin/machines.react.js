@@ -20,6 +20,13 @@ var machine_management = React.createClass({
         };
     },
 
+    componentDidUpdate: function() {
+        if (this.focus_element && this.focus_element != this.already_focused) {
+            this.focus_element.focus();
+            this.already_focused = this.focus_element;
+        }
+    },
+
     generateNewMachine: function(event) {
         AJAX.post(
             Link.get('generatepcbid'),
@@ -125,6 +132,8 @@ var machine_management = React.createClass({
             return <input
                 name="description"
                 type="text"
+                autofocus="true"
+                ref={c => (this.focus_element = c)}
                 value={ this.state.editing_machine.description }
                 onChange={function(event) {
                     var machine = this.state.editing_machine;

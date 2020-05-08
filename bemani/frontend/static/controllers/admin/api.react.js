@@ -19,6 +19,13 @@ var api_management = React.createClass({
         };
     },
 
+    componentDidUpdate: function() {
+        if (this.focus_element && this.focus_element != this.already_focused) {
+            this.focus_element.focus();
+            this.already_focused = this.focus_element;
+        }
+    },
+
     scheduleServerInfo: function(servers) {
         var info = {};
 
@@ -230,6 +237,8 @@ var api_management = React.createClass({
             return <input
                 name="name"
                 type="text"
+                autofocus="true"
+                ref={c => (this.focus_element = c)}
                 value={ this.state.editing_client.name }
                 onChange={function(event) {
                     var client = this.state.editing_client;
@@ -310,6 +319,8 @@ var api_management = React.createClass({
             return <input
                 name="uri"
                 type="text"
+                autofocus="true"
+                ref={c => (this.focus_element = c)}
                 value={ this.state.editing_server.uri }
                 onChange={function(event) {
                     var server = this.state.editing_server;

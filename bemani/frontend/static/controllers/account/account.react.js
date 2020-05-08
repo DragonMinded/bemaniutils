@@ -17,6 +17,13 @@ var account_management = React.createClass({
         };
     },
 
+    componentDidUpdate: function() {
+        if (this.focus_element && this.focus_element != this.already_focused) {
+            this.focus_element.focus();
+            this.already_focused = this.focus_element;
+        }
+    },
+
     saveEmail: function(event) {
         AJAX.post(
             Link.get('updateemail'),
@@ -93,6 +100,8 @@ var account_management = React.createClass({
                             <label for="old">Current password:</label>
                             <input
                                 type="password"
+                                autofocus="true"
+                                ref={c => (this.focus_element = c)}
                                 value={this.state.old_password}
                                 onChange={function(event) {
                                     this.setState({old_password: event.target.value});
@@ -162,6 +171,8 @@ var account_management = React.createClass({
                             <label for="old">Current password:</label>
                             <input
                                 type="password"
+                                autofocus="true"
+                                ref={c => (this.focus_element = c)}
                                 value={this.state.email_password}
                                 onChange={function(event) {
                                     this.setState({email_password: event.target.value});
@@ -220,6 +231,8 @@ var account_management = React.createClass({
                             className="inline"
                             maxlength="4"
                             size="4"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
                             value={this.state.new_pin}
                             onChange={function(event) {
                                 var intRegex = /^\d*$/;

@@ -33,6 +33,13 @@ var user_management = React.createClass({
         this.refreshUser();
     },
 
+    componentDidUpdate: function() {
+        if (this.focus_element && this.focus_element != this.already_focused) {
+            this.focus_element.focus();
+            this.already_focused = this.focus_element;
+        }
+    },
+
     refreshUser: function() {
         AJAX.get(
             Link.get('refresh'),
@@ -204,6 +211,8 @@ var user_management = React.createClass({
                         <input
                             type="text"
                             className="inline"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
                             value={this.state.new_username}
                             onChange={function(event) {
                                 this.setState({new_username: event.target.value});
@@ -246,6 +255,8 @@ var user_management = React.createClass({
                             <label htmlFor="new1">New password:</label>
                             <input
                                 type="password"
+                                autofocus="true"
+                                ref={c => (this.focus_element = c)}
                                 value={this.state.new_password1}
                                 onChange={function(event) {
                                     this.setState({new_password1: event.target.value});
@@ -306,6 +317,8 @@ var user_management = React.createClass({
                         <input
                             type="text"
                             className="inline"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
                             value={this.state.new_email}
                             onChange={function(event) {
                                 this.setState({new_email: event.target.value});
@@ -349,6 +362,8 @@ var user_management = React.createClass({
                             maxlength="4"
                             size="4"
                             className="inline"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
                             value={this.state.new_pin}
                             onChange={function(event) {
                                 var intRegex = /^\d*$/;

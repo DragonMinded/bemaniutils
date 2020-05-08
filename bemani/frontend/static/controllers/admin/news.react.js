@@ -12,6 +12,13 @@ var news_management = React.createClass({
         };
     },
 
+    componentDidUpdate: function() {
+        if (this.focus_element && this.focus_element != this.already_focused) {
+            this.focus_element.focus();
+            this.already_focused = this.focus_element;
+        }
+    },
+
     deleteExistingNews: function(event, newsid) {
         $.confirm({
             escapeKey: 'Cancel',
@@ -99,6 +106,8 @@ var news_management = React.createClass({
                 <input
                     name="title"
                     type="text"
+                    autofocus="true"
+                    ref={c => (this.focus_element = c)}
                     value={ this.state.editing_news.title }
                     onChange={function(event) {
                         var entry = this.state.editing_news;

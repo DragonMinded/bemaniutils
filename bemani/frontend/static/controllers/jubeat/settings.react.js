@@ -23,6 +23,13 @@ var settings_view = React.createClass({
         }.bind(this));
     },
 
+    componentDidUpdate: function() {
+        if (this.focus_element && this.focus_element != this.already_focused) {
+            this.focus_element.focus();
+            this.already_focused = this.focus_element;
+        }
+    },
+
     saveName: function(event) {
         AJAX.post(
             Link.get('updatename'),
@@ -60,6 +67,8 @@ var settings_view = React.createClass({
                             type="text"
                             className="inline"
                             maxlength="8"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
                             size="8"
                             value={this.state.new_name}
                             onChange={function(event) {
