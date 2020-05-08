@@ -18,7 +18,7 @@ from bemani.frontend.ddr import DDRCache
 from bemani.frontend.sdvx import SoundVoltexCache
 from bemani.frontend.reflec import ReflecBeatCache
 from bemani.frontend.museca import MusecaCache
-from bemani.common import GameConstants
+from bemani.common import GameConstants, Time
 from bemani.data import Data
 
 
@@ -60,6 +60,13 @@ def run_scheduled_work(config: Dict[str, Any]) -> None:
     # Now, warm the caches for the frontend
     for cache in enabled_caches:
         cache.preload(data, config)  # type: ignore
+
+    # Now, possibly delete old log entries
+    keep_duration = config.get('event_log_duration', 0)
+    if keep_duration > 0:
+        # Calculate timestamp of events we should delete
+        oldest_event = Time.now() - keep_duration
+        data.local.network.delete_events(oldest_event)
 
 
 if __name__ == '__main__':

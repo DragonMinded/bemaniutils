@@ -298,3 +298,11 @@ class NetworkData(BaseData):
                 ),
             )
         return events
+
+    def delete_events(self, oldest_event_ts: int) -> None:
+        """
+        Given a timestamp of the oldset event we should keep around, delete
+        all events older than this timestamp.
+        """
+        sql = "DELETE FROM audit WHERE timestamp < :ts"
+        self.execute(sql, {'ts': oldest_event_ts})

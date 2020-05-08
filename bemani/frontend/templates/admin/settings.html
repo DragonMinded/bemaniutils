@@ -56,6 +56,8 @@
             <dd>{{ 'yes' if config['paseli']['enabled'] else 'no' }} (can be overridden by arcade settings)</dd>
             <dt>Infinite PASELI Enabled</dt>
             <dd>{{ 'yes' if config['paseli']['infinite'] else 'no' }} (can be overridden by arcade settings)</dd>
+            <dt>Event Log Preservation Duration</dt>
+            <dd>{{ (config['event_log_duration']|string + ' seconds') if config['event_log_duration'] else 'infinite' }}</dd>
         </dl>
     </div>
 {% endblock %}
