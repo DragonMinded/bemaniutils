@@ -73,7 +73,7 @@ var settings_view = React.createClass({
                             value={this.state.new_name}
                             onChange={function(event) {
                                 var value = event.target.value.toUpperCase();
-                                var nameRegex = /^[-&\\.\\*A-Z0-9]*$/;
+                                var nameRegex = /^[ -&\\.\\*A-Z0-9]*$/;
                                 if (value.length <= 8 && nameRegex.test(value)) {
                                     this.setState({new_name: value});
                                 }

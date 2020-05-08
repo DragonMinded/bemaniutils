@@ -328,7 +328,7 @@ def updatename() -> Dict[str, Any]:
         raise Exception('Unable to find profile to update!')
     if len(name) == 0 or len(name) > 8:
         raise Exception('Invalid profile name!')
-    if re.match(r'^[-&\.\*A-Z0-9]*$', name) is None:
+    if re.match(r'^[ -&\.\*A-Z0-9]*$', name) is None:
         raise Exception('Invalid profile name!')
     profile.replace_str('name', name)
     g.data.local.user.put_profile(GameConstants.JUBEAT, version, user.id, profile)
