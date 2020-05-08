@@ -11,3 +11,4 @@ build/
 .hg/
 .hgignore
 .venv/
+bemani.egg-info/
