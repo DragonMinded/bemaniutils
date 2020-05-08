@@ -8,7 +8,7 @@ from bemani.protocol import Node
 
 
 class JubeatPropClient(BaseClient):
-    NAME = 'ＴＥＳＴ'
+    NAME = 'TEST'
 
     def verify_shopinfo_regist(self) -> None:
         call = self.call_node()
