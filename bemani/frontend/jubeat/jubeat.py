@@ -17,6 +17,8 @@ class JubeatFrontend(FrontendBase):
         JubeatBase.CHART_TYPE_EXTREME,
     ]
 
+    valid_rival_types = ['rival']
+
     def all_games(self) -> Iterator[Tuple[str, int, str]]:
         yield from JubeatFactory.all_games()
 

@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort, g  # type: ignore
 
-from bemani.common import GameConstants
+from bemani.common import ID, GameConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.jubeat.jubeat import JubeatFrontend
@@ -337,4 +337,123 @@ def updatename() -> Dict[str, Any]:
     return {
         'version': version,
         'name': name,
+    }
+
+
+@jubeat_pages.route('/rivals')
+@loginrequired
+def viewrivals() -> Response:
+    frontend = JubeatFrontend(g.data, g.config, g.cache)
+    rivals, playerinfo = frontend.get_rivals(g.userID)
+    return render_react(
+        'Jubeat Rivals',
+        'jubeat/rivals.react.js',
+        {
+            'userid': str(g.userID),
+            'rivals': rivals,
+            'players': playerinfo,
+            'versions': {version: name for (game, version, name) in frontend.all_games()},
+        },
+        {
+            'refresh': url_for('jubeat_pages.listrivals'),
+            'search': url_for('jubeat_pages.searchrivals'),
+            'player': url_for('jubeat_pages.viewplayer', userid=-1),
+            'addrival': url_for('jubeat_pages.addrival'),
+            'removerival': url_for('jubeat_pages.removerival'),
+        },
+    )
+
+
+@jubeat_pages.route('/rivals/list')
+@jsonify
+@loginrequired
+def listrivals() -> Dict[str, Any]:
+    frontend = JubeatFrontend(g.data, g.config, g.cache)
+    rivals, playerinfo = frontend.get_rivals(g.userID)
+
+    return {
+        'rivals': rivals,
+        'players': playerinfo,
+    }
+
+
+@jubeat_pages.route('/rivals/search', methods=['POST'])
+@jsonify
+@loginrequired
+def searchrivals() -> Dict[str, Any]:
+    frontend = JubeatFrontend(g.data, g.config, g.cache)
+    version = int(request.get_json()['version'])
+    name = request.get_json()['term']
+
+    # Try to treat the term as an extid
+    extid = ID.parse_extid(name)
+
+    matches = set()
+    profiles = g.data.remote.user.get_all_profiles(GameConstants.JUBEAT, version)
+    for (userid, profile) in profiles:
+        if profile.get_int('extid') == extid or profile.get_str('name').lower() == name.lower():
+            matches.add(userid)
+
+    playerinfo = frontend.get_all_player_info(list(matches), allow_remote=True)
+    return {
+        'results': playerinfo,
+    }
+
+
+@jubeat_pages.route('/rivals/add', methods=['POST'])
+@jsonify
+@loginrequired
+def addrival() -> Dict[str, Any]:
+    frontend = JubeatFrontend(g.data, g.config, g.cache)
+    version = int(request.get_json()['version'])
+    other_userid = UserID(int(request.get_json()['userid']))
+    userid = g.userID
+
+    # Add this rival link
+    profile = g.data.remote.user.get_profile(GameConstants.JUBEAT, version, other_userid)
+    if profile is None:
+        raise Exception('Unable to find profile for rival!')
+
+    g.data.local.user.put_link(
+        GameConstants.JUBEAT,
+        version,
+        userid,
+        'rival',
+        other_userid,
+        {},
+    )
+
+    # Now return updated rival info
+    rivals, playerinfo = frontend.get_rivals(userid)
+
+    return {
+        'rivals': rivals,
+        'players': playerinfo,
+    }
+
+
+@jubeat_pages.route('/rivals/remove', methods=['POST'])
+@jsonify
+@loginrequired
+def removerival() -> Dict[str, Any]:
+    frontend = JubeatFrontend(g.data, g.config, g.cache)
+    version = int(request.get_json()['version'])
+    other_userid = UserID(int(request.get_json()['userid']))
+    userid = g.userID
+
+    # Remove this rival link
+    g.data.local.user.destroy_link(
+        GameConstants.JUBEAT,
+        version,
+        userid,
+        'rival',
+        other_userid,
+    )
+
+    # Now return updated rival info
+    rivals, playerinfo = frontend.get_rivals(userid)
+
+    return {
+        'rivals': rivals,
+        'players': playerinfo,
     }

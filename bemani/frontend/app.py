@@ -405,6 +405,10 @@ def navigation() -> Dict[str, Any]:
                     'uri': url_for('jubeat_pages.viewsettings'),
                 },
                 {
+                    'label': 'Rivals',
+                    'uri': url_for('jubeat_pages.viewrivals'),
+                },
+                {
                     'label': 'Personal Profile',
                     'uri': url_for('jubeat_pages.viewplayer', userid=g.userID),
                 },
