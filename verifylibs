@@ -1,4 +1,16 @@
-#! /bin/bash
+#! /usr/bin/env python3
+import os
+path = os.path.abspath(os.path.dirname(__file__))
 
-export PYTHONPATH=$(python -c "import os; print(os.path.realpath('.'))")
-python3 -m unittest discover -s bemani/tests "$@"
+import sys
+sys.path.append(path)
+sys.argv = [
+    sys.argv[0],
+    "discover",
+    "-s",
+    os.path.join(path, "bemani/tests"),
+    *sys.argv[1:],
+]
+
+import runpy
+runpy.run_module("unittest", run_name="__main__")

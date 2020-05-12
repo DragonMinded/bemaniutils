@@ -1,4 +1,9 @@
-#! /bin/bash
+#! /usr/bin/env python3
+import os
+path = os.path.abspath(os.path.dirname(__file__))
 
-export PYTHONPATH=$(python -c "import os; print(os.path.realpath('.'))")
-python3
+import sys
+sys.path.append(path)
+
+import code
+code.InteractiveConsole().interact()

@@ -1,4 +1,10 @@
-#! /bin/bash
+#! /usr/bin/env python3
+import os
+path = os.path.abspath(os.path.dirname(__file__))
+name = os.path.basename(__file__)
 
-export PYTHONPATH=$(python -c "import os; print(os.path.realpath('.'))")
-python3 -m bemani.utils.scheduler "$@"
+import sys
+sys.path.append(path)
+
+import runpy
+runpy.run_module(f"bemani.utils.{name}", run_name="__main__")
