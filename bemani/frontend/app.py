@@ -499,6 +499,10 @@ def navigation() -> Dict[str, Any]:
                     'uri': url_for('popn_pages.viewsettings'),
                 },
                 {
+                    'label': 'Rivals',
+                    'uri': url_for('popn_pages.viewrivals'),
+                },
+                {
                     'label': 'Personal Profile',
                     'uri': url_for('popn_pages.viewplayer', userid=g.userID),
                 },

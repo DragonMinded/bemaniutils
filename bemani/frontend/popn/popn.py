@@ -18,6 +18,8 @@ class PopnMusicFrontend(FrontendBase):
         PopnMusicBase.CHART_TYPE_EX,
     ]
 
+    valid_rival_types = ['rival']
+
     def all_games(self) -> Iterator[Tuple[str, int, str]]:
         yield from PopnMusicFactory.all_games()
 
