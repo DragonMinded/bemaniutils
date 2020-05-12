@@ -170,6 +170,12 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
                 node = Node.bool_array(name, [False] * elements)
             else:
                 node = Node.bool(name, False)
+        elif nodetype == 0x2F:
+            # Special case, this is an attribute
+            if name[-1] != '@':
+                raise Exception(f'Attribute name {name} expected to end with @')
+            root.set_attribute(name[:-1], '')
+            continue
         else:
             raise Exception(f'Unimplemented node type 0x{nodetype:02x}')
 
