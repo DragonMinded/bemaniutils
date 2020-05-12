@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort, g  # type: ignore
 
-from bemani.common import ID, GameConstants
+from bemani.common import ID, GameConstants, VersionConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.sdvx.sdvx import SoundVoltexFrontend
@@ -355,10 +355,10 @@ def viewrivals() -> Response:
     rivals, playerinfo = frontend.get_rivals(g.userID)
 
     # There were no rivals in SDVX 1 or 2.
-    if 1 in rivals:
-        del rivals[1]
-    if 2 in rivals:
-        del rivals[2]
+    if VersionConstants.SDVX_BOOTH in rivals:
+        del rivals[VersionConstants.SDVX_BOOTH]
+    if VersionConstants.SDVX_INFINITE_INFECTION in rivals:
+        del rivals[VersionConstants.SDVX_INFINITE_INFECTION]
 
     return render_react(
         'SDVX Rivals',
@@ -385,6 +385,12 @@ def viewrivals() -> Response:
 def listrivals() -> Dict[str, Any]:
     frontend = SoundVoltexFrontend(g.data, g.config, g.cache)
     rivals, playerinfo = frontend.get_rivals(g.userID)
+
+    # There were no rivals in SDVX 1 or 2.
+    if VersionConstants.SDVX_BOOTH in rivals:
+        del rivals[VersionConstants.SDVX_BOOTH]
+    if VersionConstants.SDVX_INFINITE_INFECTION in rivals:
+        del rivals[VersionConstants.SDVX_INFINITE_INFECTION]
 
     return {
         'rivals': rivals,

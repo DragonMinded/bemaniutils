@@ -1,13 +1,13 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Optional
+from typing import Dict, List, Optional
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.tunestreet import PopnMusicTuneStreet
 
 from bemani.backend.base import Status
 from bemani.common import ValidatedDict, VersionConstants, Time, ID
-from bemani.data import Score, UserID
+from bemani.data import Score, Link, UserID
 from bemani.protocol import Node
 
 
@@ -130,10 +130,23 @@ class PopnMusicFantasia(PopnMusicBase):
             today_count = statistics.get_int('today_plays', 0)
         else:
             today_count = 0
-        base.add_child(Node.u8('active_fr_num', 0))  # TODO: Hook up rivals code?
         base.add_child(Node.s32('total_play_cnt', statistics.get_int('total_plays', 0)))
         base.add_child(Node.s16('today_play_cnt', today_count))
         base.add_child(Node.s16('consecutive_days', statistics.get_int('consecutive_days', 0)))
+
+        # Number of rivals that are active for this version.
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        rivalcount = 0
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            if not self.has_profile(link.other_userid):
+                continue
+
+            # This profile is valid.
+            rivalcount += 1
+        base.add_child(Node.u8('active_fr_num', rivalcount))
 
         last_played = [x[0] for x in self.data.local.music.get_last_played(self.game, self.version, userid, 3)]
         most_played = [x[0] for x in self.data.local.music.get_most_played(self.game, self.version, userid, 20)]
@@ -418,6 +431,86 @@ class PopnMusicFantasia(PopnMusicBase):
 
             return root
 
+        elif method == 'friend':
+            refid = request.attribute('ref_id')
+            root = Node.void('playerdata')
+
+            # Look up our own user ID based on the RefID provided.
+            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+            if userid is None:
+                root.set_attribute('status', str(Status.NO_PROFILE))
+                return root
+
+            # Grab the links that we care about.
+            links = self.data.local.user.get_links(self.game, self.version, userid)
+            profiles: Dict[UserID, ValidatedDict] = {}
+            rivals: List[Link] = []
+            for link in links:
+                if link.type != 'rival':
+                    continue
+
+                other_profile = self.get_profile(link.other_userid)
+                if other_profile is None:
+                    continue
+                profiles[link.other_userid] = other_profile
+                rivals.append(link)
+
+            for rival in links[:2]:
+                rivalid = rival.other_userid
+                rivalprofile = profiles[rivalid]
+                scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+
+                # First, output general profile info.
+                friend = Node.void('friend')
+                root.add_child(friend)
+
+                # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
+                # ranking numbers disappear and the player icon show a questionmark.
+                friend.add_child(Node.s8('open', 1))
+
+                # Set up some sane defaults.
+                friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
+                friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.get_int('extid'))))
+                friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+
+                # Perform hiscore/medal conversion.
+                hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
+                clear_medal = [0] * self.GAME_MAX_MUSIC_ID
+                for score in scores:
+                    if score.id > self.GAME_MAX_MUSIC_ID:
+                        continue
+
+                    # Skip any scores for chart types we don't support
+                    if score.chart not in [
+                        self.CHART_TYPE_EASY,
+                        self.CHART_TYPE_NORMAL,
+                        self.CHART_TYPE_HYPER,
+                        self.CHART_TYPE_EX,
+                    ]:
+                        continue
+
+                    points = score.points
+                    clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
+
+                    hiscore_index = (score.id * 4) + {
+                        self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
+                        self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
+                        self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
+                        self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
+                    }[score.chart]
+                    hiscore_byte_pos = int((hiscore_index * 17) / 8)
+                    hiscore_bit_pos = int((hiscore_index * 17) % 8)
+                    hiscore_value = points << hiscore_bit_pos
+                    hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+                    hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+                    hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
+
+                hiscore = bytes(hiscore_array)
+                friend.add_child(Node.u16_array('clear_medal', clear_medal))
+                friend.add_child(Node.binary('hiscore', hiscore))
+
+            return root
+
         # Invalid method
         return None
 
@@ -458,3 +551,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
         # Invalid method
         return None
+
+    def handle_lobby_request(self, request: Node) -> Optional[Node]:
+        # Stub out the entire lobby service
+        return Node.void('lobby')

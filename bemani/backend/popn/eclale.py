@@ -1,13 +1,13 @@
 # vim: set fileencoding=utf-8
 import binascii
 import copy
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.lapistoria import PopnMusicLapistoria
 
 from bemani.common import Time, ValidatedDict, VersionConstants
-from bemani.data import UserID
+from bemani.data import UserID, Link
 from bemani.protocol import Node
 
 
@@ -306,6 +306,93 @@ class PopnMusicEclale(PopnMusicBase):
 
         return root
 
+    def handle_player23_friend_request(self, request: Node) -> Node:
+        refid = request.attribute('ref_id')
+        no = int(request.attribute('no', '-1'))
+
+        root = Node.void('player23')
+        if no < 0:
+            root.add_child(Node.s8('result', 2))
+            return root
+
+        # Look up our own user ID based on the RefID provided.
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            root.add_child(Node.s8('result', 2))
+            return root
+
+        # Grab the links that we care about.
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        profiles: Dict[UserID, ValidatedDict] = {}
+        rivals: List[Link] = []
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            other_profile = self.get_profile(link.other_userid)
+            if other_profile is None:
+                continue
+            profiles[link.other_userid] = other_profile
+            rivals.append(link)
+
+        # Somehow requested an invalid profile.
+        if no >= len(rivals):
+            root.add_child(Node.s8('result', 2))
+            return root
+        rivalid = links[no].other_userid
+        rivalprofile = profiles[rivalid]
+        scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+
+        # First, output general profile info.
+        friend = Node.void('friend')
+        root.add_child(friend)
+        friend.add_child(Node.s16('no', no))
+        friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.get_int('extid'))))  # Eclale formats on its own
+        friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
+        friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+        # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
+        # ranking numbers disappear and the player icon show a questionmark.
+        friend.add_child(Node.s8('is_open', 1))
+
+        for score in scores:
+            # Skip any scores for chart types we don't support
+            if score.chart not in [
+                self.CHART_TYPE_EASY,
+                self.CHART_TYPE_NORMAL,
+                self.CHART_TYPE_HYPER,
+                self.CHART_TYPE_EX,
+            ]:
+                continue
+
+            points = score.points
+            medal = score.data.get_int('medal')
+
+            music = Node.void('music')
+            friend.add_child(music)
+            music.set_attribute('music_num', str(score.id))
+            music.set_attribute('sheet_num', str({
+                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
+                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
+                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
+                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
+            }[score.chart]))
+            music.set_attribute('score', str(points))
+            music.set_attribute('clearmedal', str({
+                self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
+                self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
+                self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
+                self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
+                self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
+                self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
+                self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
+                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
+                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
+                self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
+                self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
+            }[medal]))
+
+        return root
+
     def handle_player23_write_music_request(self, request: Node) -> Node:
         refid = request.child_value('ref_id')
 
@@ -443,8 +530,19 @@ class PopnMusicEclale(PopnMusicBase):
         account.add_child(Node.s16_array('my_best', most_played))
         account.add_child(Node.s16_array('latest_music', last_played))
 
-        # TODO: Hook up rivals for Pop'n music?
-        account.add_child(Node.u8('active_fr_num', 0))
+        # Number of rivals that are active for this version.
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        rivalcount = 0
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            if not self.has_profile(link.other_userid):
+                continue
+
+            # This profile is valid.
+            rivalcount += 1
+        account.add_child(Node.u8('active_fr_num', rivalcount))
 
         # player statistics
         statistics = self.get_play_statistics(userid)

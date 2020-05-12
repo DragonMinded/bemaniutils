@@ -128,7 +128,7 @@ var rivals_view = React.createClass({
             }
         }
 
-        if (count >= 4) { avail = false; }
+        if (count >= window.max_active_rivals[this.state.version]) { avail = false; }
 
         return (
             <span>

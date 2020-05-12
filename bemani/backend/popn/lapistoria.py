@@ -1,13 +1,13 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Optional
+from typing import Dict, List, Optional
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.sunnypark import PopnMusicSunnyPark
 
 from bemani.backend.base import Status
 from bemani.common import ValidatedDict, VersionConstants, Time, ID
-from bemani.data import UserID
+from bemani.data import UserID, Link
 from bemani.protocol import Node
 
 
@@ -176,6 +176,93 @@ class PopnMusicLapistoria(PopnMusicBase):
 
             return root
 
+        elif method == 'friend':
+            refid = request.attribute('ref_id')
+            no = int(request.attribute('no', '-1'))
+
+            root = Node.void('player22')
+            if no < 0:
+                root.add_child(Node.s8('result', 2))
+                return root
+
+            # Look up our own user ID based on the RefID provided.
+            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+            if userid is None:
+                root.add_child(Node.s8('result', 2))
+                return root
+
+            # Grab the links that we care about.
+            links = self.data.local.user.get_links(self.game, self.version, userid)
+            profiles: Dict[UserID, ValidatedDict] = {}
+            rivals: List[Link] = []
+            for link in links:
+                if link.type != 'rival':
+                    continue
+
+                other_profile = self.get_profile(link.other_userid)
+                if other_profile is None:
+                    continue
+                profiles[link.other_userid] = other_profile
+                rivals.append(link)
+
+            # Somehow requested an invalid profile.
+            if no >= len(rivals):
+                root.add_child(Node.s8('result', 2))
+                return root
+            rivalid = links[no].other_userid
+            rivalprofile = profiles[rivalid]
+            scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+
+            # First, output general profile info.
+            friend = Node.void('friend')
+            root.add_child(friend)
+            friend.add_child(Node.s16('no', no))
+            friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.get_int('extid'))))
+            friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
+            friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+            # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
+            # ranking numbers disappear and the player icon show a questionmark.
+            friend.add_child(Node.s8('is_open', 1))
+
+            for score in scores:
+                # Skip any scores for chart types we don't support
+                if score.chart not in [
+                    self.CHART_TYPE_EASY,
+                    self.CHART_TYPE_NORMAL,
+                    self.CHART_TYPE_HYPER,
+                    self.CHART_TYPE_EX,
+                ]:
+                    continue
+
+                points = score.points
+                medal = score.data.get_int('medal')
+
+                music = Node.void('music')
+                friend.add_child(music)
+                music.set_attribute('music_num', str(score.id))
+                music.set_attribute('sheet_num', str({
+                    self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
+                    self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
+                    self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
+                    self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
+                }[score.chart]))
+                music.set_attribute('score', str(points))
+                music.set_attribute('clearmedal', str({
+                    self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
+                    self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
+                    self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
+                    self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
+                    self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
+                    self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
+                    self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
+                    self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
+                    self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
+                    self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
+                    self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
+                }[medal]))
+
+            return root
+
         elif method == 'conversion':
             refid = request.child_value('ref_id')
             name = request.child_value('name')
@@ -263,12 +350,25 @@ class PopnMusicLapistoria(PopnMusicBase):
             today_count = statistics.get_int('today_plays', 0)
         else:
             today_count = 0
-        account.add_child(Node.u8('active_fr_num', 0))  # TODO: Hook up rivals code?
         account.add_child(Node.s16('total_play_cnt', statistics.get_int('total_plays', 0)))
         account.add_child(Node.s16('today_play_cnt', today_count))
         account.add_child(Node.s16('consecutive_days', statistics.get_int('consecutive_days', 0)))
         account.add_child(Node.s16('total_days', statistics.get_int('total_days', 0)))
         account.add_child(Node.s16('interval_day', 0))
+
+        # Number of rivals that are active for this version.
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        rivalcount = 0
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            if not self.has_profile(link.other_userid):
+                continue
+
+            # This profile is valid.
+            rivalcount += 1
+        account.add_child(Node.u8('active_fr_num', rivalcount))
 
         # Add scores section
         last_played = [x[0] for x in self.data.local.music.get_last_played(self.game, self.version, userid, 5)]

@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort, g  # type: ignore
 
-from bemani.common import ID, GameConstants
+from bemani.common import ID, GameConstants, VersionConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.popn.popn import PopnMusicFrontend
@@ -361,12 +361,18 @@ def updatename() -> Dict[str, Any]:
 def viewrivals() -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     rivals, playerinfo = frontend.get_rivals(g.userID)
+
+    # There is no support for Rivals in Tune Street.
+    if VersionConstants.POPN_MUSIC_TUNE_STREET in rivals:
+        del rivals[VersionConstants.POPN_MUSIC_TUNE_STREET]
+
     return render_react(
         'Pop\'n Music Rivals',
         'popn/rivals.react.js',
         {
             'userid': str(g.userID),
             'rivals': rivals,
+            'max_active_rivals': frontend.max_active_rivals,
             'players': playerinfo,
             'versions': {version: name for (game, version, name) in frontend.all_games()},
         },
@@ -386,6 +392,10 @@ def viewrivals() -> Response:
 def listrivals() -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     rivals, playerinfo = frontend.get_rivals(g.userID)
+
+    # There is no support for Rivals in Tune Street.
+    if VersionConstants.POPN_MUSIC_TUNE_STREET in rivals:
+        del rivals[VersionConstants.POPN_MUSIC_TUNE_STREET]
 
     return {
         'rivals': rivals,

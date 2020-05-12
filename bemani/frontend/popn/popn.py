@@ -2,7 +2,7 @@
 from typing import Any, Dict, Iterator, Tuple
 
 from bemani.backend.popn import PopnMusicFactory, PopnMusicBase
-from bemani.common import ValidatedDict, GameConstants
+from bemani.common import ValidatedDict, GameConstants, VersionConstants
 from bemani.data import Attempt, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
@@ -19,6 +19,17 @@ class PopnMusicFrontend(FrontendBase):
     ]
 
     valid_rival_types = ['rival']
+
+    max_active_rivals = {
+        # Technically there is support for Rivals in Tune Street but I
+        # couldn't get it booting anymore to test.
+        VersionConstants.POPN_MUSIC_TUNE_STREET: 0,
+        VersionConstants.POPN_MUSIC_FANTASIA: 2,
+        VersionConstants.POPN_MUSIC_SUNNY_PARK: 2,
+        VersionConstants.POPN_MUSIC_LAPISTORIA: 4,
+        VersionConstants.POPN_MUSIC_ECLALE: 4,
+        VersionConstants.POPN_MUSIC_USANEKO: 4,
+    }
 
     def all_games(self) -> Iterator[Tuple[str, int, str]]:
         yield from PopnMusicFactory.all_games()

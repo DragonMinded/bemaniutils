@@ -135,6 +135,9 @@ class PopnMusicTuneStreet(PopnMusicBase):
         binary_profile[63] = (profile.get_int('music') >> 8) & 0xFF
         binary_profile[64] = profile.get_int('sheet') & 0xFF
         binary_profile[65] = profile.get_int('category') & 0xFF
+        # This might be the count of friends, since Tune Street *does* support
+        # rivals. However, I can no longer get it running on my cabinet or locally
+        # so there's no way for me to test.
         binary_profile[67] = profile.get_int('medal_and_friend') & 0xFF
 
         # Format Scores
