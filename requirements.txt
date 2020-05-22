@@ -12,7 +12,7 @@ freezegun
 pyreact
 Flask-Caching
 blinker
-pycrypto
+pycryptodome
 jaconv
 pefile
 pillow

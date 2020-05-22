@@ -28,6 +28,7 @@ from bemani.backend.iidx.pendual import IIDXPendual
 from bemani.backend.iidx.copula import IIDXCopula
 from bemani.backend.iidx.sinobuz import IIDXSinobuz
 from bemani.backend.iidx.cannonballers import IIDXCannonBallers
+from bemani.backend.iidx.rootage import IIDXRootage
 from bemani.common import Model, VersionConstants
 from bemani.data import Data
 
@@ -60,6 +61,7 @@ class IIDXFactory(Factory):
         IIDXCopula,
         IIDXSinobuz,
         IIDXCannonBallers,
+        IIDXRootage,
     ]
 
     @classmethod
@@ -81,9 +83,9 @@ class IIDXFactory(Factory):
                 return VersionConstants.IIDX_COPULA
             if date >= 2016102600 and date < 2017122100:
                 return VersionConstants.IIDX_SINOBUZ
-            if date >= 2017122100:
+            if date >= 2017122100 and date < 2019012300:
                 return VersionConstants.IIDX_CANNON_BALLERS
-            return None
+            return VersionConstants.IIDX_ROOTAGE # date >= 2019012300
 
         if model.game == 'JDJ':
             return IIDXSirius(data, config, model)
@@ -128,6 +130,8 @@ class IIDXFactory(Factory):
                 return IIDXSinobuz(data, config, model)
             if version == VersionConstants.IIDX_CANNON_BALLERS:
                 return IIDXCannonBallers(data, config, model)
+            if version == VersionConstants.IIDX_ROOTAGE:
+                return IIDXRootage(data, config, model)
 
         # Unknown game version
         return None

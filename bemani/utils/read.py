@@ -1470,13 +1470,14 @@ class ImportIIDX(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        if version in ['20', '21', '22', '23', '24']:
+        if version in ['20', '21', '22', '23', '24', '26']:
             actual_version = {
                 '20': VersionConstants.IIDX_TRICORO,
                 '21': VersionConstants.IIDX_SPADA,
                 '22': VersionConstants.IIDX_PENDUAL,
                 '23': VersionConstants.IIDX_COPULA,
                 '24': VersionConstants.IIDX_SINOBUZ,
+                '26': VersionConstants.IIDX_ROOTAGE,
             }[version]
             self.charts = [0, 1, 2, 3, 4, 5, 6]
         elif version in ['omni-20', 'omni-21', 'omni-22', 'omni-23', 'omni-24']:
@@ -1492,7 +1493,7 @@ class ImportIIDX(ImportBase):
             actual_version = None
             self.charts = [0, 1, 2, 3, 4, 5, 6]
         else:
-            raise Exception("Unsupported IIDX version, expected one of the following: 20, 21, 22, 23, 24, omni-20, omni-21, omni-22, omni-23, omni-24!")
+            raise Exception("Unsupported IIDX version, expected one of the following: 20, 21, 22, 23, 24, 26, omni-20, omni-21, omni-22, omni-23, omni-24!")
 
         super().__init__(config, GameConstants.IIDX, actual_version, no_combine, update)
 
