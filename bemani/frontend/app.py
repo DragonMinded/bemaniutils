@@ -133,10 +133,9 @@ def jsx(filename: str) -> Response:
     namespace = f'{mtime}.{jsxfile}'
     jsx = g.cache.get(namespace)
     if jsx is None:
-        transformer = JSXTransformer()
-        f = open(jsxfile, 'r')
-        jsx = transformer.transform_string(f.read())
-        f.close()
+        with open(jsxfile, 'rb') as f:
+            transformer = JSXTransformer()
+            jsx = transformer.transform_string(f.read().decode('utf-8'))
         # Set the cache to one year, since we namespace on this file's update time
         g.cache.set(namespace, jsx, timeout=86400 * 365)
     return Response(jsx, mimetype='application/javascript')
