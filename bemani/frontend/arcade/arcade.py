@@ -98,36 +98,35 @@ def get_game_settings(arcade: Arcade) -> List[Dict[str, Any]]:
             'name': game_lut[game][version],
             'bools': [],
             'ints': [],
+            'strs': [],
+            'longstrs': [],
         }
 
         # Now, look up the current setting for each returned setting
-        for bool_setting in settings.get('bools', []):
-            if bool_setting['category'] not in settings_lut[game][version]:
-                cached_setting = g.data.local.machine.get_settings(arcade.id, game, version, bool_setting['category'])
-                if cached_setting is None:
-                    cached_setting = ValidatedDict()
-                settings_lut[game][version][bool_setting['category']] = cached_setting
+        for setting_type, setting_unpacker in [
+            ('bools', "get_bool"),
+            ('ints', "get_int"),
+            ('strs', "get_str"),
+            ('longstrs', "get_str"),
+        ]:
+            for setting in settings.get(setting_type, []):
+                if setting['category'] not in settings_lut[game][version]:
+                    cached_setting = g.data.local.machine.get_settings(arcade.id, game, version, setting['category'])
+                    if cached_setting is None:
+                        cached_setting = ValidatedDict()
+                    settings_lut[game][version][setting['category']] = cached_setting
 
-            current_settings = settings_lut[game][version][bool_setting['category']]
-            bool_setting['value'] = current_settings.get_bool(bool_setting['setting'])
-            game_settings['bools'].append(bool_setting)
-
-        # Now, look up the current setting for each returned setting
-        for int_setting in settings.get('ints', []):
-            if int_setting['category'] not in settings_lut[game][version]:
-                cached_setting = g.data.local.machine.get_settings(arcade.id, game, version, int_setting['category'])
-                if cached_setting is None:
-                    cached_setting = ValidatedDict()
-                settings_lut[game][version][int_setting['category']] = cached_setting
-
-            current_settings = settings_lut[game][version][int_setting['category']]
-            int_setting['value'] = current_settings.get_int(int_setting['setting'])
-            game_settings['ints'].append(int_setting)
+                current_settings = settings_lut[game][version][setting['category']]
+                setting['value'] = getattr(current_settings, setting_unpacker)(setting['setting'])
+                game_settings[setting_type].append(setting)
 
         # Now, include it!
         all_settings.append(game_settings)
 
-    return all_settings
+    return sorted(
+        all_settings,
+        key=lambda setting: (setting['game'], setting['version']),
+    )
 
 
 @arcade_pages.route('/<int:arcadeid>')
@@ -334,37 +333,27 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
     game = request.get_json()['game']
     version = request.get_json()['version']
 
-    for game_setting in request.get_json()['bools']:
-        # Grab the value to update
-        category = game_setting['category']
-        setting = game_setting['setting']
-        new_value = game_setting['value']
+    for setting_type, update_function in [
+        ('bools', 'replace_bool'),
+        ('ints', 'replace_int'),
+        ('strs', 'replace_str'),
+        ('longstrs', 'replace_str'),
+    ]:
+        for game_setting in request.get_json()[setting_type]:
+            # Grab the value to update
+            category = game_setting['category']
+            setting = game_setting['setting']
+            new_value = game_setting['value']
 
-        # Update the value
-        current_settings = g.data.local.machine.get_settings(arcade.id, game, version, category)
-        if current_settings is None:
-            current_settings = ValidatedDict()
+            # Update the value
+            current_settings = g.data.local.machine.get_settings(arcade.id, game, version, category)
+            if current_settings is None:
+                current_settings = ValidatedDict()
 
-        current_settings.replace_bool(setting, new_value)
+            getattr(current_settings, update_function)(setting, new_value)
 
-        # Save it back
-        g.data.local.machine.put_settings(arcade.id, game, version, category, current_settings)
-
-    for game_setting in request.get_json()['ints']:
-        # Grab the value to update
-        category = game_setting['category']
-        setting = game_setting['setting']
-        new_value = game_setting['value']
-
-        # Update the value
-        current_settings = g.data.local.machine.get_settings(arcade.id, game, version, category)
-        if current_settings is None:
-            current_settings = ValidatedDict()
-
-        current_settings.replace_int(setting, new_value)
-
-        # Save it back
-        g.data.local.machine.put_settings(arcade.id, game, version, category, current_settings)
+            # Save it back
+            g.data.local.machine.put_settings(arcade.id, game, version, category, current_settings)
 
     # Return the updated value
     return {

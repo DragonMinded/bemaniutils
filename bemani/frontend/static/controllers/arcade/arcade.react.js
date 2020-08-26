@@ -421,6 +421,53 @@ var arcade_management = React.createClass({
                             </div>
                         );
                     }.bind(this))}
+                    { this.state.settings[this.getSettingIndex(this.state.current_setting)].strs.map(function(setting, index) {
+                        return (
+                            <div className="arcade menuoption">
+                                <Tip
+                                    text={setting.tip}
+                                >
+                                    <label htmlFor={setting.setting}>{setting.name}:</label>
+                                    <input
+                                        name={setting.setting}
+                                        id={setting.setting}
+                                        type="text"
+                                        value={setting.value}
+                                        onChange={function(event) {
+                                            this.state.settings[this.getSettingIndex(this.state.current_setting)].strs[index].value = event.target.value;
+                                            this.setState({
+                                                settings: this.state.settings,
+                                                settings_changed: this.setChanged(true),
+                                            });
+                                        }.bind(this)}
+                                    />
+                                </Tip>
+                            </div>
+                        );
+                    }.bind(this))}
+                    { this.state.settings[this.getSettingIndex(this.state.current_setting)].longstrs.map(function(setting, index) {
+                        return (
+                            <div className="arcade menuoption">
+                                <Tip
+                                    text={setting.tip}
+                                >
+                                    <label htmlFor={setting.setting}>{setting.name}:</label>
+                                    <textarea
+                                        name={setting.setting}
+                                        id={setting.setting}
+                                        value={setting.value}
+                                        onChange={function(event) {
+                                            this.state.settings[this.getSettingIndex(this.state.current_setting)].longstrs[index].value = event.target.value;
+                                            this.setState({
+                                                settings: this.state.settings,
+                                                settings_changed: this.setChanged(true),
+                                            });
+                                        }.bind(this)}
+                                    />
+                                </Tip>
+                            </div>
+                        );
+                    }.bind(this))}
                     <input
                         type="submit"
                         disabled={!this.state.settings_changed[this.state.current_setting]}
