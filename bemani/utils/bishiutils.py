@@ -106,7 +106,13 @@ def descramble_pman(package_data: bytes, offset: int, endian: str, obfuscated: b
     return names
 
 
-def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = False) -> None:
+def extract(
+    filename: str,
+    output_dir: str, *,
+    write: bool = True,
+    verbose: bool = False,
+    raw: bool = False,
+) -> None:
     with open(filename, "rb") as fp:
         data = fp.read()
 
@@ -230,10 +236,19 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                     else:
                         # Now, see if we can extract this data.
                         print(f"Writing {filename} texture data...")
-                        magic, _, _, _, width, height, fmt, _, flags2, flags1 = struct.unpack(
-                            f"{endian}4sIIIHHBBBB",
+                        magic, _, _, length, width, height, fmtflags = struct.unpack(
+                            f"{endian}4sIIIHHI",
                             raw_data[0:24],
                         )
+                        if length != len(raw_data):
+                            raise Exception("Invalid texture length!")
+                        fmt = fmtflags & 0xFF
+                        flags1 = (fmtflags >> 24) & 0xFF
+                        flags2 = (fmtflags >> 16) & 0xFF
+                        unk1 = 3 if (flags1 & 0xF == 1) else 1
+                        unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
+                        unk3 = 1 if (flags2 & 0xF == 1) else 2
+                        unk4 = 1 if ((flags2 >> 4) & 0xF == 1) else 2
 
                         if endian == "<" and magic != b"TDXT":
                             raise Exception("Unexpected texture format!")
@@ -246,7 +261,6 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                                 'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
                             )
                         # 0x10 = Seems to be some sort of RGB with color swapping.
-                        # 0x11 = Unknown entirely, PS3 format. Looks to be one byte per pixel.
                         # 0x15 = Looks like RGB but reversed (end and beginning bytes swapped).
                         # 0x16 = DTX1 format, when I encounter this I'll hook it up.
                         elif fmt == 0x1A:
@@ -261,7 +275,6 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                                 0,
                                 1,
                             )
-                            img = ImageOps.flip(img).rotate(-90, expand=True)
                         # 0x1E = I have no idea what format this is.
                         # 0x1F = 16bpp, possibly grayscale? Maybe 555A or 565 color?
                         elif fmt == 0x20:
@@ -278,7 +291,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                         if img:
                             with open(f"{filename}.png", "wb") as bfp:
                                 img.save(bfp, format='PNG')
-                        else:
+                        if not img or raw:
                             with open(f"{filename}.raw", "wb") as bfp:
                                 bfp.write(raw_data)
                             with open(f"{filename}.xml", "w") as sfp:
@@ -698,9 +711,21 @@ def main() -> int:
         action="store_true",
         help="Display verbuse debugging output.",
     )
+    parser.add_argument(
+        "-r",
+        "--write-raw",
+        action="store_true",
+        help="Always write raw texture files.",
+    )
     args = parser.parse_args()
 
-    extract(args.file, args.dir, write=not args.pretend, verbose=args.verbose)
+    extract(
+        args.file,
+        args.dir,
+        write=not args.pretend,
+        verbose=args.verbose,
+        raw=args.write_raw,
+    )
 
     return 0
 

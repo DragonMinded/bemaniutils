@@ -20,7 +20,7 @@ def unpack(_bytes: bytes) -> int:
         4: 'I',
         8: 'Q'
     }
-    return struct.unpack('<' + STRUCT_SIGNS[len(_bytes)], _bytes)[0]
+    return struct.unpack('>' + STRUCT_SIGNS[len(_bytes)], _bytes)[0]
 
 
 # This function converts RGB565 format to raw pixels
@@ -51,7 +51,6 @@ class DXTBuffer:
         file = io.BytesIO(filedata)
         for row in range(self.block_county):
             for col in range(self.block_countx):
-
                 # Get the alpha values
                 a0 = unpack(file.read(1))
                 a1 = unpack(file.read(1))
@@ -68,10 +67,10 @@ class DXTBuffer:
                 # The 4x4 Lookup table loop
                 for j in range(4):
                     for i in range(4):
-                        alpha = self.getAlpha(j, i, a0, a1, acode0, acode1)
+                        alpha = self.getAlpha(i, j, a0, a1, acode0, acode1)
                         self.getColors(
-                            row * 4,
                             col * 4,
+                            row * 4,
                             i,
                             j,
                             ctable,
@@ -97,8 +96,8 @@ class DXTBuffer:
                 for j in range(4):
                     for i in range(4):
                         self.getColors(
-                            row * 4,
                             col * 4,
+                            row * 4,
                             i,
                             j,
                             ctable,
@@ -120,7 +119,7 @@ class DXTBuffer:
         c1: Tuple[int, int, int, int],
         alpha: int,
     ) -> None:
-        code = (ctable >> (2 * (4 * i + j))) & 0x03  # Get the color of the current pixel
+        code = (ctable >> (2 * ((4 * i) + j))) & 0x03  # Get the color of the current pixel
         pixel_color = None
 
         r0 = c0[0]
@@ -131,39 +130,26 @@ class DXTBuffer:
         g1 = c1[1]
         b1 = c1[2]
 
-        # Main two colors
+        # Sliding scale between colors.
         if code == 0:
             pixel_color = (r0, g0, b0, alpha)
         if code == 1:
             pixel_color = (r1, g1, b1, alpha)
+        if code == 2:
+            pixel_color = ((2 * r0 + r1) // 3, (2 * g0 + g1) // 3, (2 * b0 + b1) // 3, alpha)
+        if code == 3:
+            pixel_color = ((r0 + 2 * r1) // 3, (g0 + 2 * g1) // 3, (b0 + 2 * b1) // 3, alpha)
 
-        # Use the lookup table to determine the other two colors
-        if c0 > c1:
-            if code == 2:
-                pixel_color = ((2 * r0 + r1) // 3, (2 * g0 + g1) // 3, (2 * b0 + b1) // 3, alpha)
-            if code == 3:
-                pixel_color = ((r0 + 2 * r1) // 3, (g0 + 2 * g1) // 3, (b0 + 2 * b1) // 3, alpha)
-        else:
-            if code == 2:
-                pixel_color = ((r0 + r1) // 2, (g0 + g1) // 2, (b0 + b1) // 2, alpha)
-            if code == 3:
-                pixel_color = (0, 0, 0, alpha)
-
-        # While not surpassing the image dimensions, assign pixels the colors
-        if (x + i) < self.width:
+        # While not surpassing the image dimensions, assign pixels the colors.
+        if (x + i) < self.width and (y + j) < self.height:
             self.decompressed_buffer[(y + j) * self.width + (x + i)] = (
-                struct.pack('<B', pixel_color[0]) +
-                struct.pack('<B', pixel_color[1]) +
-                struct.pack('<B', pixel_color[2]) +
-                struct.pack('<B', pixel_color[3])
+                struct.pack('<BBBB', *pixel_color)
             )
 
     def getAlpha(self, i: int, j: int, a0: int, a1: int, acode0: int, acode1: int) -> int:
-
         # Using the same method as the colors calculate the alpha values
 
-        alpha = 255
-        alpha_index = 3 * (4 * j + i)
+        alpha_index = 3 * ((4 * j) + i)
         alpha_code = None
 
         if alpha_index <= 12:
@@ -185,14 +171,6 @@ class DXTBuffer:
                     alpha = 0
                 elif alpha_code == 7:
                     alpha = 255
-                elif alpha_code == 5:
-                    alpha = (1 * a0 + 4 * a1) // 5
-                elif alpha_code == 4:
-                    alpha = (2 * a0 + 3 * a1) // 5
-                elif alpha_code == 3:
-                    alpha = (3 * a0 + 2 * a1) // 5
-                elif alpha_code == 2:
-                    alpha = (4 * a0 + 1 * a1) // 5
                 else:
-                    alpha = 0  # For safety
+                    alpha = ((6 - alpha_code) * a0 + (alpha_code - 1) * a1) // 5
         return alpha
