@@ -261,13 +261,30 @@ def extract(
                         if endian == ">" and magic != b"TXDT":
                             raise Exception("Unexpected texture format!")
 
-                        if fmt == 0x0E:
+                        if fmt == 0x0B:
+                            # 16-bit 565 color RGB format.
+                            newdata = []
+                            for i in range(width * height):
+                                pixel = struct.unpack(
+                                    f"{endian}H",
+                                    raw_data[(64 + (i * 2)):(66 + (i * 2))],
+                                )[0]
+                                red = ((pixel >> 0) & 0x1F) << 3
+                                green = ((pixel >> 5) & 0x3F) << 2
+                                blue = ((pixel >> 11) & 0x1F) << 3
+                                newdata.append(
+                                    struct.pack("<BBB", blue, green, red)
+                                )
+                            img = Image.frombytes(
+                                'RGB', (width, height), b''.join(newdata), 'raw', 'RGB',
+                            )
+                        elif fmt == 0x0E:
                             # RGB image, no alpha.
                             img = Image.frombytes(
                                 'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
                             )
                         # 0x10 = Seems to be some sort of RGB with color swapping.
-                        if fmt == 0x15:
+                        elif fmt == 0x15:
                             # RGBA format.
                             # TODO: The colors are wrong on this, need to investigate
                             # further.
@@ -290,7 +307,24 @@ def extract(
                                 1,
                             )
                         # 0x1E = I have no idea what format this is.
-                        # 0x1F = 16bpp, possibly grayscale? Maybe 555A or 565 color?
+                        elif fmt == 0x1F:
+                            # 16-bit 4-4-4-4 RGBA format.
+                            newdata = []
+                            for i in range(width * height):
+                                pixel = struct.unpack(
+                                    f"{endian}H",
+                                    raw_data[(64 + (i * 2)):(66 + (i * 2))],
+                                )[0]
+                                blue = ((pixel >> 0) & 0xF) << 4
+                                green = ((pixel >> 4) & 0xF) << 4
+                                red = ((pixel >> 8) & 0xF) << 4
+                                alpha = ((pixel >> 12) & 0xF) << 4
+                                newdata.append(
+                                    struct.pack("<BBBB", red, green, blue, alpha)
+                                )
+                            img = Image.frombytes(
+                                'RGBA', (width, height), b''.join(newdata), 'raw', 'RGBA',
+                            )
                         elif fmt == 0x20:
                             # RGBA format.
                             img = Image.frombytes(
