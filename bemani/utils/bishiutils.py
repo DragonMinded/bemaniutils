@@ -5,7 +5,7 @@ import os.path
 import struct
 import sys
 import textwrap
-from PIL import Image, ImageOps  # type: ignore
+from PIL import Image  # type: ignore
 from typing import Any, List, Optional
 
 from bemani.format.dxt import DXTBuffer
@@ -243,12 +243,17 @@ def extract(
                         if length != len(raw_data):
                             raise Exception("Invalid texture length!")
                         fmt = fmtflags & 0xFF
-                        flags1 = (fmtflags >> 24) & 0xFF
-                        flags2 = (fmtflags >> 16) & 0xFF
-                        unk1 = 3 if (flags1 & 0xF == 1) else 1
-                        unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
-                        unk3 = 1 if (flags2 & 0xF == 1) else 2
-                        unk4 = 1 if ((flags2 >> 4) & 0xF == 1) else 2
+
+                        # Extract flags that the game cares about.
+                        # flags1 = (fmtflags >> 24) & 0xFF
+                        # flags2 = (fmtflags >> 16) & 0xFF
+
+                        # These flags may have some significance, such as
+                        # the unk3/unk4 possibly indicating texture doubling?
+                        # unk1 = 3 if (flags1 & 0xF == 1) else 1
+                        # unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
+                        # unk3 = 1 if (flags2 & 0xF == 1) else 2
+                        # unk4 = 1 if ((flags2 >> 4) & 0xF == 1) else 2
 
                         if endian == "<" and magic != b"TDXT":
                             raise Exception("Unexpected texture format!")
@@ -261,10 +266,18 @@ def extract(
                                 'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
                             )
                         # 0x10 = Seems to be some sort of RGB with color swapping.
-                        # 0x15 = Looks like RGB but reversed (end and beginning bytes swapped).
+                        if fmt == 0x15:
+                            # RGBA format.
+                            # TODO: The colors are wrong on this, need to investigate
+                            # further.
+                            img = Image.frombytes(
+                                'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
+                            )
                         # 0x16 = DTX1 format, when I encounter this I'll hook it up.
                         elif fmt == 0x1A:
                             # DXT5 format.
+                            # TODO: This seems to render some chunks rotated, need
+                            # to investigate further.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
                                 'RGBA',
