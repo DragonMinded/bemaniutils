@@ -119,7 +119,7 @@ class DXTBuffer:
         c1: Tuple[int, int, int, int],
         alpha: int,
     ) -> None:
-        code = (ctable >> (2 * ((4 * i) + j))) & 0x03  # Get the color of the current pixel
+        code = (ctable >> (2 * ((4 * j) + i))) & 0x03  # Get the color of the current pixel
         pixel_color = None
 
         r0 = c0[0]
@@ -148,7 +148,6 @@ class DXTBuffer:
 
     def getAlpha(self, i: int, j: int, a0: int, a1: int, acode0: int, acode1: int) -> int:
         # Using the same method as the colors calculate the alpha values
-
         alpha_index = 3 * ((4 * j) + i)
         alpha_code = None
 
