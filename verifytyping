@@ -2,8 +2,8 @@
 
 declare -a arr=(
     "api"
+    "afputils"
     "arcutils"
-    "bishiutils"
     "bemanishark"
     "binutils"
     "cardconvert"

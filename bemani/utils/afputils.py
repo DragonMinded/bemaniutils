@@ -701,7 +701,7 @@ def extract(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="BishiBashi graphic file unpacker.")
+    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker.")
     parser.add_argument(
         "file",
         metavar="FILE",
