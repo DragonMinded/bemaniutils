@@ -13,14 +13,14 @@ import struct
 from typing import List, Optional, Tuple
 
 
-def unpack(_bytes: bytes) -> int:
+def unpack(endian: str, _bytes: bytes) -> int:
     STRUCT_SIGNS = {
         1: 'B',
         2: 'H',
         4: 'I',
         8: 'Q'
     }
-    return struct.unpack('>' + STRUCT_SIGNS[len(_bytes)], _bytes)[0]
+    return struct.unpack(endian + STRUCT_SIGNS[len(_bytes)], _bytes)[0]
 
 
 # This function converts RGB565 format to raw pixels
@@ -46,23 +46,23 @@ class DXTBuffer:
 
         self.decompressed_buffer: List[Optional[bytes]] = [None] * ((width * height) * 2)  # Dont ask me why
 
-    def DXT5Decompress(self, filedata: bytes) -> bytes:
+    def DXT5Decompress(self, filedata: bytes, endian: str = "<") -> bytes:
         # Loop through each block and decompress it
         file = io.BytesIO(filedata)
         for row in range(self.block_county):
             for col in range(self.block_countx):
                 # Get the alpha values
-                a0 = unpack(file.read(1))
-                a1 = unpack(file.read(1))
+                a0 = unpack(endian, file.read(1))
+                a1 = unpack(endian, file.read(1))
                 atable = file.read(6)
 
                 acode0 = atable[2] | (atable[3] << 8) | (atable[4] << 16) | (atable[5] << 24)
                 acode1 = atable[0] | (atable[1] << 8)
 
                 # Color 1 color 2, color look up table
-                c0 = unpack(file.read(2))
-                c1 = unpack(file.read(2))
-                ctable = unpack(file.read(4))
+                c0 = unpack(endian, file.read(2))
+                c1 = unpack(endian, file.read(2))
+                ctable = unpack(endian, file.read(4))
 
                 # The 4x4 Lookup table loop
                 for j in range(4):
@@ -81,16 +81,16 @@ class DXTBuffer:
 
         return b''.join([x for x in self.decompressed_buffer if x is not None])
 
-    def DXT1Decompress(self, filedata: bytes) -> bytes:
+    def DXT1Decompress(self, filedata: bytes, endian: str = "<") -> bytes:
         # Loop through each block and decompress it
         file = io.BytesIO(filedata)
         for row in range(self.block_county):
             for col in range(self.block_countx):
 
                 # Color 1 color 2, color look up table
-                c0 = unpack(file.read(2))
-                c1 = unpack(file.read(2))
-                ctable = unpack(file.read(4))
+                c0 = unpack(endian, file.read(2))
+                c1 = unpack(endian, file.read(2))
+                ctable = unpack(endian, file.read(4))
 
                 # The 4x4 Lookup table loop
                 for j in range(4):

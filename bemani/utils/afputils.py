@@ -283,7 +283,7 @@ def extract(
                             img = Image.frombuffer(
                                 'RGBA',
                                 (width, height),
-                                dxt.DXT5Decompress(raw_data[64:]),
+                                dxt.DXT5Decompress(raw_data[64:], endian=endian),
                                 'raw',
                                 'RGBA',
                                 0,
