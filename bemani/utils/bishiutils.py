@@ -4,8 +4,9 @@ import os
 import os.path
 import struct
 import sys
+import textwrap
 from PIL import Image, ImageOps  # type: ignore
-from typing import Any, List
+from typing import Any, List, Optional
 
 from bemani.format.dxt import DXTBuffer
 from bemani.protocol.binary import BinaryEncoding
@@ -64,19 +65,21 @@ def descramble_text(text: bytes, obfuscated: bool) -> str:
         return ""
 
 
-def descramble_pman(package_data: bytes, offset: int, obfuscated: bool) -> List[str]:
+def descramble_pman(package_data: bytes, offset: int, endian: str, obfuscated: bool) -> List[str]:
     # Unclear what the first three unknowns are, but the fourth
     # looks like it could possibly be two int16s indicating unknown?
     magic, _, _, _, numentries, _, data_offset = struct.unpack(
-        "<4sIIIIII",
+        f"{endian}4sIIIIII",
         package_data[offset:(offset + 28)],
     )
     add_coverage(offset, 28)
 
-    if magic != b"PMAN":
+    if endian == "<" and magic != b"PMAN":
+        raise Exception("Invalid magic value in PMAN structure!")
+    if endian == ">" and magic != b"NAMP":
         raise Exception("Invalid magic value in PMAN structure!")
 
-    names = []
+    names: List[Optional[str]] = [None] * numentries
     if numentries > 0:
         # Jump to the offset, parse it out
         for i in range(numentries):
@@ -84,7 +87,7 @@ def descramble_pman(package_data: bytes, offset: int, obfuscated: bool) -> List[
             # Really not sure on the first entry here, it looks
             # completely random, so it might be a CRC?
             _, entry_no, nameoffset = struct.unpack(
-                "<III",
+                f"{endian}III",
                 package_data[file_offset:(file_offset + 12)],
             )
             add_coverage(file_offset, 12)
@@ -94,13 +97,13 @@ def descramble_pman(package_data: bytes, offset: int, obfuscated: bool) -> List[
             bytedata = get_until_null(package_data, nameoffset)
             add_coverage(nameoffset, len(bytedata) + 1, unique=False)
             name = descramble_text(bytedata, obfuscated)
-            names.append(name)
+            names[entry_no] = name
+
+    for i, name in enumerate(names):
+        if name is None:
+            raise Exception(f"Didn't get mapping for entry {i + 1}")
 
     return names
-
-
-def swap32(i: int) -> int:
-    return struct.unpack("<I", struct.pack(">I", i))[0]
 
 
 def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = False) -> None:
@@ -121,7 +124,11 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     # First, check the signature
     add_coverage(0, 4)
-    if data[0:4] != b"2PXT":
+    if data[0:4] == b"2PXT":
+        endian = "<"
+    elif data[0:4] == b"TXP2":
+        endian = ">"
+    else:
         raise Exception("Invalid graphic file format!")
 
     # Not sure what words 2 and 3 are, they seem to be some sort of
@@ -130,19 +137,19 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     # Now, grab the file length, verify that we have the right amount
     # of data.
-    length = struct.unpack("<I", data[12:16])[0]
+    length = struct.unpack(f"{endian}I", data[12:16])[0]
     add_coverage(12, 4)
     if length != len(data):
         raise Exception(f"Invalid graphic file length, expecting {length} bytes!")
 
     # I think that offset 16-20 are the file data offset, but I'm not sure?
-    header_length = struct.unpack("<I", data[16:20])[0]
+    header_length = struct.unpack(f"{endian}I", data[16:20])[0]
     add_coverage(16, 4)
 
     # Now, the meat of the file format. Bytes 20-24 are a bitfield for
     # what parts of the header exist in the file. We need to understand
     # each bit so we know how to skip past each section.
-    feature_mask = struct.unpack("<I", data[20:24])[0]
+    feature_mask = struct.unpack(f"{endian}I", data[20:24])[0]
     add_coverage(20, 4)
     header_offset = 24
 
@@ -156,7 +163,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     if feature_mask & 0x01:
         # List of textures that exist in the file, with pointers to their data.
-        length, offset = struct.unpack("<II", data[header_offset:(header_offset + 8)])
+        length, offset = struct.unpack(f"{endian}II", data[header_offset:(header_offset + 8)])
         add_coverage(header_offset, 8)
         header_offset += 8
 
@@ -165,7 +172,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
             interesting_offset = offset + (x * 12)
             if interesting_offset != 0:
                 name_offset, texture_length, texture_offset = struct.unpack(
-                    "<III",
+                    f"{endian}III",
                     data[interesting_offset:(interesting_offset + 12)],
                 )
                 add_coverage(interesting_offset, 12)
@@ -219,25 +226,27 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                         add_coverage(texture_offset, deflated_size + 8)
 
                     if not write:
-                        print(f"Would extract {filename}...")
+                        print(f"Would write {filename} texture data...")
                     else:
                         # Now, see if we can extract this data.
-                        print(f"Extracting {filename}...")
+                        print(f"Writing {filename} texture data...")
                         magic, _, _, _, width, height, fmt, _, flags2, flags1 = struct.unpack(
-                            "<4sIIIHHBBBB",
+                            f"{endian}4sIIIHHBBBB",
                             raw_data[0:24],
                         )
 
-                        if magic != b"TDXT":
+                        if endian == "<" and magic != b"TDXT":
+                            raise Exception("Unexpected texture format!")
+                        if endian == ">" and magic != b"TXDT":
                             raise Exception("Unexpected texture format!")
 
-                        img = None
                         if fmt == 0x0E:
                             # RGB image, no alpha.
                             img = Image.frombytes(
                                 'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
                             )
                         # 0x10 = Seems to be some sort of RGB with color swapping.
+                        # 0x11 = Unknown entirely, PS3 format. Looks to be one byte per pixel.
                         # 0x15 = Looks like RGB but reversed (end and beginning bytes swapped).
                         # 0x16 = DTX1 format, when I encounter this I'll hook it up.
                         elif fmt == 0x1A:
@@ -261,15 +270,26 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                                 'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
                             )
                         else:
-                            raise Exception(f"Unsupported format {hex(fmt)} for texture {name}")
+                            print(f"Unsupported format {hex(fmt)} for texture {name}")
+                            img = None
 
                         # Actually place the file down.
                         os.makedirs(path, exist_ok=True)
-                        with open(f"{filename}.raw", "wb") as bfp:
-                            bfp.write(raw_data)
                         if img:
                             with open(f"{filename}.png", "wb") as bfp:
                                 img.save(bfp, format='PNG')
+                        else:
+                            with open(f"{filename}.raw", "wb") as bfp:
+                                bfp.write(raw_data)
+                            with open(f"{filename}.xml", "w") as sfp:
+                                sfp.write(textwrap.dedent(f"""
+                                    <info>
+                                        <width>{width}</width>
+                                        <height>{height}</height>
+                                        <type>{hex(fmt)}</type>
+                                        <raw>{filename}.raw</raw>
+                                    </info>
+                                """).strip())
 
         vprint(f"Bit 0x000001 - count: {length}, offset: {hex(offset)}")
         for name in names:
@@ -277,20 +297,21 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
     else:
         vprint("Bit 0x000001 - NOT PRESENT")
 
+    # Mapping between texture index and the name of the texture.
+    texturemap = []
     if feature_mask & 0x02:
-        # Seems to be a structure that duplicates texture names? Maybe this is
-        # used elsewhere to map sections to textures? The structure includes
-        # the entry number that seems to correspond with the above table.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        # Seems to be a structure that duplicates texture names? I am pretty
+        # sure this is used to map texture names to file indexes used elsewhere.
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         vprint(f"Bit 0x000002 - offset: {hex(offset)}")
 
         if offset != 0:
-            names = descramble_pman(data, offset, text_obfuscated)
-            for name in names:
-                vprint(f"    {name}")
+            texturemap = descramble_pman(data, offset, endian, text_obfuscated)
+            for i, name in enumerate(texturemap):
+                vprint(f"    {i}: {name}")
     else:
         vprint("Bit 0x000002 - NOT PRESENT")
 
@@ -299,29 +320,77 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
     else:
         vprint("Bit 0x000004 - legacy lz mode off")
 
+    # Mapping between region index and the texture it goes to as well as the
+    # region of texture that this particular graphic makes up.
+    texture_to_region = []
     if feature_mask & 0x08:
-        # I *THINK* that this is the mapping between sections and their
-        # respective textures, but I haven't dug in yet.
-        length, offset = struct.unpack("<II", data[header_offset:(header_offset + 8)])
+        # Mapping between individual graphics and their respective textures.
+        # This is 10 bytes per entry. Seems to need both 0x2 (texture index)
+        # and 0x10 (region index).
+        length, offset = struct.unpack(f"{endian}II", data[header_offset:(header_offset + 8)])
         add_coverage(header_offset, 8)
         header_offset += 8
+
+        if offset != 0 and length > 0:
+            texture_to_region = [(0, (0, 0), (0, 0))] * length
+
+            for i in range(length):
+                descriptor_offset = offset + (10 * i)
+                texture_no, left, top, right, bottom = struct.unpack(
+                    f"{endian}HHHHH",
+                    data[descriptor_offset:(descriptor_offset + 10)],
+                )
+                add_coverage(descriptor_offset, 10)
+
+                if texture_no < 0 or texture_no >= len(texturemap):
+                    raise Exception(f"Out of bounds texture {texture_no}")
+
+                # TODO: The offsets here seem to be off by a power of 2, there
+                # might be more flags in the above texture format that specify
+                # device scaling and such?
+                texture_to_region[i] = (texture_no, (left, top), (right, bottom))
 
         vprint(f"Bit 0x000008 - count: {length}, offset: {hex(offset)}")
     else:
         vprint("Bit 0x000008 - NOT PRESENT")
 
     if feature_mask & 0x10:
-        # Seems to be a strucure that duplicates the above section?
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        # Names of the graphics regions, so we can look into the texture_to_region
+        # mapping above.
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         vprint(f"Bit 0x000010 - offset: {hex(offset)}")
 
         if offset != 0:
-            names = descramble_pman(data, offset, text_obfuscated)
-            for name in names:
-                vprint(f"    {name}")
+            names = descramble_pman(data, offset, endian, text_obfuscated)
+            for i, name in enumerate(names):
+                if i < 0 or i >= len(texture_to_region):
+                    raise Exception(f"Out of bounds region {i}")
+                region = texture_to_region[i]
+                texture = texturemap[region[0]]
+
+                filename = os.path.join(path, name)
+                if write:
+                    # Actually place the file down.
+                    os.makedirs(path, exist_ok=True)
+
+                    print(f"Writing {filename}.xml graphic information...")
+                    with open(f"{filename}.xml", "w") as sfp:
+                        sfp.write(textwrap.dedent(f"""
+                            <info>
+                                <left>{region[1][0]}</left>
+                                <top>{region[1][1]}</top>
+                                <right>{region[2][0]}</right>
+                                <bottom>{region[2][1]}</bottom>
+                                <texture>{texture}</texture>
+                            </info>
+                        """).strip())
+                else:
+                    print(f"Would write {filename}.xml graphic information...")
+
+                vprint(f"    {i}: {name}")
     else:
         vprint("Bit 0x000010 - NOT PRESENT")
 
@@ -333,27 +402,12 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
     if feature_mask & 0x40:
         # Two unknown bytes, first is a length or a count. Secound is
         # an optional offset to grab another set of bytes from.
-        length, offset = struct.unpack("<II", data[header_offset:(header_offset + 8)])
+        length, offset = struct.unpack(f"{endian}II", data[header_offset:(header_offset + 8)])
         add_coverage(header_offset, 8)
         header_offset += 8
 
         # TODO: 0x40 has some weird offset calculations, gotta look into
         # this further.
-
-        names = []
-        for x in range(length):
-            interesting_offset = offset + (x * 12)
-            if interesting_offset != 0:
-                interesting_offset = struct.unpack(
-                    "<I",
-                    data[interesting_offset:(interesting_offset + 4)],
-                )[0]
-            if interesting_offset != 0:
-                # Let's decode this until the first null.
-                bytedata = get_until_null(data, interesting_offset)
-                add_coverage(interesting_offset, len(bytedata) + 1, unique=False)
-                name = descramble_text(bytedata, text_obfuscated)
-                names.append(name)
 
         vprint(f"Bit 0x000040 - count: {length}, offset: {hex(offset)}")
         for name in names:
@@ -363,23 +417,23 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     if feature_mask & 0x80:
         # One unknown byte, treated as an offset.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         vprint(f"Bit 0x000080 - offset: {hex(offset)}")
 
         if offset != 0:
-            names = descramble_pman(data, offset, text_obfuscated)
-            for name in names:
-                vprint(f"    {name}")
+            names = descramble_pman(data, offset, endian, text_obfuscated)
+            for i, name in enumerate(names):
+                vprint(f"    {i}: {name}")
     else:
         vprint("Bit 0x000080 - NOT PRESENT")
 
     if feature_mask & 0x100:
         # Two unknown bytes, first is a length or a count. Secound is
         # an optional offset to grab another set of bytes from.
-        length, offset = struct.unpack("<II", data[header_offset:(header_offset + 8)])
+        length, offset = struct.unpack(f"{endian}II", data[header_offset:(header_offset + 8)])
         add_coverage(header_offset, 8)
         header_offset += 8
 
@@ -387,28 +441,28 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
         # TODO: We do something if length is > 0, we use the magic flag
         # from above in this case to optionally transform each thing we
-        # extract.
+        # extract. This is possibly names of some other type of struture?
     else:
         vprint("Bit 0x000100 - NOT PRESENT")
 
     if feature_mask & 0x200:
         # One unknown byte, treated as an offset.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         vprint(f"Bit 0x000200 - offset: {hex(offset)}")
 
         if offset != 0:
-            names = descramble_pman(data, offset, text_obfuscated)
-            for name in names:
-                vprint(f"    {name}")
+            names = descramble_pman(data, offset, endian, text_obfuscated)
+            for i, name in enumerate(names):
+                vprint(f"    {i}: {name}")
     else:
         vprint("Bit 0x000200 - NOT PRESENT")
 
     if feature_mask & 0x400:
         # One unknown byte, treated as an offset.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
@@ -418,7 +472,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     if feature_mask & 0x800:
         # This is the names of the animations as far as I can tell.
-        length, offset = struct.unpack("<II", data[header_offset:(header_offset + 8)])
+        length, offset = struct.unpack(f"{endian}II", data[header_offset:(header_offset + 8)])
         add_coverage(header_offset, 8)
         header_offset += 8
 
@@ -432,7 +486,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
             interesting_offset = offset + (x * 12)
             if interesting_offset != 0:
                 name_offset, anim_length, anim_offset = struct.unpack(
-                    "<III",
+                    f"{endian}III",
                     data[interesting_offset:(interesting_offset + 12)],
                 )
                 add_coverage(interesting_offset, 12)
@@ -452,16 +506,16 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     if feature_mask & 0x1000:
         # Seems to be a secondary structure mirroring the above.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         vprint(f"Bit 0x001000 - offset: {hex(offset)}")
 
         if offset != 0:
-            names = descramble_pman(data, offset, text_obfuscated)
-            for name in names:
-                vprint(f"    {name}")
+            names = descramble_pman(data, offset, endian, text_obfuscated)
+            for i, name in enumerate(names):
+                vprint(f"    {i}: {name}")
     else:
         vprint("Bit 0x001000 - NOT PRESENT")
 
@@ -469,7 +523,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
         # I am making a very preliminary guess that these are shapes used along
         # with animations specified below. The names in these sections tend to
         # have the word "shape" in them.
-        length, offset = struct.unpack("<II", data[header_offset:(header_offset + 8)])
+        length, offset = struct.unpack(f"{endian}II", data[header_offset:(header_offset + 8)])
         add_coverage(header_offset, 8)
         header_offset += 8
 
@@ -479,18 +533,25 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
         names = []
         for x in range(length):
-            interesting_offset = offset + (x * 12)
-            if interesting_offset != 0:
-                interesting_offset = struct.unpack(
-                    "<I",
-                    data[interesting_offset:(interesting_offset + 4)],
-                )[0]
-            if interesting_offset != 0:
-                # Let's decode this until the first null.
-                bytedata = get_until_null(data, interesting_offset)
-                add_coverage(interesting_offset, len(bytedata) + 1, unique=False)
-                name = descramble_text(bytedata, text_obfuscated)
-                names.append(name)
+            shape_base_offset = offset + (x * 12)
+            if shape_base_offset != 0:
+                name_offset, shape_length, shape_offset = struct.unpack(
+                    f"{endian}III",
+                    data[shape_base_offset:(shape_base_offset + 12)],
+                )
+                add_coverage(shape_base_offset, 12)
+                add_coverage(shape_offset, shape_length)
+
+                # TODO: At the shape offset is a "D2EG" structure of some sort.
+                # I have no idea what these do. I would have to look into it
+                # more if its important.
+
+                if name_offset != 0:
+                    # Let's decode this until the first null.
+                    bytedata = get_until_null(data, name_offset)
+                    add_coverage(name_offset, len(bytedata) + 1, unique=False)
+                    name = descramble_text(bytedata, text_obfuscated)
+                    names.append(name)
 
         for name in names:
             vprint(f"    {name}")
@@ -499,22 +560,22 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     if feature_mask & 0x4000:
         # Seems to be a secondary section mirroring the names from above.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         vprint(f"Bit 0x004000 - offset: {hex(offset)}")
 
         if offset != 0:
-            names = descramble_pman(data, offset, text_obfuscated)
-            for name in names:
-                vprint(f"    {name}")
+            names = descramble_pman(data, offset, endian, text_obfuscated)
+            for i, name in enumerate(names):
+                vprint(f"    {i}: {name}")
     else:
         vprint("Bit 0x004000 - NOT PRESENT")
 
     if feature_mask & 0x8000:
         # One unknown byte, treated as an offset.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
@@ -524,13 +585,13 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
     if feature_mask & 0x10000:
         # Included font package, BINXRPC encoded.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
         # I am not sure what the unknown byte is for. It always appears as
         # all zeros in all files I've looked at.
-        _, length, binxrpc_offset = struct.unpack("<III", data[offset:(offset + 12)])
+        _, length, binxrpc_offset = struct.unpack(f"{endian}III", data[offset:(offset + 12)])
         add_coverage(offset, 12)
 
         if binxrpc_offset != 0:
@@ -557,7 +618,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
     if feature_mask & 0x20000:
         # I am beginning to suspect that this is animation/level data. I have
         # no idea what "afp" is.
-        offset = struct.unpack("<I", data[header_offset:(header_offset + 4)])[0]
+        offset = struct.unpack(f"{endian}I", data[header_offset:(header_offset + 4)])[0]
         add_coverage(header_offset, 4)
         header_offset += 4
 
@@ -572,7 +633,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
                 # the second field is length, but it lines up with everything else
                 # I've observed and seems to make sense.
                 _, afp_header_length, afp_header = struct.unpack(
-                    "<III",
+                    f"{endian}III",
                     data[structure_offset:(structure_offset + 12)]
                 )
                 add_coverage(structure_offset, 12)
@@ -580,7 +641,7 @@ def extract(filename: str, output_dir: str, *, write: bool, verbose: bool = Fals
 
                 # This chunk of data is referred to by name, and then a chunk.
                 anim_name_offset, anim_afp_data_length, anim_afp_data_offset = struct.unpack(
-                    "<III",
+                    f"{endian}III",
                     data[anim_info_ptr:(anim_info_ptr + 12)],
                 )
                 add_coverage(anim_info_ptr, 12, unique=False)
