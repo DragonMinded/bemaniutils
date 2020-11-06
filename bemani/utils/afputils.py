@@ -112,6 +112,7 @@ def extract(
     write: bool = True,
     verbose: bool = False,
     raw: bool = False,
+    xml: bool = False,
 ) -> None:
     with open(filename, "rb") as fp:
         data = fp.read()
@@ -307,15 +308,16 @@ def extract(
                         if not img or raw:
                             with open(f"{filename}.raw", "wb") as bfp:
                                 bfp.write(raw_data)
-                            with open(f"{filename}.xml", "w") as sfp:
-                                sfp.write(textwrap.dedent(f"""
-                                    <info>
-                                        <width>{width}</width>
-                                        <height>{height}</height>
-                                        <type>{hex(fmt)}</type>
-                                        <raw>{filename}.raw</raw>
-                                    </info>
-                                """).strip())
+                            if xml:
+                                with open(f"{filename}.xml", "w") as sfp:
+                                    sfp.write(textwrap.dedent(f"""
+                                        <info>
+                                            <width>{width}</width>
+                                            <height>{height}</height>
+                                            <type>{hex(fmt)}</type>
+                                            <raw>{filename}.raw</raw>
+                                        </info>
+                                    """).strip())
 
         vprint(f"Bit 0x000001 - count: {length}, offset: {hex(offset)}")
         for name in names:
@@ -402,19 +404,21 @@ def extract(
                     # Actually place the file down.
                     os.makedirs(path, exist_ok=True)
 
-                    print(f"Writing {filename}.xml graphic information...")
-                    with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(textwrap.dedent(f"""
-                            <info>
-                                <left>{region[1][0]}</left>
-                                <top>{region[1][1]}</top>
-                                <right>{region[2][0]}</right>
-                                <bottom>{region[2][1]}</bottom>
-                                <texture>{texture}</texture>
-                            </info>
-                        """).strip())
+                    if xml:
+                        print(f"Writing {filename}.xml graphic information...")
+                        with open(f"{filename}.xml", "w") as sfp:
+                            sfp.write(textwrap.dedent(f"""
+                                <info>
+                                    <left>{region[1][0]}</left>
+                                    <top>{region[1][1]}</top>
+                                    <right>{region[2][0]}</right>
+                                    <bottom>{region[2][1]}</bottom>
+                                    <texture>{texture}</texture>
+                                </info>
+                            """).strip())
                 else:
-                    print(f"Would write {filename}.xml graphic information...")
+                    if xml:
+                        print(f"Would write {filename}.xml graphic information...")
 
                 vprint(f"    {i}: {name}")
     else:
@@ -631,13 +635,14 @@ def extract(
         if fontdata is not None:
             filename = os.path.join(path, "fontinfo.xml")
 
-            if write:
-                os.makedirs(path, exist_ok=True)
-                print(f"Writing {filename} font information...")
-                with open(filename, "w") as sfp:
-                    sfp.write(str(fontdata))
-            else:
-                print(f"Would write {filename} font information...")
+            if xml:
+                if write:
+                    os.makedirs(path, exist_ok=True)
+                    print(f"Writing {filename} font information...")
+                    with open(filename, "w") as sfp:
+                        sfp.write(str(fontdata))
+                else:
+                    print(f"Would write {filename} font information...")
     else:
         vprint("Bit 0x010000 - NOT PRESENT")
 
@@ -730,6 +735,11 @@ def main() -> int:
         action="store_true",
         help="Always write raw texture files.",
     )
+    parser.add_argument(
+        "--write-mappings",
+        action="store_true",
+        help="Write mapping files to disk.",
+    )
     args = parser.parse_args()
 
     extract(
@@ -738,6 +748,7 @@ def main() -> int:
         write=not args.pretend,
         verbose=args.verbose,
         raw=args.write_raw,
+        xml=args.write_mappings,
     )
 
     return 0
