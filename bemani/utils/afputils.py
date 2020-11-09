@@ -53,6 +53,26 @@ def get_until_null(data: bytes, offset: int) -> bytes:
     return out
 
 
+def cap32(val: int) -> int:
+    return val & 0xFFFFFFFF
+
+
+def poly(val: int) -> int:
+    if (val >> 31) & 1 != 0:
+        return 0x4C11DB7
+    else:
+        return 0
+
+
+def crc32(bytestream: bytes) -> int:
+    # Janky 6-bit CRC for ascii names in PMAN structures.
+    result = 0
+    for byte in bytestream:
+        for i in range(6):
+            result = poly(result) ^ cap32((result << 1) | ((byte >> i) & 1))
+    return result
+
+
 def descramble_text(text: bytes, obfuscated: bool) -> str:
     if len(text):
         if obfuscated and (text[0] - 0x20) > 0x7F:
@@ -68,11 +88,16 @@ def descramble_text(text: bytes, obfuscated: bool) -> str:
 def descramble_pman(package_data: bytes, offset: int, endian: str, obfuscated: bool) -> List[str]:
     # Unclear what the first three unknowns are, but the fourth
     # looks like it could possibly be two int16s indicating unknown?
-    magic, _, _, _, numentries, _, data_offset = struct.unpack(
+    magic, expect_zero, flags1, flags2, numentries, flags3, data_offset = struct.unpack(
         f"{endian}4sIIIIII",
         package_data[offset:(offset + 28)],
     )
     add_coverage(offset, 28)
+
+    # I have never seen the first unknown be anything other than zero,
+    # so lets lock that down.
+    if expect_zero != 0:
+        raise Exception("Got a non-zero value for expected zero location in PMAN!")
 
     if endian == "<" and magic != b"PMAN":
         raise Exception("Invalid magic value in PMAN structure!")
@@ -84,13 +109,12 @@ def descramble_pman(package_data: bytes, offset: int, endian: str, obfuscated: b
         # Jump to the offset, parse it out
         for i in range(numentries):
             file_offset = data_offset + (i * 12)
-            # Really not sure on the first entry here, it looks
-            # completely random, so it might be a CRC?
-            _, entry_no, nameoffset = struct.unpack(
+            name_crc, entry_no, nameoffset = struct.unpack(
                 f"{endian}III",
                 package_data[file_offset:(file_offset + 12)],
             )
             add_coverage(file_offset, 12)
+
             if nameoffset == 0:
                 raise Exception("Expected name offset in PMAN data!")
 
@@ -98,6 +122,9 @@ def descramble_pman(package_data: bytes, offset: int, endian: str, obfuscated: b
             add_coverage(nameoffset, len(bytedata) + 1, unique=False)
             name = descramble_text(bytedata, obfuscated)
             names[entry_no] = name
+
+            if name_crc != crc32(name.encode('ascii')):
+                raise Exception(f"Name CRC failed for {name}")
 
     for i, name in enumerate(names):
         if name is None:
@@ -237,12 +264,32 @@ def extract(
                     else:
                         # Now, see if we can extract this data.
                         print(f"Writing {filename} texture data...")
-                        magic, _, _, length, width, height, fmtflags = struct.unpack(
-                            f"{endian}4sIIIHHI",
-                            raw_data[0:24],
+                        (
+                            magic,
+                            header_flags1,
+                            header_flags2,
+                            length,
+                            width,
+                            height,
+                            fmtflags,
+                            expected_zero1,
+                            expected_zero2,
+                        ) = struct.unpack(
+                            f"{endian}4sIIIHHIII",
+                            raw_data[0:32],
                         )
                         if length != len(raw_data):
                             raise Exception("Invalid texture length!")
+                        # I have only ever observed the following values across two different games.
+                        # Don't want to keep the chunk around so let's assert our assumptions.
+                        if (expected_zero1 | expected_zero2) != 0:
+                            raise Exception("Found unexpected non-zero value in texture header!")
+                        if raw_data[32:44] != b'\0' * 12:
+                            raise Exception("Found unexpected non-zero value in texture header!")
+                        if struct.unpack(f"{endian}I", raw_data[44:48])[0] != 3:
+                            raise Exception("Found unexpected value in texture header!")
+                        if raw_data[48:64] != b'\0' * 16:
+                            raise Exception("Found unexpected non-zero value in texture header!")
                         fmt = fmtflags & 0xFF
 
                         # Extract flags that the game cares about.
@@ -655,8 +702,13 @@ def extract(
 
         # I am not sure what the unknown byte is for. It always appears as
         # all zeros in all files I've looked at.
-        _, length, binxrpc_offset = struct.unpack(f"{endian}III", data[offset:(offset + 12)])
+        expect_zero, length, binxrpc_offset = struct.unpack(f"{endian}III", data[offset:(offset + 12)])
         add_coverage(offset, 12)
+
+        if expect_zero != 0:
+            # If we find non-zero versions of this, then that means updating the file is
+            # potentially unsafe as we could rewrite it incorrectly. So, let's assert!
+            raise Exception("Expected a zero in font package header!")
 
         if binxrpc_offset != 0:
             benc = BinaryEncoding()
@@ -697,12 +749,17 @@ def extract(
                 # First word is always zero, as observed. I am not ENTIRELY sure that
                 # the second field is length, but it lines up with everything else
                 # I've observed and seems to make sense.
-                _, afp_header_length, afp_header = struct.unpack(
+                expect_zero, afp_header_length, afp_header = struct.unpack(
                     f"{endian}III",
                     data[structure_offset:(structure_offset + 12)]
                 )
                 add_coverage(structure_offset, 12)
                 add_coverage(afp_header, afp_header_length)
+
+                if expect_zero != 0:
+                    # If we find non-zero versions of this, then that means updating the file is
+                    # potentially unsafe as we could rewrite it incorrectly. So, let's assert!
+                    raise Exception("Expected a zero in font package header!")
 
                 # This chunk of data is referred to by name, and then a chunk.
                 anim_name_offset, anim_afp_data_length, anim_afp_data_offset = struct.unpack(
