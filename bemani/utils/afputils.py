@@ -341,8 +341,6 @@ def extract(
                         # 0x16 = DTX1 format, when I encounter this I'll hook it up.
                         elif fmt == 0x1A:
                             # DXT5 format.
-                            # TODO: This seems to render some chunks rotated, need
-                            # to investigate further.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
                                 'RGBA',
