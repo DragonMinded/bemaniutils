@@ -286,8 +286,11 @@ def extract(
                             raise Exception("Found unexpected non-zero value in texture header!")
                         if raw_data[32:44] != b'\0' * 12:
                             raise Exception("Found unexpected non-zero value in texture header!")
-                        if struct.unpack(f"{endian}I", raw_data[44:48])[0] != 3:
-                            raise Exception("Found unexpected value in texture header!")
+                        # This is almost ALWAYS 3, but I've seen it be 1 as well, so I guess we have to
+                        # round-trip it if we want to write files back out. I have no clue what it's for.
+                        # I've seen it be 1 only on files used for fonts so far, but I am not sure there
+                        # is any correlation there.
+                        header_flags3 = struct.unpack(f"{endian}I", raw_data[44:48])[0]
                         if raw_data[48:64] != b'\0' * 16:
                             raise Exception("Found unexpected non-zero value in texture header!")
                         fmt = fmtflags & 0xFF
