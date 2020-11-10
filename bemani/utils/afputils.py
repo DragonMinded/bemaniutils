@@ -15,7 +15,13 @@ from bemani.protocol.node import Node
 
 
 class PMAN:
-    def __init__(self, entries: List[str] = []) -> None:
+    def __init__(
+        self,
+        entries: List[str] = [],
+        flags1: int = 0,
+        flags2: int = 0,
+        flags3: int = 0,
+    ) -> None:
         self.entries = entries
 
 
@@ -72,6 +78,16 @@ class Animation:
         self.header = header
 
 
+class Shape:
+    def __init__(
+        self,
+        name: str,
+        data: bytes,
+    ) -> None:
+        self.name = name
+        self.data = data
+
+
 class AFPFile:
     def __init__(self, contents: bytes, verbose: bool = False) -> None:
         # Initialize coverage. This is used to help find missed/hidden file
@@ -87,6 +103,11 @@ class AFPFile:
         self.text_obfuscated: bool = False
         self.legacy_lz: bool = False
         self.modern_lz: bool = False
+
+        # If we encounter parts of the file that we don't know how to read
+        # or save, we drop into read-only mode and throw if somebody tries
+        # to update the file.
+        self.read_only: bool = False
 
         # List of all textures in this file. This is unordered, textures should
         # be looked up by name.
@@ -117,6 +138,16 @@ class AFPFile:
         # Font information (mapping for various coepoints to their region in
         # a particular font texture.
         self.fontdata: Optional[Node] = None
+
+        # Shapes(?) with their raw data.
+        self.shapes: List[Shape] = []
+
+        # Shape(?) mapping, not understood or used.
+        self.shapemap: PMAN = PMAN()
+
+        # Unknown PMAN structures that we have to roundtrip.
+        self.unk_pman1: PMAN = PMAN()
+        self.unk_pman2: PMAN = PMAN()
 
         # Parse out the file structure.
         self.__parse(verbose)
@@ -229,7 +260,10 @@ class AFPFile:
                 raise Exception(f"Didn't get mapping for entry {i + 1}")
 
         return PMAN(
-            entries=names
+            entries=names,
+            flags1=flags1,
+            flags2=flags2,
+            flags3=flags3,
         )
 
     def __parse(
@@ -567,6 +601,8 @@ class AFPFile:
 
             # TODO: 0x40 has some weird offset calculations, gotta look into
             # this further. Also, gotta actually parse this structure.
+            if length != 0:
+                self.read_only = True
         else:
             vprint("Bit 0x000040 - NOT PRESENT")
 
@@ -578,11 +614,10 @@ class AFPFile:
 
             vprint(f"Bit 0x000080 - offset: {hex(offset)}")
 
-            # TODO: We don't save this PMAN structure, I have no idea what it's for, but if
-            # we find files with a nonzero value here and update textures, we're hosed.
+            # TODO: I have no idea what this is for.
             if offset != 0:
-                pman = self.descramble_pman(offset)
-                for i, name in enumerate(pman.entries):
+                self.unk_pman1 = self.descramble_pman(offset)
+                for i, name in enumerate(self.unk_pman1.entries):
                     vprint(f"    {i}: {name}")
         else:
             vprint("Bit 0x000080 - NOT PRESENT")
@@ -599,6 +634,8 @@ class AFPFile:
             # TODO: We do something if length is > 0, we use the magic flag
             # from above in this case to optionally transform each thing we
             # extract. This is possibly names of some other type of struture?
+            if length != 0:
+                self.read_only = True
         else:
             vprint("Bit 0x000100 - NOT PRESENT")
 
@@ -613,8 +650,8 @@ class AFPFile:
             # TODO: We don't save this PMAN structure, I have no idea what it's for, but if
             # we find files with a nonzero value here and update textures, we're hosed.
             if offset != 0:
-                pman = self.descramble_pman(offset)
-                for i, name in enumerate(pman.entries):
+                self.unk_pman2 = self.descramble_pman(offset)
+                for i, name in enumerate(self.unk_pman2.entries):
                     vprint(f"    {i}: {name}")
         else:
             vprint("Bit 0x000200 - NOT PRESENT")
@@ -703,7 +740,6 @@ class AFPFile:
                         self.data[shape_base_offset:(shape_base_offset + 12)],
                     )
                     self.add_coverage(shape_base_offset, 12)
-                    self.add_coverage(shape_offset, shape_length)
 
                     # TODO: At the shape offset is a "D2EG" structure of some sort.
                     # I have no idea what these do. I would have to look into it
@@ -715,6 +751,15 @@ class AFPFile:
                         self.add_coverage(name_offset, len(bytedata) + 1, unique=False)
                         name = AFPFile.descramble_text(bytedata, self.text_obfuscated)
                         shapenames.append(name)
+
+                    if shape_offset != 0:
+                        self.add_coverage(shape_offset, shape_length)
+                        self.shapes.append(
+                            Shape(
+                                name,
+                                self.data[shape_offset:(shape_offset + shape_length)],
+                            )
+                        )
 
             for name in shapenames:
                 vprint(f"    {name}")
@@ -730,17 +775,22 @@ class AFPFile:
             vprint(f"Bit 0x004000 - offset: {hex(offset)}")
 
             if offset != 0:
-                pman = self.descramble_pman(offset)
-                for i, name in enumerate(pman.entries):
+                self.shapemap = self.descramble_pman(offset)
+                for i, name in enumerate(self.shapemap.entries):
                     vprint(f"    {i}: {name}")
         else:
             vprint("Bit 0x004000 - NOT PRESENT")
 
         if feature_mask & 0x8000:
-            # One unknown byte, treated as an offset.
+            # One unknown byte, treated as an offset. I have no idea what this is because
+            # the games I've looked at don't include this bit.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
+
+            # Since I've never seen this, I'm going to assume that it showing up is
+            # bad and make things read only.
+            self.read_only = True
 
             vprint(f"Bit 0x008000 - offset: {hex(offset)}")
         else:
@@ -809,6 +859,10 @@ class AFPFile:
             vprint("Bit 0x040000 - modern lz mode on")
         else:
             vprint("Bit 0x040000 - modern lz mode off")
+
+        if feature_mask & 0xFFF80000:
+            # We don't know these bits at all!
+            raise Exception("Invalid bits set in feature mask!")
 
         if header_offset != header_length:
             raise Exception("Failed to parse bitfield of header correctly!")
