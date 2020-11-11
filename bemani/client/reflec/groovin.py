@@ -1,6 +1,6 @@
 import random
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from bemani.client.base import BaseClient
 from bemani.protocol import Node
@@ -729,7 +729,7 @@ class ReflecBeatGroovinUpper(BaseClient):
                     'time': 54321,
                 },
             ],
-            key=lambda ep: ep['id'],
+            key=lambda ep: cast(int, ep['id']),
         )
         self.verify_player_rb4write(ref_id, location, episodes=dummyepisodes)
         episodes = sorted(

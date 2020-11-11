@@ -257,7 +257,7 @@ def navigation() -> Dict[str, Any]:
             'components': components,
             'any': jinja2_any,
         }
-    pages = []
+    pages: List[Dict[str, Any]] = []
 
     # Landing page
     pages.append(

@@ -641,9 +641,9 @@ class AFPFile:
             vprint("Bit 0x000010 - regionmapping; NOT PRESENT")
 
         if feature_mask & 0x20:
-            vprint(f"Bit 0x000020 - text obfuscation on")
+            vprint("Bit 0x000020 - text obfuscation on")
         else:
-            vprint(f"Bit 0x000020 - text obfuscation off")
+            vprint("Bit 0x000020 - text obfuscation off")
 
         if feature_mask & 0x40:
             # Two unknown bytes, first is a length or a count. Secound is
