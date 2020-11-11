@@ -106,7 +106,7 @@ class DXTBuffer:
                             255,
                         )  # Set the color for the current pixel
 
-        return b''.join([_ for _ in self.decompressed_buffer if _ != 'X'])
+        return b''.join([x for x in self.decompressed_buffer if x is not None])
 
     def getColors(
         self,

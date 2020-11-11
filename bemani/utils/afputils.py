@@ -88,6 +88,28 @@ class Shape:
         self.data = data
 
 
+class Unknown1:
+    def __init__(
+        self,
+        name: str,
+        data: bytes,
+    ) -> None:
+        self.name = name
+        self.data = data
+        if len(data) != 12:
+            raise Exception("Unexpected length for Unknown1 structure!")
+
+
+class Unknown2:
+    def __init__(
+        self,
+        data: bytes,
+    ) -> None:
+        self.data = data
+        if len(data) != 4:
+            raise Exception("Unexpected length for Unknown2 structure!")
+
+
 class AFPFile:
     def __init__(self, contents: bytes, verbose: bool = False) -> None:
         # Initialize coverage. This is used to help find missed/hidden file
@@ -145,7 +167,13 @@ class AFPFile:
         # Shape(?) mapping, not understood or used.
         self.shapemap: PMAN = PMAN()
 
-        # Unknown PMAN structures that we have to roundtrip.
+        # Unknown data structures that we have to roundtrip. They correlate to
+        # the PMAN structures below.
+        self.unknown1: List[Unknown1] = []
+        self.unknown2: List[Unknown2] = []
+
+        # Unknown PMAN structures that we have to roundtrip. They correlate to
+        # the unknown data structures above.
         self.unk_pman1: PMAN = PMAN()
         self.unk_pman2: PMAN = PMAN()
 
@@ -449,7 +477,18 @@ class AFPFile:
                             img = Image.frombytes(
                                 'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
                             )
-                        # 0x16 = DTX1 format, when I encounter this I'll hook it up.
+                        elif fmt == 0x16:
+                            # DXT1 format.
+                            dxt = DXTBuffer(width, height)
+                            img = Image.frombuffer(
+                                'RGBA',
+                                (width, height),
+                                dxt.DXT1Decompress(raw_data[64:], endian=self.endian),
+                                'raw',
+                                'RGBA',
+                                0,
+                                1,
+                            )
                         elif fmt == 0x1A:
                             # DXT5 format.
                             dxt = DXTBuffer(width, height)
@@ -508,11 +547,11 @@ class AFPFile:
                             )
                         )
 
-            vprint(f"Bit 0x000001 - count: {length}, offset: {hex(offset)}")
+            vprint(f"Bit 0x000001 - textures; count: {length}, offset: {hex(offset)}")
             for name in texturenames:
                 vprint(f"    {name}")
         else:
-            vprint("Bit 0x000001 - NOT PRESENT")
+            vprint("Bit 0x000001 - textures; NOT PRESENT")
 
         # Mapping between texture index and the name of the texture.
         if feature_mask & 0x02:
@@ -522,14 +561,14 @@ class AFPFile:
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000002 - offset: {hex(offset)}")
+            vprint(f"Bit 0x000002 - texturemapping; offset: {hex(offset)}")
 
             if offset != 0:
                 self.texturemap = self.descramble_pman(offset)
                 for i, name in enumerate(self.texturemap.entries):
                     vprint(f"    {i}: {name}")
         else:
-            vprint("Bit 0x000002 - NOT PRESENT")
+            vprint("Bit 0x000002 - texturemapping; NOT PRESENT")
 
         if feature_mask & 0x04:
             vprint("Bit 0x000004 - legacy lz mode on")
@@ -565,9 +604,9 @@ class AFPFile:
                     # device scaling and such?
                     self.texture_to_region[i] = TextureRegion(texture_no, left, top, right, bottom)
 
-            vprint(f"Bit 0x000008 - count: {length}, offset: {hex(offset)}")
+            vprint(f"Bit 0x000008 - regions; count: {length}, offset: {hex(offset)}")
         else:
-            vprint("Bit 0x000008 - NOT PRESENT")
+            vprint("Bit 0x000008 - regions; NOT PRESENT")
 
         if feature_mask & 0x10:
             # Names of the graphics regions, so we can look into the texture_to_region
@@ -576,14 +615,14 @@ class AFPFile:
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000010 - offset: {hex(offset)}")
+            vprint(f"Bit 0x000010 - regionmapping; offset: {hex(offset)}")
 
             if offset != 0:
                 self.regionmap = self.descramble_pman(offset)
                 for i, name in enumerate(self.regionmap.entries):
                     vprint(f"    {i}: {name}")
         else:
-            vprint("Bit 0x000010 - NOT PRESENT")
+            vprint("Bit 0x000010 - regionmapping; NOT PRESENT")
 
         if feature_mask & 0x20:
             vprint(f"Bit 0x000020 - text obfuscation on")
@@ -597,22 +636,46 @@ class AFPFile:
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000040 - count: {length}, offset: {hex(offset)}")
+            unknames = []
+            if offset != 0 and length > 0:
+                for i in range(length):
+                    unk_offset = offset + (i * 16)
+                    name_offset = struct.unpack(f"{self.endian}I", self.data[unk_offset:(unk_offset + 4)])[0]
+                    self.add_coverage(unk_offset, 4)
 
-            # TODO: 0x40 has some weird offset calculations, gotta look into
-            # this further. Also, gotta actually parse this structure.
-            if length != 0:
-                self.read_only = True
+                    # The game does some very bizarre bit-shifting. Its clear tha the first value
+                    # points at a name structure, but its not in the correct endianness. This replicates
+                    # the weird logic seen in game disassembly.
+                    name_offset = (((name_offset >> 7) & 0x1FF) << 16) + ((name_offset >> 16) & 0xFFFF)
+                    if name_offset != 0:
+                        # Let's decode this until the first null.
+                        bytedata = self.get_until_null(name_offset)
+                        self.add_coverage(name_offset, len(bytedata) + 1, unique=False)
+                        name = AFPFile.descramble_text(bytedata, self.text_obfuscated)
+                        unknames.append(name)
+
+                    self.unknown1.append(
+                        Unknown1(
+                            name=name,
+                            data=self.data[(unk_offset + 4):(unk_offset + 16)],
+                        )
+                    )
+                    self.add_coverage(unk_offset + 4, 12)
+
+            vprint(f"Bit 0x000040 - unknown; count: {length}, offset: {hex(offset)}")
+            for name in unknames:
+                vprint(f"    {name}")
         else:
-            vprint("Bit 0x000040 - NOT PRESENT")
+            vprint("Bit 0x000040 - unknown; NOT PRESENT")
 
         if feature_mask & 0x80:
-            # One unknown byte, treated as an offset.
+            # One unknown byte, treated as an offset. This is clearly the mapping for the parsed
+            # structures from 0x40, but I don't know what those are.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000080 - offset: {hex(offset)}")
+            vprint(f"Bit 0x000080 - unknownmapping; offset: {hex(offset)}")
 
             # TODO: I have no idea what this is for.
             if offset != 0:
@@ -620,7 +683,7 @@ class AFPFile:
                 for i, name in enumerate(self.unk_pman1.entries):
                     vprint(f"    {i}: {name}")
         else:
-            vprint("Bit 0x000080 - NOT PRESENT")
+            vprint("Bit 0x000080 - unknownmapping; NOT PRESENT")
 
         if feature_mask & 0x100:
             # Two unknown bytes, first is a length or a count. Secound is
@@ -629,42 +692,46 @@ class AFPFile:
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000100 - count: {length}, offset: {hex(offset)}")
+            if offset != 0 and length > 0:
+                for i in range(length):
+                    unk_offset = offset + (i * 4)
+                    self.unknown2.append(
+                        Unknown2(self.data[unk_offset:(unk_offset + 4)])
+                    )
+                    self.add_coverage(unk_offset, 4)
 
-            # TODO: We do something if length is > 0, we use the magic flag
-            # from above in this case to optionally transform each thing we
-            # extract. This is possibly names of some other type of struture?
-            if length != 0:
-                self.read_only = True
+            vprint(f"Bit 0x000100 - unknown; count: {length}, offset: {hex(offset)}")
         else:
-            vprint("Bit 0x000100 - NOT PRESENT")
+            vprint("Bit 0x000100 - unknown; NOT PRESENT")
 
         if feature_mask & 0x200:
-            # One unknown byte, treated as an offset.
+            # One unknown byte, treated as an offset. Almost positive its a string mapping
+            # for the above 0x100 structure. That's how this file format appears to work.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000200 - offset: {hex(offset)}")
+            vprint(f"Bit 0x000200 - unknownmapping; offset: {hex(offset)}")
 
-            # TODO: We don't save this PMAN structure, I have no idea what it's for, but if
-            # we find files with a nonzero value here and update textures, we're hosed.
+            # TODO: I have no idea what this is for.
             if offset != 0:
                 self.unk_pman2 = self.descramble_pman(offset)
                 for i, name in enumerate(self.unk_pman2.entries):
                     vprint(f"    {i}: {name}")
         else:
-            vprint("Bit 0x000200 - NOT PRESENT")
+            vprint("Bit 0x000200 - unknownmapping; NOT PRESENT")
 
         if feature_mask & 0x400:
-            # One unknown byte, treated as an offset.
+            # One unknown byte, treated as an offset. I have no idea what this is used for,
+            # it seems to be empty data in files that I've looked at, it doesn't go to any
+            # structure or mapping.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000400 - offset: {hex(offset)}")
+            vprint(f"Bit 0x000400 - unknown; offset: {hex(offset)}")
         else:
-            vprint("Bit 0x000400 - NOT PRESENT")
+            vprint("Bit 0x000400 - unknown; NOT PRESENT")
 
         if feature_mask & 0x800:
             # This is the names of the animations as far as I can tell.
@@ -672,7 +739,7 @@ class AFPFile:
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000800 - count: {length}, offset: {hex(offset)}")
+            vprint(f"Bit 0x000800 - animations; count: {length}, offset: {hex(offset)}")
 
             animnames = []
             for x in range(length):
@@ -702,7 +769,7 @@ class AFPFile:
             for name in animnames:
                 vprint(f"    {name}")
         else:
-            vprint("Bit 0x000800 - NOT PRESENT")
+            vprint("Bit 0x000800 - animations; NOT PRESENT")
 
         if feature_mask & 0x1000:
             # Seems to be a secondary structure mirroring the above.
@@ -710,14 +777,14 @@ class AFPFile:
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x001000 - offset: {hex(offset)}")
+            vprint(f"Bit 0x001000 - animationmapping; offset: {hex(offset)}")
 
             if offset != 0:
                 self.animmap = self.descramble_pman(offset)
                 for i, name in enumerate(self.animmap.entries):
                     vprint(f"    {i}: {name}")
         else:
-            vprint("Bit 0x001000 - NOT PRESENT")
+            vprint("Bit 0x001000 - animationmapping; NOT PRESENT")
 
         if feature_mask & 0x2000:
             # I am making a very preliminary guess that these are shapes used along
@@ -727,7 +794,7 @@ class AFPFile:
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x002000 - count: {length}, offset: {hex(offset)}")
+            vprint(f"Bit 0x002000 - shapes; count: {length}, offset: {hex(offset)}")
 
             # TODO: We do a LOT of extra stuff with this one, if count > 0...
 
@@ -764,7 +831,7 @@ class AFPFile:
             for name in shapenames:
                 vprint(f"    {name}")
         else:
-            vprint("Bit 0x002000 - NOT PRESENT")
+            vprint("Bit 0x002000 - shapes; NOT PRESENT")
 
         if feature_mask & 0x4000:
             # Seems to be a secondary section mirroring the names from above.
@@ -772,14 +839,14 @@ class AFPFile:
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x004000 - offset: {hex(offset)}")
+            vprint(f"Bit 0x004000 - shapesmapping; offset: {hex(offset)}")
 
             if offset != 0:
                 self.shapemap = self.descramble_pman(offset)
                 for i, name in enumerate(self.shapemap.entries):
                     vprint(f"    {i}: {name}")
         else:
-            vprint("Bit 0x004000 - NOT PRESENT")
+            vprint("Bit 0x004000 - shapesmapping; NOT PRESENT")
 
         if feature_mask & 0x8000:
             # One unknown byte, treated as an offset. I have no idea what this is because
@@ -792,9 +859,9 @@ class AFPFile:
             # bad and make things read only.
             self.read_only = True
 
-            vprint(f"Bit 0x008000 - offset: {hex(offset)}")
+            vprint(f"Bit 0x008000 - unknown; offset: {hex(offset)}")
         else:
-            vprint("Bit 0x008000 - NOT PRESENT")
+            vprint("Bit 0x008000 - unknown; NOT PRESENT")
 
         if feature_mask & 0x10000:
             # Included font package, BINXRPC encoded.
@@ -819,9 +886,9 @@ class AFPFile:
             else:
                 self.fontdata = None
 
-            vprint(f"Bit 0x010000 - offset: {hex(offset)}, binxrpc offset: {hex(binxrpc_offset)}")
+            vprint(f"Bit 0x010000 - fontinfo; offset: {hex(offset)}, binxrpc offset: {hex(binxrpc_offset)}")
         else:
-            vprint("Bit 0x010000 - NOT PRESENT")
+            vprint("Bit 0x010000 - fontinfo; NOT PRESENT")
 
         if feature_mask & 0x20000:
             # I am beginning to suspect that this is animation/level data. I have
@@ -830,7 +897,7 @@ class AFPFile:
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x020000 - offset: {hex(offset)}")
+            vprint(f"Bit 0x020000 - animationheaders; offset: {hex(offset)}")
 
             if offset > 0 and len(self.animations) > 0:
                 for i in range(len(self.animations)):
@@ -853,7 +920,7 @@ class AFPFile:
                     self.animations[i].header = self.data[afp_header:(afp_header + afp_header_length)]
                     self.add_coverage(afp_header, afp_header_length)
         else:
-            vprint("Bit 0x020000 - NOT PRESENT")
+            vprint("Bit 0x020000 - animationheaders; NOT PRESENT")
 
         if feature_mask & 0x40000:
             vprint("Bit 0x040000 - modern lz mode on")
@@ -933,7 +1000,7 @@ def main() -> int:
                 with open(f"{filename}.raw", "wb") as bfp:
                     bfp.write(texture.raw)
 
-            if args.xml:
+            if args.write_mappings:
                 if args.pretend:
                     print(f"Would write {filename}.xml texture info...")
                 else:
