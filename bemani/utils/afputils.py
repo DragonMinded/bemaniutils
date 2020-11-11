@@ -6,7 +6,7 @@ import struct
 import sys
 import textwrap
 from PIL import Image  # type: ignore
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.format.dxt import DXTBuffer
 from bemani.protocol.binary import BinaryEncoding
@@ -23,6 +23,9 @@ class PMAN:
         flags3: int = 0,
     ) -> None:
         self.entries = entries
+        self.flags1 = flags1
+        self.flags2 = flags2
+        self.flags3 = flags3
 
 
 class Texture:
@@ -119,9 +122,14 @@ class AFPFile:
         # Original file data that we parse into structures.
         self.data = contents
 
+        # Font data encoding handler. We keep this around as it manages
+        # remembering the actual BinXML encoding.
+        self.benc = BinaryEncoding()
+
         # All of the crap!
         self.endian: str = "<"
         self.features: int = 0
+        self.file_flags: bytes = b""
         self.text_obfuscated: bool = False
         self.legacy_lz: bool = False
         self.modern_lz: bool = False
@@ -235,6 +243,13 @@ class AFPFile:
         else:
             return ""
 
+    @staticmethod
+    def scramble_text(text: str, obfuscated: bool) -> bytes:
+        if obfuscated:
+            return bytes(((x + 0x80) & 0xFF) for x in text.encode('ascii')) + b'\0'
+        else:
+            return text.encode('ascii') + b'\0'
+
     def get_until_null(self, offset: int) -> bytes:
         out = b""
         while self.data[offset] != 0:
@@ -306,16 +321,17 @@ class AFPFile:
                 pass
 
         # First, check the signature
-        self.add_coverage(0, 4)
         if self.data[0:4] == b"2PXT":
             self.endian = "<"
         elif self.data[0:4] == b"TXP2":
             self.endian = ">"
         else:
             raise Exception("Invalid graphic file format!")
+        self.add_coverage(0, 4)
 
         # Not sure what words 2 and 3 are, they seem to be some sort of
         # version or date?
+        self.file_flags = self.data[4:12]
         self.add_coverage(4, 8)
 
         # Now, grab the file length, verify that we have the right amount
@@ -404,7 +420,7 @@ class AFPFile:
                             magic,
                             header_flags1,
                             header_flags2,
-                            length,
+                            raw_length,
                             width,
                             height,
                             fmtflags,
@@ -414,7 +430,7 @@ class AFPFile:
                             f"{self.endian}4sIIIHHIII",
                             raw_data[0:32],
                         )
-                        if length != len(raw_data):
+                        if raw_length != len(raw_data):
                             raise Exception("Invalid texture length!")
                         # I have only ever observed the following values across two different games.
                         # Don't want to keep the chunk around so let's assert our assumptions.
@@ -880,8 +896,7 @@ class AFPFile:
                 raise Exception("Expected a zero in font package header!")
 
             if binxrpc_offset != 0:
-                benc = BinaryEncoding()
-                self.fontdata = benc.decode(self.data[binxrpc_offset:(binxrpc_offset + length)])
+                self.fontdata = self.benc.decode(self.data[binxrpc_offset:(binxrpc_offset + length)])
                 self.add_coverage(binxrpc_offset, length)
             else:
                 self.fontdata = None
@@ -937,116 +952,585 @@ class AFPFile:
         if verbose:
             self.print_coverage()
 
+    @staticmethod
+    def align(val: int) -> int:
+        return (val + 3) & 0xFFFFFFFFC
+
+    @staticmethod
+    def pad(data: bytes, length: int) -> bytes:
+        if len(data) == length:
+            return data
+        elif len(data) > length:
+            raise Exception("Logic error, padding request in data already written!")
+        return data + (b"\0" * (length - len(data)))
+
+    def write_strings(self, data: bytes, strings: Dict[str, int]) -> bytes:
+        tuples: List[Tuple[str, int]] = [(name, strings[name]) for name in strings]
+        tuples = sorted(tuples, key=lambda tup: tup[1])
+
+        for (string, offset) in tuples:
+            data = AFPFile.pad(data, offset)
+            data += AFPFile.scramble_text(string, self.text_obfuscated)
+
+        return data
+
+    def write_pman(self, data: bytes, offset: int, pman: PMAN, string_offsets: Dict[str, int]) -> bytes:
+        # First, lay down the PMAN header
+        if self.endian == "<":
+            magic = b"PMAN"
+        elif self.endian == ">":
+            magic = b"NAMP"
+        else:
+            raise Exception("Logic error, unexpected endianness!")
+
+        # Calculate where various data goes
+        data = AFPFile.pad(data, offset)
+        payload_offset = offset + 28
+        string_offset = payload_offset + (len(pman.entries) * 12)
+        pending_strings: Dict[str, int] = {}
+
+        data += struct.pack(
+            f"{self.endian}4sIIIIII",
+            magic,
+            0,
+            pman.flags1,
+            pman.flags2,
+            len(pman.entries),
+            pman.flags3,
+            payload_offset,
+        )
+
+        # Now, lay down the individual entries
+        for entry_no, name in enumerate(pman.entries):
+            name_crc = AFPFile.crc32(name.encode('ascii'))
+
+            if name not in string_offsets:
+                # We haven't written this string out yet, so put it on our pending list.
+                pending_strings[name] = string_offset
+                string_offsets[name] = string_offset
+
+                # Room for the null byte!
+                string_offset += len(name) + 1
+
+            # Write out the chunk itself.
+            data += struct.pack(
+                f"{self.endian}III",
+                name_crc,
+                entry_no,
+                string_offsets[name],
+            )
+
+        # Now, put down the strings that were new in this pman structure.
+        return self.write_strings(data, pending_strings)
+
+    def unparse(self) -> bytes:
+        if self.read_only:
+            raise Exception("This file is read-only because we can't parse some of it!")
+
+        # Mapping from various strings found in the file to their offsets.
+        string_offsets: Dict[str, int] = {}
+        pending_strings: Dict[str, int] = {}
+
+        # The true file header, containing magic, some file flags, file length and
+        # header length.
+        header: bytes = b''
+
+        # The bitfield structure that dictates what's found in the file and where.
+        bitfields: bytes = b''
+
+        # The data itself.
+        body: bytes = b''
+
+        # First, plop down the file magic as well as the unknown file flags we
+        # roundtripped.
+        if self.endian == "<":
+            header += b"2PXT"
+        elif self.endian == ">":
+            header += b"TXP2"
+        else:
+            raise Exception("Invalid graphic file format!")
+
+        # Not sure what words 2 and 3 are, they seem to be some sort of
+        # version or date?
+        header += self.data[4:12]
+
+        # We can't plop the length down yet, since we don't know it. So, let's first
+        # figure out what our bitfield length is.
+        header_length = 0
+        if self.features & 0x1:
+            header_length += 8
+        if self.features & 0x2:
+            header_length += 4
+        # Bit 0x4 is for lz options.
+        if self.features & 0x8:
+            header_length += 8
+        if self.features & 0x10:
+            header_length += 4
+        # Bit 0x20 is for text obfuscation options.
+        if self.features & 0x40:
+            header_length += 8
+        if self.features & 0x80:
+            header_length += 4
+        if self.features & 0x100:
+            header_length += 8
+        if self.features & 0x200:
+            header_length += 4
+        if self.features & 0x400:
+            header_length += 4
+        if self.features & 0x800:
+            header_length += 8
+        if self.features & 0x1000:
+            header_length += 4
+        if self.features & 0x2000:
+            header_length += 8
+        if self.features & 0x4000:
+            header_length += 4
+        if self.features & 0x8000:
+            header_length += 4
+        if self.features & 0x10000:
+            header_length += 4
+        if self.features & 0x20000:
+            header_length += 4
+        # Bit 0x40000 is for lz options.
+
+        # We keep this indirection because we want to do our best to preserve
+        # the file order we observe in actual files. So, that means writing data
+        # out of order of when it shows in the header, and as such we must remember
+        # what chunks go where. We key by feature bitmask so its safe to have empties.
+        bitchunks = [b""] * 32
+
+        # Pad out the body for easier calculations below
+        body = AFPFile.pad(body, 24 + header_length)
+
+        # Start laying down various file pieces.
+        if self.features & 0x01:
+            # List of textures that exist in the file, with pointers to their data.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # First, lay down pointers and length, regardless of number of entries.
+            bitchunks[0] = struct.pack(f"{self.endian}II", len(self.textures), offset)
+
+            for texture in self.textures:
+                raise Exception("TODO!")
+
+        if self.features & 0x08:
+            # Mapping between individual graphics and their respective textures.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # First, lay down pointers and length, regardless of number of entries.
+            bitchunks[3] = struct.pack(f"{self.endian}II", len(self.texture_to_region), offset)
+
+            for tex_to_region in self.texture_to_region:
+                raise Exception("TODO!")
+
+        if self.features & 0x40:
+            # Unknown file chunk.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # First, lay down pointers and length, regardless of number of entries.
+            bitchunks[6] = struct.pack(f"{self.endian}II", len(self.unknown1), offset)
+
+            # Now, calculate where we can put strings.
+            string_offset = AFPFile.align(len(body) + (len(self.unknown1) * 16))
+
+            # Now, write out chunks and strings.
+            for entry1 in self.unknown1:
+                if entry1.name not in string_offsets:
+                    # We haven't written this string out yet, so put it on our pending list.
+                    pending_strings[entry1.name] = string_offset
+                    string_offsets[entry1.name] = string_offset
+
+                    # Room for the null byte!
+                    string_offset += len(entry1.name) + 1
+
+                # Write out the chunk itself.
+                body += struct.pack(f"{self.endian}I", string_offsets[entry1.name]) + entry1.data
+
+            # Now, put down the strings that were new in this chunk.
+            body = self.write_strings(body, pending_strings)
+            pending_strings = {}
+
+        if self.features & 0x100:
+            # Two unknown bytes, first is a length or a count. Secound is
+            # an optional offset to grab another set of bytes from.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # First, lay down pointers and length, regardless of number of entries.
+            bitchunks[8] = struct.pack(f"{self.endian}II", len(self.unknown2), offset)
+
+            # Now, write out chunks and strings.
+            for entry2 in self.unknown2:
+                # Write out the chunk itself.
+                body += entry2.data
+
+        if self.features & 0x400:
+            # I haven't seen any files with any meaningful information for this, but
+            # it gets included anyway since games seem to parse it.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Point to current data location (seems to be what original files do too).
+            bitchunks[10] = struct.pack(f"{self.endian}I", offset)
+
+        if self.features & 0x800:
+            # This is the names and locations of the animations as far as I can tell.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            bitchunks[11] = struct.pack(f"{self.endian}II", len(self.animations), offset)
+
+            # Now, calculate where we can put animations and their names.
+            animation_offset = AFPFile.align(len(body) + (len(self.animations) * 12))
+            string_offset = AFPFile.align(animation_offset + sum(AFPFile.align(len(a.data)) for a in self.animations))
+            animdata = b""
+
+            # Now, lay them out.
+            for animation in self.animations:
+                if animation.name not in string_offsets:
+                    # We haven't written this string out yet, so put it on our pending list.
+                    pending_strings[animation.name] = string_offset
+                    string_offsets[animation.name] = string_offset
+
+                    # Room for the null byte!
+                    string_offset += len(animation.name) + 1
+
+                # Write out the chunk itself.
+                body += struct.pack(
+                    f"{self.endian}III",
+                    string_offsets[animation.name],
+                    len(animation.data),
+                    animation_offset + len(animdata),
+                )
+                animdata += AFPFile.pad(animation.data, AFPFile.align(len(animation.data)))
+
+            # Now, lay out the data itself and finally string names.
+            body = self.write_strings(body + animdata, pending_strings)
+            pending_strings = {}
+
+        if self.features & 0x2000:
+            # This is the names and data for shapes as far as I can tell.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            bitchunks[13] = struct.pack(f"{self.endian}II", len(self.shapes), offset)
+
+            # Now, calculate where we can put shapes and their names.
+            shape_offset = AFPFile.align(len(body) + (len(self.shapes) * 12))
+            string_offset = AFPFile.align(shape_offset + sum(AFPFile.align(len(s.data)) for s in self.shapes))
+            shapedata = b""
+
+            # Now, lay them out.
+            for shape in self.shapes:
+                if shape.name not in string_offsets:
+                    # We haven't written this string out yet, so put it on our pending list.
+                    pending_strings[shape.name] = string_offset
+                    string_offsets[shape.name] = string_offset
+
+                    # Room for the null byte!
+                    string_offset += len(shape.name) + 1
+
+                # Write out the chunk itself.
+                body += struct.pack(
+                    f"{self.endian}III",
+                    string_offsets[shape.name],
+                    len(shape.data),
+                    shape_offset + len(shapedata),
+                )
+                shapedata += AFPFile.pad(shape.data, AFPFile.align(len(shape.data)))
+
+            # Now, lay out the data itself and finally string names.
+            body = self.write_strings(body + shapedata, pending_strings)
+            pending_strings = {}
+
+        if self.features & 0x8000:
+            # Unknown, never seen bit. We shouldn't be here, we set ourselves
+            # to read-only.
+            raise Exception("This should not be possible!")
+
+        if self.features & 0x02:
+            # Mapping between texture index and the name of the texture.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Lay down PMAN pointer and PMAN structure itself.
+            bitchunks[1] = struct.pack(f"{self.endian}I", offset)
+            body = self.write_pman(body, offset, self.texturemap, string_offsets)
+
+        if self.features & 0x10:
+            # Names of the graphics regions, so we can look into the texture_to_region
+            # mapping above.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Lay down PMAN pointer and PMAN structure itself.
+            bitchunks[4] = struct.pack(f"{self.endian}I", offset)
+            body = self.write_pman(body, offset, self.regionmap, string_offsets)
+
+        if self.features & 0x80:
+            # One unknown byte, treated as an offset. This is clearly the mapping for the parsed
+            # structures from 0x40, but I don't know what those are.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Lay down PMAN pointer and PMAN structure itself.
+            bitchunks[7] = struct.pack(f"{self.endian}I", offset)
+            body = self.write_pman(body, offset, self.unk_pman1, string_offsets)
+
+        if self.features & 0x200:
+            # I am pretty sure this is a mapping for the structures parsed at 0x100.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Lay down PMAN pointer and PMAN structure itself.
+            bitchunks[9] = struct.pack(f"{self.endian}I", offset)
+            body = self.write_pman(body, offset, self.unk_pman2, string_offsets)
+
+        if self.features & 0x1000:
+            # Mapping of animations to their ID.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Lay down PMAN pointer and PMAN structure itself.
+            bitchunks[12] = struct.pack(f"{self.endian}I", offset)
+            body = self.write_pman(body, offset, self.animmap, string_offsets)
+
+        if self.features & 0x4000:
+            # Mapping of shapes to their ID.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            # Lay down PMAN pointer and PMAN structure itself.
+            bitchunks[14] = struct.pack(f"{self.endian}I", offset)
+            body = self.write_pman(body, offset, self.shapemap, string_offsets)
+
+        if self.features & 0x10000:
+            # Font information.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            bitchunks[16] = struct.pack(f"{self.endian}I", offset)
+
+            # Now, encode the font information.
+            fontbytes = self.benc.encode(self.fontdata)
+            body += struct.pack(
+                f"{self.endian}III",
+                0,
+                len(fontbytes),
+                offset + 12,
+            )
+            body += fontbytes
+
+        if self.features & 0x20000:
+            # Animation header information.
+            offset = AFPFile.align(len(body))
+            body = AFPFile.pad(body, offset)
+
+            bitchunks[17] = struct.pack(f"{self.endian}I", offset)
+
+            # Now, calculate where we can put animation headers.
+            animation_offset = AFPFile.align(len(body) + (len(self.animations) * 12))
+            animheader = b""
+
+            # Now, lay them out.
+            for animation in self.animations:
+                # Write out the chunk itself.
+                body += struct.pack(
+                    f"{self.endian}III",
+                    0,
+                    len(animation.header),
+                    animation_offset + len(animheader),
+                )
+                animheader += AFPFile.pad(animation.header, AFPFile.align(len(animation.header)))
+
+            # Now, lay out the header itself
+            body += animheader
+
+        # Bit 0x40000 is for lz options.
+
+        # Now, no matter what happened above, make sure file is aligned to 4 bytes.
+        offset = AFPFile.align(len(body))
+        body = AFPFile.pad(body, offset)
+
+        # Record the bitfield options into the bitfield structure, and we can
+        # get started writing the file out.
+        bitfields = struct.pack(f"{self.endian}I", self.features) + b"".join(bitchunks)
+
+        # Finally, now that we know the full file length, we can finish
+        # writing the header.
+        header += struct.pack(f"{self.endian}II", len(body), header_length + 24)
+        if len(header) != 20:
+            raise Exception("Logic error, incorrect header length!")
+
+        # Skip over padding to the body that we inserted specifically to track offsets
+        # against the headers.
+        return header + bitfields + body[(header_length + 24):]
+
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker.")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker")
+    subparsers = parser.add_subparsers(help='Action to take', dest='action')
+
+    extract_parser = subparsers.add_parser('extract', help='Extract relevant textures from file')
+    extract_parser.add_argument(
         "file",
         metavar="FILE",
         help="The file to extract",
     )
-    parser.add_argument(
+    extract_parser.add_argument(
         "dir",
         metavar="DIR",
         help="Directory to extract to",
     )
-    parser.add_argument(
+    extract_parser.add_argument(
         "-p",
         "--pretend",
         action="store_true",
-        help="Pretend to extract instead of extracting.",
+        help="Pretend to extract instead of extracting",
     )
-    parser.add_argument(
+    extract_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output.",
+        help="Display verbuse debugging output",
     )
-    parser.add_argument(
+    extract_parser.add_argument(
         "-r",
         "--write-raw",
         action="store_true",
-        help="Always write raw texture files.",
+        help="Always write raw texture files",
     )
-    parser.add_argument(
+    extract_parser.add_argument(
+        "-m",
         "--write-mappings",
         action="store_true",
-        help="Write mapping files to disk.",
+        help="Write mapping files to disk",
+    )
+
+    update_parser = subparsers.add_parser('update', help='Update relevant textures in a file from a directory')
+    update_parser.add_argument(
+        "file",
+        metavar="FILE",
+        help="The file to update",
+    )
+    update_parser.add_argument(
+        "dir",
+        metavar="DIR",
+        help="Directory to update from",
+    )
+    update_parser.add_argument(
+        "-p",
+        "--pretend",
+        action="store_true",
+        help="Pretend to update instead of updating",
+    )
+    update_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
     )
     args = parser.parse_args()
 
-    with open(args.file, "rb") as bfp:
-        afpfile = AFPFile(bfp.read(), verbose=args.verbose)
+    if args.action == "extract":
+        with open(args.file, "rb") as bfp:
+            afpfile = AFPFile(bfp.read(), verbose=args.verbose)
 
-    # Actually place the files down.
-    os.makedirs(args.dir, exist_ok=True)
+        # Actually place the files down.
+        os.makedirs(args.dir, exist_ok=True)
 
-    for texture in afpfile.textures:
-        filename = os.path.join(args.dir, texture.name)
+        for texture in afpfile.textures:
+            filename = os.path.join(args.dir, texture.name)
 
-        if texture.img:
-            if args.pretend:
-                print(f"Would write {filename}.png texture...")
-            else:
-                print(f"Writing {filename}.png texture...")
-                with open(f"{filename}.png", "wb") as bfp:
-                    texture.img.save(bfp, format='PNG')
-
-        if not texture.img or args.write_raw:
-            if args.pretend:
-                print(f"Would write {filename}.raw texture...")
-            else:
-                print(f"Writing {filename}.raw texture...")
-                with open(f"{filename}.raw", "wb") as bfp:
-                    bfp.write(texture.raw)
-
-            if args.write_mappings:
+            if texture.img:
                 if args.pretend:
-                    print(f"Would write {filename}.xml texture info...")
+                    print(f"Would write {filename}.png texture...")
                 else:
-                    print(f"Writing {filename}.xml texture info...")
+                    print(f"Writing {filename}.png texture...")
+                    with open(f"{filename}.png", "wb") as bfp:
+                        texture.img.save(bfp, format='PNG')
+
+            if not texture.img or args.write_raw:
+                if args.pretend:
+                    print(f"Would write {filename}.raw texture...")
+                else:
+                    print(f"Writing {filename}.raw texture...")
+                    with open(f"{filename}.raw", "wb") as bfp:
+                        bfp.write(texture.raw)
+
+                if args.write_mappings:
+                    if args.pretend:
+                        print(f"Would write {filename}.xml texture info...")
+                    else:
+                        print(f"Writing {filename}.xml texture info...")
+                        with open(f"{filename}.xml", "w") as sfp:
+                            sfp.write(textwrap.dedent(f"""
+                                <info>
+                                    <width>{texture.width}</width>
+                                    <height>{texture.height}</height>
+                                    <type>{hex(texture.fmt)}</type>
+                                    <raw>{filename}.raw</raw>
+                                </info>
+                            """).strip())
+
+        if args.write_mappings:
+            for i, name in enumerate(afpfile.regionmap.entries):
+                if i < 0 or i >= len(afpfile.texture_to_region):
+                    raise Exception(f"Out of bounds region {i}")
+                region = afpfile.texture_to_region[i]
+                texturename = afpfile.texturemap.entries[region.textureno]
+                filename = os.path.join(args.dir, name)
+
+                if args.pretend:
+                    print(f"Would write {filename}.xml region information...")
+                else:
+                    print(f"Writing {filename}.xml region information...")
                     with open(f"{filename}.xml", "w") as sfp:
                         sfp.write(textwrap.dedent(f"""
                             <info>
-                                <width>{texture.width}</width>
-                                <height>{texture.height}</height>
-                                <type>{hex(texture.fmt)}</type>
-                                <raw>{filename}.raw</raw>
+                                <left>{region.left}</left>
+                                <top>{region.top}</top>
+                                <right>{region.right}</right>
+                                <bottom>{region.bottom}</bottom>
+                                <texture>{texturename}</texture>
                             </info>
                         """).strip())
 
-    if args.write_mappings:
-        for i, name in enumerate(afpfile.regionmap.entries):
-            if i < 0 or i >= len(afpfile.texture_to_region):
-                raise Exception(f"Out of bounds region {i}")
-            region = afpfile.texture_to_region[i]
-            texturename = afpfile.texturemap.entries[region.textureno]
-            filename = os.path.join(args.dir, name)
+            if afpfile.fontdata is not None:
+                filename = os.path.join(args.dir, "fontinfo.xml")
 
-            if args.pretend:
-                print(f"Would write {filename}.xml region information...")
-            else:
-                print(f"Writing {filename}.xml region information...")
-                with open(f"{filename}.xml", "w") as sfp:
-                    sfp.write(textwrap.dedent(f"""
-                        <info>
-                            <left>{region.left}</left>
-                            <top>{region.top}</top>
-                            <right>{region.right}</right>
-                            <bottom>{region.bottom}</bottom>
-                            <texture>{texturename}</texture>
-                        </info>
-                    """).strip())
+                if args.pretend:
+                    print(f"Would write {filename} font information...")
+                else:
+                    print(f"Writing {filename} font information...")
+                    with open(filename, "w") as sfp:
+                        sfp.write(str(afpfile.fontdata))
 
-        if afpfile.fontdata is not None:
-            filename = os.path.join(args.dir, "fontinfo.xml")
+    if args.action == "update":
+        # First, parse the file out
+        with open(args.file, "rb") as bfp:
+            afpfile = AFPFile(bfp.read(), verbose=args.verbose)
 
-            if args.pretend:
-                print(f"Writing {filename} font information...")
-            else:
-                print(f"Writing {filename} font information...")
-                with open(filename, "w") as sfp:
-                    sfp.write(str(afpfile.fontdata))
+        # Now, find any PNG files that match texture names.
+        for texture in afpfile.textures:
+            filename = os.path.join(args.dir, texture.name) + ".png"
+
+            if os.path.isfile(filename):
+                print(f"Updating {texture.name} from {filename}...")
+
+                # TODO: What it says above
+
+        # Now, write out the updated file
+        if args.pretend:
+            print(f"Would write {args.file}...")
+            afpfile.unparse()
+        else:
+            print(f"Writing {args.file}...")
+            with open(args.file + ".tmp", "wb") as bfp:
+                bfp.write(afpfile.unparse())
 
     return 0
 
