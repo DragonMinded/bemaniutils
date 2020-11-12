@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import argparse
+import io
 import os
 import os.path
 import struct
@@ -1449,6 +1450,36 @@ class AFPFile:
         # against the headers.
         return header + bitfields + body[(header_length + 24):]
 
+    def update_texture(self, name: str, png_data: bytes) -> None:
+        for texture in self.textures:
+            if texture.name == name:
+                # First, let's get the dimensions of this new picture and
+                # ensure that it is identical to the existing one.
+                img = Image.open(io.BytesIO(png_data))
+                if img.width != texture.width or img.height != texture.height:
+                    raise Exception("Cannot update texture with different size!")
+
+                # Now, get the raw image data.
+                img = img.convert('RGBA')
+
+                if texture.fmt == 0x20:
+                    # RGBA format
+                    texture.raw = b"".join(
+                        struct.pack(
+                            "BBBB",
+                            pixel[2],
+                            pixel[1],
+                            pixel[0],
+                            pixel[3],
+                        ) for pixel in img.getdata()
+                    )
+                else:
+                    raise Exception(f"Unsupported format {hex(texture.fmt)} for texture {name}")
+
+                return
+
+        raise Exception(f"There is no texture named {name}!")
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker")
@@ -1600,7 +1631,8 @@ def main() -> int:
             if os.path.isfile(filename):
                 print(f"Updating {texture.name} from {filename}...")
 
-                # TODO: What it says above
+                with open(filename, "rb") as bfp:
+                    afpfile.update_texture(texture.name, bfp.read())
 
         # Now, write out the updated file
         if args.pretend:
