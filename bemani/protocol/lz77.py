@@ -258,7 +258,7 @@ class Lz77Compress:
                 # byte and then 8 instructions.
                 flags = 0x0
                 flagpos = -1
-                data: List[bytes] = [b"\x00"] * 8
+                data: List[bytes] = [b""] * 8
 
                 for _ in range(8):
                     # Track what flag we're generating data for
@@ -289,7 +289,7 @@ class Lz77Compress:
                     backref_amount = min(self.left, 18)
 
                     # Iterate over all spots where the first byte equals, and is in range.
-                    earliest = max(0, self.bytes_written - self.ringlength)
+                    earliest = max(0, self.bytes_written - (self.ringlength - 1))
                     possible_backref_locations: List[int] = [
                         absolute_pos for absolute_pos in self.starts[self.data[self.read_pos:(self.read_pos + 3)]]
                         if absolute_pos >= earliest
@@ -344,7 +344,7 @@ class Lz77Compress:
                     self.read_pos += copy_amount
                     self.left -= copy_amount
 
-                yield bytes([flags]) + b"".join(data[:(flagpos + 1)])
+                yield bytes([flags]) + b"".join(data)
 
 
 class Lz77:
