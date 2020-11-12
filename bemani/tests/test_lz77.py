@@ -53,6 +53,16 @@ class TestLz77RealCompressor(unittest.TestCase):
         decompresseddata = lz77.decompress(compresseddata)
         self.assertEqual(data, decompresseddata)
 
+    def test_huge_data_random(self) -> None:
+        lz77 = Lz77()
+        data = bytes([random.randint(0, 255) for _ in range(1 * 1024 * 1024)])
+
+        compresseddata = lz77.compress(data)
+        self.assertNotEqual(data, compresseddata)
+
+        decompresseddata = lz77.decompress(compresseddata)
+        self.assertEqual(data, decompresseddata)
+
     def test_declaration(self) -> None:
         lz77 = Lz77()
         data = get_fixture("declaration.txt")
