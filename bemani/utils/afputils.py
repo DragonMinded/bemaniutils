@@ -38,10 +38,7 @@ class Texture:
         header_flags1: int,
         header_flags2: int,
         header_flags3: int,
-        unk_flags1: int,
-        unk_flags2: int,
-        unk_flags3: int,
-        unk_flags4: int,
+        fmtflags: int,
         rawdata: bytes,
         imgdata: Any,
     ) -> None:
@@ -52,10 +49,7 @@ class Texture:
         self.header_flags1 = header_flags1
         self.header_flags2 = header_flags2
         self.header_flags3 = header_flags3
-        self.unk_flags1 = unk_flags1
-        self.unk_flags2 = unk_flags2
-        self.unk_flags3 = unk_flags3
-        self.unk_flags4 = unk_flags4
+        self.fmtflags = fmtflags
         self.raw = rawdata
         self.img = imgdata
 
@@ -448,15 +442,15 @@ class AFPFile:
                         fmt = fmtflags & 0xFF
 
                         # Extract flags that the game cares about.
-                        flags1 = (fmtflags >> 24) & 0xFF
-                        flags2 = (fmtflags >> 16) & 0xFF
+                        # flags1 = (fmtflags >> 24) & 0xFF
+                        # flags2 = (fmtflags >> 16) & 0xFF
 
                         # These flags may have some significance, such as
                         # the unk3/unk4 possibly indicating texture doubling?
-                        unk1 = 3 if (flags1 & 0xF == 1) else 1
-                        unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
-                        unk3 = 1 if (flags2 & 0xF == 1) else 2
-                        unk4 = 1 if ((flags2 >> 4) & 0xF == 1) else 2
+                        # unk1 = 3 if (flags1 & 0xF == 1) else 1
+                        # unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
+                        # unk3 = 1 if (flags2 & 0xF == 1) else 2
+                        # unk4 = 1 if ((flags2 >> 4) & 0xF == 1) else 2
 
                         if self.endian == "<" and magic != b"TDXT":
                             raise Exception("Unexpected texture format!")
@@ -554,11 +548,8 @@ class AFPFile:
                                 header_flags1,
                                 header_flags2,
                                 header_flags3,
-                                unk1,
-                                unk2,
-                                unk3,
-                                unk4,
-                                raw_data,
+                                fmtflags & 0xFFFFFF00,
+                                raw_data[64:],
                                 img,
                             )
                         )
@@ -602,8 +593,6 @@ class AFPFile:
             header_offset += 8
 
             if offset != 0 and length > 0:
-                self.texture_to_region = [TextureRegion(0, 0, 0, 0, 0)] * length
-
                 for i in range(length):
                     descriptor_offset = offset + (10 * i)
                     texture_no, left, top, right, bottom = struct.unpack(
@@ -618,7 +607,7 @@ class AFPFile:
                     # TODO: The offsets here seem to be off by a power of 2, there
                     # might be more flags in the above texture format that specify
                     # device scaling and such?
-                    self.texture_to_region[i] = TextureRegion(texture_no, left, top, right, bottom)
+                    self.texture_to_region.append(TextureRegion(texture_no, left, top, right, bottom))
 
             vprint(f"Bit 0x000008 - regions; count: {length}, offset: {hex(offset)}")
         else:
@@ -1111,8 +1100,92 @@ class AFPFile:
             # First, lay down pointers and length, regardless of number of entries.
             bitchunks[0] = struct.pack(f"{self.endian}II", len(self.textures), offset)
 
+            # Now, calculate where we can put texturedata.
+            tex_offset = AFPFile.align(len(body) + (len(self.textures) * 12))
+            textures: bytes = b""
+            name_to_offset: Dict[str, Tuple[int, int]] = {}
+
+            # Now, possibly compress and lay down textures.
             for texture in self.textures:
-                raise Exception("TODO!")
+                # Construct the TXDT texture format from our parsed results.
+                if self.endian == "<":
+                    magic = b"TDXT"
+                elif self.endian == ">":
+                    magic != b"TXDT"
+                else:
+                    raise Exception("Unexpected texture format!")
+
+                fmtflags = (texture.fmtflags & 0xFFFFFF00) | (texture.fmt & 0xFF)
+
+                raw_texture = struct.pack(
+                    f"{self.endian}4sIIIHHIII",
+                    magic,
+                    texture.header_flags1,
+                    texture.header_flags2,
+                    64 + len(texture.raw),
+                    texture.width,
+                    texture.height,
+                    fmtflags,
+                    0,
+                    0,
+                ) + (b'\0' * 12) + struct.pack(
+                    f"{self.endian}I", texture.header_flags3,
+                ) + (b'\0' * 16) + texture.raw
+
+                if self.legacy_lz:
+                    raise Exception("We don't support legacy lz mode!")
+                elif self.modern_lz:
+                    # We need to compress the raw texture.
+                    lz77 = Lz77()
+                    compressed_texture = lz77.compress(raw_texture)
+
+                    # Make room for the texture, remember where we put it.
+                    textures = AFPFile.pad(textures, AFPFile.align(len(textures)))
+                    name_to_offset[texture.name] = (len(textures), len(compressed_texture) + 8)
+
+                    # Place down the mini-header and the texture itself.
+                    textures += struct.pack(
+                        ">II",
+                        len(raw_texture),
+                        len(compressed_texture),
+                    ) + compressed_texture
+                else:
+                    # We just need to place the raw texture down.
+                    textures = AFPFile.pad(textures, AFPFile.align(len(textures)))
+                    name_to_offset[texture.name] = (len(textures), len(raw_texture) + 8)
+
+                    textures += struct.pack(
+                        ">II",
+                        len(raw_texture),
+                        len(raw_texture),
+                    ) + raw_texture
+
+            # Now, make sure the texture block is padded to 4 bytes, so we can figure out
+            # where strings go.
+            textures = AFPFile.pad(textures, AFPFile.align(len(textures)))
+            string_offset = AFPFile.align(len(body) + (len(self.textures) * 12) + len(textures))
+
+            # Now, write out textures and strings.
+            for texture in self.textures:
+                if texture.name not in string_offsets:
+                    # We haven't written this string out yet, so put it on our pending list.
+                    pending_strings[texture.name] = string_offset
+                    string_offsets[texture.name] = string_offset
+
+                    # Room for the null byte!
+                    string_offset += len(texture.name) + 1
+
+                # Write out the chunk itself.
+                body += struct.pack(
+                    f"{self.endian}III",
+                    string_offsets[texture.name],
+                    name_to_offset[texture.name][1],  # Structure length
+                    tex_offset + name_to_offset[texture.name][0],  # Structure offset
+                )
+
+            # Now, put down the texture chunk itself and then strings that were new in this chunk.
+            body = self.write_strings(body + textures, pending_strings)
+            pending_strings = {}
 
         if self.features & 0x08:
             # Mapping between individual graphics and their respective textures.
@@ -1122,8 +1195,15 @@ class AFPFile:
             # First, lay down pointers and length, regardless of number of entries.
             bitchunks[3] = struct.pack(f"{self.endian}II", len(self.texture_to_region), offset)
 
-            for tex_to_region in self.texture_to_region:
-                raise Exception("TODO!")
+            for bounds in self.texture_to_region:
+                body += struct.pack(
+                    f"{self.endian}HHHHH",
+                    bounds.textureno,
+                    bounds.left,
+                    bounds.top,
+                    bounds.right,
+                    bounds.bottom,
+                )
 
         if self.features & 0x40:
             # Unknown file chunk.
@@ -1461,20 +1541,19 @@ def main() -> int:
                     with open(f"{filename}.raw", "wb") as bfp:
                         bfp.write(texture.raw)
 
-                if args.write_mappings:
-                    if args.pretend:
-                        print(f"Would write {filename}.xml texture info...")
-                    else:
-                        print(f"Writing {filename}.xml texture info...")
-                        with open(f"{filename}.xml", "w") as sfp:
-                            sfp.write(textwrap.dedent(f"""
-                                <info>
-                                    <width>{texture.width}</width>
-                                    <height>{texture.height}</height>
-                                    <type>{hex(texture.fmt)}</type>
-                                    <raw>{filename}.raw</raw>
-                                </info>
-                            """).strip())
+                if args.pretend:
+                    print(f"Would write {filename}.xml texture info...")
+                else:
+                    print(f"Writing {filename}.xml texture info...")
+                    with open(f"{filename}.xml", "w") as sfp:
+                        sfp.write(textwrap.dedent(f"""
+                            <info>
+                                <width>{texture.width}</width>
+                                <height>{texture.height}</height>
+                                <type>{hex(texture.fmt)}</type>
+                                <raw>{filename}.raw</raw>
+                            </info>
+                        """).strip())
 
         if args.write_mappings:
             for i, name in enumerate(afpfile.regionmap.entries):
