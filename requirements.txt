@@ -1,3 +1,6 @@
+Cython
+SQLAlchemy
+alembic
 PyYAML
 Flask
 Requests
@@ -6,8 +9,6 @@ passlib
 mypy
 flake8
 typed-ast
-SQLAlchemy
-alembic
 freezegun
 pyreact
 Flask-Caching
@@ -16,4 +17,3 @@ pycrypto
 jaconv
 pefile
 pillow
-Cython
