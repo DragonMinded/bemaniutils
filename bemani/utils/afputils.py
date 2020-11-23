@@ -6,7 +6,7 @@ import os.path
 import struct
 import sys
 import textwrap
-from PIL import Image  # type: ignore
+from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.format.dxt import DXTBuffer
@@ -1552,6 +1552,12 @@ def main() -> int:
         action="store_true",
         help="Write mapping files to disk",
     )
+    extract_parser.add_argument(
+        "-g",
+        "--generate-mapping-overlays",
+        action="store_true",
+        help="Generate overlay images showing mappings",
+    )
 
     update_parser = subparsers.add_parser('update', help='Update relevant textures in a file from a directory')
     update_parser.add_argument(
@@ -1650,6 +1656,49 @@ def main() -> int:
                     print(f"Writing {filename} font information...")
                     with open(filename, "w") as sfp:
                         sfp.write(str(afpfile.fontdata))
+
+        if args.generate_mapping_overlays:
+            overlays: Dict[str, Any] = {}
+
+            for i, name in enumerate(afpfile.regionmap.entries):
+                if i < 0 or i >= len(afpfile.texture_to_region):
+                    raise Exception(f"Out of bounds region {i}")
+                region = afpfile.texture_to_region[i]
+                texturename = afpfile.texturemap.entries[region.textureno]
+
+                if texturename not in overlays:
+                    for texture in afpfile.textures:
+                        if texture.name == texturename:
+                            overlays[texturename] = Image.new(
+                                'RGBA',
+                                (texture.width, texture.height),
+                                (0, 0, 0, 0),
+                            )
+                            break
+                    else:
+                        raise Exception(f"Couldn't find texture {texturename}")
+
+                draw = ImageDraw.Draw(overlays[texturename])
+                draw.rectangle(
+                    ((region.left // 2, region.top // 2), (region.right // 2, region.bottom // 2)),
+                    fill=(0, 0, 0, 0),
+                    outline=(255, 0, 0, 255),
+                    width=1,
+                )
+                draw.text(
+                    (region.left // 2, region.top // 2),
+                    name,
+                    fill=(255, 0, 255, 255),
+                )
+
+            for name, img in overlays.items():
+                filename = os.path.join(args.dir, name) + "_overlay.png"
+                if args.pretend:
+                    print(f"Would write {filename} overlay...")
+                else:
+                    print(f"Writing {filename} overlay...")
+                    with open(filename, "wb") as bfp:
+                        img.save(bfp, format='PNG')
 
     if args.action == "update":
         # First, parse the file out
