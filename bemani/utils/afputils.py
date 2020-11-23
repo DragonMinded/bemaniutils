@@ -1721,7 +1721,7 @@ def main() -> int:
             afpfile.unparse()
         else:
             print(f"Writing {args.file}...")
-            with open(args.file + ".tmp", "wb") as bfp:
+            with open(args.file, "wb") as bfp:
                 bfp.write(afpfile.unparse())
 
     return 0
