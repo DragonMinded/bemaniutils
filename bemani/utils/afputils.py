@@ -458,6 +458,10 @@ class AFPFile:
                         if self.endian == ">" and magic != b"TXDT":
                             raise Exception("Unexpected texture format!")
 
+                        # Since the AFP file format can be found in both big and little endian, its
+                        # possible that some of these loaders might need byteswapping on some platforms.
+                        # This has been tested on files intended for X86 (little endian).
+
                         if fmt == 0x0B:
                             # 16-bit 565 color RGB format. Game references D3D9 texture format 23 (R5G6B5).
                             newdata = []
@@ -481,8 +485,12 @@ class AFPFile:
                                 'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
                             )
                         elif fmt == 0x10:
-                            # Seems to be some sort of RGB with color swapping.
-                            pass
+                            # Seems to be some sort of RGB with color swapping. Game references D3D9 texture
+                            # format 21 (A8R8B8G8) but does manual byteswapping.
+                            # TODO: Not sure this is correct, need to find sample files.
+                            img = Image.frombytes(
+                                'RGB', (width, height), raw_data[64:], 'raw', 'BGR',
+                            )
                         elif fmt == 0x13:
                             # Some 16-bit texture format. Game references D3D9 texture format 25 (A1R5G5B5).
                             newdata = []
@@ -502,11 +510,11 @@ class AFPFile:
                                 'RGBA', (width, height), b''.join(newdata), 'raw', 'RGBA',
                             )
                         elif fmt == 0x15:
-                            # RGBA format.
-                            # TODO: The colors are wrong on this, need to investigate
-                            # further.
+                            # RGBA format. Game references D3D9 texture format 21 (A8R8G8B8).
+                            # Looks like unlike 0x20 below, the game does some endianness swapping.
+                            # TODO: Not sure this is correct, need to find sample files.
                             img = Image.frombytes(
-                                'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
+                                'RGBA', (width, height), raw_data[64:], 'raw', 'ARGB',
                             )
                         elif fmt == 0x16:
                             # DXT1 format. Game references D3D9 DXT1 texture format.
@@ -533,7 +541,9 @@ class AFPFile:
                                 1,
                             )
                         elif fmt == 0x1E:
-                            # I have no idea what format this is.
+                            # I have no idea what format this is. The game does some byte
+                            # swapping but doesn't actually call any texture create calls.
+                            # This might be leftover from another game.
                             pass
                         elif fmt == 0x1F:
                             # 16-bit 4-4-4-4 RGBA format. Game references D3D9 texture format 26 (A4R4G4B4).
