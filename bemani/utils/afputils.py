@@ -459,7 +459,7 @@ class AFPFile:
                             raise Exception("Unexpected texture format!")
 
                         if fmt == 0x0B:
-                            # 16-bit 565 color RGB format.
+                            # 16-bit 565 color RGB format. Game references D3D9 texture format 23 (R5G6B5).
                             newdata = []
                             for i in range(width * height):
                                 pixel = struct.unpack(
@@ -476,11 +476,31 @@ class AFPFile:
                                 'RGB', (width, height), b''.join(newdata), 'raw', 'RGB',
                             )
                         elif fmt == 0x0E:
-                            # RGB image, no alpha.
+                            # RGB image, no alpha. Game references D3D9 texture format 22 (R8G8B8).
                             img = Image.frombytes(
                                 'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
                             )
-                        # 0x10 = Seems to be some sort of RGB with color swapping.
+                        elif fmt == 0x10:
+                            # Seems to be some sort of RGB with color swapping.
+                            pass
+                        elif fmt == 0x13:
+                            # Some 16-bit texture format. Game references D3D9 texture format 25 (A1R5G5B5).
+                            newdata = []
+                            for i in range(width * height):
+                                pixel = struct.unpack(
+                                    f"{self.endian}H",
+                                    raw_data[(64 + (i * 2)):(66 + (i * 2))],
+                                )[0]
+                                alpha = 255 if ((pixel >> 15) & 0x1) != 0 else 0
+                                red = ((pixel >> 0) & 0x1F) << 3
+                                green = ((pixel >> 5) & 0x1F) << 3
+                                blue = ((pixel >> 10) & 0x1F) << 3
+                                newdata.append(
+                                    struct.pack("<BBBB", blue, green, red, alpha)
+                                )
+                            img = Image.frombytes(
+                                'RGBA', (width, height), b''.join(newdata), 'raw', 'RGBA',
+                            )
                         elif fmt == 0x15:
                             # RGBA format.
                             # TODO: The colors are wrong on this, need to investigate
@@ -489,7 +509,7 @@ class AFPFile:
                                 'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
                             )
                         elif fmt == 0x16:
-                            # DXT1 format.
+                            # DXT1 format. Game references D3D9 DXT1 texture format.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
                                 'RGBA',
@@ -501,7 +521,7 @@ class AFPFile:
                                 1,
                             )
                         elif fmt == 0x1A:
-                            # DXT5 format.
+                            # DXT5 format. Game references D3D9 DXT5 texture format.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
                                 'RGBA',
@@ -512,9 +532,11 @@ class AFPFile:
                                 0,
                                 1,
                             )
-                        # 0x1E = I have no idea what format this is.
+                        elif fmt == 0x1E:
+                            # I have no idea what format this is.
+                            pass
                         elif fmt == 0x1F:
-                            # 16-bit 4-4-4-4 RGBA format.
+                            # 16-bit 4-4-4-4 RGBA format. Game references D3D9 texture format 26 (A4R4G4B4).
                             newdata = []
                             for i in range(width * height):
                                 pixel = struct.unpack(
@@ -532,7 +554,7 @@ class AFPFile:
                                 'RGBA', (width, height), b''.join(newdata), 'raw', 'RGBA',
                             )
                         elif fmt == 0x20:
-                            # RGBA format.
+                            # RGBA format. Game references D3D9 surface format 21 (A8R8G8B8).
                             img = Image.frombytes(
                                 'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
                             )
