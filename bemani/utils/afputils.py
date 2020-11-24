@@ -41,6 +41,7 @@ class Texture:
         header_flags3: int,
         fmtflags: int,
         rawdata: bytes,
+        compressed: Optional[bytes],
         imgdata: Any,
     ) -> None:
         self.name = name
@@ -52,6 +53,7 @@ class Texture:
         self.header_flags3 = header_flags3
         self.fmtflags = fmtflags
         self.raw = rawdata
+        self.compressed = compressed
         self.img = imgdata
 
 
@@ -408,6 +410,7 @@ class AFPFile:
                             # I assume they're like the above, so lets put in some asertions.
                             if deflated_size != (texture_length - 8):
                                 raise Exception("We got an incorrect length for raw texture!")
+                            lz_data = None
                             raw_data = self.data[(texture_offset + 8):(texture_offset + 8 + deflated_size)]
                             self.add_coverage(texture_offset, deflated_size + 8)
 
@@ -583,6 +586,7 @@ class AFPFile:
                                 header_flags3,
                                 fmtflags & 0xFFFFFF00,
                                 raw_data[64:],
+                                lz_data,
                                 img,
                             )
                         )
@@ -1168,9 +1172,13 @@ class AFPFile:
                 if self.legacy_lz:
                     raise Exception("We don't support legacy lz mode!")
                 elif self.modern_lz:
-                    # We need to compress the raw texture.
-                    lz77 = Lz77()
-                    compressed_texture = lz77.compress(raw_texture)
+                    if texture.compressed:
+                        # We didn't change this texture, use the original compression.
+                        compressed_texture = texture.compressed
+                    else:
+                        # We need to compress the raw texture.
+                        lz77 = Lz77()
+                        compressed_texture = lz77.compress(raw_texture)
 
                     # Make room for the texture, remember where we put it.
                     textures = AFPFile.pad(textures, AFPFile.align(len(textures)))
@@ -1505,6 +1513,9 @@ class AFPFile:
                             pixel[3],
                         ) for pixel in img.getdata()
                     )
+
+                    # Make sure we don't use the old compressed data.
+                    texture.compressed = None
                 else:
                     raise Exception(f"Unsupported format {hex(texture.fmt)} for texture {name}")
 
@@ -1721,8 +1732,9 @@ def main() -> int:
             afpfile.unparse()
         else:
             print(f"Writing {args.file}...")
+            data = afpfile.unparse()
             with open(args.file, "wb") as bfp:
-                bfp.write(afpfile.unparse())
+                bfp.write(data)
 
     return 0
 
