@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import argparse
 import io
+import json
 import os
 import os.path
 import struct
@@ -15,6 +16,13 @@ from bemani.protocol.lz77 import Lz77
 from bemani.protocol.node import Node
 
 
+def _hex(data: int) -> str:
+    hexval = hex(data)[2:]
+    if len(hexval) == 1:
+        return "0" + hexval
+    return hexval
+
+
 class PMAN:
     def __init__(
         self,
@@ -27,6 +35,12 @@ class PMAN:
         self.flags1 = flags1
         self.flags2 = flags2
         self.flags3 = flags3
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'flags': [self.flags1, self.flags2, self.flags3],
+            'entries': self.entries,
+        }
 
 
 class Texture:
@@ -56,6 +70,18 @@ class Texture:
         self.compressed = compressed
         self.img = imgdata
 
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'name': self.name,
+            'width': self.width,
+            'height': self.height,
+            'fmt': self.fmt,
+            'header_flags': [self.header_flags1, self.header_flags2, self.header_flags3],
+            'fmt_flags': self.fmtflags,
+            'raw': "".join(_hex(x) for x in self.raw),
+            'compressed': "".join(_hex(x) for x in self.compressed) if self.compressed is not None else None,
+        }
+
 
 class TextureRegion:
     def __init__(self, textureno: int, left: int, top: int, right: int, bottom: int) -> None:
@@ -64,6 +90,15 @@ class TextureRegion:
         self.top = top
         self.right = right
         self.bottom = bottom
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'texture': self.textureno,
+            'left': self.left,
+            'top': self.top,
+            'right': self.right,
+            'bottom': self.bottom,
+        }
 
 
 class Animation:
@@ -77,6 +112,13 @@ class Animation:
         self.data = data
         self.header = header
 
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'name': self.name,
+            'data': "".join(_hex(x) for x in self.data),
+            'header': "".join(_hex(x) for x in self.header),
+        }
+
 
 class Shape:
     def __init__(
@@ -86,6 +128,12 @@ class Shape:
     ) -> None:
         self.name = name
         self.data = data
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'name': self.name,
+            'data': "".join(_hex(x) for x in self.data),
+        }
 
 
 class Unknown1:
@@ -99,6 +147,12 @@ class Unknown1:
         if len(data) != 12:
             raise Exception("Unexpected length for Unknown1 structure!")
 
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'name': self.name,
+            'data': "".join(_hex(x) for x in self.data),
+        }
+
 
 class Unknown2:
     def __init__(
@@ -108,6 +162,11 @@ class Unknown2:
         self.data = data
         if len(data) != 4:
             raise Exception("Unexpected length for Unknown2 structure!")
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'data': "".join(_hex(x) for x in self.data),
+        }
 
 
 class AFPFile:
@@ -190,6 +249,29 @@ class AFPFile:
             if self.coverage[i] and unique:
                 raise Exception(f"Already covered {hex(offset)}!")
             self.coverage[i] = True
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'endian': self.endian,
+            'features': self.features,
+            'file_flags': "".join(_hex(x) for x in self.file_flags),
+            'obfuscated': self.text_obfuscated,
+            'legacy_lz': self.legacy_lz,
+            'modern_lz': self.modern_lz,
+            'textures': [tex.as_dict() for tex in self.textures],
+            'texturemap': self.texturemap.as_dict(),
+            'textureregion': [reg.as_dict() for reg in self.texture_to_region],
+            'regionmap': self.regionmap.as_dict(),
+            'animations': [anim.as_dict() for anim in self.animations],
+            'animationmap': self.animmap.as_dict(),
+            'fontdata': str(self.fontdata) if self.fontdata is not None else None,
+            'shapes': [shape.as_dict() for shape in self.shapes],
+            'shapemap': self.shapemap.as_dict(),
+            'unknown1': [unk.as_dict() for unk in self.unknown1],
+            'unknown1map': self.unk_pman1.as_dict(),
+            'unknown2': [unk.as_dict() for unk in self.unknown2],
+            'unknown2map': self.unk_pman2.as_dict(),
+        }
 
     def print_coverage(self) -> None:
         # First offset that is not coverd in a run.
@@ -1593,6 +1675,14 @@ def main() -> int:
         action="store_true",
         help="Display verbuse debugging output",
     )
+
+    print_parser = subparsers.add_parser('print', help='Print the file contents as a JSON dictionary')
+    print_parser.add_argument(
+        "file",
+        metavar="FILE",
+        help="The file to print",
+    )
+
     args = parser.parse_args()
 
     if args.action == "extract":
@@ -1735,6 +1825,14 @@ def main() -> int:
             data = afpfile.unparse()
             with open(args.file, "wb") as bfp:
                 bfp.write(data)
+
+    if args.action == "print":
+        # First, parse the file out
+        with open(args.file, "rb") as bfp:
+            afpfile = AFPFile(bfp.read(), verbose=False)
+
+        # Now, print it
+        print(json.dumps(afpfile.as_dict(), sort_keys=True, indent=4))
 
     return 0
 
