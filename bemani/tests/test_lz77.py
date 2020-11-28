@@ -12,7 +12,7 @@ class TestLZ77Decompressor(unittest.TestCase):
 
         for _ in range(100):
             amount = random.randint(1, Lz77Decompress.RING_LENGTH)
-            data = bytes([random.randint(0, 255) for _ in range(amount)])
+            data = os.urandom(amount)
 
             # Save our ring position, write a chunk of data
             readpos = dec.write_pos
@@ -35,7 +35,7 @@ def get_fixture(name: str) -> bytes:
 class TestLz77RealCompressor(unittest.TestCase):
     def test_small_data_random(self) -> None:
         lz77 = Lz77()
-        data = bytes([random.randint(0, 255) for _ in range(1 * 1024)])
+        data = os.urandom(1 * 1024)
 
         compresseddata = lz77.compress(data)
         self.assertNotEqual(data, compresseddata)
@@ -45,7 +45,7 @@ class TestLz77RealCompressor(unittest.TestCase):
 
     def test_large_data_random(self) -> None:
         lz77 = Lz77()
-        data = bytes([random.randint(0, 255) for _ in range(100 * 1024)])
+        data = os.urandom(100 * 1024)
 
         compresseddata = lz77.compress(data)
         self.assertNotEqual(data, compresseddata)
@@ -55,7 +55,7 @@ class TestLz77RealCompressor(unittest.TestCase):
 
     def test_huge_data_random(self) -> None:
         lz77 = Lz77()
-        data = bytes([random.randint(0, 255) for _ in range(1 * 1024 * 1024)])
+        data = os.urandom(1 * 1024 * 1024)
 
         compresseddata = lz77.compress(data)
         self.assertNotEqual(data, compresseddata)

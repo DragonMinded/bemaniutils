@@ -1,5 +1,20 @@
+import ctypes
+import os
 from collections import defaultdict
 from typing import Generator, List, MutableMapping, Optional, Set, Tuple
+
+
+# Attempt to use the faster C++ libraries if they're available
+try:
+    clib = None
+    clib_path = os.path.dirname(os.path.abspath(__file__))
+    files = [f for f in os.listdir(clib_path) if f.startswith("lz77alt") and f.endswith(".so")]
+    if len(files) > 0:
+        clib = ctypes.cdll.LoadLibrary(os.path.join(clib_path, files[0]))
+        clib.decompress.argtypes = (ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)
+        clib.decompress.restype = ctypes.c_int
+except Exception:
+    clib = None
 
 
 class LzException(Exception):
@@ -414,8 +429,26 @@ class Lz77:
         Returns:
             Raw binary data.
         """
-        lz = Lz77Decompress(data, backref=self.backref)
-        return b''.join(lz.decompress_bytes())
+        if clib is not None:
+            # Given a maximum backref length of 18, if we had a file that was
+            # only backrefs of maximum size. We would get a compression of around
+            # (18 * 8) / (2 * 8 + 1), or 8.47. So, allocate 9 times in the output
+            # buffer.
+            outbuf = b"\0" * (len(data) * 9)
+            result = clib.decompress(data, len(data), outbuf, len(outbuf))
+            if result >= 0:
+                return outbuf[:result]
+            elif result == -1:
+                raise LzException("Not enough room in output buffer!")
+            elif result == -2:
+                raise LzException("Unexpected EOF during decompression!")
+            elif result == -3:
+                raise LzException("Not enough room to write output byte!")
+            else:
+                raise LzException("Unknown exception in C++ code!")
+        else:
+            lz = Lz77Decompress(data, backref=self.backref)
+            return b''.join(lz.decompress_bytes())
 
     def compress(self, data: bytes) -> bytes:
         """

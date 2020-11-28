@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import Extension, setup
 from Cython.Build import cythonize
 
 setup(
@@ -69,16 +69,54 @@ setup(
     install_requires=[
         req for req in open('requirements.txt').read().split('\n') if len(req) > 0
     ],
+    # None of these are required for operating any of the utilities found in this repo.
+    # They are all present for speed. If you cannot compile arbitrary code or cython,
+    # remove the ext_modules line and run setuptools again. Everything should work, but
+    # it will run slower.
     ext_modules=cythonize(
-        # Compile various low-level portions of the protocol to get a massive
-        # per-packet speed boost.
         [
-            "bemani/protocol/binary.py",
-            "bemani/protocol/lz77.py",
-            "bemani/protocol/node.py",
-            "bemani/protocol/protocol.py",
-            "bemani/protocol/stream.py",
-            "bemani/protocol/xml.py",
+            Extension(
+                "bemani.protocol.binary",
+                [
+                    "bemani/protocol/binary.py",
+                ]
+            ),
+            Extension(
+                "bemani.protocol.lz77",
+                [
+                    "bemani/protocol/lz77.py",
+                ]
+            ),
+            Extension(
+                "bemani.protocol.lz77alt",
+                [
+                    "bemani/protocol/lz77.cpp",
+                ]
+            ),
+            Extension(
+                "bemani.protocol.node",
+                [
+                    "bemani/protocol/node.py",
+                ]
+            ),
+            Extension(
+                "bemani.protocol.protocol",
+                [
+                    "bemani/protocol/protocol.py",
+                ]
+            ),
+            Extension(
+                "bemani.protocol.stream",
+                [
+                    "bemani/protocol/stream.py",
+                ]
+            ),
+            Extension(
+                "bemani.protocol.xml",
+                [
+                    "bemani/protocol/xml.py",
+                ]
+            ),
         ],
         language_level=3,
     ),
