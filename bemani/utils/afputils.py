@@ -1676,6 +1676,12 @@ def main() -> int:
         action="store_true",
         help="Generate overlay images showing mappings",
     )
+    extract_parser.add_argument(
+        "-s",
+        "--split-textures",
+        action="store_true",
+        help="Split textures into individual sprites",
+    )
 
     update_parser = subparsers.add_parser('update', help='Update relevant textures in a file from a directory')
     update_parser.add_argument(
@@ -1711,67 +1717,75 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.action == "extract":
+        if args.split_textures:
+            if args.write_raw:
+                raise Exception("Cannot write raw textures when splitting sprites!")
+            if args.generate_mapping_overlays:
+                raise Exception("Cannot generate mapping overlays when splitting sprites!")
+
         with open(args.file, "rb") as bfp:
             afpfile = AFPFile(bfp.read(), verbose=args.verbose)
 
         # Actually place the files down.
         os.makedirs(args.dir, exist_ok=True)
 
-        for texture in afpfile.textures:
-            filename = os.path.join(args.dir, texture.name)
+        if not args.split_textures:
+            for texture in afpfile.textures:
+                filename = os.path.join(args.dir, texture.name)
 
-            if texture.img:
-                if args.pretend:
-                    print(f"Would write {filename}.png texture...")
-                else:
-                    print(f"Writing {filename}.png texture...")
-                    with open(f"{filename}.png", "wb") as bfp:
-                        texture.img.save(bfp, format='PNG')
+                if texture.img:
+                    if args.pretend:
+                        print(f"Would write {filename}.png texture...")
+                    else:
+                        print(f"Writing {filename}.png texture...")
+                        with open(f"{filename}.png", "wb") as bfp:
+                            texture.img.save(bfp, format='PNG')
 
-            if not texture.img or args.write_raw:
-                if args.pretend:
-                    print(f"Would write {filename}.raw texture...")
-                else:
-                    print(f"Writing {filename}.raw texture...")
-                    with open(f"{filename}.raw", "wb") as bfp:
-                        bfp.write(texture.raw)
+                if not texture.img or args.write_raw:
+                    if args.pretend:
+                        print(f"Would write {filename}.raw texture...")
+                    else:
+                        print(f"Writing {filename}.raw texture...")
+                        with open(f"{filename}.raw", "wb") as bfp:
+                            bfp.write(texture.raw)
 
-                if args.pretend:
-                    print(f"Would write {filename}.xml texture info...")
-                else:
-                    print(f"Writing {filename}.xml texture info...")
-                    with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(textwrap.dedent(f"""
-                            <info>
-                                <width>{texture.width}</width>
-                                <height>{texture.height}</height>
-                                <type>{hex(texture.fmt)}</type>
-                                <raw>{filename}.raw</raw>
-                            </info>
-                        """).strip())
+                    if args.pretend:
+                        print(f"Would write {filename}.xml texture info...")
+                    else:
+                        print(f"Writing {filename}.xml texture info...")
+                        with open(f"{filename}.xml", "w") as sfp:
+                            sfp.write(textwrap.dedent(f"""
+                                <info>
+                                    <width>{texture.width}</width>
+                                    <height>{texture.height}</height>
+                                    <type>{hex(texture.fmt)}</type>
+                                    <raw>{filename}.raw</raw>
+                                </info>
+                            """).strip())
 
         if args.write_mappings:
-            for i, name in enumerate(afpfile.regionmap.entries):
-                if i < 0 or i >= len(afpfile.texture_to_region):
-                    raise Exception(f"Out of bounds region {i}")
-                region = afpfile.texture_to_region[i]
-                texturename = afpfile.texturemap.entries[region.textureno]
-                filename = os.path.join(args.dir, name)
+            if not args.split_textures:
+                for i, name in enumerate(afpfile.regionmap.entries):
+                    if i < 0 or i >= len(afpfile.texture_to_region):
+                        raise Exception(f"Out of bounds region {i}")
+                    region = afpfile.texture_to_region[i]
+                    texturename = afpfile.texturemap.entries[region.textureno]
+                    filename = os.path.join(args.dir, name)
 
-                if args.pretend:
-                    print(f"Would write {filename}.xml region information...")
-                else:
-                    print(f"Writing {filename}.xml region information...")
-                    with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(textwrap.dedent(f"""
-                            <info>
-                                <left>{region.left}</left>
-                                <top>{region.top}</top>
-                                <right>{region.right}</right>
-                                <bottom>{region.bottom}</bottom>
-                                <texture>{texturename}</texture>
-                            </info>
-                        """).strip())
+                    if args.pretend:
+                        print(f"Would write {filename}.xml region information...")
+                    else:
+                        print(f"Writing {filename}.xml region information...")
+                        with open(f"{filename}.xml", "w") as sfp:
+                            sfp.write(textwrap.dedent(f"""
+                                <info>
+                                    <left>{region.left}</left>
+                                    <top>{region.top}</top>
+                                    <right>{region.right}</right>
+                                    <bottom>{region.bottom}</bottom>
+                                    <texture>{texturename}</texture>
+                                </info>
+                            """).strip())
 
             if afpfile.fontdata is not None:
                 filename = os.path.join(args.dir, "fontinfo.xml")
@@ -1825,6 +1839,43 @@ def main() -> int:
                     print(f"Writing {filename} overlay...")
                     with open(filename, "wb") as bfp:
                         img.save(bfp, format='PNG')
+
+        if args.split_textures:
+            textures: Dict[str, Any] = {}
+            announced: Dict[str, bool] = {}
+
+            for i, name in enumerate(afpfile.regionmap.entries):
+                if i < 0 or i >= len(afpfile.texture_to_region):
+                    raise Exception(f"Out of bounds region {i}")
+                region = afpfile.texture_to_region[i]
+                texturename = afpfile.texturemap.entries[region.textureno]
+
+                if texturename not in textures:
+                    for tex in afpfile.textures:
+                        if tex.name == texturename:
+                            textures[texturename] = tex
+                            break
+                    else:
+                        raise Exception("Could not find texture {texturename} to split!")
+
+                if textures[texturename].img:
+                    # Grab the location in the image, save it out to a new file.
+                    filename = f"{texturename}_{name}.png"
+                    filename = os.path.join(args.dir, filename)
+
+                    if args.pretend:
+                        print(f"Would write {filename} sprite...")
+                    else:
+                        print(f"Writing {filename} sprite...")
+                        sprite = textures[texturename].img.crop(
+                            (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                        )
+                        with open(filename, "wb") as bfp:
+                            sprite.save(bfp, format='PNG')
+                else:
+                    if not announced.get(texturename, False):
+                        print(f"Cannot extract sprites from {texturename} because it is not a supported format!")
+                        announced[texturename] = True
 
     if args.action == "update":
         # First, parse the file out
