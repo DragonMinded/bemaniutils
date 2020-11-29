@@ -1608,27 +1608,63 @@ class AFPFile:
 
                 # Now, get the raw image data.
                 img = img.convert('RGBA')
+                texture.img = img
 
-                if texture.fmt == 0x20:
-                    # RGBA format
-                    texture.raw = b"".join(
-                        struct.pack(
-                            "BBBB",
-                            pixel[2],
-                            pixel[1],
-                            pixel[0],
-                            pixel[3],
-                        ) for pixel in img.getdata()
-                    )
-
-                    # Make sure we don't use the old compressed data.
-                    texture.compressed = None
-                else:
-                    raise Exception(f"Unsupported format {hex(texture.fmt)} for texture {name}")
+                # Now, refresh the raw texture data for when we write it out.
+                self._refresh_texture(texture)
 
                 return
+        else:
+            raise Exception(f"There is no texture named {name}!")
 
-        raise Exception(f"There is no texture named {name}!")
+    def update_sprite(self, texture: str, sprite: str, png_data: bytes) -> None:
+        # First, identify the bounds where the texture lives.
+        for no, name in enumerate(self.texturemap.entries):
+            if name == texture:
+                textureno = no
+                break
+        else:
+            raise Exception(f"There is no texture named {texture}!")
+
+        for no, name in enumerate(self.regionmap.entries):
+            if name == sprite:
+                region = self.texture_to_region[no]
+                if region.textureno == textureno:
+                    # We found the region associated with the sprite we want to update.
+                    break
+        else:
+            raise Exception(f"There is no sprite named {sprite} on texture {texture}!")
+
+        # Now, figure out if the PNG data we got is valid.
+        sprite_img = Image.open(io.BytesIO(png_data))
+        if sprite_img.width != ((region.right // 2) - (region.left // 2)) or sprite_img.height != ((region.bottom // 2) - (region.top // 2)):
+            raise Exception("Cannot update sprite with different size!")
+
+        # Now, copy the data over and update the raw texture.
+        for tex in self.textures:
+            if tex.name == texture:
+                tex.img.paste(sprite_img, (region.left // 2, region.top // 2))
+
+                # Now, refresh the texture so when we save the file its updated.
+                self._refresh_texture(tex)
+
+    def _refresh_texture(self, texture: Texture) -> None:
+        if texture.fmt == 0x20:
+            # RGBA format
+            texture.raw = b"".join(
+                struct.pack(
+                    "BBBB",
+                    pixel[2],
+                    pixel[1],
+                    pixel[0],
+                    pixel[3],
+                ) for pixel in texture.img.getdata()
+            )
+
+            # Make sure we don't use the old compressed data.
+            texture.compressed = None
+        else:
+            raise Exception(f"Unsupported format {hex(texture.fmt)} for texture {texture.name}")
 
 
 def main() -> int:
@@ -1891,6 +1927,23 @@ def main() -> int:
 
                 with open(filename, "rb") as bfp:
                     afpfile.update_texture(texture.name, bfp.read())
+
+        # Now, find any PNG files that match a specific sprite.
+        for i, spritename in enumerate(afpfile.regionmap.entries):
+            if i < 0 or i >= len(afpfile.texture_to_region):
+                raise Exception(f"Out of bounds region {i}")
+            region = afpfile.texture_to_region[i]
+            texturename = afpfile.texturemap.entries[region.textureno]
+
+            # Grab the location in the image to see if it exists.
+            filename = f"{texturename}_{spritename}.png"
+            filename = os.path.join(args.dir, filename)
+
+            if os.path.isfile(filename):
+                print(f"Updating {texturename} sprite piece {spritename} from {filename}...")
+
+                with open(filename, "rb") as bfp:
+                    afpfile.update_sprite(texturename, spritename, bfp.read())
 
         # Now, write out the updated file
         if args.pretend:
