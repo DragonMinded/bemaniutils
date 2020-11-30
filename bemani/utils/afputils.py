@@ -1649,22 +1649,48 @@ class AFPFile:
                 self._refresh_texture(tex)
 
     def _refresh_texture(self, texture: Texture) -> None:
-        if texture.fmt == 0x20:
-            # RGBA format
+        if texture.fmt == 0x13:
+            # 16-bit A1R5G55 texture format.
             texture.raw = b"".join(
                 struct.pack(
-                    "BBBB",
+                    f"{self.endian}H",
+                    (
+                        (0x8000 if pixel[3] >= 128 else 0x0000) |
+                        (((pixel[0] >> 3) & 0x1F) << 10) |
+                        (((pixel[1] >> 3) & 0x1F) << 5) |
+                        ((pixel[2] >> 3) & 0x1F)
+                    )
+                ) for pixel in texture.img.getdata()
+            )
+        elif texture.fmt == 0x1F:
+            # 16-bit 4-4-4-4 RGBA format.
+            texture.raw = b"".join(
+                struct.pack(
+                    f"{self.endian}H",
+                    (
+                        ((pixel[2] >> 4) & 0xF) |
+                        (((pixel[1] >> 4) & 0xF) << 4) |
+                        (((pixel[0] >> 4) & 0xF) << 8) |
+                        (((pixel[3] >> 4) & 0xF) << 12)
+                    )
+                ) for pixel in texture.img.getdata()
+            )
+        elif texture.fmt == 0x20:
+            # 32-bit RGBA format
+            texture.raw = b"".join(
+                struct.pack(
+                    f"{self.endian}BBBB",
                     pixel[2],
                     pixel[1],
                     pixel[0],
                     pixel[3],
                 ) for pixel in texture.img.getdata()
             )
-
-            # Make sure we don't use the old compressed data.
-            texture.compressed = None
         else:
             raise Exception(f"Unsupported format {hex(texture.fmt)} for texture {texture.name}")
+
+        # Make sure we don't use the old compressed data.
+        texture.compressed = None
 
 
 def main() -> int:
