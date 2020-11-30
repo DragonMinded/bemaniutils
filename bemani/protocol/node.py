@@ -32,9 +32,8 @@ class Node:
     NODE_TYPE_IP4 = 12
     NODE_TYPE_TIME = 13
     NODE_TYPE_FLOAT = 14
-    # 15 is probably a double type?
+    NODE_TYPE_DOUBLE = 15
 
-    # These seem to repeat, so they are not all verified or supported.
     NODE_TYPE_2S8 = 16
     NODE_TYPE_2U8 = 17
     NODE_TYPE_2S16 = 18
@@ -43,6 +42,8 @@ class Node:
     NODE_TYPE_2U32 = 21
     NODE_TYPE_2S64 = 22
     NODE_TYPE_2U64 = 23
+    NODE_TYPE_2FLOAT = 24
+    NODE_TYPE_2DOUBLE = 25
 
     NODE_TYPE_3S8 = 26
     NODE_TYPE_3U8 = 27
@@ -52,6 +53,8 @@ class Node:
     NODE_TYPE_3U32 = 31
     NODE_TYPE_3S64 = 32
     NODE_TYPE_3U64 = 33
+    NODE_TYPE_3FLOAT = 34
+    NODE_TYPE_3DOUBLE = 35
 
     NODE_TYPE_4S8 = 36
     NODE_TYPE_4U8 = 37
@@ -61,6 +64,8 @@ class Node:
     NODE_TYPE_4U32 = 41
     NODE_TYPE_4S64 = 42
     NODE_TYPE_4U64 = 43
+    NODE_TYPE_4FLOAT = 44
+    NODE_TYPE_4DOUBLE = 45
 
     NODE_TYPE_BOOL = 52
 
