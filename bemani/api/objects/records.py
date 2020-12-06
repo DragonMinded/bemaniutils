@@ -222,13 +222,10 @@ class RecordsObject(BaseObject):
 
     @property
     def music_version(self) -> int:
-        if self.game == GameConstants.IIDX:
             if self.omnimix:
                 return self.version + DBConstants.OMNIMIX_VERSION_BUMP
             else:
                 return self.version
-        else:
-            return self.version
 
     def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         since = params.get('since')
