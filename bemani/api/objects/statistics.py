@@ -25,10 +25,10 @@ class StatisticsObject(BaseObject):
 
     @property
     def music_version(self) -> int:
-            if self.omnimix:
-                return self.version + DBConstants.OMNIMIX_VERSION_BUMP
-            else:
-                return self.version
+        if self.omnimix:
+            return self.version + DBConstants.OMNIMIX_VERSION_BUMP
+        else:
+            return self.version
 
     def __is_play(self, attempt: Attempt) -> bool:
         if self.game in [
