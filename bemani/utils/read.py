@@ -2852,7 +2852,7 @@ class ImportMuseca(ImportBase):
         elif actual_version == VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP:
             self.charts = [0, 1, 2, 3]
         else:
-            raise Exception("Unsupported Museca version, expected one of the following: 1, 1+1/2!")
+            raise Exception("Unsupported Museca version, expected one of the following: 1, 1+1/2, plus!")
 
         super().__init__(config, GameConstants.MUSECA, actual_version, no_combine, update)
 
