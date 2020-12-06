@@ -180,6 +180,24 @@ class Museca1Plus(
         if self.omnimix:
             for evtid in museca_plus_events:
                 enable_event(evtid)
+        # Makes special missions available on grafica that have them.
+        extend = Node.void('extend')
+        game.add_child(extend)
+        info = Node.void('info')
+        extend.add_child(info)
+        info.add_child(Node.u32('extend_id', 12))
+        info.add_child(Node.u32('extend_type', 9))
+        
+        info.add_child(Node.s32('param_num_1', 2))
+        info.add_child(Node.s32('param_num_2', 50))
+        info.add_child(Node.s32('param_num_3', 59))
+        info.add_child(Node.s32('param_num_4', 64))
+        info.add_child(Node.s32('param_num_5', 86))
+        info.add_child(Node.string('param_str_1', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_2', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_3', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_4', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_5', 'available_ex: 1'))
         return game
 
     def handle_game_3_lounge_request(self, request: Node) -> Node:
