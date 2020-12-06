@@ -176,7 +176,7 @@ class Museca1Plus(
         ]
 
         for evtid in event_ids:
-            enable_event(evtid)  # Mission stuff
+            enable_event(evtid)
         if self.omnimix:
             for evtid in museca_plus_events:
                 enable_event(evtid)
@@ -187,7 +187,6 @@ class Museca1Plus(
         extend.add_child(info)
         info.add_child(Node.u32('extend_id', 12))
         info.add_child(Node.u32('extend_type', 9))
-        
         info.add_child(Node.s32('param_num_1', 2))
         info.add_child(Node.s32('param_num_2', 50))
         info.add_child(Node.s32('param_num_3', 59))
