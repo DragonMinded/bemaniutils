@@ -2843,13 +2843,9 @@ class ImportMuseca(ImportBase):
             actual_version = {
                 '1': VersionConstants.MUSECA,
                 '1+1/2': VersionConstants.MUSECA_1_PLUS,
+                'plus': VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP,
             }.get(version, -1)
-        elif version == 'plus':
-            actual_version = VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP
-
-        if actual_version in [VersionConstants.MUSECA, VersionConstants.MUSECA_1_PLUS]:
-            self.charts = [0, 1, 2, 3]
-        elif actual_version == VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP:
+        if actual_version in [VersionConstants.MUSECA, VersionConstants.MUSECA_1_PLUS, VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP]:
             self.charts = [0, 1, 2, 3]
         else:
             raise Exception("Unsupported Museca version, expected one of the following: 1, 1+1/2, plus!")
