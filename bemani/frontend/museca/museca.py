@@ -24,6 +24,7 @@ class MusecaFrontend(FrontendBase):
 
     def all_games(self) -> Iterator[Tuple[str, int, str]]:
         yield from MusecaFactory.all_games()
+        yield ('museca', 10002, 'MÚSECA PLUS')  # Hard code entry for MÚSECA PLUS since entries will go in blank category otherwise
 
     def format_score(self, userid: UserID, score: Score) -> Dict[str, Any]:
         formatted_score = super().format_score(userid, score)
