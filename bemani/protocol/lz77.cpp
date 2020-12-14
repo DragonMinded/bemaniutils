@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <algorithm>
+#include <unordered_map>
+#include <list>
 
 #define FLAG_COPY 1
 #define FLAG_BACKREF 0
+
+#define MAX_BACKREF ((unsigned int)18)
+#define RING_LEN 0x1000
 
 extern "C"
 {
@@ -95,6 +101,192 @@ extern "C"
         }
 
         // Update the outlen with the actual data length.
+        return outloc;
+    }
+
+    int compress(uint8_t *indata, unsigned int inlen, uint8_t *outdata, unsigned int outlen)
+    {
+        uint32_t key = 0;
+        std::unordered_map<uint32_t, std::list<unsigned int>> starts;
+        bool eof = false;
+        unsigned int outloc = 0;
+        unsigned int inloc = 0;
+
+        while (!eof)
+        {
+            if (inloc == inlen)
+            {
+                if (outloc > (outlen - 3))
+                {
+                    // We overwrote our output buffer, we probably corrupted memory somewhere.
+                    return -3;
+                }
+
+                // We hit the end of the compressable data and we don't have a flag byte to
+                // add on to. Add a new empty flag byte.
+                outdata[outloc++] = 0;
+
+                // Add a backref pointing at the current byte to signify end of file.
+                outdata[outloc++] = 0;
+                outdata[outloc++] = 0;
+
+                // Bail out of the loop, we're done!
+                eof = true;
+            }
+            else
+            {
+                if (outloc >= outlen)
+                {
+                    // We overwrote our output buffer, we probably corrupted memory somewhere.
+                    return -3;
+                }
+
+                // Add a spot for the flag byte.
+                unsigned int flagsloc = outloc;
+                outdata[outloc++] = 0;
+
+                for (unsigned int flagpos = 0; (flagpos < 8 && !eof); flagpos++)
+                {
+                    if (inloc == inlen)
+                    {
+                        if (outloc > (outlen - 3))
+                        {
+                            // We overwrote our output buffer, we probably corrupted memory somewhere.
+                            return -3;
+                        }
+
+                        // We hit the end of compressable data and we are mid flag byte.
+                        // Set the particular flag bit to a backref and point at the current
+                        // byte to signify end of file.
+                        outdata[flagsloc] |= (FLAG_BACKREF << flagpos);
+
+                        // Add the backref itself.
+                        outdata[outloc++] = 0;
+                        outdata[outloc++] = 0;
+
+                        // Bail out of the loop, we're done!
+                        eof = true;
+                    }
+                    else if (inloc < 3 || inloc >= (inlen - 3))
+                    {
+                        if (outloc >= outlen)
+                        {
+                            // We overwrote our output buffer, we probably corrupted memory somewhere.
+                            return -3;
+                        }
+
+                        // We either don't have enough data written to backref, or we
+                        // don't have enough data in the stream that could be made into
+                        // a backref. Set the particular flag bit to a copy and then
+                        // output that byte to the compressed stream.
+                        outdata[flagsloc] |= (FLAG_COPY << flagpos);
+
+                        // Update our key to reflect this byte coming out.
+                        key = ((key << 8) | indata[inloc]) & 0xFFFFFF;
+                        if (inloc >= 2)
+                        {
+                            starts[key].push_back(inloc - 2);
+                        }
+
+                        // Output this byte specifically
+                        outdata[outloc++] = indata[inloc++];
+                    }
+                    else
+                    {
+                        // Figure out the maximum backref amount we can reference.
+                        unsigned int backref_amount = std::min(inlen - inloc, MAX_BACKREF);
+                        unsigned int earliest_backref = std::max(0, (int)inloc - (RING_LEN - 1));
+                        uint32_t search_key = (indata[inloc] << 16) | (indata[inloc + 1] << 8) | (indata[inloc + 2]);
+
+                        // Prune anything that we can't backref.
+                        starts[search_key].remove_if([earliest_backref](auto val)
+                        {
+                            return val < earliest_backref;
+                        });
+
+                        if (starts[search_key].size() == 0)
+                        {
+                            if (outloc >= outlen)
+                            {
+                                // We overwrote our output buffer, we probably corrupted memory somewhere.
+                                return -3;
+                            }
+
+                            // We couldn't find a previous data in range of a backref.
+                            outdata[flagsloc] |= (FLAG_COPY << flagpos);
+
+                            // Update our key to reflect this byte coming out.
+                            key = ((key << 8) | indata[inloc]) & 0xFFFFFF;
+                            starts[key].push_back(inloc - 2);
+
+                            // Output this byte specifically
+                            outdata[outloc++] = indata[inloc++];
+                        }
+                        else
+                        {
+                            int best_backref = -1;
+                            unsigned int best_length = 0;
+
+                            for (auto possible_backref = starts[search_key].begin(); possible_backref != starts[search_key].end(); possible_backref++)
+                            {
+                                // We already know that the first three match so we don't need to check those;
+                                unsigned int current_length;
+                                for (current_length = 3; current_length < backref_amount; current_length++)
+                                {
+                                    if (indata[(*possible_backref) + current_length] != indata[inloc + current_length])
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                // We found a non-match.
+                                if (best_length < current_length)
+                                {
+                                    best_length = current_length;
+                                    best_backref = (inloc - *possible_backref) & 0xFFF;
+                                    break;
+                                }
+
+                                if (best_length == backref_amount)
+                                {
+                                    // We found an ideal length, no need to keep searching.
+                                    break;
+                                }
+                            }
+
+                            if (best_backref <= 0)
+                            {
+                                // Double check, since we know we should have found a backref.
+                                return -2;
+                            }
+
+                            if (outloc > (outlen - 2))
+                            {
+                                // We overwrote our output buffer, we probably corrupted memory somewhere.
+                                return -3;
+                            }
+
+                            // We got a valid backref, so let's record it as well as the start positions
+                            // for each of the bytes we compressed.
+                            outdata[flagsloc] |= (FLAG_BACKREF << flagpos);
+
+                            // Add the backref itself.
+                            outdata[outloc++] = (best_backref >> 4) & 0xFF;
+                            outdata[outloc++] = ((best_backref & 0xF) << 4) | ((best_length - 3) & 0xF);
+
+                            // Record the keys for each byte;
+                            for (unsigned int i = 0; i < best_length; i++)
+                            {
+                                key = ((key << 8) | indata[inloc]) & 0xFFFFFF;
+                                starts[key].push_back(inloc - 2);
+                                inloc++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return outloc;
     }
 }

@@ -409,10 +409,6 @@ class Lz77:
     A wrapper class encapsulating Lz77 encoding and decoding.
     """
 
-    # The point at which we consider it better to trade off smaller data
-    # sent over the wire for a more computationally expensive compression.
-    REAL_COMPRESSION_THRESHOLD = 10 * 1024
-
     def __init__(self, backref: Optional[int] = None) -> None:
         """
         Initialize the object.
@@ -460,5 +456,22 @@ class Lz77:
         Returns:
             L7zz-compressed binary data.
         """
-        lz = Lz77Compress(data, backref=self.backref)
-        return b''.join(lz.compress_bytes())
+        if clib is not None:
+            # Given a worst case scenario where we end up copying every byte to
+            # the output, compression would actually inflate the file by 9/8 size.
+            # Leave enough room for a trailing EOF reference.
+            outbuf = b"\0" * (int((len(data) * 9) / 8) + 3)
+            result = clib.compress(data, len(data), outbuf, len(outbuf))
+            if result >= 0:
+                return outbuf[:result]
+            elif result == -1:
+                raise LzException("Not enough room in output buffer!")
+            elif result == -2:
+                raise LzException("Unexpected lack of backref during compression!")
+            elif result == -3:
+                raise LzException("Not enough room to write output byte!")
+            else:
+                raise LzException("Unknown exception in C++ code!")
+        else:
+            lz = Lz77Compress(data, backref=self.backref)
+            return b''.join(lz.compress_bytes())
