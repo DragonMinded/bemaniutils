@@ -378,7 +378,7 @@ var settings_view = React.createClass({
                                 null
                             }
                             { this.state.options_saved[this.state.version] ?
-                                <span>&#x2713;</span> :
+                                <span>{ "\u2713" }</span> :
                                 null
                             }
                         </div> : null

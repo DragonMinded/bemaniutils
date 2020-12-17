@@ -389,7 +389,7 @@ var settings_view = React.createClass({
                             null
                         }
                         { this.state.theme_saved[this.state.version] ?
-                            <span>&#x2713;</span> :
+                            <span>{ "\u2713" }</span> :
                             null
                         }
                     </div>
@@ -429,7 +429,7 @@ var settings_view = React.createClass({
                             null
                         }
                         { this.state.menu_saved[this.state.version] ?
-                            <span>&#x2713;</span> :
+                            <span>{ "\u2713" }</span> :
                             null
                         }
                     </div>

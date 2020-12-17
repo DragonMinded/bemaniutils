@@ -5,8 +5,8 @@ var Checkbox = React.createClass({
         return (
             <span className={this.props.className} onClick={this.props.onClick}>
                 {this.props.checked ?
-                    <span className="checkbox">&#9745;</span> :
-                    <span className="checkbox">&#9744;</span>
+                    <span className="checkbox">{ "\u2611" }</span> :
+                    <span className="checkbox">{ "\u2610" }</span>
                 }
             </span>
         );

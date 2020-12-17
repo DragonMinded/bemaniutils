@@ -64,19 +64,19 @@ var Table = React.createClass({
                             var click = null;
                             if (index == this.state.sortCol) {
                                 if (this.state.sortDir < 0) {
-                                    sort = <span className="sort"> &#8593;</span>;
+                                    sort = <span className="sort">{ " \u2191" }</span>;
                                     click = function() {
                                         this.setState({sortDir: 1});
                                     }.bind(this);
                                 } else {
-                                    sort = <span className="sort"> &#8595;</span>;
+                                    sort = <span className="sort">{ " \u2193" }</span>;
                                     click = function() {
                                         this.setState({sortDir: -1});
                                     }.bind(this);
                                 }
                             } else {
                                 if (column.sort) {
-                                    sort = <span className="sort"> &#8597;</span>;
+                                    sort = <span className="sort">{ " \u2195" }</span>;
                                     click = function() {
                                         this.setState({sortCol: index, sortDir: column.reverse ? 1 : -1});
                                     }.bind(this);

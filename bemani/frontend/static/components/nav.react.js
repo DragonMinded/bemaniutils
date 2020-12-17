@@ -12,7 +12,7 @@ var Nav = React.createClass({
            <span>
                 {this.props.title}
                 {this.props.showAlert ?
-                    <span className="alert">&#9888;</span> :
+                    <span className="alert">{ "\u26a0" }</span> :
                     null
                 }
             </span>
