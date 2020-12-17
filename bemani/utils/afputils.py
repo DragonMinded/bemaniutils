@@ -1649,7 +1649,19 @@ class AFPFile:
                 self._refresh_texture(tex)
 
     def _refresh_texture(self, texture: Texture) -> None:
-        if texture.fmt == 0x13:
+        if texture.fmt == 0x0B:
+            # 16-bit 565 color RGB format.
+            texture.raw = b"".join(
+                struct.pack(
+                    f"{self.endian}H",
+                    (
+                        (((pixel[0] >> 3) & 0x1F) << 11) |
+                        (((pixel[1] >> 2) & 0x3F) << 5) |
+                        ((pixel[2] >> 3) & 0x1F)
+                    )
+                ) for pixel in texture.img.getdata()
+            )
+        elif texture.fmt == 0x13:
             # 16-bit A1R5G55 texture format.
             texture.raw = b"".join(
                 struct.pack(
