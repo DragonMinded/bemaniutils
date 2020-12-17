@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterator, Tuple
 from flask_caching import Cache  # type: ignore
 
 from bemani.backend.museca import MusecaFactory, MusecaBase
-from bemani.common import GameConstants, ValidatedDict
+from bemani.common import GameConstants, VersionConstants, DBConstants, ValidatedDict
 from bemani.data import Attempt, Data, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
@@ -24,7 +24,11 @@ class MusecaFrontend(FrontendBase):
 
     def all_games(self) -> Iterator[Tuple[str, int, str]]:
         yield from MusecaFactory.all_games()
-        yield ('museca', 10002, 'MÚSECA PLUS')  # Hard code entry for MÚSECA PLUS since entries will go in blank category otherwise
+        yield (
+            GameConstants.MUSECA,
+            VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP,
+            'MÚSECA PLUS',
+        )  # Hard code entry for MÚSECA PLUS since entries will go in blank category otherwise
 
     def format_score(self, userid: UserID, score: Score) -> Dict[str, Any]:
         formatted_score = super().format_score(userid, score)
