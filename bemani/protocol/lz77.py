@@ -356,7 +356,7 @@ class Lz77Compress:
                     start_write_size = self.bytes_written
                     self.__ring_write(index)
                     copy_amount = 3
-                    while copy_amount < (backref_amount):
+                    while copy_amount < backref_amount:
                         # First, let's see if we have any 3-wide chunks to consume.
                         index = self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 3)]
                         locations = self.starts[index]
@@ -373,21 +373,27 @@ class Lz77Compress:
                         else:
                             # Check our existing locations to figure out if we still have
                             # longest prefixes of 1 or 2 left.
-                            locations = self.locations[self.data[self.read_pos + copy_amount]]
-                            new_backref_locations = [
-                                absolute_pos for absolute_pos in possible_backref_locations
-                                if absolute_pos + copy_amount in locations
-                            ]
+                            while copy_amount < backref_amount:
+                                locations = self.locations[self.data[self.read_pos + copy_amount]]
+                                new_backref_locations = [
+                                    absolute_pos for absolute_pos in possible_backref_locations
+                                    if absolute_pos + copy_amount in locations
+                                ]
 
-                            # If we have no longest prefixes, that means that any of the
-                            # previous prefixes are good enough.
-                            if not new_backref_locations:
-                                break
+                                # If we have no longest prefixes, that means that any of the
+                                # previous prefixes are good enough.
+                                if not new_backref_locations:
+                                    break
 
-                            # Mark that we're copying an extra byte from the backref.
-                            self.__ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
-                            copy_amount += 1
-                            possible_backref_locations = new_backref_locations
+                                # Mark that we're copying an extra byte from the backref.
+                                self.__ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
+                                copy_amount += 1
+                                possible_backref_locations = new_backref_locations
+
+                            # Either we looped above in the inner while, or we didn't. Either way,
+                            # we don't have any more to check since there were no more 3-long backref
+                            # locations.
+                            break
 
                     # Now that we have a list of candidates, arbitrarily pick the
                     # first one as our candidate and output it.
