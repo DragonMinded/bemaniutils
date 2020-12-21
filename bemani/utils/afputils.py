@@ -633,11 +633,14 @@ class AFPFile:
                             )
                         elif fmt == 0x16:
                             # DXT1 format. Game references D3D9 DXT1 texture format.
+                            # Konami seems to have screwed up with DDR PS3 where they
+                            # swap every other byte in the format, even though its specified
+                            # as little-endian by all DXT1 documentation.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
                                 'RGBA',
                                 (width, height),
-                                dxt.DXT1Decompress(raw_data[64:], endian=self.endian),
+                                dxt.DXT1Decompress(raw_data[64:], swap=self.endian != "<"),
                                 'raw',
                                 'RGBA',
                                 0,
@@ -645,11 +648,14 @@ class AFPFile:
                             )
                         elif fmt == 0x1A:
                             # DXT5 format. Game references D3D9 DXT5 texture format.
+                            # Konami seems to have screwed up with DDR PS3 where they
+                            # swap every other byte in the format, even though its specified
+                            # as little-endian by all DXT5 documentation.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
                                 'RGBA',
                                 (width, height),
-                                dxt.DXT5Decompress(raw_data[64:], endian=self.endian),
+                                dxt.DXT5Decompress(raw_data[64:], swap=self.endian != "<"),
                                 'raw',
                                 'RGBA',
                                 0,
