@@ -2839,7 +2839,7 @@ class ImportMuseca(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        if version in ['1', '1+1/2']:
+        if version in ['1', '1+1/2', 'plus']:
             actual_version = {
                 '1': VersionConstants.MUSECA,
                 '1+1/2': VersionConstants.MUSECA_1_PLUS,
