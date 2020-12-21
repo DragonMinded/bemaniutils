@@ -585,9 +585,17 @@ class AFPFile:
                                     f"{self.endian}H",
                                     raw_data[(64 + (i * 2)):(66 + (i * 2))],
                                 )[0]
+
+                                # Extract the raw values
                                 red = ((pixel >> 0) & 0x1F) << 3
                                 green = ((pixel >> 5) & 0x3F) << 2
                                 blue = ((pixel >> 11) & 0x1F) << 3
+
+                                # Scale the colors so they fill the entire 8 bit range.
+                                red = red | (red >> 5)
+                                green = green | (green >> 6)
+                                blue = blue | (blue >> 5)
+
                                 newdata.append(
                                     struct.pack("<BBB", blue, green, red)
                                 )
@@ -614,10 +622,18 @@ class AFPFile:
                                     f"{self.endian}H",
                                     raw_data[(64 + (i * 2)):(66 + (i * 2))],
                                 )[0]
+
+                                # Extract the raw values
                                 alpha = 255 if ((pixel >> 15) & 0x1) != 0 else 0
                                 red = ((pixel >> 0) & 0x1F) << 3
                                 green = ((pixel >> 5) & 0x1F) << 3
                                 blue = ((pixel >> 10) & 0x1F) << 3
+
+                                # Scale the colors so they fill the entire 8 bit range.
+                                red = red | (red >> 5)
+                                green = green | (green >> 5)
+                                blue = blue | (blue >> 5)
+
                                 newdata.append(
                                     struct.pack("<BBBB", blue, green, red, alpha)
                                 )
@@ -674,10 +690,19 @@ class AFPFile:
                                     f"{self.endian}H",
                                     raw_data[(64 + (i * 2)):(66 + (i * 2))],
                                 )[0]
+
+                                # Extract the raw values
                                 blue = ((pixel >> 0) & 0xF) << 4
                                 green = ((pixel >> 4) & 0xF) << 4
                                 red = ((pixel >> 8) & 0xF) << 4
                                 alpha = ((pixel >> 12) & 0xF) << 4
+
+                                # Scale the colors so they fill the entire 8 bit range.
+                                red = red | (red >> 4)
+                                green = green | (green >> 4)
+                                blue = blue | (blue >> 4)
+                                alpha = alpha | (alpha >> 4)
+
                                 newdata.append(
                                     struct.pack("<BBBB", red, green, blue, alpha)
                                 )
