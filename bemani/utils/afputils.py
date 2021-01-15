@@ -104,7 +104,7 @@ class TextureRegion:
         }
 
 
-class Animation:
+class SWF:
     def __init__(
         self,
         name: str,
@@ -121,6 +121,201 @@ class Animation:
             'data': "".join(_hex(x) for x in self.data),
             'header': "".join(_hex(x) for x in self.header),
         }
+
+    def tag_to_name(self, tagid: int) -> str:
+        resources: List[Any] = [
+            [['END'], '0x0'],
+            [['SHOW_FRAME'], '0x1'],
+            [['DEFINE_SHAPE'], '0x2'],
+            [['PLACE_OBJECT'], '0x4'],
+            [['REMOVE_OBJECT'], '0x5'],
+            [['DEFINE_BITS'], '0x6'],
+            [['DEFINE_BUTTON'], '0x7'],
+            [['JPEG_TABLES'], '0x8'],
+            [['BACKGROUND_COLOR'], '0x9'],
+            [['DEFINE_FONT'], '0xa'],
+            [['DEFINE_TEXT'], '0xb'],
+            [['DO_ACTION'], '0xc'],
+            [['DEFINE_FONT_INFO'], '0xd'],
+            [['DEFINE_SOUND'], '0xe'],
+            [['START_SOUND'], '0xf'],
+            [['DEFINE_BUTTON_SOUND'], '0x11'],
+            [['SOUND_STREAM_HEAD'], '0x12'],
+            [['SOUND_STREAM_BLOCK'], '0x13'],
+            [['DEFINE_BITS_LOSSLESS'], '0x14'],
+            [['DEFINE_BITS_JPEG2'], '0x15'],
+            [['DEFINE_SHAPE2'], '0x16'],
+            [['DEFINE_BUTTON_CXFORM'], '0x17'],
+            [['PROTECT'], '0x18'],
+            [['PLACE_OBJECT2'], '0x1a'],
+            [['REMOVE_OBJECT2'], '0x1c'],
+            [['DEFINE_SHAPE3'], '0x20'],
+            [['DEFINE_TEXT2'], '0x21'],
+            [['DEFINE_BUTTON2'], '0x22'],
+            [['DEFINE_BITS_JPEG3'], '0x23'],
+            [['DEFINE_BITS_LOSSLESS2'], '0x24'],
+            [['DEFINE_EDIT_TEXT'], '0x25'],
+            [['DEFINE_SPRITE'], '0x27'],
+            [['FRAME_LABEL'], '0x2b'],
+            [['SOUND_STREAM_HEAD2'], '0x2d'],
+            [['DEFINE_MORPH_SHAPE'], '0x2e'],
+            [['DEFINE_FONT2'], '0x30'],
+            [['EXPORT_ASSETS'], '0x38'],
+            [['IMPORT_ASSETS'], '0x39'],
+            [['DO_INIT_ACTION'], '0x3b'],
+            [['DEFINE_VIDEO_STREAM'], '0x3c'],
+            [['VIDEO_FRAME'], '0x3d'],
+            [['DEFINE_FONT_INFO2'], '0x3e'],
+            [['ENABLE_DEBUGGER2'], '0x40'],
+            [['SCRIPT_LIMITS'], '0x41'],
+            [['SET_TAB_INDEX'], '0x42'],
+            [['PLACE_OBJECT3'], '0x46'],
+            [['IMPORT_ASSETS2'], '0x47'],
+            [['DEFINE_FONT3'], '0x4b'],
+            [['DEFINE_SCALING_GRID'], '0x4e'],
+            [['METADATA'], '0x4d'],
+            [['DEFINE_SHAPE4'], '0x53'],
+            [['DEFINE_MORPH_SHAPE2'], '0x54'],
+            [['SCENE_LABEL?'], '0x56'],
+            [['AFP_IMAGE'], '0x64'],
+            [['AFP_DEFINE_SOUND'], '0x65'],
+            [['AFP_SOUND_STREAM_BLOCK'], '0x66'],
+            [['AFP_DEFINE_FONT'], '0x67'],
+            [['AFP_DEFINE_SHAPE'], '0x68'],
+            [['AEP_PLACE_OBJECT'], '0x6e'],
+            [['AP2_DEFINE_FONT'], '0x78'],
+            [['AP2_DEFINE_SPRITE'], '0x79'],
+            [['AP2_DO_ACTION'], '0x7a'],
+            [['AP2_DEFINE_BUTTON'], '0x7b'],
+            [['AP2_DEFINE_BUTTON_SOUND'], '0x7c'],
+            [['AP2_DEFINE_TEXT'], '0x7d'],
+            [['AP2_DEFINE_EDIT_TEXT'], '0x7e'],
+            [['AP2_PLACE_OBJECT'], '0x7f'],
+            [['AP2_REMOVE_OBJECT'], '0x80'],
+            [['AP2_START_SOUND'], '0x81'],
+            [['AP2_DEFINE_MORPH_SHAPE'], '0x82'],
+            [['AP2_IMAGE'], '0x83'],
+            [['AP2_SHAPE'], '0x84'],
+            [['AP2_SOUND'], '0x85'],
+            [['AP2_VIDEO'], '0x86'],
+        ]
+
+        for name, tid in resources:
+            if int(tid, 16) == tagid:
+                return name[0]
+        return "UNKNOWN"
+
+    def parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytearray, tagdata: bytearray) -> None:
+        tags_count = struct.unpack("<i", tagdata[8:12])[0]
+        tags_offset = struct.unpack("<i", tagdata[20:24])[0]
+
+        print(f"tags count: {tags_count}")
+        for i in range(tags_count):
+            tag = struct.unpack("<I", tagdata[tags_offset:(tags_offset + 4)])[0]
+
+            tagid = (tag >> 22) & 0x3FF
+            size = ((tag & 0x3FFFFF) + 3) & 0xFFFFFFFC  # Round to multiple of 4.
+
+            print(f"tag: {hex(tagid)} ({self.tag_to_name(tagid)}), size: {size}")
+            tags_offset += size + 4  # Skip past tag header and data.
+
+        imported_tags_count = struct.unpack("<h", ap2data[34:36])[0]
+        imported_tags_offset = struct.unpack("<I", ap2data[44:48])[0]
+
+        print(f"imported tags count: {imported_tags_count}")
+        for i in range(imported_tags_count):
+            unknown, size = struct.unpack("<HH", tagdata[imported_tags_offset:(imported_tags_offset + 4)])
+
+            # TODO: This is entirely unfinished.
+            imported_tags_offset += 4
+
+    def parse(self) -> None:
+        # TODO: This is incredibly unfinished, and should probably be moved to bemani.format.afp
+        swap_len = {
+            1: 2,
+            2: 4,
+            3: 8,
+        }
+
+        data = bytearray(self.data)
+        data_offset = 0
+        for i in range(0, len(self.header), 2):
+            swapword = struct.unpack("<H", self.header[i:(i + 2)])[0]
+            if swapword == 0:
+                break
+
+            offset = (swapword & 0x7F) * 2
+            swap_type = (swapword >> 13) & 0x7
+            loops = ((swapword >> 7) & 0x3F)
+            data_offset += offset
+
+            if swap_type == 0:
+                # Just jump forward based on loops
+                data_offset += 256 * loops
+                continue
+
+            if swap_type not in swap_len:
+                raise Exception(f"Unknown swap type {swap_type}!")
+
+            # Reverse the bytes
+            for _ in range(loops + 1):
+                data[data_offset:(data_offset + swap_len[swap_type])] = data[data_offset:(data_offset + swap_len[swap_type])][::-1]
+                data_offset += swap_len[swap_type]
+
+        def get_until_null(offset: int) -> bytes:
+            out = b""
+            while data[offset] != 0:
+                out += data[offset:(offset + 1)]
+                offset += 1
+            return out
+
+        print("\n\nstart")
+
+        magic, length, version, nameoffset, flags, width, height = struct.unpack("<4sIHHIxxHxxH", data[0:24])
+        magic = bytes([magic[3] & 0x7F, magic[2] & 0x7F, magic[1] & 0x7F, 0x0])
+        if magic != b'AP2\x00':
+            raise Exception(f"Unrecognzied magic {magic}!")
+        if length != len(data):
+            raise Exception(f"Unexpected length in AFP header, {length} != {len(data)}!")
+        ap2_data_version = magic[0] & 0xFF
+
+        if flags & 0x2:
+            # I think this is FPS given the output of this bit of code.
+            fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
+        else:
+            fps = struct.unpack("<f", data[24:28])[0]
+
+        # String table
+        stringtable_offset, stringtable_size = struct.unpack("<II", data[48:56])
+        addition = 128
+        for i in range(stringtable_size):
+            data[stringtable_offset + i] = (data[stringtable_offset + i] - addition) & 0xFF
+            addition += 1
+
+        # Unknown, all files have this
+        unk_offset = struct.unpack("<I", data[36:40])  # NOQA: F841
+
+        # Exported assets
+        num_exported_assets = struct.unpack("<H", data[32:34])[0]
+        asset_offset = struct.unpack("<I", data[40:44])[0]
+        for assetno in range(num_exported_assets):
+            asset_data_offset, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
+            asset_offset += 4
+
+            asset_name = get_until_null(asset_string_offset + stringtable_offset).decode('ascii')
+            print(f"{assetno} = {asset_name}")
+
+        # Tag sections
+        tags_offset = struct.unpack("<I", data[36:40])[0]
+        self.parse_tags(ap2_data_version, version, data, data[tags_offset:])
+
+        print(f"nameoffset: {nameoffset}")
+        selfname = get_until_null(nameoffset + stringtable_offset).decode('ascii')
+
+        with open(f"/shares/Entertainment/{selfname}.bin", "wb") as bfp:
+            bfp.write(data)
+
+        print(f"afp name: {self.name}\nversion:{version}\ninternal name: {selfname}\nflags: {hex(flags)}\nsize: {width}x{height}\nfps: {fps}")
 
 
 class Shape:
@@ -216,13 +411,13 @@ class AFPFile:
         # by number instead of name.
         self.regionmap: PMAN = PMAN()
 
-        # Animations(?) and their names found in this file. This is unordered,
-        # animations should be looked up by name.
-        self.animations: List[Animation] = []
+        # Level data (swf-derivative) and their names found in this file. This is
+        # unordered, swfdata should be looked up by name.
+        self.swfdata: List[SWF] = []
 
-        # Animation(?) mapping, which allows other structures to refer to
-        # animations by number instead of name.
-        self.animmap: PMAN = PMAN()
+        # Level data (swf-derivative) mapping, which allows other structures to
+        # refer to swfdata by number instead of name.
+        self.swfmap: PMAN = PMAN()
 
         # Font information (mapping for various coepoints to their region in
         # a particular font texture.
@@ -265,8 +460,8 @@ class AFPFile:
             'texturemap': self.texturemap.as_dict(),
             'textureregion': [reg.as_dict() for reg in self.texture_to_region],
             'regionmap': self.regionmap.as_dict(),
-            'animations': [anim.as_dict() for anim in self.animations],
-            'animationmap': self.animmap.as_dict(),
+            'swfdata': [data.as_dict() for data in self.swfdata],
+            'swfmap': self.swfmap.as_dict(),
             'fontdata': str(self.fontdata) if self.fontdata is not None else None,
             'shapes': [shape.as_dict() for shape in self.shapes],
             'shapemap': self.shapemap.as_dict(),
@@ -905,17 +1100,17 @@ class AFPFile:
             vprint("Bit 0x000400 - unknown; NOT PRESENT")
 
         if feature_mask & 0x800:
-            # This is the names of the animations as far as I can tell.
+            # This is the names of the SWF data as far as I can tell.
             length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
             add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000800 - animations; count: {length}, offset: {hex(offset)}")
+            vprint(f"Bit 0x000800 - swfdata; count: {length}, offset: {hex(offset)}")
 
             for x in range(length):
                 interesting_offset = offset + (x * 12)
                 if interesting_offset != 0:
-                    name_offset, anim_length, anim_offset = struct.unpack(
+                    name_offset, swf_length, swf_offset = struct.unpack(
                         f"{self.endian}III",
                         self.data[interesting_offset:(interesting_offset + 12)],
                     )
@@ -925,18 +1120,18 @@ class AFPFile:
                         bytedata = self.get_until_null(name_offset)
                         add_coverage(name_offset, len(bytedata) + 1, unique=False)
                         name = AFPFile.descramble_text(bytedata, self.text_obfuscated)
-                        vprint(f"    {name}, length: {anim_length}, offset: {hex(anim_offset)}")
+                        vprint(f"    {name}, length: {swf_length}, offset: {hex(swf_offset)}")
 
-                    if anim_offset != 0:
-                        self.animations.append(
-                            Animation(
+                    if swf_offset != 0:
+                        self.swfdata.append(
+                            SWF(
                                 name,
-                                self.data[anim_offset:(anim_offset + anim_length)]
+                                self.data[swf_offset:(swf_offset + swf_length)]
                             )
                         )
-                        add_coverage(anim_offset, anim_length)
+                        add_coverage(swf_offset, swf_length)
         else:
-            vprint("Bit 0x000800 - animations; NOT PRESENT")
+            vprint("Bit 0x000800 - swfdata; NOT PRESENT")
 
         if feature_mask & 0x1000:
             # Seems to be a secondary structure mirroring the above.
@@ -944,16 +1139,16 @@ class AFPFile:
             add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x001000 - animationmapping; offset: {hex(offset)}")
+            vprint(f"Bit 0x001000 - swfmapping; offset: {hex(offset)}")
 
             if offset != 0:
-                self.animmap = self.descramble_pman(offset, verbose)
+                self.swfmap = self.descramble_pman(offset, verbose)
         else:
-            vprint("Bit 0x001000 - animationmapping; NOT PRESENT")
+            vprint("Bit 0x001000 - swfmapping; NOT PRESENT")
 
         if feature_mask & 0x2000:
             # I am making a very preliminary guess that these are shapes used along
-            # with animations specified below. The names in these sections tend to
+            # with SWF data specified below. The names in these sections tend to
             # have the word "shape" in them.
             length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
             add_coverage(header_offset, 8)
@@ -983,7 +1178,62 @@ class AFPFile:
                         vprint(f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}")
 
                     if shape_offset != 0:
+                        shape_data = self.data[shape_offset:(shape_offset + shape_length)]
                         add_coverage(shape_offset, shape_length)
+
+                        magic, header1, header2, filesize, header3 = struct.unpack(
+                            f"{self.endian}4sIIII",
+                            shape_data[0:20],
+                        )
+
+                        if self.endian == "<" and magic != b"D2EG":
+                            raise Exception("Invalid magic value in D2EG structure!")
+                        if self.endian == ">" and magic != b"GE2D":
+                            raise Exception("Invalid magic value in D2EG structure!")
+                        if filesize != len(shape_data):
+                            raise Exception("Unexpected file size for D2EG structure!")
+
+                        # Get width/height
+                        endian = "<" if self.endian == ">" else ">"
+                        width, height = struct.unpack(f"{endian}HH", shape_data[20:24])
+
+                        header4, header5 = struct.unpack(
+                            f"{self.endian}II",
+                            shape_data[24:32],
+                        )
+
+                        rect_offset, tex_offset, unk1_offset, label_offset, unk2_offset = struct.unpack(
+                            f"{self.endian}IIIII",
+                            shape_data[32:52],
+                        )
+
+                        label = None
+                        if label_offset != 0:
+                            labelptr = struct.unpack(f"{self.endian}I", shape_data[label_offset:label_offset + 4])[0]
+                            if labelptr is not None:
+                                bytedata = self.get_until_null(shape_offset + labelptr)
+                                label = AFPFile.descramble_text(bytedata, self.text_obfuscated)  # NOQA: F841
+
+                        if rect_offset != 0:
+                            floats = struct.unpack(
+                                f"{self.endian}ffffffff",
+                                shape_data[(rect_offset):(rect_offset + 32)]
+                            )
+                            _rect_offsets = [x for x in floats]  # NOQA: F841
+                        if tex_offset != 0:
+                            floats = struct.unpack(
+                                f"{self.endian}ffffffff",
+                                shape_data[(tex_offset):(tex_offset + 32)]
+                            )
+                            tex_offsets = []
+                            for i, flt in enumerate(floats):
+                                tex_offsets.append(flt * (width if ((i & 1) == 0) else height))
+                        if unk2_offset != 0:
+                            test = struct.unpack(  # NOQA: F841
+                                f"{endian}iii",
+                                shape_data[(unk2_offset):(unk2_offset + 12)]
+                            )
+
                         self.shapes.append(
                             Shape(
                                 name,
@@ -1048,16 +1298,16 @@ class AFPFile:
             vprint("Bit 0x010000 - fontinfo; NOT PRESENT")
 
         if feature_mask & 0x20000:
-            # I am beginning to suspect that this is animation/level data. I have
+            # I am beginning to suspect that this is SWF data/level data. I have
             # no idea what "afp" is. Games refer to these as "afp streams".
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x020000 - animationheaders; offset: {hex(offset)}")
+            vprint(f"Bit 0x020000 - swfheaders; offset: {hex(offset)}")
 
-            if offset > 0 and len(self.animations) > 0:
-                for i in range(len(self.animations)):
+            if offset > 0 and len(self.swfdata) > 0:
+                for i in range(len(self.swfdata)):
                     structure_offset = offset + (i * 12)
 
                     # First word is always zero, as observed. I am not ENTIRELY sure that
@@ -1075,10 +1325,10 @@ class AFPFile:
                         # potentially unsafe as we could rewrite it incorrectly. So, let's assert!
                         raise Exception("Expected a zero in font package header!")
 
-                    self.animations[i].header = self.data[afp_header:(afp_header + afp_header_length)]
+                    self.swfdata[i].header = self.data[afp_header:(afp_header + afp_header_length)]
                     add_coverage(afp_header, afp_header_length)
         else:
-            vprint("Bit 0x020000 - animationheaders; NOT PRESENT")
+            vprint("Bit 0x020000 - swfheaders; NOT PRESENT")
 
         if feature_mask & 0x40000:
             vprint("Bit 0x040000 - modern lz mode on")
@@ -1414,38 +1664,38 @@ class AFPFile:
                 body += entry2.data
 
         if self.features & 0x800:
-            # This is the names and locations of the animations as far as I can tell.
+            # This is the names and locations of the SWF data as far as I can tell.
             offset = AFPFile.align(len(body))
             body = AFPFile.pad(body, offset)
 
-            bitchunks[11] = struct.pack(f"{self.endian}II", len(self.animations), offset)
+            bitchunks[11] = struct.pack(f"{self.endian}II", len(self.swfdata), offset)
 
-            # Now, calculate where we can put animations and their names.
-            animation_offset = AFPFile.align(len(body) + (len(self.animations) * 12))
-            string_offset = AFPFile.align(animation_offset + sum(AFPFile.align(len(a.data)) for a in self.animations))
-            animdata = b""
+            # Now, calculate where we can put SWF data and their names.
+            swfdata_offset = AFPFile.align(len(body) + (len(self.swfdata) * 12))
+            string_offset = AFPFile.align(swfdata_offset + sum(AFPFile.align(len(a.data)) for a in self.swfdata))
+            swfdata = b""
 
             # Now, lay them out.
-            for animation in self.animations:
-                if animation.name not in string_offsets:
+            for data in self.swfdata:
+                if data.name not in string_offsets:
                     # We haven't written this string out yet, so put it on our pending list.
-                    pending_strings[animation.name] = string_offset
-                    string_offsets[animation.name] = string_offset
+                    pending_strings[data.name] = string_offset
+                    string_offsets[data.name] = string_offset
 
                     # Room for the null byte!
-                    string_offset += len(animation.name) + 1
+                    string_offset += len(data.name) + 1
 
                 # Write out the chunk itself.
                 body += struct.pack(
                     f"{self.endian}III",
-                    string_offsets[animation.name],
-                    len(animation.data),
-                    animation_offset + len(animdata),
+                    string_offsets[data.name],
+                    len(data.data),
+                    swfdata_offset + len(swfdata),
                 )
-                animdata += AFPFile.pad(animation.data, AFPFile.align(len(animation.data)))
+                swfdata += AFPFile.pad(data.data, AFPFile.align(len(data.data)))
 
             # Now, lay out the data itself and finally string names.
-            body = self.write_strings(body + animdata, pending_strings)
+            body = self.write_strings(body + swfdata, pending_strings)
             pending_strings = {}
 
         if self.features & 0x2000:
@@ -1522,13 +1772,13 @@ class AFPFile:
             body = self.write_pman(body, offset, self.unk_pman2, string_offsets)
 
         if self.features & 0x1000:
-            # Mapping of animations to their ID.
+            # Mapping of SWF data to their ID.
             offset = AFPFile.align(len(body))
             body = AFPFile.pad(body, offset)
 
             # Lay down PMAN pointer and PMAN structure itself.
             bitchunks[12] = struct.pack(f"{self.endian}I", offset)
-            body = self.write_pman(body, offset, self.animmap, string_offsets)
+            body = self.write_pman(body, offset, self.swfmap, string_offsets)
 
         if self.features & 0x4000:
             # Mapping of shapes to their ID.
@@ -1571,29 +1821,29 @@ class AFPFile:
             raise Exception("This should not be possible!")
 
         if self.features & 0x20000:
-            # Animation header information.
+            # SWF header information.
             offset = AFPFile.align(len(body))
             body = AFPFile.pad(body, offset)
 
             bitchunks[17] = struct.pack(f"{self.endian}I", offset)
 
-            # Now, calculate where we can put animation headers.
-            animation_offset = AFPFile.align(len(body) + (len(self.animations) * 12))
-            animheader = b""
+            # Now, calculate where we can put SWF headers.
+            swfdata_offset = AFPFile.align(len(body) + (len(self.swfdata) * 12))
+            swfheader = b""
 
             # Now, lay them out.
-            for animation in self.animations:
+            for data in self.swfdata:
                 # Write out the chunk itself.
                 body += struct.pack(
                     f"{self.endian}III",
                     0,
-                    len(animation.header),
-                    animation_offset + len(animheader),
+                    len(data.header),
+                    swfdata_offset + len(swfheader),
                 )
-                animheader += AFPFile.pad(animation.header, AFPFile.align(len(animation.header)))
+                swfheader += AFPFile.pad(data.header, AFPFile.align(len(data.header)))
 
             # Now, lay out the header itself
-            body += animheader
+            body += swfheader
 
         if self.features & 0x01:
             # Now, go back and add texture data to the end of the file, fixing up the
