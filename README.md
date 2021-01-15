@@ -603,8 +603,7 @@ If you followed the above instructions, the network should "Just Work" for you. 
 there are several gotchas and caveats that might not be obvious to a first-time user of
 this software. If you run into trouble these troubleshooting steps may help.
 
-> Logs show that games only request the initial services packet. Additional packets
-> are not sent and games do not go online.
+### Logs show that games only request the initial services packet. Additional packets are not sent and games do not go online.
 
 The initial services packet is akin to a DNS request. The response tells games where to
 go for each service. The values sent by the server are controlled in `config/server.yaml`.
@@ -616,9 +615,7 @@ command line if you are launching the debug program, or the same as your webserv
 config if you are setting up a production instance. Make sure that the specified port
 is unblocked in any firewall running on the computer you're running services on.
 
-> Games connect to the server, logs show successful exchanges, there are no exceptions
-> and the game boots fine but freezes on the attract screen or refuses to mark itself
-> as "online".
+### Games connect to the server, logs show successful exchanges, there are no exceptions and the game boots fine but freezes on the attract screen or refuses to mark itself as "online".
 
 Even if 100% of the network packets are responded to correctly, if the game itself can't
 ping the keepalive host it will refuse to enable online services. Verifiy the
