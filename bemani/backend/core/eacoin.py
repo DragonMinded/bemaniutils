@@ -131,7 +131,7 @@ class PASELIHandler(Base):
                 return make_resp(2, 0)
 
             userid = self.data.local.user.from_session(session)
-            if session is None:
+            if userid is None:
                 # Refuse to do anything
                 print("Invalid session for eacoin consume request")
                 return make_resp(2, 0)
