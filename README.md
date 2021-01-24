@@ -597,6 +597,35 @@ script to promote yourself to admin, similar to this command:
 ./dbutils --config config/server.yaml add-admin --username <your-name-here>
 ```
 
+## Troubleshooting
+
+If you followed the above instructions, the network should "Just Work" for you. However
+there are several gotchas and caveats that might not be obvious to a first-time user of
+this software. If you run into trouble these troubleshooting steps may help.
+
+### Logs show that games only request the initial services packet. Additional packets are not sent and games do not go online.
+
+The initial services packet is akin to a DNS request. The response tells games where to
+go for each service. The values sent by the server are controlled in `config/server.yaml`.
+Make sure the domain or IP in the `server.address` config entry is correct for the
+computer you're running services on. Make sure that the IP the DNS entry resolves to,
+or the literal IP you've typed in this setting is routable from the game's perspective.
+Make sure that the port setting in `server.port` is the same as you've specified in your
+command line if you are launching the debug program, or the same as your webserver
+config if you are setting up a production instance. Make sure that the specified port
+is unblocked in any firewall running on the computer you're running services on.
+
+### Games connect to the server, logs show successful exchanges, there are no exceptions and the game boots fine but freezes on the attract screen or refuses to mark itself as "online".
+
+Even if 100% of the network packets are responded to correctly, if the game itself can't
+ping the keepalive host it will refuse to enable online services. Verifiy the
+`server.keepalive` setting in `config/server.yaml` to make sure that it points at a
+computer that can be reached by the game. Make sure that that computer has enabled ICMP
+replies such as ping. Routers often block ping requests. It is recommended that you leave
+this as `127.0.0.1` as it will cause the game to ping itself and get a successful reply.
+This removes the usefulness of the network test screen outside of the IP setup but it is
+known to work.
+
 ## Production Setup
 
 As alluded to several times in this README, the recommended way to run a production

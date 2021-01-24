@@ -2839,15 +2839,16 @@ class ImportMuseca(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        actual_version = {
-            '1': VersionConstants.MUSECA,
-            '1+1/2': VersionConstants.MUSECA_1_PLUS,
-        }.get(version, -1)
-
-        if actual_version in [VersionConstants.MUSECA, VersionConstants.MUSECA_1_PLUS]:
+        if version in ['1', '1+1/2', 'plus']:
+            actual_version = {
+                '1': VersionConstants.MUSECA,
+                '1+1/2': VersionConstants.MUSECA_1_PLUS,
+                'plus': VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP,
+            }.get(version, -1)
+        if actual_version in [VersionConstants.MUSECA, VersionConstants.MUSECA_1_PLUS, VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP]:
             self.charts = [0, 1, 2, 3]
         else:
-            raise Exception("Unsupported Museca version, expected one of the following: 1, 1+1/2!")
+            raise Exception("Unsupported Museca version, expected one of the following: 1, 1+1/2, plus!")
 
         super().__init__(config, GameConstants.MUSECA, actual_version, no_combine, update)
 

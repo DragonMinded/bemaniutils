@@ -481,7 +481,7 @@ var arcade_management = React.createClass({
                             null
                     }
                     { this.state.settings_saved[this.state.current_setting] ?
-                        <span>&#x2713;</span> :
+                        <span>{ "\u2713" }</span> :
                             null
                     }
                 </div>

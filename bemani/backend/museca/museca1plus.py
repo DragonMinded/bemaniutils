@@ -129,7 +129,7 @@ class Museca1Plus(
         game_config = self.get_game_config()
         if game_config.get_bool('force_unlock_songs'):
             ids = set()
-            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            songs = self.data.local.music.get_all_songs(self.game, self.music_version)
             for song in songs:
                 if song.data.get_int('limited') in (self.GAME_LIMITED_LOCKED, self.GAME_LIMITED_UNLOCKABLE):
                     ids.add((song.id, song.chart))
@@ -153,16 +153,50 @@ class Museca1Plus(
         if not game_config.get_bool('disable_matching'):
             enable_event(143)  # Matching enabled
 
-        enable_event(1)  # Extended pedal options
-        enable_event(83)  # Light start
-        enable_event(130)  # Curator rank
-        enable_event(195)  # Fictional curator
-        # Event 194 is continuation mode, but it doesn't seem to work on latest data.
+        # These events are meant specifically for Museca Plus
+        museca_plus_events = [
+            140,  # Agetta Moratta (vmlink_phase 3 in musicdb)
+            211,  # News 1
+        ]
+        event_ids = [
+            1,    # Extended pedal options
+            56,   # Generator grafica icon <print 1 in musicdb>
+            83,   # Paseli Light Start
+            86,   # Generator grafica icon <print 2 in musicdb>
+            98,   # Caption 2 notice (grs_grafica_caption_2.png)
+            105,  # Makes the "Number of Layers" option visible in game settings
+            130,  # Curator Rank
+            141,  # Coconatsu & Mukipara grafica effects
+            145,  # MUKIPARA UNLOCKS
+            146,  # MUKIPARA UNLOCKS
+            147,  # MUKIPARA UNLOCKS
+            148,  # MUKIPARA UNLOCKS
+            149,  # MUKIPARA UNLOCKS
+            195,  # Fictional Curator (foot pedal options)
+        ]
 
-        enable_event(98)  # Mission mode
-        for evtid in [145, 146, 147, 148, 149]:
-            enable_event(evtid)  # Mission stuff
-
+        for evtid in event_ids:
+            enable_event(evtid)
+        if self.omnimix:
+            for evtid in museca_plus_events:
+                enable_event(evtid)
+        # Makes special missions available on grafica that have them.
+        extend = Node.void('extend')
+        game.add_child(extend)
+        info = Node.void('info')
+        extend.add_child(info)
+        info.add_child(Node.u32('extend_id', 12))
+        info.add_child(Node.u32('extend_type', 9))
+        info.add_child(Node.s32('param_num_1', 2))
+        info.add_child(Node.s32('param_num_2', 50))
+        info.add_child(Node.s32('param_num_3', 59))
+        info.add_child(Node.s32('param_num_4', 64))
+        info.add_child(Node.s32('param_num_5', 86))
+        info.add_child(Node.string('param_str_1', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_2', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_3', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_4', 'available_ex: 1'))
+        info.add_child(Node.string('param_str_5', 'available_ex: 1'))
         return game
 
     def handle_game_3_lounge_request(self, request: Node) -> Node:
@@ -210,7 +244,7 @@ class Museca1Plus(
             userid = None
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             scores = []
 
@@ -310,7 +344,7 @@ class Museca1Plus(
 
         if game_config.get_bool('force_unlock_songs'):
             ids: Dict[int, int] = {}
-            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            songs = self.data.local.music.get_all_songs(self.game, self.music_version)
             for song in songs:
                 if song.id not in ids:
                     ids[song.id] = 0

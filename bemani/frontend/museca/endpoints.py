@@ -101,7 +101,6 @@ def viewnetworkrecords() -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
     network_records = frontend.get_network_records()
     versions = {version: name for (game, version, name) in frontend.all_games()}
-    versions[0] = 'CS and Licenses'
 
     return render_react(
         'Global MÚSECA Records',
@@ -185,15 +184,16 @@ def viewtopscores(musicid: int) -> Response:
     difficulties = [0, 0, 0, 0, 0]
 
     for version in versions:
-        for chart in [0, 1, 2, 3, 4]:
-            details = g.data.local.music.get_song(GameConstants.MUSECA, version, musicid, chart)
-            if details is not None:
-                if name is None:
-                    name = details.name
-                if artist is None:
-                    artist = details.artist
-                if difficulties[chart] == 0:
-                    difficulties[chart] = details.data.get_int('difficulty')
+        for omniadd in [0, 10000]:
+            for chart in [0, 1, 2, 3, 4]:
+                details = g.data.local.music.get_song(GameConstants.MUSECA, version + omniadd, musicid, chart)
+                if details is not None:
+                    if name is None:
+                        name = details.name
+                    if artist is None:
+                        artist = details.artist
+                    if difficulties[chart] == 0:
+                        difficulties[chart] = details.data.get_int('difficulty')
 
     if name is None:
         # Not a real song!

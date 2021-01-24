@@ -101,7 +101,6 @@ def viewnetworkrecords() -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     network_records = frontend.get_network_records()
     versions = {version: name for (game, version, name) in frontend.all_games()}
-    versions[0] = 'CS and Licenses'
 
     return render_react(
         'Global Pop\'n Music Records',
@@ -139,7 +138,6 @@ def viewrecords(userid: UserID) -> Response:
     if info is None:
         abort(404)
     versions = {version: name for (game, version, name) in frontend.all_games()}
-    versions[0] = 'CS and Licenses'
 
     return render_react(
         f'{info["name"]}\'s Pop\'n Music Records',

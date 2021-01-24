@@ -33,6 +33,7 @@ class PopnMusicFrontend(FrontendBase):
 
     def all_games(self) -> Iterator[Tuple[str, int, str]]:
         yield from PopnMusicFactory.all_games()
+        yield (GameConstants.POPN_MUSIC, 0, 'CS and Licenses')  # Folder that doesn't belong to any specific game
 
     def format_score(self, userid: UserID, score: Score) -> Dict[str, Any]:
         formatted_score = super().format_score(userid, score)

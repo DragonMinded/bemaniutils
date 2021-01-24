@@ -356,7 +356,7 @@ class Lz77Compress:
                     start_write_size = self.bytes_written
                     self.__ring_write(index)
                     copy_amount = 3
-                    while copy_amount < (backref_amount):
+                    while copy_amount < backref_amount:
                         # First, let's see if we have any 3-wide chunks to consume.
                         index = self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 3)]
                         locations = self.starts[index]
@@ -373,21 +373,27 @@ class Lz77Compress:
                         else:
                             # Check our existing locations to figure out if we still have
                             # longest prefixes of 1 or 2 left.
-                            locations = self.locations[self.data[self.read_pos + copy_amount]]
-                            new_backref_locations = [
-                                absolute_pos for absolute_pos in possible_backref_locations
-                                if absolute_pos + copy_amount in locations
-                            ]
+                            while copy_amount < backref_amount:
+                                locations = self.locations[self.data[self.read_pos + copy_amount]]
+                                new_backref_locations = [
+                                    absolute_pos for absolute_pos in possible_backref_locations
+                                    if absolute_pos + copy_amount in locations
+                                ]
 
-                            # If we have no longest prefixes, that means that any of the
-                            # previous prefixes are good enough.
-                            if not new_backref_locations:
-                                break
+                                # If we have no longest prefixes, that means that any of the
+                                # previous prefixes are good enough.
+                                if not new_backref_locations:
+                                    break
 
-                            # Mark that we're copying an extra byte from the backref.
-                            self.__ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
-                            copy_amount += 1
-                            possible_backref_locations = new_backref_locations
+                                # Mark that we're copying an extra byte from the backref.
+                                self.__ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
+                                copy_amount += 1
+                                possible_backref_locations = new_backref_locations
+
+                            # Either we looped above in the inner while, or we didn't. Either way,
+                            # we don't have any more to check since there were no more 3-long backref
+                            # locations.
+                            break
 
                     # Now that we have a list of candidates, arbitrarily pick the
                     # first one as our candidate and output it.
@@ -408,10 +414,6 @@ class Lz77:
     """
     A wrapper class encapsulating Lz77 encoding and decoding.
     """
-
-    # The point at which we consider it better to trade off smaller data
-    # sent over the wire for a more computationally expensive compression.
-    REAL_COMPRESSION_THRESHOLD = 10 * 1024
 
     def __init__(self, backref: Optional[int] = None) -> None:
         """
@@ -460,5 +462,22 @@ class Lz77:
         Returns:
             L7zz-compressed binary data.
         """
-        lz = Lz77Compress(data, backref=self.backref)
-        return b''.join(lz.compress_bytes())
+        if clib is not None:
+            # Given a worst case scenario where we end up copying every byte to
+            # the output, compression would actually inflate the file by 9/8 size.
+            # Leave enough room for a trailing EOF reference.
+            outbuf = b"\0" * (int((len(data) * 9) / 8) + 3)
+            result = clib.compress(data, len(data), outbuf, len(outbuf))
+            if result >= 0:
+                return outbuf[:result]
+            elif result == -1:
+                raise LzException("Not enough room in output buffer!")
+            elif result == -2:
+                raise LzException("Unexpected lack of backref during compression!")
+            elif result == -3:
+                raise LzException("Not enough room to write output byte!")
+            else:
+                raise LzException("Unknown exception in C++ code!")
+        else:
+            lz = Lz77Compress(data, backref=self.backref)
+            return b''.join(lz.compress_bytes())

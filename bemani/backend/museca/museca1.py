@@ -117,7 +117,7 @@ class Museca1(
         game_config = self.get_game_config()
         if game_config.get_bool('force_unlock_songs'):
             ids = set()
-            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            songs = self.data.local.music.get_all_songs(self.game, self.music_version)
             for song in songs:
                 if song.data.get_int('limited') in (self.GAME_LIMITED_LOCKED, self.GAME_LIMITED_UNLOCKABLE):
                     ids.add((song.id, song.chart))
@@ -175,7 +175,7 @@ class Museca1(
             userid = None
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             scores = []
 
@@ -269,7 +269,7 @@ class Museca1(
 
         if game_config.get_bool('force_unlock_songs'):
             ids: Dict[int, int] = {}
-            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            songs = self.data.local.music.get_all_songs(self.game, self.music_version)
             for song in songs:
                 if song.id not in ids:
                     ids[song.id] = 0

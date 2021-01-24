@@ -12,3 +12,6 @@ build/
 .hgignore
 .venv/
 bemani.egg-info/
+server/
+emblems
+.vscode/
