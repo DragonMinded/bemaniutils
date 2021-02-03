@@ -157,9 +157,10 @@ class Museca1Plus(
         museca_plus_events = [
             140,  # Agetta Moratta (vmlink_phase 3 in musicdb)
             211,  # News 1
+            212,  # News 2
         ]
         event_ids = [
-            1,    # Extended pedal options
+            1,    # Extended pedal options (no effect on Museca 1+1/2)
             56,   # Generator grafica icon <print 1 in musicdb>
             83,   # Paseli Light Start
             86,   # Generator grafica icon <print 2 in musicdb>
@@ -180,12 +181,59 @@ class Museca1Plus(
         if self.omnimix:
             for evtid in museca_plus_events:
                 enable_event(evtid)
+        
+        #TODO: Add the campaign events to the webui so players can enable them in their profile.
+        # List of known event IDs:
+            # 56,   # Generator grafica icon <print 1 in musicdb>
+            # 83,   # Paseli Light Start
+            # 86,   # Generator grafica icon <print 2 in musicdb>
+            # 98,   # Caption 2 notice (grs_grafica_caption_2.png)
+            # 100,  # DJ YOSHITAKA EXHIBITION 2016
+            # 103,  # HATSUNE MIKU EXHIBITION 2016 - PART 1
+            # 104,  # HATSUNE MIKU EXHIBITION 2016 - PART 2
+            # 105,  # Makes the "Number of Layers" option visible in game settings
+            # 106,  # HATSUNE MIKU EXHIBITION 2016 - PART 3
+            # 117,  # NEW GENERATION METEOR DIFFUSE FESTA 2016 / RYUSEI FESTA TRIGGER
+            # 129,  # COCONATSU EXHIBITION 2016
+            # 130,  # Curator Rank
+            # 97,   # Agetta Moratta (vmlink_phase 1 in musicdb)
+            # 114,  # Agetta Moratta (vmlink_phase 2 in musicdb)
+            # 140,  # Agetta Moratta (vmlink_phase 3 in musicdb)
+            # 141,  # Coconatsu & Mukipara grafica effects
+            # 143,  # Matching
+            # 144,  # BEMANI ARCHAEOLOGICAL EXHIBITION
+            # 163,  # TUTORIAL SNOW
+            # 169,  # SHIORI FUJISAKI EXHIBITION 2017 - PART 1
+            # 174,  # SHIORI FUJISAKI EXHIBITION 2017 - PART 2
+            # 182,  # Mute illil's voice?
+            # 192,  # GREAT REPRINT FESTIVAL: MIKU + DJ YOSHITAKA
+            # 194,  # Continue
+            # 195,  # Fictional Curator (foot pedal options)
+            # 211,  #News 1
+            # 212,  #News 2
+            # 213,  #News 3
+            # 214,  #News 4
+            # 217,  #News 5
+            # 218,  #News 6
+            # 219,  #News 7
+            # 220,  #News 8
+            # 221,  # GRAFICA PRESENTATION CAMPAIGN “THE PRIMITIVE LIFE EXHIBITION”
+            # 222,  # GRAFICA PRESENTATION CAMPAIGN "NOISE"
+            # 223,  # GRAFICA PRESENTATION CAMPAIGN "PATISSERIE ROUGE"
+            # 224,  # GRAFICA PRESENTATION CAMPAIGN "GUNSLINGER"
+            # 145,  # MUKIPARA UNLOCKS
+            # 146,  # MUKIPARA UNLOCKS
+            # 147,  # MUKIPARA UNLOCKS
+            # 148,  # MUKIPARA UNLOCKS
+            # 149,  # MUKIPARA UNLOCKS
+        
+        
         # Makes special missions available on grafica that have them.
         extend = Node.void('extend')
         game.add_child(extend)
         info = Node.void('info')
         extend.add_child(info)
-        info.add_child(Node.u32('extend_id', 12))
+        info.add_child(Node.u32('extend_id', 1))
         info.add_child(Node.u32('extend_type', 9))
         info.add_child(Node.s32('param_num_1', 2))
         info.add_child(Node.s32('param_num_2', 50))
@@ -197,6 +245,23 @@ class Museca1Plus(
         info.add_child(Node.string('param_str_3', 'available_ex: 1'))
         info.add_child(Node.string('param_str_4', 'available_ex: 1'))
         info.add_child(Node.string('param_str_5', 'available_ex: 1'))
+        
+        if self.omnimix:
+            info = Node.void('info')
+            extend.add_child(info)
+            info.add_child(Node.u32('extend_id', 2))
+            info.add_child(Node.u32('extend_type', 9))
+            info.add_child(Node.s32('param_num_1', 210))
+            info.add_child(Node.s32('param_num_2', 0))
+            info.add_child(Node.s32('param_num_3', 0))
+            info.add_child(Node.s32('param_num_4', 0))
+            info.add_child(Node.s32('param_num_5', 0))
+            info.add_child(Node.string('param_str_1', ''))
+            info.add_child(Node.string('param_str_2', ''))
+            info.add_child(Node.string('param_str_3', ''))
+            info.add_child(Node.string('param_str_4', ''))
+            info.add_child(Node.string('param_str_5', ''))
+
         return game
 
     def handle_game_3_lounge_request(self, request: Node) -> Node:
