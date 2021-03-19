@@ -12,7 +12,7 @@ import struct
 import yaml  # type: ignore
 import xml.etree.ElementTree as ET
 from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.engine.result import ResultProxy  # type: ignore
+from sqlalchemy.engine import CursorResult  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
@@ -75,7 +75,7 @@ class ImportBase:
         self.__session.commit()
         self.__batch = False
 
-    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None) -> ResultProxy:
+    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None) -> CursorResult:
         if not self.__batch:
             raise Exception('Logic error, cannot execute outside of a batch!')
 

@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 from bemani.common import Time
 
 from sqlalchemy.engine.base import Connection  # type: ignore
-from sqlalchemy.engine.result import ResultProxy  # type: ignore
+from sqlalchemy.engine import CursorResult  # type: ignore
 from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.types import String, Integer  # type: ignore
 from sqlalchemy import Table, Column, MetaData  # type: ignore
@@ -54,7 +54,7 @@ class BaseData:
         self.__config = config
         self.__conn = conn
 
-    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None, safe_write_operation: bool=False) -> ResultProxy:
+    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None, safe_write_operation: bool=False) -> CursorResult:
         """
         Given a SQL string and some parameters, execute the query and return the result.
 
@@ -63,7 +63,7 @@ class BaseData:
             params - Dictionary of parameters which will be substituted into the sql string.
 
         Returns:
-            A SQLAlchemy ResultProxy object.
+            A SQLAlchemy CursorResult object.
         """
         if self.__config['database'].get('read_only', False):
             # See if this is an insert/update/delete

@@ -1,8 +1,7 @@
-import datetime
 from typing import Dict, Any
 from flask import Blueprint, request, redirect, Response, url_for, make_response, render_template, g  # type: ignore
 
-from bemani.common import CardCipher, CardCipherException, AESCipher
+from bemani.common import CardCipher, CardCipherException, AESCipher, Time
 from bemani.frontend.app import loginrequired, loginprohibited, success, error, jsonify, valid_email, valid_username, valid_pin, render_react
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
@@ -33,7 +32,7 @@ def login() -> Response:
         response.set_cookie(
             'SessionID',
             aes.encrypt(sessionID),
-            expires=datetime.datetime.now() + datetime.timedelta(days=90)
+            expires=Time.now() + (90 * Time.SECONDS_IN_DAY),
         )
         return response
     else:
