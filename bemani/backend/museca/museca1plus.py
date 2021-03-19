@@ -181,8 +181,8 @@ class Museca1Plus(
         if self.omnimix:
             for evtid in museca_plus_events:
                 enable_event(evtid)
-        
-        #TODO: Add the campaign events to the webui so players can enable them in their profile.
+
+        # TODO: Add the campaign events to the webui so players can enable them in their profile.
         # List of known event IDs:
             # 56,   # Generator grafica icon <print 1 in musicdb>
             # 83,   # Paseli Light Start
@@ -226,8 +226,7 @@ class Museca1Plus(
             # 147,  # MUKIPARA UNLOCKS
             # 148,  # MUKIPARA UNLOCKS
             # 149,  # MUKIPARA UNLOCKS
-        
-        
+
         # Makes special missions available on grafica that have them.
         extend = Node.void('extend')
         game.add_child(extend)
@@ -245,7 +244,7 @@ class Museca1Plus(
         info.add_child(Node.string('param_str_3', 'available_ex: 1'))
         info.add_child(Node.string('param_str_4', 'available_ex: 1'))
         info.add_child(Node.string('param_str_5', 'available_ex: 1'))
-        
+
         if self.omnimix:
             info = Node.void('info')
             extend.add_child(info)
