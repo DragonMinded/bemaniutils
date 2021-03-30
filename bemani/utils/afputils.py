@@ -93,6 +93,12 @@ def main() -> int:
         metavar="FILE",
         help="The file to print",
     )
+    print_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
+    )
 
     args = parser.parse_args()
 
@@ -302,7 +308,7 @@ def main() -> int:
     if args.action == "print":
         # First, parse the file out
         with open(args.file, "rb") as bfp:
-            afpfile = AFPFile(bfp.read(), verbose=False)
+            afpfile = AFPFile(bfp.read(), verbose=args.verbose)
 
         # Now, print it
         print(json.dumps(afpfile.as_dict(), sort_keys=True, indent=4))

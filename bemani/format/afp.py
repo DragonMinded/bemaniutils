@@ -1,5 +1,6 @@
 import io
 import struct
+import sys
 from PIL import Image  # type: ignore
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -98,6 +99,82 @@ class TextureRegion:
 
 
 class SWF:
+
+    END = 0x0
+    SHOW_FRAME = 0x1
+    DEFINE_SHAPE = 0x2
+    PLACE_OBJECT = 0x4
+    REMOVE_OBJECT = 0x5
+    DEFINE_BITS = 0x6
+    DEFINE_BUTTON = 0x7
+    JPEG_TABLES = 0x8
+    BACKGROUND_COLOR = 0x9
+    DEFINE_FONT = 0xa
+    DEFINE_TEXT = 0xb
+    DO_ACTION = 0xc
+    DEFINE_FONT_INFO = 0xd
+    DEFINE_SOUND = 0xe
+    START_SOUND = 0xf
+    DEFINE_BUTTON_SOUND = 0x11
+    SOUND_STREAM_HEAD = 0x12
+    SOUND_STREAM_BLOCK = 0x13
+    DEFINE_BITS_LOSSLESS = 0x14
+    DEFINE_BITS_JPEG2 = 0x15
+    DEFINE_SHAPE2 = 0x16
+    DEFINE_BUTTON_CXFORM = 0x17
+    PROTECT = 0x18
+    PLACE_OBJECT2 = 0x1a
+    REMOVE_OBJECT2 = 0x1c
+    DEFINE_SHAPE3 = 0x20
+    DEFINE_TEXT2 = 0x21
+    DEFINE_BUTTON2 = 0x22
+    DEFINE_BITS_JPEG3 = 0x23
+    DEFINE_BITS_LOSSLESS2 = 0x24
+    DEFINE_EDIT_TEXT = 0x25
+    DEFINE_SPRITE = 0x27
+    FRAME_LABEL = 0x2b
+    SOUND_STREAM_HEAD2 = 0x2d
+    DEFINE_MORPH_SHAPE = 0x2e
+    DEFINE_FONT2 = 0x30
+    EXPORT_ASSETS = 0x38
+    IMPORT_ASSETS = 0x39
+    DO_INIT_ACTION = 0x3b
+    DEFINE_VIDEO_STREAM = 0x3c
+    VIDEO_FRAME = 0x3d
+    DEFINE_FONT_INFO2 = 0x3e
+    ENABLE_DEBUGGER2 = 0x40
+    SCRIPT_LIMITS = 0x41
+    SET_TAB_INDEX = 0x42
+    PLACE_OBJECT3 = 0x46
+    IMPORT_ASSETS2 = 0x47
+    DEFINE_FONT3 = 0x4b
+    DEFINE_SCALING_GRID = 0x4e
+    METADATA = 0x4d
+    DEFINE_SHAPE4 = 0x53
+    DEFINE_MORPH_SHAPE2 = 0x54
+    SCENE_LABEL = 0x56
+    AFP_IMAGE = 0x64
+    AFP_DEFINE_SOUND = 0x65
+    AFP_SOUND_STREAM_BLOCK = 0x66
+    AFP_DEFINE_FONT = 0x67
+    AFP_DEFINE_SHAPE = 0x68
+    AEP_PLACE_OBJECT = 0x6e
+    AP2_DEFINE_FONT = 0x78
+    AP2_DEFINE_SPRITE = 0x79
+    AP2_DO_ACTION = 0x7a
+    AP2_DEFINE_BUTTON = 0x7b
+    AP2_DEFINE_BUTTON_SOUND = 0x7c
+    AP2_DEFINE_TEXT = 0x7d
+    AP2_DEFINE_EDIT_TEXT = 0x7e
+    AP2_PLACE_OBJECT = 0x7f
+    AP2_REMOVE_OBJECT = 0x80
+    AP2_START_SOUND = 0x81
+    AP2_DEFINE_MORPH_SHAPE = 0x82
+    AP2_IMAGE = 0x83
+    AP2_SHAPE = 0x84
+    AP2_SOUND = 0x85
+    AP2_VIDEO = 0x86
+
     def __init__(
         self,
         name: str,
@@ -105,6 +182,7 @@ class SWF:
         descramble_info: bytes = b"",
     ) -> None:
         self.name = name
+        self.exported_name = ""
         self.data = data
         self.descramble_info = descramble_info
 
@@ -112,8 +190,28 @@ class SWF:
         # sections that we aren't parsing correctly.
         self.coverage: List[bool] = [False] * len(data)
 
-        # Parse the info out.
-        self.__parse()
+    def add_coverage(self, offset: int, length: int, unique: bool = True) -> None:
+        for i in range(offset, offset + length):
+            if self.coverage[i] and unique:
+                raise Exception(f"Already covered {hex(offset)}!")
+            self.coverage[i] = True
+
+    def print_coverage(self) -> None:
+        # First offset that is not coverd in a run.
+        start = None
+
+        for offset, covered in enumerate(self.coverage):
+            if covered:
+                if start is not None:
+                    print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+                    start = None
+            else:
+                if start is None:
+                    start = offset
+        if start is not None:
+            # Print final range
+            offset = len(self.coverage)
+            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -123,114 +221,165 @@ class SWF:
         }
 
     def tag_to_name(self, tagid: int) -> str:
-        resources: List[Any] = [
-            [['END'], '0x0'],
-            [['SHOW_FRAME'], '0x1'],
-            [['DEFINE_SHAPE'], '0x2'],
-            [['PLACE_OBJECT'], '0x4'],
-            [['REMOVE_OBJECT'], '0x5'],
-            [['DEFINE_BITS'], '0x6'],
-            [['DEFINE_BUTTON'], '0x7'],
-            [['JPEG_TABLES'], '0x8'],
-            [['BACKGROUND_COLOR'], '0x9'],
-            [['DEFINE_FONT'], '0xa'],
-            [['DEFINE_TEXT'], '0xb'],
-            [['DO_ACTION'], '0xc'],
-            [['DEFINE_FONT_INFO'], '0xd'],
-            [['DEFINE_SOUND'], '0xe'],
-            [['START_SOUND'], '0xf'],
-            [['DEFINE_BUTTON_SOUND'], '0x11'],
-            [['SOUND_STREAM_HEAD'], '0x12'],
-            [['SOUND_STREAM_BLOCK'], '0x13'],
-            [['DEFINE_BITS_LOSSLESS'], '0x14'],
-            [['DEFINE_BITS_JPEG2'], '0x15'],
-            [['DEFINE_SHAPE2'], '0x16'],
-            [['DEFINE_BUTTON_CXFORM'], '0x17'],
-            [['PROTECT'], '0x18'],
-            [['PLACE_OBJECT2'], '0x1a'],
-            [['REMOVE_OBJECT2'], '0x1c'],
-            [['DEFINE_SHAPE3'], '0x20'],
-            [['DEFINE_TEXT2'], '0x21'],
-            [['DEFINE_BUTTON2'], '0x22'],
-            [['DEFINE_BITS_JPEG3'], '0x23'],
-            [['DEFINE_BITS_LOSSLESS2'], '0x24'],
-            [['DEFINE_EDIT_TEXT'], '0x25'],
-            [['DEFINE_SPRITE'], '0x27'],
-            [['FRAME_LABEL'], '0x2b'],
-            [['SOUND_STREAM_HEAD2'], '0x2d'],
-            [['DEFINE_MORPH_SHAPE'], '0x2e'],
-            [['DEFINE_FONT2'], '0x30'],
-            [['EXPORT_ASSETS'], '0x38'],
-            [['IMPORT_ASSETS'], '0x39'],
-            [['DO_INIT_ACTION'], '0x3b'],
-            [['DEFINE_VIDEO_STREAM'], '0x3c'],
-            [['VIDEO_FRAME'], '0x3d'],
-            [['DEFINE_FONT_INFO2'], '0x3e'],
-            [['ENABLE_DEBUGGER2'], '0x40'],
-            [['SCRIPT_LIMITS'], '0x41'],
-            [['SET_TAB_INDEX'], '0x42'],
-            [['PLACE_OBJECT3'], '0x46'],
-            [['IMPORT_ASSETS2'], '0x47'],
-            [['DEFINE_FONT3'], '0x4b'],
-            [['DEFINE_SCALING_GRID'], '0x4e'],
-            [['METADATA'], '0x4d'],
-            [['DEFINE_SHAPE4'], '0x53'],
-            [['DEFINE_MORPH_SHAPE2'], '0x54'],
-            [['SCENE_LABEL?'], '0x56'],
-            [['AFP_IMAGE'], '0x64'],
-            [['AFP_DEFINE_SOUND'], '0x65'],
-            [['AFP_SOUND_STREAM_BLOCK'], '0x66'],
-            [['AFP_DEFINE_FONT'], '0x67'],
-            [['AFP_DEFINE_SHAPE'], '0x68'],
-            [['AEP_PLACE_OBJECT'], '0x6e'],
-            [['AP2_DEFINE_FONT'], '0x78'],
-            [['AP2_DEFINE_SPRITE'], '0x79'],
-            [['AP2_DO_ACTION'], '0x7a'],
-            [['AP2_DEFINE_BUTTON'], '0x7b'],
-            [['AP2_DEFINE_BUTTON_SOUND'], '0x7c'],
-            [['AP2_DEFINE_TEXT'], '0x7d'],
-            [['AP2_DEFINE_EDIT_TEXT'], '0x7e'],
-            [['AP2_PLACE_OBJECT'], '0x7f'],
-            [['AP2_REMOVE_OBJECT'], '0x80'],
-            [['AP2_START_SOUND'], '0x81'],
-            [['AP2_DEFINE_MORPH_SHAPE'], '0x82'],
-            [['AP2_IMAGE'], '0x83'],
-            [['AP2_SHAPE'], '0x84'],
-            [['AP2_SOUND'], '0x85'],
-            [['AP2_VIDEO'], '0x86'],
-        ]
+        resources: Dict[int, str] = {
+            self.END: 'END',
+            self.SHOW_FRAME: 'SHOW_FRAME',
+            0x2: 'DEFINE_SHAPE',
+            0x4: 'PLACE_OBJECT',
+            0x5: 'REMOVE_OBJECT',
+            0x6: 'DEFINE_BITS',
+            0x7: 'DEFINE_BUTTON',
+            0x8: 'JPEG_TABLES',
+            0x9: 'BACKGROUND_COLOR',
+            0xa: 'DEFINE_FONT',
+            0xb: 'DEFINE_TEXT',
+            0xc: 'DO_ACTION',
+            0xd: 'DEFINE_FONT_INFO',
+            0xe: 'DEFINE_SOUND',
+            0xf: 'START_SOUND',
+            0x11: 'DEFINE_BUTTON_SOUND',
+            0x12: 'SOUND_STREAM_HEAD',
+            0x13: 'SOUND_STREAM_BLOCK',
+            0x14: 'DEFINE_BITS_LOSSLESS',
+            0x15: 'DEFINE_BITS_JPEG2',
+            0x16: 'DEFINE_SHAPE2',
+            0x17: 'DEFINE_BUTTON_CXFORM',
+            0x18: 'PROTECT',
+            0x1a: 'PLACE_OBJECT2',
+            0x1c: 'REMOVE_OBJECT2',
+            0x20: 'DEFINE_SHAPE3',
+            0x21: 'DEFINE_TEXT2',
+            0x22: 'DEFINE_BUTTON2',
+            0x23: 'DEFINE_BITS_JPEG3',
+            0x24: 'DEFINE_BITS_LOSSLESS2',
+            0x25: 'DEFINE_EDIT_TEXT',
+            0x27: 'DEFINE_SPRITE',
+            0x2b: 'FRAME_LABEL',
+            0x2d: 'SOUND_STREAM_HEAD2',
+            0x2e: 'DEFINE_MORPH_SHAPE',
+            0x30: 'DEFINE_FONT2',
+            0x38: 'EXPORT_ASSETS',
+            0x39: 'IMPORT_ASSETS',
+            0x3b: 'DO_INIT_ACTION',
+            0x3c: 'DEFINE_VIDEO_STREAM',
+            0x3d: 'VIDEO_FRAME',
+            0x3e: 'DEFINE_FONT_INFO2',
+            0x40: 'ENABLE_DEBUGGER2',
+            0x41: 'SCRIPT_LIMITS',
+            0x42: 'SET_TAB_INDEX',
+            0x46: 'PLACE_OBJECT3',
+            0x47: 'IMPORT_ASSETS2',
+            0x4b: 'DEFINE_FONT3',
+            0x4e: 'DEFINE_SCALING_GRID',
+            0x4d: 'METADATA',
+            0x53: 'DEFINE_SHAPE4',
+            0x54: 'DEFINE_MORPH_SHAPE2',
+            0x56: 'SCENE_LABEL',
+            0x64: 'AFP_IMAGE',
+            0x65: 'AFP_DEFINE_SOUND',
+            0x66: 'AFP_SOUND_STREAM_BLOCK',
+            0x67: 'AFP_DEFINE_FONT',
+            0x68: 'AFP_DEFINE_SHAPE',
+            0x6e: 'AEP_PLACE_OBJECT',
+            0x78: 'AP2_DEFINE_FONT',
+            0x79: 'AP2_DEFINE_SPRITE',
+            0x7a: 'AP2_DO_ACTION',
+            0x7b: 'AP2_DEFINE_BUTTON',
+            0x7c: 'AP2_DEFINE_BUTTON_SOUND',
+            0x7d: 'AP2_DEFINE_TEXT',
+            0x7e: 'AP2_DEFINE_EDIT_TEXT',
+            0x7f: 'AP2_PLACE_OBJECT',
+            0x80: 'AP2_REMOVE_OBJECT',
+            0x81: 'AP2_START_SOUND',
+            0x82: 'AP2_DEFINE_MORPH_SHAPE',
+            0x83: 'AP2_IMAGE',
+            self.AP2_SHAPE: 'AP2_SHAPE',
+            self.AP2_SOUND: 'AP2_SOUND',
+            self.AP2_VIDEO: 'AP2_VIDEO',
+        }
 
-        for name, tid in resources:
-            if int(tid, 16) == tagid:
-                return name[0]
-        return "UNKNOWN"
+        return resources.get(tagid, "UNKNOWN")
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytearray, tagdata: bytearray) -> None:
-        tags_count = struct.unpack("<i", tagdata[8:12])[0]
-        tags_offset = struct.unpack("<i", tagdata[20:24])[0]
+    def __parse_tag(self, tagid: int, size: int, dataoffset: int, verbose: bool = False) -> None:
+        # Suppress debug text unless asked
+        if verbose:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
 
-        print(f"tags count: {tags_count}")
+            add_coverage = self.add_coverage
+        else:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+        if tagid == self.AP2_SHAPE:
+            if size != 4:
+                raise Exception(f"Invalid shape size {size}")
+
+            # TODO, this should be little endian? But it only works out if I do big endian.
+            _, shape_id = struct.unpack(">HH", self.data[dataoffset:(dataoffset + 4)])
+
+            add_coverage(dataoffset, size)
+
+            shape_reference = f"{self.exported_name}_shape{shape_id}"
+            vprint(f"    {shape_reference}")
+        # TODO: Switch on tag types, parse out data.
+        elif False:
+            add_coverage(dataoffset, size)
+
+    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytearray, tags_base_offset: int, verbose: bool = False) -> None:
+        # Suppress debug text unless asked
+        if verbose:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
+
+            add_coverage = self.add_coverage
+        else:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+        tags_unknown1, tags_unknown2, tags_count = struct.unpack("<IIi", ap2data[tags_base_offset:(tags_base_offset + 12)])
+        tags_offset = struct.unpack("<i", ap2data[(tags_base_offset + 20):(tags_base_offset + 24)])[0] + tags_base_offset
+        add_coverage(tags_base_offset, 12)
+        add_coverage(tags_base_offset + 20, 4)
+
+        vprint(f"UNKNOWN: {hex(tags_unknown1)}, {hex(tags_unknown2)}")
+
+        vprint(f"Number of Tags: {tags_count}")
         for i in range(tags_count):
-            tag = struct.unpack("<I", tagdata[tags_offset:(tags_offset + 4)])[0]
+            tag = struct.unpack("<I", ap2data[tags_offset:(tags_offset + 4)])[0]
+            add_coverage(tags_offset, 4)
 
             tagid = (tag >> 22) & 0x3FF
             size = ((tag & 0x3FFFFF) + 3) & 0xFFFFFFFC  # Round to multiple of 4.
 
-            print(f"tag: {hex(tagid)} ({self.tag_to_name(tagid)}), size: {size}")
+            vprint(f"  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {size}, Offset: {hex(tags_offset + 4)}")
+            self.__parse_tag(tagid, size, tags_offset + 4, verbose=verbose)
+
             tags_offset += size + 4  # Skip past tag header and data.
 
-        imported_tags_count = struct.unpack("<h", ap2data[34:36])[0]
-        imported_tags_offset = struct.unpack("<I", ap2data[44:48])[0]
+    def parse(self, verbose: bool = False) -> None:
+        # Suppress debug text unless asked
+        if verbose:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
 
-        print(f"imported tags count: {imported_tags_count}")
-        for i in range(imported_tags_count):
-            unknown, size = struct.unpack("<HH", tagdata[imported_tags_offset:(imported_tags_offset + 4)])
+            add_coverage = self.add_coverage
 
-            # TODO: This is entirely unfinished.
-            imported_tags_offset += 4
+            # Reinitialize coverage.
+            self.coverage = [False] * len(self.data)
+        else:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
 
-    def __parse(self) -> None:
-        # TODO: This is incredibly unfinished.
+            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
         swap_len = {
             1: 2,
             2: 4,
@@ -269,9 +418,12 @@ class SWF:
                 offset += 1
             return out
 
-        print("\n\nstart")
+        # Start with the basic file header.
+        magic, length, version, nameoffset, flags, left, right, top, bottom = struct.unpack("<4sIHHIHHHH", data[0:24])
+        width = right - left
+        height = bottom - top
+        add_coverage(0, 24)
 
-        magic, length, version, nameoffset, flags, width, height = struct.unpack("<4sIHHIxxHxxH", data[0:24])
         magic = bytes([magic[3] & 0x7F, magic[2] & 0x7F, magic[1] & 0x7F, 0x0])
         if magic != b'AP2\x00':
             raise Exception(f"Unrecognzied magic {magic}!")
@@ -279,43 +431,122 @@ class SWF:
             raise Exception(f"Unexpected length in AFP header, {length} != {len(data)}!")
         ap2_data_version = magic[0] & 0xFF
 
+        if flags & 0x1:
+            # I have no idea what this is, but its treated as 4 bytes and something
+            # happens if they aren't all 0xFF.
+            unknown_bytes = struct.unpack("<4B", data[28:32])
+        else:
+            unknown_bytes = None
+        add_coverage(28, 4)
+
         if flags & 0x2:
             # I think this is FPS given the output of this bit of code.
             fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
         else:
             fps = struct.unpack("<f", data[24:28])[0]
+        add_coverage(24, 4)
+
+        if flags & 0x4:
+            # I have no idea what this offset is for.
+            unknown_offset = struct.unpack("<I", data[56:60])[0]
+            add_coverage(56, 4)
+        else:
+            # Unknown offset is not present.
+            unknown_offset = None
 
         # String table
         stringtable_offset, stringtable_size = struct.unpack("<II", data[48:56])
+        add_coverage(48, 8)
+
+        # Descramble string table.
         addition = 128
         for i in range(stringtable_size):
             data[stringtable_offset + i] = (data[stringtable_offset + i] - addition) & 0xFF
             addition += 1
 
-        # Unknown, all files have this
-        unk_offset = struct.unpack("<I", data[36:40])  # NOQA: F841
+        # Get exported SWF name.
+        self.exported_name = get_until_null(nameoffset + stringtable_offset).decode('ascii')
+        add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
+        vprint(f"\nAFP name: {self.name}")
+        vprint(f"Version: {version}")
+        vprint(f"Exported Name: {self.exported_name}")
+        vprint(f"SWF Flags: {hex(flags)}")
+        if flags & 0x1:
+            vprint(f"  0x1: Unknown bytes: {' '.join(hex(i) for i in unknown_bytes)}")
+        else:
+            vprint("  0x2: Unknown bytes ignored")
+        if flags & 0x2:
+            vprint("  0x2: FPS is an integer")
+        else:
+            vprint("  0x2: FPS is a float")
+        if flags & 0x4:
+            vprint(f"  0x4: Unknown data section present at offset {hex(unknown_offset)}")
+        else:
+            vprint("  0x4: Unknown data section not present")
+        vprint(f"Dimensions: {width}x{height}")
+        vprint(f"Requested FPS: {fps}")
+
+        # Unknown offset
+        if unknown_offset is not None:
+            vprint(f"Unknown data offset: {hex(unknown_offset)}")
 
         # Exported assets
         num_exported_assets = struct.unpack("<H", data[32:34])[0]
         asset_offset = struct.unpack("<I", data[40:44])[0]
+        add_coverage(32, 2)
+        add_coverage(40, 4)
+
+        vprint(f"Number of Exported Tags: {num_exported_assets}")
         for assetno in range(num_exported_assets):
             asset_data_offset, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
+            add_coverage(asset_offset, 4)
             asset_offset += 4
 
             asset_name = get_until_null(asset_string_offset + stringtable_offset).decode('ascii')
-            print(f"{assetno} = {asset_name}")
+            add_coverage(asset_string_offset + stringtable_offset, len(asset_name) + 1, unique=False)
+            vprint(f"  {assetno}: {asset_name}")
 
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
-        self.__parse_tags(ap2_data_version, version, data, data[tags_offset:])
+        add_coverage(36, 4)
+        self.__parse_tags(ap2_data_version, version, data, tags_offset, verbose=verbose)
 
-        print(f"nameoffset: {nameoffset}")
-        selfname = get_until_null(nameoffset + stringtable_offset).decode('ascii')
+        # Imported tags sections
+        imported_tags_count = struct.unpack("<h", data[34:36])[0]
+        imported_tags_offset = struct.unpack("<I", data[44:48])[0]
+        imported_tags_data_offset = imported_tags_offset + 4 * imported_tags_count
+        add_coverage(34, 2)
+        add_coverage(44, 4)
 
-        with open(f"/shares/Entertainment/{selfname}.bin", "wb") as bfp:
+        vprint(f"Number of Imported Tags: {imported_tags_count}")
+        for i in range(imported_tags_count):
+            # First grab the SWF this is importing from, and the number of assets being imported.
+            swf_name_offset, count = struct.unpack("<HH", data[imported_tags_offset:(imported_tags_offset + 4)])
+            add_coverage(imported_tags_offset, 4)
+
+            swf_name = get_until_null(swf_name_offset + stringtable_offset).decode('ascii')
+            add_coverage(swf_name_offset + stringtable_offset, len(swf_name) + 1, unique=False)
+            vprint(f"  {swf_name}: {count}")
+
+            # Now, grab the actual asset names being imported.
+            for j in range(count):
+                asset_id_no, asset_name_offset = struct.unpack("<HH", data[imported_tags_data_offset:(imported_tags_data_offset + 4)])
+                add_coverage(imported_tags_data_offset, 4)
+
+                asset_name = get_until_null(asset_name_offset + stringtable_offset).decode('ascii')
+                add_coverage(asset_name_offset + stringtable_offset, len(asset_name) + 1, unique=False)
+                vprint(f"    {asset_id_no}: {asset_name}")
+
+                imported_tags_data_offset += 4
+
+            imported_tags_offset += 4
+
+        # TODO: Remove this
+        with open(f"/shares/Entertainment/{self.exported_name}.bin", "wb") as bfp:
             bfp.write(data)
 
-        print(f"afp name: {self.name}\nversion:{version}\ninternal name: {selfname}\nflags: {hex(flags)}\nsize: {width}x{height}\nfps: {fps}")
+        if verbose:
+            self.print_coverage()
 
 
 class Shape:
@@ -478,7 +709,7 @@ class AFPFile:
         for offset, covered in enumerate(self.coverage):
             if covered:
                 if start is not None:
-                    print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)")
+                    print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
                     start = None
             else:
                 if start is None:
@@ -486,7 +717,7 @@ class AFPFile:
         if start is not None:
             # Print final range
             offset = len(self.coverage)
-            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)")
+            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
 
     @staticmethod
     def cap32(val: int) -> int:
@@ -537,7 +768,9 @@ class AFPFile:
     def descramble_pman(self, offset: int, verbose: bool) -> PMAN:
         # Suppress debug text unless asked
         if verbose:
-            vprint = print
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
+
             add_coverage = self.add_coverage
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -611,7 +844,9 @@ class AFPFile:
     ) -> None:
         # Suppress debug text unless asked
         if verbose:
-            vprint = print
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
+
             add_coverage = self.add_coverage
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -1341,6 +1576,10 @@ class AFPFile:
 
         if header_offset != header_length:
             raise Exception("Failed to parse bitfield of header correctly!")
+
+        # Now, parse out the SWF data in each of the SWF structures we found.
+        for swf in self.swfdata:
+            swf.parse(verbose)
 
         if verbose:
             self.print_coverage()
