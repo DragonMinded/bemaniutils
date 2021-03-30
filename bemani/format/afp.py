@@ -278,21 +278,21 @@ class SWF:
             0x64: 'AFP_IMAGE',
             0x65: 'AFP_DEFINE_SOUND',
             0x66: 'AFP_SOUND_STREAM_BLOCK',
-            0x67: 'AFP_DEFINE_FONT',
-            0x68: 'AFP_DEFINE_SHAPE',
-            0x6e: 'AEP_PLACE_OBJECT',
-            0x78: 'AP2_DEFINE_FONT',
-            0x79: 'AP2_DEFINE_SPRITE',
-            0x7a: 'AP2_DO_ACTION',
-            0x7b: 'AP2_DEFINE_BUTTON',
-            0x7c: 'AP2_DEFINE_BUTTON_SOUND',
-            0x7d: 'AP2_DEFINE_TEXT',
-            0x7e: 'AP2_DEFINE_EDIT_TEXT',
-            0x7f: 'AP2_PLACE_OBJECT',
-            0x80: 'AP2_REMOVE_OBJECT',
-            0x81: 'AP2_START_SOUND',
-            0x82: 'AP2_DEFINE_MORPH_SHAPE',
-            0x83: 'AP2_IMAGE',
+            self.AFP_DEFINE_FONT: 'AFP_DEFINE_FONT',
+            self.AFP_DEFINE_SHAPE: 'AFP_DEFINE_SHAPE',
+            self.AEP_PLACE_OBJECT: 'AEP_PLACE_OBJECT',
+            self.AP2_DEFINE_FONT: 'AP2_DEFINE_FONT',
+            self.AP2_DEFINE_SPRITE: 'AP2_DEFINE_SPRITE',
+            self.AP2_DO_ACTION: 'AP2_DO_ACTION',
+            self.AP2_DEFINE_BUTTON: 'AP2_DEFINE_BUTTON',
+            self.AP2_DEFINE_BUTTON_SOUND: 'AP2_DEFINE_BUTTON_SOUND',
+            self.AP2_DEFINE_TEXT: 'AP2_DEFINE_TEXT',
+            self.AP2_DEFINE_EDIT_TEXT: 'AP2_DEFINE_EDIT_TEXT',
+            self.AP2_PLACE_OBJECT: 'AP2_PLACE_OBJECT',
+            self.AP2_REMOVE_OBJECT: 'AP2_REMOVE_OBJECT',
+            self.AP2_START_SOUND: 'AP2_START_SOUND',
+            self.AP2_DEFINE_MORPH_SHAPE: 'AP2_DEFINE_MORPH_SHAPE',
+            self.AP2_IMAGE: 'AP2_IMAGE',
             self.AP2_SHAPE: 'AP2_SHAPE',
             self.AP2_SOUND: 'AP2_SOUND',
             self.AP2_VIDEO: 'AP2_VIDEO',
@@ -300,7 +300,7 @@ class SWF:
 
         return resources.get(tagid, "UNKNOWN")
 
-    def __parse_tag(self, tagid: int, size: int, dataoffset: int, verbose: bool = False) -> None:
+    def __parse_tag(self, ap2data: bytes, tagid: int, size: int, dataoffset: int, verbose: bool = False) -> None:
         # Suppress debug text unless asked
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -318,18 +318,22 @@ class SWF:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
 
-            # TODO, this should be little endian? But it only works out if I do big endian.
-            _, shape_id = struct.unpack(">HH", self.data[dataoffset:(dataoffset + 4)])
-
+            _, shape_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             add_coverage(dataoffset, size)
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
-            vprint(f"    {shape_reference}")
+            vprint(f"    Tag ID: {shape_id}, Reference: {shape_reference}")
+        elif tagid == self.AP2_DEFINE_SPRITE:
+            wat, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            vprint(f"    Tag ID: {sprite_id}")
+        elif tagid == self.AP2_DEFINE_FONT:
+            wat, font_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            vprint(f"    Tag ID: {font_id}")
         # TODO: Switch on tag types, parse out data.
         elif False:
             add_coverage(dataoffset, size)
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytearray, tags_base_offset: int, verbose: bool = False) -> None:
+    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, verbose: bool = False) -> None:
         # Suppress debug text unless asked
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -348,6 +352,7 @@ class SWF:
         add_coverage(tags_base_offset, 12)
         add_coverage(tags_base_offset + 20, 4)
 
+        # TODO: Seems that tags_unknown2 has something to do with end of movie stuff?
         vprint(f"UNKNOWN: {hex(tags_unknown1)}, {hex(tags_unknown2)}")
 
         vprint(f"Number of Tags: {tags_count}")
@@ -359,37 +364,21 @@ class SWF:
             size = ((tag & 0x3FFFFF) + 3) & 0xFFFFFFFC  # Round to multiple of 4.
 
             vprint(f"  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {size}, Offset: {hex(tags_offset + 4)}")
-            self.__parse_tag(tagid, size, tags_offset + 4, verbose=verbose)
+            self.__parse_tag(ap2data, tagid, size, tags_offset + 4, verbose=verbose)
 
             tags_offset += size + 4  # Skip past tag header and data.
 
-    def parse(self, verbose: bool = False) -> None:
-        # Suppress debug text unless asked
-        if verbose:
-            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                print(*args, **kwargs, file=sys.stderr)
-
-            add_coverage = self.add_coverage
-
-            # Reinitialize coverage.
-            self.coverage = [False] * len(self.data)
-        else:
-            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
-            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
+    def __descramble(self, scrambled_data: bytes, descramble_info: bytes) -> bytes:
         swap_len = {
             1: 2,
             2: 4,
             3: 8,
         }
 
-        data = bytearray(self.data)
+        data = bytearray(scrambled_data)
         data_offset = 0
-        for i in range(0, len(self.descramble_info), 2):
-            swapword = struct.unpack("<H", self.descramble_info[i:(i + 2)])[0]
+        for i in range(0, len(descramble_info), 2):
+            swapword = struct.unpack("<H", descramble_info[i:(i + 2)])[0]
             if swapword == 0:
                 break
 
@@ -410,6 +399,37 @@ class SWF:
             for _ in range(loops + 1):
                 data[data_offset:(data_offset + swap_len[swap_type])] = data[data_offset:(data_offset + swap_len[swap_type])][::-1]
                 data_offset += swap_len[swap_type]
+
+        return bytes(data)
+
+    def __descramble_stringtable(self, scrambled_data: bytes, stringtable_offset: int, stringtable_size: int) -> bytes:
+        data = bytearray(scrambled_data)
+
+        addition = 128
+        for i in range(stringtable_size):
+            data[stringtable_offset + i] = (data[stringtable_offset + i] - addition) & 0xFF
+            addition += 1
+
+        return bytes(data)
+
+    def parse(self, verbose: bool = False) -> None:
+        # Suppress debug text unless asked
+        if verbose:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
+
+            add_coverage = self.add_coverage
+
+            # Reinitialize coverage.
+            self.coverage = [False] * len(self.data)
+        else:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+        data = self.__descramble(self.data, self.descramble_info)
 
         def get_until_null(offset: int) -> bytes:
             out = b""
@@ -447,28 +467,25 @@ class SWF:
         add_coverage(24, 4)
 
         if flags & 0x4:
-            # I have no idea what this offset is for.
-            unknown_offset = struct.unpack("<I", data[56:60])[0]
+            # This seems related to imported tags.
+            imported_tag_something_offset = struct.unpack("<I", data[56:60])[0]
             add_coverage(56, 4)
         else:
             # Unknown offset is not present.
-            unknown_offset = None
+            imported_tag_something_offset = None
 
         # String table
         stringtable_offset, stringtable_size = struct.unpack("<II", data[48:56])
         add_coverage(48, 8)
 
         # Descramble string table.
-        addition = 128
-        for i in range(stringtable_size):
-            data[stringtable_offset + i] = (data[stringtable_offset + i] - addition) & 0xFF
-            addition += 1
+        data = self.__descramble_stringtable(data, stringtable_offset, stringtable_size)
 
         # Get exported SWF name.
         self.exported_name = get_until_null(nameoffset + stringtable_offset).decode('ascii')
         add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
         vprint(f"\nAFP name: {self.name}")
-        vprint(f"Version: {version}")
+        vprint(f"Version: {hex(version)}")
         vprint(f"Exported Name: {self.exported_name}")
         vprint(f"SWF Flags: {hex(flags)}")
         if flags & 0x1:
@@ -480,15 +497,11 @@ class SWF:
         else:
             vprint("  0x2: FPS is a float")
         if flags & 0x4:
-            vprint(f"  0x4: Unknown data section present at offset {hex(unknown_offset)}")
+            vprint(f"  0x4: Unknown imported tag section present at offset {hex(imported_tag_something_offset)}")
         else:
-            vprint("  0x4: Unknown data section not present")
+            vprint("  0x4: Unknown imported tag section not present")
         vprint(f"Dimensions: {width}x{height}")
         vprint(f"Requested FPS: {fps}")
-
-        # Unknown offset
-        if unknown_offset is not None:
-            vprint(f"Unknown data offset: {hex(unknown_offset)}")
 
         # Exported assets
         num_exported_assets = struct.unpack("<H", data[32:34])[0]
@@ -526,7 +539,7 @@ class SWF:
 
             swf_name = get_until_null(swf_name_offset + stringtable_offset).decode('ascii')
             add_coverage(swf_name_offset + stringtable_offset, len(swf_name) + 1, unique=False)
-            vprint(f"  {swf_name}: {count}")
+            vprint(f"  Source SWF: {swf_name}")
 
             # Now, grab the actual asset names being imported.
             for j in range(count):
@@ -535,11 +548,26 @@ class SWF:
 
                 asset_name = get_until_null(asset_name_offset + stringtable_offset).decode('ascii')
                 add_coverage(asset_name_offset + stringtable_offset, len(asset_name) + 1, unique=False)
-                vprint(f"    {asset_id_no}: {asset_name}")
+                vprint(f"    Tag ID: {asset_id_no}, Requested Asset: {asset_name}")
 
                 imported_tags_data_offset += 4
 
             imported_tags_offset += 4
+
+        # Some imported tag data.
+        if imported_tag_something_offset is not None:
+
+            unk1, length = struct.unpack("<HH", data[imported_tag_something_offset:(imported_tag_something_offset + 4)])
+            add_coverage(imported_tag_something_offset, 4)
+
+            vprint(f"Imported tag unknown data offset: {hex(imported_tag_something_offset)}, length: {length}")
+
+            for i in range(length):
+                item_offset = imported_tag_something_offset + 4 + (i * 12)
+                tag_id, _, item_data_offset, flags_or_length = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
+                add_coverage(item_offset, 12)
+
+                vprint(f"  Tag ID: {tag_id}, Data offset: {hex(item_data_offset + imported_tag_something_offset)}, Data present flag: {hex(flags_or_length)}")
 
         # TODO: Remove this
         with open(f"/shares/Entertainment/{self.exported_name}.bin", "wb") as bfp:
