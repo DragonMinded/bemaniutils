@@ -190,6 +190,10 @@ class SWF:
         # sections that we aren't parsing correctly.
         self.coverage: List[bool] = [False] * len(data)
 
+        # Initialize string table. This is used for faster lookup of strings
+        # as well as tracking which strings in the table have been parsed correctly.
+        self.strings: Dict[int, Tuple[str, bool]] = {}
+
     def add_coverage(self, offset: int, length: int, unique: bool = True) -> None:
         for i in range(offset, offset + length):
             if self.coverage[i] and unique:
@@ -203,7 +207,7 @@ class SWF:
         for offset, covered in enumerate(self.coverage):
             if covered:
                 if start is not None:
-                    print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+                    print(f"Uncovered bytes: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
                     start = None
             else:
                 if start is None:
@@ -211,7 +215,14 @@ class SWF:
         if start is not None:
             # Print final range
             offset = len(self.coverage)
-            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+            print(f"Uncovered bytes: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+
+        # Now, print uncovered strings
+        for offset, (string, covered) in self.strings.items():
+            if covered:
+                continue
+
+            print(f"Uncovered string: {hex(offset)} - {string}", file=sys.stderr)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -224,60 +235,60 @@ class SWF:
         resources: Dict[int, str] = {
             self.END: 'END',
             self.SHOW_FRAME: 'SHOW_FRAME',
-            0x2: 'DEFINE_SHAPE',
-            0x4: 'PLACE_OBJECT',
-            0x5: 'REMOVE_OBJECT',
-            0x6: 'DEFINE_BITS',
-            0x7: 'DEFINE_BUTTON',
-            0x8: 'JPEG_TABLES',
-            0x9: 'BACKGROUND_COLOR',
-            0xa: 'DEFINE_FONT',
-            0xb: 'DEFINE_TEXT',
-            0xc: 'DO_ACTION',
-            0xd: 'DEFINE_FONT_INFO',
-            0xe: 'DEFINE_SOUND',
-            0xf: 'START_SOUND',
-            0x11: 'DEFINE_BUTTON_SOUND',
-            0x12: 'SOUND_STREAM_HEAD',
-            0x13: 'SOUND_STREAM_BLOCK',
-            0x14: 'DEFINE_BITS_LOSSLESS',
-            0x15: 'DEFINE_BITS_JPEG2',
-            0x16: 'DEFINE_SHAPE2',
-            0x17: 'DEFINE_BUTTON_CXFORM',
-            0x18: 'PROTECT',
-            0x1a: 'PLACE_OBJECT2',
-            0x1c: 'REMOVE_OBJECT2',
-            0x20: 'DEFINE_SHAPE3',
-            0x21: 'DEFINE_TEXT2',
-            0x22: 'DEFINE_BUTTON2',
-            0x23: 'DEFINE_BITS_JPEG3',
-            0x24: 'DEFINE_BITS_LOSSLESS2',
-            0x25: 'DEFINE_EDIT_TEXT',
-            0x27: 'DEFINE_SPRITE',
-            0x2b: 'FRAME_LABEL',
-            0x2d: 'SOUND_STREAM_HEAD2',
-            0x2e: 'DEFINE_MORPH_SHAPE',
-            0x30: 'DEFINE_FONT2',
-            0x38: 'EXPORT_ASSETS',
-            0x39: 'IMPORT_ASSETS',
-            0x3b: 'DO_INIT_ACTION',
-            0x3c: 'DEFINE_VIDEO_STREAM',
-            0x3d: 'VIDEO_FRAME',
-            0x3e: 'DEFINE_FONT_INFO2',
-            0x40: 'ENABLE_DEBUGGER2',
-            0x41: 'SCRIPT_LIMITS',
-            0x42: 'SET_TAB_INDEX',
-            0x46: 'PLACE_OBJECT3',
-            0x47: 'IMPORT_ASSETS2',
-            0x4b: 'DEFINE_FONT3',
-            0x4e: 'DEFINE_SCALING_GRID',
-            0x4d: 'METADATA',
-            0x53: 'DEFINE_SHAPE4',
-            0x54: 'DEFINE_MORPH_SHAPE2',
-            0x56: 'SCENE_LABEL',
-            0x64: 'AFP_IMAGE',
-            0x65: 'AFP_DEFINE_SOUND',
-            0x66: 'AFP_SOUND_STREAM_BLOCK',
+            self.DEFINE_SHAPE: 'DEFINE_SHAPE',
+            self.PLACE_OBJECT: 'PLACE_OBJECT',
+            self.REMOVE_OBJECT: 'REMOVE_OBJECT',
+            self.DEFINE_BITS: 'DEFINE_BITS',
+            self.DEFINE_BUTTON: 'DEFINE_BUTTON',
+            self.JPEG_TABLES: 'JPEG_TABLES',
+            self.BACKGROUND_COLOR: 'BACKGROUND_COLOR',
+            self.DEFINE_FONT: 'DEFINE_FONT',
+            self.DEFINE_TEXT: 'DEFINE_TEXT',
+            self.DO_ACTION: 'DO_ACTION',
+            self.DEFINE_FONT_INFO: 'DEFINE_FONT_INFO',
+            self.DEFINE_SOUND: 'DEFINE_SOUND',
+            self.START_SOUND: 'START_SOUND',
+            self.DEFINE_BUTTON_SOUND: 'DEFINE_BUTTON_SOUND',
+            self.SOUND_STREAM_HEAD: 'SOUND_STREAM_HEAD',
+            self.SOUND_STREAM_BLOCK: 'SOUND_STREAM_BLOCK',
+            self.DEFINE_BITS_LOSSLESS: 'DEFINE_BITS_LOSSLESS',
+            self.DEFINE_BITS_JPEG2: 'DEFINE_BITS_JPEG2',
+            self.DEFINE_SHAPE2: 'DEFINE_SHAPE2',
+            self.DEFINE_BUTTON_CXFORM: 'DEFINE_BUTTON_CXFORM',
+            self.PROTECT: 'PROTECT',
+            self.PLACE_OBJECT2: 'PLACE_OBJECT2',
+            self.REMOVE_OBJECT2: 'REMOVE_OBJECT2',
+            self.DEFINE_SHAPE3: 'DEFINE_SHAPE3',
+            self.DEFINE_TEXT2: 'DEFINE_TEXT2',
+            self.DEFINE_BUTTON2: 'DEFINE_BUTTON2',
+            self.DEFINE_BITS_JPEG3: 'DEFINE_BITS_JPEG3',
+            self.DEFINE_BITS_LOSSLESS2: 'DEFINE_BITS_LOSSLESS2',
+            self.DEFINE_EDIT_TEXT: 'DEFINE_EDIT_TEXT',
+            self.DEFINE_SPRITE: 'DEFINE_SPRITE',
+            self.FRAME_LABEL: 'FRAME_LABEL',
+            self.SOUND_STREAM_HEAD2: 'SOUND_STREAM_HEAD2',
+            self.DEFINE_MORPH_SHAPE: 'DEFINE_MORPH_SHAPE',
+            self.DEFINE_FONT2: 'DEFINE_FONT2',
+            self.EXPORT_ASSETS: 'EXPORT_ASSETS',
+            self.IMPORT_ASSETS: 'IMPORT_ASSETS',
+            self.DO_INIT_ACTION: 'DO_INIT_ACTION',
+            self.DEFINE_VIDEO_STREAM: 'DEFINE_VIDEO_STREAM',
+            self.VIDEO_FRAME: 'VIDEO_FRAME',
+            self.DEFINE_FONT_INFO2: 'DEFINE_FONT_INFO2',
+            self.ENABLE_DEBUGGER2: 'ENABLE_DEBUGGER2',
+            self.SCRIPT_LIMITS: 'SCRIPT_LIMITS',
+            self.SET_TAB_INDEX: 'SET_TAB_INDEX',
+            self.PLACE_OBJECT3: 'PLACE_OBJECT3',
+            self.IMPORT_ASSETS2: 'IMPORT_ASSETS2',
+            self.DEFINE_FONT3: 'DEFINE_FONT3',
+            self.DEFINE_SCALING_GRID: 'DEFINE_SCALING_GRID',
+            self.METADATA: 'METADATA',
+            self.DEFINE_SHAPE4: 'DEFINE_SHAPE4',
+            self.DEFINE_MORPH_SHAPE2: 'DEFINE_MORPH_SHAPE2',
+            self.SCENE_LABEL: 'SCENE_LABEL',
+            self.AFP_IMAGE: 'AFP_IMAGE',
+            self.AFP_DEFINE_SOUND: 'AFP_DEFINE_SOUND',
+            self.AFP_SOUND_STREAM_BLOCK: 'AFP_SOUND_STREAM_BLOCK',
             self.AFP_DEFINE_FONT: 'AFP_DEFINE_FONT',
             self.AFP_DEFINE_SHAPE: 'AFP_DEFINE_SHAPE',
             self.AEP_PLACE_OBJECT: 'AEP_PLACE_OBJECT',
@@ -347,13 +358,15 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
-        tags_unknown1, tags_unknown2, tags_count = struct.unpack("<IIi", ap2data[tags_base_offset:(tags_base_offset + 12)])
-        tags_offset = struct.unpack("<i", ap2data[(tags_base_offset + 20):(tags_base_offset + 24)])[0] + tags_base_offset
-        add_coverage(tags_base_offset, 12)
-        add_coverage(tags_base_offset + 20, 4)
+        tags_unknown1, tags_unknown2, tags_count, tags_unknown3, tags_unknown4, tags_offset, tags_unknown5 = struct.unpack(
+            "<IIiIIiI",
+            ap2data[tags_base_offset:(tags_base_offset + 28)]
+        )
+        tags_offset += tags_base_offset
+        add_coverage(tags_base_offset, 28)
 
         # TODO: Seems that tags_unknown2 has something to do with end of movie stuff?
-        vprint(f"UNKNOWN: {hex(tags_unknown1)}, {hex(tags_unknown2)}")
+        vprint(f"UNKNOWN: {hex(tags_unknown1)}, {hex(tags_unknown2)}, {hex(tags_unknown3)}, {hex(tags_unknown4)}, {hex(tags_unknown5)}")
 
         vprint(f"Number of Tags: {tags_count}")
         for i in range(tags_count):
@@ -404,13 +417,33 @@ class SWF:
 
     def __descramble_stringtable(self, scrambled_data: bytes, stringtable_offset: int, stringtable_size: int) -> bytes:
         data = bytearray(scrambled_data)
+        curstring: List[int] = []
+        curloc = stringtable_offset
 
         addition = 128
         for i in range(stringtable_size):
-            data[stringtable_offset + i] = (data[stringtable_offset + i] - addition) & 0xFF
+            byte = (data[stringtable_offset + i] - addition) & 0xFF
+            data[stringtable_offset + i] = byte
             addition += 1
 
+            if byte == 0:
+                if curstring:
+                    # We found a string!
+                    self.strings[curloc - stringtable_offset] = (bytes(curstring).decode('utf8'), False)
+                    curloc = stringtable_offset + i + 1
+                    curstring = []
+                curloc = stringtable_offset + i + 1
+            else:
+                curstring.append(byte)
+
+        if curstring:
+            raise Exception("Logic error!")
+
         return bytes(data)
+
+    def __get_string(self, offset: int) -> str:
+        self.strings[offset] = (self.strings[offset][0], True)
+        return self.strings[offset][0]
 
     def parse(self, verbose: bool = False) -> None:
         # Suppress debug text unless asked
@@ -422,6 +455,7 @@ class SWF:
 
             # Reinitialize coverage.
             self.coverage = [False] * len(self.data)
+            self.strings = {}
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
@@ -429,14 +463,8 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
+        # First, use the byteswap header to descramble the data.
         data = self.__descramble(self.data, self.descramble_info)
-
-        def get_until_null(offset: int) -> bytes:
-            out = b""
-            while data[offset] != 0:
-                out += data[offset:(offset + 1)]
-                offset += 1
-            return out
 
         # Start with the basic file header.
         magic, length, version, nameoffset, flags, left, right, top, bottom = struct.unpack("<4sIHHIHHHH", data[0:24])
@@ -444,12 +472,12 @@ class SWF:
         height = bottom - top
         add_coverage(0, 24)
 
+        ap2_data_version = magic[0] & 0xFF
         magic = bytes([magic[3] & 0x7F, magic[2] & 0x7F, magic[1] & 0x7F, 0x0])
         if magic != b'AP2\x00':
             raise Exception(f"Unrecognzied magic {magic}!")
         if length != len(data):
             raise Exception(f"Unexpected length in AFP header, {length} != {len(data)}!")
-        ap2_data_version = magic[0] & 0xFF
 
         if flags & 0x1:
             # I have no idea what this is, but its treated as 4 bytes and something
@@ -480,11 +508,13 @@ class SWF:
 
         # Descramble string table.
         data = self.__descramble_stringtable(data, stringtable_offset, stringtable_size)
+        add_coverage(stringtable_offset, stringtable_size)
 
         # Get exported SWF name.
-        self.exported_name = get_until_null(nameoffset + stringtable_offset).decode('ascii')
+        self.exported_name = self.__get_string(nameoffset)
         add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
         vprint(f"\nAFP name: {self.name}")
+        vprint(f"Container Version: {hex(ap2_data_version)}")
         vprint(f"Version: {hex(version)}")
         vprint(f"Exported Name: {self.exported_name}")
         vprint(f"SWF Flags: {hex(flags)}")
@@ -515,7 +545,7 @@ class SWF:
             add_coverage(asset_offset, 4)
             asset_offset += 4
 
-            asset_name = get_until_null(asset_string_offset + stringtable_offset).decode('ascii')
+            asset_name = self.__get_string(asset_string_offset)
             add_coverage(asset_string_offset + stringtable_offset, len(asset_name) + 1, unique=False)
             vprint(f"  {assetno}: {asset_name}")
 
@@ -537,7 +567,7 @@ class SWF:
             swf_name_offset, count = struct.unpack("<HH", data[imported_tags_offset:(imported_tags_offset + 4)])
             add_coverage(imported_tags_offset, 4)
 
-            swf_name = get_until_null(swf_name_offset + stringtable_offset).decode('ascii')
+            swf_name = self.__get_string(swf_name_offset)
             add_coverage(swf_name_offset + stringtable_offset, len(swf_name) + 1, unique=False)
             vprint(f"  Source SWF: {swf_name}")
 
@@ -546,7 +576,7 @@ class SWF:
                 asset_id_no, asset_name_offset = struct.unpack("<HH", data[imported_tags_data_offset:(imported_tags_data_offset + 4)])
                 add_coverage(imported_tags_data_offset, 4)
 
-                asset_name = get_until_null(asset_name_offset + stringtable_offset).decode('ascii')
+                asset_name = self.__get_string(asset_name_offset)
                 add_coverage(asset_name_offset + stringtable_offset, len(asset_name) + 1, unique=False)
                 vprint(f"    Tag ID: {asset_id_no}, Requested Asset: {asset_name}")
 
@@ -1604,13 +1634,12 @@ class AFPFile:
 
         if header_offset != header_length:
             raise Exception("Failed to parse bitfield of header correctly!")
+        if verbose:
+            self.print_coverage()
 
         # Now, parse out the SWF data in each of the SWF structures we found.
         for swf in self.swfdata:
             swf.parse(verbose)
-
-        if verbose:
-            self.print_coverage()
 
     @staticmethod
     def align(val: int) -> int:
