@@ -311,7 +311,7 @@ class SWF:
 
         return resources.get(tagid, "UNKNOWN")
 
-    def __parse_tag(self, ap2data: bytes, tagid: int, size: int, dataoffset: int, verbose: bool = False) -> None:
+    def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -333,18 +333,29 @@ class SWF:
             add_coverage(dataoffset, size)
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
-            vprint(f"    Tag ID: {shape_id}, Reference: {shape_reference}")
+            vprint(f"{prefix}    Tag ID: {shape_id}, Reference: {shape_reference}")
         elif tagid == self.AP2_DEFINE_SPRITE:
-            wat, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
-            vprint(f"    Tag ID: {sprite_id}")
+            sprite_flags, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            add_coverage(dataoffset, 4)
+
+            if sprite_flags & 1 == 0:
+                # This is an old-style tag, it has data directly following the header.
+                subtags_offset = dataoffset + 4
+            else:
+                # This is a new-style tag, it has a relative data pointer.
+                subtags_offset = struct.unpack("<I", ap2data[(dataoffset + 4):(dataoffset + 8)])[0] + dataoffset
+                add_coverage(dataoffset + 4, 4)
+
+            vprint(f"{prefix}    Tag ID: {sprite_id}")
+            self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix, verbose=verbose)
         elif tagid == self.AP2_DEFINE_FONT:
             wat, font_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
-            vprint(f"    Tag ID: {font_id}")
+            vprint(f"{prefix}    Tag ID: {font_id}")
         # TODO: Switch on tag types, parse out data.
         elif False:
             add_coverage(dataoffset, size)
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, verbose: bool = False) -> None:
+    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -358,28 +369,39 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
-        tags_unknown1, tags_unknown2, tags_count, tags_unknown3, tags_unknown4, tags_offset, tags_unknown5 = struct.unpack(
-            "<IIiIIiI",
-            ap2data[tags_base_offset:(tags_base_offset + 28)]
+        unknown_tags_count, end_tags_count, tags_count, unknown_tags_offset, end_tags_offset, tags_offset = struct.unpack(
+            "<IIiIIi",
+            ap2data[tags_base_offset:(tags_base_offset + 24)]
         )
+        add_coverage(tags_base_offset, 24)
+
+        # Fix up pointers.
         tags_offset += tags_base_offset
-        add_coverage(tags_base_offset, 28)
+        unknown_tags_offset += tags_base_offset
+        end_tags_offset += tags_base_offset
 
-        # TODO: Seems that tags_unknown2 has something to do with end of movie stuff?
-        vprint(f"UNKNOWN: {hex(tags_unknown1)}, {hex(tags_unknown2)}, {hex(tags_unknown3)}, {hex(tags_unknown4)}, {hex(tags_unknown5)}")
+        for count, offset, name in [
+            (unknown_tags_count, unknown_tags_offset, "Unknown Tags"),
+            (tags_count, tags_offset, "Tags"),
+            (end_tags_count, end_tags_offset, "End Tags"),
+        ]:
+            vprint(f"{prefix}Number of {name}: {count}")
+            if name != "Tags":
+                # TODO: I actually am not sure these are tag sections anymore.... Need to keep digging.
+                continue
+            for i in range(count):
+                tag = struct.unpack("<I", ap2data[offset:(offset + 4)])[0]
+                add_coverage(offset, 4)
 
-        vprint(f"Number of Tags: {tags_count}")
-        for i in range(tags_count):
-            tag = struct.unpack("<I", ap2data[tags_offset:(tags_offset + 4)])[0]
-            add_coverage(tags_offset, 4)
+                tagid = (tag >> 22) & 0x3FF
+                size = tag & 0x3FFFFF
 
-            tagid = (tag >> 22) & 0x3FF
-            size = ((tag & 0x3FFFFF) + 3) & 0xFFFFFFFC  # Round to multiple of 4.
+                if size > 0x200000:
+                    raise Exception(f"Invalid tag size {size}")
 
-            vprint(f"  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {size}, Offset: {hex(tags_offset + 4)}")
-            self.__parse_tag(ap2data, tagid, size, tags_offset + 4, verbose=verbose)
-
-            tags_offset += size + 4  # Skip past tag header and data.
+                vprint(f"{prefix}  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(offset + 4)}")
+                self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, offset + 4, prefix=prefix, verbose=verbose)
+                offset += size + 4  # Skip past tag header and data.
 
     def __descramble(self, scrambled_data: bytes, descramble_info: bytes) -> bytes:
         swap_len = {
