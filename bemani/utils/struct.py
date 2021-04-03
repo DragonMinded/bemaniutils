@@ -148,10 +148,11 @@ class StructPrinter:
                     else:
                         size = struct.calcsize(prefix + spec)
                         chunk = self.data[offset:(offset + size)]
-                        if dohex:
-                            line.append(hex(struct.unpack(prefix + spec, chunk)[0]))
-                        else:
-                            line.append(struct.unpack(prefix + spec, chunk)[0])
+                        if spec != 'x':
+                            if dohex:
+                                line.append(hex(struct.unpack(prefix + spec, chunk)[0]))
+                            else:
+                                line.append(struct.unpack(prefix + spec, chunk)[0])
                         offset += size
                 else:
                     chunk = self.data[offset:(offset + 4)]
@@ -201,7 +202,7 @@ def main() -> None:
             "for details. Additionally, prefixing a format specifier with * allows dereferencing pointers. "
             "Surround a chunk of format specifiers with parenthesis to dereference complex structures. For "
             "ease of unpacking C string pointers, the specifier \"z\" is recognzied to mean null-terminated "
-            "string. A % preceeding a format specifier means that we should convert to hex before displaying."
+            "string. A & preceeding a format specifier means that we should convert to hex before displaying."
         ),
         type=str,
         default=None,
