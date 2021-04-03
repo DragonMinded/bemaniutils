@@ -98,8 +98,7 @@ class TextureRegion:
         }
 
 
-class SWF:
-
+class Tag:
     END = 0x0
     SHOW_FRAME = 0x1
     DEFINE_SHAPE = 0x2
@@ -148,8 +147,8 @@ class SWF:
     PLACE_OBJECT3 = 0x46
     IMPORT_ASSETS2 = 0x47
     DEFINE_FONT3 = 0x4b
-    DEFINE_SCALING_GRID = 0x4e
     METADATA = 0x4d
+    DEFINE_SCALING_GRID = 0x4e
     DEFINE_SHAPE4 = 0x53
     DEFINE_MORPH_SHAPE2 = 0x54
     SCENE_LABEL = 0x56
@@ -175,6 +174,255 @@ class SWF:
     AP2_SOUND = 0x85
     AP2_VIDEO = 0x86
 
+    @classmethod
+    def tag_to_name(cls, tagid: int) -> str:
+        resources: Dict[int, str] = {
+            cls.END: 'END',
+            cls.SHOW_FRAME: 'SHOW_FRAME',
+            cls.DEFINE_SHAPE: 'DEFINE_SHAPE',
+            cls.PLACE_OBJECT: 'PLACE_OBJECT',
+            cls.REMOVE_OBJECT: 'REMOVE_OBJECT',
+            cls.DEFINE_BITS: 'DEFINE_BITS',
+            cls.DEFINE_BUTTON: 'DEFINE_BUTTON',
+            cls.JPEG_TABLES: 'JPEG_TABLES',
+            cls.BACKGROUND_COLOR: 'BACKGROUND_COLOR',
+            cls.DEFINE_FONT: 'DEFINE_FONT',
+            cls.DEFINE_TEXT: 'DEFINE_TEXT',
+            cls.DO_ACTION: 'DO_ACTION',
+            cls.DEFINE_FONT_INFO: 'DEFINE_FONT_INFO',
+            cls.DEFINE_SOUND: 'DEFINE_SOUND',
+            cls.START_SOUND: 'START_SOUND',
+            cls.DEFINE_BUTTON_SOUND: 'DEFINE_BUTTON_SOUND',
+            cls.SOUND_STREAM_HEAD: 'SOUND_STREAM_HEAD',
+            cls.SOUND_STREAM_BLOCK: 'SOUND_STREAM_BLOCK',
+            cls.DEFINE_BITS_LOSSLESS: 'DEFINE_BITS_LOSSLESS',
+            cls.DEFINE_BITS_JPEG2: 'DEFINE_BITS_JPEG2',
+            cls.DEFINE_SHAPE2: 'DEFINE_SHAPE2',
+            cls.DEFINE_BUTTON_CXFORM: 'DEFINE_BUTTON_CXFORM',
+            cls.PROTECT: 'PROTECT',
+            cls.PLACE_OBJECT2: 'PLACE_OBJECT2',
+            cls.REMOVE_OBJECT2: 'REMOVE_OBJECT2',
+            cls.DEFINE_SHAPE3: 'DEFINE_SHAPE3',
+            cls.DEFINE_TEXT2: 'DEFINE_TEXT2',
+            cls.DEFINE_BUTTON2: 'DEFINE_BUTTON2',
+            cls.DEFINE_BITS_JPEG3: 'DEFINE_BITS_JPEG3',
+            cls.DEFINE_BITS_LOSSLESS2: 'DEFINE_BITS_LOSSLESS2',
+            cls.DEFINE_EDIT_TEXT: 'DEFINE_EDIT_TEXT',
+            cls.DEFINE_SPRITE: 'DEFINE_SPRITE',
+            cls.FRAME_LABEL: 'FRAME_LABEL',
+            cls.SOUND_STREAM_HEAD2: 'SOUND_STREAM_HEAD2',
+            cls.DEFINE_MORPH_SHAPE: 'DEFINE_MORPH_SHAPE',
+            cls.DEFINE_FONT2: 'DEFINE_FONT2',
+            cls.EXPORT_ASSETS: 'EXPORT_ASSETS',
+            cls.IMPORT_ASSETS: 'IMPORT_ASSETS',
+            cls.DO_INIT_ACTION: 'DO_INIT_ACTION',
+            cls.DEFINE_VIDEO_STREAM: 'DEFINE_VIDEO_STREAM',
+            cls.VIDEO_FRAME: 'VIDEO_FRAME',
+            cls.DEFINE_FONT_INFO2: 'DEFINE_FONT_INFO2',
+            cls.ENABLE_DEBUGGER2: 'ENABLE_DEBUGGER2',
+            cls.SCRIPT_LIMITS: 'SCRIPT_LIMITS',
+            cls.SET_TAB_INDEX: 'SET_TAB_INDEX',
+            cls.PLACE_OBJECT3: 'PLACE_OBJECT3',
+            cls.IMPORT_ASSETS2: 'IMPORT_ASSETS2',
+            cls.DEFINE_FONT3: 'DEFINE_FONT3',
+            cls.DEFINE_SCALING_GRID: 'DEFINE_SCALING_GRID',
+            cls.METADATA: 'METADATA',
+            cls.DEFINE_SHAPE4: 'DEFINE_SHAPE4',
+            cls.DEFINE_MORPH_SHAPE2: 'DEFINE_MORPH_SHAPE2',
+            cls.SCENE_LABEL: 'SCENE_LABEL',
+            cls.AFP_IMAGE: 'AFP_IMAGE',
+            cls.AFP_DEFINE_SOUND: 'AFP_DEFINE_SOUND',
+            cls.AFP_SOUND_STREAM_BLOCK: 'AFP_SOUND_STREAM_BLOCK',
+            cls.AFP_DEFINE_FONT: 'AFP_DEFINE_FONT',
+            cls.AFP_DEFINE_SHAPE: 'AFP_DEFINE_SHAPE',
+            cls.AEP_PLACE_OBJECT: 'AEP_PLACE_OBJECT',
+            cls.AP2_DEFINE_FONT: 'AP2_DEFINE_FONT',
+            cls.AP2_DEFINE_SPRITE: 'AP2_DEFINE_SPRITE',
+            cls.AP2_DO_ACTION: 'AP2_DO_ACTION',
+            cls.AP2_DEFINE_BUTTON: 'AP2_DEFINE_BUTTON',
+            cls.AP2_DEFINE_BUTTON_SOUND: 'AP2_DEFINE_BUTTON_SOUND',
+            cls.AP2_DEFINE_TEXT: 'AP2_DEFINE_TEXT',
+            cls.AP2_DEFINE_EDIT_TEXT: 'AP2_DEFINE_EDIT_TEXT',
+            cls.AP2_PLACE_OBJECT: 'AP2_PLACE_OBJECT',
+            cls.AP2_REMOVE_OBJECT: 'AP2_REMOVE_OBJECT',
+            cls.AP2_START_SOUND: 'AP2_START_SOUND',
+            cls.AP2_DEFINE_MORPH_SHAPE: 'AP2_DEFINE_MORPH_SHAPE',
+            cls.AP2_IMAGE: 'AP2_IMAGE',
+            cls.AP2_SHAPE: 'AP2_SHAPE',
+            cls.AP2_SOUND: 'AP2_SOUND',
+            cls.AP2_VIDEO: 'AP2_VIDEO',
+        }
+
+        return resources.get(tagid, "UNKNOWN")
+
+
+class AP2Action:
+    END = 0
+    NEXT_FRAME = 1
+    PREVIOUS_FRAME = 2
+    PLAY = 3
+    STOP = 4
+    STOP_SOUND = 5
+    ADD = 6
+    SUBTRACT = 7
+    MULTIPLY = 8
+    DIVIDE = 9
+    EQUALS = 10
+    LESS = 11
+    NOT = 12
+    POP = 13
+    GET_VARIABLE = 14
+    SET_VARIABLE = 15
+    GET_PROPERTY = 16
+    SET_PROPERTY = 17
+    CLONE_SPRITE = 18
+    REMOVE_SPRITE = 19
+    TRACE = 20
+    START_DRAG = 21
+    END_DRAG = 22
+    THROW = 23
+    CAST_OP = 24
+    IMPLEMENTS_OP = 25
+    GET_TIME = 26
+    DELETE = 27
+    DELETE2 = 28
+    DEFINE_LOCAL = 29
+    CALL_FUNCTION = 30
+    RETURN = 31
+    MODULO = 32
+    NEW_OBJECT = 33
+    DEFINE_LOCAL2 = 34
+    INIT_ARRAY = 35
+    INIT_OBJECT = 36
+    TYPEOF = 37
+    TARGET_PATH = 38
+    ADD2 = 39
+    LESS2 = 40
+    EQUALS2 = 41
+    TO_NUMBER = 42
+    TO_STRING = 43
+    PUSH_DUPLICATE = 44
+    STACK_SWAP = 45
+    GET_MEMBER = 46
+    SET_MEMBER = 47
+    INCREMENT = 48
+    DECREMENT = 49
+    CALL_METHOD = 50
+    NEW_METHOD = 51
+    INSTANCEOF = 52
+    ENUMERATE2 = 53
+    BIT_AND = 54
+    BIT_OR = 55
+    BIT_XOR = 56
+    BIT_L_SHIFT = 57
+    BIT_R_SHIFT = 58
+    BIT_U_R_SHIFT = 59
+    STRICT_EQUALS = 60
+    GREATER = 61
+    EXTENDS = 62
+    STORE_REGISTER = 63
+    DEFINE_FUNCTION2 = 64
+    TRY = 65
+    WITH = 66
+    PUSH = 67
+    JUMP = 68
+    GET_URL2 = 69
+    IF = 70
+    GOTO_FRAME2 = 71
+    GET_TARGET = 72
+    IF2 = 73
+    STORE_REGISTER2 = 74
+    INIT_REGISTER = 75
+    ADD_NUM_REGISTER = 76
+    ADD_NUM_VARIABLE = 77
+
+    @classmethod
+    def action_to_name(cls, tagid: int) -> str:
+        resources: Dict[int, str] = {
+            cls.END: 'END',
+            cls.NEXT_FRAME: 'NEXT_FRAME',
+            cls.PREVIOUS_FRAME: 'PREVIOUS_FRAME',
+            cls.PLAY: 'PLAY',
+            cls.STOP: 'STOP',
+            cls.STOP_SOUND: 'STOP_SOUND',
+            cls.ADD: 'ADD',
+            cls.SUBTRACT: 'SUBTRACT',
+            cls.MULTIPLY: 'MULTIPLY',
+            cls.DIVIDE: 'DIVIDE',
+            cls.EQUALS: 'EQUALS',
+            cls.LESS: 'LESS',
+            cls.NOT: 'NOT',
+            cls.POP: 'POP',
+            cls.GET_VARIABLE: 'GET_VARIABLE',
+            cls.SET_VARIABLE: 'SET_VARIABLE',
+            cls.GET_PROPERTY: 'GET_PROPERTY',
+            cls.SET_PROPERTY: 'SET_PROPERTY',
+            cls.CLONE_SPRITE: 'CLONE_SPRITE',
+            cls.REMOVE_SPRITE: 'REMOVE_SPRITE',
+            cls.TRACE: 'TRACE',
+            cls.START_DRAG: 'START_DRAG',
+            cls.END_DRAG: 'END_DRAG',
+            cls.THROW: 'THROW',
+            cls.CAST_OP: 'CAST_OP',
+            cls.IMPLEMENTS_OP: 'IMPLEMENTS_OP',
+            cls.GET_TIME: 'GET_TIME',
+            cls.DELETE: 'DELETE',
+            cls.DELETE2: 'DELETE2',
+            cls.DEFINE_LOCAL: 'DEFINE_LOCAL',
+            cls.CALL_FUNCTION: 'CALL_FUNCTION',
+            cls.RETURN: 'RETURN',
+            cls.MODULO: 'MODULO',
+            cls.NEW_OBJECT: 'NEW_OBJECT',
+            cls.DEFINE_LOCAL2: 'DEFINE_LOCAL2',
+            cls.INIT_ARRAY: 'INIT_ARRAY',
+            cls.INIT_OBJECT: 'INIT_OBJECT',
+            cls.TYPEOF: 'TYPEOF',
+            cls.TARGET_PATH: 'TARGET_PATH',
+            cls.ADD2: 'ADD2',
+            cls.LESS2: 'LESS2',
+            cls.EQUALS2: 'EQUALS2',
+            cls.TO_NUMBER: 'TO_NUMBER',
+            cls.TO_STRING: 'TO_STRING',
+            cls.PUSH_DUPLICATE: 'PUSH_DUPLICATE',
+            cls.STACK_SWAP: 'STACK_SWAP',
+            cls.GET_MEMBER: 'GET_MEMBER',
+            cls.SET_MEMBER: 'SET_MEMBER',
+            cls.INCREMENT: 'INCREMENT',
+            cls.DECREMENT: 'DECREMENT',
+            cls.CALL_METHOD: 'CALL_METHOD',
+            cls.NEW_METHOD: 'NEW_METHOD',
+            cls.INSTANCEOF: 'INSTANCEOF',
+            cls.ENUMERATE2: 'ENUMERATE2',
+            cls.BIT_AND: 'BIT_AND',
+            cls.BIT_OR: 'BIT_OR',
+            cls.BIT_XOR: 'BIT_XOR',
+            cls.BIT_L_SHIFT: 'BIT_L_SHIFT',
+            cls.BIT_R_SHIFT: 'BIT_R_SHIFT',
+            cls.BIT_U_R_SHIFT: 'BIT_U_R_SHIFT',
+            cls.STRICT_EQUALS: 'STRICT_EQUALS',
+            cls.GREATER: 'GREATER',
+            cls.EXTENDS: 'EXTENDS',
+            cls.STORE_REGISTER: 'STORE_REGISTER',
+            cls.DEFINE_FUNCTION2: 'DEFINE_FUNCTION2',
+            cls.TRY: 'TRY',
+            cls.WITH: 'WITH',
+            cls.PUSH: 'PUSH',
+            cls.JUMP: 'JUMP',
+            cls.GET_URL2: 'GET_URL2',
+            cls.IF: 'IF',
+            cls.GOTO_FRAME2: 'GOTO_FRAME2',
+            cls.GET_TARGET: 'GET_TARGET',
+            cls.IF2: 'IF2',
+            cls.STORE_REGISTER2: 'STORE_REGISTER2',
+            cls.INIT_REGISTER: 'INIT_REGISTER',
+            cls.ADD_NUM_REGISTER: 'ADD_NUM_REGISTER',
+            cls.ADD_NUM_VARIABLE: 'ADD_NUM_VARIABLE',
+        }
+
+        return resources.get(tagid, "UNKNOWN")
+
+
+class SWF:
     def __init__(
         self,
         name: str,
@@ -231,86 +479,6 @@ class SWF:
             'descramble_info': "".join(_hex(x) for x in self.descramble_info),
         }
 
-    def tag_to_name(self, tagid: int) -> str:
-        resources: Dict[int, str] = {
-            self.END: 'END',
-            self.SHOW_FRAME: 'SHOW_FRAME',
-            self.DEFINE_SHAPE: 'DEFINE_SHAPE',
-            self.PLACE_OBJECT: 'PLACE_OBJECT',
-            self.REMOVE_OBJECT: 'REMOVE_OBJECT',
-            self.DEFINE_BITS: 'DEFINE_BITS',
-            self.DEFINE_BUTTON: 'DEFINE_BUTTON',
-            self.JPEG_TABLES: 'JPEG_TABLES',
-            self.BACKGROUND_COLOR: 'BACKGROUND_COLOR',
-            self.DEFINE_FONT: 'DEFINE_FONT',
-            self.DEFINE_TEXT: 'DEFINE_TEXT',
-            self.DO_ACTION: 'DO_ACTION',
-            self.DEFINE_FONT_INFO: 'DEFINE_FONT_INFO',
-            self.DEFINE_SOUND: 'DEFINE_SOUND',
-            self.START_SOUND: 'START_SOUND',
-            self.DEFINE_BUTTON_SOUND: 'DEFINE_BUTTON_SOUND',
-            self.SOUND_STREAM_HEAD: 'SOUND_STREAM_HEAD',
-            self.SOUND_STREAM_BLOCK: 'SOUND_STREAM_BLOCK',
-            self.DEFINE_BITS_LOSSLESS: 'DEFINE_BITS_LOSSLESS',
-            self.DEFINE_BITS_JPEG2: 'DEFINE_BITS_JPEG2',
-            self.DEFINE_SHAPE2: 'DEFINE_SHAPE2',
-            self.DEFINE_BUTTON_CXFORM: 'DEFINE_BUTTON_CXFORM',
-            self.PROTECT: 'PROTECT',
-            self.PLACE_OBJECT2: 'PLACE_OBJECT2',
-            self.REMOVE_OBJECT2: 'REMOVE_OBJECT2',
-            self.DEFINE_SHAPE3: 'DEFINE_SHAPE3',
-            self.DEFINE_TEXT2: 'DEFINE_TEXT2',
-            self.DEFINE_BUTTON2: 'DEFINE_BUTTON2',
-            self.DEFINE_BITS_JPEG3: 'DEFINE_BITS_JPEG3',
-            self.DEFINE_BITS_LOSSLESS2: 'DEFINE_BITS_LOSSLESS2',
-            self.DEFINE_EDIT_TEXT: 'DEFINE_EDIT_TEXT',
-            self.DEFINE_SPRITE: 'DEFINE_SPRITE',
-            self.FRAME_LABEL: 'FRAME_LABEL',
-            self.SOUND_STREAM_HEAD2: 'SOUND_STREAM_HEAD2',
-            self.DEFINE_MORPH_SHAPE: 'DEFINE_MORPH_SHAPE',
-            self.DEFINE_FONT2: 'DEFINE_FONT2',
-            self.EXPORT_ASSETS: 'EXPORT_ASSETS',
-            self.IMPORT_ASSETS: 'IMPORT_ASSETS',
-            self.DO_INIT_ACTION: 'DO_INIT_ACTION',
-            self.DEFINE_VIDEO_STREAM: 'DEFINE_VIDEO_STREAM',
-            self.VIDEO_FRAME: 'VIDEO_FRAME',
-            self.DEFINE_FONT_INFO2: 'DEFINE_FONT_INFO2',
-            self.ENABLE_DEBUGGER2: 'ENABLE_DEBUGGER2',
-            self.SCRIPT_LIMITS: 'SCRIPT_LIMITS',
-            self.SET_TAB_INDEX: 'SET_TAB_INDEX',
-            self.PLACE_OBJECT3: 'PLACE_OBJECT3',
-            self.IMPORT_ASSETS2: 'IMPORT_ASSETS2',
-            self.DEFINE_FONT3: 'DEFINE_FONT3',
-            self.DEFINE_SCALING_GRID: 'DEFINE_SCALING_GRID',
-            self.METADATA: 'METADATA',
-            self.DEFINE_SHAPE4: 'DEFINE_SHAPE4',
-            self.DEFINE_MORPH_SHAPE2: 'DEFINE_MORPH_SHAPE2',
-            self.SCENE_LABEL: 'SCENE_LABEL',
-            self.AFP_IMAGE: 'AFP_IMAGE',
-            self.AFP_DEFINE_SOUND: 'AFP_DEFINE_SOUND',
-            self.AFP_SOUND_STREAM_BLOCK: 'AFP_SOUND_STREAM_BLOCK',
-            self.AFP_DEFINE_FONT: 'AFP_DEFINE_FONT',
-            self.AFP_DEFINE_SHAPE: 'AFP_DEFINE_SHAPE',
-            self.AEP_PLACE_OBJECT: 'AEP_PLACE_OBJECT',
-            self.AP2_DEFINE_FONT: 'AP2_DEFINE_FONT',
-            self.AP2_DEFINE_SPRITE: 'AP2_DEFINE_SPRITE',
-            self.AP2_DO_ACTION: 'AP2_DO_ACTION',
-            self.AP2_DEFINE_BUTTON: 'AP2_DEFINE_BUTTON',
-            self.AP2_DEFINE_BUTTON_SOUND: 'AP2_DEFINE_BUTTON_SOUND',
-            self.AP2_DEFINE_TEXT: 'AP2_DEFINE_TEXT',
-            self.AP2_DEFINE_EDIT_TEXT: 'AP2_DEFINE_EDIT_TEXT',
-            self.AP2_PLACE_OBJECT: 'AP2_PLACE_OBJECT',
-            self.AP2_REMOVE_OBJECT: 'AP2_REMOVE_OBJECT',
-            self.AP2_START_SOUND: 'AP2_START_SOUND',
-            self.AP2_DEFINE_MORPH_SHAPE: 'AP2_DEFINE_MORPH_SHAPE',
-            self.AP2_IMAGE: 'AP2_IMAGE',
-            self.AP2_SHAPE: 'AP2_SHAPE',
-            self.AP2_SOUND: 'AP2_SOUND',
-            self.AP2_VIDEO: 'AP2_VIDEO',
-        }
-
-        return resources.get(tagid, "UNKNOWN")
-
     def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
         if verbose:
@@ -325,7 +493,7 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
-        if tagid == self.AP2_SHAPE:
+        if tagid == Tag.AP2_SHAPE:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
 
@@ -334,7 +502,7 @@ class SWF:
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
             vprint(f"{prefix}    Tag ID: {shape_id}, Reference: {shape_reference}")
-        elif tagid == self.AP2_DEFINE_SPRITE:
+        elif tagid == Tag.AP2_DEFINE_SPRITE:
             sprite_flags, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             add_coverage(dataoffset, 4)
 
@@ -348,9 +516,13 @@ class SWF:
 
             vprint(f"{prefix}    Tag ID: {sprite_id}")
             self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix, verbose=verbose)
-        elif tagid == self.AP2_DEFINE_FONT:
+        elif tagid == Tag.AP2_DEFINE_FONT:
             wat, font_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             vprint(f"{prefix}    Tag ID: {font_id}")
+        elif tagid == Tag.AP2_DO_ACTION:
+            # TODO: This is wrong, this is only for defined functions.
+            flags, unk1, nameoffset, unk2, _, unk3 = struct.unpack(">BHHHBH", ap2data[dataoffset:(dataoffset + 10)])
+            vprint(f"{prefix}    Flags: {hex(flags)}, Unk1: {hex(unk1)}, Name: {hex(nameoffset)}, Unk2: {hex(unk2)}, Unk3: {hex(unk3)}")
         # TODO: Switch on tag types, parse out data.
         elif False:
             add_coverage(dataoffset, size)
@@ -369,8 +541,8 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
-        unknown_tags_flags, unknown_tags_count, timing_tags_count, tags_count, unknown_tags_offset, timing_tags_offset, tags_offset = struct.unpack(
-            "<HHIiIIi",
+        unknown_tags_flags, unknown_tags_count, frame_count, tags_count, unknown_tags_offset, frame_offset, tags_offset = struct.unpack(
+            "<HHIIIII",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
         )
         add_coverage(tags_base_offset, 24)
@@ -378,7 +550,7 @@ class SWF:
         # Fix up pointers.
         tags_offset += tags_base_offset
         unknown_tags_offset += tags_base_offset
-        timing_tags_offset += tags_base_offset
+        frame_offset += tags_base_offset
 
         # First, parse regular tags.
         vprint(f"{prefix}Number of Tags: {tags_count}")
@@ -392,18 +564,21 @@ class SWF:
             if size > 0x200000:
                 raise Exception(f"Invalid tag size {size}")
 
-            vprint(f"{prefix}  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
+            vprint(f"{prefix}  Tag: {hex(tagid)} ({Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
             self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix, verbose=verbose)
             tags_offset += size + 4  # Skip past tag header and data.
 
-        # Now, parse end tags?
-        vprint(f"{prefix}Number of Timing Tags: {timing_tags_count}")
-        for i in range(timing_tags_count):
-            unk1, unk2 = struct.unpack("<HH", ap2data[timing_tags_offset:(timing_tags_offset + 4)])
-            add_coverage(timing_tags_offset, 4)
+        # Now, parse frames.
+        vprint(f"{prefix}Number of Frames: {frame_count}")
+        for i in range(frame_count):
+            frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
+            add_coverage(frame_offset, 4)
 
-            vprint(f"{prefix}  Timing Tag: {hex(unk1)} {hex(unk2)}")
-            timing_tags_offset += 4
+            start_tag_id = frame_info & 0xFFFFF
+            num_tags_to_play = (frame_info >> 20) & 0xFFF
+
+            vprint(f"{prefix}  Frame Start Tag: {hex(start_tag_id)}, Count: {num_tags_to_play}")
+            frame_offset += 4
 
         # Now, parse unknown tags?
         vprint(f"{prefix}Number of Unknown Tags: {unknown_tags_count}, Flags: {hex(unknown_tags_flags)}")
@@ -627,14 +802,13 @@ class SWF:
 
             for i in range(length):
                 item_offset = imported_tag_something_offset + 4 + (i * 12)
-                tag_id, _, item_data_offset, flags_or_length = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
+                tag_id, length, action_bytecode_offset, has_action_bytecode = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
                 add_coverage(item_offset, 12)
 
-                vprint(f"  Tag ID: {tag_id}, Data offset: {hex(item_data_offset + imported_tag_something_offset)}, Data present flag: {hex(flags_or_length)}")
-
-        # TODO: Remove this
-        with open(f"/shares/Entertainment/{self.exported_name}.bin", "wb") as bfp:
-            bfp.write(data)
+                if has_action_bytecode != 0:
+                    vprint(f"  Tag ID: {tag_id}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_something_offset)}, Length: {hex(length)}")
+                else:
+                    vprint(f"  Tag ID: {tag_id}, No Bytecode Present")
 
         if verbose:
             self.print_coverage()
