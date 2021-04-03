@@ -369,8 +369,8 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
-        unknown_tags_count, end_tags_count, tags_count, unknown_tags_offset, end_tags_offset, tags_offset = struct.unpack(
-            "<IIiIIi",
+        unknown_tags_flags, unknown_tags_count, timing_tags_count, tags_count, unknown_tags_offset, timing_tags_offset, tags_offset = struct.unpack(
+            "<HHIiIIi",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
         )
         add_coverage(tags_base_offset, 24)
@@ -378,30 +378,41 @@ class SWF:
         # Fix up pointers.
         tags_offset += tags_base_offset
         unknown_tags_offset += tags_base_offset
-        end_tags_offset += tags_base_offset
+        timing_tags_offset += tags_base_offset
 
-        for count, offset, name in [
-            (unknown_tags_count, unknown_tags_offset, "Unknown Tags"),
-            (tags_count, tags_offset, "Tags"),
-            (end_tags_count, end_tags_offset, "End Tags"),
-        ]:
-            vprint(f"{prefix}Number of {name}: {count}")
-            if name != "Tags":
-                # TODO: I actually am not sure these are tag sections anymore.... Need to keep digging.
-                continue
-            for i in range(count):
-                tag = struct.unpack("<I", ap2data[offset:(offset + 4)])[0]
-                add_coverage(offset, 4)
+        # First, parse regular tags.
+        vprint(f"{prefix}Number of Tags: {tags_count}")
+        for i in range(tags_count):
+            tag = struct.unpack("<I", ap2data[tags_offset:(tags_offset + 4)])[0]
+            add_coverage(tags_offset, 4)
 
-                tagid = (tag >> 22) & 0x3FF
-                size = tag & 0x3FFFFF
+            tagid = (tag >> 22) & 0x3FF
+            size = tag & 0x3FFFFF
 
-                if size > 0x200000:
-                    raise Exception(f"Invalid tag size {size}")
+            if size > 0x200000:
+                raise Exception(f"Invalid tag size {size}")
 
-                vprint(f"{prefix}  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(offset + 4)}")
-                self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, offset + 4, prefix=prefix, verbose=verbose)
-                offset += size + 4  # Skip past tag header and data.
+            vprint(f"{prefix}  Tag: {hex(tagid)} ({self.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
+            self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix, verbose=verbose)
+            tags_offset += size + 4  # Skip past tag header and data.
+
+        # Now, parse end tags?
+        vprint(f"{prefix}Number of Timing Tags: {timing_tags_count}")
+        for i in range(timing_tags_count):
+            unk1, unk2 = struct.unpack("<HH", ap2data[timing_tags_offset:(timing_tags_offset + 4)])
+            add_coverage(timing_tags_offset, 4)
+
+            vprint(f"{prefix}  Timing Tag: {hex(unk1)} {hex(unk2)}")
+            timing_tags_offset += 4
+
+        # Now, parse unknown tags?
+        vprint(f"{prefix}Number of Unknown Tags: {unknown_tags_count}, Flags: {hex(unknown_tags_flags)}")
+        for i in range(unknown_tags_count):
+            unk1, unk2 = struct.unpack("<HH", ap2data[unknown_tags_offset:(unknown_tags_offset + 4)])
+            add_coverage(unknown_tags_offset, 4)
+
+            vprint(f"{prefix}  Unknown Tag: {hex(unk1)} {hex(unk2)}")
+            unknown_tags_offset += 4
 
     def __descramble(self, scrambled_data: bytes, descramble_info: bytes) -> bytes:
         swap_len = {
