@@ -1,5 +1,6 @@
 import io
 from hashlib import md5
+import os
 import struct
 import sys
 from PIL import Image  # type: ignore
@@ -98,6 +99,17 @@ class TextureRegion:
             'bottom': self.bottom,
         }
 
+    def __repr__(self) -> str:
+        return (
+            f"texture: {self.textureno}, " +
+            f"left: {self.left / 2}, " +
+            f"top: {self.top / 2}, " +
+            f"right: {self.right / 2}, " +
+            f"bottom: {self.bottom / 2}, " +
+            f"width: {(self.right - self.left) / 2}, " +
+            f"height: {(self.bottom - self.top) / 2}"
+        )
+
 
 class Matrix:
     def __init__(self, a: float, b: float, c: float, d: float, tx: float, ty: float) -> None:
@@ -112,6 +124,9 @@ class Matrix:
     def identity() -> "Matrix":
         return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
 
+    def __repr__(self) -> str:
+        return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
+
 
 class Color:
     def __init__(self, r: float, g: float, b: float, a: float) -> None:
@@ -120,8 +135,32 @@ class Color:
         self.b = b
         self.a = a
 
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'r': self.r,
+            'g': self.g,
+            'b': self.b,
+            'a': self.a,
+        }
+
     def __repr__(self) -> str:
-        return f"{round(self.r, 5)}, {round(self.g, 5)}, {round(self.b, 5)}, {round(self.a, 5)}"
+        return f"r: {round(self.r, 5)}, g: {round(self.g, 5)}, b: {round(self.b, 5)}, a: {round(self.a, 5)}"
+
+
+class Point:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'x': self.x,
+            'y': self.y,
+        }
+
+    def __repr__(self) -> str:
+        return f"x: {round(self.x, 5)}, y: {round(self.y, 5)}"
+
 
 class Tag:
     END = 0x0
@@ -874,7 +913,7 @@ class SWF:
         add_coverage(28, 4)
 
         if flags & 0x2:
-            # I think this is FPS given the output of this bit of code.
+            # FPS can be either an integer or a float.
             fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
         else:
             fps = struct.unpack("<f", data[24:28])[0]
@@ -899,7 +938,7 @@ class SWF:
         # Get exported SWF name.
         self.exported_name = self.__get_string(nameoffset)
         add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
-        vprint(f"\nAFP name: {self.name}")
+        vprint(f"{os.linesep}AFP name: {self.name}")
         vprint(f"Container Version: {hex(ap2_data_version)}")
         vprint(f"Version: {hex(version)}")
         vprint(f"Exported Name: {self.exported_name}")
@@ -993,6 +1032,52 @@ class SWF:
             self.print_coverage()
 
 
+class DrawParams:
+    def __init__(
+        self,
+        flags: int,
+        region: Optional[str] = None,
+        vertexes: List[int] = [],
+        blend: Optional[Color] = None,
+    ) -> None:
+        self.flags = flags
+        self.region = region
+        self.vertexes = vertexes
+        self.blend = blend
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'flags': self.flags,
+            'region': self.region,
+            'vertexes': self.vertexes,
+            'blend': self.blend.as_dict() if self.blend else None,
+        }
+
+    def __repr__(self) -> str:
+        flagbits: List[str] = []
+        if self.flags & 0x1:
+            flagbits.append("(Instantiable)")
+        if self.flags & 0x2:
+            flagbits.append("(Includes Texture)")
+        if self.flags & 0x8:
+            flagbits.append("(Includes Blend Color)")
+        if self.flags & 0x40:
+            flagbits.append("(Needs Tex Point Normalization)")
+
+        flagspart = f"flags: {hex(self.flags)} {' '.join(flagbits)}"
+        if self.flags & 0x2:
+            texpart = f", region: {self.region}, vertexes: {', '.join(str(x) for x in self.vertexes)}"
+        else:
+            texpart = ""
+
+        if self.flags & 0x8:
+            blendpart = f", blend: {self.blend}"
+        else:
+            blendpart = ""
+
+        return f"{flagspart}{texpart}{blendpart}"
+
+
 class Shape:
     def __init__(
         self,
@@ -1002,11 +1087,143 @@ class Shape:
         self.name = name
         self.data = data
 
+        # Rectangle points outlining this shape.
+        self.rect_points: List[Point] = []
+
+        # Texture points, as used alongside vertex chunks when the shape contains a texture.
+        self.tex_points: List[Point] = []
+
+        # Actual shape drawing parameters.
+        self.draw_params: List[DrawParams] = []
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             'name': self.name,
-            'data': "".join(_hex(x) for x in self.data),
+            'rect_points': [p.as_dict() for p in self.rect_points],
+            'tex_points': [p.as_dict() for p in self.tex_points],
+            'draw_params': [d.as_dict() for d in self.draw_params],
         }
+
+    def __repr__(self) -> str:
+        return os.linesep.join([
+            *[f"rect point: {rect}" for rect in self.rect_points],
+            *[f"tex point: {tex}" for tex in self.tex_points],
+            *[f"draw params: {params}" for params in self.draw_params],
+        ])
+
+    def get_until_null(self, offset: int) -> bytes:
+        out = b""
+        while self.data[offset] != 0:
+            out += self.data[offset:(offset + 1)]
+            offset += 1
+        return out
+
+    def parse(self, text_obfuscated: bool = True) -> None:
+        # First, grab the header bytes.
+        magic = self.data[0:4]
+
+        if magic == b"D2EG":
+            endian = "<"
+        elif magic == b"GE2D":
+            endian = ">"
+        else:
+            raise Exception("Invalid magic value in GE2D structure!")
+
+        filesize = struct.unpack(f"{endian}I", self.data[12:16])[0]
+        if filesize != len(self.data):
+            raise Exception("Unexpected file size for GE2D structure!")
+
+        rect_count, tex_count, unk1_count, label_count, render_params_count, _ = struct.unpack(
+            f"{endian}HHHHHH",
+            self.data[20:32],
+        )
+
+        rect_offset, tex_offset, unk1_offset, label_offset, render_params_offset = struct.unpack(
+            f"{endian}IIIII",
+            self.data[32:52],
+        )
+
+        rect_points: List[Point] = []
+        if rect_offset != 0:
+            for rectno in range(rect_count):
+                rectno_offset = rect_offset + (8 * rectno)
+                x, y = struct.unpack(f"{endian}ff", self.data[rectno_offset:rectno_offset + 8])
+                rect_points.append(Point(x, y))
+        self.rect_points = rect_points
+
+        tex_points: List[Point] = []
+        if tex_offset != 0:
+            for texno in range(tex_count):
+                texno_offset = tex_offset + (8 * texno)
+                x, y = struct.unpack(f"{endian}ff", self.data[texno_offset:texno_offset + 8])
+                tex_points.append(Point(x, y))
+        self.tex_points = tex_points
+
+        if unk1_offset != 0:
+            raise Exception("Unknown offset pointer data present!")
+
+        labels: List[str] = []
+        if label_offset != 0:
+            for labelno in range(label_count):
+                labelno_offset = label_offset + (4 * labelno)
+                labelptr = struct.unpack(f"{endian}I", self.data[labelno_offset:labelno_offset + 4])[0]
+
+                bytedata = self.get_until_null(labelptr)
+                labels.append(AFPFile.descramble_text(bytedata, text_obfuscated))
+
+        draw_params: List[DrawParams] = []
+        if render_params_offset != 0:
+            # The actual render parameters for the shape. This dictates how the texture values
+            # are used when drawing shapes, whether to use a blend value or draw a primitive, etc.
+            for render_paramsno in range(render_params_count):
+                render_paramsno_offset = render_params_offset + (16 * render_paramsno)
+                points, flags, label, _, trianglecount, _, rgba, triangleoffset = struct.unpack(
+                    f"{endian}BBBBHHII",
+                    self.data[(render_paramsno_offset):(render_paramsno_offset + 16)]
+                )
+
+                if points != 4:
+                    raise Exception("Unexpected number of points in GE2D structure!")
+                if (flags & 0x2) and len(labels) == 0:
+                    raise Exception("GE2D structure has a texture, but no region labels present!")
+
+                color = Color(
+                    r=(rgba & 0xFF) / 255.0,
+                    g=((rgba >> 8) & 0xFF) / 255.0,
+                    b=((rgba >> 16) & 0xFF) / 255.0,
+                    a=((rgba >> 24) & 0xFF) / 255.0,
+                )
+
+                verticies: List[int] = []
+                for render_paramstriangleno in range(trianglecount):
+                    render_paramstriangleno_offset = triangleoffset + (2 * render_paramstriangleno)
+                    tex_offset = struct.unpack(f"{endian}H", self.data[render_paramstriangleno_offset:(render_paramstriangleno_offset + 2)])[0]
+                    verticies.append(tex_offset)
+
+                # Seen bits are 0x1, 0x2, 0x8 so far.
+                # 0x1 Is a "this shape is instantiable/drawable" bit.
+                # 0x2 Is the shape having a texture.
+                # 0x8 Is "draw background color/blend" flag.
+                # 0x40 Is a "normalize texture coordinates" flag. It performs the below algorithm.
+
+                if (flags & (0x2 | 0x40)) == (0x2 | 0x40):
+                    # The tex offsets point at the tex vals parsed above, and are used in conjunction with
+                    # texture/region metrics to calcuate some offsets. First, the region left/right/top/bottom
+                    # is divided by 2 (looks like a scaling of 2 for regions to textures is hardcoded) and then
+                    # divided by the texture width/height (as relevant). The returned metrics are in texture space
+                    # where 0.0 is the origin and 1.0 is the furthest right/down. The metrics are then multiplied
+                    # by the texture point pairs that appear above, meaning they should be treated as percentages.
+                    pass
+
+                draw_params.append(
+                    DrawParams(
+                        flags=flags,
+                        region=labels[label] if (flags & 0x2) else None,
+                        vertexes=verticies if (flags & 0x2) else [],
+                        blend=color if (flags & 0x8) else None,
+                    )
+                )
+        self.draw_params = draw_params
 
 
 class Unknown1:
@@ -1320,7 +1537,7 @@ class AFPFile:
         if length != len(self.data):
             raise Exception(f"Invalid graphic file length, expecting {length} bytes!")
 
-        # I think that offset 16-20 are the file data offset, but I'm not sure?
+        # This is always the header length, or the offset of the data payload.
         header_length = struct.unpack(f"{self.endian}I", self.data[16:20])[0]
         add_coverage(16, 4)
 
@@ -1435,8 +1652,6 @@ class AFPFile:
                         # flags1 = (fmtflags >> 24) & 0xFF
                         # flags2 = (fmtflags >> 16) & 0xFF
 
-                        # These flags may have some significance, such as
-                        # the unk3/unk4 possibly indicating texture doubling?
                         # unk1 = 3 if (flags1 & 0xF == 1) else 1
                         # unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
                         # unk3 = 1 if (flags2 & 0xF == 1) else 2
@@ -1612,8 +1827,7 @@ class AFPFile:
 
         # Mapping between texture index and the name of the texture.
         if feature_mask & 0x02:
-            # Seems to be a structure that duplicates texture names? I am pretty
-            # sure this is used to map texture names to file indexes used elsewhere.
+            # Mapping of texture name to texture index. This is used by regions to look up textures.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
@@ -1653,18 +1867,19 @@ class AFPFile:
 
                     if texture_no < 0 or texture_no >= len(self.texturemap.entries):
                         raise Exception(f"Out of bounds texture {texture_no}")
-                    vprint(f"    length: 10, offset: {hex(offset + (10 * i))}")
 
-                    # TODO: The offsets here seem to be off by a power of 2, there
-                    # might be more flags in the above texture format that specify
-                    # device scaling and such?
-                    self.texture_to_region.append(TextureRegion(texture_no, left, top, right, bottom))
+                    # Texture regions are multiplied by a power of 2. Not sure why, but the games I
+                    # looked at hardcode a divide by 2 when loading regions.
+                    region = TextureRegion(texture_no, left, top, right, bottom)
+                    self.texture_to_region.append(region)
+
+                    vprint(f"    {region}, offset: {hex(descriptor_offset)}")
         else:
             vprint("Bit 0x000008 - regions; NOT PRESENT")
 
         if feature_mask & 0x10:
             # Names of the graphics regions, so we can look into the texture_to_region
-            # mapping above.
+            # mapping above. Used by shapes to find the right region offset given a name.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
@@ -1779,7 +1994,8 @@ class AFPFile:
             vprint("Bit 0x000400 - unknown; NOT PRESENT")
 
         if feature_mask & 0x800:
-            # This is the names of the SWF data as far as I can tell.
+            # SWF raw data that is loaded and passed to AFP core. It is equivalent to the
+            # afp files in an IFS container.
             length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
             add_coverage(header_offset, 8)
             header_offset += 8
@@ -1813,7 +2029,7 @@ class AFPFile:
             vprint("Bit 0x000800 - swfdata; NOT PRESENT")
 
         if feature_mask & 0x1000:
-            # Seems to be a secondary structure mirroring the above.
+            # A mapping structure that allows looking up SWF data by name.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
@@ -1826,16 +2042,15 @@ class AFPFile:
             vprint("Bit 0x001000 - swfmapping; NOT PRESENT")
 
         if feature_mask & 0x2000:
-            # I am making a very preliminary guess that these are shapes used along
-            # with SWF data specified below. The names in these sections tend to
-            # have the word "shape" in them.
+            # These are shapes as used with the SWF data above. They contain mappings between a
+            # loaded texture shape and the region that contains data. They are equivalent to the
+            # geo files found in an IFS container.
             length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
             add_coverage(header_offset, 8)
             header_offset += 8
 
             vprint(f"Bit 0x002000 - shapes; count: {length}, offset: {hex(offset)}")
 
-            # TODO: We do a LOT of extra stuff with this one, if count > 0...
             for x in range(length):
                 shape_base_offset = offset + (x * 12)
                 if shape_base_offset != 0:
@@ -1845,85 +2060,32 @@ class AFPFile:
                     )
                     add_coverage(shape_base_offset, 12)
 
-                    # TODO: At the shape offset is a "D2EG" structure of some sort.
-                    # I have no idea what these do. I would have to look into it
-                    # more if its important.
-
                     if name_offset != 0:
                         # Let's decode this until the first null.
                         bytedata = self.get_until_null(name_offset)
                         add_coverage(name_offset, len(bytedata) + 1, unique=False)
                         name = AFPFile.descramble_text(bytedata, self.text_obfuscated)
-                        vprint(f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}")
+                    else:
+                        name = "<unnamed>"
 
                     if shape_offset != 0:
-                        shape_data = self.data[shape_offset:(shape_offset + shape_length)]
+                        shape = Shape(
+                            name,
+                            self.data[shape_offset:(shape_offset + shape_length)],
+                        )
+                        shape.parse(text_obfuscated=self.text_obfuscated)
+                        self.shapes.append(shape)
                         add_coverage(shape_offset, shape_length)
 
-                        magic, header1, header2, filesize, header3 = struct.unpack(
-                            f"{self.endian}4sIIII",
-                            shape_data[0:20],
-                        )
+                        vprint(f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}")
+                        for line in str(shape).split(os.linesep):
+                            vprint(f"        {line}")
 
-                        if self.endian == "<" and magic != b"D2EG":
-                            raise Exception("Invalid magic value in D2EG structure!")
-                        if self.endian == ">" and magic != b"GE2D":
-                            raise Exception("Invalid magic value in D2EG structure!")
-                        if filesize != len(shape_data):
-                            raise Exception("Unexpected file size for D2EG structure!")
-
-                        # Get width/height
-                        endian = "<" if self.endian == ">" else ">"
-                        width, height = struct.unpack(f"{endian}HH", shape_data[20:24])
-
-                        header4, header5 = struct.unpack(
-                            f"{self.endian}II",
-                            shape_data[24:32],
-                        )
-
-                        rect_offset, tex_offset, unk1_offset, label_offset, unk2_offset = struct.unpack(
-                            f"{self.endian}IIIII",
-                            shape_data[32:52],
-                        )
-
-                        label = None
-                        if label_offset != 0:
-                            labelptr = struct.unpack(f"{self.endian}I", shape_data[label_offset:label_offset + 4])[0]
-                            if labelptr is not None:
-                                bytedata = self.get_until_null(shape_offset + labelptr)
-                                label = AFPFile.descramble_text(bytedata, self.text_obfuscated)  # NOQA: F841
-
-                        if rect_offset != 0:
-                            floats = struct.unpack(
-                                f"{self.endian}ffffffff",
-                                shape_data[(rect_offset):(rect_offset + 32)]
-                            )
-                            _rect_offsets = [x for x in floats]  # NOQA: F841
-                        if tex_offset != 0:
-                            floats = struct.unpack(
-                                f"{self.endian}ffffffff",
-                                shape_data[(tex_offset):(tex_offset + 32)]
-                            )
-                            tex_offsets = []
-                            for i, flt in enumerate(floats):
-                                tex_offsets.append(flt * (width if ((i & 1) == 0) else height))
-                        if unk2_offset != 0:
-                            test = struct.unpack(  # NOQA: F841
-                                f"{endian}iii",
-                                shape_data[(unk2_offset):(unk2_offset + 12)]
-                            )
-
-                        self.shapes.append(
-                            Shape(
-                                name,
-                                self.data[shape_offset:(shape_offset + shape_length)],
-                            )
-                        )
         else:
             vprint("Bit 0x002000 - shapes; NOT PRESENT")
 
         if feature_mask & 0x4000:
-            # Seems to be a secondary section mirroring the names from above.
+            # Mapping so that shapes can be looked up by name to get their offset.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
@@ -1951,7 +2113,8 @@ class AFPFile:
             vprint("Bit 0x008000 - unknown; NOT PRESENT")
 
         if feature_mask & 0x10000:
-            # Included font package, BINXRPC encoded.
+            # Included font package, BINXRPC encoded. This is basically a texture sheet with an XML
+            # pointing at the region in the texture sheet for every renderable character.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
@@ -1977,8 +2140,8 @@ class AFPFile:
             vprint("Bit 0x010000 - fontinfo; NOT PRESENT")
 
         if feature_mask & 0x20000:
-            # I am beginning to suspect that this is SWF data/level data. I have
-            # no idea what "afp" is. Games refer to these as "afp streams".
+            # This is the byteswapping headers that allow us to byteswap the SWF data before passing it
+            # to AFP core. It is equivalent to the bsi files in an IFS container.
             offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
             add_coverage(header_offset, 4)
             header_offset += 4
