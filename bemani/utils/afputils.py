@@ -8,7 +8,7 @@ import textwrap
 from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict
 
-from bemani.format.afp import AFPFile
+from bemani.format.afp import AFPFile, SWF
 
 
 def main() -> int:
@@ -94,6 +94,24 @@ def main() -> int:
         help="The file to print",
     )
     print_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
+    )
+
+    parse_parser = subparsers.add_parser('parse', help='Parse a raw AFP/BSI file pair from an IFS container')
+    parse_parser.add_argument(
+        "afp",
+        metavar="AFPFILE",
+        help="The AFP file to parse",
+    )
+    parse_parser.add_argument(
+        "bsi",
+        metavar="BSIFILE",
+        help="The BSI file to parse",
+    )
+    parse_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -312,6 +330,16 @@ def main() -> int:
 
         # Now, print it
         print(json.dumps(afpfile.as_dict(), sort_keys=True, indent=4))
+
+    if args.action == "parse":
+        # First, load the AFP and BSI files
+        with open(args.afp, "rb") as bafp:
+            with open(args.bsi, "rb") as bbsi:
+                swf = SWF("<unnamed>", bafp.read(), bbsi.read())
+
+        # Now, print it
+        swf.parse(verbose=args.verbose)
+        print(json.dumps(swf.as_dict(), sort_keys=True, indent=4))
 
     return 0
 
