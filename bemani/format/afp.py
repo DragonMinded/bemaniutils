@@ -1,4 +1,5 @@
 import io
+from hashlib import md5
 import struct
 import sys
 from PIL import Image  # type: ignore
@@ -97,6 +98,30 @@ class TextureRegion:
             'bottom': self.bottom,
         }
 
+
+class Matrix:
+    def __init__(self, a: float, b: float, c: float, d: float, tx: float, ty: float) -> None:
+        self.a = a
+        self.b = b
+        self.c = c
+        self.d = d
+        self.tx = tx
+        self.ty = ty
+
+    @staticmethod
+    def identity() -> "Matrix":
+        return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+
+class Color:
+    def __init__(self, r: float, g: float, b: float, a: float) -> None:
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+
+    def __repr__(self) -> str:
+        return f"{round(self.r, 5)}, {round(self.g, 5)}, {round(self.b, 5)}, {round(self.a, 5)}"
 
 class Tag:
     END = 0x0
@@ -501,7 +526,7 @@ class SWF:
             add_coverage(dataoffset, size)
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
-            vprint(f"{prefix}    Tag ID: {shape_id}, Reference: {shape_reference}")
+            vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()}")
         elif tagid == Tag.AP2_DEFINE_SPRITE:
             sprite_flags, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             add_coverage(dataoffset, 4)
@@ -523,9 +548,162 @@ class SWF:
             # TODO: This is wrong, this is only for defined functions.
             flags, unk1, nameoffset, unk2, _, unk3 = struct.unpack(">BHHHBH", ap2data[dataoffset:(dataoffset + 10)])
             vprint(f"{prefix}    Flags: {hex(flags)}, Unk1: {hex(unk1)}, Name: {hex(nameoffset)}, Unk2: {hex(unk2)}, Unk3: {hex(unk3)}")
-        # TODO: Switch on tag types, parse out data.
-        elif False:
-            add_coverage(dataoffset, size)
+        elif tagid == Tag.AP2_PLACE_OBJECT:
+            # Allow us to keep track of what we've consumed.
+            datachunk = ap2data[dataoffset:(dataoffset + size)]
+            flags, depth, object_id = struct.unpack("<IHH", datachunk[0:8])
+            add_coverage(dataoffset, 8)
+
+            vprint(f"{prefix}    Flags: {hex(flags)}, Object ID: {object_id}, Depth: {depth}")
+
+            running_pointer = 8
+
+            if flags & 0x2:
+                src_tag_id = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
+                add_coverage(dataoffset + running_pointer, 2)
+                running_pointer += 2
+                vprint(f"{prefix}    Source Tag ID: {src_tag_id}")
+
+            if flags & 0x10:
+                unk2 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
+                add_coverage(dataoffset + running_pointer, 2)
+                running_pointer += 2
+                vprint(f"{prefix}    Unk2: {hex(unk2)}")
+
+            if flags & 0x20:
+                nameoffset = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
+                add_coverage(dataoffset + running_pointer, 2)
+                name = self.__get_string(nameoffset)
+                running_pointer += 2
+                vprint(f"{prefix}    Name: {name}")
+
+            if flags & 0x40:
+                unk3 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
+                add_coverage(dataoffset + running_pointer, 2)
+                running_pointer += 2
+                vprint(f"{prefix}    Unk3: {hex(unk2)}")
+
+            if flags & 0x20000:
+                blend = struct.unpack("<B", datachunk[running_pointer:(running_pointer + 1)])[0]
+                add_coverage(dataoffset + running_pointer, 1)
+                running_pointer += 1
+                vprint(f"{prefix}    Blend: {hex(blend)}")
+
+            # Due to possible misalignment, we need to realign.
+            misalignment = running_pointer & 3
+            if misalignment > 0:
+                catchup = 4 - misalignment
+                add_coverage(dataoffset + running_pointer, catchup)
+                running_pointer += catchup
+
+            # Handle transformation matrix.
+            transform = Matrix.identity()
+
+            if flags & 0x100:
+                a_int, d_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                transform.a = float(a_int) * 0.0009765625
+                transform.d = float(d_int) * 0.0009765625
+                vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
+
+            if flags & 0x200:
+                b_int, c_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                transform.b = float(b_int) * 0.0009765625
+                transform.c = float(c_int) * 0.0009765625
+                vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
+
+            if flags & 0x400:
+                tx_int, ty_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                transform.tx = float(tx_int) / 20.0
+                transform.ty = float(tx_int) / 20.0
+                vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
+
+            # Handle object colors
+            color = Color(1.0, 1.0, 1.0, 1.0)
+            acolor = Color(1.0, 1.0, 1.0, 1.0)
+
+            if flags & 0x800:
+                r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                color.r = float(r) * 0.003921569
+                color.g = float(g) * 0.003921569
+                color.b = float(b) * 0.003921569
+                color.a = float(a) * 0.003921569
+                vprint(f"{prefix}    Color: {color}")
+
+            if flags & 0x1000:
+                r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                acolor.r = float(r) * 0.003921569
+                acolor.g = float(g) * 0.003921569
+                acolor.b = float(b) * 0.003921569
+                acolor.a = float(a) * 0.003921569
+                vprint(f"{prefix}    AColor: {color}")
+
+            if flags & 0x2000:
+                rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
+                add_coverage(dataoffset + running_pointer, 4)
+                running_pointer += 4
+
+                color.r = float((rgba >> 24) & 0xFF) * 0.003921569
+                color.g = float((rgba >> 16) & 0xFF) * 0.003921569
+                color.b = float((rgba >> 8) & 0xFF) * 0.003921569
+                color.a = float(rgba & 0xFF) * 0.003921569
+                vprint(f"{prefix}    Color: {color}")
+
+            if flags & 0x4000:
+                rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
+                add_coverage(dataoffset + running_pointer, 4)
+                running_pointer += 4
+
+                acolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
+                acolor.g = float((rgba >> 16) & 0xFF) * 0.003921569
+                acolor.b = float((rgba >> 8) & 0xFF) * 0.003921569
+                acolor.a = float(rgba & 0xFF) * 0.003921569
+                vprint(f"{prefix}    AColor: {color}")
+
+            # Completely unsure what this is
+            if flags & 0x80:
+                raise Exception("Unhandled flag!")
+
+            # Completely unsure what this is
+            if flags & 0x10000:
+                raise Exception("Unhandled flag!")
+
+            if flags & 0x1000000:
+                raise Exception("Unhandled flag!")
+
+            if flags & 0x2000000:
+                raise Exception("Unhandled flag!")
+
+            # This flag states whether we are creating a new object on this depth, or updating one.
+            if flags & 0x1:
+                vprint(f"{prefix}    Update object request")
+            else:
+                vprint(f"{prefix}    Create object request")
+
+            if running_pointer < size:
+                raise Exception(f"Did not consume {size - running_pointer} bytes in object instantiation!")
+
+        elif tagid == Tag.AP2_REMOVE_OBJECT:
+            if size != 4:
+                raise Exception(f"Invalid shape size {size}")
+
+            object_id, depth = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}")
+            add_coverage(dataoffset, 4)
 
     def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
@@ -747,6 +925,7 @@ class SWF:
         add_coverage(32, 2)
         add_coverage(40, 4)
 
+        # TODO: How do these point at created tags in the SWF?
         vprint(f"Number of Exported Tags: {num_exported_assets}")
         for assetno in range(num_exported_assets):
             asset_data_offset, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
