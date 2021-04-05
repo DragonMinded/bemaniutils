@@ -338,7 +338,7 @@ class XmlEncoder:
         Parameters:
             tree - A binary blob of data to be decoded
             encoding - A string representing the text encoding for string elements. Should be either
-                       'shift-jis', 'euc-jp' or 'utf-8'
+                       'shift-jis', 'euc-jp', 'utf-8' or 'ascii'.
         """
         self.tree = tree
         self.encoding = encoding
@@ -539,7 +539,7 @@ class XmlEncoding:
 
         encoding = self.__fix_encoding(encoding)
         if encoding not in XmlEncoding.ACCEPTED_ENCODINGS:
-            # XML pages only support shift-jis
+            # XML pages only support a few encodings.
             raise XmlEncodingException(f"Invalid text encoding {encoding}")
 
         xml = XmlEncoder(tree, encoding)
