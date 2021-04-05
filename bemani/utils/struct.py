@@ -161,11 +161,15 @@ class StructPrinter:
 
                     # Resolve the physical address of this pointer, trick the substructure into
                     # parsing only one iteration.
-                    pointer = self.virtual_to_physical(pointer)
-                    subparse = self.__parse_struct(pointer, pointer + 1, prefix, spec)
-                    if len(subparse) != 1:
-                        raise Exception("Logic error!")
-                    line.append(subparse[0])
+                    if pointer == 0x0:
+                        # Null pointer
+                        line.append(None)
+                    else:
+                        pointer = self.virtual_to_physical(pointer)
+                        subparse = self.__parse_struct(pointer, pointer + 1, prefix, spec)
+                        if len(subparse) != 1:
+                            raise Exception("Logic error!")
+                        line.append(subparse[0])
 
             output.append(line)
 
@@ -214,10 +218,21 @@ def main() -> None:
     data = fp.read()
     fp.close()
 
+    def __str(obj: object) -> str:
+        if obj is None:
+            return "NULL"
+        elif isinstance(obj, list):
+            if len(obj) == 1:
+                return __str(obj[0])
+            else:
+                return f"({', '.join(__str(o) for o in obj)})"
+        else:
+            return repr(obj)
+
     printer = StructPrinter(data)
     lines = printer.parse_struct(args.start, args.end, args.format)
     for line in lines:
-        print(line)
+        print(", ".join(__str(entry) for entry in line))
 
 
 if __name__ == '__main__':
