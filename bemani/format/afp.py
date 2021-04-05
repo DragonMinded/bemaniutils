@@ -1026,14 +1026,22 @@ class SWF:
             raise Exception(f"Unrecognzied magic {magic}!")
         if length != len(data):
             raise Exception(f"Unexpected length in AFP header, {length} != {len(data)}!")
+        if ap2_data_version != 8:
+            raise Exception(f"Unsupported AP2 container version {ap2_data_version}!")
+        if version != 0x200:
+            raise Exception(f"Unsupported AP2 version {version}!")
 
         if flags & 0x1:
-            # I have no idea what this is, but its treated as 4 bytes and something
-            # happens if they aren't all 0xFF. It looks like this is an animation
-            # background color.
-            unknown_bytes = struct.unpack("<4B", data[28:32])
+            # This appears to be the animation background color.
+            rgba = struct.unpack("<I", data[28:32])[0]
+            swf_color = Color(
+                r=(rgba & 0xFF) / 255.0,
+                g=((rgba >> 8) & 0xFF) / 255.0,
+                b=((rgba >> 16) & 0xFF) / 255.0,
+                a=((rgba >> 24) & 0xFF) / 255.0,
+            )
         else:
-            unknown_bytes = None
+            swf_color = None
         add_coverage(28, 4)
 
         if flags & 0x2:
@@ -1045,11 +1053,11 @@ class SWF:
 
         if flags & 0x4:
             # This seems related to imported tags.
-            imported_tag_something_offset = struct.unpack("<I", data[56:60])[0]
+            imported_tag_initializers_offset = struct.unpack("<I", data[56:60])[0]
             add_coverage(56, 4)
         else:
             # Unknown offset is not present.
-            imported_tag_something_offset = None
+            imported_tag_initializers_offset = None
 
         # String table
         stringtable_offset, stringtable_size = struct.unpack("<II", data[48:56])
@@ -1068,17 +1076,17 @@ class SWF:
         vprint(f"Exported Name: {self.exported_name}")
         vprint(f"SWF Flags: {hex(flags)}")
         if flags & 0x1:
-            vprint(f"  0x1: Unknown bytes: {' '.join(hex(i) for i in unknown_bytes)}")
+            vprint(f"  0x1: Movie background color: {swf_color}")
         else:
-            vprint("  0x2: Unknown bytes ignored")
+            vprint("  0x2: No movie background color")
         if flags & 0x2:
             vprint("  0x2: FPS is an integer")
         else:
             vprint("  0x2: FPS is a float")
         if flags & 0x4:
-            vprint(f"  0x4: Unknown imported tag section present at offset {hex(imported_tag_something_offset)}")
+            vprint("  0x4: Imported tag initializer section present")
         else:
-            vprint("  0x4: Unknown imported tag section not present")
+            vprint("  0x4: Imported tag initializer section not present")
         vprint(f"Dimensions: {width}x{height}")
         vprint(f"Requested FPS: {fps}")
 
@@ -1088,7 +1096,7 @@ class SWF:
         add_coverage(32, 2)
         add_coverage(40, 4)
 
-        # TODO: How do these point at created tags in the SWF?
+        # Parse exported asset tag names and their tag IDs.
         vprint(f"Number of Exported Tags: {num_exported_assets}")
         for assetno in range(num_exported_assets):
             asset_data_offset, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
@@ -1097,7 +1105,7 @@ class SWF:
 
             asset_name = self.__get_string(asset_string_offset)
             add_coverage(asset_string_offset + stringtable_offset, len(asset_name) + 1, unique=False)
-            vprint(f"  {assetno}: {asset_name}")
+            vprint(f"  {assetno}: Tag Name: {asset_name} Tag ID: {asset_data_offset}")
 
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
@@ -1135,20 +1143,20 @@ class SWF:
             imported_tags_offset += 4
 
         # Some imported tag data.
-        if imported_tag_something_offset is not None:
+        if imported_tag_initializers_offset is not None:
 
-            unk1, length = struct.unpack("<HH", data[imported_tag_something_offset:(imported_tag_something_offset + 4)])
-            add_coverage(imported_tag_something_offset, 4)
+            unk1, length = struct.unpack("<HH", data[imported_tag_initializers_offset:(imported_tag_initializers_offset + 4)])
+            add_coverage(imported_tag_initializers_offset, 4)
 
-            vprint(f"Imported tag unknown data offset: {hex(imported_tag_something_offset)}, length: {length}")
+            vprint(f"Imported Tag Initializer Offset: {hex(imported_tag_initializers_offset)}, Length: {length}")
 
             for i in range(length):
-                item_offset = imported_tag_something_offset + 4 + (i * 12)
+                item_offset = imported_tag_initializers_offset + 4 + (i * 12)
                 tag_id, length, action_bytecode_offset, has_action_bytecode = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
                 add_coverage(item_offset, 12)
 
                 if has_action_bytecode != 0:
-                    vprint(f"  Tag ID: {tag_id}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_something_offset)}, Length: {hex(length)}")
+                    vprint(f"  Tag ID: {tag_id}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}, Length: {hex(length)}")
                 else:
                     vprint(f"  Tag ID: {tag_id}, No Bytecode Present")
 
