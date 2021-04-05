@@ -27,6 +27,7 @@ class EAmuseProtocol:
     SHIFT_JIS = "shift-jis"
     EUC_JP = "euc-jp"
     UTF_8 = "utf-8"
+    ASCII = "ascii"
 
     def __init__(self) -> None:
         """

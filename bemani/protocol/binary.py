@@ -680,15 +680,22 @@ class BinaryEncoding:
     """
     Wrapper class representing a Binary Encoding.
     """
+    MAGIC = 0xA0
+
+    COMPRESSED_WITH_DATA = 0x42
+    COMPRESSED_WITHOUT_DATA = 0x43
+    DECOMPRESSED_WITH_DATA = 0x45
+    DECOMPRESSED_WITHOUT_DATA = 0x46
+
     # The string values should match the constants in EAmuseProtocol.
     # I have no better way to link these than to write this comment,
     # as otherwise we would have a circular dependency.
-    MAGIC = {
-        0xA04200FF: "ascii",
-        0xA04220DF: "shift-jis-legacy",
-        0xA042609F: "euc-jp",
-        0xA042807F: "shift-jis",
-        0xA042A05F: "utf-8",
+    ENCODINGS = {
+        0x00: "ascii",
+        0x20: "shift-jis-legacy",
+        0x60: "euc-jp",
+        0x80: "shift-jis",
+        0xA0: "utf-8",
     }
 
     def __init__(self) -> None:
@@ -725,11 +732,20 @@ class BinaryEncoding:
             if we couldn't decode the object for some reason.
         """
         try:
-            data_magic = struct.unpack(">L", data[0:4])[0]
+            data_magic, contents, encoding_raw, encoding_swapped = struct.unpack(">BBBB", data[0:4])
         except struct.error:
             # Couldn't even parse magic
             return None
-        encoding = BinaryEncoding.MAGIC.get(data_magic)
+
+        if data_magic != BinaryEncoding.MAGIC:
+            return None
+        if ((~encoding_raw) & 0xFF) != encoding_swapped:
+            return None
+        if contents not in [BinaryEncoding.COMPRESSED_WITH_DATA, BinaryEncoding.COMPRESSED_WITHOUT_DATA]:
+            # We don't support uncompressed data.
+            return None
+
+        encoding = BinaryEncoding.ENCODINGS.get(encoding_raw)
 
         if encoding is not None:
             self.encoding = encoding
@@ -762,8 +778,8 @@ class BinaryEncoding:
             raise BinaryEncodingException('Unknown encoding')
 
         encoding_magic = None
-        for magic in BinaryEncoding.MAGIC:
-            if BinaryEncoding.MAGIC[magic] == encoding:
+        for magic, encstr in BinaryEncoding.ENCODINGS.items():
+            if encstr == encoding:
                 encoding_magic = magic
                 break
 
@@ -774,6 +790,6 @@ class BinaryEncoding:
         data = encoder.get_data()
 
         if data is not None:
-            return struct.pack(">L", encoding_magic) + data
+            return struct.pack(">BBBB", BinaryEncoding.MAGIC, BinaryEncoding.COMPRESSED_WITH_DATA, encoding_magic, (~encoding_magic & 0xFF)) + data
         else:
             return None
