@@ -162,7 +162,7 @@ class Point:
         return f"x: {round(self.x, 5)}, y: {round(self.y, 5)}"
 
 
-class Tag:
+class AP2Tag:
     END = 0x0
     SHOW_FRAME = 0x1
     DEFINE_SHAPE = 0x2
@@ -486,6 +486,101 @@ class AP2Action:
         return resources.get(tagid, "UNKNOWN")
 
 
+class AP2ObjectType:
+    UNDEFINED = 0x0
+    NAN = 0x1
+    BOOLEAN = 0x2
+    INTEGER = 0x3
+    S64 = 0x4
+    FLOAT = 0x5
+    DOUBLE = 0x6
+    STRING = 0x7
+    POINTER = 0x8
+    OBJECT = 0x9
+    INFINITY = 0xa
+    CONST_STRING = 0xb
+    BUILT_IN_FUNCTION = 0xc
+
+
+class AP2PointerType:
+    # The type of the object if it is an AP2ObjectType.POINTER or AP2ObjectType.OBJECT
+    UNDEFINED = 0x0
+    AFP_TEXT = 0x1
+    AFP_RECT = 0x2
+    AFP_SHAPE = 0x3
+    DRAG = 0x4
+    MATRIX = 0x5
+    POINT = 0x6
+    GETTER_SETTER_PROPERTY = 0x7
+    FUNCTION_WITH_PROTOTYPE = 0x8
+    ROW_DATA = 0x20
+
+    object_W = 0x50
+    movieClip_W = 0x51
+    sound_W = 0x52
+    color_W = 0x53
+    date_W = 0x54
+    array_W = 0x55
+    xml_W = 0x56
+    xmlNode_W = 0x57
+    textFormat_W = 0x58
+    sharedObject_W = 0x59
+    sharedObjectData_W = 0x5a
+    textField_W = 0x5b
+    xmlAttrib_W = 0x5c
+    bitmapdata_W = 0x5d
+    matrix_W = 0x5e
+    point_W = 0x5f
+    ColorMatrixFilter_W = 0x60
+    String_W = 0x61
+    Boolean_W = 0x62
+    Number_W = 0x63
+    function_W = 0x64
+    prototype_W = 0x65
+    super_W = 0x66
+    transform_W = 0x68
+    colorTransform_W = 0x69
+    rectangle_W = 0x6a
+
+    # All of these can have prototypes, not sure what the "C" stands for.
+    Object_C = 0x78
+    MovieClip_C = 0x79
+    Sound_C = 0x7a
+    Color_C = 0x7b
+    Date_C = 0x7c
+    Array_C = 0x7d
+    XML_C = 0x7e
+    XMLNode_C = 0x7f
+    TextFormat_C = 0x80
+    TextField_C = 0x83
+    BitmapData_C = 0x85
+    matrix_C = 0x86
+    point_C = 0x87
+    String_C = 0x89
+    Boolean_C = 0x8a
+    Number_C = 0x8b
+    Function_C = 0x8c
+    aplib_C = 0x8f
+    transform_C = 0x90
+    colorTransform_C = 0x91
+    rectangle_C = 0x92
+    asdlib_C = 0x93
+    XMLController_C = 0x94
+    eManager_C = 0x95
+
+    stage_O = 0xa0
+    math_O = 0xa1
+    key_O = 0xa2
+    mouse_O = 0xa3
+    system_O = 0xa4
+    sharedObject_O = 0xa5
+    flash_O = 0xa6
+    global_O = 0xa7
+    display_P = 0xb4
+    geom_P = 0xb5
+    filtesr_P = 0xb6
+
+
 class SWF:
     def __init__(
         self,
@@ -557,7 +652,7 @@ class SWF:
             def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
-        if tagid == Tag.AP2_SHAPE:
+        if tagid == AP2Tag.AP2_SHAPE:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
 
@@ -566,7 +661,7 @@ class SWF:
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
             vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()}")
-        elif tagid == Tag.AP2_DEFINE_SPRITE:
+        elif tagid == AP2Tag.AP2_DEFINE_SPRITE:
             sprite_flags, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             add_coverage(dataoffset, 4)
 
@@ -580,14 +675,14 @@ class SWF:
 
             vprint(f"{prefix}    Tag ID: {sprite_id}")
             self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix, verbose=verbose)
-        elif tagid == Tag.AP2_DEFINE_FONT:
+        elif tagid == AP2Tag.AP2_DEFINE_FONT:
             wat, font_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             vprint(f"{prefix}    Tag ID: {font_id}")
-        elif tagid == Tag.AP2_DO_ACTION:
+        elif tagid == AP2Tag.AP2_DO_ACTION:
             # TODO: This is wrong, this is only for defined functions.
             flags, unk1, nameoffset, unk2, _, unk3 = struct.unpack(">BHHHBH", ap2data[dataoffset:(dataoffset + 10)])
             vprint(f"{prefix}    Flags: {hex(flags)}, Unk1: {hex(unk1)}, Name: {hex(nameoffset)}, Unk2: {hex(unk2)}, Unk3: {hex(unk3)}")
-        elif tagid == Tag.AP2_PLACE_OBJECT:
+        elif tagid == AP2Tag.AP2_PLACE_OBJECT:
             # Allow us to keep track of what we've consumed.
             datachunk = ap2data[dataoffset:(dataoffset + size)]
             flags, depth, object_id = struct.unpack("<IHH", datachunk[0:8])
@@ -713,19 +808,47 @@ class SWF:
                 acolor.a = float(rgba & 0xFF) * 0.003921569
                 vprint(f"{prefix}    AColor: {color}")
 
-            # Completely unsure what this is
             if flags & 0x80:
-                raise Exception("Unhandled flag!")
+                # Some sort of event data? I dunno, but it changes the running pointer for data
+                # following it. Not sure what the data itself contains. This looks like it contains
+                # some lengths such as length of bytecode contained, and length of some values
+                # contained.
+                flags, size = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += size
 
-            # Completely unsure what this is
+                # TODO: This is basically not understood at all, I can't make heads or tails of
+                # the code. This definitely contains bytecode in some circumstances, maybe sprite
+                # init portion of the SWF spec?
+                vprint(f"{prefix}    Unknown Event data Flags: {hex(flags)}, Size: {size}")
+
             if flags & 0x10000:
-                raise Exception("Unhandled flag!")
+                # Some sort of filter data? Not sure what this is either. Needs more investigation
+                # if I encounter files with it.
+                count, size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                add_coverage(dataoffset + running_pointer, 4)
+                running_pointer += size
+
+                vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {size}")
+
+                # running_pointer + 4 starts a series of shorts (exactly count of them) which are
+                # all in the range of 0-7, corresponding to some sort of filter. They get sizes
+                # looked up and I presume there's data following this corresponding to those sizes.
+                # I don't know however as I've not encountered data with this bit.
 
             if flags & 0x1000000:
-                raise Exception("Unhandled flag!")
+                # Some sort of point, perhaps an x, y offset for the object?
+                x, y = struct.unpack("<ff", datachunk[running_pointer:(running_pointer + 8)])
+                add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                point = Point(x / 20.0, y / 20.0)
+                vprint(f"{prefix}    Point: {point}")
 
             if flags & 0x2000000:
-                raise Exception("Unhandled flag!")
+                # Same as above, but initializing to 0, 0 instead of from data.
+                point = Point(0.0, 0.0)
+                vprint(f"{prefix}    Point: {point}")
 
             # This flag states whether we are creating a new object on this depth, or updating one.
             if flags & 0x1:
@@ -736,7 +859,7 @@ class SWF:
             if running_pointer < size:
                 raise Exception(f"Did not consume {size - running_pointer} bytes in object instantiation!")
 
-        elif tagid == Tag.AP2_REMOVE_OBJECT:
+        elif tagid == AP2Tag.AP2_REMOVE_OBJECT:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
 
@@ -781,7 +904,7 @@ class SWF:
             if size > 0x200000:
                 raise Exception(f"Invalid tag size {size}")
 
-            vprint(f"{prefix}  Tag: {hex(tagid)} ({Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
+            vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
             self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix, verbose=verbose)
             tags_offset += size + 4  # Skip past tag header and data.
 
@@ -906,7 +1029,8 @@ class SWF:
 
         if flags & 0x1:
             # I have no idea what this is, but its treated as 4 bytes and something
-            # happens if they aren't all 0xFF.
+            # happens if they aren't all 0xFF. It looks like this is an animation
+            # background color.
             unknown_bytes = struct.unpack("<4B", data[28:32])
         else:
             unknown_bytes = None
