@@ -1461,6 +1461,12 @@ class SWF:
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
                         offset_ptr += 1
                         vprint(f"{prefix}        ORGFUNC2 CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x37:
+                        # Integer object but one byte.
+                        ival = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                        offset_ptr += 1
+
+                        vprint(f"{prefix}        INTEGER: {ival}")
                     else:
                         raise Exception(f"Unsupported object {hex(obj_to_create)} to push!")
 
