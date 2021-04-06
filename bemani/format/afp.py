@@ -1266,6 +1266,10 @@ class SWF:
                 point = Point(0.0, 0.0)
                 vprint(f"{prefix}    Point: {point}")
 
+            # TODO: There's a flag 0x40000 that appears in a lot of DDR PS3 AFP files. I don't know
+            # what it is yet, but it appears to correspond to 4 bytes of data. The question is, where
+            # does it slot in for when to decode it?
+
             # This flag states whether we are creating a new object on this depth, or updating one.
             if flags & 0x1:
                 vprint(f"{prefix}    Update object request")
@@ -1273,7 +1277,7 @@ class SWF:
                 vprint(f"{prefix}    Create object request")
 
             if running_pointer < size:
-                raise Exception(f"Did not consume {size - running_pointer} bytes in object instantiation!")
+                raise Exception(f"Did not consume {size - running_pointer} bytes ({[hex(x) for x in datachunk[running_pointer:]]}) in object instantiation!")
 
         elif tagid == AP2Tag.AP2_REMOVE_OBJECT:
             if size != 4:
@@ -1336,13 +1340,15 @@ class SWF:
             vprint(f"{prefix}  Frame Start Tag: {hex(start_tag_id)}, Count: {num_tags_to_play}")
             frame_offset += 4
 
-        # Now, parse unknown tags?
+        # Now, parse unknown tags? I have no idea what these are, but they're referencing strings that
+        # are otherwise unused.
         vprint(f"{prefix}Number of Unknown Tags: {unknown_tags_count}, Flags: {hex(unknown_tags_flags)}")
         for i in range(unknown_tags_count):
-            unk1, unk2 = struct.unpack("<HH", ap2data[unknown_tags_offset:(unknown_tags_offset + 4)])
+            unk1, stringoffset = struct.unpack("<HH", ap2data[unknown_tags_offset:(unknown_tags_offset + 4)])
+            strval = self.__get_string(stringoffset)
             add_coverage(unknown_tags_offset, 4)
 
-            vprint(f"{prefix}  Unknown Tag: {hex(unk1)} {hex(unk2)}")
+            vprint(f"{prefix}  Unknown Tag: {hex(unk1)} Name: {strval}")
             unknown_tags_offset += 4
 
     def __descramble(self, scrambled_data: bytes, descramble_info: bytes) -> bytes:
@@ -1448,7 +1454,7 @@ class SWF:
             raise Exception(f"Unrecognzied magic {magic}!")
         if length != len(data):
             raise Exception(f"Unexpected length in AFP header, {length} != {len(data)}!")
-        if ap2_data_version != 8:
+        if ap2_data_version not in [8, 9, 10]:
             raise Exception(f"Unsupported AP2 container version {ap2_data_version}!")
         if version != 0x200:
             raise Exception(f"Unsupported AP2 version {version}!")
@@ -1564,7 +1570,8 @@ class SWF:
 
             imported_tags_offset += 4
 
-        # Some imported tag data.
+        # This appears to be bytecode to execute on a per-frame basis. We execute this every frame and
+        # only execute up to the point where we equal the current frame.
         if imported_tag_initializers_offset is not None:
 
             unk1, length = struct.unpack("<HH", data[imported_tag_initializers_offset:(imported_tag_initializers_offset + 4)])
@@ -1574,13 +1581,15 @@ class SWF:
 
             for i in range(length):
                 item_offset = imported_tag_initializers_offset + 4 + (i * 12)
-                tag_id, length, action_bytecode_offset, has_action_bytecode = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
+                tag_id, frame, action_bytecode_offset, action_bytecode_length = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
                 add_coverage(item_offset, 12)
 
-                if has_action_bytecode != 0:
-                    vprint(f"  Tag ID: {tag_id}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}, Length: {hex(length)}")
+                if action_bytecode_length != 0:
+                    vprint(f"  Tag ID: {tag_id}, Frame: {frame}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
+                    bytecode_data = data[(action_bytecode_offset + imported_tag_initializers_offset):(action_bytecode_offset + imported_tag_initializers_offset + action_bytecode_length)]
+                    self.__parse_bytecode(bytecode_data, verbose=verbose)
                 else:
-                    vprint(f"  Tag ID: {tag_id}, No Bytecode Present")
+                    vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No Bytecode Present")
 
         if verbose:
             self.print_coverage()
