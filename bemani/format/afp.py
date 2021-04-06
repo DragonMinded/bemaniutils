@@ -317,7 +317,7 @@ class AP2Tag:
             cls.AP2_VIDEO: 'AP2_VIDEO',
         }
 
-        return resources.get(tagid, "UNKNOWN")
+        return resources.get(tagid, f"<UNKNOWN {tagid}>")
 
 
 class AP2Action:
@@ -577,7 +577,7 @@ class AP2Action:
             cls.ADD_NUM_VARIABLE: 'ADD_NUM_VARIABLE',
         }
 
-        return resources.get(actionid, "UNKNOWN")
+        return resources.get(actionid, f"<UNKNOWN {actionid}>")
 
     @classmethod
     def actions_without_params(cls) -> Set[int]:
@@ -707,6 +707,524 @@ class AP2PointerType:
     display_P = 0xb4
     geom_P = 0xb5
     filtesr_P = 0xb6
+
+
+class AP2PropertyType:
+    # TODO: This is missing some properties for newer games.
+
+    __PROPERTIES: List[Tuple[int, str]] = [
+        # Global properties on every object.
+        (0x120, 'this'),
+        (0x121, '_root'),
+        (0x122, '_parent'),
+        (0x123, '_global'),
+        (0x124, 'arguments'),
+
+        # Object properties?
+        (0x140, 'blendMode'),
+        (0x141, 'enabled'),
+        (0x142, 'hitArea'),
+        (0x143, '_lockroot'),
+        (0x144, '$version'),
+
+        # Text input properties.
+        (0x160, 'textWidth'),
+        (0x161, 'textHeight'),
+        (0x162, 'text'),
+        (0x163, 'autoSize'),
+        (0x164, 'textColor'),
+        (0x165, 'selectable'),
+
+        # Color properties?
+        (0x180, 'ra'),
+        (0x181, 'rb'),
+        (0x182, 'ga'),
+        (0x183, 'gb'),
+        (0x184, 'ba'),
+        (0x185, 'bb'),
+        (0x186, 'aa'),
+        (0x187, 'ab'),
+
+        # Text properties?
+        (0x1a0, 'font'),
+        (0x1a1, 'size'),
+        (0x1a2, 'color'),
+        (0x1a3, 'bold'),
+        (0x1a4, 'italic'),
+        (0x1a5, 'underline'),
+        (0x1a6, 'url'),
+        (0x1a7, 'target'),
+        (0x1a8, 'align'),
+        (0x1a9, 'leftMargin'),
+        (0x1aa, 'rightMargin'),
+        (0x1ab, 'indent'),
+        (0x1ac, 'leading'),
+
+        # Who the fuck knows...
+        (0x1c0, 'a'),
+        (0x1c1, 'b'),
+        (0x1c2, 'c'),
+        (0x1c3, 'd'),
+        (0x1c4, 'e'),
+        (0x1c5, 'f'),
+        (0x1c6, 'g'),
+        (0x1c7, 'h'),
+        (0x1c8, 'i'),
+        (0x1c9, 'j'),
+        (0x1ca, 'k'),
+        (0x1cb, 'l'),
+        (0x1cc, 'm'),
+        (0x1cd, 'n'),
+        (0x1ce, 'o'),
+        (0x1cf, 'p'),
+        (0x1d0, 'q'),
+        (0x1d1, 'r'),
+        (0x1d2, 's'),
+        (0x1d3, 't'),
+        (0x1d4, 'u'),
+        (0x1d5, 'v'),
+        (0x1d6, 'w'),
+        (0x1d7, 'x'),
+        (0x1d8, 'y'),
+        (0x1d9, 'z'),
+        (0x1da, 'tx'),
+        (0x1db, 'ty'),
+        (0x1dc, 'length'),
+        (0x1dd, 'ignoreWhite'),
+        (0x1de, 'loaded'),
+        (0x1df, 'childNodes'),
+        (0x1e0, 'firstChild'),
+        (0x1e1, 'nodeValue'),
+        (0x1e2, 'nextSibling'),
+        (0x1e3, 'nodeName'),
+        (0x1e4, 'nodeType'),
+        (0x1e5, 'attributes'),
+        (0x1e6, '__count'),
+        (0x1e7, '__type'),
+        (0x1e8, 'width'),
+        (0x1e9, 'height'),
+        (0x1ea, 'useCodepage'),
+        (0x1eb, 'duration'),
+        (0x1ec, 'position'),
+        (0x1ed, 'matrixType'),
+        (0x1ee, 'matrix'),
+        (0x1ef, 'prototype'),
+        (0x1f0, '__proto__'),
+        (0x1f1, 'xMin'),
+        (0x1f2, 'xMax'),
+        (0x1f3, 'yMin'),
+        (0x1f4, 'yMax'),
+        (0x1f5, 'lastChild'),
+        (0x1f6, 'parentNode'),
+        (0x1f7, 'previousSibling'),
+        (0x1f8, 'callee'),
+        (0x1f9, 'caller'),
+        (0x1fa, 'colorTransform'),
+        (0x1fb, 'concatenatedColorTransform'),
+        (0x1fc, 'concatenatedMatrix'),
+        (0x1fd, 'pixelBounds'),
+
+        # Commands and object references?
+        (0x200, 'FSCommand:fullscreen'),
+        (0x201, 'FSCommand:showmenu'),
+        (0x202, 'FSCommand:allowscale'),
+        (0x203, 'FSCommand:quit'),
+        (0x204, 'NaN'),
+        (0x205, 'Infinity'),
+        (0x206, 'number'),
+        (0x207, 'boolean'),
+        (0x208, 'string'),
+        (0x209, 'object'),
+        (0x20a, 'movieclip'),
+        (0x20b, 'null'),
+        (0x20c, 'undefined'),
+        (0x20d, 'function'),
+        (0x20e, 'normal'),
+        (0x20f, 'layer'),
+        (0x210, 'darken'),
+        (0x211, 'multiply'),
+        (0x212, 'lighten'),
+        (0x213, 'screen'),
+        (0x214, 'overlay'),
+        (0x215, 'hardlight'),
+        (0x216, 'subtract'),
+        (0x217, 'difference'),
+        (0x218, 'invert'),
+        (0x219, 'alpha'),
+        (0x21a, 'erase'),
+        (0x21b, '/'),
+        (0x21c, '..'),
+        (0x21d, 'linear'),
+        (0x21e, 'radial'),
+        (0x21f, 'none'),
+        (0x220, 'square'),
+        (0x221, 'miter'),
+        (0x222, 'bevel'),
+        (0x223, 'left'),
+        (0x224, 'right'),
+        (0x225, 'center'),
+        (0x226, 'box'),
+        (0x227, 'reflect'),
+        (0x228, 'repeat'),
+        (0x229, 'RGB'),
+        (0x22a, 'linearRGB'),
+        (0x22b, 'justify'),
+
+        # Layer depths
+        (0x2e0, '_level0'),
+        (0x2e1, '_level1'),
+        (0x2e2, '_level2'),
+        (0x2e3, '_level3'),
+        (0x2e4, '_level4'),
+        (0x2e5, '_level5'),
+        (0x2e6, '_level6'),
+        (0x2e7, '_level7'),
+        (0x2e8, '_level8'),
+        (0x2e9, '_level9'),
+        (0x2ea, '_level10'),
+        (0x2eb, '_level11'),
+        (0x2ec, '_level12'),
+        (0x2ed, '_level13'),
+        (0x2ee, '_level14'),
+        (0x2ef, '_level15'),
+
+        # System objects
+        (0x300, 'System'),
+        (0x301, 'Stage'),
+        (0x302, 'Key'),
+        (0x303, 'Math'),
+        (0x304, 'flash'),
+        (0x305, 'MovieClip'),
+        (0x306, 'String'),
+        (0x307, 'TextField'),
+        (0x308, 'Color'),
+        (0x309, 'Date'),
+        (0x30a, 'SharedObject'),
+        (0x30b, 'Mouse'),
+        (0x30c, 'Object'),
+        (0x30d, 'Sound'),
+        (0x30e, 'Number'),
+        (0x30f, 'Array'),
+        (0x310, 'XML'),
+        (0x311, 'TextFormat'),
+        (0x312, 'display'),
+        (0x313, 'geom'),
+        (0x314, 'Matrix'),
+        (0x315, 'Point'),
+        (0x316, 'BitmapData'),
+        (0x317, 'data'),
+        (0x318, 'filters'),
+        (0x319, 'ColorMatrixFilter'),
+        (0x31a, 'Function'),
+        (0x31b, 'XMLNode'),
+        (0x31c, 'aplib'),
+        (0x31d, 'Transform'),
+        (0x31e, 'ColorTransform'),
+        (0x31f, 'Rectangle'),
+        (0x320, 'asdlib'),
+        (0x321, 'XMLController'),
+        (0x322, 'eManager'),
+
+        # XML functions
+        (0x400, 'afp_prop_init'),
+        (0x401, 'afp_prop'),
+        (0x402, 'afp_prop_dummy'),
+        (0x403, 'afp_prop_destroy'),
+        (0x404, 'afp_sync'),
+        (0x405, 'afp_node_search'),
+        (0x406, 'afp_node_value'),
+        (0x407, 'afp_node_array_value'),
+        (0x408, 'afp_complete'),
+        (0x409, 'afp_sound_fade_in'),
+        (0x40a, 'afp_sound_fade_out'),
+        (0x40b, 'afp_make_gradient_data'),
+        (0x40c, 'afp_make_alpha_texture'),
+        (0x40d, 'afp_node_set_value'),
+        (0x40e, 'afp_node_date_value'),
+        (0x40f, 'afp_node_num_value'),
+        (0x410, 'afp_node_array_num_value'),
+
+        # System functions
+        (0x420, 'updateAfterEvent'),
+        (0x421, 'parseInt'),
+        (0x422, 'parseFloat'),
+        (0x423, 'Boolean'),
+        (0x424, 'setInterval'),
+        (0x425, 'clearInterval'),
+        (0x426, 'escape'),
+        (0x427, 'ASSetPropFlags'),
+        (0x428, 'unescape'),
+        (0x429, 'isNaN'),
+        (0x42a, 'isFinite'),
+
+        # Current movie manipulation functions.
+        (0x440, 'stop'),
+        (0x441, 'play'),
+        (0x442, 'gotoAndPlay'),
+        (0x443, 'gotoAndStop'),
+        (0x444, 'prevFrame'),
+        (0x445, 'nextFrame'),
+        (0x446, 'createEmptyMovieClip'),
+        (0x447, 'duplicateMovieClip'),
+        (0x448, 'attachMovie'),
+        (0x449, 'attachBitmap'),
+        (0x44a, 'removeMovieClip'),
+        (0x44b, 'unloadMovie'),
+        (0x44c, 'loadMovie'),
+        (0x44d, 'loadVariables'),
+        (0x44e, 'startDrag'),
+        (0x44f, 'stopDrag'),
+        (0x450, 'setMask'),
+        (0x451, 'hitTest'),
+        (0x452, 'lineStyle'),
+        (0x453, 'lineGradientStyle'),
+        (0x454, 'beginFill'),
+        (0x455, 'beginBitmapFill'),
+        (0x456, 'endFill'),
+        (0x457, 'moveTo'),
+        (0x458, 'lineTo'),
+        (0x459, 'curveTo'),
+        (0x45a, 'clear'),
+        (0x45b, 'getBytesLoaded'),
+        (0x45c, 'getBytesTotal'),
+        (0x45d, 'getDepth'),
+        (0x45e, 'getNextHighestDepth'),
+        (0x45f, 'swapDepths'),
+        (0x460, 'localToGlobal'),
+        (0x461, 'beginGradientFill'),
+        (0x462, 'getSWFVersion'),
+        (0x463, 'getRect'),
+        (0x464, 'getBounds'),
+        (0x465, 'getInstanceAtDepth'),
+        (0x466, 'getURL'),
+
+        # System object manipulation functions.
+        (0x480, 'toString'),
+        (0x481, 'distance'),
+        (0x482, 'translate'),
+        (0x483, 'rotate'),
+        (0x484, 'scale'),
+        (0x485, 'clone'),
+        (0x486, 'transformPoint'),
+        (0x487, 'add'),
+        (0x488, 'cos'),
+        (0x489, 'sin'),
+        (0x48a, 'sqrt'),
+        (0x48b, 'atan2'),
+        (0x48c, 'log'),
+        (0x48d, 'abs'),
+        (0x48e, 'floor'),
+        (0x48f, 'ceil'),
+        (0x490, 'round'),
+        (0x491, 'pow'),
+        (0x492, 'max'),
+        (0x493, 'min'),
+        (0x494, 'random'),
+        (0x495, 'acos'),
+        (0x496, 'asin'),
+        (0x497, 'atan'),
+        (0x498, 'tan'),
+        (0x499, 'exp'),
+        (0x49a, 'getRGB'),
+        (0x49b, 'setRGB'),
+        (0x49c, 'getTransform'),
+        (0x49d, 'setTransform'),
+        (0x49e, 'fromCharCode'),
+        (0x49f, 'substr'),
+        (0x4a0, 'substring'),
+        (0x4a1, 'toUpperCase'),
+        (0x4a2, 'toLowerCase'),
+        (0x4a3, 'indexOf'),
+        (0x4a4, 'lastIndexOf'),
+        (0x4a5, 'charAt'),
+        (0x4a6, 'charCodeAt'),
+        (0x4a7, 'split'),
+        (0x4a8, 'concat'),
+        (0x4a9, 'getFullYear'),
+        (0x4aa, 'getUTCFullYear'),
+        (0x4ab, 'getMonth'),
+        (0x4ac, 'getUTCMonth'),
+        (0x4ad, 'getDate'),
+        (0x4ae, 'getUTCDate'),
+        (0x4af, 'getDay'),
+        (0x4b0, 'getHours'),
+        (0x4b1, 'getUTCHours'),
+        (0x4b2, 'getMinutes'),
+        (0x4b3, 'getUTCMinutes'),
+        (0x4b4, 'getSeconds'),
+        (0x4b5, 'getUTCSeconds'),
+        (0x4b6, 'getTime'),
+        (0x4b7, 'getTimezoneOffset'),
+        (0x4b8, 'UTC'),
+        (0x4b9, 'createElement'),
+        (0x4ba, 'appendChild'),
+        (0x4bb, 'createTextNode'),
+        (0x4bc, 'parseXML'),
+        (0x4bd, 'load'),
+        (0x4be, 'hasChildNodes'),
+        (0x4bf, 'cloneNode'),
+        (0x4c0, 'removeNode'),
+        (0x4c1, 'loadInAdvance'),
+        (0x4c2, 'createGradientBox'),
+        (0x4c3, 'loadBitmap'),
+        (0x4c4, 'hide'),
+        (0x4c5, 'show'),
+        (0x4c6, 'addListener'),
+        (0x4c7, 'removeListener'),
+        (0x4c8, 'isDown'),
+        (0x4c9, 'getCode'),
+        (0x4ca, 'getAscii'),
+        (0x4cb, 'attachSound'),
+        (0x4cc, 'start'),
+        (0x4cd, 'getVolume'),
+        (0x4ce, 'setVolume'),
+        (0x4cf, 'setPan'),
+        (0x4d0, 'loadSound'),
+        (0x4d1, 'setTextFormat'),
+        (0x4d2, 'getTextFormat'),
+        (0x4d3, 'push'),
+        (0x4d4, 'pop'),
+        (0x4d5, 'slice'),
+        (0x4d6, 'splice'),
+        (0x4d7, 'reverse'),
+        (0x4d8, 'sort'),
+        (0x4d9, 'flush'),
+        (0x4da, 'getLocal'),
+        (0x4db, 'shift'),
+        (0x4dc, 'unshift'),
+        (0x4dd, 'registerClass'),
+        (0x4de, 'getUTCDay'),
+        (0x4df, 'getMilliseconds'),
+        (0x4e0, 'getUTCMilliseconds'),
+        (0x4e1, 'addProperty'),
+        (0x4e2, 'hasOwnProperty'),
+        (0x4e3, 'isPropertyEnumerable'),
+        (0x4e4, 'isPrototypeOf'),
+        (0x4e5, 'unwatch'),
+        (0x4e6, 'valueOf'),
+        (0x4e7, 'watch'),
+        (0x4e8, 'apply'),
+        (0x4e9, 'call'),
+        (0x4ea, 'contains'),
+        (0x4eb, 'containsPoint'),
+        (0x4ec, 'containsRectangle'),
+        (0x4ed, 'equals'),
+        (0x4ee, 'inflate'),
+        (0x4ef, 'inflatePoint'),
+        (0x4f0, 'intersection'),
+        (0x4f1, 'intersects'),
+        (0x4f2, 'isEmpty'),
+        (0x4f3, 'offset'),
+        (0x4f4, 'offsetPoint'),
+        (0x4f5, 'setEmpty'),
+        (0x4f6, 'union'),
+        (0x4f7, 'interpolate'),
+
+        # Event constants
+        (0x500, 'onKeyDown'),
+        (0x501, 'onKeyUp'),
+        (0x502, 'onMouseDown'),
+        (0x503, 'onMouseUp'),
+        (0x504, 'onMouseMove'),
+        (0x505, 'onLoad'),
+        (0x506, 'onEnterFrame'),
+        (0x507, 'onUnload'),
+        (0x508, 'onRollOver'),
+        (0x509, 'onRollOut'),
+        (0x50a, 'onPress'),
+        (0x50b, 'onRelease'),
+        (0x50c, 'onReleaseOutside'),
+        (0x50d, 'onData'),
+        (0x50e, 'onSoundComplete'),
+        (0x50f, 'onDragOver'),
+        (0x510, 'onDragOut'),
+
+        # Key constants
+        (0x600, 'BACKSPACE'),
+        (0x601, 'CAPSLOCK'),
+        (0x602, 'CONTROL'),
+        (0x603, 'DELETEKEY'),
+        (0x604, 'DOWN'),
+        (0x605, 'END'),
+        (0x606, 'ENTER'),
+        (0x607, 'ESCAPE'),
+        (0x608, 'HOME'),
+        (0x609, 'INSERT'),
+        (0x60a, 'LEFT'),
+        (0x60b, 'PGDN'),
+        (0x60c, 'PGUP'),
+        (0x60d, 'RIGHT'),
+        (0x60e, 'SHIFT'),
+        (0x60f, 'SPACE'),
+        (0x610, 'TAB'),
+        (0x611, 'UP'),
+
+        # Some sort of sorting constants.
+        (0x620, 'CASEINSENSITIVE'),
+        (0x621, 'DESCENDING'),
+        (0x622, 'UNIQUESORT'),
+        (0x623, 'RETURNINDEXEDARRAY'),
+        (0x624, 'NUMERIC'),
+
+        # Shape constants?
+        (0x700, 'redMultiplier'),
+        (0x701, 'greenMultiplier'),
+        (0x702, 'blueMultiplier'),
+        (0x703, 'alphaMultiplier'),
+        (0x704, 'redOffset'),
+        (0x705, 'greenOffset'),
+        (0x706, 'blueOffset'),
+        (0x707, 'alphaOffset'),
+        (0x708, 'rgb'),
+        (0x709, 'bottom'),
+        (0x70a, 'bottomRight'),
+        (0x70b, 'top'),
+        (0x70c, 'topLeft'),
+        (0x70d, 'LOW'),
+        (0x70e, 'MEDIUM'),
+        (0x70f, 'HIGH'),
+        (0x710, 'BEST'),
+
+        # Some more system functions?
+        (0x800, 'sound_play'),
+        (0x801, 'sound_stop'),
+        (0x802, 'sound_stop_all'),
+        (0x803, 'set_top_mc'),
+        (0x804, 'set_controlled_XML'),
+        (0x805, 'set_config_XML'),
+        (0x806, 'set_data_top'),
+        (0x807, 'attach_event'),
+        (0x808, 'detach_event'),
+        (0x809, 'set'),
+        (0x80a, 'get'),
+        (0x80b, 'ready'),
+        (0x80c, 'afp_available'),
+
+        # Time functions
+        (0x900, 'setDate'),
+        (0x901, 'setUTCDate'),
+        (0x902, 'setFullYear'),
+        (0x903, 'setUTCFullYear'),
+        (0x904, 'setHours'),
+        (0x905, 'setUTCHours'),
+        (0x906, 'setMilliseconds'),
+        (0x907, 'setUTCMilliseconds'),
+        (0x908, 'setMinutes'),
+        (0x909, 'setUTCMinutes'),
+        (0x90a, 'setMonth'),
+        (0x90b, 'setUTCMonth'),
+        (0x90c, 'setSeconds'),
+        (0x90d, 'setUTCSeconds'),
+        (0x90e, 'setTime'),
+        (0x90f, 'setYear'),
+    ]
+
+    @classmethod
+    def property_to_name(cls, propid: int) -> str:
+        for i, p in cls.__PROPERTIES:
+            if i == propid:
+                return p
+        return f"<UNKNOWN {propid}>"
 
 
 class SWF:
@@ -919,30 +1437,22 @@ class SWF:
                         # Unknown property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x100
                         offset_ptr += 1
-
-                        # TODO: Resolve these!
-                        vprint(f"{prefix}        PROPERTY CONST NAME: {hex(propertyval)}")
+                        vprint(f"{prefix}        PROPERTY CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x13:
                         # Class property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x300
                         offset_ptr += 1
-
-                        # TODO: Resolve these!
-                        vprint(f"{prefix}        CLASS CONST NAME: {hex(propertyval)}")
+                        vprint(f"{prefix}        CLASS CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x16:
                         # Func property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x400
                         offset_ptr += 1
-
-                        # TODO: Resolve these!
-                        vprint(f"{prefix}        FUNC CONST NAME: {hex(propertyval)}")
+                        vprint(f"{prefix}        FUNC CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x1c:
                         # Event property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
                         offset_ptr += 1
-
-                        # TODO: Resolve these!
-                        vprint(f"{prefix}        EVENT CONST NAME: {hex(propertyval)}")
+                        vprint(f"{prefix}        EVENT CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x22:
                         # Pointer to global object.
                         vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
@@ -950,9 +1460,7 @@ class SWF:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
                         offset_ptr += 1
-
-                        # TODO: Resolve these!
-                        vprint(f"{prefix}        ORGFUNC2 CONST NAME: {hex(propertyval)}")
+                        vprint(f"{prefix}        ORGFUNC2 CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     else:
                         raise Exception(f"Unsupported object {hex(obj_to_create)} to push!")
 
@@ -1107,20 +1615,24 @@ class SWF:
             vprint(f"{prefix}    Flags: {hex(flags)}, Object ID: {object_id}, Depth: {depth}")
 
             running_pointer = 8
+            unhandled_flags = flags
 
             if flags & 0x2:
+                unhandled_flags &= ~0x2
                 src_tag_id = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 vprint(f"{prefix}    Source Tag ID: {src_tag_id}")
 
             if flags & 0x10:
+                unhandled_flags &= ~0x10
                 unk2 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 vprint(f"{prefix}    Unk2: {hex(unk2)}")
 
             if flags & 0x20:
+                unhandled_flags &= ~0x20
                 nameoffset = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 add_coverage(dataoffset + running_pointer, 2)
                 name = self.__get_string(nameoffset)
@@ -1128,12 +1640,14 @@ class SWF:
                 vprint(f"{prefix}    Name: {name}")
 
             if flags & 0x40:
+                unhandled_flags &= ~0x40
                 unk3 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 vprint(f"{prefix}    Unk3: {hex(unk3)}")
 
             if flags & 0x20000:
+                unhandled_flags &= ~0x20000
                 blend = struct.unpack("<B", datachunk[running_pointer:(running_pointer + 1)])[0]
                 add_coverage(dataoffset + running_pointer, 1)
                 running_pointer += 1
@@ -1150,6 +1664,7 @@ class SWF:
             transform = Matrix.identity()
 
             if flags & 0x100:
+                unhandled_flags &= ~0x100
                 a_int, d_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
@@ -1159,6 +1674,7 @@ class SWF:
                 vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
             if flags & 0x200:
+                unhandled_flags &= ~0x200
                 b_int, c_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
@@ -1168,6 +1684,7 @@ class SWF:
                 vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
             if flags & 0x400:
+                unhandled_flags &= ~0x400
                 tx_int, ty_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
@@ -1181,6 +1698,7 @@ class SWF:
             acolor = Color(1.0, 1.0, 1.0, 1.0)
 
             if flags & 0x800:
+                unhandled_flags &= ~0x800
                 r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
@@ -1192,6 +1710,7 @@ class SWF:
                 vprint(f"{prefix}    Color: {color}")
 
             if flags & 0x1000:
+                unhandled_flags &= ~0x1000
                 r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
@@ -1203,6 +1722,7 @@ class SWF:
                 vprint(f"{prefix}    AColor: {color}")
 
             if flags & 0x2000:
+                unhandled_flags &= ~0x2000
                 rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
                 add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
@@ -1214,6 +1734,7 @@ class SWF:
                 vprint(f"{prefix}    Color: {color}")
 
             if flags & 0x4000:
+                unhandled_flags &= ~0x4000
                 rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
                 add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
@@ -1225,44 +1746,102 @@ class SWF:
                 vprint(f"{prefix}    AColor: {color}")
 
             if flags & 0x80:
-                # Some sort of event data? I dunno, but it changes the running pointer for data
-                # following it. Not sure what the data itself contains. This looks like it contains
-                # some lengths such as length of bytecode contained, and length of some values
-                # contained.
-                flags, size = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                # Object event triggers.
+                unhandled_flags &= ~0x80
+                event_flags, event_size = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
-                running_pointer += size
 
-                # TODO: This is basically not understood at all, I can't make heads or tails of
-                # the code. This definitely contains bytecode in some circumstances, maybe sprite
-                # init portion of the SWF spec?
-                vprint(f"{prefix}    Unknown Event data Flags: {hex(flags)}, Size: {size}")
+                if event_flags != 0:
+                    _, count = struct.unpack("<HH", datachunk[(running_pointer + 8):(running_pointer + 12)])
+                    add_coverage(dataoffset + running_pointer + 8, 4)
+
+                    # The game does not seem to care about length here, but we do, so let's calculate
+                    # offsets and use that for lengths.
+                    bytecode_offsets: List[int] = []
+                    for evt in range(count):
+                        evt_offset = running_pointer + 12 + (evt * 8)
+                        bytecode_offset = struct.unpack("<H", datachunk[(evt_offset + 6):(evt_offset + 8)])[0] + evt_offset
+                        bytecode_offsets.append(bytecode_offset)
+                    bytecode_offsets.append(event_size + running_pointer)
+
+                    beginning_to_end: Dict[int, int] = {}
+                    for i, bytecode_offset in enumerate(bytecode_offsets[:-1]):
+                        beginning_to_end[bytecode_offset] = bytecode_offsets[i + 1]
+
+                    vprint(f"{prefix}    Event Triggers, Count: {count}")
+                    for evt in range(count):
+                        evt_offset = running_pointer + 12 + (evt * 8)
+                        evt_flags, _, keycode, bytecode_offset = struct.unpack("<IBBH", datachunk[evt_offset:(evt_offset + 8)])
+                        add_coverage(dataoffset + evt_offset, 8)
+
+                        events: List[str] = []
+                        if evt_flags & 0x1:
+                            events.append("ON_LOAD")
+                        if evt_flags & 0x2:
+                            events.append("ON_ENTER_FRAME")
+                        if evt_flags & 0x4:
+                            events.append("ON_UNLOAD")
+                        if evt_flags & 0x8:
+                            events.append("ON_MOUSE_MOVE")
+                        if evt_flags & 0x10:
+                            events.append("ON_MOUSE_DOWN")
+                        if evt_flags & 0x20:
+                            events.append("ON_MOUSE_UP")
+                        if evt_flags & 0x40:
+                            events.append("ON_KEY_DOWN")
+                        if evt_flags & 0x80:
+                            events.append("ON_KEY_UP")
+                        if evt_flags & 0x100:
+                            events.append("ON_DATA")
+                        if evt_flags & 0x400:
+                            events.append("ON_PRESS")
+                        if evt_flags & 0x800:
+                            events.append("ON_RELEASE")
+                        if evt_flags & 0x1000:
+                            events.append("ON_RELEASE_OUTSIDE")
+                        if evt_flags & 0x2000:
+                            events.append("ON_ROLL_OVER")
+                        if evt_flags & 0x4000:
+                            events.append("ON_ROLL_OUT")
+
+                        bytecode_offset += evt_offset
+                        bytecode_length = beginning_to_end[bytecode_offset] - bytecode_offset
+
+                        vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, Bytecode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}")
+                        self.__parse_bytecode(datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ", verbose=verbose)
+                        add_coverage(dataoffset + bytecode_offset, bytecode_length)
+
+                running_pointer += event_size
 
             if flags & 0x10000:
                 # Some sort of filter data? Not sure what this is either. Needs more investigation
                 # if I encounter files with it.
-                count, size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                unhandled_flags &= ~0x10000
+                count, filter_size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
                 add_coverage(dataoffset + running_pointer, 4)
-                running_pointer += size
+                running_pointer += filter_size
 
-                vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {size}")
-
+                # TODO: This is not understood at all. I need to find data that uses it to continue.
                 # running_pointer + 4 starts a series of shorts (exactly count of them) which are
                 # all in the range of 0-7, corresponding to some sort of filter. They get sizes
                 # looked up and I presume there's data following this corresponding to those sizes.
                 # I don't know however as I've not encountered data with this bit.
+                vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {filter_size}")
 
             if flags & 0x1000000:
                 # Some sort of point, perhaps an x, y offset for the object?
+                unhandled_flags &= ~0x1000000
                 x, y = struct.unpack("<ff", datachunk[running_pointer:(running_pointer + 8)])
                 add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
+                # TODO: This doesn't seem right when run past Pop'n Music data.
                 point = Point(x / 20.0, y / 20.0)
                 vprint(f"{prefix}    Point: {point}")
 
             if flags & 0x2000000:
                 # Same as above, but initializing to 0, 0 instead of from data.
+                unhandled_flags &= ~0x2000000
                 point = Point(0.0, 0.0)
                 vprint(f"{prefix}    Point: {point}")
 
@@ -1271,13 +1850,22 @@ class SWF:
             # does it slot in for when to decode it?
 
             # This flag states whether we are creating a new object on this depth, or updating one.
+            unhandled_flags &= ~0x5
             if flags & 0x1:
                 vprint(f"{prefix}    Update object request")
             else:
                 vprint(f"{prefix}    Create object request")
+            if flags & 0x4:
+                vprint(f"{prefix}    Use transform matrix")
+            else:
+                vprint(f"{prefix}    Ignore transform matrix")
 
+            if unhandled_flags != 0:
+                raise Exception(f"Did not handle {hex(unhandled_flags)} flag bits!")
             if running_pointer < size:
                 raise Exception(f"Did not consume {size - running_pointer} bytes ({[hex(x) for x in datachunk[running_pointer:]]}) in object instantiation!")
+            if running_pointer != size:
+                raise Exception("Logic error!")
 
         elif tagid == AP2Tag.AP2_REMOVE_OBJECT:
             if size != 4:
@@ -1622,6 +2210,8 @@ class DrawParams:
             flagbits.append("(Instantiable)")
         if self.flags & 0x2:
             flagbits.append("(Includes Texture)")
+        if self.flags & 0x4:
+            flagbits.append("(Includes Texture Color)")
         if self.flags & 0x8:
             flagbits.append("(Includes Blend Color)")
         if self.flags & 0x40:
@@ -1656,6 +2246,9 @@ class Shape:
         # Texture points, as used alongside vertex chunks when the shape contains a texture.
         self.tex_points: List[Point] = []
 
+        # Colors for texture points, if they exist in the file.
+        self.tex_colors: List[Color] = []
+
         # Actual shape drawing parameters.
         self.draw_params: List[DrawParams] = []
 
@@ -1664,6 +2257,7 @@ class Shape:
             'name': self.name,
             'vertex_points': [p.as_dict() for p in self.vertex_points],
             'tex_points': [p.as_dict() for p in self.tex_points],
+            'tex_colors': [c.as_dict() for c in self.tex_colors],
             'draw_params': [d.as_dict() for d in self.draw_params],
         }
 
@@ -1671,6 +2265,7 @@ class Shape:
         return os.linesep.join([
             *[f"vertex point: {vertex}" for vertex in self.vertex_points],
             *[f"tex point: {tex}" for tex in self.tex_points],
+            *[f"tex color: {color}" for color in self.tex_colors],
             *[f"draw params: {params}" for params in self.draw_params],
         ])
 
@@ -1703,12 +2298,12 @@ class Shape:
         if self.data[16:20] != b"\0\0\0\0":
             raise Exception("Unhandled flag data bytes in GE2D structure!")
 
-        vertex_count, tex_count, unk1_count, label_count, render_params_count, _ = struct.unpack(
+        vertex_count, tex_count, color_count, label_count, render_params_count, _ = struct.unpack(
             f"{endian}HHHHHH",
             self.data[20:32],
         )
 
-        vertex_offset, tex_offset, unk1_offset, label_offset, render_params_offset = struct.unpack(
+        vertex_offset, tex_offset, color_offset, label_offset, render_params_offset = struct.unpack(
             f"{endian}IIIII",
             self.data[32:52],
         )
@@ -1729,10 +2324,19 @@ class Shape:
                 tex_points.append(Point(x, y))
         self.tex_points = tex_points
 
-        if unk1_offset != 0:
-            # These are supposedly colors, but I've never found a GE2D structure using this
-            # nor code that cares so I have no way of verifying.
-            raise Exception("Unknown offset pointer data present!")
+        colors: List[Color] = []
+        if color_offset != 0:
+            for colorno in range(color_count):
+                colorno_offset = color_offset + (4 * colorno)
+                rgba = struct.unpack(f"{endian}I", self.data[colorno_offset:colorno_offset + 4])[0]
+                color = Color(
+                    a=(rgba & 0xFF) / 255.0,
+                    b=((rgba >> 8) & 0xFF) / 255.0,
+                    g=((rgba >> 16) & 0xFF) / 255.0,
+                    r=((rgba >> 24) & 0xFF) / 255.0,
+                )
+                colors.append(color)
+        self.tex_colors = colors
 
         labels: List[str] = []
         if label_offset != 0:
@@ -1749,19 +2353,19 @@ class Shape:
             # are used when drawing shapes, whether to use a blend value or draw a primitive, etc.
             for render_paramsno in range(render_params_count):
                 render_paramsno_offset = render_params_offset + (16 * render_paramsno)
-                points, flags, tex1, tex2, trianglecount, _, rgba, triangleoffset = struct.unpack(
+                mode, flags, tex1, tex2, trianglecount, _, rgba, triangleoffset = struct.unpack(
                     f"{endian}BBBBHHII",
                     self.data[(render_paramsno_offset):(render_paramsno_offset + 16)]
                 )
 
-                if points != 4:
-                    raise Exception("Unexpected number of points in GE2D structure!")
+                if mode != 4:
+                    raise Exception("Unexpected mode in GE2D structure!")
                 if (flags & 0x2) and len(labels) == 0:
                     raise Exception("GE2D structure has a texture, but no region labels present!")
                 if (flags & 0x2) and (tex1 == 0xFF):
                     raise Exception("GE2D structure requests a texture, but no texture pointer present!")
-                if (flags & 0x4) or (tex2 != 0xFF):
-                    raise Exception("GE2D structure has second texture, but we don't support this!")
+                if tex2 != 0xFF:
+                    raise Exception("GE2D structure requests a second texture, but we don't support this!")
 
                 color = Color(
                     r=(rgba & 0xFF) / 255.0,
@@ -1776,10 +2380,10 @@ class Shape:
                     tex_offset = struct.unpack(f"{endian}H", self.data[render_paramstriangleno_offset:(render_paramstriangleno_offset + 2)])[0]
                     verticies.append(tex_offset)
 
-                # Seen bits are 0x1, 0x2, 0x8 so far.
+                # Seen bits are 0x1, 0x2, 0x4, 0x8 so far.
                 # 0x1 Is a "this shape is instantiable/drawable" bit.
                 # 0x2 Is the shape having a texture.
-                # 0x4 Is probably the shape having a second texture, but I don't know of any data using this.
+                # 0x4 Is the shape having a texture color per texture point.
                 # 0x8 Is "draw background color/blend" flag.
                 # 0x40 Is a "normalize texture coordinates" flag. It performs the below algorithm.
 
@@ -1796,7 +2400,7 @@ class Shape:
                     DrawParams(
                         flags=flags,
                         region=labels[tex1] if (flags & 0x2) else None,
-                        vertexes=verticies if (flags & 0x2) else [],
+                        vertexes=verticies if (flags & 0x6) else [],
                         blend=color if (flags & 0x8) else None,
                     )
                 )
