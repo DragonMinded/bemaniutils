@@ -4,7 +4,7 @@ import os
 import struct
 import sys
 from PIL import Image  # type: ignore
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from bemani.format.dxt import DXTBuffer
 from bemani.protocol.binary import BinaryEncoding
@@ -321,24 +321,53 @@ class AP2Tag:
 
 
 class AP2Action:
+    # End bytecode processing
     END = 0
+
+    # Advance movieclip to next frame.
     NEXT_FRAME = 1
+
+    # Rewind movieclip to previous frame.
     PREVIOUS_FRAME = 2
+
+    # Play the movieclip.
     PLAY = 3
+
+    # Stop the movieclip.
     STOP = 4
+
+    # Stop all sound from the movie clip.
     STOP_SOUND = 5
-    ADD = 6
+
+    # Pop two objects from the stack, subtract them, push the result to the stack.
     SUBTRACT = 7
+
+    # Pop two objects from the stack, multiply them, push the result to the stack.
     MULTIPLY = 8
+
+    # Pop two objects from the stack, divide them, push the result to the stack.
     DIVIDE = 9
-    EQUALS = 10
-    LESS = 11
+
+    # Pop an object from the stack, boolean negate it, push the result to the stack.
     NOT = 12
+
+    # Pop an object from the stack, discard it.
     POP = 13
+
+    # Pop an object off the stack, use that as a string to look up a variable, push
+    # that variable's value onto the stack.
     GET_VARIABLE = 14
+
+    # Pop two objects from the stack, if the second object is a string or const, define a
+    # variable with that name equal to the first object.
     SET_VARIABLE = 15
+
+    # Similar to get variable.
     GET_PROPERTY = 16
+
+    # Simiar to set variable.
     SET_PROPERTY = 17
+
     CLONE_SPRITE = 18
     REMOVE_SPRITE = 19
     TRACE = 20
@@ -348,30 +377,67 @@ class AP2Action:
     CAST_OP = 24
     IMPLEMENTS_OP = 25
     GET_TIME = 26
+
+    # Pops two values from the stack to look up what to delete.
     DELETE = 27
+
+    # Delete a variable as defined on the stack. Pops that variable name.
     DELETE2 = 28
+
+    # Pop two objects from the stack, and then define a local variable just like "SET_VARIABLE"
+    # but in the scope of the current movieclip or function.
     DEFINE_LOCAL = 29
+
+    # Call a function. Similar to CALL_METHOD but with only one pop for the function name.
     CALL_FUNCTION = 30
+
+    # Return the top of the stack as the return value of the function.
     RETURN = 31
+
+    # Pop two numbers, modulo them, push them back to the stack.
     MODULO = 32
+
+    # Create a new object, I haven't figured out what it pushes and pops from the stack yet.
     NEW_OBJECT = 33
+
     DEFINE_LOCAL2 = 34
+
+    # Init an array from the stack. I haven't figured out what it needs to push and pop.
     INIT_ARRAY = 35
+
     INIT_OBJECT = 36
     TYPEOF = 37
     TARGET_PATH = 38
+
+    # Add two values on the stack, popping them and pushing the result.
     ADD2 = 39
+
     LESS2 = 40
     EQUALS2 = 41
     TO_NUMBER = 42
     TO_STRING = 43
+
+    # Takes the top of the stack and duplicates the object before pushing that object to the stack.
     PUSH_DUPLICATE = 44
+
     STACK_SWAP = 45
+
+    # Get a member value and place it on the stack.
     GET_MEMBER = 46
+
+    # Set member, popping three values from the stack.
     SET_MEMBER = 47
+
+    # Increment value on stack.
     INCREMENT = 48
+
+    # Decrement value on stack.
     DECREMENT = 49
+
+    # Call method. Pops two values from the stack to lookup an object method, another value from the
+    # stack for the number of params, and then that many values from the stack as function parameters.
     CALL_METHOD = 50
+
     NEW_METHOD = 51
     INSTANCEOF = 52
     ENUMERATE2 = 53
@@ -384,24 +450,56 @@ class AP2Action:
     STRICT_EQUALS = 60
     GREATER = 61
     EXTENDS = 62
+
+    # Pop a value from the stack and store it in a register specified by the opcode param. Also push
+    # it back onto the stack.
     STORE_REGISTER = 63
+
+    # Define a function based on parameters on the stack. This reads the next 9 bytes of the bytecode
+    # as parameters, and uses that to read the next N bytes of bytecode as the function definition.
     DEFINE_FUNCTION2 = 64
-    TRY = 65
+
     WITH = 66
+
+    # Push an object onto the stack. Creates objects based on the bytecode parameters and pushes
+    # them onto the stack.
     PUSH = 67
+
+    # Unconditional jump based on bytecode value.
     JUMP = 68
+
     GET_URL2 = 69
+
+    # Pops a value from the stack, jumps to offset from opcode params if value is truthy.
     IF = 70
+
+    # Go to frame specified by top of stack, popping that value from the stack. Also specifies
+    # flags for whether to play or stop when going to that frame, and additional frames to advance
+    # in opcode params.
     GOTO_FRAME2 = 71
+
     GET_TARGET = 72
+
+    # Given a subtype of check and a positive offset to jump to on true, perform a conditional check.
+    # Pops two values from the stack for all equality checks except for undefined checks, which pop
+    # one value.
     IF2 = 73
+
+    # Similar to STORE_REGISTER but does not preserve the value on the stack afterwards.
     STORE_REGISTER2 = 74
+
     INIT_REGISTER = 75
+
+    # Similar to ADD_NUM_VARIABLE, but operating on a register number instead of the stack. Takes
+    # two params from opcodes, one for the register number and one for the addition value.
     ADD_NUM_REGISTER = 76
+
+    # Add a number dictated by an opcode param to the variable on the stack, popping the variable
+    # name.
     ADD_NUM_VARIABLE = 77
 
     @classmethod
-    def action_to_name(cls, tagid: int) -> str:
+    def action_to_name(cls, actionid: int) -> str:
         resources: Dict[int, str] = {
             cls.END: 'END',
             cls.NEXT_FRAME: 'NEXT_FRAME',
@@ -409,12 +507,9 @@ class AP2Action:
             cls.PLAY: 'PLAY',
             cls.STOP: 'STOP',
             cls.STOP_SOUND: 'STOP_SOUND',
-            cls.ADD: 'ADD',
             cls.SUBTRACT: 'SUBTRACT',
             cls.MULTIPLY: 'MULTIPLY',
             cls.DIVIDE: 'DIVIDE',
-            cls.EQUALS: 'EQUALS',
-            cls.LESS: 'LESS',
             cls.NOT: 'NOT',
             cls.POP: 'POP',
             cls.GET_VARIABLE: 'GET_VARIABLE',
@@ -468,7 +563,6 @@ class AP2Action:
             cls.EXTENDS: 'EXTENDS',
             cls.STORE_REGISTER: 'STORE_REGISTER',
             cls.DEFINE_FUNCTION2: 'DEFINE_FUNCTION2',
-            cls.TRY: 'TRY',
             cls.WITH: 'WITH',
             cls.PUSH: 'PUSH',
             cls.JUMP: 'JUMP',
@@ -483,7 +577,41 @@ class AP2Action:
             cls.ADD_NUM_VARIABLE: 'ADD_NUM_VARIABLE',
         }
 
-        return resources.get(tagid, "UNKNOWN")
+        return resources.get(actionid, "UNKNOWN")
+
+    @classmethod
+    def actions_without_params(cls) -> Set[int]:
+        return {
+            cls.END,
+            cls.NEXT_FRAME,
+            cls.PREVIOUS_FRAME,
+            cls.PLAY,
+            cls.STOP,
+            cls.STOP_SOUND,
+            cls.ADD2,
+            cls.SUBTRACT,
+            cls.MULTIPLY,
+            cls.DIVIDE,
+            cls.MODULO,
+            cls.NOT,
+            cls.POP,
+            cls.PUSH_DUPLICATE,
+            cls.DELETE,
+            cls.DELETE2,
+            cls.NEW_OBJECT,
+            cls.INIT_ARRAY,
+            cls.GET_VARIABLE,
+            cls.SET_VARIABLE,
+            cls.INCREMENT,
+            cls.DECREMENT,
+            cls.DEFINE_LOCAL,
+            cls.GET_MEMBER,
+            cls.SET_MEMBER,
+            cls.GET_PROPERTY,
+            cls.SET_PROPERTY,
+            cls.CALL_METHOD,
+            cls.CALL_FUNCTION,
+        }
 
 
 class AP2ObjectType:
@@ -638,6 +766,294 @@ class SWF:
             'descramble_info': "".join(_hex(x) for x in self.descramble_info),
         }
 
+    def __parse_bytecode(self, datachunk: bytes, string_offsets: List[int] = [], prefix: str = "", verbose: bool = False) -> None:
+        # Suppress debug text unless asked
+        if verbose:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                print(*args, **kwargs, file=sys.stderr)
+
+            add_coverage = self.add_coverage
+        else:
+            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
+                pass
+
+        # First, we need to check if this is a SWF-style bytecode or an AP2 bytecode.
+        ap2_sentinel = struct.unpack("<B", datachunk[0:1])[0]
+
+        if ap2_sentinel != 0xFF:
+            raise Exception("Encountered SWF-style bytecode but we don't support this!")
+
+        # Now, we need to grab the flags byte which tells us how to find the actual bytecode.
+        flags = struct.unpack("<B", datachunk[1:2])[0]
+
+        if flags & 0x1:
+            # There is an offset pointer telling us where the data is as well as string offset tables.
+            string_offsets_count = struct.unpack("<H", datachunk[2:4])[0]
+
+            # We don't want to overwrite the global ones with our current ones.
+            if not string_offsets:
+                string_offsets = list(struct.unpack("<" + ("H" * string_offsets_count), datachunk[4:(4 + (2 * string_offsets_count))]))
+
+            offset_ptr = (string_offsets_count + 2) * 2
+        else:
+            # The data directly follows, no pointer.
+            offset_ptr = 2
+        start_offset = offset_ptr
+
+        vprint(f"{prefix}    Flags: {hex(flags)}, Bytecode Actual Offset: {hex(offset_ptr)}")
+
+        # Actually parse out the opcodes:
+        while offset_ptr < len(datachunk):
+            # We leave it up to the individual opcode handlers to increment the offset pointer. By default, parameterless
+            # opcodes increase by one. Everything else increases by its own amount. Opcode parsing here is done in big-endian
+            # as the game code seems to always parse big-endian values.
+            opcode = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+            action_name = AP2Action.action_to_name(opcode)
+
+            # Because the starting offset is non-zero, we calculate this here as a convenience for displaying. It means
+            # that line numbers for opcodes start at 0 but we have to fix up offsets for jumps by the start_offset.
+            lineno = offset_ptr - start_offset
+
+            if opcode in AP2Action.actions_without_params():
+                vprint(f"{prefix}      {lineno}: {action_name}")
+                offset_ptr += 1
+            elif opcode == AP2Action.DEFINE_FUNCTION2:
+                function_flags, funcname_offset, bytecode_offset, _, bytecode_count = struct.unpack(
+                    ">HHHBH",
+                    datachunk[(offset_ptr + 1):(offset_ptr + 10)],
+                )
+
+                if funcname_offset == 0:
+                    funcname = "<anonymous function>"
+                else:
+                    funcname = self.__get_string(funcname_offset)
+                offset_ptr += 10 + (3 * bytecode_offset)
+
+                vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname}, Bytecode Offset: {hex(bytecode_offset)}, Bytecode Length: {hex(bytecode_count)}")
+                self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ", verbose=verbose)
+                vprint(f"{prefix}      END_{action_name}")
+
+                offset_ptr += bytecode_count
+            elif opcode == AP2Action.PUSH:
+                obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                vprint(f"{prefix}      {lineno}: {action_name}")
+
+                while obj_count > 0:
+                    obj_to_create = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                    offset_ptr += 1
+
+                    if obj_to_create == 0x0:
+                        # Integer "0" object.
+                        vprint(f"{prefix}        INTEGER: 0")
+                    elif obj_to_create == 0x1:
+                        # Float object, represented internally as a double.
+                        fval = struct.unpack(">f", datachunk[offset_ptr:(offset_ptr + 4)])[0]
+                        offset_ptr += 4
+
+                        vprint(f"{prefix}        FLOAT: {fval}")
+                    elif obj_to_create == 0x2:
+                        # Null pointer object.
+                        vprint(f"{prefix}        NULL")
+                    elif obj_to_create == 0x3:
+                        # Undefined constant.
+                        vprint(f"{prefix}        UNDEFINED")
+                    elif obj_to_create == 0x4:
+                        # Register value.
+                        regno = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                        offset_ptr += 1
+
+                        vprint(f"{prefix}        REGISTER NO: {regno}")
+                    elif obj_to_create == 0x5:
+                        # Boolean "TRUE" object.
+                        vprint(f"{prefix}        BOOLEAN: True")
+                    elif obj_to_create == 0x6:
+                        # Boolean "FALSE" object.
+                        vprint(f"{prefix}        BOOLEAN: False")
+                    elif obj_to_create == 0x7:
+                        # Integer object.
+                        ival = struct.unpack(">I", datachunk[offset_ptr:(offset_ptr + 4)])[0]
+                        offset_ptr += 4
+
+                        vprint(f"{prefix}        INTEGER: {ival}")
+                    elif obj_to_create == 0x8:
+                        # String constant object.
+                        const_offset = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                        const = self.__get_string(string_offsets[const_offset])
+                        offset_ptr += 1
+
+                        vprint(f"{prefix}        STRING CONST: {const}")
+                    elif obj_to_create == 0x9:
+                        # String constant, but with 16 bits for the offset. Probably not used except
+                        # on the largest files.
+                        const_offset = struct.unpack(">H", datachunk[offset_ptr:(offset_ptr + 2)])[0]
+                        const = self.__get_string(string_offsets[const_offset])
+                        offset_ptr += 2
+
+                        vprint(f"{prefix}        STRING_CONTS: {const}")
+                    elif obj_to_create == 0xa:
+                        # NaN constant.
+                        vprint(f"{prefix}        NAN")
+                    elif obj_to_create == 0xb:
+                        # Infinity constant.
+                        vprint(f"{prefix}        INFINITY")
+                    elif obj_to_create == 0xc:
+                        # Pointer to "this" object, whatever currently is executing the bytecode.
+                        vprint(f"{prefix}        POINTER TO THIS")
+                    elif obj_to_create == 0xd:
+                        # Pointer to "root" object, which is the movieclip this bytecode exists in.
+                        vprint(f"{prefix}        POINTER TO ROOT")
+                    elif obj_to_create == 0xe:
+                        # Pointer to "parent" object, whatever currently is executing the bytecode.
+                        # This seems to be the parent of the movie clip, or the current movieclip
+                        # if that isn't set.
+                        vprint(f"{prefix}        POINTER TO PARENT")
+                    elif obj_to_create == 0xf:
+                        # Current movie clip.
+                        vprint(f"{prefix}        POINTER TO CURRENT MOVIECLIP")
+                    elif obj_to_create == 0x10:
+                        # Unknown property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x100
+                        offset_ptr += 1
+
+                        # TODO: Resolve these!
+                        vprint(f"{prefix}        PROPERTY CONST NAME: {hex(propertyval)}")
+                    elif obj_to_create == 0x13:
+                        # Class property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x300
+                        offset_ptr += 1
+
+                        # TODO: Resolve these!
+                        vprint(f"{prefix}        CLASS CONST NAME: {hex(propertyval)}")
+                    elif obj_to_create == 0x16:
+                        # Func property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x400
+                        offset_ptr += 1
+
+                        # TODO: Resolve these!
+                        vprint(f"{prefix}        FUNC CONST NAME: {hex(propertyval)}")
+                    elif obj_to_create == 0x1c:
+                        # Event property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
+                        offset_ptr += 1
+
+                        # TODO: Resolve these!
+                        vprint(f"{prefix}        EVENT CONST NAME: {hex(propertyval)}")
+                    elif obj_to_create == 0x22:
+                        # Pointer to global object.
+                        vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
+                    elif obj_to_create == 0x27:
+                        # Some other property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
+                        offset_ptr += 1
+
+                        # TODO: Resolve these!
+                        vprint(f"{prefix}        ORGFUNC2 CONST NAME: {hex(propertyval)}")
+                    else:
+                        raise Exception(f"Unsupported object {hex(obj_to_create)} to push!")
+
+                    obj_count -= 1
+
+                vprint(f"{prefix}      END_{action_name}")
+            elif opcode == AP2Action.STORE_REGISTER:
+                obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                vprint(f"{prefix}      {lineno}: {action_name}")
+
+                while obj_count > 0:
+                    register_no = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                    offset_ptr += 1
+                    obj_count -= 1
+
+                    vprint(f"{prefix}        REGISTER NO: {register_no}")
+                vprint(f"{prefix}      END_{action_name}")
+            elif opcode == AP2Action.STORE_REGISTER2:
+                register_no = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                vprint(f"{prefix}      {lineno}: {action_name}")
+                vprint(f"{prefix}        REGISTER NO: {register_no}")
+                vprint(f"{prefix}      END_{action_name}")
+            elif opcode == AP2Action.IF:
+                jump_if_true_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                offset_ptr += 3
+
+                # TODO: This can jump outside of a function definition, most commonly seen when jumping to an
+                # "END" pointer at the end of a chunk. We need to handle this. We probably need function lines
+                # to be absolute instead of relative.
+                jump_if_true_offset += offset_ptr - start_offset
+
+                vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}")
+            elif opcode == AP2Action.IF2:
+                if2_type, jump_if_true_offset = struct.unpack(">BH", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
+                offset_ptr += 4
+
+                # TODO: This can jump outside of a function definition, most commonly seen when jumping to an
+                # "END" pointer at the end of a chunk. We need to handle this. We probably need function lines
+                # to be absolute instead of relative.
+                jump_if_true_offset += offset_ptr - start_offset
+
+                if2_typestr = {
+                    0: "==",
+                    1: "!=",
+                    2: "<",
+                    3: ">",
+                    4: "<=",
+                    5: ">=",
+                    6: "!",
+                    7: "BITAND",
+                    8: "BITNOTAND",
+                    9: "STRICT ==",
+                    10: "STRICT !=",
+                    11: "IS UNDEFINED",
+                    12: "IS NOT UNDEFINED",
+                }[if2_type]
+
+                vprint(f"{prefix}      {lineno}: {action_name} {if2_typestr}, Offset If True: {jump_if_true_offset}")
+            elif opcode == AP2Action.JUMP:
+                jump_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                offset_ptr += 3
+
+                # TODO: This can jump outside of a function definition, most commonly seen when jumping to an
+                # "END" pointer at the end of a chunk. We need to handle this. We probably need function lines
+                # to be absolute instead of relative.
+                jump_offset += offset_ptr - start_offset
+                vprint(f"{prefix}      {lineno}: {action_name} Offset: {jump_offset}")
+            elif opcode == AP2Action.ADD_NUM_VARIABLE:
+                amount_to_add = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                vprint(f"{prefix}      {lineno}: {action_name} Add Value: {amount_to_add}")
+            elif opcode == AP2Action.ADD_NUM_REGISTER:
+                register_no, amount_to_add = struct.unpack(">BB", datachunk[(offset_ptr + 1):(offset_ptr + 3)])
+                offset_ptr += 3
+
+                vprint(f"{prefix}      {lineno}: {action_name} Register No: {register_no}, Add Value: {amount_to_add}")
+            elif opcode == AP2Action.GOTO_FRAME2:
+                flags = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                if flags & 0x1:
+                    post = "STOP"
+                else:
+                    post = "PLAY"
+
+                if flags & 0x2:
+                    # Additional frames to add on top of stack value.
+                    additional_frames = struct.unpack(">H", datachunk[offset_ptr:(offset_ptr + 2)])[0]
+                    offset_ptr += 2
+                else:
+                    additional_frames = 0
+
+                vprint(f"{prefix}      {lineno}: {action_name} AND {post} Additional Frames: {additional_frames}")
+            else:
+                raise Exception(f"Can't advance, no handler for opcode {hex(opcode)}!")
+
     def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
         if verbose:
@@ -679,9 +1095,9 @@ class SWF:
             wat, font_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             vprint(f"{prefix}    Tag ID: {font_id}")
         elif tagid == AP2Tag.AP2_DO_ACTION:
-            # TODO: This is wrong, this is only for defined functions.
-            flags, unk1, nameoffset, unk2, _, unk3 = struct.unpack(">BHHHBH", ap2data[dataoffset:(dataoffset + 10)])
-            vprint(f"{prefix}    Flags: {hex(flags)}, Unk1: {hex(unk1)}, Name: {hex(nameoffset)}, Unk2: {hex(unk2)}, Unk3: {hex(unk3)}")
+            datachunk = ap2data[dataoffset:(dataoffset + size)]
+            self.__parse_bytecode(datachunk, prefix=prefix, verbose=verbose)
+            add_coverage(dataoffset, size)
         elif tagid == AP2Tag.AP2_PLACE_OBJECT:
             # Allow us to keep track of what we've consumed.
             datachunk = ap2data[dataoffset:(dataoffset + size)]
@@ -715,7 +1131,7 @@ class SWF:
                 unk3 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
-                vprint(f"{prefix}    Unk3: {hex(unk2)}")
+                vprint(f"{prefix}    Unk3: {hex(unk3)}")
 
             if flags & 0x20000:
                 blend = struct.unpack("<B", datachunk[running_pointer:(running_pointer + 1)])[0]
@@ -987,9 +1403,15 @@ class SWF:
         if curstring:
             raise Exception("Logic error!")
 
+        if 0 in self.strings:
+            raise Exception("Should not include null string!")
+
         return bytes(data)
 
     def __get_string(self, offset: int) -> str:
+        if offset == 0:
+            return ""
+
         self.strings[offset] = (self.strings[offset][0], True)
         return self.strings[offset][0]
 
@@ -1219,8 +1641,8 @@ class Shape:
         self.name = name
         self.data = data
 
-        # Rectangle points outlining this shape.
-        self.rect_points: List[Point] = []
+        # Vertex points outlining this shape.
+        self.vertex_points: List[Point] = []
 
         # Texture points, as used alongside vertex chunks when the shape contains a texture.
         self.tex_points: List[Point] = []
@@ -1231,14 +1653,14 @@ class Shape:
     def as_dict(self) -> Dict[str, Any]:
         return {
             'name': self.name,
-            'rect_points': [p.as_dict() for p in self.rect_points],
+            'vertex_points': [p.as_dict() for p in self.vertex_points],
             'tex_points': [p.as_dict() for p in self.tex_points],
             'draw_params': [d.as_dict() for d in self.draw_params],
         }
 
     def __repr__(self) -> str:
         return os.linesep.join([
-            *[f"rect point: {rect}" for rect in self.rect_points],
+            *[f"vertex point: {vertex}" for vertex in self.vertex_points],
             *[f"tex point: {tex}" for tex in self.tex_points],
             *[f"draw params: {params}" for params in self.draw_params],
         ])
@@ -1261,27 +1683,34 @@ class Shape:
         else:
             raise Exception("Invalid magic value in GE2D structure!")
 
+        # There are two integers at 0x4 and 0x8 which are basically file versions.
+
         filesize = struct.unpack(f"{endian}I", self.data[12:16])[0]
         if filesize != len(self.data):
             raise Exception("Unexpected file size for GE2D structure!")
 
-        rect_count, tex_count, unk1_count, label_count, render_params_count, _ = struct.unpack(
+        # There is an integer at 0x16 which always appears to be zero. It should be
+        # file flags, but I don't know what it does since no code I've found cares.
+        if self.data[16:20] != b"\0\0\0\0":
+            raise Exception("Unhandled flag data bytes in GE2D structure!")
+
+        vertex_count, tex_count, unk1_count, label_count, render_params_count, _ = struct.unpack(
             f"{endian}HHHHHH",
             self.data[20:32],
         )
 
-        rect_offset, tex_offset, unk1_offset, label_offset, render_params_offset = struct.unpack(
+        vertex_offset, tex_offset, unk1_offset, label_offset, render_params_offset = struct.unpack(
             f"{endian}IIIII",
             self.data[32:52],
         )
 
-        rect_points: List[Point] = []
-        if rect_offset != 0:
-            for rectno in range(rect_count):
-                rectno_offset = rect_offset + (8 * rectno)
-                x, y = struct.unpack(f"{endian}ff", self.data[rectno_offset:rectno_offset + 8])
-                rect_points.append(Point(x, y))
-        self.rect_points = rect_points
+        vertex_points: List[Point] = []
+        if vertex_offset != 0:
+            for vertexno in range(vertex_count):
+                vertexno_offset = vertex_offset + (8 * vertexno)
+                x, y = struct.unpack(f"{endian}ff", self.data[vertexno_offset:vertexno_offset + 8])
+                vertex_points.append(Point(x, y))
+        self.vertex_points = vertex_points
 
         tex_points: List[Point] = []
         if tex_offset != 0:
@@ -1292,6 +1721,8 @@ class Shape:
         self.tex_points = tex_points
 
         if unk1_offset != 0:
+            # These are supposedly colors, but I've never found a GE2D structure using this
+            # nor code that cares so I have no way of verifying.
             raise Exception("Unknown offset pointer data present!")
 
         labels: List[str] = []
@@ -1309,7 +1740,7 @@ class Shape:
             # are used when drawing shapes, whether to use a blend value or draw a primitive, etc.
             for render_paramsno in range(render_params_count):
                 render_paramsno_offset = render_params_offset + (16 * render_paramsno)
-                points, flags, label, _, trianglecount, _, rgba, triangleoffset = struct.unpack(
+                points, flags, tex1, tex2, trianglecount, _, rgba, triangleoffset = struct.unpack(
                     f"{endian}BBBBHHII",
                     self.data[(render_paramsno_offset):(render_paramsno_offset + 16)]
                 )
@@ -1318,6 +1749,10 @@ class Shape:
                     raise Exception("Unexpected number of points in GE2D structure!")
                 if (flags & 0x2) and len(labels) == 0:
                     raise Exception("GE2D structure has a texture, but no region labels present!")
+                if (flags & 0x2) and (tex1 == 0xFF):
+                    raise Exception("GE2D structure requests a texture, but no texture pointer present!")
+                if (flags & 0x4) or (tex2 != 0xFF):
+                    raise Exception("GE2D structure has second texture, but we don't support this!")
 
                 color = Color(
                     r=(rgba & 0xFF) / 255.0,
@@ -1335,6 +1770,7 @@ class Shape:
                 # Seen bits are 0x1, 0x2, 0x8 so far.
                 # 0x1 Is a "this shape is instantiable/drawable" bit.
                 # 0x2 Is the shape having a texture.
+                # 0x4 Is probably the shape having a second texture, but I don't know of any data using this.
                 # 0x8 Is "draw background color/blend" flag.
                 # 0x40 Is a "normalize texture coordinates" flag. It performs the below algorithm.
 
@@ -1350,7 +1786,7 @@ class Shape:
                 draw_params.append(
                     DrawParams(
                         flags=flags,
-                        region=labels[label] if (flags & 0x2) else None,
+                        region=labels[tex1] if (flags & 0x2) else None,
                         vertexes=verticies if (flags & 0x2) else [],
                         blend=color if (flags & 0x8) else None,
                     )
