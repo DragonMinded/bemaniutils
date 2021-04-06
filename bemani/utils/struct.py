@@ -5,6 +5,32 @@ import sys
 from typing import Optional, Tuple, List, Any
 
 
+"""
+Some examples of valid format specifiers and what they do are as follows:
+
+*z&+0x200# = Decodes an array of string pointers, and includes the count
+             alongside the string, starting at 0x200, and displayed in
+             hex. Broken down, it has the following parts:
+
+             *z = Dereference the current value (*) and treat that integer
+                  as a pointer to a null-terminated string (z).
+             &+0x200# = Print the current line number (#), offset by the
+                        value 0x200 (+0x200) as a hex number (&).
+"""
+
+
+class LineNumber:
+    def __init__(self, offset: int, hex: bool) -> None:
+        self.offset = offset
+        self.hex = hex
+
+    def toStr(self, lineno: int) -> str:
+        if self.hex:
+            return str(hex(self.offset + lineno))
+        else:
+            return str(self.offset + lineno)
+
+
 class StructPrinter:
     def __init__(self, data: bytes) -> None:
         self.data = data
@@ -68,7 +94,8 @@ class StructPrinter:
 
                 continue
 
-            if c.isdigit():
+            # If we have either an integer prefix, or an offset prefix, accumulate here.
+            if c.isdigit() or c in '+-' or (c in 'xabcdefABCDEF' and ('+' in cur_accum or '-' in cur_accum)):
                 cur_accum += c
                 continue
 
@@ -138,7 +165,7 @@ class StructPrinter:
                     break
                 count -= 1
 
-            line = []
+            line: List[Any] = []
             for spec in specs:
                 if isinstance(spec, str):
                     if spec[0] == "&":
@@ -147,7 +174,15 @@ class StructPrinter:
                     else:
                         dohex = False
 
-                    if spec == "z":
+                    if spec[-1] == "#":
+                        if len(spec) > 1:
+                            if spec[0] not in "+-":
+                                raise Exception("Line number offsets must include a '+' or '-' prefix!")
+                            val = int(spec[:-1], 16 if "0x" in spec else 10)
+                        else:
+                            val = 0
+                        line.append(LineNumber(val, dohex))
+                    elif spec == "z":
                         # Null-terminated string
                         bs = b""
                         while self.data[offset:(offset + 1)] != b"\x00":
@@ -227,6 +262,8 @@ def main() -> int:
             "Surround a chunk of format specifiers with parenthesis to dereference complex structures. For "
             "ease of unpacking C string pointers, the specifier \"z\" is recognzied to mean null-terminated "
             "string. A & preceeding a format specifier means that we should convert to hex before displaying."
+            "For the ease of decoding enumerations, the specifier \"#\" is recognized to mean entry number."
+            "You can provide it a offset value such as \"+20#\" to start at a certain number."
         ),
         type=str,
         default=None,
@@ -245,21 +282,23 @@ def main() -> int:
     data = fp.read()
     fp.close()
 
-    def __str(obj: object) -> str:
+    def __str(obj: object, lineno: int) -> str:
         if obj is None:
             return "NULL"
+        elif isinstance(obj, LineNumber):
+            return obj.toStr(lineno)
         elif isinstance(obj, list):
             if len(obj) == 1:
-                return __str(obj[0])
+                return __str(obj[0], lineno)
             else:
-                return f"({', '.join(__str(o) for o in obj)})"
+                return f"({', '.join(__str(o, lineno) for o in obj)})"
         else:
             return repr(obj)
 
     printer = StructPrinter(data)
     lines = printer.parse_struct(args.start, args.end, args.count, args.format)
-    for line in lines:
-        print(", ".join(__str(entry) for entry in line))
+    for i, line in enumerate(lines):
+        print(", ".join(__str(entry, i) for entry in line))
 
     return 0
 
