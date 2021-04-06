@@ -1,7 +1,8 @@
 import argparse
 import pefile  # type: ignore
 import struct
-from typing import Tuple, List, Any
+import sys
+from typing import Optional, Tuple, List, Any
 
 
 class StructPrinter:
@@ -101,28 +102,42 @@ class StructPrinter:
                 return (offset - start) + section.PointerToRawData
         raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
-    def parse_struct(self, startaddr: str, endaddr: str, fmt: str) -> List[Any]:
+    def parse_struct(self, startaddr: str, endaddr: str, countstr: str, fmt: str) -> List[Any]:
         start: int = int(startaddr, 16)
-        end: int = int(endaddr, 16)
+        end: Optional[int] = int(endaddr, 16) if endaddr is not None else None
+        count: Optional[int] = int(countstr, 16 if "0x" in countstr else 10) if countstr is not None else None
+
+        if end is None and count is None:
+            raise Exception("Can't handle endless structures!")
+        if end is not None and count is not None:
+            raise Exception("Can't handle providing two ends!")
 
         if start >= self.pe.OPTIONAL_HEADER.ImageBase:
             # Assume this is virtual
             start = self.virtual_to_physical(start)
 
-        if end >= self.pe.OPTIONAL_HEADER.ImageBase:
+        if end is not None and end >= self.pe.OPTIONAL_HEADER.ImageBase:
             # Assume this is virtual
             end = self.virtual_to_physical(end)
 
         # Parse out any dereference instructions.
         prefix, specs = self.parse_format_spec(fmt)
 
-        return self.__parse_struct(start, end, prefix, specs)
+        return self.__parse_struct(start, end, count, prefix, specs)
 
-    def __parse_struct(self, start: int, end: int, prefix: str, specs: List[Any]) -> List[Any]:
+    def __parse_struct(self, start: int, end: Optional[int], count: Optional[int], prefix: str, specs: List[Any]) -> List[Any]:
         # Now, parse out each chunk.
         output = []
         offset = start
-        while offset < end:
+        while True:
+            if end is not None:
+                if offset >= end:
+                    break
+            if count is not None:
+                if count <= 0:
+                    break
+                count -= 1
+
             line = []
             for spec in specs:
                 if isinstance(spec, str):
@@ -166,7 +181,7 @@ class StructPrinter:
                         line.append(None)
                     else:
                         pointer = self.virtual_to_physical(pointer)
-                        subparse = self.__parse_struct(pointer, pointer + 1, prefix, spec)
+                        subparse = self.__parse_struct(pointer, pointer + 1, None, prefix, spec)
                         if len(subparse) != 1:
                             raise Exception("Logic error!")
                         line.append(subparse[0])
@@ -176,7 +191,7 @@ class StructPrinter:
         return output
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description="A utility to print structs out of a DLL.")
     parser.add_argument(
         "--file",
@@ -194,10 +209,15 @@ def main() -> None:
     )
     parser.add_argument(
         "--end",
-        help="Hex offset into the file we should go until.",
+        help="Hex offset into the file we should go until. Alternatively you can use --count",
         type=str,
         default=None,
-        required=True,
+    )
+    parser.add_argument(
+        "--count",
+        help="Number of entries to parse, as a decimal or hex integer. Alternatively you can use --end",
+        type=str,
+        default=None,
     )
     parser.add_argument(
         "--format",
@@ -213,6 +233,13 @@ def main() -> None:
         required=True,
     )
     args = parser.parse_args()
+
+    if args.end is None and args.count is None:
+        print("You must specify either an --end or a --count!", file=sys.stderr)
+        return 1
+    if args.end is not None and args.count is not None:
+        print("You cannot specify both an --end and a --count!", file=sys.stderr)
+        return 1
 
     fp = open(args.file, 'rb')
     data = fp.read()
@@ -230,10 +257,12 @@ def main() -> None:
             return repr(obj)
 
     printer = StructPrinter(data)
-    lines = printer.parse_struct(args.start, args.end, args.format)
+    lines = printer.parse_struct(args.start, args.end, args.count, args.format)
     for line in lines:
         print(", ".join(__str(entry) for entry in line))
 
+    return 0
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
