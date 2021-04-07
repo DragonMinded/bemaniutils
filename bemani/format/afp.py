@@ -368,14 +368,37 @@ class AP2Action:
     # Simiar to set variable.
     SET_PROPERTY = 17
 
+    # Clone a sprite that's specified on the stack.
     CLONE_SPRITE = 18
+
+    # Remove a sprite as specified on the stack.
     REMOVE_SPRITE = 19
+
+    # Print a trace of the current object on the stack, and pop it.
     TRACE = 20
+
+    # Start dragging an object. It pops a value from the stack to set as the drag target.
+    # It pops a second boolean value from the stack to specify if the drag target should be
+    # locked to the mouse. One opcode specifies that we pop 4 more values from the stack
+    # as a rectangle to constrain the mouse if the opcode is > 0, that we don't constrain
+    # at all if the opcode is 0, or that we pop another boolean from the stack and constrain
+    # if that value is true.
     START_DRAG = 21
+
+    # End dragging the current drag target that was started with START_DRAG.
     END_DRAG = 22
+
+    # Pop an object from the stack and throw it as an exception.
     THROW = 23
+
+    # Pop an object from the stack, and an object representing a class. If the first
+    # object is an instance of the class, push it back. Otherwise, push back a null.
     CAST_OP = 24
+
+    # Unclear exactly what this does on the stack, the implementation seems wrong.
     IMPLEMENTS_OP = 25
+
+    # Get the current playback position as an integer number of milliseconds, pushed to the stack.
     GET_TIME = 26
 
     # Pops two values from the stack to look up what to delete.
@@ -400,13 +423,19 @@ class AP2Action:
     # Create a new object, I haven't figured out what it pushes and pops from the stack yet.
     NEW_OBJECT = 33
 
+    # Define a variable in the local movieclip or function, without a value.
     DEFINE_LOCAL2 = 34
 
     # Init an array from the stack. I haven't figured out what it needs to push and pop.
     INIT_ARRAY = 35
 
     INIT_OBJECT = 36
+
+    # Pop an object off the stack, push the type of the object as a string.
     TYPEOF = 37
+
+    # Pop an item off the stack, and if it is a movieclip, push the string path. If it isn't
+    # a movieclip, push an undefined object onto the stack.
     TARGET_PATH = 38
 
     # Add two values on the stack, popping them and pushing the result.
@@ -441,14 +470,32 @@ class AP2Action:
     NEW_METHOD = 51
     INSTANCEOF = 52
     ENUMERATE2 = 53
+
+    # Pop two values from the stack, bitwise and them, push the result.
     BIT_AND = 54
+
+    # Pop two values from the stack, bitwise or them, push the result.
     BIT_OR = 55
+
+    # Pop two values from the stack, bitwise xor them, push the result.
     BIT_XOR = 56
+
+    # Pop the amount to left shift, and an integer from the stack, push the result.
     BIT_L_SHIFT = 57
+
+    # Pop the amount to right shift, and an integer from the stack, push the result.
     BIT_R_SHIFT = 58
+
+    # Same as above but unsigned. It appears that games implement this identically to BIT_U_R_SHIFT.
     BIT_U_R_SHIFT = 59
+
+    # Pop two values from the stack, push a boolean set to true if the values are strictly equal.
     STRICT_EQUALS = 60
+
+    # Pop two objects off the stack, push a boolean object for whether the first object is greater tha
+    # the second or not.
     GREATER = 61
+
     EXTENDS = 62
 
     # Pop a value from the stack and store it in a register specified by the opcode param. Also push
@@ -594,17 +641,37 @@ class AP2Action:
             cls.DIVIDE,
             cls.MODULO,
             cls.NOT,
+            cls.BIT_AND,
+            cls.BIT_OR,
+            cls.BIT_XOR,
+            cls.BIT_L_SHIFT,
+            cls.BIT_R_SHIFT,
+            cls.BIT_U_R_SHIFT,
+            cls.STRICT_EQUALS,
+            cls.GREATER,
+            cls.CLONE_SPRITE,
+            cls.REMOVE_SPRITE,
+            cls.TRACE,
+            cls.TYPEOF,
+            cls.TARGET_PATH,
+            cls.THROW,
+            cls.CAST_OP,
+            cls.IMPLEMENTS_OP,
+            cls.GET_TIME,
+            cls.RETURN,
             cls.POP,
             cls.PUSH_DUPLICATE,
             cls.DELETE,
             cls.DELETE2,
             cls.NEW_OBJECT,
             cls.INIT_ARRAY,
+            cls.END_DRAG,
             cls.GET_VARIABLE,
             cls.SET_VARIABLE,
             cls.INCREMENT,
             cls.DECREMENT,
             cls.DEFINE_LOCAL,
+            cls.DEFINE_LOCAL2,
             cls.GET_MEMBER,
             cls.SET_MEMBER,
             cls.GET_PROPERTY,
@@ -710,8 +777,6 @@ class AP2PointerType:
 
 
 class AP2PropertyType:
-    # TODO: This is missing some properties for newer games.
-
     __PROPERTIES: List[Tuple[int, str]] = [
         # Seems to be properties on every object.
         (0x100, '_x'),
@@ -2874,6 +2939,11 @@ class SWF:
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
                         offset_ptr += 1
                         vprint(f"{prefix}        EVENT CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x19:
+                        # Other property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x200
+                        offset_ptr += 1
+                        vprint(f"{prefix}        OTHER CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x22:
                         # Pointer to global object.
                         vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
@@ -2964,6 +3034,11 @@ class SWF:
                 offset_ptr += 2
 
                 vprint(f"{prefix}      {lineno}: {action_name} Add Value: {amount_to_add}")
+            elif opcode == AP2Action.START_DRAG:
+                constraint = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                vprint(f"{prefix}      {lineno}: {action_name} Constrain Mouse: {'yes' if constraint > 0 else ('no' if constrained == 0 else 'check stack')}")
             elif opcode == AP2Action.ADD_NUM_REGISTER:
                 register_no, amount_to_add = struct.unpack(">BB", datachunk[(offset_ptr + 1):(offset_ptr + 3)])
                 offset_ptr += 3
@@ -3027,8 +3102,20 @@ class SWF:
             vprint(f"{prefix}    Tag ID: {sprite_id}")
             self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix, verbose=verbose)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
-            wat, font_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
-            vprint(f"{prefix}    Tag ID: {font_id}")
+            unk, font_id, fontname_offset, xml_prefix_offset, data_offset, data_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
+            add_coverage(dataoffset, 12)
+
+            fontname = self.__get_string(fontname_offset)
+            xml_prefix = self.__get_string(xml_prefix_offset)
+
+            vprint(f"{prefix}    Tag ID: {font_id}, Font Name: {fontname}, XML Prefix: {xml_prefix}, Entries: {data_count}")
+
+            for i in range(data_count):
+                entry_offset = dataoffset + 12 + (data_offset * 2) + (i * 2)
+                entry_value = struct.unpack("<H", ap2data[entry_offset:(entry_offset + 2)])[0]
+                add_coverage(entry_offset, 2)
+
+                vprint(f"{prefix}      Height: {entry_value}")
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
             self.__parse_bytecode(datachunk, prefix=prefix, verbose=verbose)
@@ -3323,6 +3410,8 @@ class SWF:
             object_id, depth = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}")
             add_coverage(dataoffset, 4)
+        else:
+            raise Exception(f"Unimplemented tag {tagid}!")
 
     def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
