@@ -3272,9 +3272,27 @@ class SWF:
                 point = Point(0.0, 0.0)
                 vprint(f"{prefix}    Point: {point}")
 
-            # TODO: There's a flag 0x40000 that appears in a lot of DDR PS3 AFP files. I don't know
-            # what it is yet, but it appears to correspond to 4 bytes of data. The question is, where
-            # does it slot in for when to decode it?
+            if flags & 0x40000:
+                # Some pair of shorts, not sure, its in DDR PS3 data.
+                unhandled_flags &= ~0x40000
+                x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                add_coverage(dataoffset + running_pointer, 4)
+                running_pointer += 4
+
+                # TODO: I have no idea what these are.
+                point = Point(x * 3.051758e-05, y * 3.051758e-05)
+                vprint(f"{prefix}    Point: {point}")
+
+            if flags & 0x80000:
+                # Some pair of shorts, not sure, its in DDR PS3 data.
+                unhandled_flags &= ~0x80000
+                x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                add_coverage(dataoffset + running_pointer, 4)
+                running_pointer += 4
+
+                # TODO: I have no idea what these are.
+                point = Point(x * 3.051758e-05, y * 3.051758e-05)
+                vprint(f"{prefix}    Point: {point}")
 
             # This flag states whether we are creating a new object on this depth, or updating one.
             unhandled_flags &= ~0xD
