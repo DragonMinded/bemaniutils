@@ -3038,7 +3038,7 @@ class SWF:
                 constraint = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                vprint(f"{prefix}      {lineno}: {action_name} Constrain Mouse: {'yes' if constraint > 0 else ('no' if constrained == 0 else 'check stack')}")
+                vprint(f"{prefix}      {lineno}: {action_name} Constrain Mouse: {'yes' if constraint > 0 else ('no' if constraint == 0 else 'check stack')}")
             elif opcode == AP2Action.ADD_NUM_REGISTER:
                 register_no, amount_to_add = struct.unpack(">BB", datachunk[(offset_ptr + 1):(offset_ptr + 3)])
                 offset_ptr += 3
