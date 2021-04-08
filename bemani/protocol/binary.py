@@ -306,7 +306,7 @@ class BinaryDecoder:
                 return node
             elif child_type == Node.ATTR_TYPE:
                 key = self.__read_node_name()
-                node.add_attribute(key)
+                node.set_attribute(key)
             else:
                 child = self.__read_node(child_type)
                 node.add_child(child)
