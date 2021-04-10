@@ -448,6 +448,7 @@ class AP2Action:
     # Init an array from the stack. I haven't figured out what it needs to push and pop.
     INIT_ARRAY = 35
 
+    # Init an object from the stack.
     INIT_OBJECT = 36
 
     # Pop an object off the stack, push the type of the object as a string.
@@ -460,9 +461,19 @@ class AP2Action:
     # Add two values on the stack, popping them and pushing the result.
     ADD2 = 39
 
+    # Pops two values from the stack, and pushes a boolean representing whether one is less than
+    # the other. If they cannot be compared, pushes an "Undefined" object onto the stack instead.
     LESS2 = 40
+
+    # Pop two objects from the stack, get their string equivalent, and push a boolean onto the
+    # stack if those strings match.
     EQUALS2 = 41
+
+    # Pops the top of the stack, converts it to an integer object, and pushes it. If it can't
+    # convert, instead pushes a "NaN" object.
     TO_NUMBER = 42
+
+    # Pops the top of the stack, converts the object to its string equivalent, and pushes it.
     TO_STRING = 43
 
     # Takes the top of the stack and duplicates the object before pushing that object to the stack.
@@ -668,6 +679,8 @@ class AP2Action:
             cls.BIT_U_R_SHIFT,
             cls.STRICT_EQUALS,
             cls.GREATER,
+            cls.LESS2,
+            cls.EQUALS2,
             cls.CLONE_SPRITE,
             cls.REMOVE_SPRITE,
             cls.TRACE,
@@ -684,6 +697,7 @@ class AP2Action:
             cls.DELETE2,
             cls.NEW_OBJECT,
             cls.INIT_ARRAY,
+            cls.INIT_OBJECT,
             cls.END_DRAG,
             cls.GET_VARIABLE,
             cls.SET_VARIABLE,
@@ -697,6 +711,8 @@ class AP2Action:
             cls.SET_PROPERTY,
             cls.CALL_METHOD,
             cls.CALL_FUNCTION,
+            cls.TO_NUMBER,
+            cls.TO_STRING,
         }
 
 
@@ -2953,19 +2969,29 @@ class SWF:
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x400
                         offset_ptr += 1
                         vprint(f"{prefix}        FUNC CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
-                    elif obj_to_create == 0x1c:
-                        # Event property name.
-                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
-                        offset_ptr += 1
-                        vprint(f"{prefix}        EVENT CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x19:
                         # Other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x200
                         offset_ptr += 1
                         vprint(f"{prefix}        OTHER CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x1c:
+                        # Event property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
+                        offset_ptr += 1
+                        vprint(f"{prefix}        EVENT CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x1f:
+                        # Key constants.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x600
+                        offset_ptr += 1
+                        vprint(f"{prefix}        KEY CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x22:
                         # Pointer to global object.
                         vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
+                    elif obj_to_create == 0x24:
+                        # Some other property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x700
+                        offset_ptr += 1
+                        vprint(f"{prefix}        ETC2 CONST NAME: {AP2PropertyType.property_to_name(propertyval)}")
                     elif obj_to_create == 0x27:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
@@ -3081,7 +3107,7 @@ class SWF:
 
                 vprint(f"{prefix}      {lineno}: {action_name} AND {post} Additional Frames: {additional_frames}")
             else:
-                raise Exception(f"Can't advance, no handler for opcode {hex(opcode)}!")
+                raise Exception(f"Can't advance, no handler for opcode {opcode} ({hex(opcode)})!")
 
     def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
@@ -3508,11 +3534,11 @@ class SWF:
             size = tag & 0x3FFFFF
 
             if size > 0x200000:
-                raise Exception(f"Invalid tag size {size}")
+                raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
             vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
             self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix, verbose=verbose)
-            tags_offset += size + 4  # Skip past tag header and data.
+            tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
 
         # Now, parse frames.
         vprint(f"{prefix}Number of Frames: {frame_count}")
