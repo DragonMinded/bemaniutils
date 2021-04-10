@@ -162,6 +162,25 @@ class Point:
         return f"x: {round(self.x, 5)}, y: {round(self.y, 5)}"
 
 
+class Rectangle:
+    def __init__(self, left: float, top: float, bottom: float, right: float) -> None:
+        self.left = left
+        self.top = top
+        self.bottom = bottom
+        self.right = right
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'left': self.left,
+            'top': self.top,
+            'bottom': self.bottom,
+            'right': self.right,
+        }
+
+    def __repr__(self) -> str:
+        return f"left: {round(self.left, 5)}, top: {round(self.top, 5)}, bottom: {round(self.bottom, 5)}, right: {round(self.right, 5)}"
+
+
 class AP2Tag:
     END = 0x0
     SHOW_FRAME = 0x1
@@ -317,7 +336,7 @@ class AP2Tag:
             cls.AP2_VIDEO: 'AP2_VIDEO',
         }
 
-        return resources.get(tagid, f"<UNKNOWN {tagid}>")
+        return resources.get(tagid, f"<UNKNOWN {hex(tagid)}>")
 
 
 class AP2Action:
@@ -2710,7 +2729,7 @@ class AP2PropertyType:
         for i, p in cls.__PROPERTIES:
             if i == propid:
                 return p
-        return f"<UNKNOWN {propid}>"
+        return f"<UNKNOWN {hex(propid)}>"
 
 
 class SWF:
@@ -3410,8 +3429,49 @@ class SWF:
             object_id, depth = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}")
             add_coverage(dataoffset, 4)
+        elif tagid == AP2Tag.AP2_DEFINE_EDIT_TEXT:
+            if size != 44:
+                raise Exception("Invalid size {size} to get data from AP2_DEFINE_EDIT_TEXT!")
+
+            flags, edit_text_id, defined_font_tag_id, font_height, unk_str2_offset = struct.unpack("<IHHHH", ap2data[dataoffset:(dataoffset + 12)])
+            add_coverage(dataoffset, 12)
+
+            unk1, unk2, unk3, unk4 = struct.unpack("<HHHH", ap2data[(dataoffset + 12):(dataoffset + 20)])
+            add_coverage(dataoffset + 12, 8)
+
+            rgba, f1, f2, f3, f4, variable_name_offset, default_text_offset = struct.unpack("<IiiiiHH", ap2data[(dataoffset + 20):(dataoffset + 44)])
+            add_coverage(dataoffset + 20, 24)
+
+            vprint(f"{prefix}    Tag ID: {edit_text_id}, Font Tag: {defined_font_tag_id}, Height Selection: {font_height}, Flags: {hex(flags)}")
+
+            unk_string2 = self.__get_string(unk_str2_offset) or None
+            vprint(f"{prefix}      Unk String: {unk_string2}")
+
+            rect = Rectangle(f1 / 20.0, f2 / 20.0, f3 / 20.0, f4 / 20.0)
+            vprint(f"{prefix}      Rectangle: {rect}")
+
+            variable_name = self.__get_string(variable_name_offset) or None
+            vprint(f"{prefix}      Variable Name: {variable_name}")
+
+            color = Color(
+                r=(rgba & 0xFF) / 255.0,
+                g=((rgba >> 8) & 0xFF) / 255.0,
+                b=((rgba >> 16) & 0xFF) / 255.0,
+                a=((rgba >> 24) & 0xFF) / 255.0,
+            )
+            vprint(f"{prefix}      Text Color: {color}")
+
+            vprint(f"{prefix}      Unk1: {unk1}, Unk2: {unk2}, Unk3: {unk3}, Unk4: {unk4}")
+
+            # flags & 0x20 means something with offset 16-18.
+            # flags & 0x200 is unk str below is a HTML tag.
+
+            if flags & 0x80:
+                # Has some sort of string pointer.
+                default_text = self.__get_string(default_text_offset) or None
+                vprint(f"{prefix}      Default Text: {default_text}")
         else:
-            raise Exception(f"Unimplemented tag {tagid}!")
+            raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
     def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "", verbose: bool = False) -> None:
         # Suppress debug text unless asked
