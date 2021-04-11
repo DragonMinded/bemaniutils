@@ -8,7 +8,7 @@ import textwrap
 from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict
 
-from bemani.format.afp import AFPFile, Shape, SWF
+from bemani.format.afp import TXP2File, Shape, SWF
 
 
 def main() -> int:
@@ -141,7 +141,7 @@ def main() -> int:
                 raise Exception("Cannot generate mapping overlays when splitting sprites!")
 
         with open(args.file, "rb") as bfp:
-            afpfile = AFPFile(bfp.read(), verbose=args.verbose)
+            afpfile = TXP2File(bfp.read(), verbose=args.verbose)
 
         # Actually place the files down.
         os.makedirs(args.dir, exist_ok=True)
@@ -297,7 +297,7 @@ def main() -> int:
     if args.action == "update":
         # First, parse the file out
         with open(args.file, "rb") as bfp:
-            afpfile = AFPFile(bfp.read(), verbose=args.verbose)
+            afpfile = TXP2File(bfp.read(), verbose=args.verbose)
 
         # Now, find any PNG files that match texture names.
         for texture in afpfile.textures:
@@ -339,7 +339,7 @@ def main() -> int:
     if args.action == "print":
         # First, parse the file out
         with open(args.file, "rb") as bfp:
-            afpfile = AFPFile(bfp.read(), verbose=args.verbose)
+            afpfile = TXP2File(bfp.read(), verbose=args.verbose)
 
         # Now, print it
         print(json.dumps(afpfile.as_dict(), sort_keys=True, indent=4))
