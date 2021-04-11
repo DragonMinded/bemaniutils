@@ -1,0 +1,71 @@
+from typing import Any, Dict
+
+
+class Matrix:
+    def __init__(self, a: float, b: float, c: float, d: float, tx: float, ty: float) -> None:
+        self.a = a
+        self.b = b
+        self.c = c
+        self.d = d
+        self.tx = tx
+        self.ty = ty
+
+    @staticmethod
+    def identity() -> "Matrix":
+        return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+    def __repr__(self) -> str:
+        return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
+
+
+class Color:
+    def __init__(self, r: float, g: float, b: float, a: float) -> None:
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'r': self.r,
+            'g': self.g,
+            'b': self.b,
+            'a': self.a,
+        }
+
+    def __repr__(self) -> str:
+        return f"r: {round(self.r, 5)}, g: {round(self.g, 5)}, b: {round(self.b, 5)}, a: {round(self.a, 5)}"
+
+
+class Point:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'x': self.x,
+            'y': self.y,
+        }
+
+    def __repr__(self) -> str:
+        return f"x: {round(self.x, 5)}, y: {round(self.y, 5)}"
+
+
+class Rectangle:
+    def __init__(self, left: float, top: float, bottom: float, right: float) -> None:
+        self.left = left
+        self.top = top
+        self.bottom = bottom
+        self.right = right
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'left': self.left,
+            'top': self.top,
+            'bottom': self.bottom,
+            'right': self.right,
+        }
+
+    def __repr__(self) -> str:
+        return f"left: {round(self.left, 5)}, top: {round(self.top, 5)}, bottom: {round(self.bottom, 5)}, right: {round(self.right, 5)}"
