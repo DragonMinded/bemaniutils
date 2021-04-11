@@ -1,7 +1,6 @@
 import io
 import os
 import struct
-import sys
 from PIL import Image  # type: ignore
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -12,7 +11,7 @@ from bemani.protocol.node import Node
 
 from .swf import SWF
 from .geo import Shape
-from .util import TrackedCoverage, scramble_text, descramble_text, pad, align, _hex
+from .util import TrackedCoverage, VerboseOutput, scramble_text, descramble_text, pad, align, _hex
 
 
 class PMAN:
@@ -140,7 +139,7 @@ class Unknown2:
         }
 
 
-class TXP2File(TrackedCoverage):
+class TXP2File(TrackedCoverage, VerboseOutput):
     def __init__(self, contents: bytes, verbose: bool = False) -> None:
         # Make sure our coverage engine is initialized.
         super().__init__()
@@ -213,7 +212,8 @@ class TXP2File(TrackedCoverage):
 
         # Parse out the file structure.
         with self.covered(len(contents), verbose):
-            self.__parse(verbose)
+            with self.debugging(verbose):
+                self.__parse(verbose)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -265,15 +265,7 @@ class TXP2File(TrackedCoverage):
             offset += 1
         return out
 
-    def descramble_pman(self, offset: int, verbose: bool) -> PMAN:
-        # Suppress debug text unless asked
-        if verbose:
-            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                print(*args, **kwargs, file=sys.stderr)
-        else:
-            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
+    def descramble_pman(self, offset: int) -> PMAN:
         # Unclear what the first three unknowns are, but the fourth
         # looks like it could possibly be two int16s indicating unknown?
         magic, expect_zero, flags1, flags2, numentries, flags3, data_offset = struct.unpack(
@@ -312,7 +304,7 @@ class TXP2File(TrackedCoverage):
                 name = descramble_text(bytedata, self.text_obfuscated)
                 names[entry_no] = name
                 ordering[entry_no] = i
-                vprint(f"    {entry_no}: {name}, offset: {hex(nameoffset)}")
+                self.vprint(f"    {entry_no}: {name}, offset: {hex(nameoffset)}")
 
                 if name_crc != TXP2File.crc32(name.encode('ascii')):
                     raise Exception(f"Name CRC failed for {name}")
@@ -333,18 +325,7 @@ class TXP2File(TrackedCoverage):
             flags3=flags3,
         )
 
-    def __parse(
-        self,
-        verbose: bool = False,
-    ) -> None:
-        # Suppress debug text unless asked
-        if verbose:
-            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                print(*args, **kwargs, file=sys.stderr)
-        else:
-            def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
+    def __parse(self, verbose: bool) -> None:
         # First, check the signature
         if self.data[0:4] == b"2PXT":
             self.endian = "<"
@@ -389,7 +370,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000001 - textures; count: {length}, offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000001 - textures; count: {length}, offset: {hex(offset)}")
 
             for x in range(length):
                 interesting_offset = offset + (x * 12)
@@ -418,7 +399,7 @@ class TXP2File(TrackedCoverage):
                             self.add_coverage(texture_offset, 8)
                             if deflated_size != (texture_length - 8):
                                 raise Exception("We got an incorrect length for lz texture!")
-                            vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
+                            self.vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
                             inflated_size = (inflated_size + 3) & (~3)
 
                             # Get the data offset.
@@ -439,7 +420,7 @@ class TXP2File(TrackedCoverage):
                             # I assume they're like the above, so lets put in some asertions.
                             if deflated_size != (texture_length - 8):
                                 raise Exception("We got an incorrect length for raw texture!")
-                            vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
+                            self.vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
 
                             # Just grab the raw data.
                             lz_data = None
@@ -633,7 +614,7 @@ class TXP2File(TrackedCoverage):
                                 'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
                             )
                         else:
-                            vprint(f"Unsupported format {hex(fmt)} for texture {name}")
+                            self.vprint(f"Unsupported format {hex(fmt)} for texture {name}")
                             img = None
 
                         self.textures.append(
@@ -652,7 +633,7 @@ class TXP2File(TrackedCoverage):
                             )
                         )
         else:
-            vprint("Bit 0x000001 - textures; NOT PRESENT")
+            self.vprint("Bit 0x000001 - textures; NOT PRESENT")
 
         # Mapping between texture index and the name of the texture.
         if feature_mask & 0x02:
@@ -661,17 +642,17 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000002 - texturemapping; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000002 - texturemapping; offset: {hex(offset)}")
 
             if offset != 0:
-                self.texturemap = self.descramble_pman(offset, verbose)
+                self.texturemap = self.descramble_pman(offset)
         else:
-            vprint("Bit 0x000002 - texturemapping; NOT PRESENT")
+            self.vprint("Bit 0x000002 - texturemapping; NOT PRESENT")
 
         if feature_mask & 0x04:
-            vprint("Bit 0x000004 - legacy lz mode on")
+            self.vprint("Bit 0x000004 - legacy lz mode on")
         else:
-            vprint("Bit 0x000004 - legacy lz mode off")
+            self.vprint("Bit 0x000004 - legacy lz mode off")
 
         # Mapping between region index and the texture it goes to as well as the
         # region of texture that this particular graphic makes up.
@@ -683,7 +664,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000008 - regions; count: {length}, offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000008 - regions; count: {length}, offset: {hex(offset)}")
 
             if offset != 0 and length > 0:
                 for i in range(length):
@@ -702,9 +683,9 @@ class TXP2File(TrackedCoverage):
                     region = TextureRegion(texture_no, left, top, right, bottom)
                     self.texture_to_region.append(region)
 
-                    vprint(f"    {region}, offset: {hex(descriptor_offset)}")
+                    self.vprint(f"    {region}, offset: {hex(descriptor_offset)}")
         else:
-            vprint("Bit 0x000008 - regions; NOT PRESENT")
+            self.vprint("Bit 0x000008 - regions; NOT PRESENT")
 
         if feature_mask & 0x10:
             # Names of the graphics regions, so we can look into the texture_to_region
@@ -713,17 +694,17 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000010 - regionmapping; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000010 - regionmapping; offset: {hex(offset)}")
 
             if offset != 0:
-                self.regionmap = self.descramble_pman(offset, verbose)
+                self.regionmap = self.descramble_pman(offset)
         else:
-            vprint("Bit 0x000010 - regionmapping; NOT PRESENT")
+            self.vprint("Bit 0x000010 - regionmapping; NOT PRESENT")
 
         if feature_mask & 0x20:
-            vprint("Bit 0x000020 - text obfuscation on")
+            self.vprint("Bit 0x000020 - text obfuscation on")
         else:
-            vprint("Bit 0x000020 - text obfuscation off")
+            self.vprint("Bit 0x000020 - text obfuscation off")
 
         if feature_mask & 0x40:
             # Two unknown bytes, first is a length or a count. Secound is
@@ -732,7 +713,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000040 - unknown; count: {length}, offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000040 - unknown; count: {length}, offset: {hex(offset)}")
 
             if offset != 0 and length > 0:
                 for i in range(length):
@@ -749,7 +730,7 @@ class TXP2File(TrackedCoverage):
                         bytedata = self.get_until_null(name_offset)
                         self.add_coverage(name_offset, len(bytedata) + 1, unique=False)
                         name = descramble_text(bytedata, self.text_obfuscated)
-                        vprint(f"    {name}")
+                        self.vprint(f"    {name}")
 
                     self.unknown1.append(
                         Unknown1(
@@ -759,7 +740,7 @@ class TXP2File(TrackedCoverage):
                     )
                     self.add_coverage(unk_offset + 4, 12)
         else:
-            vprint("Bit 0x000040 - unknown; NOT PRESENT")
+            self.vprint("Bit 0x000040 - unknown; NOT PRESENT")
 
         if feature_mask & 0x80:
             # One unknown byte, treated as an offset. This is clearly the mapping for the parsed
@@ -768,13 +749,13 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000080 - unknownmapping; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000080 - unknownmapping; offset: {hex(offset)}")
 
             # TODO: I have no idea what this is for.
             if offset != 0:
-                self.unk_pman1 = self.descramble_pman(offset, verbose)
+                self.unk_pman1 = self.descramble_pman(offset)
         else:
-            vprint("Bit 0x000080 - unknownmapping; NOT PRESENT")
+            self.vprint("Bit 0x000080 - unknownmapping; NOT PRESENT")
 
         if feature_mask & 0x100:
             # Two unknown bytes, first is a length or a count. Secound is
@@ -783,7 +764,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000100 - unknown; count: {length}, offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000100 - unknown; count: {length}, offset: {hex(offset)}")
 
             if offset != 0 and length > 0:
                 for i in range(length):
@@ -793,7 +774,7 @@ class TXP2File(TrackedCoverage):
                     )
                     self.add_coverage(unk_offset, 4)
         else:
-            vprint("Bit 0x000100 - unknown; NOT PRESENT")
+            self.vprint("Bit 0x000100 - unknown; NOT PRESENT")
 
         if feature_mask & 0x200:
             # One unknown byte, treated as an offset. Almost positive its a string mapping
@@ -802,13 +783,13 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000200 - unknownmapping; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000200 - unknownmapping; offset: {hex(offset)}")
 
             # TODO: I have no idea what this is for.
             if offset != 0:
-                self.unk_pman2 = self.descramble_pman(offset, verbose)
+                self.unk_pman2 = self.descramble_pman(offset)
         else:
-            vprint("Bit 0x000200 - unknownmapping; NOT PRESENT")
+            self.vprint("Bit 0x000200 - unknownmapping; NOT PRESENT")
 
         if feature_mask & 0x400:
             # One unknown byte, treated as an offset. I have no idea what this is used for,
@@ -818,9 +799,9 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x000400 - unknown; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000400 - unknown; offset: {hex(offset)}")
         else:
-            vprint("Bit 0x000400 - unknown; NOT PRESENT")
+            self.vprint("Bit 0x000400 - unknown; NOT PRESENT")
 
         if feature_mask & 0x800:
             # SWF raw data that is loaded and passed to AFP core. It is equivalent to the
@@ -829,7 +810,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x000800 - swfdata; count: {length}, offset: {hex(offset)}")
+            self.vprint(f"Bit 0x000800 - swfdata; count: {length}, offset: {hex(offset)}")
 
             for x in range(length):
                 interesting_offset = offset + (x * 12)
@@ -844,7 +825,7 @@ class TXP2File(TrackedCoverage):
                         bytedata = self.get_until_null(name_offset)
                         self.add_coverage(name_offset, len(bytedata) + 1, unique=False)
                         name = descramble_text(bytedata, self.text_obfuscated)
-                        vprint(f"    {name}, length: {swf_length}, offset: {hex(swf_offset)}")
+                        self.vprint(f"    {name}, length: {swf_length}, offset: {hex(swf_offset)}")
 
                     if swf_offset != 0:
                         self.swfdata.append(
@@ -855,7 +836,7 @@ class TXP2File(TrackedCoverage):
                         )
                         self.add_coverage(swf_offset, swf_length)
         else:
-            vprint("Bit 0x000800 - swfdata; NOT PRESENT")
+            self.vprint("Bit 0x000800 - swfdata; NOT PRESENT")
 
         if feature_mask & 0x1000:
             # A mapping structure that allows looking up SWF data by name.
@@ -863,12 +844,12 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x001000 - swfmapping; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x001000 - swfmapping; offset: {hex(offset)}")
 
             if offset != 0:
-                self.swfmap = self.descramble_pman(offset, verbose)
+                self.swfmap = self.descramble_pman(offset)
         else:
-            vprint("Bit 0x001000 - swfmapping; NOT PRESENT")
+            self.vprint("Bit 0x001000 - swfmapping; NOT PRESENT")
 
         if feature_mask & 0x2000:
             # These are shapes as used with the SWF data above. They contain mappings between a
@@ -878,7 +859,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            vprint(f"Bit 0x002000 - shapes; count: {length}, offset: {hex(offset)}")
+            self.vprint(f"Bit 0x002000 - shapes; count: {length}, offset: {hex(offset)}")
 
             for x in range(length):
                 shape_base_offset = offset + (x * 12)
@@ -906,12 +887,12 @@ class TXP2File(TrackedCoverage):
                         self.shapes.append(shape)
                         self.add_coverage(shape_offset, shape_length)
 
-                        vprint(f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}")
+                        self.vprint(f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}")
                         for line in str(shape).split(os.linesep):
-                            vprint(f"        {line}")
+                            self.vprint(f"        {line}")
 
         else:
-            vprint("Bit 0x002000 - shapes; NOT PRESENT")
+            self.vprint("Bit 0x002000 - shapes; NOT PRESENT")
 
         if feature_mask & 0x4000:
             # Mapping so that shapes can be looked up by name to get their offset.
@@ -919,12 +900,12 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x004000 - shapesmapping; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x004000 - shapesmapping; offset: {hex(offset)}")
 
             if offset != 0:
-                self.shapemap = self.descramble_pman(offset, verbose)
+                self.shapemap = self.descramble_pman(offset)
         else:
-            vprint("Bit 0x004000 - shapesmapping; NOT PRESENT")
+            self.vprint("Bit 0x004000 - shapesmapping; NOT PRESENT")
 
         if feature_mask & 0x8000:
             # One unknown byte, treated as an offset. I have no idea what this is because
@@ -933,13 +914,13 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x008000 - unknown; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x008000 - unknown; offset: {hex(offset)}")
 
             # Since I've never seen this, I'm going to assume that it showing up is
             # bad and make things read only.
             self.read_only = True
         else:
-            vprint("Bit 0x008000 - unknown; NOT PRESENT")
+            self.vprint("Bit 0x008000 - unknown; NOT PRESENT")
 
         if feature_mask & 0x10000:
             # Included font package, BINXRPC encoded. This is basically a texture sheet with an XML
@@ -953,7 +934,7 @@ class TXP2File(TrackedCoverage):
             expect_zero, length, binxrpc_offset = struct.unpack(f"{self.endian}III", self.data[offset:(offset + 12)])
             self.add_coverage(offset, 12)
 
-            vprint(f"Bit 0x010000 - fontinfo; offset: {hex(offset)}, binxrpc offset: {hex(binxrpc_offset)}")
+            self.vprint(f"Bit 0x010000 - fontinfo; offset: {hex(offset)}, binxrpc offset: {hex(binxrpc_offset)}")
 
             if expect_zero != 0:
                 # If we find non-zero versions of this, then that means updating the file is
@@ -966,7 +947,7 @@ class TXP2File(TrackedCoverage):
             else:
                 self.fontdata = None
         else:
-            vprint("Bit 0x010000 - fontinfo; NOT PRESENT")
+            self.vprint("Bit 0x010000 - fontinfo; NOT PRESENT")
 
         if feature_mask & 0x20000:
             # This is the byteswapping headers that allow us to byteswap the SWF data before passing it
@@ -975,7 +956,7 @@ class TXP2File(TrackedCoverage):
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
-            vprint(f"Bit 0x020000 - swfheaders; offset: {hex(offset)}")
+            self.vprint(f"Bit 0x020000 - swfheaders; offset: {hex(offset)}")
 
             if offset > 0 and len(self.swfdata) > 0:
                 for i in range(len(self.swfdata)):
@@ -988,7 +969,7 @@ class TXP2File(TrackedCoverage):
                         f"{self.endian}III",
                         self.data[structure_offset:(structure_offset + 12)]
                     )
-                    vprint(f"    length: {afp_header_length}, offset: {hex(afp_header)}")
+                    self.vprint(f"    length: {afp_header_length}, offset: {hex(afp_header)}")
                     self.add_coverage(structure_offset, 12)
 
                     if expect_zero != 0:
@@ -999,12 +980,12 @@ class TXP2File(TrackedCoverage):
                     self.swfdata[i].descramble_info = self.data[afp_header:(afp_header + afp_header_length)]
                     self.add_coverage(afp_header, afp_header_length)
         else:
-            vprint("Bit 0x020000 - swfheaders; NOT PRESENT")
+            self.vprint("Bit 0x020000 - swfheaders; NOT PRESENT")
 
         if feature_mask & 0x40000:
-            vprint("Bit 0x040000 - modern lz mode on")
+            self.vprint("Bit 0x040000 - modern lz mode on")
         else:
-            vprint("Bit 0x040000 - modern lz mode off")
+            self.vprint("Bit 0x040000 - modern lz mode off")
 
         if feature_mask & 0xFFF80000:
             # We don't know these bits at all!

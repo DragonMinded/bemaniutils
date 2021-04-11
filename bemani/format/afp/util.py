@@ -90,3 +90,31 @@ class TrackedCoverage:
             # Print final range
             offset = len(self.coverage)
             print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+
+
+class VerboseOutputManager:
+    def __init__(self, covered_class: "VerboseOutput", verbose: bool) -> None:
+        self.covered_class = covered_class
+        self.verbose = verbose
+
+    def __enter__(self) -> "VerboseOutputManager":
+        if self.verbose:
+            self.covered_class._verbose = True
+        else:
+            self.covered_class._verbose = False
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.covered_class._verbose = False
+
+
+class VerboseOutput:
+    def __init__(self) -> None:
+        self._verbose: bool = False
+
+    def debugging(self, verbose: bool) -> VerboseOutputManager:
+        return VerboseOutputManager(self, verbose)
+
+    def vprint(self, *args: Any, **kwargs: Any) -> None:
+        if self._verbose:
+            print(*args, **kwargs, file=sys.stderr)
