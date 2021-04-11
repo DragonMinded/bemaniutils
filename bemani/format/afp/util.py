@@ -1,3 +1,8 @@
+import sys
+
+from typing import Any, List
+
+
 def _hex(data: int) -> str:
     hexval = hex(data)[2:]
     if len(hexval) == 1:
@@ -34,3 +39,54 @@ def scramble_text(text: str, obfuscated: bool) -> bytes:
         return bytes(((x + 0x80) & 0xFF) for x in text.encode('ascii')) + b'\0'
     else:
         return text.encode('ascii') + b'\0'
+
+
+class TrackedCoverageManager:
+    def __init__(self, covered_class: "TrackedCoverage", verbose: bool) -> None:
+        self.covered_class = covered_class
+        self.verbose = verbose
+
+    def __enter__(self) -> "TrackedCoverageManager":
+        if self.verbose:
+            self.covered_class._tracking = True
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.covered_class._tracking = False
+
+
+class TrackedCoverage:
+    def __init__(self) -> None:
+        self.coverage: List[bool] = []
+        self._tracking: bool = False
+
+    def covered(self, size: int, verbose: bool) -> TrackedCoverageManager:
+        if verbose:
+            self.coverage = [False] * size
+        return TrackedCoverageManager(self, verbose)
+
+    def add_coverage(self, offset: int, length: int, unique: bool = True) -> None:
+        if not self._tracking:
+            # Save some CPU cycles if we aren't verbose.
+            return
+        for i in range(offset, offset + length):
+            if self.coverage[i] and unique:
+                raise Exception(f"Already covered {hex(offset)}!")
+            self.coverage[i] = True
+
+    def print_coverage(self) -> None:
+        # First offset that is not coverd in a run.
+        start = None
+
+        for offset, covered in enumerate(self.coverage):
+            if covered:
+                if start is not None:
+                    print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+                    start = None
+            else:
+                if start is None:
+                    start = offset
+        if start is not None:
+            # Print final range
+            offset = len(self.coverage)
+            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)

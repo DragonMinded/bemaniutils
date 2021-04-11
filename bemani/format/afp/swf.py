@@ -6,51 +6,32 @@ from typing import Any, Dict, List, Tuple
 
 from .types import Matrix, Color, Point, Rectangle
 from .types import AP2Action, AP2Tag, AP2Property
-from .util import _hex
+from .util import TrackedCoverage, _hex
 
 
-class SWF:
+class SWF(TrackedCoverage):
     def __init__(
         self,
         name: str,
         data: bytes,
         descramble_info: bytes = b"",
     ) -> None:
+        # First, init the coverage engine.
+        super().__init__()
+
+        # Now, initialize parsed data.
         self.name = name
         self.exported_name = ""
         self.data = data
         self.descramble_info = descramble_info
 
-        # Initialize coverage. This is used to help find missed/hidden file
-        # sections that we aren't parsing correctly.
-        self.coverage: List[bool] = [False] * len(data)
-
         # Initialize string table. This is used for faster lookup of strings
         # as well as tracking which strings in the table have been parsed correctly.
         self.strings: Dict[int, Tuple[str, bool]] = {}
 
-    def add_coverage(self, offset: int, length: int, unique: bool = True) -> None:
-        for i in range(offset, offset + length):
-            if self.coverage[i] and unique:
-                raise Exception(f"Already covered {hex(offset)}!")
-            self.coverage[i] = True
-
     def print_coverage(self) -> None:
-        # First offset that is not coverd in a run.
-        start = None
-
-        for offset, covered in enumerate(self.coverage):
-            if covered:
-                if start is not None:
-                    print(f"Uncovered bytes: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
-                    start = None
-            else:
-                if start is None:
-                    start = offset
-        if start is not None:
-            # Print final range
-            offset = len(self.coverage)
-            print(f"Uncovered bytes: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+        # First print uncovered bytes
+        super().print_coverage()
 
         # Now, print uncovered strings
         for offset, (string, covered) in self.strings.items():
@@ -71,13 +52,8 @@ class SWF:
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 print(*args, **kwargs, file=sys.stderr)
-
-            add_coverage = self.add_coverage
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
-            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
         # First, we need to check if this is a SWF-style bytecode or an AP2 bytecode.
@@ -375,13 +351,8 @@ class SWF:
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 print(*args, **kwargs, file=sys.stderr)
-
-            add_coverage = self.add_coverage
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
-            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
         if tagid == AP2Tag.AP2_SHAPE:
@@ -389,13 +360,13 @@ class SWF:
                 raise Exception(f"Invalid shape size {size}")
 
             _, shape_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
-            add_coverage(dataoffset, size)
+            self.add_coverage(dataoffset, size)
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
             vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()}")
         elif tagid == AP2Tag.AP2_DEFINE_SPRITE:
             sprite_flags, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
-            add_coverage(dataoffset, 4)
+            self.add_coverage(dataoffset, 4)
 
             if sprite_flags & 1 == 0:
                 # This is an old-style tag, it has data directly following the header.
@@ -403,13 +374,13 @@ class SWF:
             else:
                 # This is a new-style tag, it has a relative data pointer.
                 subtags_offset = struct.unpack("<I", ap2data[(dataoffset + 4):(dataoffset + 8)])[0] + dataoffset
-                add_coverage(dataoffset + 4, 4)
+                self.add_coverage(dataoffset + 4, 4)
 
             vprint(f"{prefix}    Tag ID: {sprite_id}")
             self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix, verbose=verbose)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
             unk, font_id, fontname_offset, xml_prefix_offset, data_offset, data_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
-            add_coverage(dataoffset, 12)
+            self.add_coverage(dataoffset, 12)
 
             fontname = self.__get_string(fontname_offset)
             xml_prefix = self.__get_string(xml_prefix_offset)
@@ -419,18 +390,18 @@ class SWF:
             for i in range(data_count):
                 entry_offset = dataoffset + 12 + (data_offset * 2) + (i * 2)
                 entry_value = struct.unpack("<H", ap2data[entry_offset:(entry_offset + 2)])[0]
-                add_coverage(entry_offset, 2)
+                self.add_coverage(entry_offset, 2)
 
                 vprint(f"{prefix}      Height: {entry_value}")
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
             self.__parse_bytecode(datachunk, prefix=prefix, verbose=verbose)
-            add_coverage(dataoffset, size)
+            self.add_coverage(dataoffset, size)
         elif tagid == AP2Tag.AP2_PLACE_OBJECT:
             # Allow us to keep track of what we've consumed.
             datachunk = ap2data[dataoffset:(dataoffset + size)]
             flags, depth, object_id = struct.unpack("<IHH", datachunk[0:8])
-            add_coverage(dataoffset, 8)
+            self.add_coverage(dataoffset, 8)
 
             vprint(f"{prefix}    Flags: {hex(flags)}, Object ID: {object_id}, Depth: {depth}")
 
@@ -440,21 +411,21 @@ class SWF:
             if flags & 0x2:
                 unhandled_flags &= ~0x2
                 src_tag_id = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
-                add_coverage(dataoffset + running_pointer, 2)
+                self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 vprint(f"{prefix}    Source Tag ID: {src_tag_id}")
 
             if flags & 0x10:
                 unhandled_flags &= ~0x10
                 unk2 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
-                add_coverage(dataoffset + running_pointer, 2)
+                self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 vprint(f"{prefix}    Unk2: {hex(unk2)}")
 
             if flags & 0x20:
                 unhandled_flags &= ~0x20
                 nameoffset = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
-                add_coverage(dataoffset + running_pointer, 2)
+                self.add_coverage(dataoffset + running_pointer, 2)
                 name = self.__get_string(nameoffset)
                 running_pointer += 2
                 vprint(f"{prefix}    Name: {name}")
@@ -462,14 +433,14 @@ class SWF:
             if flags & 0x40:
                 unhandled_flags &= ~0x40
                 unk3 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
-                add_coverage(dataoffset + running_pointer, 2)
+                self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 vprint(f"{prefix}    Unk3: {hex(unk3)}")
 
             if flags & 0x20000:
                 unhandled_flags &= ~0x20000
                 blend = struct.unpack("<B", datachunk[running_pointer:(running_pointer + 1)])[0]
-                add_coverage(dataoffset + running_pointer, 1)
+                self.add_coverage(dataoffset + running_pointer, 1)
                 running_pointer += 1
                 vprint(f"{prefix}    Blend: {hex(blend)}")
 
@@ -477,7 +448,7 @@ class SWF:
             misalignment = running_pointer & 3
             if misalignment > 0:
                 catchup = 4 - misalignment
-                add_coverage(dataoffset + running_pointer, catchup)
+                self.add_coverage(dataoffset + running_pointer, catchup)
                 running_pointer += catchup
 
             # Handle transformation matrix.
@@ -486,7 +457,7 @@ class SWF:
             if flags & 0x100:
                 unhandled_flags &= ~0x100
                 a_int, d_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 transform.a = float(a_int) * 0.0009765625
@@ -496,7 +467,7 @@ class SWF:
             if flags & 0x200:
                 unhandled_flags &= ~0x200
                 b_int, c_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 transform.b = float(b_int) * 0.0009765625
@@ -506,7 +477,7 @@ class SWF:
             if flags & 0x400:
                 unhandled_flags &= ~0x400
                 tx_int, ty_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 transform.tx = float(tx_int) / 20.0
@@ -520,7 +491,7 @@ class SWF:
             if flags & 0x800:
                 unhandled_flags &= ~0x800
                 r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 color.r = float(r) * 0.003921569
@@ -532,7 +503,7 @@ class SWF:
             if flags & 0x1000:
                 unhandled_flags &= ~0x1000
                 r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 acolor.r = float(r) * 0.003921569
@@ -544,7 +515,7 @@ class SWF:
             if flags & 0x2000:
                 unhandled_flags &= ~0x2000
                 rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
-                add_coverage(dataoffset + running_pointer, 4)
+                self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
                 color.r = float((rgba >> 24) & 0xFF) * 0.003921569
@@ -556,7 +527,7 @@ class SWF:
             if flags & 0x4000:
                 unhandled_flags &= ~0x4000
                 rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
-                add_coverage(dataoffset + running_pointer, 4)
+                self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
                 acolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
@@ -569,11 +540,11 @@ class SWF:
                 # Object event triggers.
                 unhandled_flags &= ~0x80
                 event_flags, event_size = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
 
                 if event_flags != 0:
                     _, count = struct.unpack("<HH", datachunk[(running_pointer + 8):(running_pointer + 12)])
-                    add_coverage(dataoffset + running_pointer + 8, 4)
+                    self.add_coverage(dataoffset + running_pointer + 8, 4)
 
                     # The game does not seem to care about length here, but we do, so let's calculate
                     # offsets and use that for lengths.
@@ -592,7 +563,7 @@ class SWF:
                     for evt in range(count):
                         evt_offset = running_pointer + 12 + (evt * 8)
                         evt_flags, _, keycode, bytecode_offset = struct.unpack("<IBBH", datachunk[evt_offset:(evt_offset + 8)])
-                        add_coverage(dataoffset + evt_offset, 8)
+                        self.add_coverage(dataoffset + evt_offset, 8)
 
                         events: List[str] = []
                         if evt_flags & 0x1:
@@ -629,7 +600,7 @@ class SWF:
 
                         vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, Bytecode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}")
                         self.__parse_bytecode(datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ", verbose=verbose)
-                        add_coverage(dataoffset + bytecode_offset, bytecode_length)
+                        self.add_coverage(dataoffset + bytecode_offset, bytecode_length)
 
                 running_pointer += event_size
 
@@ -638,7 +609,7 @@ class SWF:
                 # if I encounter files with it.
                 unhandled_flags &= ~0x10000
                 count, filter_size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
-                add_coverage(dataoffset + running_pointer, 4)
+                self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += filter_size
 
                 # TODO: This is not understood at all. I need to find data that uses it to continue.
@@ -652,7 +623,7 @@ class SWF:
                 # Some sort of point, perhaps an x, y offset for the object?
                 unhandled_flags &= ~0x1000000
                 x, y = struct.unpack("<ff", datachunk[running_pointer:(running_pointer + 8)])
-                add_coverage(dataoffset + running_pointer, 8)
+                self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 # TODO: This doesn't seem right when run past Pop'n Music data.
@@ -669,7 +640,7 @@ class SWF:
                 # Some pair of shorts, not sure, its in DDR PS3 data.
                 unhandled_flags &= ~0x40000
                 x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
-                add_coverage(dataoffset + running_pointer, 4)
+                self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
                 # TODO: I have no idea what these are.
@@ -680,7 +651,7 @@ class SWF:
                 # Some pair of shorts, not sure, its in DDR PS3 data.
                 unhandled_flags &= ~0x80000
                 x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
-                add_coverage(dataoffset + running_pointer, 4)
+                self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
                 # TODO: I have no idea what these are.
@@ -715,19 +686,19 @@ class SWF:
 
             object_id, depth = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}")
-            add_coverage(dataoffset, 4)
+            self.add_coverage(dataoffset, 4)
         elif tagid == AP2Tag.AP2_DEFINE_EDIT_TEXT:
             if size != 44:
                 raise Exception("Invalid size {size} to get data from AP2_DEFINE_EDIT_TEXT!")
 
             flags, edit_text_id, defined_font_tag_id, font_height, unk_str2_offset = struct.unpack("<IHHHH", ap2data[dataoffset:(dataoffset + 12)])
-            add_coverage(dataoffset, 12)
+            self.add_coverage(dataoffset, 12)
 
             unk1, unk2, unk3, unk4 = struct.unpack("<HHHH", ap2data[(dataoffset + 12):(dataoffset + 20)])
-            add_coverage(dataoffset + 12, 8)
+            self.add_coverage(dataoffset + 12, 8)
 
             rgba, f1, f2, f3, f4, variable_name_offset, default_text_offset = struct.unpack("<IiiiiHH", ap2data[(dataoffset + 20):(dataoffset + 44)])
-            add_coverage(dataoffset + 20, 24)
+            self.add_coverage(dataoffset + 20, 24)
 
             vprint(f"{prefix}    Tag ID: {edit_text_id}, Font Tag: {defined_font_tag_id}, Height Selection: {font_height}, Flags: {hex(flags)}")
 
@@ -765,20 +736,15 @@ class SWF:
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 print(*args, **kwargs, file=sys.stderr)
-
-            add_coverage = self.add_coverage
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
-            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
         unknown_tags_flags, unknown_tags_count, frame_count, tags_count, unknown_tags_offset, frame_offset, tags_offset = struct.unpack(
             "<HHIIIII",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
         )
-        add_coverage(tags_base_offset, 24)
+        self.add_coverage(tags_base_offset, 24)
 
         # Fix up pointers.
         tags_offset += tags_base_offset
@@ -789,7 +755,7 @@ class SWF:
         vprint(f"{prefix}Number of Tags: {tags_count}")
         for i in range(tags_count):
             tag = struct.unpack("<I", ap2data[tags_offset:(tags_offset + 4)])[0]
-            add_coverage(tags_offset, 4)
+            self.add_coverage(tags_offset, 4)
 
             tagid = (tag >> 22) & 0x3FF
             size = tag & 0x3FFFFF
@@ -805,7 +771,7 @@ class SWF:
         vprint(f"{prefix}Number of Frames: {frame_count}")
         for i in range(frame_count):
             frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
-            add_coverage(frame_offset, 4)
+            self.add_coverage(frame_offset, 4)
 
             start_tag_id = frame_info & 0xFFFFF
             num_tags_to_play = (frame_info >> 20) & 0xFFF
@@ -819,7 +785,7 @@ class SWF:
         for i in range(unknown_tags_count):
             unk1, stringoffset = struct.unpack("<HH", ap2data[unknown_tags_offset:(unknown_tags_offset + 4)])
             strval = self.__get_string(stringoffset)
-            add_coverage(unknown_tags_offset, 4)
+            self.add_coverage(unknown_tags_offset, 4)
 
             vprint(f"{prefix}  Unknown Tag: {hex(unk1)} Name: {strval}")
             unknown_tags_offset += 4
@@ -895,21 +861,19 @@ class SWF:
         return self.strings[offset][0]
 
     def parse(self, verbose: bool = False) -> None:
+        with self.covered(len(self.data), verbose):
+            self.__parse(verbose)
+
+    def __parse(self, verbose: bool) -> None:
         # Suppress debug text unless asked
         if verbose:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 print(*args, **kwargs, file=sys.stderr)
 
-            add_coverage = self.add_coverage
-
             # Reinitialize coverage.
-            self.coverage = [False] * len(self.data)
             self.strings = {}
         else:
             def vprint(*args: Any, **kwargs: Any) -> None:  # type: ignore
-                pass
-
-            def add_coverage(*args: Any, **kwargs: Any) -> None:  # type: ignore
                 pass
 
         # First, use the byteswap header to descramble the data.
@@ -919,7 +883,7 @@ class SWF:
         magic, length, version, nameoffset, flags, left, right, top, bottom = struct.unpack("<4sIHHIHHHH", data[0:24])
         width = right - left
         height = bottom - top
-        add_coverage(0, 24)
+        self.add_coverage(0, 24)
 
         ap2_data_version = magic[0] & 0xFF
         magic = bytes([magic[3] & 0x7F, magic[2] & 0x7F, magic[1] & 0x7F, 0x0])
@@ -943,34 +907,34 @@ class SWF:
             )
         else:
             swf_color = None
-        add_coverage(28, 4)
+        self.add_coverage(28, 4)
 
         if flags & 0x2:
             # FPS can be either an integer or a float.
             fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
         else:
             fps = struct.unpack("<f", data[24:28])[0]
-        add_coverage(24, 4)
+        self.add_coverage(24, 4)
 
         if flags & 0x4:
             # This seems related to imported tags.
             imported_tag_initializers_offset = struct.unpack("<I", data[56:60])[0]
-            add_coverage(56, 4)
+            self.add_coverage(56, 4)
         else:
             # Unknown offset is not present.
             imported_tag_initializers_offset = None
 
         # String table
         stringtable_offset, stringtable_size = struct.unpack("<II", data[48:56])
-        add_coverage(48, 8)
+        self.add_coverage(48, 8)
 
         # Descramble string table.
         data = self.__descramble_stringtable(data, stringtable_offset, stringtable_size)
-        add_coverage(stringtable_offset, stringtable_size)
+        self.add_coverage(stringtable_offset, stringtable_size)
 
         # Get exported SWF name.
         self.exported_name = self.__get_string(nameoffset)
-        add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
+        self.add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
         vprint(f"{os.linesep}AFP name: {self.name}")
         vprint(f"Container Version: {hex(ap2_data_version)}")
         vprint(f"Version: {hex(version)}")
@@ -994,49 +958,49 @@ class SWF:
         # Exported assets
         num_exported_assets = struct.unpack("<H", data[32:34])[0]
         asset_offset = struct.unpack("<I", data[40:44])[0]
-        add_coverage(32, 2)
-        add_coverage(40, 4)
+        self.add_coverage(32, 2)
+        self.add_coverage(40, 4)
 
         # Parse exported asset tag names and their tag IDs.
         vprint(f"Number of Exported Tags: {num_exported_assets}")
         for assetno in range(num_exported_assets):
             asset_data_offset, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
-            add_coverage(asset_offset, 4)
+            self.add_coverage(asset_offset, 4)
             asset_offset += 4
 
             asset_name = self.__get_string(asset_string_offset)
-            add_coverage(asset_string_offset + stringtable_offset, len(asset_name) + 1, unique=False)
+            self.add_coverage(asset_string_offset + stringtable_offset, len(asset_name) + 1, unique=False)
             vprint(f"  {assetno}: Tag Name: {asset_name} Tag ID: {asset_data_offset}")
 
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
-        add_coverage(36, 4)
+        self.add_coverage(36, 4)
         self.__parse_tags(ap2_data_version, version, data, tags_offset, verbose=verbose)
 
         # Imported tags sections
         imported_tags_count = struct.unpack("<h", data[34:36])[0]
         imported_tags_offset = struct.unpack("<I", data[44:48])[0]
         imported_tags_data_offset = imported_tags_offset + 4 * imported_tags_count
-        add_coverage(34, 2)
-        add_coverage(44, 4)
+        self.add_coverage(34, 2)
+        self.add_coverage(44, 4)
 
         vprint(f"Number of Imported Tags: {imported_tags_count}")
         for i in range(imported_tags_count):
             # First grab the SWF this is importing from, and the number of assets being imported.
             swf_name_offset, count = struct.unpack("<HH", data[imported_tags_offset:(imported_tags_offset + 4)])
-            add_coverage(imported_tags_offset, 4)
+            self.add_coverage(imported_tags_offset, 4)
 
             swf_name = self.__get_string(swf_name_offset)
-            add_coverage(swf_name_offset + stringtable_offset, len(swf_name) + 1, unique=False)
+            self.add_coverage(swf_name_offset + stringtable_offset, len(swf_name) + 1, unique=False)
             vprint(f"  Source SWF: {swf_name}")
 
             # Now, grab the actual asset names being imported.
             for j in range(count):
                 asset_id_no, asset_name_offset = struct.unpack("<HH", data[imported_tags_data_offset:(imported_tags_data_offset + 4)])
-                add_coverage(imported_tags_data_offset, 4)
+                self.add_coverage(imported_tags_data_offset, 4)
 
                 asset_name = self.__get_string(asset_name_offset)
-                add_coverage(asset_name_offset + stringtable_offset, len(asset_name) + 1, unique=False)
+                self.add_coverage(asset_name_offset + stringtable_offset, len(asset_name) + 1, unique=False)
                 vprint(f"    Tag ID: {asset_id_no}, Requested Asset: {asset_name}")
 
                 imported_tags_data_offset += 4
@@ -1048,14 +1012,14 @@ class SWF:
         if imported_tag_initializers_offset is not None:
 
             unk1, length = struct.unpack("<HH", data[imported_tag_initializers_offset:(imported_tag_initializers_offset + 4)])
-            add_coverage(imported_tag_initializers_offset, 4)
+            self.add_coverage(imported_tag_initializers_offset, 4)
 
             vprint(f"Imported Tag Initializer Offset: {hex(imported_tag_initializers_offset)}, Length: {length}")
 
             for i in range(length):
                 item_offset = imported_tag_initializers_offset + 4 + (i * 12)
                 tag_id, frame, action_bytecode_offset, action_bytecode_length = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
-                add_coverage(item_offset, 12)
+                self.add_coverage(item_offset, 12)
 
                 if action_bytecode_length != 0:
                     vprint(f"  Tag ID: {tag_id}, Frame: {frame}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
