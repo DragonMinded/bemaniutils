@@ -62,6 +62,12 @@ def main() -> int:
         action="store_true",
         help="Split textures into individual sprites",
     )
+    extract_parser.add_argument(
+        "-b",
+        "--write-binaries",
+        action="store_true",
+        help="Write binary SWF files to disk",
+    )
 
     update_parser = subparsers.add_parser('update', help='Update relevant textures in a file from a directory')
     update_parser.add_argument(
@@ -213,6 +219,33 @@ def main() -> int:
                     print(f"Writing {filename} font information...")
                     with open(filename, "w") as sfp:
                         sfp.write(str(afpfile.fontdata))
+
+        if args.write_binaries:
+            for i, name in enumerate(afpfile.swfmap.entries):
+                swf = afpfile.swfdata[i]
+                filename = os.path.join(args.dir, name)
+
+                if args.pretend:
+                    print(f"Would write {filename}.afp SWF data...")
+                    print(f"Would write {filename}.bsi SWF descramble data...")
+                else:
+                    print(f"Writing {filename}.afp SWF data...")
+                    with open(f"{filename}.afp", "wb") as bfp:
+                        bfp.write(swf.data)
+                    print(f"Writing {filename}.bsi SWF descramble data...")
+                    with open(f"{filename}.bsi", "wb") as bfp:
+                        bfp.write(swf.descramble_info)
+
+            for i, name in enumerate(afpfile.shapemap.entries):
+                shape = afpfile.shapes[i]
+                filename = os.path.join(args.dir, f"{name}.geo")
+
+                if args.pretend:
+                    print(f"Would write {filename} shape data...")
+                else:
+                    print(f"Writing {filename} shape data...")
+                    with open(filename, "wb") as bfp:
+                        bfp.write(shape.data)
 
         if args.generate_mapping_overlays:
             overlays: Dict[str, Any] = {}
