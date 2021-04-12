@@ -24,6 +24,171 @@ class NamedTagReference:
         return f"{self.swf}.{self.tag}"
 
 
+class ByteCode:
+    # A list of bytecodes to execute.
+    def __init__(self) -> None:
+        # TODO: I need to actually come up with some internal representation of this. As far
+        # as I can tell, games execute bytecode by switch statement dirctly loading the opcodes
+        # from memory. There is no dynamic recompilation happening and they don't parse anything.
+        pass
+
+
+class TagPointer:
+    # A pointer to a tag in this SWF by Tag ID and containing an optional initialization bytecode
+    # to run for this tag when it is placed/executed.
+    def __init__(self, id: Optional[int], init_bytecode: Optional[ByteCode] = None) -> None:
+        self.id = id
+        self.init_bytecode = init_bytecode
+
+
+class Frame:
+    def __init__(self, start_tag_offset: int, num_tags: int, imported_tags: List[TagPointer] = []) -> None:
+        # The start tag offset into the tag list where we should begin placing/executing tags for this frame.
+        self.start_tag_offset = start_tag_offset
+
+        # The number of tags to pace/execute during this frame.
+        self.num_tags = num_tags
+
+        # A list of any imported tags that are to be placed this frame.
+        self.imported_tags = imported_tags
+
+
+class Tag:
+    # Any tag that can appear in the SWF. All tags will subclass from this for their behavior.
+    def __init__(self, id: Optional[int]) -> None:
+        self.id = id
+
+
+class AP2ShapeTag(Tag):
+    def __init__(self, id: int, reference: str) -> None:
+        super().__init__(id)
+
+        # The reference is the name of a shape (geo structure) that defines this primitive or sprite.
+        self.reference = reference
+
+
+class AP2DefineFontTag(Tag):
+    def __init__(self, id: int, fontname: str, xml_prefix: str, heights: List[int]) -> None:
+        super().__init__(id)
+
+        # The font name is just the pretty name of the font.
+        self.fontname = fontname
+
+        # The XML prefix is the reference into any font XML to look up individual
+        # glyphs for a font in a texture map.
+        self.xml_prefix = xml_prefix
+
+        # The list of heights are concatenated with the above XML prefix and the
+        # unicode glyph you want to display, to find the corresponding location
+        # in the texture map.
+        self.heights = heights
+
+
+class AP2DoActionTag(Tag):
+    def __init__(self, bytecode: ByteCode) -> None:
+        # Do Action Tags are not identified by any tag ID.
+        super().__init__(None)
+
+        # The bytecode is the actual execution that we expect to perform once
+        # this tag is placed/executed.
+        self.bytecode = bytecode
+
+
+class AP2PlaceObjectTag(Tag):
+    def __init__(
+        self,
+        object_id: int,
+        depth: int,
+        src_tag_id: Optional[int],
+        name: Optional[str],
+        blend: Optional[int],
+        update: bool,
+        transform: Optional[Matrix],
+        color: Optional[Color],
+        alpha_color: Optional[Color],
+        triggers: Dict[int, List[ByteCode]],
+    ) -> None:
+        # Place Object Tags are not identified by any tag ID.
+        super().__init__(None)
+
+        # The object ID that we should associate with this object, for removal
+        # and presumably update and other uses. Not the same as Tag ID.
+        self.object_id = object_id
+
+        # The depth (level) that we should remove objects from.
+        self.depth = depth
+
+        # The source tag ID (should point at an AP2ShapeTag by ID) if present.
+        self.source_tag_id = src_tag_id
+
+        # The name of this object, if present.
+        self.name = name
+
+        # The blend mode of this object, if present.
+        self.blend = blend
+
+        # Whether this is an object update (True) or a new object (False).
+        self.update = update
+
+        # Whether there is a transform matrix to apply before placing/updating this object or not.
+        self.transform = transform
+
+        # If there is a color to blend with the sprite/shape when drawing.
+        self.color = color
+
+        # If there is an alpha color to draw instead of draing over any other placed object.
+        self.alpha_color = alpha_color
+
+        # List of triggers for this object, and their respective bytecodes to execute when the trigger
+        # fires.
+        self.triggers = triggers
+
+
+class AP2RemoveObjectTag(Tag):
+    def __init__(self, object_id: int, depth: int) -> None:
+        # Remove Object Tags are not identified by any tag ID.
+        super().__init__(None)
+
+        # The object ID that we should remove, or 0 if we should only remove by depth.
+        self.object_id = object_id
+
+        # The depth (level) that we should remove objects from.
+        self.depth = depth
+
+
+class AP2DefineSpriteTag(Tag):
+    def __init__(self, id: int, tags: List[Tag], frames: List[Frame]) -> None:
+        super().__init__(id)
+
+        # The list of tags that this sprite consists of. Sprites are, much like vanilla
+        # SWFs, basically entire SWF movies embedded in them.
+        self.tags = tags
+
+        # The list of frames this SWF occupies.
+        self.frames = frames
+
+
+class AP2DefineEditTextTag(Tag):
+    def __init__(self, id: int, font_tag_id: int, font_height: int, rect: Rectangle, color: Color, default_text: Optional[str] = None) -> None:
+        super().__init__(id)
+
+        # The ID of the Ap2DefineFontTag that we want to use for the text.
+        self.font_tag_id = font_tag_id
+
+        # The height we want to select for the text (must be one of the heights in
+        # the referenced Ap2DefineFontTag tag).
+        self.font_height = font_height
+
+        # The bounding rectangle for this exit text control.
+        self.rect = rect
+
+        # The text color we want to use when displaying the text.
+        self.color = color
+
+        # The default text that should be present in the control when it is initially placed/executed.
+        self.default_text = default_text
+
+
 class SWF(TrackedCoverage, VerboseOutput):
     def __init__(
         self,
@@ -65,6 +230,13 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Imported tags, indexed by their Tag ID, and pointing at the SWF asset and exported tag name.
         self.imported_tags: Dict[int, NamedTagReference] = {}
 
+        # Actual tags for this SWF, ordered by their appearance in the file.
+        self.tags: List[Tag] = []
+
+        # Frames of this SWF, with the tag offset in the above list and number of tags to
+        # "execute" that frame.
+        self.frames: List[Frame] = []
+
         # SWF string table. This is used for faster lookup of strings as well as
         # tracking which strings in the table have been parsed correctly.
         self.__strings: Dict[int, Tuple[str, bool]] = {}
@@ -87,7 +259,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             'descramble_info': "".join(_hex(x) for x in self.descramble_info),
         }
 
-    def __parse_bytecode(self, datachunk: bytes, string_offsets: List[int] = [], prefix: str = "") -> None:
+    def __parse_bytecode(self, datachunk: bytes, string_offsets: List[int] = [], prefix: str = "") -> ByteCode:
         # First, we need to check if this is a SWF-style bytecode or an AP2 bytecode.
         ap2_sentinel = struct.unpack("<B", datachunk[0:1])[0]
 
@@ -111,7 +283,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             offset_ptr = 2
         start_offset = offset_ptr
 
-        self.vprint(f"{prefix}    Flags: {hex(flags)}, Bytecode Actual Offset: {hex(offset_ptr)}")
+        self.vprint(f"{prefix}    Flags: {hex(flags)}, ByteCode Actual Offset: {hex(offset_ptr)}")
 
         # Actually parse out the opcodes:
         while offset_ptr < len(datachunk):
@@ -140,8 +312,10 @@ class SWF(TrackedCoverage, VerboseOutput):
                     funcname = self.__get_string(funcname_offset)
                 offset_ptr += 10 + (3 * bytecode_offset)
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname}, Bytecode Offset: {hex(bytecode_offset)}, Bytecode Length: {hex(bytecode_count)}")
-                self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}")
+
+                # TODO: Need to do something with this parsed function bytecode.
+                function = self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
                 self.vprint(f"{prefix}      END_{action_name}")
 
                 offset_ptr += bytecode_count
@@ -378,16 +552,24 @@ class SWF(TrackedCoverage, VerboseOutput):
             else:
                 raise Exception(f"Can't advance, no handler for opcode {opcode} ({hex(opcode)})!")
 
-    def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "") -> None:
+        # TODO: I need to actually parse this, its a mess...
+        return ByteCode()
+
+    def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "") -> Tag:
         if tagid == AP2Tag.AP2_SHAPE:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
 
-            _, shape_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            unused, shape_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             self.add_coverage(dataoffset, size)
+
+            if unused != 0:
+                raise Exception(f"Unexpected value {unused} in Shape tag!")
 
             shape_reference = f"{self.exported_name}_shape{shape_id}"
             self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()}")
+
+            return AP2ShapeTag(shape_id, shape_reference)
         elif tagid == AP2Tag.AP2_DEFINE_SPRITE:
             sprite_flags, sprite_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             self.add_coverage(dataoffset, 4)
@@ -401,26 +583,37 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + 4, 4)
 
             self.vprint(f"{prefix}    Tag ID: {sprite_id}")
-            self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix)
+            tags, frames = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix)
+
+            return AP2DefineSpriteTag(sprite_id, tags, frames)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
             unk, font_id, fontname_offset, xml_prefix_offset, data_offset, data_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
             self.add_coverage(dataoffset, 12)
+
+            if unk != 0:
+                raise Exception(f"Unexpected value {unk} in Font tag!")
 
             fontname = self.__get_string(fontname_offset)
             xml_prefix = self.__get_string(xml_prefix_offset)
 
             self.vprint(f"{prefix}    Tag ID: {font_id}, Font Name: {fontname}, XML Prefix: {xml_prefix}, Entries: {data_count}")
 
+            heights: List[int] = []
             for i in range(data_count):
                 entry_offset = dataoffset + 12 + (data_offset * 2) + (i * 2)
                 entry_value = struct.unpack("<H", ap2data[entry_offset:(entry_offset + 2)])[0]
+                heights.append(entry_value)
                 self.add_coverage(entry_offset, 2)
 
                 self.vprint(f"{prefix}      Height: {entry_value}")
+
+            return AP2DefineFontTag(font_id, fontname, xml_prefix, heights)
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
-            self.__parse_bytecode(datachunk, prefix=prefix)
+            bytecode = self.__parse_bytecode(datachunk, prefix=prefix)
             self.add_coverage(dataoffset, size)
+
+            return AP2DoActionTag(bytecode)
         elif tagid == AP2Tag.AP2_PLACE_OBJECT:
             # Allow us to keep track of what we've consumed.
             datachunk = ap2data[dataoffset:(dataoffset + size)]
@@ -438,6 +631,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 self.vprint(f"{prefix}    Source Tag ID: {src_tag_id}")
+            else:
+                src_tag_id = None
 
             if flags & 0x10:
                 unhandled_flags &= ~0x10
@@ -453,6 +648,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 name = self.__get_string(nameoffset)
                 running_pointer += 2
                 self.vprint(f"{prefix}    Name: {name}")
+            else:
+                name = None
 
             if flags & 0x40:
                 unhandled_flags &= ~0x40
@@ -467,6 +664,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 1)
                 running_pointer += 1
                 self.vprint(f"{prefix}    Blend: {hex(blend)}")
+            else:
+                blend = None
 
             # Due to possible misalignment, we need to realign.
             misalignment = running_pointer & 3
@@ -560,6 +759,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 acolor.a = float(rgba & 0xFF) * 0.003921569
                 self.vprint(f"{prefix}    AColor: {color}")
 
+            bytecodes: Dict[int, List[ByteCode]] = {}
             if flags & 0x80:
                 # Object event triggers.
                 unhandled_flags &= ~0x80
@@ -622,9 +822,11 @@ class SWF(TrackedCoverage, VerboseOutput):
                         bytecode_offset += evt_offset
                         bytecode_length = beginning_to_end[bytecode_offset] - bytecode_offset
 
-                        self.vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, Bytecode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}")
-                        self.__parse_bytecode(datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ")
+                        self.vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, ByteCode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}")
+                        bytecode = self.__parse_bytecode(datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ")
                         self.add_coverage(dataoffset + bytecode_offset, bytecode_length)
+
+                        bytecodes[evt_flags] = [*bytecodes.get(evt_flags, []), bytecode]
 
                 running_pointer += event_size
 
@@ -692,7 +894,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Use transform matrix")
             else:
                 self.vprint(f"{prefix}    Ignore transform matrix")
-            if flags & 0x4:
+            if flags & 0x8:
                 self.vprint(f"{prefix}    Use color information")
             else:
                 self.vprint(f"{prefix}    Ignore color information")
@@ -704,6 +906,18 @@ class SWF(TrackedCoverage, VerboseOutput):
             if running_pointer != size:
                 raise Exception("Logic error!")
 
+            return AP2PlaceObjectTag(
+                object_id,
+                depth,
+                src_tag_id=src_tag_id,
+                name=name,
+                blend=blend,
+                update=True if (flags & 0x1) else False,
+                transform=transform if (flags & 0x4) else None,
+                color=color if (flags & 0x8) else None,
+                alpha_color=acolor if (flags & 0x8) else None,
+                triggers=bytecodes,
+            )
         elif tagid == AP2Tag.AP2_REMOVE_OBJECT:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
@@ -711,6 +925,8 @@ class SWF(TrackedCoverage, VerboseOutput):
             object_id, depth = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             self.vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}")
             self.add_coverage(dataoffset, 4)
+
+            return AP2RemoveObjectTag(object_id, depth)
         elif tagid == AP2Tag.AP2_DEFINE_EDIT_TEXT:
             if size != 44:
                 raise Exception("Invalid size {size} to get data from AP2_DEFINE_EDIT_TEXT!")
@@ -752,10 +968,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # Has some sort of string pointer.
                 default_text = self.__get_string(default_text_offset) or None
                 self.vprint(f"{prefix}      Default Text: {default_text}")
+            else:
+                default_text = None
+
+            return AP2DefineEditTextTag(edit_text_id, defined_font_tag_id, font_height, rect, color, default_text=default_text)
         else:
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "") -> None:
+    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "") -> Tuple[List[Tag], List[Frame]]:
         unknown_tags_flags, unknown_tags_count, frame_count, tags_count, unknown_tags_offset, frame_offset, tags_offset = struct.unpack(
             "<HHIIIII",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
@@ -768,6 +988,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         frame_offset += tags_base_offset
 
         # First, parse regular tags.
+        tags: List[Tag] = []
         self.vprint(f"{prefix}Number of Tags: {tags_count}")
         for i in range(tags_count):
             tag = struct.unpack("<I", ap2data[tags_offset:(tags_offset + 4)])[0]
@@ -780,19 +1001,21 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
             self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
-            self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix)
+            self.tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix))
             tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
 
         # Now, parse frames.
+        frames: List[Frame] = []
         self.vprint(f"{prefix}Number of Frames: {frame_count}")
         for i in range(frame_count):
             frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
             self.add_coverage(frame_offset, 4)
 
-            start_tag_id = frame_info & 0xFFFFF
+            start_tag_offset = frame_info & 0xFFFFF
             num_tags_to_play = (frame_info >> 20) & 0xFFF
+            frames.append(Frame(start_tag_offset, num_tags_to_play))
 
-            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_id}, Count: {num_tags_to_play}")
+            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_offset}, Count: {num_tags_to_play}")
             frame_offset += 4
 
         # Now, parse unknown tags? I have no idea what these are, but they're referencing strings that
@@ -805,6 +1028,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             self.vprint(f"{prefix}  Unknown Tag: {hex(unk1)} Name: {strval}")
             unknown_tags_offset += 4
+
+        return tags, frames
 
     def __descramble(self, scrambled_data: bytes, descramble_info: bytes) -> bytes:
         swap_len = {
@@ -996,7 +1221,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
         self.add_coverage(36, 4)
-        self.__parse_tags(ap2_data_version, version, data, tags_offset)
+        self.tags, self.frames = self.__parse_tags(ap2_data_version, version, data, tags_offset)
 
         # Imported tags sections
         imported_tags_count = struct.unpack("<h", data[34:36])[0]
@@ -1044,11 +1269,17 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(item_offset, 12)
 
                 if action_bytecode_length != 0:
-                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, Bytecode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
+                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, ByteCode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
                     bytecode_data = data[(action_bytecode_offset + imported_tag_initializers_offset):(action_bytecode_offset + imported_tag_initializers_offset + action_bytecode_length)]
-                    self.__parse_bytecode(bytecode_data)
+                    bytecode = self.__parse_bytecode(bytecode_data)
                 else:
-                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No Bytecode Present")
+                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No ByteCode Present")
+                    bytecode = None
+
+                # Add it to the frame's instructions
+                if frame >= len(self.frames):
+                    raise Exception(f"Unexpected frame {frame}, we only have {len(self.frames)} frames in this movie!")
+                self.frames[frame].imported_tags.append(TagPointer(tag_id, bytecode))
 
         if verbose:
             self.print_coverage()
