@@ -128,7 +128,7 @@ class Shape:
             # are used when drawing shapes, whether to use a blend value or draw a primitive, etc.
             for render_paramsno in range(render_params_count):
                 render_paramsno_offset = render_params_offset + (16 * render_paramsno)
-                mode, flags, tex1, tex2, trianglecount, _, rgba, triangleoffset = struct.unpack(
+                mode, flags, tex1, tex2, trianglecount, unk, rgba, triangleoffset = struct.unpack(
                     f"{endian}BBBBHHII",
                     self.data[(render_paramsno_offset):(render_paramsno_offset + 16)]
                 )
@@ -141,6 +141,8 @@ class Shape:
                     raise Exception("GE2D structure requests a texture, but no texture pointer present!")
                 if tex2 != 0xFF:
                     raise Exception("GE2D structure requests a second texture, but we don't support this!")
+                if unk != 0x0:
+                    raise Exception("Unhandled unknown dadta in GE2D structure!")
 
                 color = Color(
                     r=(rgba & 0xFF) / 255.0,
