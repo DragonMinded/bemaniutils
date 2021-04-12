@@ -2,11 +2,26 @@ from hashlib import md5
 import os
 import struct
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .types import Matrix, Color, Point, Rectangle
 from .types import AP2Action, AP2Tag, AP2Property
 from .util import TrackedCoverage, VerboseOutput, _hex
+
+
+class NamedTagReference:
+    def __init__(self, swf_name: str, tag_name: str) -> None:
+        self.swf = swf_name
+        self.tag = tag_name
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'swf': self.swf,
+            'tag': self.tag,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.swf}.{self.tag}"
 
 
 class SWF(TrackedCoverage, VerboseOutput):
@@ -19,22 +34,47 @@ class SWF(TrackedCoverage, VerboseOutput):
         # First, init the coverage engine.
         super().__init__()
 
-        # Now, initialize parsed data.
-        self.name = name
-        self.exported_name = ""
-        self.data = data
-        self.descramble_info = descramble_info
+        # Name of this SWF, according to the container it was extracted from.
+        self.name: str = name
 
-        # Initialize string table. This is used for faster lookup of strings
-        # as well as tracking which strings in the table have been parsed correctly.
-        self.strings: Dict[int, Tuple[str, bool]] = {}
+        # Name of this SWF, as referenced by other SWFs that require imports from it.
+        self.exported_name: str = ""
+
+        # Full, unparsed data for this SWF, as well as the descrambling headers.
+        self.data: bytes = data
+        self.descramble_info: bytes = descramble_info
+
+        # Data version of this SWF.
+        self.data_version: int = 0
+
+        # Container version of this SWF.
+        self.container_version: int = 0
+
+        # The requested frames per second this SWF plays at.
+        self.fps: float = 0.0
+
+        # Background color of this SWF movie.
+        self.color: Optional[Color] = None
+
+        # Location of this SWF in screen space.
+        self.location: Rectangle = Rectangle.Empty()
+
+        # Exported tags, indexed by their name and pointing to the Tag ID that name identifies.
+        self.exported_tags: Dict[str, int] = {}
+
+        # Imported tags, indexed by their Tag ID, and pointing at the SWF asset and exported tag name.
+        self.imported_tags: Dict[int, NamedTagReference] = {}
+
+        # SWF string table. This is used for faster lookup of strings as well as
+        # tracking which strings in the table have been parsed correctly.
+        self.__strings: Dict[int, Tuple[str, bool]] = {}
 
     def print_coverage(self) -> None:
         # First print uncovered bytes
         super().print_coverage()
 
         # Now, print uncovered strings
-        for offset, (string, covered) in self.strings.items():
+        for offset, (string, covered) in self.__strings.items():
             if covered:
                 continue
 
@@ -752,7 +792,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             start_tag_id = frame_info & 0xFFFFF
             num_tags_to_play = (frame_info >> 20) & 0xFFF
 
-            self.vprint(f"{prefix}  Frame Start Tag: {hex(start_tag_id)}, Count: {num_tags_to_play}")
+            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_id}, Count: {num_tags_to_play}")
             frame_offset += 4
 
         # Now, parse unknown tags? I have no idea what these are, but they're referencing strings that
@@ -814,7 +854,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             if byte == 0:
                 if curstring:
                     # We found a string!
-                    self.strings[curloc - stringtable_offset] = (bytes(curstring).decode('utf8'), False)
+                    self.__strings[curloc - stringtable_offset] = (bytes(curstring).decode('utf8'), False)
                     curloc = stringtable_offset + i + 1
                     curstring = []
                 curloc = stringtable_offset + i + 1
@@ -824,7 +864,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         if curstring:
             raise Exception("Logic error!")
 
-        if 0 in self.strings:
+        if 0 in self.__strings:
             raise Exception("Should not include null string!")
 
         return bytes(data)
@@ -833,8 +873,8 @@ class SWF(TrackedCoverage, VerboseOutput):
         if offset == 0:
             return ""
 
-        self.strings[offset] = (self.strings[offset][0], True)
-        return self.strings[offset][0]
+        self.__strings[offset] = (self.__strings[offset][0], True)
+        return self.__strings[offset][0]
 
     def parse(self, verbose: bool = False) -> None:
         with self.covered(len(self.data), verbose):
@@ -847,8 +887,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # Start with the basic file header.
         magic, length, version, nameoffset, flags, left, right, top, bottom = struct.unpack("<4sIHHIHHHH", data[0:24])
-        width = right - left
-        height = bottom - top
         self.add_coverage(0, 24)
 
         ap2_data_version = magic[0] & 0xFF
@@ -862,24 +900,40 @@ class SWF(TrackedCoverage, VerboseOutput):
         if version != 0x200:
             raise Exception(f"Unsupported AP2 version {version}!")
 
+        # The container version is analogous to the SWF file version. I'm pretty sure it
+        # dictates certain things like what properties are available. These appear strictly
+        # additive so we don't concern ourselves with this.
+        self.container_version = ap2_data_version
+
+        # The data version is basically used for how to parse tags. There was an older data
+        # version 0x100 that used more SWF-like bit-packed tags and while lots of code exists
+        # to parse this, the AP2 libraries will reject SWF data with this version.
+        self.data_version = version
+
+        # As far as I can tell, most things only care about the width and height of this
+        # movie, and I think the Shapes are rendered based on the width/height. However, it
+        # can have a non-zero x/y offset and I think this is used when rendering multiple
+        # movie clips?
+        self.location = Rectangle(left=left, right=right, top=top, bottom=bottom)
+
         if flags & 0x1:
             # This appears to be the animation background color.
             rgba = struct.unpack("<I", data[28:32])[0]
-            swf_color = Color(
+            self.color = Color(
                 r=(rgba & 0xFF) / 255.0,
                 g=((rgba >> 8) & 0xFF) / 255.0,
                 b=((rgba >> 16) & 0xFF) / 255.0,
                 a=((rgba >> 24) & 0xFF) / 255.0,
             )
         else:
-            swf_color = None
+            self.color = None
         self.add_coverage(28, 4)
 
         if flags & 0x2:
             # FPS can be either an integer or a float.
-            fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
+            self.fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
         else:
-            fps = struct.unpack("<f", data[24:28])[0]
+            self.fps = struct.unpack("<f", data[24:28])[0]
         self.add_coverage(24, 4)
 
         if flags & 0x4:
@@ -900,14 +954,13 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # Get exported SWF name.
         self.exported_name = self.__get_string(nameoffset)
-        self.add_coverage(nameoffset + stringtable_offset, len(self.exported_name) + 1, unique=False)
         self.vprint(f"{os.linesep}AFP name: {self.name}")
-        self.vprint(f"Container Version: {hex(ap2_data_version)}")
-        self.vprint(f"Version: {hex(version)}")
+        self.vprint(f"Container Version: {hex(self.container_version)}")
+        self.vprint(f"Version: {hex(self.data_version)}")
         self.vprint(f"Exported Name: {self.exported_name}")
         self.vprint(f"SWF Flags: {hex(flags)}")
         if flags & 0x1:
-            self.vprint(f"  0x1: Movie background color: {swf_color}")
+            self.vprint(f"  0x1: Movie background color: {self.color}")
         else:
             self.vprint("  0x2: No movie background color")
         if flags & 0x2:
@@ -918,8 +971,8 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.vprint("  0x4: Imported tag initializer section present")
         else:
             self.vprint("  0x4: Imported tag initializer section not present")
-        self.vprint(f"Dimensions: {width}x{height}")
-        self.vprint(f"Requested FPS: {fps}")
+        self.vprint(f"Dimensions: {self.location.width}x{self.location.height}")
+        self.vprint(f"Requested FPS: {self.fps}")
 
         # Exported assets
         num_exported_assets = struct.unpack("<H", data[32:34])[0]
@@ -928,15 +981,17 @@ class SWF(TrackedCoverage, VerboseOutput):
         self.add_coverage(40, 4)
 
         # Parse exported asset tag names and their tag IDs.
+        self.exported_tags = {}
         self.vprint(f"Number of Exported Tags: {num_exported_assets}")
         for assetno in range(num_exported_assets):
-            asset_data_offset, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
+            asset_tag_id, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
             self.add_coverage(asset_offset, 4)
             asset_offset += 4
 
             asset_name = self.__get_string(asset_string_offset)
-            self.add_coverage(asset_string_offset + stringtable_offset, len(asset_name) + 1, unique=False)
-            self.vprint(f"  {assetno}: Tag Name: {asset_name} Tag ID: {asset_data_offset}")
+            self.exported_tags[asset_name] = asset_tag_id
+
+            self.vprint(f"  {assetno}: Tag Name: {asset_name}, Tag ID: {asset_tag_id}")
 
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
@@ -951,13 +1006,13 @@ class SWF(TrackedCoverage, VerboseOutput):
         self.add_coverage(44, 4)
 
         self.vprint(f"Number of Imported Tags: {imported_tags_count}")
+        self.imported_tags = {}
         for i in range(imported_tags_count):
             # First grab the SWF this is importing from, and the number of assets being imported.
             swf_name_offset, count = struct.unpack("<HH", data[imported_tags_offset:(imported_tags_offset + 4)])
             self.add_coverage(imported_tags_offset, 4)
 
             swf_name = self.__get_string(swf_name_offset)
-            self.add_coverage(swf_name_offset + stringtable_offset, len(swf_name) + 1, unique=False)
             self.vprint(f"  Source SWF: {swf_name}")
 
             # Now, grab the actual asset names being imported.
@@ -966,7 +1021,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(imported_tags_data_offset, 4)
 
                 asset_name = self.__get_string(asset_name_offset)
-                self.add_coverage(asset_name_offset + stringtable_offset, len(asset_name) + 1, unique=False)
+                self.imported_tags[asset_id_no] = NamedTagReference(swf_name=swf_name, tag_name=asset_name)
+
                 self.vprint(f"    Tag ID: {asset_id_no}, Requested Asset: {asset_name}")
 
                 imported_tags_data_offset += 4

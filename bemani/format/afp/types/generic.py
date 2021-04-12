@@ -67,5 +67,17 @@ class Rectangle:
             'right': self.right,
         }
 
+    @property
+    def width(self) -> float:
+        return self.right - self.left
+
+    @property
+    def height(self) -> float:
+        return self.bottom - self.top
+
     def __repr__(self) -> str:
         return f"left: {round(self.left, 5)}, top: {round(self.top, 5)}, bottom: {round(self.bottom, 5)}, right: {round(self.right, 5)}"
+
+    @staticmethod
+    def Empty() -> "Rectangle":
+        return Rectangle(left=0.0, right=0.0, top=0.0, bottom=0.0)
