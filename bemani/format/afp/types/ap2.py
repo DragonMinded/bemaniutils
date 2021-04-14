@@ -76,6 +76,8 @@ class AP2Tag:
     AP2_SHAPE = 0x84
     AP2_SOUND = 0x85
     AP2_VIDEO = 0x86
+    AP2_PLACE_CAMERA = 0x88
+    AP2_SCALING_GRID = 0x89
 
     @classmethod
     def tag_to_name(cls, tagid: int) -> str:
@@ -154,6 +156,8 @@ class AP2Tag:
             cls.AP2_SHAPE: 'AP2_SHAPE',
             cls.AP2_SOUND: 'AP2_SOUND',
             cls.AP2_VIDEO: 'AP2_VIDEO',
+            cls.AP2_PLACE_CAMERA: 'AP2_PLACE_CAMERA',
+            cls.AP2_SCALING_GRID: 'AP2_SCALING_GRID',
         }
 
         return resources.get(tagid, f"<UNKNOWN {hex(tagid)}>")
@@ -472,7 +476,7 @@ class AP2Action:
             cls.DECREMENT: 'DECREMENT',
             cls.CALL_METHOD: 'CALL_METHOD',
             cls.NEW_METHOD: 'NEW_METHOD',
-            cls.INSTANCEOF: 'INSTANCE,OF',
+            cls.INSTANCEOF: 'INSTANCEOF',
             cls.ENUMERATE2: 'ENUMERATE2',
             cls.BIT_AND: 'BIT_AND',
             cls.BIT_OR: 'BIT_OR',

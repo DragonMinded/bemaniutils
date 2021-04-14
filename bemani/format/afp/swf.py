@@ -398,54 +398,164 @@ class SWF(TrackedCoverage, VerboseOutput):
                         # Current movie clip.
                         self.vprint(f"{prefix}        POINTER TO CURRENT MOVIECLIP")
                     elif obj_to_create == 0x10:
-                        # Unknown property name.
+                        # Property constant with no alias.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x100
                         offset_ptr += 1
                         self.vprint(f"{prefix}        PROPERTY CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x11:
+                        # Property constant referencing a string table entry.
+                        propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
+                        propertyval += 0x100
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 2
+                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                    elif obj_to_create == 0x12:
+                        # Same as above, but with allowance for a 16-bit constant offset.
+                        propertyval, reference = struct.unpack(">BH", datachunk[offset_ptr:(offset_ptr + 3)])
+                        propertyval += 0x100
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 3
+                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
                     elif obj_to_create == 0x13:
                         # Class property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x300
                         offset_ptr += 1
                         self.vprint(f"{prefix}        CLASS CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x14:
+                        # Class property constant with alias.
+                        propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
+                        propertyval += 0x300
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 2
+                        self.vprint(f"{prefix}        CLASS CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                    # One would expect 0x15 to be identical to 0x12 but for class properties instead. However, it appears
+                    # that this has been omitted from game binaries.
                     elif obj_to_create == 0x16:
                         # Func property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x400
                         offset_ptr += 1
                         self.vprint(f"{prefix}        FUNC CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x17:
+                        # Func property name referencing a string table entry.
+                        propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
+                        propertyval += 0x400
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 2
+                        self.vprint(f"{prefix}        FUNC CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                    # Same comment with 0x15 applies here with 0x18.
                     elif obj_to_create == 0x19:
                         # Other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x200
                         offset_ptr += 1
                         self.vprint(f"{prefix}        OTHER CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x1a:
+                        # Other property name referencing a string table entry.
+                        propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
+                        propertyval += 0x200
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 2
+                        self.vprint(f"{prefix}        OTHER CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                    # Same comment with 0x15 and 0x18 applies here with 0x1b.
                     elif obj_to_create == 0x1c:
                         # Event property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
                         offset_ptr += 1
                         self.vprint(f"{prefix}        EVENT CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x1d:
+                        # Event property name referencing a string table entry.
+                        propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
+                        propertyval += 0x500
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 2
+                        self.vprint(f"{prefix}        EVENT CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                    # Same comment with 0x15, 0x18 and 0x1b applies here with 0x1e.
                     elif obj_to_create == 0x1f:
                         # Key constants.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x600
                         offset_ptr += 1
                         self.vprint(f"{prefix}        KEY CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    elif obj_to_create == 0x20:
+                        # Key property name referencing a string table entry.
+                        propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
+                        propertyval += 0x600
+                        referenceval = self.__get_string(string_offsets[reference])
+
+                        offset_ptr += 2
+                        self.vprint(f"{prefix}        KEY CONST NAME: {AP2Property.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                    # Same comment with 0x15, 0x18, 0x1b and 0x1e applies here with 0x21.
                     elif obj_to_create == 0x22:
                         # Pointer to global object.
                         self.vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
+                    elif obj_to_create == 0x23:
+                        # Negative infinity.
+                        self.vprint(f"{prefix}        -INFINITY")
                     elif obj_to_create == 0x24:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x700
                         offset_ptr += 1
                         self.vprint(f"{prefix}        ETC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x25 and 0x26 are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x24.
                     elif obj_to_create == 0x27:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
                         offset_ptr += 1
                         self.vprint(f"{prefix}        ORGFUNC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x28 and 0x29 are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x27.
+                    elif obj_to_create == 0x2a:
+                        # Some other property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x900
+                        offset_ptr += 1
+                        self.vprint(f"{prefix}        ETCFUNC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x2b and 0x2c are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x2a.
+                    elif obj_to_create == 0x2d:
+                        # Some other property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xa00
+                        offset_ptr += 1
+                        self.vprint(f"{prefix}        EVENT2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x2e and 0x2f are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x2d.
+                    elif obj_to_create == 0x30:
+                        # Some other property name.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xb00
+                        offset_ptr += 1
+                        self.vprint(f"{prefix}        EVENT METHOD CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x31 and 0x32 are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x30.
+                    elif obj_to_create == 0x33:
+                        # Signed 64 bit integer init. Uses special "S64" type.
+                        int64 = struct.unpack(">q", datachunk[offset_ptr:(offset_ptr + 8)])
+                        offset_ptr += 8
+
+                        self.vprint(f"{prefix}        INTEGER: {int64}")
+                    elif obj_to_create == 0x34:
+                        # Some other property names.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xc00
+                        offset_ptr += 1
+                        self.vprint(f"{prefix}        GENERIC CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x35 and 0x36 are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x34.
                     elif obj_to_create == 0x37:
                         # Integer object but one byte.
                         ival = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
                         offset_ptr += 1
 
                         self.vprint(f"{prefix}        INTEGER: {ival}")
+                    elif obj_to_create == 0x38:
+                        # Some other property names.
+                        propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xd00
+                        offset_ptr += 1
+                        self.vprint(f"{prefix}        GENERIC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
+                    # Possibly in newer binaries, 0x39 and 0x3a are implemented as 8-bit and 16-bit alias pointer
+                    # versions of 0x38.
                     else:
                         raise Exception(f"Unsupported object {hex(obj_to_create)} to push!")
 
@@ -587,14 +697,13 @@ class SWF(TrackedCoverage, VerboseOutput):
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
 
-            unused, shape_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            unknown, shape_id = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             self.add_coverage(dataoffset, size)
 
-            if unused != 0:
-                raise Exception(f"Unexpected value {unused} in Shape tag!")
-
+            # I'm not sure what the unknown value is. It doesn't seem to be parsed by either BishiBashi or Jubeat
+            # when I've looked, but it does appear to be non-zero sometimes in Pop'n Music animations.
             shape_reference = f"{self.exported_name}_shape{shape_id}"
-            self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()}")
+            self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()} Unknown: {unknown}")
 
             return AP2ShapeTag(shape_id, shape_reference)
         elif tagid == AP2Tag.AP2_DEFINE_SPRITE:
