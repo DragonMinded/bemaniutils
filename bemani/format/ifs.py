@@ -3,7 +3,7 @@ import io
 import os
 import struct
 from PIL import Image  # type: ignore
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 
 from bemani.protocol.binary import BinaryEncoding
 from bemani.protocol.xml import XmlEncoding
@@ -20,8 +20,8 @@ class IFS:
 
     def __init__(self, data: bytes, decode_binxml: bool=False, decode_textures: bool=False) -> None:
         self.__files: Dict[str, bytes] = {}
-        self.__texdata: Dict[str, Node] = {}
-        self.__mappings: Dict[str, str] = {}
+        self.__formats: Dict[str, str] = {}
+        self.__compressed: Dict[str, bool] = {}
         self.__sizes: Dict[str, Tuple[int, int]] = {}
         self.__decode_binxml = decode_binxml
         self.__decode_textures = decode_textures
@@ -81,6 +81,7 @@ class IFS:
                 for subchild in node.children:
                     get_children(os.path.join(parent, f"{real_name}/"), subchild)
 
+        # Recursively walk the entire filesystem extracting files and their locations.
         get_children("/", header)
 
         for fn in files:
@@ -88,71 +89,114 @@ class IFS:
             filedata = data[start:(start + size)]
             self.__files[fn] = filedata
 
-        if self.__decode_textures:
-            # We must fix up the name of the textures since we're decoding them
-            def fix_name(hashname: str) -> str:
-                path = os.path.dirname(hashname)
-                filename = os.path.basename(hashname)
+        # Now, find all of the index files that are available.
+        for filename in list(self.__files.keys()):
+            abs_filename = ("/" if filename.startswith("/") else "") + filename
 
-                texlist = self.__get_texlist_for_file(hashname)
+            if abs_filename.endswith("/texturelist.xml"):
+                # This is a texture index.
+                texdir = os.path.dirname(filename)
 
-                if texlist is not None and texlist.name == 'texturelist':
-                    for child in texlist.children:
-                        if child.name != 'texture':
+                benc = BinaryEncoding()
+                texdata = benc.decode(self.__files[filename])
+
+                if texdata.name != 'texturelist':
+                    raise Exception(f"Unexpected name {texdata.name} in texture list!")
+                if texdata.attribute('compress') == 'avslz':
+                    compressed = True
+                else:
+                    compressed = False
+
+                for child in texdata.children:
+                    if child.name != 'texture':
+                        continue
+
+                    textfmt = child.attribute('format')
+
+                    for subchild in child.children:
+                        if subchild.name != 'image':
                             continue
+                        md5sum = hashlib.md5(subchild.attribute('name').encode(benc.encoding)).hexdigest()
+                        oldname = os.path.join(texdir, md5sum)
+                        newname = os.path.join(texdir, subchild.attribute('name'))
 
-                        textfmt = child.attribute('format')
+                        if oldname in self.__files:
+                            supported = False
+                            if self.__decode_textures:
+                                if textfmt in ["argb8888rev"]:
+                                    # This is a supported file to decode
+                                    newname += ".png"
+                                    supported = True
 
-                        for subchild in child.children:
-                            if subchild.name != 'image':
-                                continue
-                            md5sum = hashlib.md5(subchild.attribute('name').encode(benc.encoding)).hexdigest()
+                            # Remove old index, update file to new index.
+                            self.__files[newname] = self.__files[oldname]
+                            del self.__files[oldname]
 
-                            if md5sum == filename:
-                                if textfmt == "argb8888rev":
-                                    name = f'{subchild.attribute("name")}.png'
-                                else:
-                                    name = subchild.attribute('name')
-                                newpath = os.path.join(path, name)
+                            # Remember the attributes for this file so we can extract it later.
+                            self.__compressed[newname] = compressed
+
+                            if supported:
+                                # Only pop down the format and sizes if we support extracting.
+                                self.__formats[newname] = textfmt
 
                                 rect = subchild.child_value('imgrect')
                                 if rect is not None:
-                                    self.__mappings[newpath] = textfmt
-                                    self.__sizes[newpath] = (
+                                    self.__sizes[newname] = (
                                         (rect[1] - rect[0]) // 2,
                                         (rect[3] - rect[2]) // 2,
                                     )
+            elif abs_filename.endswith("/afplist.xml"):
+                # This is a texture index.
+                afpdir = os.path.dirname(filename)
+                bsidir = os.path.join(afpdir, "bsi")
+                geodir = os.path.join(os.path.dirname(afpdir), "geo")
 
-                                return newpath
+                benc = BinaryEncoding()
+                afpdata = benc.decode(self.__files[filename])
 
-                return hashname
+                if afpdata.name != 'afplist':
+                    raise Exception(f"Unexpected name {afpdata.name} in afp list!")
 
-            self.__files = {fix_name(fn): self.__files[fn] for fn in self.__files}
+                for child in afpdata.children:
+                    if child.name != 'afp':
+                        continue
+
+                    # First, fix up the afp files themselves.
+                    name = child.attribute('name')
+                    md5sum = hashlib.md5(name.encode(benc.encoding)).hexdigest()
+
+                    for fixdir in [afpdir, bsidir]:
+                        oldname = os.path.join(fixdir, md5sum)
+                        newname = os.path.join(fixdir, name)
+
+                        if oldname in self.__files:
+                            # Remove old index, update file to new index.
+                            self.__files[newname] = self.__files[oldname]
+                            del self.__files[oldname]
+
+                    # Now, fix up the shape files as well.
+                    geodata = child.child_value("geo")
+                    if geodata is not None:
+                        for geoid in geodata:
+                            geoname = f"{name}_shape{geoid}"
+                            md5sum = hashlib.md5(geoname.encode(benc.encoding)).hexdigest()
+
+                            oldname = os.path.join(geodir, md5sum)
+                            newname = os.path.join(geodir, geoname)
+
+                            if oldname in self.__files:
+                                # Remove old index, update file to new index.
+                                self.__files[newname] = self.__files[oldname]
+                                del self.__files[oldname]
 
     @property
     def filenames(self) -> List[str]:
         return [f for f in self.__files]
 
-    def __get_texlist_for_file(self, filename: str) -> Optional[Node]:
-        texlist = os.path.join(os.path.dirname(filename), 'texturelist.xml')
-        if texlist != filename and texlist in self.__files:
-            if texlist not in self.__texdata and texlist in self.__files:
-                benc = BinaryEncoding()
-                self.__texdata[texlist] = benc.decode(self.__files[texlist])
-
-            return self.__texdata.get(texlist)
-        return None
-
     def read_file(self, filename: str) -> bytes:
-        # If this is a texture folder, first we need to grab the texturelist.xml file
-        # to figure out if this is compressed or not.
-        decompress = False
-        texlist = self.__get_texlist_for_file(filename)
-        if texlist is not None and texlist.name == 'texturelist':
-            if texlist.attribute('compress') == 'avslz':
-                # We should decompress!
-                decompress = True
-
+        # First, figure out if this file is stored compressed or not. If it is, decompress
+        # it so that we have the raw data available to us.
+        decompress = self.__compressed.get(filename, False)
         filedata = self.__files[filename]
         if decompress:
             uncompressed_size, compressed_size = struct.unpack('>II', filedata[0:8])
@@ -168,9 +212,11 @@ class IFS:
             if filexml is not None:
                 filedata = str(filexml).encode('utf-8')
 
-        if self.__decode_textures and filename in self.__mappings and filename in self.__sizes:
-            fmt = self.__mappings.get(filename)
-            wh = self.__sizes.get(filename)
+        if self.__decode_textures and filename in self.__formats and filename in self.__sizes:
+            fmt = self.__formats[filename]
+            wh = self.__sizes[filename]
+
+            # Decode the image data itself.
             if fmt == "argb8888rev":
                 if len(filedata) < (wh[0] * wh[1] * 4):
                     left = (wh[0] * wh[1] * 4) - len(filedata)

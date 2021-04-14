@@ -19,12 +19,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--convert-xml-files",
-        help="Convert xml files that are in binary.",
+        help="Convert xml files that are in binary to readable text.",
         action="store_true",
     )
     parser.add_argument(
         "--convert-texture-files",
-        help="Convert texture files that are in game-format.",
+        help="Convert texture files that are in game-format to PNG files.",
         action="store_true",
     )
     args = parser.parse_args()

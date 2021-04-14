@@ -1,4 +1,3 @@
-from hashlib import md5
 import os
 import struct
 import sys
@@ -703,7 +702,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             # I'm not sure what the unknown value is. It doesn't seem to be parsed by either BishiBashi or Jubeat
             # when I've looked, but it does appear to be non-zero sometimes in Pop'n Music animations.
             shape_reference = f"{self.exported_name}_shape{shape_id}"
-            self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, IFS GEO Filename: {md5(shape_reference.encode('utf-8')).hexdigest()} Unknown: {unknown}")
+            self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, Unknown: {unknown}")
 
             return AP2ShapeTag(shape_id, shape_reference)
         elif tagid == AP2Tag.AP2_DEFINE_SPRITE:
