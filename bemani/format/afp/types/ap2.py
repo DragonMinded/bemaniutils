@@ -299,6 +299,8 @@ class AP2Action:
     # Takes the top of the stack and duplicates the object before pushing that object to the stack.
     PUSH_DUPLICATE = 44
 
+    # Swaps the position of the two two objects on the stack. If there isn't enough to swap, does
+    # nothing.
     STACK_SWAP = 45
 
     # Get a member value and place it on the stack.
@@ -317,8 +319,15 @@ class AP2Action:
     # stack for the number of params, and then that many values from the stack as function parameters.
     CALL_METHOD = 50
 
+    # Takes at least 3 objects on the stack, the third being the number of parameters, the second being
+    # the object to add a method to and the first being the member name.
     NEW_METHOD = 51
+
+    # Takes two objects, pops them off the stack and adds a boolean object to the stack set to true
+    # if one is an instance of the other or false otherwise.
     INSTANCEOF = 52
+
+    # Enumerates some sort of object into a variable on the top of the stack.
     ENUMERATE2 = 53
 
     # Pop two values from the stack, bitwise and them, push the result.
@@ -346,6 +355,8 @@ class AP2Action:
     # the second or not.
     GREATER = 61
 
+    # Pops two objects off the stack and does some sort of OOP with them, the first being the superclass
+    # and the second being the subclass.
     EXTENDS = 62
 
     # Pop a value from the stack and store it in a register specified by the opcode param. Also push
@@ -356,6 +367,12 @@ class AP2Action:
     # as parameters, and uses that to read the next N bytes of bytecode as the function definition.
     DEFINE_FUNCTION2 = 64
 
+    # Grabs a 16 bit offset pointer as the opcode param, then skips bytecode processing forward
+    # that many bytes, passing the skipped bytes as pointer data to a function that adds it to the
+    # stack as a pointer type, and then adds a copy of the top of the stack before the pointer as a
+    # second new stack entry. Strangely enough, if the object on the top of the stack doesn't meet
+    # some criteria, the skipped bytes are processed as bytecode. I am not sure what the hell is going
+    # on here.
     WITH = 66
 
     # Push an object onto the stack. Creates objects based on the bytecode parameters and pushes
@@ -365,6 +382,9 @@ class AP2Action:
     # Unconditional jump based on bytecode value.
     JUMP = 68
 
+    # Gets a single 8-bit integer as an opcode param, take the top two bits of that param as the
+    # action to take. Looks like it is similar to SWF GET_URL2 action. Supported actions are 0,
+    # 2 and 3. It pops two objects from the stack to perform against.
     GET_URL2 = 69
 
     # Pops a value from the stack, jumps to offset from opcode params if value is truthy.
@@ -375,6 +395,8 @@ class AP2Action:
     # in opcode params.
     GOTO_FRAME2 = 71
 
+    # Pops the top of the stack, uses that to get a target, pushes a pointer to that target on
+    # the stack.
     GET_TARGET = 72
 
     # Given a subtype of check and a positive offset to jump to on true, perform a conditional check.
@@ -385,6 +407,9 @@ class AP2Action:
     # Similar to STORE_REGISTER but does not preserve the value on the stack afterwards.
     STORE_REGISTER2 = 74
 
+    # Take one opcode parameter for the number of registers to in it, and then one opcode parameter
+    # per the number of registers param as the register number to init, initializing that register
+    # as an "Undefined" object.
     INIT_REGISTER = 75
 
     # Similar to ADD_NUM_VARIABLE, but operating on a register number instead of the stack. Takes
@@ -447,7 +472,7 @@ class AP2Action:
             cls.DECREMENT: 'DECREMENT',
             cls.CALL_METHOD: 'CALL_METHOD',
             cls.NEW_METHOD: 'NEW_METHOD',
-            cls.INSTANCEOF: 'INSTANCEOF',
+            cls.INSTANCEOF: 'INSTANCE,OF',
             cls.ENUMERATE2: 'ENUMERATE2',
             cls.BIT_AND: 'BIT_AND',
             cls.BIT_OR: 'BIT_OR',
@@ -505,10 +530,13 @@ class AP2Action:
             cls.REMOVE_SPRITE,
             cls.TRACE,
             cls.TYPEOF,
+            cls.INSTANCEOF,
             cls.TARGET_PATH,
+            cls.ENUMERATE2,
             cls.THROW,
             cls.CAST_OP,
             cls.IMPLEMENTS_OP,
+            cls.STACK_SWAP,
             cls.GET_TIME,
             cls.RETURN,
             cls.POP,
@@ -516,6 +544,7 @@ class AP2Action:
             cls.DELETE,
             cls.DELETE2,
             cls.NEW_OBJECT,
+            cls.EXTENDS,
             cls.INIT_ARRAY,
             cls.INIT_OBJECT,
             cls.END_DRAG,
@@ -529,10 +558,12 @@ class AP2Action:
             cls.SET_MEMBER,
             cls.GET_PROPERTY,
             cls.SET_PROPERTY,
+            cls.NEW_METHOD,
             cls.CALL_METHOD,
             cls.CALL_FUNCTION,
             cls.TO_NUMBER,
             cls.TO_STRING,
+            cls.GET_TARGET,
         }
 
 

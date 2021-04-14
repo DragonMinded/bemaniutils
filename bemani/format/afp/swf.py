@@ -315,7 +315,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}")
 
                 # TODO: Need to do something with this parsed function bytecode.
-                function = self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
+                function = self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")  # NOQA
                 self.vprint(f"{prefix}      END_{action_name}")
 
                 offset_ptr += bytecode_count
@@ -452,6 +452,19 @@ class SWF(TrackedCoverage, VerboseOutput):
                     obj_count -= 1
 
                 self.vprint(f"{prefix}      END_{action_name}")
+            elif opcode == AP2Action.INIT_REGISTER:
+                obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                self.vprint(f"{prefix}      {lineno}: {action_name}")
+
+                while obj_count > 0:
+                    register_no = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                    offset_ptr += 1
+                    obj_count -= 1
+
+                    self.vprint(f"{prefix}        REGISTER NO: {register_no}")
+                self.vprint(f"{prefix}      END_{action_name}")
             elif opcode == AP2Action.STORE_REGISTER:
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
@@ -517,11 +530,25 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # to be absolute instead of relative.
                 jump_offset += offset_ptr - start_offset
                 self.vprint(f"{prefix}      {lineno}: {action_name} Offset: {jump_offset}")
+            elif opcode == AP2Action.WITH:
+                skip_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                offset_ptr += 3
+
+                # TODO: I have absolutely no idea what the data which exists in the bytecode buffer at this point
+                # represents...
+                unknown_data = datachunk[offset_ptr:(offset_ptr + skip_offset)]  # NOQA
+                offset_ptr += skip_offset
+                self.vprint(f"{prefix}      {lineno}: {action_name} Unknown Data Length: {skip_offset}")
             elif opcode == AP2Action.ADD_NUM_VARIABLE:
                 amount_to_add = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} Add Value: {amount_to_add}")
+            elif opcode == AP2Action.GET_URL2:
+                action = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                offset_ptr += 2
+
+                self.vprint(f"{prefix}      {lineno}: {action_name} URL Action: {action >> 6}")
             elif opcode == AP2Action.START_DRAG:
                 constraint = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
