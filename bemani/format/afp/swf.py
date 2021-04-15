@@ -103,6 +103,7 @@ class AP2PlaceObjectTag(Tag):
         blend: Optional[int],
         update: bool,
         transform: Optional[Matrix],
+        rotation_offset: Optional[Point],
         mult_color: Optional[Color],
         add_color: Optional[Color],
         triggers: Dict[int, List[ByteCode]],
@@ -131,6 +132,7 @@ class AP2PlaceObjectTag(Tag):
 
         # Whether there is a transform matrix to apply before placing/updating this object or not.
         self.transform = transform
+        self.rotation_offset = rotation_offset
 
         # If there is a color to blend with the sprite/shape when drawing.
         self.mult_color = mult_color
@@ -990,6 +992,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # I don't know however as I've not encountered data with this bit.
                 self.vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {filter_size}")
 
+            rotation_offset = None
             if flags & 0x1000000:
                 # Some sort of point, perhaps an x, y offset for the object or a center point for rotation?
                 unhandled_flags &= ~0x1000000
@@ -997,14 +1000,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                point = Point(float(x) / 20.0, float(y) / 20.0)
-                self.vprint(f"{prefix}    Point: {point}")
+                rotation_offset = Point(float(x) / 20.0, float(y) / 20.0)
+                self.vprint(f"{prefix}    Point: {rotation_offset}")
 
             if flags & 0x2000000:
                 # Same as above, but initializing to 0, 0 instead of from data.
                 unhandled_flags &= ~0x2000000
-                point = Point(0.0, 0.0)
-                self.vprint(f"{prefix}    Point: {point}")
+                rotation_offset = Point(0.0, 0.0)
+                self.vprint(f"{prefix}    Point: {rotation_offset}")
 
             if flags & 0x40000:
                 # Some pair of shorts, not sure, its in DDR PS3 data.
@@ -1058,6 +1061,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 blend=blend,
                 update=True if (flags & 0x1) else False,
                 transform=transform if (flags & 0x4) else None,
+                rotation_offset=rotation_offset,
                 mult_color=multcolor if (flags & 0x8) else None,
                 add_color=addcolor if (flags & 0x8) else None,
                 triggers=bytecodes,
