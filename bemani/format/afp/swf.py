@@ -57,6 +57,9 @@ class Tag:
     def __init__(self, id: Optional[int]) -> None:
         self.id = id
 
+    def children(self) -> List["Tag"]:
+        return []
+
 
 class AP2ShapeTag(Tag):
     def __init__(self, id: int, reference: str) -> None:
@@ -168,6 +171,9 @@ class AP2DefineSpriteTag(Tag):
         # The list of frames this SWF occupies.
         self.frames = frames
 
+    def children(self) -> List["Tag"]:
+        return self.tags
+
 
 class AP2DefineEditTextTag(Tag):
     def __init__(self, id: int, font_tag_id: int, font_height: int, rect: Rectangle, color: Color, default_text: Optional[str] = None) -> None:
@@ -241,6 +247,9 @@ class SWF(TrackedCoverage, VerboseOutput):
         # SWF string table. This is used for faster lookup of strings as well as
         # tracking which strings in the table have been parsed correctly.
         self.__strings: Dict[int, Tuple[str, bool]] = {}
+
+        # Whether this is parsed or not.
+        self.parsed = False
 
     def print_coverage(self) -> None:
         # First print uncovered bytes
@@ -1149,7 +1158,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
             self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
-            self.tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix))
+            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix))
             tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
 
         # Now, parse frames.
@@ -1431,3 +1440,5 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         if verbose:
             self.print_coverage()
+
+        self.parsed = True

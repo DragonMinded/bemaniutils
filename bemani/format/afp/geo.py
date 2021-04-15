@@ -31,6 +31,9 @@ class Shape:
         # Actual shape drawing parameters.
         self.draw_params: List[DrawParams] = []
 
+        # Whether this is parsed.
+        self.parsed = False
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             'name': self.name,
@@ -186,6 +189,7 @@ class Shape:
                     )
                 )
         self.draw_params = draw_params
+        self.parsed = True
 
 
 class DrawParams:

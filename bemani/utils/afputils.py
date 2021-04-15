@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import argparse
+import io
 import json
 import os
 import os.path
@@ -8,14 +9,15 @@ import textwrap
 from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict
 
-from bemani.format.afp import TXP2File, Shape, SWF
+from bemani.format.afp import TXP2File, Shape, SWF, AFPRenderer
+from bemani.format import IFS
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker")
     subparsers = parser.add_subparsers(help='Action to take', dest='action')
 
-    extract_parser = subparsers.add_parser('extract', help='Extract relevant textures from file')
+    extract_parser = subparsers.add_parser('extract', help='Extract relevant textures from TXP2 container')
     extract_parser.add_argument(
         "file",
         metavar="FILE",
@@ -69,7 +71,7 @@ def main() -> int:
         help="Write binary SWF files to disk",
     )
 
-    update_parser = subparsers.add_parser('update', help='Update relevant textures in a file from a directory')
+    update_parser = subparsers.add_parser('update', help='Update relevant textures in a TXP2 container from a directory')
     update_parser.add_argument(
         "file",
         metavar="FILE",
@@ -93,7 +95,7 @@ def main() -> int:
         help="Display verbuse debugging output",
     )
 
-    print_parser = subparsers.add_parser('print', help='Print the file contents as a JSON dictionary')
+    print_parser = subparsers.add_parser('print', help='Print the TXP2 container contents as a JSON dictionary')
     print_parser.add_argument(
         "file",
         metavar="FILE",
@@ -106,7 +108,7 @@ def main() -> int:
         help="Display verbuse debugging output",
     )
 
-    parseafp_parser = subparsers.add_parser('parseafp', help='Parse a raw AFP/BSI file pair extracted from an IFS container')
+    parseafp_parser = subparsers.add_parser('parseafp', help='Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container')
     parseafp_parser.add_argument(
         "afp",
         metavar="AFPFILE",
@@ -124,13 +126,42 @@ def main() -> int:
         help="Display verbuse debugging output",
     )
 
-    parsegeo_parser = subparsers.add_parser('parsegeo', help='Parse a raw GEO file extracted from an IFS container')
+    parsegeo_parser = subparsers.add_parser('parsegeo', help='Parse a raw GEO file previously extracted from an IFS or TXP2 container')
     parsegeo_parser.add_argument(
         "geo",
         metavar="GEOFILE",
         help="The GEO file to parse",
     )
     parsegeo_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
+    )
+
+    render_parser = subparsers.add_parser('render', help='Render a particular animation out of a series of SWFs')
+    render_parser.add_argument(
+        "container",
+        metavar="CONTAINER",
+        type=str,
+        nargs='+',
+        help="A container file to use for loading SWF data. Can be either a TXP2 or IFS container.",
+    )
+    render_parser.add_argument(
+        "--path",
+        metavar="PATH",
+        type=str,
+        required=True,
+        help='A path to render, specified either as "moviename" or "moviename.exportedtag".',
+    )
+    render_parser.add_argument(
+        "--output",
+        metavar="IMAGE",
+        type=str,
+        default="out.gif",
+        help='The output file (ending either in .gif or .webp) where the render should be saved.',
+    )
+    render_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -397,6 +428,76 @@ def main() -> int:
         if args.verbose:
             print(geo, file=sys.stderr)
         print(json.dumps(geo.as_dict(), sort_keys=True, indent=4))
+
+    if args.action == "render":
+        # This is a complicated one, as we need to be able to specify multiple
+        # directories of files as well as support IFS files and TXP2 files.
+        renderer = AFPRenderer()
+
+        # TODO: Allow specifying individual folders and such.
+        for container in args.container:
+            with open(container, "rb") as bfp:
+                data = bfp.read()
+
+            afpfile = None
+            try:
+                afpfile = TXP2File(data, verbose=args.verbose)
+            except Exception:
+                pass
+
+            if afpfile is not None:
+                # TODO: Load from afp container
+                pass
+
+            ifsfile = None
+            try:
+                ifsfile = IFS(data, decode_textures=True)
+            except Exception:
+                pass
+
+            if ifsfile is not None:
+                for fname in ifsfile.filenames:
+                    if fname.startswith("geo/"):
+                        # Trim off directory.
+                        shapename = fname[4:]
+
+                        # Load file, register it.
+                        fdata = ifsfile.read_file(fname)
+                        shape = Shape(shapename, fdata)
+                        renderer.add_shape(shapename, shape)
+
+                        if args.verbose:
+                            print(f"Added {shapename} to SWF shape library.", file=sys.stderr)
+                    elif fname.startswith("tex/") and fname.endswith(".png"):
+                        # Trim off directory, png extension.
+                        texname = fname[4:][:-4]
+
+                        # Load file, register it.
+                        fdata = ifsfile.read_file(fname)
+                        tex = Image.open(io.BytesIO(fdata))
+                        renderer.add_texture(texname, tex)
+
+                        if args.verbose:
+                            print(f"Added {texname} to SWF texture library.", file=sys.stderr)
+                    elif fname.startswith("afp/"):
+                        # Trim off directory, see if it has a corresponding bsi.
+                        afpname = fname[4:]
+                        bsipath = f"afp/bsi/{afpname}"
+
+                        if bsipath in ifsfile.filenames:
+                            afpdata = ifsfile.read_file(fname)
+                            bsidata = ifsfile.read_file(bsipath)
+                            flash = SWF(afpname, afpdata, bsidata)
+                            renderer.add_swf(afpname, flash)
+
+                            if args.verbose:
+                                print(f"Added {afpname} to SWF library.", file=sys.stderr)
+
+            duration, images = renderer.render_path(args.path, verbose=args.verbose)
+            if len(images) == 0:
+                raise Exception("Did not render any frames!")
+            images[0].save(args.output, save_all=True, append_images=images[1:], loop=0, duration=duration)
+            print(f"Wrote animation to {args.output}")
 
     return 0
 

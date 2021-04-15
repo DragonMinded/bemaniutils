@@ -1,21 +1,4 @@
-from typing import Any, Dict
-
-
-class Matrix:
-    def __init__(self, a: float, b: float, c: float, d: float, tx: float, ty: float) -> None:
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
-        self.tx = tx
-        self.ty = ty
-
-    @staticmethod
-    def identity() -> "Matrix":
-        return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
-
-    def __repr__(self) -> str:
-        return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
+from typing import Any, Dict, Tuple
 
 
 class Color:
@@ -33,6 +16,14 @@ class Color:
             'a': self.a,
         }
 
+    def as_tuple(self) -> Tuple[int, int, int, int]:
+        return (
+            int(self.r * 255),
+            int(self.g * 255),
+            int(self.b * 255),
+            int(self.a * 255),
+        )
+
     def __repr__(self) -> str:
         return f"r: {round(self.r, 5)}, g: {round(self.g, 5)}, b: {round(self.b, 5)}, a: {round(self.a, 5)}"
 
@@ -42,11 +33,28 @@ class Point:
         self.x = x
         self.y = y
 
+    @staticmethod
+    def identity() -> "Point":
+        return Point(0.0, 0.0)
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             'x': self.x,
             'y': self.y,
         }
+
+    def as_tuple(self) -> Tuple[int, int]:
+        return (int(self.x), int(self.y))
+
+    def add(self, other: "Point") -> "Point":
+        self.x += other.x
+        self.y += other.y
+        return self
+
+    def subtract(self, other: "Point") -> "Point":
+        self.x -= other.x
+        self.y -= other.y
+        return self
 
     def __repr__(self) -> str:
         return f"x: {round(self.x, 5)}, y: {round(self.y, 5)}"
@@ -81,3 +89,26 @@ class Rectangle:
     @staticmethod
     def Empty() -> "Rectangle":
         return Rectangle(left=0.0, right=0.0, top=0.0, bottom=0.0)
+
+
+class Matrix:
+    def __init__(self, a: float, b: float, c: float, d: float, tx: float, ty: float) -> None:
+        self.a = a
+        self.b = b
+        self.c = c
+        self.d = d
+        self.tx = tx
+        self.ty = ty
+
+    @staticmethod
+    def identity() -> "Matrix":
+        return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+    def multiply_point(self, point: Point) -> Point:
+        return Point(
+            x=(self.a * point.x) + (self.c * point.y) + self.tx,
+            y=(self.b * point.x) + (self.d * point.y) + self.ty,
+        )
+
+    def __repr__(self) -> str:
+        return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
