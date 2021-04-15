@@ -820,7 +820,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x100:
                 # Has scale component.
                 unhandled_flags &= ~0x100
-                a_int, d_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                a_int, d_int = struct.unpack("<ii", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
@@ -831,7 +831,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x200:
                 # Has rotate component.
                 unhandled_flags &= ~0x200
-                b_int, c_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                b_int, c_int = struct.unpack("<ii", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
@@ -842,12 +842,12 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x400:
                 # Has translate component.
                 unhandled_flags &= ~0x400
-                tx_int, ty_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                tx_int, ty_int = struct.unpack("<ii", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
                 transform.tx = float(tx_int) / 20.0
-                transform.ty = float(tx_int) / 20.0
+                transform.ty = float(ty_int) / 20.0
                 self.vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
 
             # Handle object colors
@@ -1001,13 +1001,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 8
 
                 rotation_offset = Point(float(x) / 20.0, float(y) / 20.0)
-                self.vprint(f"{prefix}    Point: {rotation_offset}")
+                self.vprint(f"{prefix}    Rotation Origin: {rotation_offset}")
 
             if flags & 0x2000000:
                 # Same as above, but initializing to 0, 0 instead of from data.
                 unhandled_flags &= ~0x2000000
                 rotation_offset = Point(0.0, 0.0)
-                self.vprint(f"{prefix}    Point: {rotation_offset}")
+                self.vprint(f"{prefix}    Rotation Origin: {rotation_offset}")
 
             if flags & 0x40000:
                 # Some pair of shorts, not sure, its in DDR PS3 data.
