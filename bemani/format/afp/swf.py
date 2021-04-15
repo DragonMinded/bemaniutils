@@ -861,7 +861,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             # Handle object colors
             multcolor = Color(1.0, 1.0, 1.0, 1.0)
-            addcolor = Color(1.0, 1.0, 1.0, 1.0)
+            addcolor = Color(0.0, 0.0, 0.0, 0.0)
 
             if flags & 0x800:
                 # Multiplicative color present.

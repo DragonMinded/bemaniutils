@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple, Optional
 from PIL import Image  # type: ignore
 
-from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag
+from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag
 from .types import Color, Matrix, Point
 from .geo import Shape
 from .util import VerboseOutput
@@ -142,6 +142,9 @@ class AFPRenderer(VerboseOutput):
                         break
 
             return []
+        elif isinstance(tag, AP2DoActionTag):
+            print("WARNING: Unhandled DO_ACTION tag!")
+            return []
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
@@ -152,7 +155,7 @@ class AFPRenderer(VerboseOutput):
 
         # Double check supported options.
         if tag.mult_color or tag.add_color:
-            raise Exception("Don't support color blending yet!")
+            print(f"WARNING: Unhandled color blend request Mult: {tag.mult_color} Add: {tag.add_color}!")
 
         # Look up the affine transformation matrix and rotation/origin.
         transform = tag.transform or Matrix.identity()
@@ -160,9 +163,9 @@ class AFPRenderer(VerboseOutput):
 
         # TODO: Need to do actual affine transformations here.
         if transform.b != 0.0 or transform.c != 0.0 or transform.a != 1.0 or transform.d != 1.0:
-            raise Exception("Don't support affine transformations yet!")
+            print("WARNING: Unhandled affine transformation request!")
         if parent_transform.b != 0.0 or parent_transform.c != 0.0 or parent_transform.a != 1.0 or parent_transform.d != 1.0:
-            raise Exception("Don't support affine transformations yet!")
+            print("WARNING: Unhandled affine transformation request!")
         offset = parent_transform.multiply_point(transform.multiply_point(Point.identity().subtract(origin).subtract(parent_origin)))
 
         # Look up source shape.
