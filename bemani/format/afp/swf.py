@@ -103,8 +103,8 @@ class AP2PlaceObjectTag(Tag):
         blend: Optional[int],
         update: bool,
         transform: Optional[Matrix],
-        color: Optional[Color],
-        alpha_color: Optional[Color],
+        mult_color: Optional[Color],
+        add_color: Optional[Color],
         triggers: Dict[int, List[ByteCode]],
     ) -> None:
         # Place Object Tags are not identified by any tag ID.
@@ -133,10 +133,10 @@ class AP2PlaceObjectTag(Tag):
         self.transform = transform
 
         # If there is a color to blend with the sprite/shape when drawing.
-        self.color = color
+        self.mult_color = mult_color
 
-        # If there is an alpha color to draw instead of draing over any other placed object.
-        self.alpha_color = alpha_color
+        # If there is a color to add with the sprite/shape when drawing.
+        self.add_color = add_color
 
         # List of triggers for this object, and their respective bytecodes to execute when the trigger
         # fires.
@@ -761,6 +761,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             unhandled_flags = flags
 
             if flags & 0x2:
+                # Has a shape component.
                 unhandled_flags &= ~0x2
                 src_tag_id = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
@@ -777,6 +778,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Unk2: {hex(unk2)}")
 
             if flags & 0x20:
+                # Has name component.
                 unhandled_flags &= ~0x20
                 nameoffset = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
@@ -794,6 +796,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Unk3: {hex(unk3)}")
 
             if flags & 0x20000:
+                # Has blend component.
                 unhandled_flags &= ~0x20000
                 blend = struct.unpack("<B", datachunk[running_pointer:(running_pointer + 1)])[0]
                 self.add_coverage(dataoffset + running_pointer, 1)
@@ -813,6 +816,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             transform = Matrix.identity()
 
             if flags & 0x100:
+                # Has scale component.
                 unhandled_flags &= ~0x100
                 a_int, d_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
@@ -823,6 +827,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
             if flags & 0x200:
+                # Has rotate component.
                 unhandled_flags &= ~0x200
                 b_int, c_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
@@ -833,6 +838,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
             if flags & 0x400:
+                # Has translate component.
                 unhandled_flags &= ~0x400
                 tx_int, ty_int = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
@@ -843,56 +849,60 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
 
             # Handle object colors
-            color = Color(1.0, 1.0, 1.0, 1.0)
-            acolor = Color(1.0, 1.0, 1.0, 1.0)
+            multcolor = Color(1.0, 1.0, 1.0, 1.0)
+            addcolor = Color(1.0, 1.0, 1.0, 1.0)
 
             if flags & 0x800:
+                # Multiplicative color present.
                 unhandled_flags &= ~0x800
                 r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                color.r = float(r) * 0.003921569
-                color.g = float(g) * 0.003921569
-                color.b = float(b) * 0.003921569
-                color.a = float(a) * 0.003921569
-                self.vprint(f"{prefix}    Color: {color}")
+                multcolor.r = float(r) * 0.003921569
+                multcolor.g = float(g) * 0.003921569
+                multcolor.b = float(b) * 0.003921569
+                multcolor.a = float(a) * 0.003921569
+                self.vprint(f"{prefix}    Mult Color: {multcolor}")
 
             if flags & 0x1000:
+                # Additive color present.
                 unhandled_flags &= ~0x1000
                 r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                acolor.r = float(r) * 0.003921569
-                acolor.g = float(g) * 0.003921569
-                acolor.b = float(b) * 0.003921569
-                acolor.a = float(a) * 0.003921569
-                self.vprint(f"{prefix}    AColor: {color}")
+                addcolor.r = float(r) * 0.003921569
+                addcolor.g = float(g) * 0.003921569
+                addcolor.b = float(b) * 0.003921569
+                addcolor.a = float(a) * 0.003921569
+                self.vprint(f"{prefix}    Add Color: {addcolor}")
 
             if flags & 0x2000:
+                # Multiplicative color present, smaller integers.
                 unhandled_flags &= ~0x2000
                 rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                color.r = float((rgba >> 24) & 0xFF) * 0.003921569
-                color.g = float((rgba >> 16) & 0xFF) * 0.003921569
-                color.b = float((rgba >> 8) & 0xFF) * 0.003921569
-                color.a = float(rgba & 0xFF) * 0.003921569
-                self.vprint(f"{prefix}    Color: {color}")
+                multcolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
+                multcolor.g = float((rgba >> 16) & 0xFF) * 0.003921569
+                multcolor.b = float((rgba >> 8) & 0xFF) * 0.003921569
+                multcolor.a = float(rgba & 0xFF) * 0.003921569
+                self.vprint(f"{prefix}    Mult Color: {multcolor}")
 
             if flags & 0x4000:
+                # Additive color present, smaller integers.
                 unhandled_flags &= ~0x4000
                 rgba = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                acolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
-                acolor.g = float((rgba >> 16) & 0xFF) * 0.003921569
-                acolor.b = float((rgba >> 8) & 0xFF) * 0.003921569
-                acolor.a = float(rgba & 0xFF) * 0.003921569
-                self.vprint(f"{prefix}    AColor: {color}")
+                addcolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
+                addcolor.g = float((rgba >> 16) & 0xFF) * 0.003921569
+                addcolor.b = float((rgba >> 8) & 0xFF) * 0.003921569
+                addcolor.a = float(rgba & 0xFF) * 0.003921569
+                self.vprint(f"{prefix}    Add Color: {addcolor}")
 
             bytecodes: Dict[int, List[ByteCode]] = {}
             if flags & 0x80:
@@ -981,14 +991,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {filter_size}")
 
             if flags & 0x1000000:
-                # Some sort of point, perhaps an x, y offset for the object?
+                # Some sort of point, perhaps an x, y offset for the object or a center point for rotation?
                 unhandled_flags &= ~0x1000000
-                x, y = struct.unpack("<ff", datachunk[running_pointer:(running_pointer + 8)])
+                x, y = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                # TODO: This doesn't seem right when run past Pop'n Music data.
-                point = Point(x / 20.0, y / 20.0)
+                point = Point(float(x) / 20.0, float(y) / 20.0)
                 self.vprint(f"{prefix}    Point: {point}")
 
             if flags & 0x2000000:
@@ -1005,7 +1014,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 4
 
                 # TODO: I have no idea what these are.
-                point = Point(x * 3.051758e-05, y * 3.051758e-05)
+                point = Point(float(x) * 3.051758e-05, float(y) * 3.051758e-05)
                 self.vprint(f"{prefix}    Point: {point}")
 
             if flags & 0x80000:
@@ -1016,7 +1025,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 4
 
                 # TODO: I have no idea what these are.
-                point = Point(x * 3.051758e-05, y * 3.051758e-05)
+                point = Point(float(x) * 3.051758e-05, float(y) * 3.051758e-05)
                 self.vprint(f"{prefix}    Point: {point}")
 
             # This flag states whether we are creating a new object on this depth, or updating one.
@@ -1049,8 +1058,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 blend=blend,
                 update=True if (flags & 0x1) else False,
                 transform=transform if (flags & 0x4) else None,
-                color=color if (flags & 0x8) else None,
-                alpha_color=acolor if (flags & 0x8) else None,
+                mult_color=multcolor if (flags & 0x8) else None,
+                add_color=addcolor if (flags & 0x8) else None,
                 triggers=bytecodes,
             )
         elif tagid == AP2Tag.AP2_REMOVE_OBJECT:
