@@ -103,7 +103,19 @@ class AFPRenderer(VerboseOutput):
             return clips
         elif isinstance(tag, AP2PlaceObjectTag):
             if tag.update:
-                raise Exception("Don't support update tags yet!")
+                self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
+                updated = False
+
+                for obj in self.__placed_objects:
+                    if obj.tag.object_id == tag.object_id and obj.tag.depth == tag.depth:
+                        # As far as I can tell, pretty much only color and matrix stuff can be updated.
+                        obj.tag.mult_color = tag.mult_color or obj.tag.mult_color
+                        obj.tag.add_color = tag.add_color or obj.tag.add_color
+                        obj.tag.transform = tag.transform or obj.tag.transform
+                        updated = True
+
+                if not updated:
+                    raise Exception("Couldn't find tag to update!")
             else:
                 self.vprint(f"{prefix}    Placing Object ID {tag.object_id} onto Depth {tag.depth}")
 
@@ -133,7 +145,7 @@ class AFPRenderer(VerboseOutput):
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
-    def __render_object(self, img: Any, tag: AP2PlaceObjectTag) -> Any:
+    def __render_object(self, img: Any, tag: AP2PlaceObjectTag, parent_transform: Matrix, parent_origin: Point) -> Any:
         if tag.source_tag_id is None:
             self.vprint("    Nothing to render!")
             return img
@@ -146,12 +158,21 @@ class AFPRenderer(VerboseOutput):
         transform = tag.transform or Matrix.identity()
         origin = tag.rotation_offset or Point.identity()
 
+        # TODO: Need to do actual affine transformations here.
+        if transform.b != 0.0 or transform.c != 0.0 or transform.a != 1.0 or transform.d != 1.0:
+            raise Exception("Don't support affine transformations yet!")
+        if parent_transform.b != 0.0 or parent_transform.c != 0.0 or parent_transform.a != 1.0 or parent_transform.d != 1.0:
+            raise Exception("Don't support affine transformations yet!")
+        offset = parent_transform.multiply_point(transform.multiply_point(Point.identity().subtract(origin).subtract(parent_origin)))
+
         # Look up source shape.
         if tag.source_tag_id not in self.__registered_shapes:
-            # TODO: Lots of animations are referencing other sprite tags with transform
-            # offsets and such. We need to support this. However, I'm not sure how the
-            # original gets hidden...
-            raise Exception(f"Failed to find shape tag {tag.source_tag_id} for object render!")
+            # This is probably a sprite placement reference.
+            for obj in self.__placed_objects:
+                if obj.parent_sprite == tag.source_tag_id:
+                    self.vprint(f"    Rendering placed object ID {obj.tag.object_id} from sprite {obj.parent_sprite} onto Depth {obj.tag.depth}")
+                    img = self.__render_object(img, obj.tag, transform, origin)
+            return img
         shape = self.__registered_shapes[tag.source_tag_id]
 
         for params in shape.draw_params:
@@ -169,19 +190,17 @@ class AFPRenderer(VerboseOutput):
                     raise Exception(f"Cannot find texture reference {params.region}!")
                 texture = self.textures[params.region]
 
-            # TODO: Need to do actual affine transformations here.
-            offset = transform.multiply_point(Point.identity().subtract(origin))
-
             # Now, render out the texture.
+            cutin = Point(offset.x, offset.y)
             cutoff = Point.identity()
-            if offset.x < 0:
-                cutoff.x = -offset.x
-                offset.x = 0
-            if offset.y < 0:
-                cutoff.y = -offset.y
-                offset.y = 0
+            if cutin.x < 0:
+                cutoff.x = -cutin.x
+                cutin.x = 0
+            if cutin.y < 0:
+                cutoff.y = -cutin.y
+                cutin.y = 0
 
-            img.alpha_composite(texture, offset.as_tuple(), cutoff.as_tuple())
+            img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
         return img
 
     def __render(self, swf: SWF, export_tag: Optional[str]) -> Tuple[int, List[Any]]:
@@ -255,7 +274,7 @@ class AFPRenderer(VerboseOutput):
                     continue
 
                 self.vprint(f"  Rendering placed object ID {obj.tag.object_id} from sprite {obj.parent_sprite} onto Depth {obj.tag.depth}")
-                curimage = self.__render_object(curimage, obj.tag)
+                curimage = self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
 
             # Advance all the clips and frame now that we processed and rendered them.
             for clip in clips:

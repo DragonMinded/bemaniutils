@@ -368,7 +368,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         self.vprint(f"{prefix}        BOOLEAN: False")
                     elif obj_to_create == 0x7:
                         # Integer object.
-                        ival = struct.unpack(">I", datachunk[offset_ptr:(offset_ptr + 4)])[0]
+                        ival = struct.unpack(">i", datachunk[offset_ptr:(offset_ptr + 4)])[0]
                         offset_ptr += 4
 
                         self.vprint(f"{prefix}        INTEGER: {ival}")
@@ -555,7 +555,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     # versions of 0x34.
                     elif obj_to_create == 0x37:
                         # Integer object but one byte.
-                        ival = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                        ival = struct.unpack(">b", datachunk[offset_ptr:(offset_ptr + 1)])[0]
                         offset_ptr += 1
 
                         self.vprint(f"{prefix}        INTEGER: {ival}")
