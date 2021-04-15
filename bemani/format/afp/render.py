@@ -112,6 +112,7 @@ class AFPRenderer(VerboseOutput):
                         obj.tag.mult_color = tag.mult_color or obj.tag.mult_color
                         obj.tag.add_color = tag.add_color or obj.tag.add_color
                         obj.tag.transform = tag.transform or obj.tag.transform
+                        obj.tag.rotation_offset = tag.rotation_offset or obj.tag.rotation_offset
                         updated = True
 
                 if not updated:
