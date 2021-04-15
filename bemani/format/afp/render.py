@@ -251,7 +251,7 @@ class AFPRenderer(VerboseOutput):
 
             # Now, render out the placed objects.
             for obj in sorted(self.__placed_objects, key=lambda o: o.tag.depth):
-                if self.__visible_tag is not None and self.__visible_tag != obj.parent_sprite:
+                if self.__visible_tag != obj.parent_sprite:
                     continue
 
                 self.vprint(f"  Rendering placed object ID {obj.tag.object_id} from sprite {obj.parent_sprite} onto Depth {obj.tag.depth}")
