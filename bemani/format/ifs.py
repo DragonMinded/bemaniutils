@@ -22,7 +22,8 @@ class IFS:
         self.__files: Dict[str, bytes] = {}
         self.__formats: Dict[str, str] = {}
         self.__compressed: Dict[str, bool] = {}
-        self.__sizes: Dict[str, Tuple[int, int]] = {}
+        self.__imgsize: Dict[str, Tuple[int, int, int, int]] = {}
+        self.__uvsize: Dict[str, Tuple[int, int, int, int]] = {}
         self.__decode_binxml = decode_binxml
         self.__decode_textures = decode_textures
         self.__parse_file(data)
@@ -141,9 +142,19 @@ class IFS:
 
                                 rect = subchild.child_value('imgrect')
                                 if rect is not None:
-                                    self.__sizes[newname] = (
-                                        (rect[1] - rect[0]) // 2,
-                                        (rect[3] - rect[2]) // 2,
+                                    self.__imgsize[newname] = (
+                                        rect[0] // 2,
+                                        rect[1] // 2,
+                                        rect[2] // 2,
+                                        rect[3] // 2,
+                                    )
+                                rect = subchild.child_value('uvrect')
+                                if rect is not None:
+                                    self.__uvsize[newname] = (
+                                        rect[0] // 2,
+                                        rect[1] // 2,
+                                        rect[2] // 2,
+                                        rect[3] // 2,
                                     )
             elif abs_filename.endswith("/afplist.xml"):
                 # This is a texture index.
@@ -212,18 +223,27 @@ class IFS:
             if filexml is not None:
                 filedata = str(filexml).encode('utf-8')
 
-        if self.__decode_textures and filename in self.__formats and filename in self.__sizes:
+        if self.__decode_textures and filename in self.__formats and filename in self.__imgsize and filename in self.__uvsize:
             fmt = self.__formats[filename]
-            wh = self.__sizes[filename]
+            img = self.__imgsize[filename]
+            crop = self.__uvsize[filename]
 
             # Decode the image data itself.
             if fmt == "argb8888rev":
-                if len(filedata) < (wh[0] * wh[1] * 4):
-                    left = (wh[0] * wh[1] * 4) - len(filedata)
+                width = img[1] - img[0]
+                height = img[3] - img[2]
+                if len(filedata) < (width * height * 4):
+                    left = (width * height * 4) - len(filedata)
                     filedata = filedata + b'\x00' * left
-                img = Image.frombytes('RGBA', wh, filedata, 'raw', 'BGRA')
+                png = Image.frombytes('RGBA', (width, height), filedata, 'raw', 'BGRA')
+                png = png.crop((
+                    crop[0] - img[0],
+                    crop[2] - img[2],
+                    crop[1] - img[0],
+                    crop[3] - img[2],
+                ))
                 b = io.BytesIO()
-                img.save(b, format='PNG')
+                png.save(b, format='PNG')
                 filedata = b.getvalue()
 
         return filedata

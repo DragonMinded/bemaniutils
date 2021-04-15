@@ -15,10 +15,14 @@ class Shape:
         self.name = name
         self.data = data
 
-        # Vertex points outlining this shape.
+        # Vertex points outlining this shape. These are in pixels and the rectangle they outline
+        # should match the size of the texture in pixels.
         self.vertex_points: List[Point] = []
 
-        # Texture points, as used alongside vertex chunks when the shape contains a texture.
+        # Texture points, as used alongside vertex chunks when the shape contains a texture. These
+        # are in floating points that when multiplied by the width and height of the original
+        # texture sheet that the texture was taken from (multiplied by two), should match the uvrect
+        # of the texture exactly.
         self.tex_points: List[Point] = []
 
         # Colors for texture points, if they exist in the file.
