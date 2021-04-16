@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple, Optional
 from PIL import Image  # type: ignore
 
-from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag
+from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag
 from .types import Color, Matrix, Point
 from .geo import Shape
 from .util import VerboseOutput
@@ -156,6 +156,12 @@ class AFPRenderer(VerboseOutput):
             return []
         elif isinstance(tag, AP2DoActionTag):
             print("WARNING: Unhandled DO_ACTION tag!")
+            return []
+        elif isinstance(tag, AP2DefineFontTag):
+            print("WARNING: Unhandled DEFINE_FONT tag!")
+            return []
+        elif isinstance(tag, AP2DefineEditTextTag):
+            print("WARNING: Unhandled DEFINE_EDIT_TEXT tag!")
             return []
         else:
             raise Exception(f"Failed to process tag: {tag}")

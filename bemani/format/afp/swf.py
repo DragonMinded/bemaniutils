@@ -736,13 +736,10 @@ class SWF(TrackedCoverage, VerboseOutput):
             unk, font_id, fontname_offset, xml_prefix_offset, data_offset, data_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
             self.add_coverage(dataoffset, 12)
 
-            if unk != 0:
-                raise Exception(f"Unexpected value {unk} in Font tag!")
-
             fontname = self.__get_string(fontname_offset)
             xml_prefix = self.__get_string(xml_prefix_offset)
 
-            self.vprint(f"{prefix}    Tag ID: {font_id}, Font Name: {fontname}, XML Prefix: {xml_prefix}, Entries: {data_count}")
+            self.vprint(f"{prefix}    Tag ID: {font_id}, Unknown: {unk}, Font Name: {fontname}, XML Prefix: {xml_prefix}, Entries: {data_count}")
 
             heights: List[int] = []
             for i in range(data_count):
