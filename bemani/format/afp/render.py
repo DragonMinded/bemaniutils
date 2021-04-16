@@ -75,6 +75,17 @@ class AFPRenderer(VerboseOutput):
 
         raise Exception(f'{path} not found in registered SWFs!')
 
+    def list_paths(self, verbose: bool = False) -> List[str]:
+        paths: List[str] = []
+
+        for name, swf in self.swfs.items():
+            paths.append(swf.exported_name)
+
+            for export_tag in swf.exported_tags:
+                paths.append(f"{swf.exported_name}.{export_tag}")
+
+        return paths
+
     def __place(self, tag: Tag, parent_sprite: Optional[int], prefix: str = "") -> List[Clip]:
         if isinstance(tag, AP2ShapeTag):
             self.vprint(f"{prefix}    Loading {tag.reference} into shape slot {tag.id}")
@@ -185,7 +196,8 @@ class AFPRenderer(VerboseOutput):
                 return img
 
             if params.flags & 0x4 or params.flags & 0x8:
-                raise Exception("Don't support shape blend or uv coordinate color yet!")
+                # TODO: Need to support blending and UV coordinate colors here.
+                print("WARNING: Unhandled shape blend or UV coordinate color!")
 
             texture = None
             if params.flags & 0x2:
@@ -194,17 +206,18 @@ class AFPRenderer(VerboseOutput):
                     raise Exception(f"Cannot find texture reference {params.region}!")
                 texture = self.textures[params.region]
 
-            # Now, render out the texture.
-            cutin = Point(offset.x, offset.y)
-            cutoff = Point.identity()
-            if cutin.x < 0:
-                cutoff.x = -cutin.x
-                cutin.x = 0
-            if cutin.y < 0:
-                cutoff.y = -cutin.y
-                cutin.y = 0
+            if texture is not None:
+                # Now, render out the texture.
+                cutin = Point(offset.x, offset.y)
+                cutoff = Point.identity()
+                if cutin.x < 0:
+                    cutoff.x = -cutin.x
+                    cutin.x = 0
+                if cutin.y < 0:
+                    cutoff.y = -cutin.y
+                    cutin.y = 0
 
-            img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
+                img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
         return img
 
     def __render(self, swf: SWF, export_tag: Optional[str]) -> Tuple[int, List[Any]]:

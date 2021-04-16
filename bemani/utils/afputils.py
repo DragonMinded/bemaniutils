@@ -168,6 +168,21 @@ def main() -> int:
         help="Display verbuse debugging output",
     )
 
+    list_parser = subparsers.add_parser('list', help='List out the possible paths to render from a series of SWFs')
+    list_parser.add_argument(
+        "container",
+        metavar="CONTAINER",
+        type=str,
+        nargs='+',
+        help="A container file to use for loading SWF data. Can be either a TXP2 or IFS container.",
+    )
+    list_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
+    )
+
     args = parser.parse_args()
 
     if args.action == "extract":
@@ -429,7 +444,7 @@ def main() -> int:
             print(geo, file=sys.stderr)
         print(json.dumps(geo.as_dict(), sort_keys=True, indent=4))
 
-    if args.action == "render":
+    if args.action in ["render", "list"]:
         # This is a complicated one, as we need to be able to specify multiple
         # directories of files as well as support IFS files and TXP2 files.
         renderer = AFPRenderer()
@@ -446,8 +461,54 @@ def main() -> int:
                 pass
 
             if afpfile is not None:
-                # TODO: Load from afp container
-                pass
+                if args.verbose:
+                    print(f"Loading files out of TXP2 container {container}...", file=sys.stderr)
+
+                # First, load GE2D structures into the renderer.
+                for i, name in enumerate(afpfile.shapemap.entries):
+                    shape = afpfile.shapes[i]
+                    renderer.add_shape(name, shape)
+
+                    if args.verbose:
+                        print(f"Added {name} to SWF shape library.", file=sys.stderr)
+
+                # Now, split and load textures into the renderer.
+                sheets: Dict[str, Any] = {}
+
+                for i, name in enumerate(afpfile.regionmap.entries):
+                    if i < 0 or i >= len(afpfile.texture_to_region):
+                        raise Exception(f"Out of bounds region {i}")
+                    region = afpfile.texture_to_region[i]
+                    texturename = afpfile.texturemap.entries[region.textureno]
+
+                    if texturename not in sheets:
+                        for tex in afpfile.textures:
+                            if tex.name == texturename:
+                                sheets[texturename] = tex
+                                break
+                        else:
+                            raise Exception("Could not find texture {texturename} to split!")
+
+                    if sheets[texturename].img:
+                        sprite = sheets[texturename].img.crop(
+                            (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                        )
+                        renderer.add_texture(name, sprite)
+
+                        if args.verbose:
+                            print(f"Added {name} to SWF texture library.", file=sys.stderr)
+                    else:
+                        print(f"Cannot load {name} from {texturename} because it is not a supported format!")
+
+                # Finally, load the SWF data itself into the renderer.
+                for i, name in enumerate(afpfile.swfmap.entries):
+                    swf = afpfile.swfdata[i]
+                    renderer.add_swf(name, swf)
+
+                    if args.verbose:
+                        print(f"Added {name} to SWF library.", file=sys.stderr)
+
+                continue
 
             ifsfile = None
             try:
@@ -456,6 +517,8 @@ def main() -> int:
                 pass
 
             if ifsfile is not None:
+                if args.verbose:
+                    print(f"Loading files out of IFS container {container}...", file=sys.stderr)
                 for fname in ifsfile.filenames:
                     if fname.startswith(f"geo{os.sep}"):
                         # Trim off directory.
@@ -492,12 +555,18 @@ def main() -> int:
 
                             if args.verbose:
                                 print(f"Added {afpname} to SWF library.", file=sys.stderr)
+                continue
 
+        if args.action == "render":
             duration, images = renderer.render_path(args.path, verbose=args.verbose)
             if len(images) == 0:
                 raise Exception("Did not render any frames!")
             images[0].save(args.output, save_all=True, append_images=images[1:], loop=0, duration=duration)
             print(f"Wrote animation to {args.output}")
+        elif args.action == "list":
+            paths = renderer.list_paths(verbose=args.verbose)
+            for path in paths:
+                print(path)
 
     return 0
 
