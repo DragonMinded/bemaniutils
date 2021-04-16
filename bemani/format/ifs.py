@@ -76,14 +76,14 @@ class IFS:
         def get_children(parent: str, node: Node) -> None:
             real_name = self.__fix_name(node.name)
             if node.data_type == '3s32':
-                node_name = os.path.join(parent, real_name).replace('/imgfs/', '')
+                node_name = os.path.join(parent, real_name).replace(f'{os.sep}imgfs{os.sep}', '')
                 files[node_name] = (node.value[0] + data_index, node.value[1], node.value[2])
             else:
                 for subchild in node.children:
-                    get_children(os.path.join(parent, f"{real_name}/"), subchild)
+                    get_children(os.path.join(parent, f"{real_name}{os.sep}"), subchild)
 
         # Recursively walk the entire filesystem extracting files and their locations.
-        get_children("/", header)
+        get_children(os.sep, header)
 
         for fn in files:
             (start, size, pack_time) = files[fn]
@@ -92,9 +92,9 @@ class IFS:
 
         # Now, find all of the index files that are available.
         for filename in list(self.__files.keys()):
-            abs_filename = ("/" if filename.startswith("/") else "") + filename
+            abs_filename = (os.sep if filename.startswith(os.sep) else "") + filename
 
-            if abs_filename.endswith("/texturelist.xml"):
+            if abs_filename.endswith(f"{os.sep}texturelist.xml"):
                 # This is a texture index.
                 texdir = os.path.dirname(filename)
 
@@ -156,7 +156,7 @@ class IFS:
                                         rect[2] // 2,
                                         rect[3] // 2,
                                     )
-            elif abs_filename.endswith("/afplist.xml"):
+            elif abs_filename.endswith(f"{os.sep}afplist.xml"):
                 # This is a texture index.
                 afpdir = os.path.dirname(filename)
                 bsidir = os.path.join(afpdir, "bsi")

@@ -457,9 +457,9 @@ def main() -> int:
 
             if ifsfile is not None:
                 for fname in ifsfile.filenames:
-                    if fname.startswith("geo/"):
+                    if fname.startswith(f"geo{os.sep}"):
                         # Trim off directory.
-                        shapename = fname[4:]
+                        shapename = fname[(3 + len(os.sep)):]
 
                         # Load file, register it.
                         fdata = ifsfile.read_file(fname)
@@ -468,9 +468,9 @@ def main() -> int:
 
                         if args.verbose:
                             print(f"Added {shapename} to SWF shape library.", file=sys.stderr)
-                    elif fname.startswith("tex/") and fname.endswith(".png"):
+                    elif fname.startswith(f"tex{os.sep}") and fname.endswith(".png"):
                         # Trim off directory, png extension.
-                        texname = fname[4:][:-4]
+                        texname = fname[(3 + len(os.sep)):][:-4]
 
                         # Load file, register it.
                         fdata = ifsfile.read_file(fname)
@@ -479,10 +479,10 @@ def main() -> int:
 
                         if args.verbose:
                             print(f"Added {texname} to SWF texture library.", file=sys.stderr)
-                    elif fname.startswith("afp/"):
+                    elif fname.startswith(f"afp{os.sep}"):
                         # Trim off directory, see if it has a corresponding bsi.
-                        afpname = fname[4:]
-                        bsipath = f"afp/bsi/{afpname}"
+                        afpname = fname[(3 + len(os.sep)):]
+                        bsipath = f"afp{os.sep}bsi{os.sep}{afpname}"
 
                         if bsipath in ifsfile.filenames:
                             afpdata = ifsfile.read_file(fname)

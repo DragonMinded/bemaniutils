@@ -139,7 +139,7 @@ class Data:
             return False
 
     def __alembic_cmd(self, command: str, *args: str) -> None:
-        base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'migrations/')
+        base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'migrations')
         alembicArgs = [
             '-c',
             os.path.join(base_dir, 'alembic.ini'),

@@ -157,7 +157,7 @@ def render_react(
         'react.html',
         **{
             'title': title,
-            'reactbase': os.path.join('controllers/', controller),
+            'reactbase': os.path.join('controllers', controller),
             'inits': inits,
             'links': links,
         },
@@ -234,8 +234,8 @@ def valid_pin(pin: str, type: str) -> bool:
 def navigation() -> Dict[str, Any]:
     # Look up JSX components we should provide for every page load
     components = [
-        os.path.join('components/', f)
-        for f in os.listdir(os.path.join(static_location, 'components/'))
+        os.path.join('components', f)
+        for f in os.listdir(os.path.join(static_location, 'components'))
         if re.search(r'\.react\.js$', f)
     ]
 
