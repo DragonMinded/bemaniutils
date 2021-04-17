@@ -162,7 +162,6 @@ class AFPRenderer(VerboseOutput):
                     # clip so that we can process its own animation frames in order to reference
                     # its objects when rendering.
                     for clip in self.__clips:
-                        print(clip)
                         if clip.tag_id == tag.source_tag_id:
                             if clip.running:
                                 # We should never reference already-running animations!
@@ -259,11 +258,6 @@ class AFPRenderer(VerboseOutput):
             self.vprint("    Nothing to render!")
             return img
 
-        # Double check supported options.
-        if tag.mult_color or tag.add_color:
-            # TODO: Handle additive and multiplicative color.
-            print(f"WARNING: Unhandled color blend request Mult: {tag.mult_color} Add: {tag.add_color}!")
-
         # Look up the affine transformation matrix and rotation/origin.
         transform = parent_transform.multiply(tag.transform or Matrix.identity())
         origin = parent_origin.add(tag.rotation_offset or Point.identity())
@@ -289,6 +283,11 @@ class AFPRenderer(VerboseOutput):
         # This is a shape draw reference.
         shape = self.__registered_shapes[tag.source_tag_id]
 
+        # Calculate add color if it is present.
+        add_color = (tag.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
+        mult_color = tag.mult_color or Color(1.0, 1.0, 1.0, 1.0)
+
+        # Now, render out shapes.
         for params in shape.draw_params:
             if not (params.flags & 0x1):
                 # Not instantiable, don't render.
@@ -306,45 +305,83 @@ class AFPRenderer(VerboseOutput):
                 texture = self.textures[params.region]
 
             if texture is not None:
-                # Now, render out the texture.
-                imgmap = list(img.getdata())
-                texmap = list(texture.getdata())
+                # See if we can cheat and use the faster blitting method.
+                if (
+                    add_color == (0, 0, 0, 0) and
+                    mult_color.r == 1.0 and
+                    mult_color.g == 1.0 and
+                    mult_color.b == 1.0 and
+                    mult_color.a == 1.0 and
+                    transform.b == 0.0 and
+                    transform.c == 0.0 and
+                    transform.a == 1.0 and
+                    transform.d == 1.0
+                ):
+                    # We can!
+                    cutin = transform.multiply_point(Point.identity().subtract(origin))
+                    cutoff = Point.identity()
+                    if cutin.x < 0:
+                        cutoff.x = -cutin.x
+                        cutin.x = 0
+                    if cutin.y < 0:
+                        cutoff.y = -cutin.y
+                        cutin.y = 0
 
-                # Calculate the maximum range of update this texture can possibly reside in.
-                pix1 = transform.multiply_point(Point.identity().subtract(origin))
-                pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, 0)))
-                pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texture.height)))
-                pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, texture.height)))
+                    img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
+                else:
+                    # Now, render out the texture.
+                    imgmap = list(img.getdata())
+                    texmap = list(texture.getdata())
 
-                # Map this to the rectangle we need to sweep in the rendering image.
-                minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
-                maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, img.width)
-                miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
-                maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
+                    # Calculate the maximum range of update this texture can possibly reside in.
+                    pix1 = transform.multiply_point(Point.identity().subtract(origin))
+                    pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, 0)))
+                    pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texture.height)))
+                    pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, texture.height)))
 
-                for imgy in range(miny, maxy):
-                    for imgx in range(minx, maxx):
-                        # Determine offset
-                        imgoff = imgx + (imgy * img.width)
+                    # Map this to the rectangle we need to sweep in the rendering image.
+                    minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
+                    maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, img.width)
+                    miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
+                    maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
 
-                        # Calculate what texture pixel data goes here.
-                        texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
-                        texx, texy = texloc.as_tuple()
+                    for imgy in range(miny, maxy):
+                        for imgx in range(minx, maxx):
+                            # Determine offset
+                            imgoff = imgx + (imgy * img.width)
 
-                        # If we're out of bounds, don't update.
-                        if texx < 0 or texy < 0 or texx >= texture.width or texy >= texture.height:
-                            continue
+                            # Calculate what texture pixel data goes here.
+                            texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+                            texx, texy = texloc.as_tuple()
 
-                        # Blend it.
-                        texoff = texx + (texy * texture.width)
-                        imgmap[imgoff] = self.__blend(imgmap[imgoff], texmap[texoff])
+                            # If we're out of bounds, don't update.
+                            if texx < 0 or texy < 0 or texx >= texture.width or texy >= texture.height:
+                                continue
 
-                img = Image.new("RGBA", (img.width, img.height))
-                img.putdata(imgmap)
+                            # Blend it.
+                            texoff = texx + (texy * texture.width)
+                            imgmap[imgoff] = self.__blend(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+
+                    img = Image.new("RGBA", (img.width, img.height))
+                    img.putdata(imgmap)
 
         return img
 
-    def __blend(self, bg: Tuple[int, int, int, int], fg: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    def __blend(
+        self,
+        bg: Tuple[int, int, int, int],
+        fg: Tuple[int, int, int, int],
+        mult_color: Color,
+        add_color: Tuple[int, int, int, int],
+    ) -> Tuple[int, int, int, int]:
+        # Calculate multiplicative and additive colors.
+        fg = (
+            min(int(fg[0] * mult_color.r) + add_color[0], 255),
+            min(int(fg[1] * mult_color.g) + add_color[1], 255),
+            min(int(fg[2] * mult_color.b) + add_color[2], 255),
+            min(int(fg[3] * mult_color.a) + add_color[3], 255),
+        )
+
         # Short circuit for speed.
         if fg[3] == 0:
             return bg
@@ -355,9 +392,9 @@ class AFPRenderer(VerboseOutput):
         fgpercent = (float(fg[3]) / 255.0)
         bgpercent = 1.0 - fgpercent
         return (
-            max(int(float(bg[0]) * bgpercent + float(fg[0]) * fgpercent), 255),
-            max(int(float(bg[1]) * bgpercent + float(fg[1]) * fgpercent), 255),
-            max(int(float(bg[2]) * bgpercent + float(fg[2]) * fgpercent), 255),
+            int(float(bg[0]) * bgpercent + float(fg[0]) * fgpercent),
+            int(float(bg[1]) * bgpercent + float(fg[1]) * fgpercent),
+            int(float(bg[2]) * bgpercent + float(fg[2]) * fgpercent),
             255,
         )
 
