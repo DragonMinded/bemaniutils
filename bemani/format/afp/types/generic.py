@@ -47,14 +47,14 @@ class Point:
         return (int(self.x), int(self.y))
 
     def add(self, other: "Point") -> "Point":
-        self.x += other.x
-        self.y += other.y
-        return self
+        x = self.x + other.x
+        y = self.y + other.y
+        return Point(x, y)
 
     def subtract(self, other: "Point") -> "Point":
-        self.x -= other.x
-        self.y -= other.y
-        return self
+        x = self.x - other.x
+        y = self.y - other.y
+        return Point(x, y)
 
     def __repr__(self) -> str:
         return f"x: {round(self.x, 5)}, y: {round(self.y, 5)}"
@@ -108,6 +108,28 @@ class Matrix:
         return Point(
             x=(self.a * point.x) + (self.c * point.y) + self.tx,
             y=(self.b * point.x) + (self.d * point.y) + self.ty,
+        )
+
+    def multiply(self, other: "Matrix") -> "Matrix":
+        return Matrix(
+            a=self.a * other.a + self.b * other.c,
+            b=self.a * other.b + self.b * other.d,
+            c=self.c * other.a + self.d * other.c,
+            d=self.c * other.b + self.d * other.d,
+            tx=self.tx * other.a + self.ty * other.c + other.tx,
+            ty=self.tx * other.b + self.ty * other.d + other.ty,
+        )
+
+    def inverse(self) -> "Matrix":
+        denom = (self.a * self.d - self.b * self.c)
+
+        return Matrix(
+            a=self.d / denom,
+            b=-self.b / denom,
+            c=-self.c / denom,
+            d=self.a / denom,
+            tx=(self.c * self.ty - self.d * self.tx) / denom,
+            ty=-(self.a * self.ty - self.b * self.tx) / denom,
         )
 
     def __repr__(self) -> str:

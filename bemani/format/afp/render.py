@@ -261,18 +261,15 @@ class AFPRenderer(VerboseOutput):
 
         # Double check supported options.
         if tag.mult_color or tag.add_color:
+            # TODO: Handle additive and multiplicative color.
             print(f"WARNING: Unhandled color blend request Mult: {tag.mult_color} Add: {tag.add_color}!")
 
         # Look up the affine transformation matrix and rotation/origin.
-        transform = tag.transform or Matrix.identity()
-        origin = tag.rotation_offset or Point.identity()
+        transform = parent_transform.multiply(tag.transform or Matrix.identity())
+        origin = parent_origin.add(tag.rotation_offset or Point.identity())
 
-        # TODO: Need to do actual affine transformations here.
-        if transform.b != 0.0 or transform.c != 0.0 or transform.a != 1.0 or transform.d != 1.0:
-            print("WARNING: Unhandled affine transformation request!")
-        if parent_transform.b != 0.0 or parent_transform.c != 0.0 or parent_transform.a != 1.0 or parent_transform.d != 1.0:
-            print("WARNING: Unhandled affine transformation request!")
-        offset = parent_transform.multiply_point(transform.multiply_point(Point.identity().subtract(origin).subtract(parent_origin)))
+        # Calculate the inverse so we can map canvas space back to texture space.
+        inverse = transform.inverse()
 
         # Look up source shape.
         if tag.source_tag_id not in self.__registered_shapes:
@@ -310,17 +307,59 @@ class AFPRenderer(VerboseOutput):
 
             if texture is not None:
                 # Now, render out the texture.
-                cutin = Point(offset.x, offset.y)
-                cutoff = Point.identity()
-                if cutin.x < 0:
-                    cutoff.x = -cutin.x
-                    cutin.x = 0
-                if cutin.y < 0:
-                    cutoff.y = -cutin.y
-                    cutin.y = 0
+                imgmap = list(img.getdata())
+                texmap = list(texture.getdata())
 
-                img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
+                # Calculate the maximum range of update this texture can possibly reside in.
+                pix1 = transform.multiply_point(Point.identity().subtract(origin))
+                pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, 0)))
+                pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texture.height)))
+                pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, texture.height)))
+
+                # Map this to the rectangle we need to sweep in the rendering image.
+                minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
+                maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, img.width)
+                miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
+                maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
+
+                for imgy in range(miny, maxy):
+                    for imgx in range(minx, maxx):
+                        # Determine offset
+                        imgoff = imgx + (imgy * img.width)
+
+                        # Calculate what texture pixel data goes here.
+                        texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+                        texx, texy = texloc.as_tuple()
+
+                        # If we're out of bounds, don't update.
+                        if texx < 0 or texy < 0 or texx >= texture.width or texy >= texture.height:
+                            continue
+
+                        # Blend it.
+                        texoff = texx + (texy * texture.width)
+                        imgmap[imgoff] = self.__blend(imgmap[imgoff], texmap[texoff])
+
+                img = Image.new("RGBA", (img.width, img.height))
+                img.putdata(imgmap)
+
         return img
+
+    def __blend(self, bg: Tuple[int, int, int, int], fg: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+        # Short circuit for speed.
+        if fg[3] == 0:
+            return bg
+        if fg[3] == 255:
+            return fg
+
+        # Calculate alpha blending.
+        fgpercent = (float(fg[3]) / 255.0)
+        bgpercent = 1.0 - fgpercent
+        return (
+            max(int(float(bg[0]) * bgpercent + float(fg[0]) * fgpercent), 255),
+            max(int(float(bg[1]) * bgpercent + float(fg[1]) * fgpercent), 255),
+            max(int(float(bg[2]) * bgpercent + float(fg[2]) * fgpercent), 255),
+            255,
+        )
 
     def __render(self, swf: SWF, export_tag: Optional[str]) -> Tuple[int, List[Image.Image]]:
         # If we are rendering an exported tag, we want to perform the actions of the
@@ -349,10 +388,10 @@ class AFPRenderer(VerboseOutput):
             # Create a new image to render into.
             time = spf * float(frameno)
             color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-            curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
             self.vprint(f"Rendering Frame {frameno} ({time}s)")
 
             # Go through all registered clips, place all needed tags.
+            changed = False
             while any(c.dirty for c in self.__clips):
                 newclips: List[Clip] = []
                 for clip in self.__clips:
@@ -361,6 +400,7 @@ class AFPRenderer(VerboseOutput):
                         self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Current Frame: {clip.frame.start_tag_offset + clip.frame.current_tag}, Num Frames: {clip.frame.num_tags}")
                         newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip.tag_id))
                         clip.frame.current_tag += 1
+                        changed = True
 
                     if clip.dirty and clip.frame.current_tag == clip.frame.num_tags:
                         # We handled this clip.
@@ -369,15 +409,21 @@ class AFPRenderer(VerboseOutput):
                 # Add any new clips that we should process next frame.
                 self.__clips.extend(newclips)
 
-            # Now, render out the placed objects. We sort by depth so that we can
-            # get the layering correct, but its important to preserve the original
-            # insertion order for delete requests.
-            for obj in sorted(self.__placed_objects, key=lambda obj: obj.depth):
-                if self.__visible_tag != obj.parent_clip:
-                    continue
+            if changed or frameno == 0:
+                # Now, render out the placed objects. We sort by depth so that we can
+                # get the layering correct, but its important to preserve the original
+                # insertion order for delete requests.
+                curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
+                for obj in sorted(self.__placed_objects, key=lambda obj: obj.depth):
+                    if self.__visible_tag != obj.parent_clip:
+                        continue
 
-                self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
-                curimage = self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
+                    self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
+                    curimage = self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
+            else:
+                # Nothing changed, make a copy of the previous render.
+                self.vprint("  Using previous frame render")
+                curimage = frames[-1].copy()
 
             # Advance all the clips and frame now that we processed and rendered them.
             for clip in self.__clips:
