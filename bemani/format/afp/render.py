@@ -293,9 +293,12 @@ class AFPRenderer(VerboseOutput):
                 # Not instantiable, don't render.
                 return img
 
-            if params.flags & 0x4 or params.flags & 0x8:
+            if params.flags & 0x8:
                 # TODO: Need to support blending and UV coordinate colors here.
-                print("WARNING: Unhandled shape blend or UV coordinate color!")
+                print(f"WARNING: Unhandled shape blend color {params.blend}")
+            if params.flags & 0x4:
+                # TODO: Need to support blending and UV coordinate colors here.
+                print("WARNING: Unhandled UV coordinate color!")
 
             texture = None
             if params.flags & 0x2:
