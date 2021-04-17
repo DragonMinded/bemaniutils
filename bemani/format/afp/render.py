@@ -10,11 +10,13 @@ from .util import VerboseOutput
 class Clip:
     # A movie clip that we are rendering, frame by frame. These are manifest by the root
     # SWF as well as AP2DefineSpriteTags which are essentially embedded movie clips.
-    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag]) -> None:
+    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag], running: bool) -> None:
         self.tag_id = tag_id
         self.frames = frames
         self.tags = tags
         self.frameno = 0
+        self.__last_frameno = -1
+        self.__running = running
 
     @property
     def frame(self) -> Frame:
@@ -25,21 +27,34 @@ class Clip:
 
     def advance(self) -> None:
         # Advance the clip by one frame after we finished processing that frame.
-        if not self.finished:
+        if self.running:
             self.frameno += 1
+
+    def clear(self) -> None:
+        # Clear the dirty flag on this clip until we advance to the next frame.
+        self.__last_frameno = self.frameno
 
     @property
     def finished(self) -> bool:
-        # Whether we've hit the end of the clip or not.
-        return self.frameno == len(self.frames)
+        # Whether we've hit the end of the clip and should get rid of this object or not.
+        return (not self.__running) and (self.frameno == len(self.frames))
 
     @property
     def running(self) -> bool:
         # Whether we are still running.
-        return self.frameno < len(self.frames)
+        return self.frameno < len(self.frames) and self.__running
+
+    @running.setter
+    def running(self, running: bool) -> None:
+        self.__running = running
+
+    @property
+    def dirty(self) -> bool:
+        # Whether we are in need of processing this frame or not.
+        return self.running and (self.frameno != self.__last_frameno)
 
     def __repr__(self) -> str:
-        return f"Clip(tag_id={self.tag_id}, frames={len(self.frames)}, frameno={self.frameno})"
+        return f"Clip(tag_id={self.tag_id}, frames={len(self.frames)}, frameno={self.frameno}, running={self.running}, dirty={self.dirty})"
 
 
 class PlacedObject:
@@ -74,6 +89,7 @@ class AFPRenderer(VerboseOutput):
         self.__visible_tag: Optional[int] = None
         self.__registered_shapes: Dict[int, Shape] = {}
         self.__placed_objects: List[PlacedObject] = []
+        self.__clips: List[Clip] = []
 
     def add_shape(self, name: str, data: Shape) -> None:
         # Register a named shape with the renderer.
@@ -137,21 +153,28 @@ class AFPRenderer(VerboseOutput):
         elif isinstance(tag, AP2DefineSpriteTag):
             self.vprint(f"{prefix}    Registering Sprite Tag {tag.id}")
 
-            # Register a new clip that we have to execute.
-            clip = Clip(tag.id, tag.frames, tag.tags)
-            clips: List[Clip] = [clip]
-
-            # Now, we need to run the first frame of this clip, since that's this frame.
-            if clip.running:
-                if clip.frame.num_tags > 0:
-                    self.vprint(f"{prefix}      First Frame Initialization, Start Frame: {clip.frame.start_tag_offset}, Num Frames: {clip.frame.num_tags}")
-                    for child in clip.tags[clip.frame.start_tag_offset:(clip.frame.start_tag_offset + clip.frame.num_tags)]:
-                        clips.extend(self.__place(child, parent_clip=tag.id, prefix=prefix + "    "))
-
-            # Finally, return the new clips we registered, including any that were done
-            # in recursive calls to __place.
-            return clips
+            # Register a new clip that we might reference to execute.
+            return [Clip(tag.id, tag.frames, tag.tags, running=False)]
         elif isinstance(tag, AP2PlaceObjectTag):
+            if tag.source_tag_id is not None:
+                if tag.source_tag_id not in self.__registered_shapes:
+                    # This is probably a sprite placement reference. We need to start this
+                    # clip so that we can process its own animation frames in order to reference
+                    # its objects when rendering.
+                    for clip in self.__clips:
+                        print(clip)
+                        if clip.tag_id == tag.source_tag_id:
+                            if clip.running:
+                                # We should never reference already-running animations!
+                                raise Exception("Logic error!")
+
+                            # Start the clip.
+                            clip.running = True
+                            clip.frameno = 0
+                            break
+                    else:
+                        raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
+
             if tag.update:
                 self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
                 updated = False
@@ -181,16 +204,17 @@ class AFPRenderer(VerboseOutput):
 
             if tag.object_id != 0:
                 # Remove the identified object by object ID and depth.
-                old_len = len(self.__placed_objects)
+                # Remember removed objects so we can stop any clips.
+                removed_objects = [
+                    obj for obj in self.__placed_objects
+                    if obj.object_id == tag.object_id and obj.depth == tag.depth
+                ]
 
+                # Get rid of the objects that we're removing from the master list.
                 self.__placed_objects = [
                     obj for obj in self.__placed_objects
                     if not(obj.object_id == tag.object_id and obj.depth == tag.depth)
                 ]
-
-                # We should have removed at least one objct.
-                if len(self.__placed_objects) == old_len:
-                    raise Exception(f"Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
             else:
                 # Remove the last placed object at this depth. The placed objects list isn't
                 # ordered so much as apppending to the list means the last placed object at a
@@ -199,10 +223,23 @@ class AFPRenderer(VerboseOutput):
                     real_index = len(self.__placed_objects) - (i + 1)
 
                     if self.__placed_objects[real_index].depth == tag.depth:
+                        removed_objects = self.__placed_objects[real_index:(real_index + 1)]
                         self.__placed_objects = self.__placed_objects[:real_index] + self.__placed_objects[(real_index + 1):]
                         break
-                else:
-                    raise Exception(f"Couldn't find a recently-placed object to remove on depth {tag.depth}!")
+
+            # We should have removed at least one objct.
+            if len(removed_objects) == 0:
+                raise Exception(f"Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
+
+            for obj in removed_objects:
+                if obj.tag.source_tag_id not in self.__registered_shapes:
+                    # This is probably a sprite placement reference.
+                    for clip in self.__clips:
+                        if clip.tag_id == obj.tag.source_tag_id:
+                            clip.running = False
+                            break
+                    else:
+                        raise Exception(f"Cannot find a shape or sprite with Tag ID {obj.tag.source_tag_id}!")
 
             return []
         elif isinstance(tag, AP2DoActionTag):
@@ -301,12 +338,14 @@ class AFPRenderer(VerboseOutput):
         spf = 1.0 / swf.fps
         frames: List[Image.Image] = []
         frameno: int = 0
-        clips: List[Clip] = [Clip(None, swf.frames, swf.tags)] if len(swf.frames) > 0 else []
+
+        # Reset any registered clips.
+        self.__clips = [Clip(None, swf.frames, swf.tags, running=True)] if len(swf.frames) > 0 else []
 
         # Reset any registered shapes.
         self.__registered_shapes = {}
 
-        while any(c.running for c in clips):
+        while any(c.running for c in self.__clips):
             # Create a new image to render into.
             time = spf * float(frameno)
             color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
@@ -314,15 +353,21 @@ class AFPRenderer(VerboseOutput):
             self.vprint(f"Rendering Frame {frameno} ({time}s)")
 
             # Go through all registered clips, place all needed tags.
-            newclips: List[Clip] = []
-            for clip in clips:
-                if clip.frame.num_tags > 0:
-                    self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Start Frame: {clip.frame.start_tag_offset}, Num Frames: {clip.frame.num_tags}")
-                    for tag in clip.tags[clip.frame.start_tag_offset:(clip.frame.start_tag_offset + clip.frame.num_tags)]:
-                        newclips.extend(self.__place(tag, parent_clip=clip.tag_id))
+            while any(c.dirty for c in self.__clips):
+                newclips: List[Clip] = []
+                for clip in self.__clips:
+                    # See if the clip needs handling (might have been placed and needs to run).
+                    if clip.dirty and clip.frame.current_tag < clip.frame.num_tags:
+                        self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Current Frame: {clip.frame.start_tag_offset + clip.frame.current_tag}, Num Frames: {clip.frame.num_tags}")
+                        newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip.tag_id))
+                        clip.frame.current_tag += 1
 
-            # Add any new clips that we should process next frame.
-            clips.extend(newclips)
+                    if clip.dirty and clip.frame.current_tag == clip.frame.num_tags:
+                        # We handled this clip.
+                        clip.clear()
+
+                # Add any new clips that we should process next frame.
+                self.__clips.extend(newclips)
 
             # Now, render out the placed objects. We sort by depth so that we can
             # get the layering correct, but its important to preserve the original
@@ -335,12 +380,14 @@ class AFPRenderer(VerboseOutput):
                 curimage = self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
 
             # Advance all the clips and frame now that we processed and rendered them.
-            for clip in clips:
+            for clip in self.__clips:
+                if clip.dirty:
+                    raise Exception("Logic error!")
                 clip.advance()
             frames.append(curimage)
             frameno += 1
 
             # Garbage collect any clips that we're finished with.
-            clips = [c for c in clips if c.running]
+            self.__clips = [c for c in self.__clips if not c.finished]
 
         return int(spf * 1000.0), frames

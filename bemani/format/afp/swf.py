@@ -51,6 +51,9 @@ class Frame:
         # A list of any imported tags that are to be placed this frame.
         self.imported_tags = imported_tags
 
+        # The current tag we're processing, if any.
+        self.current_tag = 0
+
 
 class Tag:
     # Any tag that can appear in the SWF. All tags will subclass from this for their behavior.
@@ -121,7 +124,7 @@ class AP2PlaceObjectTag(Tag):
         # The depth (level) that we should remove objects from.
         self.depth = depth
 
-        # The source tag ID (should point at an AP2ShapeTag by ID) if present.
+        # The source tag ID (should point at an AP2ShapeTag or AP2SpriteTag by ID) if present.
         self.source_tag_id = src_tag_id
 
         # The name of this object, if present.
