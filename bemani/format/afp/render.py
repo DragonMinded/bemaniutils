@@ -258,9 +258,8 @@ class AFPRenderer(VerboseOutput):
             self.vprint("    Nothing to render!")
             return
 
-        # Look up the affine transformation matrix and rotation/origin.
+        # Look up the affine transformation matrix for this object.
         transform = parent_transform.multiply(tag.transform or Matrix.identity())
-        origin = parent_origin.add(tag.rotation_offset or Point.identity())
 
         # Calculate the inverse so we can map canvas space back to texture space.
         inverse = transform.inverse()
@@ -272,7 +271,7 @@ class AFPRenderer(VerboseOutput):
             for obj in self.__placed_objects:
                 if obj.parent_clip == tag.source_tag_id:
                     self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
-                    self.__render_object(img, obj.tag, transform, origin)
+                    self.__render_object(img, obj.tag, transform, parent_origin.add(tag.rotation_offset or Point.identity()))
                     found_one = True
 
             if not found_one:
@@ -308,6 +307,9 @@ class AFPRenderer(VerboseOutput):
                 texture = self.textures[params.region]
 
             if texture is not None:
+                # If the origin is not specified, assume it is the center of the texture.
+                origin = parent_origin.add(tag.rotation_offset or Point(texture.width / 2, texture.height / 2))
+
                 # See if we can cheat and use the faster blitting method.
                 if (
                     add_color == (0, 0, 0, 0) and
