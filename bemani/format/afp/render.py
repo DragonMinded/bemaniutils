@@ -253,10 +253,10 @@ class AFPRenderer(VerboseOutput):
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
-    def __render_object(self, img: Image.Image, tag: AP2PlaceObjectTag, parent_transform: Matrix, parent_origin: Point) -> Image.Image:
+    def __render_object(self, img: Image.Image, tag: AP2PlaceObjectTag, parent_transform: Matrix, parent_origin: Point) -> None:
         if tag.source_tag_id is None:
             self.vprint("    Nothing to render!")
-            return img
+            return
 
         # Look up the affine transformation matrix and rotation/origin.
         transform = parent_transform.multiply(tag.transform or Matrix.identity())
@@ -272,13 +272,13 @@ class AFPRenderer(VerboseOutput):
             for obj in self.__placed_objects:
                 if obj.parent_clip == tag.source_tag_id:
                     self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
-                    img = self.__render_object(img, obj.tag, transform, origin)
+                    self.__render_object(img, obj.tag, transform, origin)
                     found_one = True
 
             if not found_one:
                 raise Exception(f"Couldn't find parent clip {obj.parent_clip} to render animation out of!")
 
-            return img
+            return
 
         # This is a shape draw reference.
         shape = self.__registered_shapes[tag.source_tag_id]
@@ -291,7 +291,7 @@ class AFPRenderer(VerboseOutput):
         for params in shape.draw_params:
             if not (params.flags & 0x1):
                 # Not instantiable, don't render.
-                return img
+                return
 
             if params.flags & 0x8:
                 # TODO: Need to support blending and UV coordinate colors here.
@@ -365,10 +365,7 @@ class AFPRenderer(VerboseOutput):
                             texoff = texx + (texy * texture.width)
                             imgmap[imgoff] = self.__blend(imgmap[imgoff], texmap[texoff], mult_color, add_color)
 
-                    img = Image.new("RGBA", (img.width, img.height))
                     img.putdata(imgmap)
-
-        return img
 
     def __blend(
         self,
@@ -459,7 +456,7 @@ class AFPRenderer(VerboseOutput):
                         continue
 
                     self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
-                    curimage = self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
+                    self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
             else:
                 # Nothing changed, make a copy of the previous render.
                 self.vprint("  Using previous frame render")

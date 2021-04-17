@@ -159,7 +159,7 @@ def main() -> int:
         metavar="IMAGE",
         type=str,
         default="out.gif",
-        help='The output file (ending either in .gif or .webp) where the render should be saved.',
+        help='The output file (ending either in .gif, .webp or .png) where the render should be saved.',
     )
     render_parser.add_argument(
         "-v",
@@ -558,11 +558,40 @@ def main() -> int:
                 continue
 
         if args.action == "render":
+            # Render the gif/webp frames.
             duration, images = renderer.render_path(args.path, verbose=args.verbose)
             if len(images) == 0:
                 raise Exception("Did not render any frames!")
-            images[0].save(args.output, save_all=True, append_images=images[1:], loop=0, duration=duration)
-            print(f"Wrote animation to {args.output}")
+
+            # Write them out to a new file.
+            if args.output.lower().endswith(".gif"):
+                fmt = "GIF"
+            elif args.output.lower().endswith(".webp"):
+                fmt = "WEBP"
+            elif args.output.lower().endswith(".png"):
+                fmt = "PNG"
+            else:
+                raise Exception("Unrecognized file extension for output!")
+
+            if fmt in ["GIF", "WEBP"]:
+                # Write all the frames out in one file.
+                with open(args.output, "wb") as bfp:
+                    images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=[duration] * len(images))
+
+                print(f"Wrote animation to {args.output}")
+            else:
+                # Write all the frames out in individual_files.
+                filename = args.output[:-4]
+                ext = args.output[-4:]
+
+                for i, img in enumerate(images):
+                    fullname = f"{filename}-{i}{ext}"
+
+                    with open(fullname, "wb") as bfp:
+                        img.save(bfp, format=fmt)
+
+                    print(f"Wrote animation frame to {fullname}")
+
         elif args.action == "list":
             paths = renderer.list_paths(verbose=args.verbose)
             for path in paths:
