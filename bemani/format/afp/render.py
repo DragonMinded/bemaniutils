@@ -297,7 +297,11 @@ class AFPRenderer(VerboseOutput):
         transform = parent_transform.multiply(renderable.tag.transform or Matrix.identity())
 
         # Calculate the inverse so we can map canvas space back to texture space.
-        inverse = transform.inverse()
+        try:
+            inverse = transform.inverse()
+        except ZeroDivisionError:
+            print(f"WARNING: Transform Matrix {transform} has zero scaling factor, making it non-invertible!")
+            return
 
         # Render individual shapes if this is a sprite.
         if renderable.tag.source_tag_id in self.__registered_sprites:

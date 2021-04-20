@@ -123,14 +123,19 @@ class Matrix:
     def inverse(self) -> "Matrix":
         denom = (self.a * self.d - self.b * self.c)
 
-        return Matrix(
-            a=self.d / denom,
-            b=-self.b / denom,
-            c=-self.c / denom,
-            d=self.a / denom,
-            tx=(self.c * self.ty - self.d * self.tx) / denom,
-            ty=-(self.a * self.ty - self.b * self.tx) / denom,
-        )
+        try:
+            return Matrix(
+                a=self.d / denom,
+                b=-self.b / denom,
+                c=-self.c / denom,
+                d=self.a / denom,
+                tx=(self.c * self.ty - self.d * self.tx) / denom,
+                ty=-(self.a * self.ty - self.b * self.tx) / denom,
+            )
+        except ZeroDivisionError:
+            pass
+
+        raise ZeroDivisionError(f"Matrix({self}) cannot be inverted!")
 
     def __repr__(self) -> str:
         return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
