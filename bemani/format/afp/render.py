@@ -30,7 +30,7 @@ class Clip:
     @property
     def frame(self) -> Frame:
         # The current frame object.
-        if self.finished:
+        if self.frameno >= len(self.frames):
             raise Exception("Logic error!")
         return self.frames[self.frameno]
 
@@ -187,7 +187,7 @@ class AFPRenderer(VerboseOutput):
                         updated = True
 
                 if not updated:
-                    raise Exception(f"Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
+                    print(f"WARNING: Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
 
                 # We finished!
                 return []
@@ -208,13 +208,14 @@ class AFPRenderer(VerboseOutput):
                     self.__placed_objects.append(PlacedObject(parent_clip, tag, new_clip))
 
                     return [new_clip]
+
                 if tag.source_tag_id in self.__registered_shapes:
                     self.vprint(f"{prefix}    Placing Shape {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
                     self.__placed_objects.append(PlacedObject(parent_clip, tag, self.__registered_shapes[tag.source_tag_id]))
 
                     return []
-                else:
-                    raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
+
+                raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
         elif isinstance(tag, AP2RemoveObjectTag):
             self.vprint(f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}")
 
@@ -235,6 +236,7 @@ class AFPRenderer(VerboseOutput):
                 # Remove the last placed object at this depth. The placed objects list isn't
                 # ordered so much as apppending to the list means the last placed object at a
                 # depth comes last.
+                removed_objects = []
                 for i in range(len(self.__placed_objects)):
                     real_index = len(self.__placed_objects) - (i + 1)
 
@@ -243,22 +245,35 @@ class AFPRenderer(VerboseOutput):
                         self.__placed_objects = self.__placed_objects[:real_index] + self.__placed_objects[(real_index + 1):]
                         break
 
-            # We should have removed at least one objct.
-            if len(removed_objects) == 0:
-                raise Exception(f"Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
+            if not removed_objects:
+                print(f"WARNING: Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
 
-            for obj in removed_objects:
-                if obj.tag.source_tag_id in self.__registered_sprites:
-                    # This is a sprite placement reference.
-                    for clip in self.__clips:
-                        if clip is obj.drawable:
-                            clip.remove()
+            # Now, if we removed a sprite, go through and drop all of its children.
+            while removed_objects:
+                # Keep track of new clips that we need to drop.
+                new_removed_objects = []
 
-                    # Kill any objects placed by this clip.
-                    self.__placed_objects = [
-                        o for o in self.__placed_objects
-                        if not(o.parent_clip is obj.drawable)
-                    ]
+                for obj in removed_objects:
+                    if obj.tag.source_tag_id in self.__registered_sprites:
+                        # This is a sprite placement reference, stop the clip.
+                        for clip in self.__clips:
+                            if clip is obj.drawable:
+                                clip.remove()
+
+                        # Log what we're killing, schedule child clips for removal as well.
+                        for o in self.__placed_objects:
+                            if o.parent_clip is obj.drawable:
+                                self.vprint(f"{prefix}    Removing Object ID {o.tag.object_id} from Depth {o.tag.depth} after removing sprite with ID {tag.object_id} and depth {tag.depth}")
+                                new_removed_objects.append(o)
+
+                        # Kill any objects placed by this clip.
+                        self.__placed_objects = [
+                            o for o in self.__placed_objects
+                            if not(o.parent_clip is obj.drawable)
+                        ]
+
+                # Now, do it again.
+                removed_objects = new_removed_objects
 
             return []
         elif isinstance(tag, AP2DoActionTag):
@@ -393,7 +408,8 @@ class AFPRenderer(VerboseOutput):
                             elif blend == 9:
                                 imgmap[imgoff] = self.__blend_subtractive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
                             else:
-                                raise Exception(f"Unsupported blend {blend}")
+                                print(f"WARNING: Unsupported blend {blend}")
+                                imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
 
                     img.putdata(imgmap)
 
