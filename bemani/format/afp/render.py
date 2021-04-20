@@ -9,14 +9,23 @@ from .util import VerboseOutput
 
 class Clip:
     # A movie clip that we are rendering, frame by frame. These are manifest by the root
-    # SWF as well as AP2DefineSpriteTags which are essentially embedded movie clips.
-    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag], running: bool) -> None:
+    # SWF as well as AP2DefineSpriteTags which are essentially embedded movie clips. The
+    # tag_id is the AP2DefineSpriteTag that created us, or None if this is the clip for
+    # the root of the movie.
+    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag]) -> None:
         self.tag_id = tag_id
         self.frames = frames
         self.tags = tags
         self.frameno = 0
         self.__last_frameno = -1
-        self.__running = running
+        self.__finished = False
+
+    def clone(self) -> "Clip":
+        return Clip(
+            self.tag_id,
+            self.frames,
+            self.tags,
+        )
 
     @property
     def frame(self) -> Frame:
@@ -34,19 +43,18 @@ class Clip:
         # Clear the dirty flag on this clip until we advance to the next frame.
         self.__last_frameno = self.frameno
 
+    def remove(self) -> None:
+        # Schedule this clip to be removed.
+        self.__finished = True
+
     @property
     def finished(self) -> bool:
         # Whether we've hit the end of the clip and should get rid of this object or not.
-        return (not self.__running) and (self.frameno == len(self.frames))
+        return (self.__finished or (self.frameno == len(self.frames)))
 
     @property
     def running(self) -> bool:
-        # Whether we are still running.
-        return self.frameno < len(self.frames) and self.__running
-
-    @running.setter
-    def running(self, running: bool) -> None:
-        self.__running = running
+        return not self.finished
 
     @property
     def dirty(self) -> bool:
@@ -61,9 +69,11 @@ class PlacedObject:
     # An object that occupies the screen at some depth. Placed by an AP2PlaceObjectTag
     # that is inside the root SWF or an AP2DefineSpriteTag (essentially an embedded
     # movie clip).
-    def __init__(self, parent_clip: Optional[int], tag: AP2PlaceObjectTag) -> None:
+    def __init__(self, parent_clip: Clip, tag: AP2PlaceObjectTag, drawable: Union[Clip, Shape]) -> None:
         self.parent_clip = parent_clip
+        # TODO: Get rid of tag reference, instead grab the variables we need.
         self.tag = tag
+        self.drawable = drawable
 
     @property
     def depth(self) -> int:
@@ -88,6 +98,7 @@ class AFPRenderer(VerboseOutput):
         # Internal render parameters
         self.__visible_tag: Optional[int] = None
         self.__registered_shapes: Dict[int, Shape] = {}
+        self.__registered_sprites: Dict[int, Clip] = {}
         self.__placed_objects: List[PlacedObject] = []
         self.__clips: List[Clip] = []
 
@@ -135,7 +146,7 @@ class AFPRenderer(VerboseOutput):
 
         return paths
 
-    def __place(self, tag: Tag, parent_clip: Optional[int], prefix: str = "") -> List[Clip]:
+    def __place(self, tag: Tag, parent_clip: Clip, prefix: str = "") -> List[Clip]:
         # "Place" a tag on the screen. Most of the time, this means performing the action of the tag,
         # such as defining a shape (registering it with our shape list) or adding/removing an object.
         if isinstance(tag, AP2ShapeTag):
@@ -151,29 +162,17 @@ class AFPRenderer(VerboseOutput):
             # No additional movie clips were spawned.
             return []
         elif isinstance(tag, AP2DefineSpriteTag):
-            self.vprint(f"{prefix}    Registering Sprite Tag {tag.id}")
+            self.vprint(f"{prefix}    Loading Sprite into sprite slot {tag.id}")
+
+            if tag.id in self.__registered_sprites:
+                raise Exception(f"Cannot register sprite as sprite slot {tag.id} is already taken!")
 
             # Register a new clip that we might reference to execute.
-            return [Clip(tag.id, tag.frames, tag.tags, running=False)]
+            self.__registered_sprites[tag.id] = Clip(tag.id, tag.frames, tag.tags)
+
+            # We didn't add the clip to our processing target yet.
+            return []
         elif isinstance(tag, AP2PlaceObjectTag):
-            if tag.source_tag_id is not None:
-                if tag.source_tag_id not in self.__registered_shapes:
-                    # This is probably a sprite placement reference. We need to start this
-                    # clip so that we can process its own animation frames in order to reference
-                    # its objects when rendering.
-                    for clip in self.__clips:
-                        if clip.tag_id == tag.source_tag_id:
-                            if clip.running:
-                                # We should never reference already-running animations!
-                                raise Exception("Logic error!")
-
-                            # Start the clip.
-                            clip.running = True
-                            clip.frameno = 0
-                            break
-                    else:
-                        raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
-
             if tag.update:
                 self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
                 updated = False
@@ -189,15 +188,33 @@ class AFPRenderer(VerboseOutput):
 
                 if not updated:
                     raise Exception(f"Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
+
+                # We finished!
+                return []
             else:
-                self.vprint(f"{prefix}    Placing Object ID {tag.object_id} onto Depth {tag.depth}")
+                if tag.source_tag_id is None:
+                    raise Exception("Cannot place a tag with no source ID and no update flags!")
 
-                self.__placed_objects.append(PlacedObject(parent_clip, tag))
+                # TODO: Handle ON_LOAD triggers for this object. Many of these are just calls into
+                # the game to set the current frame that we're on, but sometimes its important.
 
-            # TODO: Handle ON_LOAD triggers for this object. Many of these are just calls into
-            # the game to set the current frame that we're on, but sometimes its important.
+                if tag.source_tag_id in self.__registered_sprites:
+                    # This is a sprite placement reference. We need to start this
+                    # clip so that we can process its own animation frames in order to reference
+                    # its objects when rendering.
 
-            return []
+                    self.vprint(f"{prefix}    Placing Sprite {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
+                    new_clip = self.__registered_sprites[tag.source_tag_id].clone()
+                    self.__placed_objects.append(PlacedObject(parent_clip, tag, new_clip))
+
+                    return [new_clip]
+                if tag.source_tag_id in self.__registered_shapes:
+                    self.vprint(f"{prefix}    Placing Shape {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
+                    self.__placed_objects.append(PlacedObject(parent_clip, tag, self.__registered_shapes[tag.source_tag_id]))
+
+                    return []
+                else:
+                    raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
         elif isinstance(tag, AP2RemoveObjectTag):
             self.vprint(f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}")
 
@@ -231,14 +248,17 @@ class AFPRenderer(VerboseOutput):
                 raise Exception(f"Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
 
             for obj in removed_objects:
-                if obj.tag.source_tag_id not in self.__registered_shapes:
-                    # This is probably a sprite placement reference.
+                if obj.tag.source_tag_id in self.__registered_sprites:
+                    # This is a sprite placement reference.
                     for clip in self.__clips:
-                        if clip.tag_id == obj.tag.source_tag_id:
-                            clip.running = False
-                            break
-                    else:
-                        raise Exception(f"Cannot find a shape or sprite with Tag ID {obj.tag.source_tag_id}!")
+                        if clip is obj.drawable:
+                            clip.remove()
+
+                    # Kill any objects placed by this clip.
+                    self.__placed_objects = [
+                        o for o in self.__placed_objects
+                        if not(o.parent_clip is obj.drawable)
+                    ]
 
             return []
         elif isinstance(tag, AP2DoActionTag):
@@ -253,39 +273,37 @@ class AFPRenderer(VerboseOutput):
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
-    def __render_object(self, img: Image.Image, tag: AP2PlaceObjectTag, parent_transform: Matrix, parent_origin: Point) -> None:
-        if tag.source_tag_id is None:
+    def __render_object(self, img: Image.Image, renderable: PlacedObject, parent_transform: Matrix, parent_origin: Point) -> None:
+        if renderable.tag.source_tag_id is None:
             self.vprint("    Nothing to render!")
             return
 
         # Look up the affine transformation matrix for this object.
-        transform = parent_transform.multiply(tag.transform or Matrix.identity())
+        transform = parent_transform.multiply(renderable.tag.transform or Matrix.identity())
 
         # Calculate the inverse so we can map canvas space back to texture space.
         inverse = transform.inverse()
 
-        # Look up source shape.
-        if tag.source_tag_id not in self.__registered_shapes:
-            # This is probably a sprite placement reference.
-            found_one = False
-            for obj in self.__placed_objects:
-                if obj.parent_clip == tag.source_tag_id:
-                    self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
-                    self.__render_object(img, obj.tag, transform, parent_origin.add(tag.rotation_offset or Point.identity()))
-                    found_one = True
-
-            if not found_one:
-                raise Exception(f"Couldn't find parent clip {obj.parent_clip} to render animation out of!")
+        # Render individual shapes if this is a sprite.
+        if renderable.tag.source_tag_id in self.__registered_sprites:
+            # This is a sprite placement reference.
+            objs = sorted(
+                [o for o in self.__placed_objects if o.parent_clip is renderable.drawable],
+                key=lambda obj: obj.depth,
+            )
+            for obj in objs:
+                self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip.tag_id} onto Depth {obj.depth}")
+                self.__render_object(img, obj, transform, parent_origin.add(renderable.tag.rotation_offset or Point.identity()))
 
             return
 
         # This is a shape draw reference.
-        shape = self.__registered_shapes[tag.source_tag_id]
+        shape = self.__registered_shapes[renderable.tag.source_tag_id]
 
         # Calculate add color if it is present.
-        add_color = (tag.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
-        mult_color = tag.mult_color or Color(1.0, 1.0, 1.0, 1.0)
-        blend = tag.blend or 0
+        add_color = (renderable.tag.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
+        mult_color = renderable.tag.mult_color or Color(1.0, 1.0, 1.0, 1.0)
+        blend = renderable.tag.blend or 0
 
         # Now, render out shapes.
         for params in shape.draw_params:
@@ -309,7 +327,7 @@ class AFPRenderer(VerboseOutput):
 
             if texture is not None:
                 # If the origin is not specified, assume it is the center of the texture.
-                origin = parent_origin.add(tag.rotation_offset or Point(texture.width / 2, texture.height / 2))
+                origin = parent_origin.add(renderable.tag.rotation_offset or Point(texture.width / 2, texture.height / 2))
 
                 # See if we can cheat and use the faster blitting method.
                 if (
@@ -500,10 +518,11 @@ class AFPRenderer(VerboseOutput):
         frameno: int = 0
 
         # Reset any registered clips.
-        self.__clips = [Clip(None, swf.frames, swf.tags, running=True)] if len(swf.frames) > 0 else []
+        self.__clips = [Clip(None, swf.frames, swf.tags)] if len(swf.frames) > 0 else []
 
         # Reset any registered shapes.
         self.__registered_shapes = {}
+        self.__registered_sprites = {}
 
         while any(c.running for c in self.__clips):
             # Create a new image to render into.
@@ -519,7 +538,7 @@ class AFPRenderer(VerboseOutput):
                     # See if the clip needs handling (might have been placed and needs to run).
                     if clip.dirty and clip.frame.current_tag < clip.frame.num_tags:
                         self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Current Frame: {clip.frame.start_tag_offset + clip.frame.current_tag}, Num Frames: {clip.frame.num_tags}")
-                        newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip.tag_id))
+                        newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip))
                         clip.frame.current_tag += 1
                         changed = True
 
@@ -536,11 +555,11 @@ class AFPRenderer(VerboseOutput):
                 # insertion order for delete requests.
                 curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
                 for obj in sorted(self.__placed_objects, key=lambda obj: obj.depth):
-                    if self.__visible_tag != obj.parent_clip:
+                    if self.__visible_tag != obj.parent_clip.tag_id:
                         continue
 
-                    self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip} onto Depth {obj.depth}")
-                    self.__render_object(curimage, obj.tag, Matrix.identity(), Point.identity())
+                    self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip.tag_id} onto Depth {obj.depth}")
+                    self.__render_object(curimage, obj, Matrix.identity(), Point.identity())
             else:
                 # Nothing changed, make a copy of the previous render.
                 self.vprint("  Using previous frame render")

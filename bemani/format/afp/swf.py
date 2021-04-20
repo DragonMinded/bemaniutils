@@ -150,6 +150,9 @@ class AP2PlaceObjectTag(Tag):
         # fires.
         self.triggers = triggers
 
+    def __repr__(self) -> str:
+        return f"AP2PlaceObjectTag(object_id={self.object_id}, depth={self.depth})"
+
 
 class AP2RemoveObjectTag(Tag):
     def __init__(self, object_id: int, depth: int) -> None:
