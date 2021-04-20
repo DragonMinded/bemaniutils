@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag
@@ -285,6 +285,7 @@ class AFPRenderer(VerboseOutput):
         # Calculate add color if it is present.
         add_color = (tag.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
         mult_color = tag.mult_color or Color(1.0, 1.0, 1.0, 1.0)
+        blend = tag.blend or 0
 
         # Now, render out shapes.
         for params in shape.draw_params:
@@ -320,7 +321,8 @@ class AFPRenderer(VerboseOutput):
                     transform.b == 0.0 and
                     transform.c == 0.0 and
                     transform.a == 1.0 and
-                    transform.d == 1.0
+                    transform.d == 1.0 and
+                    blend == 0
                 ):
                     # We can!
                     cutin = transform.multiply_point(Point.identity().subtract(origin))
@@ -365,39 +367,119 @@ class AFPRenderer(VerboseOutput):
 
                             # Blend it.
                             texoff = texx + (texy * texture.width)
-                            imgmap[imgoff] = self.__blend(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+
+                            if blend == 0:
+                                imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                            elif blend == 8:
+                                imgmap[imgoff] = self.__blend_additive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                            elif blend == 9:
+                                imgmap[imgoff] = self.__blend_subtractive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                            else:
+                                raise Exception(f"Unsupported blend {blend}")
 
                     img.putdata(imgmap)
 
-    def __blend(
+    def __clamp(self, color: Union[float, int]) -> int:
+        return min(max(0, round(color)), 255)
+
+    def __blend_normal(
         self,
-        bg: Tuple[int, int, int, int],
-        fg: Tuple[int, int, int, int],
+        # RGBA color tuple representing what's already at the dest.
+        dest: Tuple[int, int, int, int],
+        # RGBA color tuple representing the source we want to blend to the dest.
+        src: Tuple[int, int, int, int],
+        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
         mult_color: Color,
+        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
         add_color: Tuple[int, int, int, int],
     ) -> Tuple[int, int, int, int]:
-        # Calculate multiplicative and additive colors.
-        fg = (
-            min(int(fg[0] * mult_color.r) + add_color[0], 255),
-            min(int(fg[1] * mult_color.g) + add_color[1], 255),
-            min(int(fg[2] * mult_color.b) + add_color[2], 255),
-            min(int(fg[3] * mult_color.a) + add_color[3], 255),
+        # Calculate multiplicative and additive colors against the source.
+        src = (
+            self.__clamp((src[0] * mult_color.r) + add_color[0]),
+            self.__clamp((src[1] * mult_color.g) + add_color[1]),
+            self.__clamp((src[2] * mult_color.b) + add_color[2]),
+            self.__clamp((src[3] * mult_color.a) + add_color[3]),
         )
 
         # Short circuit for speed.
-        if fg[3] == 0:
-            return bg
-        if fg[3] == 255:
-            return fg
+        if src[3] == 0:
+            return dest
+        if src[3] == 255:
+            return src
 
         # Calculate alpha blending.
-        fgpercent = (float(fg[3]) / 255.0)
-        bgpercent = 1.0 - fgpercent
+        srcpercent = (float(src[3]) / 255.0)
+        destpercent = (float(dest[3]) / 255.0)
+        destremainder = 1.0 - srcpercent
         return (
-            int(float(bg[0]) * bgpercent + float(fg[0]) * fgpercent),
-            int(float(bg[1]) * bgpercent + float(fg[1]) * fgpercent),
-            int(float(bg[2]) * bgpercent + float(fg[2]) * fgpercent),
-            255,
+            self.__clamp((float(dest[0]) * destpercent * destremainder) + (float(src[0]) * srcpercent)),
+            self.__clamp((float(dest[1]) * destpercent * destremainder) + (float(src[1]) * srcpercent)),
+            self.__clamp((float(dest[2]) * destpercent * destremainder) + (float(src[2]) * srcpercent)),
+            self.__clamp(255 * (srcpercent + destpercent * destremainder)),
+        )
+
+    def __blend_additive(
+        self,
+        # RGBA color tuple representing what's already at the dest.
+        dest: Tuple[int, int, int, int],
+        # RGBA color tuple representing the source we want to blend to the dest.
+        src: Tuple[int, int, int, int],
+        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
+        mult_color: Color,
+        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
+        add_color: Tuple[int, int, int, int],
+    ) -> Tuple[int, int, int, int]:
+        # Calculate multiplicative and additive colors against the source.
+        src = (
+            self.__clamp((src[0] * mult_color.r) + add_color[0]),
+            self.__clamp((src[1] * mult_color.g) + add_color[1]),
+            self.__clamp((src[2] * mult_color.b) + add_color[2]),
+            self.__clamp((src[3] * mult_color.a) + add_color[3]),
+        )
+
+        # Short circuit for speed.
+        if src[3] == 0:
+            return dest
+
+        # Calculate alpha blending.
+        srcpercent = (float(src[3]) / 255.0)
+        return (
+            self.__clamp(dest[0] + (float(src[0]) * srcpercent)),
+            self.__clamp(dest[1] + (float(src[1]) * srcpercent)),
+            self.__clamp(dest[2] + (float(src[2]) * srcpercent)),
+            self.__clamp(dest[3] + (255 * srcpercent)),
+        )
+
+    def __blend_subtractive(
+        self,
+        # RGBA color tuple representing what's already at the dest.
+        dest: Tuple[int, int, int, int],
+        # RGBA color tuple representing the source we want to blend to the dest.
+        src: Tuple[int, int, int, int],
+        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
+        mult_color: Color,
+        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
+        add_color: Tuple[int, int, int, int],
+    ) -> Tuple[int, int, int, int]:
+        # Calculate multiplicative and additive colors against the source.
+        src = (
+            self.__clamp((src[0] * mult_color.r) + add_color[0]),
+            self.__clamp((src[1] * mult_color.g) + add_color[1]),
+            self.__clamp((src[2] * mult_color.b) + add_color[2]),
+            self.__clamp((src[3] * mult_color.a) + add_color[3]),
+        )
+
+        # Short circuit for speed.
+        if src[3] == 0:
+            return dest
+
+        # Calculate alpha blending.
+        srcpercent = (float(src[3]) / 255.0)
+        return (
+            self.__clamp(dest[0] - (float(src[0]) * srcpercent)),
+            self.__clamp(dest[1] - (float(src[1]) * srcpercent)),
+            self.__clamp(dest[2] - (float(src[2]) * srcpercent)),
+            self.__clamp(dest[3] - (255 * srcpercent)),
         )
 
     def __render(self, swf: SWF, export_tag: Optional[str]) -> Tuple[int, List[Image.Image]]:

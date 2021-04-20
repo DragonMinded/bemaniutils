@@ -576,7 +576,7 @@ def main() -> int:
             if fmt in ["GIF", "WEBP"]:
                 # Write all the frames out in one file.
                 with open(args.output, "wb") as bfp:
-                    images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=[duration] * len(images))
+                    images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
 
                 print(f"Wrote animation to {args.output}")
             else:

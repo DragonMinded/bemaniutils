@@ -27,6 +27,17 @@ I think there are more complete and more accurate programs out there. However,
 they all lack source as far as I could tell, so I developed this. Run it like
 `./2dxutils --help` to see help output and determine how to use this.
 
+## afputils
+
+Utilities for working with several animation formats found across a vast range
+of games. This includes a TXP2 container parser, a GE2D shape parser and an
+AFP/BSI parser. Together, they make a set of utilities that attempts to render
+animations out of IFS and TXP2 files as found in various games. Note that this
+format is similar to SWF and thus very complicated. Therefore, it is unlikely
+that these tools will correctly render all animations from all games that it
+encounters. Run it like `./afputils --help` to see help output and determine
+how to use it.
+
 ## api
 
 Development version of this repository's BEMAPI implementation. Run it like
