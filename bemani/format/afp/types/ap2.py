@@ -570,6 +570,13 @@ class AP2Action:
             cls.GET_TARGET,
         }
 
+    def __init__(self, offset: int, opcode: int) -> None:
+        self.offset = offset
+        self.opcode = opcode
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}"
+
 
 class AP2Object:
     UNDEFINED = 0x0

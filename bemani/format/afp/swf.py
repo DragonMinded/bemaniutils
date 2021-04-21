@@ -23,13 +23,193 @@ class NamedTagReference:
         return f"{self.swf}.{self.tag}"
 
 
+class DefineFunction2Action(AP2Action):
+    def __init__(self, offset: int, name: Optional[str], flags: int, body: "ByteCode") -> None:
+        super().__init__(offset, AP2Action.DEFINE_FUNCTION2)
+        self.name = name
+        self.flags = flags
+        self.body = body
+
+    def __repr__(self) -> str:
+        bytecode = [f"  {line}" for line in str(self.body).split(os.linesep)]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}, Name: {self.name or '<anonymous function>'}, Flags: {hex(self.flags)}",
+            *bytecode,
+            f"END_{action_name}",
+        ])
+
+
+# A bunch of stuff for implementing PushAction
+class GenericObject:
+    def __init__(self, name: str) -> None:
+        self.__name = name
+
+    def __repr__(self) -> str:
+        return self.__name
+
+
+NULL = GenericObject('NULL')
+UNDEFINED = GenericObject('UNDEFINED')
+THIS = GenericObject('THIS')
+ROOT = GenericObject('ROOT')
+PARENT = GenericObject('PARENT')
+CLIP = GenericObject('CLIP')
+GLOBAL = GenericObject('GLOBAL')
+
+
+class Register:
+    def __init__(self, no: int) -> None:
+        self.no = no
+
+    def __repr__(self) -> str:
+        return f"Register {self.no}"
+
+
+class PushAction(AP2Action):
+    def __init__(self, offset: int, objects: List[Any]) -> None:
+        super().__init__(offset, AP2Action.PUSH)
+        self.objects = objects
+
+    def __repr__(self) -> str:
+        objects = [f"  {repr(obj)}" for obj in self.objects]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}",
+            *objects,
+            f"END_{action_name}",
+        ])
+
+
+class InitRegisterAction(AP2Action):
+    def __init__(self, offset: int, registers: List[Register]) -> None:
+        super().__init__(offset, AP2Action.INIT_REGISTER)
+        self.registers = registers
+
+    def __repr__(self) -> str:
+        registers = [f"  {reg}" for reg in self.registers]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}",
+            *registers,
+            f"END_{action_name}",
+        ])
+
+
+class StoreRegisterAction(AP2Action):
+    def __init__(self, offset: int, registers: List[Register]) -> None:
+        super().__init__(offset, AP2Action.STORE_REGISTER)
+        self.registers = registers
+
+    def __repr__(self) -> str:
+        registers = [f"  {reg}" for reg in self.registers]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}",
+            *registers,
+            f"END_{action_name}",
+        ])
+
+
+class IfAction(AP2Action):
+    def __init__(self, offset: int, jump_if_true_offset: int) -> None:
+        super().__init__(offset, AP2Action.IF)
+        self.jump_if_true_offset = jump_if_true_offset
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Offset To Jump To If True: {self.jump_if_true_offset}"
+
+
+class If2Action(AP2Action):
+    def __init__(self, offset: int, comparison: str, jump_if_true_offset: int) -> None:
+        super().__init__(offset, AP2Action.IF2)
+        self.comparison = comparison
+        self.jump_if_true_offset = jump_if_true_offset
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Comparison: {self.comparison}, Offset To Jump To If True: {self.jump_if_true_offset}"
+
+
+class JumpAction(AP2Action):
+    def __init__(self, offset: int, jump_offset: int) -> None:
+        super().__init__(offset, AP2Action.JUMP)
+        self.jump_offset = jump_offset
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Offset To Jump To: {self.jump_offset}"
+
+
+class WithAction(AP2Action):
+    def __init__(self, offset: int, unknown: bytes) -> None:
+        super().__init__(offset, AP2Action.WITH)
+        self.unknown = unknown
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Unknown: {self.unknown!r}"
+
+
+class GotoFrame2Action(AP2Action):
+    def __init__(self, offset: int, additional_frames: int, stop: bool) -> None:
+        super().__init__(offset, AP2Action.GOTO_FRAME2)
+        self.additional_frames = additional_frames
+        self.stop = stop
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Additional Frames: {self.additional_frames}, Stop On Arrival: {'yes': if self.stop else 'no'}"
+
+
+class AddNumVariableAction(AP2Action):
+    def __init__(self, offset: int, amount_to_add: int) -> None:
+        super().__init__(offset, AP2Action.ADD_NUM_VARIABLE)
+        self.amount_to_add = amount_to_add
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Amount To Add: {self.amount_to_add}"
+
+
+class AddNumRegisterAction(AP2Action):
+    def __init__(self, offset: int, register: Register, amount_to_add: int) -> None:
+        super().__init__(offset, AP2Action.ADD_NUM_REGISTER)
+        self.register = register
+        self.amount_to_add = amount_to_add
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Register: {self.register}, Amount To Add: {self.amount_to_add}"
+
+
+class GetURL2Action(AP2Action):
+    def __init__(self, offset: int, action: int) -> None:
+        super().__init__(offset, AP2Action.GET_URL2)
+        self.action = action
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Action: {self.action}"
+
+
+class StartDragAction(AP2Action):
+    def __init__(self, offset: int, constrain: Optional[bool]) -> None:
+        super().__init__(offset, AP2Action.START_DRAG)
+        self.constrain = constrain
+
+    def __repr__(self) -> str:
+        if self.constrain is None:
+            cstr = "check stack"
+        else:
+            cstr = "yes" if self.constrain else "no"
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Constrain Mouse: {cstr}"
+
+
 class ByteCode:
     # A list of bytecodes to execute.
-    def __init__(self) -> None:
-        # TODO: I need to actually come up with some internal representation of this. As far
-        # as I can tell, games execute bytecode by switch statement dirctly loading the opcodes
-        # from memory. There is no dynamic recompilation happening and they don't parse anything.
-        pass
+    def __init__(self, actions: List[AP2Action]) -> None:
+        self.actions = actions
+
+    def __repr__(self) -> str:
+        entries: List[str] = []
+        for action in self.actions:
+            entries.extend([f"  {s}" for s in str(action).split(os.linesep)])
+
+        return f"ByteCode({os.linesep}{os.linesep.join(entries)}{os.linesep})"
 
 
 class TagPointer:
@@ -297,25 +477,24 @@ class SWF(TrackedCoverage, VerboseOutput):
         else:
             # The data directly follows, no pointer.
             offset_ptr = 2
-        start_offset = offset_ptr
 
         self.vprint(f"{prefix}    Flags: {hex(flags)}, ByteCode Actual Offset: {hex(offset_ptr)}")
 
         # Actually parse out the opcodes:
+        actions: List[AP2Action] = []
         while offset_ptr < len(datachunk):
             # We leave it up to the individual opcode handlers to increment the offset pointer. By default, parameterless
             # opcodes increase by one. Everything else increases by its own amount. Opcode parsing here is done in big-endian
             # as the game code seems to always parse big-endian values.
             opcode = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
             action_name = AP2Action.action_to_name(opcode)
-
-            # Because the starting offset is non-zero, we calculate this here as a convenience for displaying. It means
-            # that line numbers for opcodes start at 0 but we have to fix up offsets for jumps by the start_offset.
-            lineno = offset_ptr - start_offset
+            lineno = offset_ptr
 
             if opcode in AP2Action.actions_without_params():
+                # Simple opcodes need no parsing, they can go directly onto the stack.
                 self.vprint(f"{prefix}      {lineno}: {action_name}")
                 offset_ptr += 1
+                actions.append(AP2Action(lineno, opcode))
             elif opcode == AP2Action.DEFINE_FUNCTION2:
                 function_flags, funcname_offset, bytecode_offset, _, bytecode_count = struct.unpack(
                     ">HHHBH",
@@ -323,17 +502,18 @@ class SWF(TrackedCoverage, VerboseOutput):
                 )
 
                 if funcname_offset == 0:
-                    funcname = "<anonymous function>"
+                    funcname = None
                 else:
                     funcname = self.__get_string(funcname_offset)
                 offset_ptr += 10 + (3 * bytecode_offset)
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname or '<anonymous function>'}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}")
 
-                # TODO: Need to do something with this parsed function bytecode.
-                function = self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")  # NOQA
+                function = self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
+
                 self.vprint(f"{prefix}      END_{action_name}")
 
+                actions.append(DefineFunction2Action(lineno, funcname, function_flags, function))
                 offset_ptr += bytecode_count
             elif opcode == AP2Action.PUSH:
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
@@ -341,40 +521,50 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 self.vprint(f"{prefix}      {lineno}: {action_name}")
 
+                objects: List[Any] = []
+
                 while obj_count > 0:
                     obj_to_create = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
                     offset_ptr += 1
 
                     if obj_to_create == 0x0:
                         # Integer "0" object.
+                        objects.append(0)
                         self.vprint(f"{prefix}        INTEGER: 0")
                     elif obj_to_create == 0x1:
                         # Float object, represented internally as a double.
                         fval = struct.unpack(">f", datachunk[offset_ptr:(offset_ptr + 4)])[0]
+                        objects.append(fval)
                         offset_ptr += 4
 
                         self.vprint(f"{prefix}        FLOAT: {fval}")
                     elif obj_to_create == 0x2:
                         # Null pointer object.
+                        objects.append(NULL)
                         self.vprint(f"{prefix}        NULL")
                     elif obj_to_create == 0x3:
                         # Undefined constant.
+                        objects.append(UNDEFINED)
                         self.vprint(f"{prefix}        UNDEFINED")
                     elif obj_to_create == 0x4:
                         # Register value.
                         regno = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                        objects.append(Register(regno))
                         offset_ptr += 1
 
                         self.vprint(f"{prefix}        REGISTER NO: {regno}")
                     elif obj_to_create == 0x5:
                         # Boolean "TRUE" object.
+                        objects.append(True)
                         self.vprint(f"{prefix}        BOOLEAN: True")
                     elif obj_to_create == 0x6:
                         # Boolean "FALSE" object.
+                        objects.append(False)
                         self.vprint(f"{prefix}        BOOLEAN: False")
                     elif obj_to_create == 0x7:
                         # Integer object.
                         ival = struct.unpack(">i", datachunk[offset_ptr:(offset_ptr + 4)])[0]
+                        objects.append(ival)
                         offset_ptr += 4
 
                         self.vprint(f"{prefix}        INTEGER: {ival}")
@@ -382,6 +572,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         # String constant object.
                         const_offset = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
                         const = self.__get_string(string_offsets[const_offset])
+                        objects.append(const)
                         offset_ptr += 1
 
                         self.vprint(f"{prefix}        STRING CONST: {const}")
@@ -390,38 +581,47 @@ class SWF(TrackedCoverage, VerboseOutput):
                         # on the largest files.
                         const_offset = struct.unpack(">H", datachunk[offset_ptr:(offset_ptr + 2)])[0]
                         const = self.__get_string(string_offsets[const_offset])
+                        objects.append(const)
                         offset_ptr += 2
 
-                        self.vprint(f"{prefix}        STRING_CONTS: {const}")
+                        self.vprint(f"{prefix}        STRING CONST: {const}")
                     elif obj_to_create == 0xa:
                         # NaN constant.
+                        objects.append(float("nan"))
                         self.vprint(f"{prefix}        NAN")
                     elif obj_to_create == 0xb:
                         # Infinity constant.
+                        objects.append(float("inf"))
                         self.vprint(f"{prefix}        INFINITY")
                     elif obj_to_create == 0xc:
                         # Pointer to "this" object, whatever currently is executing the bytecode.
+                        objects.append(THIS)
                         self.vprint(f"{prefix}        POINTER TO THIS")
                     elif obj_to_create == 0xd:
                         # Pointer to "root" object, which is the movieclip this bytecode exists in.
+                        objects.append(ROOT)
                         self.vprint(f"{prefix}        POINTER TO ROOT")
                     elif obj_to_create == 0xe:
                         # Pointer to "parent" object, whatever currently is executing the bytecode.
                         # This seems to be the parent of the movie clip, or the current movieclip
                         # if that isn't set.
+                        objects.append(PARENT)
                         self.vprint(f"{prefix}        POINTER TO PARENT")
                     elif obj_to_create == 0xf:
                         # Current movie clip.
+                        objects.append(CLIP)
                         self.vprint(f"{prefix}        POINTER TO CURRENT MOVIECLIP")
                     elif obj_to_create == 0x10:
                         # Property constant with no alias.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x100
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        PROPERTY CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     elif obj_to_create == 0x11:
                         # Property constant referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
                         propertyval += 0x100
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 2
@@ -430,6 +630,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         # Same as above, but with allowance for a 16-bit constant offset.
                         propertyval, reference = struct.unpack(">BH", datachunk[offset_ptr:(offset_ptr + 3)])
                         propertyval += 0x100
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 3
@@ -437,12 +638,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x13:
                         # Class property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x300
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        CLASS CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     elif obj_to_create == 0x14:
                         # Class property constant with alias.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
                         propertyval += 0x300
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 2
@@ -452,12 +655,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x16:
                         # Func property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x400
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        FUNC CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     elif obj_to_create == 0x17:
                         # Func property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
                         propertyval += 0x400
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 2
@@ -466,12 +671,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x19:
                         # Other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x200
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        OTHER CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     elif obj_to_create == 0x1a:
                         # Other property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
                         propertyval += 0x200
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 2
@@ -480,12 +687,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x1c:
                         # Event property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        EVENT CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     elif obj_to_create == 0x1d:
                         # Event property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
                         propertyval += 0x500
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 2
@@ -494,12 +703,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x1f:
                         # Key constants.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x600
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        KEY CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     elif obj_to_create == 0x20:
                         # Key property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
                         propertyval += 0x600
+                        objects.append(AP2Property.property_to_name(propertyval))
                         referenceval = self.__get_string(string_offsets[reference])
 
                         offset_ptr += 2
@@ -507,13 +718,16 @@ class SWF(TrackedCoverage, VerboseOutput):
                     # Same comment with 0x15, 0x18, 0x1b and 0x1e applies here with 0x21.
                     elif obj_to_create == 0x22:
                         # Pointer to global object.
+                        objects.append(GLOBAL)
                         self.vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
                     elif obj_to_create == 0x23:
                         # Negative infinity.
+                        objects.append(float("-inf"))
                         self.vprint(f"{prefix}        -INFINITY")
                     elif obj_to_create == 0x24:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x700
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        ETC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x25 and 0x26 are implemented as 8-bit and 16-bit alias pointer
@@ -521,6 +735,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x27:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        ORGFUNC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x28 and 0x29 are implemented as 8-bit and 16-bit alias pointer
@@ -528,6 +743,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x2a:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x900
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        ETCFUNC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x2b and 0x2c are implemented as 8-bit and 16-bit alias pointer
@@ -535,6 +751,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x2d:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xa00
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        EVENT2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x2e and 0x2f are implemented as 8-bit and 16-bit alias pointer
@@ -542,6 +759,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x30:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xb00
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        EVENT METHOD CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x31 and 0x32 are implemented as 8-bit and 16-bit alias pointer
@@ -549,12 +767,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x33:
                         # Signed 64 bit integer init. Uses special "S64" type.
                         int64 = struct.unpack(">q", datachunk[offset_ptr:(offset_ptr + 8)])
+                        objects.append(int64)
                         offset_ptr += 8
 
                         self.vprint(f"{prefix}        INTEGER: {int64}")
                     elif obj_to_create == 0x34:
                         # Some other property names.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xc00
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        GENERIC CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x35 and 0x36 are implemented as 8-bit and 16-bit alias pointer
@@ -562,12 +782,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     elif obj_to_create == 0x37:
                         # Integer object but one byte.
                         ival = struct.unpack(">b", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                        objects.append(ival)
                         offset_ptr += 1
 
                         self.vprint(f"{prefix}        INTEGER: {ival}")
                     elif obj_to_create == 0x38:
                         # Some other property names.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xd00
+                        objects.append(AP2Property.property_to_name(propertyval))
                         offset_ptr += 1
                         self.vprint(f"{prefix}        GENERIC2 CONST NAME: {AP2Property.property_to_name(propertyval)}")
                     # Possibly in newer binaries, 0x39 and 0x3a are implemented as 8-bit and 16-bit alias pointer
@@ -578,32 +800,42 @@ class SWF(TrackedCoverage, VerboseOutput):
                     obj_count -= 1
 
                 self.vprint(f"{prefix}      END_{action_name}")
+
+                actions.append(PushAction(lineno, objects))
             elif opcode == AP2Action.INIT_REGISTER:
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
                 self.vprint(f"{prefix}      {lineno}: {action_name}")
 
+                init_registers: List[Register] = []
                 while obj_count > 0:
                     register_no = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                    init_registers.append(Register(register_no))
                     offset_ptr += 1
                     obj_count -= 1
 
                     self.vprint(f"{prefix}        REGISTER NO: {register_no}")
                 self.vprint(f"{prefix}      END_{action_name}")
+
+                actions.append(InitRegisterAction(lineno, init_registers))
             elif opcode == AP2Action.STORE_REGISTER:
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
                 self.vprint(f"{prefix}      {lineno}: {action_name}")
 
+                store_registers: List[Register] = []
                 while obj_count > 0:
                     register_no = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
+                    store_registers.append(Register(register_no))
                     offset_ptr += 1
                     obj_count -= 1
 
                     self.vprint(f"{prefix}        REGISTER NO: {register_no}")
                 self.vprint(f"{prefix}      END_{action_name}")
+
+                actions.append(StoreRegisterAction(lineno, store_registers))
             elif opcode == AP2Action.STORE_REGISTER2:
                 register_no = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
@@ -611,24 +843,19 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}      {lineno}: {action_name}")
                 self.vprint(f"{prefix}        REGISTER NO: {register_no}")
                 self.vprint(f"{prefix}      END_{action_name}")
+
+                actions.append(StoreRegisterAction(lineno, [Register(register_no)]))
             elif opcode == AP2Action.IF:
-                jump_if_true_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                jump_if_true_offset = struct.unpack(">h", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                jump_if_true_offset += (lineno + 3)
                 offset_ptr += 3
 
-                # TODO: This can jump outside of a function definition, most commonly seen when jumping to an
-                # "END" pointer at the end of a chunk. We need to handle this. We probably need function lines
-                # to be absolute instead of relative.
-                jump_if_true_offset += offset_ptr - start_offset
-
                 self.vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}")
+                actions.append(IfAction(lineno, jump_if_true_offset))
             elif opcode == AP2Action.IF2:
-                if2_type, jump_if_true_offset = struct.unpack(">BH", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
+                if2_type, jump_if_true_offset = struct.unpack(">Bh", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
+                jump_if_true_offset += (lineno + 4)
                 offset_ptr += 4
-
-                # TODO: This can jump outside of a function definition, most commonly seen when jumping to an
-                # "END" pointer at the end of a chunk. We need to handle this. We probably need function lines
-                # to be absolute instead of relative.
-                jump_if_true_offset += offset_ptr - start_offset
 
                 if2_typestr = {
                     0: "==",
@@ -647,44 +874,48 @@ class SWF(TrackedCoverage, VerboseOutput):
                 }[if2_type]
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} {if2_typestr}, Offset If True: {jump_if_true_offset}")
+                actions.append(If2Action(lineno, if2_typestr, jump_if_true_offset))
             elif opcode == AP2Action.JUMP:
-                jump_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                jump_offset = struct.unpack(">h", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
+                jump_offset += (lineno + 3)
                 offset_ptr += 3
 
-                # TODO: This can jump outside of a function definition, most commonly seen when jumping to an
-                # "END" pointer at the end of a chunk. We need to handle this. We probably need function lines
-                # to be absolute instead of relative.
-                jump_offset += offset_ptr - start_offset
                 self.vprint(f"{prefix}      {lineno}: {action_name} Offset: {jump_offset}")
+                actions.append(JumpAction(lineno, jump_offset))
             elif opcode == AP2Action.WITH:
                 skip_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
                 offset_ptr += 3
 
                 # TODO: I have absolutely no idea what the data which exists in the bytecode buffer at this point
                 # represents...
-                unknown_data = datachunk[offset_ptr:(offset_ptr + skip_offset)]  # NOQA
+                unknown_data = datachunk[offset_ptr:(offset_ptr + skip_offset)]
                 offset_ptr += skip_offset
                 self.vprint(f"{prefix}      {lineno}: {action_name} Unknown Data Length: {skip_offset}")
+                actions.append(WithAction(lineno, unknown_data))
             elif opcode == AP2Action.ADD_NUM_VARIABLE:
-                amount_to_add = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                amount_to_add = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} Add Value: {amount_to_add}")
+                actions.append(AddNumVariableAction(lineno, amount_to_add))
             elif opcode == AP2Action.GET_URL2:
-                action = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
+                get_url_action = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} URL Action: {action >> 6}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} URL Action: {get_url_action >> 6}")
+                actions.append(GetURL2Action(lineno, get_url_action >> 6))
             elif opcode == AP2Action.START_DRAG:
                 constraint = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} Constrain Mouse: {'yes' if constraint > 0 else ('no' if constraint == 0 else 'check stack')}")
+                actions.append(StartDragAction(lineno, constrain=True if constraint > 0 else (False if constraint == 0 else None)))
             elif opcode == AP2Action.ADD_NUM_REGISTER:
-                register_no, amount_to_add = struct.unpack(">BB", datachunk[(offset_ptr + 1):(offset_ptr + 3)])
+                register_no, amount_to_add = struct.unpack(">Bb", datachunk[(offset_ptr + 1):(offset_ptr + 3)])
                 offset_ptr += 3
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} Register No: {register_no}, Add Value: {amount_to_add}")
+                actions.append(AddNumRegisterAction(lineno, Register(register_no), amount_to_add))
             elif opcode == AP2Action.GOTO_FRAME2:
                 flags = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
@@ -702,11 +933,11 @@ class SWF(TrackedCoverage, VerboseOutput):
                     additional_frames = 0
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} AND {post} Additional Frames: {additional_frames}")
+                actions.append(GotoFrame2Action(lineno, additional_frames, stop=bool(flags & 0x1)))
             else:
                 raise Exception(f"Can't advance, no handler for opcode {opcode} ({hex(opcode)})!")
 
-        # TODO: I need to actually parse this, its a mess...
-        return ByteCode()
+        return ByteCode(actions)
 
     def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "") -> Tag:
         if tagid == AP2Tag.AP2_SHAPE:
