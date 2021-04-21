@@ -110,7 +110,7 @@ class AFPRenderer(VerboseOutput):
 
     def add_texture(self, name: str, data: Image.Image) -> None:
         # Register a named texture (already loaded PIL image) with the renderer.
-        self.textures[name] = data
+        self.textures[name] = data.convert("RGBA")
 
     def add_swf(self, name: str, data: SWF) -> None:
         # Register a named SWF with the renderer.
@@ -346,7 +346,10 @@ class AFPRenderer(VerboseOutput):
 
             if texture is not None:
                 # If the origin is not specified, assume it is the center of the texture.
-                origin = parent_origin.add(renderable.tag.rotation_offset or Point(texture.width / 2, texture.height / 2))
+                # TODO: Setting the rotation offset to Point(texture.width / 2, texture.height / 2)
+                # when we don't have a rotation offset works for Bishi but breaks other games.
+                # Perhaps there's a tag flag for this?
+                origin = parent_origin.add(renderable.tag.rotation_offset or Point.identity())
 
                 # See if we can cheat and use the faster blitting method.
                 if (
@@ -544,56 +547,60 @@ class AFPRenderer(VerboseOutput):
         self.__registered_shapes = {}
         self.__registered_sprites = {}
 
-        while any(c.running for c in self.__clips):
-            # Create a new image to render into.
-            time = spf * float(frameno)
-            color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-            self.vprint(f"Rendering Frame {frameno} ({time}s)")
+        try:
+            while any(c.running for c in self.__clips):
+                # Create a new image to render into.
+                time = spf * float(frameno)
+                color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
+                self.vprint(f"Rendering Frame {frameno} ({time}s)")
 
-            # Go through all registered clips, place all needed tags.
-            changed = False
-            while any(c.dirty for c in self.__clips):
-                newclips: List[Clip] = []
+                # Go through all registered clips, place all needed tags.
+                changed = False
+                while any(c.dirty for c in self.__clips):
+                    newclips: List[Clip] = []
+                    for clip in self.__clips:
+                        # See if the clip needs handling (might have been placed and needs to run).
+                        if clip.dirty and clip.frame.current_tag < clip.frame.num_tags:
+                            self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Current Frame: {clip.frame.start_tag_offset + clip.frame.current_tag}, Num Frames: {clip.frame.num_tags}")
+                            newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip))
+                            clip.frame.current_tag += 1
+                            changed = True
+
+                        if clip.dirty and clip.frame.current_tag == clip.frame.num_tags:
+                            # We handled this clip.
+                            clip.clear()
+
+                    # Add any new clips that we should process next frame.
+                    self.__clips.extend(newclips)
+
+                if changed or frameno == 0:
+                    # Now, render out the placed objects. We sort by depth so that we can
+                    # get the layering correct, but its important to preserve the original
+                    # insertion order for delete requests.
+                    curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
+                    for obj in sorted(self.__placed_objects, key=lambda obj: obj.depth):
+                        if self.__visible_tag != obj.parent_clip.tag_id:
+                            continue
+
+                        self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip.tag_id} onto Depth {obj.depth}")
+                        self.__render_object(curimage, obj, Matrix.identity(), Point.identity())
+                else:
+                    # Nothing changed, make a copy of the previous render.
+                    self.vprint("  Using previous frame render")
+                    curimage = frames[-1].copy()
+
+                # Advance all the clips and frame now that we processed and rendered them.
                 for clip in self.__clips:
-                    # See if the clip needs handling (might have been placed and needs to run).
-                    if clip.dirty and clip.frame.current_tag < clip.frame.num_tags:
-                        self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Current Frame: {clip.frame.start_tag_offset + clip.frame.current_tag}, Num Frames: {clip.frame.num_tags}")
-                        newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip))
-                        clip.frame.current_tag += 1
-                        changed = True
+                    if clip.dirty:
+                        raise Exception("Logic error!")
+                    clip.advance()
+                frames.append(curimage)
+                frameno += 1
 
-                    if clip.dirty and clip.frame.current_tag == clip.frame.num_tags:
-                        # We handled this clip.
-                        clip.clear()
-
-                # Add any new clips that we should process next frame.
-                self.__clips.extend(newclips)
-
-            if changed or frameno == 0:
-                # Now, render out the placed objects. We sort by depth so that we can
-                # get the layering correct, but its important to preserve the original
-                # insertion order for delete requests.
-                curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
-                for obj in sorted(self.__placed_objects, key=lambda obj: obj.depth):
-                    if self.__visible_tag != obj.parent_clip.tag_id:
-                        continue
-
-                    self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip.tag_id} onto Depth {obj.depth}")
-                    self.__render_object(curimage, obj, Matrix.identity(), Point.identity())
-            else:
-                # Nothing changed, make a copy of the previous render.
-                self.vprint("  Using previous frame render")
-                curimage = frames[-1].copy()
-
-            # Advance all the clips and frame now that we processed and rendered them.
-            for clip in self.__clips:
-                if clip.dirty:
-                    raise Exception("Logic error!")
-                clip.advance()
-            frames.append(curimage)
-            frameno += 1
-
-            # Garbage collect any clips that we're finished with.
-            self.__clips = [c for c in self.__clips if not c.finished]
+                # Garbage collect any clips that we're finished with.
+                self.__clips = [c for c in self.__clips if not c.finished]
+        except KeyboardInterrupt:
+            # Allow ctrl-c to end early and render a partial animation.
+            print(f"WARNING: Interrupted early, will render only {len(frames)} of animation!")
 
         return int(spf * 1000.0), frames
