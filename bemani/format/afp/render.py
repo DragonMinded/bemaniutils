@@ -118,7 +118,7 @@ class AFPRenderer(VerboseOutput):
             data.parse()
         self.swfs[name] = data
 
-    def render_path(self, path: str, verbose: bool = False) -> Tuple[int, List[Image.Image]]:
+    def render_path(self, path: str, background_color: Optional[Color] = None, verbose: bool = False) -> Tuple[int, List[Image.Image]]:
         # Given a path to a SWF root animation or an exported animation inside a SWF,
         # attempt to render it to a list of frames, one per image.
         components = path.split(".")
@@ -130,6 +130,7 @@ class AFPRenderer(VerboseOutput):
             if swf.exported_name == components[0]:
                 # This is the SWF we care about.
                 with self.debugging(verbose):
+                    swf.color = background_color or swf.color
                     return self.__render(swf, components[1] if len(components) > 1 else None)
 
         raise Exception(f'{path} not found in registered SWFs!')
@@ -598,7 +599,21 @@ class AFPRenderer(VerboseOutput):
                 frameno += 1
 
                 # Garbage collect any clips that we're finished with.
+                removed_referenced_tag = False
+                for c in self.__clips:
+                    if c.finished:
+                        if self.__visible_tag == c.tag_id:
+                            removed_referenced_tag = True
+
+                        self.vprint(f"  Removing clip based on Tag ID {clip.tag_id} because it is finished playing.")
+
                 self.__clips = [c for c in self.__clips if not c.finished]
+
+                # Exit early if we removed all tags we would be rendering.
+                if removed_referenced_tag and self.__clips:
+                    if not any(c.tag_id == self.__visible_tag for c in self.__clips):
+                        self.vprint("Finishing early because the tag we are rendering has deconstructed.")
+                        break
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
             print(f"WARNING: Interrupted early, will render only {len(frames)} of animation!")

@@ -9,7 +9,7 @@ import textwrap
 from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict
 
-from bemani.format.afp import TXP2File, Shape, SWF, AFPRenderer
+from bemani.format.afp import TXP2File, Shape, SWF, AFPRenderer, Color
 from bemani.format import IFS
 
 
@@ -166,6 +166,12 @@ def main() -> int:
         "--verbose",
         action="store_true",
         help="Display verbuse debugging output",
+    )
+    render_parser.add_argument(
+        "--background-color",
+        type=str,
+        default=None,
+        help="Set the background color of the animation, overriding a default if present in the SWF.",
     )
 
     list_parser = subparsers.add_parser('list', help='List out the possible paths to render from a series of SWFs')
@@ -558,12 +564,7 @@ def main() -> int:
                 continue
 
         if args.action == "render":
-            # Render the gif/webp frames.
-            duration, images = renderer.render_path(args.path, verbose=args.verbose)
-            if len(images) == 0:
-                raise Exception("Did not render any frames!")
-
-            # Write them out to a new file.
+            # Verify the correct params.
             if args.output.lower().endswith(".gif"):
                 fmt = "GIF"
             elif args.output.lower().endswith(".webp"):
@@ -572,6 +573,28 @@ def main() -> int:
                 fmt = "PNG"
             else:
                 raise Exception("Unrecognized file extension for output!")
+
+            # Allow overriding background color.
+            if args.background_color:
+                colorvals = args.background_color.split(",")
+                if len(colorvals) not in [3, 4]:
+                    raise Exception("Invalid color, specify a color as a comma-separated RGB or RGBA value!")
+
+                if len(colorvals) == 3:
+                    colorvals.append("255")
+                colorints = [int(c.strip()) for c in colorvals]
+                for c in colorints:
+                    if c < 0 or c > 255:
+                        raise Exception("Color values should be between 0 and 255!")
+
+                color = Color(*[c / 255.0 for c in colorints])
+            else:
+                color = None
+
+            # Render the gif/webp frames.
+            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color)
+            if len(images) == 0:
+                raise Exception("Did not render any frames!")
 
             if fmt in ["GIF", "WEBP"]:
                 # Write all the frames out in one file.
