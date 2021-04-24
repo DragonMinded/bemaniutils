@@ -1679,28 +1679,28 @@ class ByteCodeDecompiler(VerboseOutput):
         stack: List[Any] = []
 
         def make_if_expr(action: IfAction, negate: bool) -> IfExpr:
-            if action.comparison in ["IS UNDEFINED", "IS NOT UNDEFINED"]:
+            if action.comparison in [IfAction.IS_UNDEFINED, IfAction.IS_NOT_UNDEFINED]:
                 conditional = stack.pop()
-                return IsUndefinedIf(conditional, negate=negate != (action.comparison == "IS UNDEFINED"))
-            if action.comparison in ["IS TRUE", "IS FALSE"]:
+                return IsUndefinedIf(conditional, negate=negate != (action.comparison == IfAction.IS_UNDEFINED))
+            if action.comparison in [IfAction.IS_TRUE, IfAction.IS_FALSE]:
                 conditional = stack.pop()
-                return IsBooleanIf(conditional, negate=negate != (action.comparison == "IS FALSE"))
-            if action.comparison in ["==", "!="]:
+                return IsBooleanIf(conditional, negate=negate != (action.comparison == IfAction.IS_FALSE))
+            if action.comparison in [IfAction.EQUALS, IfAction.NOT_EQUALS]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
-                return IsEqualIf(conditional1, conditional2, negate=negate != (action.comparison == "!="))
-            if action.comparison in ["STRICT ==", "STRICT !="]:
+                return IsEqualIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.NOT_EQUALS))
+            if action.comparison in [IfAction.STRICT_EQUALS, IfAction.STRICT_NOT_EQUALS]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
-                return IsStrictEqualIf(conditional1, conditional2, negate=negate != (action.comparison == "STRICT !="))
-            if action.comparison in ["<", ">"]:
+                return IsStrictEqualIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.STRICT_NOT_EQUALS))
+            if action.comparison in [IfAction.LT, IfAction.GT]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
-                return MagnitudeIf(conditional1, conditional2, negate=negate != (action.comparison == "<"))
-            if action.comparison in ["<=", ">="]:
+                return MagnitudeIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.LT))
+            if action.comparison in [IfAction.LT_EQUALS, IfAction.GT_EQUALS]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
-                return MagnitudeEqualIf(conditional1, conditional2, negate=negate != (action.comparison == "<="))
+                return MagnitudeEqualIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.LT_EQUALS))
 
             raise Exception(f"TODO: {action}")
 

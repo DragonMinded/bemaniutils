@@ -768,30 +768,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                 offset_ptr += 3
 
                 self.vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}")
-                actions.append(IfAction(lineno, "IS TRUE", jump_if_true_offset))
+                actions.append(IfAction(lineno, IfAction.IS_TRUE, jump_if_true_offset))
             elif opcode == AP2Action.IF2:
                 if2_type, jump_if_true_offset = struct.unpack(">Bh", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
                 jump_if_true_offset += (lineno + 4)
                 offset_ptr += 4
 
-                if2_typestr = {
-                    0: "==",
-                    1: "!=",
-                    2: "<",
-                    3: ">",
-                    4: "<=",
-                    5: ">=",
-                    6: "IS FALSE",
-                    7: "BITAND",
-                    8: "BITNOTAND",
-                    9: "STRICT ==",
-                    10: "STRICT !=",
-                    11: "IS UNDEFINED",
-                    12: "IS NOT UNDEFINED",
-                }[if2_type]
-
-                self.vprint(f"{prefix}      {lineno}: {action_name} {if2_typestr}, Offset If True: {jump_if_true_offset}")
-                actions.append(IfAction(lineno, if2_typestr, jump_if_true_offset))
+                self.vprint(f"{prefix}      {lineno}: {action_name} {IfAction.comparison_to_str(if2_type)}, Offset If True: {jump_if_true_offset}")
+                actions.append(IfAction(lineno, if2_type, jump_if_true_offset))
             elif opcode == AP2Action.JUMP:
                 jump_offset = struct.unpack(">h", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
                 jump_offset += (lineno + 3)

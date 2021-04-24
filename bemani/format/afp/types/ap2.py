@@ -2674,19 +2674,54 @@ class StoreRegisterAction(AP2Action):
 
 
 class IfAction(AP2Action):
-    def __init__(self, offset: int, comparison: str, jump_if_true_offset: int) -> None:
+    EQUALS = 0
+    NOT_EQUALS = 1
+    LT = 2
+    GT = 3
+    LT_EQUALS = 4
+    GT_EQUALS = 5
+    IS_FALSE = 6
+    BITAND = 7
+    NOT_BITAND = 8
+    STRICT_EQUALS = 9
+    STRICT_NOT_EQUALS = 10
+    IS_UNDEFINED = 11
+    IS_NOT_UNDEFINED = 12
+    IS_TRUE = 1000
+
+    def __init__(self, offset: int, comparison: int, jump_if_true_offset: int) -> None:
         super().__init__(offset, AP2Action.IF)
         self.comparison = comparison
         self.jump_if_true_offset = jump_if_true_offset
 
+    @classmethod
+    def comparison_to_str(cls, comparison: int) -> str:
+        return {
+            cls.EQUALS: "==",
+            cls.NOT_EQUALS: "!=",
+            cls.LT: "<",
+            cls.GT: ">",
+            cls.LT_EQUALS: "<=",
+            cls.GT_EQUALS: ">=",
+            cls.IS_FALSE: "IS FALSE",
+            cls.BITAND: "BITAND",
+            cls.NOT_BITAND: "BITNOTAND",
+            cls.STRICT_EQUALS: "STRICT ==",
+            cls.STRICT_NOT_EQUALS: "STRICT !=",
+            cls.IS_UNDEFINED: "IS UNDEFINED",
+            cls.IS_NOT_UNDEFINED: "IS NOT UNDEFINED",
+            cls.IS_TRUE: "IS TRUE",
+        }[comparison]
+
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
+            'comparison': IfAction.comparison_to_str(self.comparison),
             'jump_if_true_offset': self.jump_if_true_offset,
         }
 
     def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Comparison: {self.comparison}, Offset To Jump To If True: {self.jump_if_true_offset}"
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Comparison: {IfAction.comparison_to_str(self.comparison)}, Offset To Jump To If True: {self.jump_if_true_offset}"
 
 
 class JumpAction(AP2Action):
