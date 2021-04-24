@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict, List, Sequence, Tuple, Set, Union, Optional, cast
 
-from .types import AP2Action, JumpAction, IfAction, DefineFunction2Action
+from .types import AP2Action, JumpAction, IfAction, PushAction, GenericObject, DefineFunction2Action
 from .util import VerboseOutput
 
 
@@ -74,7 +74,21 @@ class ControlFlow:
 
 class ConvertedAction:
     # An action that has been analyzed and converted to an intermediate representation.
-    pass
+    semi = True
+
+    def _object_ref(self, obj: Any) -> str:
+        if isinstance(obj, (GenericObject, Variable, Member)):
+            return repr(obj)
+        else:
+            raise Exception(f"Unsupported objectref {obj}")
+
+    def _value_ref(self, param: Any) -> str:
+        if isinstance(param, (GenericObject, Variable, Member, CallFunctionStatement, CallMethodStatement)):
+            return repr(param)
+        elif isinstance(param, (str, int, float)):
+            return repr(param)
+        else:
+            raise Exception(f"Unsupported valueref {param} ({type(param)})")
 
 
 ArbitraryOpcode = Union[AP2Action, ConvertedAction]
@@ -83,13 +97,13 @@ ArbitraryOpcode = Union[AP2Action, ConvertedAction]
 class BreakStatement(ConvertedAction):
     # A break from a loop (forces execution to the next line after the loop).
     def __repr__(self) -> str:
-        return "break;"
+        return "break"
 
 
 class ContinueStatement(ConvertedAction):
     # A continue in a loop (forces execution to the top of the loop).
     def __repr__(self) -> str:
-        return "continue;"
+        return "continue"
 
 
 class GotoStatement(ConvertedAction):
@@ -98,14 +112,79 @@ class GotoStatement(ConvertedAction):
         self.location = location
 
     def __repr__(self) -> str:
-        return f"goto label_{self.location};"
+        return f"goto label_{self.location}"
 
 
 class NullReturnStatement(ConvertedAction):
     # A statement which directs the control flow to the end of the code, but
     # does not pop the stack to return
     def __repr__(self) -> str:
-        return "return;"
+        return "return"
+
+
+class NopStatement(ConvertedAction):
+    # A literal no-op. We will get rid of these in an optimizing pass.
+    def __repr__(self) -> str:
+        return "nop"
+
+
+class StopMovieStatement(ConvertedAction):
+    # Stop the movie, this is an actionscript-specific opcode.
+    def __repr__(self) -> str:
+        return "builtin_StopPlaying()"
+
+
+class CallFunctionStatement(ConvertedAction):
+    # Call a method on an object.
+    def __init__(self, name: str, params: List[Any]) -> None:
+        self.name = name
+        self.params = params
+
+    def __repr__(self) -> str:
+        params = [self._value_ref(param) for param in self.params]
+        return f"{self.name}({', '.join(params)})"
+
+
+class CallMethodStatement(ConvertedAction):
+    # Call a method on an object.
+    def __init__(self, objectref: Any, name: str, params: List[Any]) -> None:
+        self.objectref = objectref
+        self.name = name
+        self.params = params
+
+    def __repr__(self) -> str:
+        obj = self._object_ref(self.objectref)
+        params = [self._value_ref(param) for param in self.params]
+        return f"{obj}.{self.name}({', '.join(params)})"
+
+
+class SetMemberStatement(ConvertedAction):
+    # Call a method on an object.
+    def __init__(self, objectref: Any, name: str, valueref: Any) -> None:
+        self.objectref = objectref
+        self.name = name
+        self.valueref = valueref
+
+    def __repr__(self) -> str:
+        ref = self._object_ref(self.objectref)
+        val = self._value_ref(self.valueref)
+        return f"{ref}.{self.name} = {val}"
+
+
+class IsUndefinedIfStatement(ConvertedAction):
+    # No semicolon on this.
+    semi = False
+
+    def __init__(self, conditional: Any, negate: bool) -> None:
+        self.conditional = conditional
+        self.negate = negate
+
+    def __repr__(self) -> str:
+        val = self._value_ref(self.conditional)
+        if self.negate:
+            return f"if ({val} !== UNDEFINED)"
+        else:
+            return f"if ({val} === UNDEFINED)"
 
 
 class IntermediateIfStatement(ConvertedAction):
@@ -241,6 +320,24 @@ class IfBody:
         )
 
 
+class Variable(ConvertedAction):
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __repr__(self) -> str:
+        return self.name
+
+
+class Member(ConvertedAction):
+    def __init__(self, objectref: Any, member: str) -> None:
+        self.objectref = objectref
+        self.member = member
+
+    def __repr__(self) -> str:
+        ref = self._object_ref(self.objectref)
+        return f"{ref}.{self.member}"
+
+
 class BitVector:
     def __init__(self, length: int, init: bool = False) -> None:
         self.__bits: Dict[int, bool] = {i: init for i in range(length)}
@@ -294,10 +391,11 @@ class BitVector:
 
 
 class ByteCodeDecompiler(VerboseOutput):
-    def __init__(self, bytecode: ByteCode) -> None:
+    def __init__(self, bytecode: ByteCode, main: bool = True) -> None:
         super().__init__()
 
         self.bytecode = bytecode
+        self.main = main
 
     def __graph_control_flow(self) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
         # Start by assuming that the whole bytecode never directs flow. This is, confusingly,
@@ -1020,7 +1118,6 @@ class ByteCodeDecompiler(VerboseOutput):
             # Now, check to make sure that we have only one exit pointer.
             num_exits = len(cur_chunk.next_chunks)
             if num_exits > 1:
-                self.vprint(chunks)
                 raise Exception("Logic error!")
 
             # Now, we know this chunk is visited, so we can keep it.
@@ -1035,6 +1132,201 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Return the tree, stripped of all dead code (most likely just the return sentinel).
         return new_chunks
+
+    def __eval_stack(self, chunk: ByteCodeChunk) -> None:
+        stack: List[Any] = []
+
+        for i in range(len(chunk.actions)):
+            action = chunk.actions[i]
+
+            if isinstance(action, PushAction):
+                for obj in action.objects:
+                    stack.append(obj)
+
+                chunk.actions[i] = NopStatement()
+                continue
+
+            if isinstance(action, IfAction):
+                if action.comparison in ["IS DEFINED", "IS NOT UNDEFINED"]:
+                    conditional = stack.pop()
+                    chunk.actions[i] = IsUndefinedIfStatement(conditional, negate=(action.comparison == "IS DEFINED"))
+                    continue
+
+            if isinstance(action, AP2Action):
+                if action.opcode == AP2Action.STOP:
+                    chunk.actions[i] = StopMovieStatement()
+                    continue
+
+                if action.opcode == AP2Action.END:
+                    chunk.actions[i] = NullReturnStatement()
+                    continue
+
+                if action.opcode == AP2Action.GET_VARIABLE:
+                    variable_name = stack.pop()
+                    if not isinstance(variable_name, str):
+                        raise Exception("Logic error!")
+                    stack.append(Variable(variable_name))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.CALL_METHOD:
+                    method_name = stack.pop()
+                    if not isinstance(method_name, str):
+                        raise Exception("Logic error!")
+                    object_reference = stack.pop()
+                    num_params = stack.pop()
+                    if not isinstance(num_params, int):
+                        raise Exception("Logic error!")
+                    params = []
+                    for _ in range(num_params):
+                        params.append(stack.pop())
+                    stack.append(CallMethodStatement(object_reference, method_name, params))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.CALL_FUNCTION:
+                    function_name = stack.pop()
+                    if not isinstance(function_name, str):
+                        raise Exception("Logic error!")
+                    num_params = stack.pop()
+                    if not isinstance(num_params, int):
+                        raise Exception("Logic error!")
+                    params = []
+                    for _ in range(num_params):
+                        params.append(stack.pop())
+                    stack.append(CallFunctionStatement(function_name, params))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.POP:
+                    # This is a discard. Let's see if its discarding a function or method
+                    # call. If so, that means the return doesn't matter.
+                    discard = stack.pop()
+                    if isinstance(discard, CallMethodStatement):
+                        # It is! Let's act on the statement.
+                        chunk.actions[i] = discard
+                    else:
+                        chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.SET_MEMBER:
+                    set_value = stack.pop()
+                    member_name = stack.pop()
+                    if not isinstance(member_name, str):
+                        raise Exception("Logic error!")
+                    object_reference = stack.pop()
+
+                    chunk.actions[i] = SetMemberStatement(object_reference, member_name, set_value)
+                    continue
+
+                if action.opcode == AP2Action.GET_MEMBER:
+                    member_name = stack.pop()
+                    if not isinstance(member_name, str):
+                        raise Exception("Logic error!")
+                    object_reference = stack.pop()
+                    stack.append(Member(object_reference, member_name))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+            if isinstance(action, NullReturnStatement):
+                # We alreadyf handled this
+                continue
+
+            self.vprint(chunk.actions)
+            self.vprint(stack)
+            raise Exception(f"TODO: {action}")
+
+        # Now, clean up code generation.
+        new_actions: List[ArbitraryOpcode] = []
+        for action in chunk.actions:
+            if isinstance(action, NopStatement):
+                # Filter out noops.
+                continue
+            if isinstance(action, NullReturnStatement):
+                if new_actions and isinstance(new_actions[-1], NullReturnStatement):
+                    # Filter out redundant return statements.
+                    continue
+
+            new_actions.append(action)
+        chunk.actions = new_actions
+
+    def __eval_chunks(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk]) -> None:
+        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
+
+        while True:
+            # Grab the chunk to operate on.
+            chunk = chunks_by_id[start_id]
+
+            if isinstance(chunk, Loop):
+                # Evaluate the loop
+                self.vprint(f"Evaluating graph in Loop {chunk.id}")
+                self.__eval_chunks(chunk.id, chunk.chunks)
+            elif isinstance(chunk, IfBody):
+                # Evaluate the if body
+                if chunk.true_chunks:
+                    self.vprint(f"Evaluating graph of IfBody {chunk.id} true case")
+                    true_start = self.__get_entry_block(chunk.true_chunks)
+                    self.__eval_chunks(true_start, chunk.true_chunks)
+                if chunk.false_chunks:
+                    self.vprint(f"Evaluating graph of IfBody {chunk.id} false case")
+                    false_start = self.__get_entry_block(chunk.false_chunks)
+                    self.__eval_chunks(false_start, chunk.false_chunks)
+            else:
+                self.__eval_stack(chunk)
+
+            # Go to the next chunk
+            if not chunk.next_chunks:
+                break
+            if len(chunk.next_chunks) != 1:
+                # We've checked so this should be impossible.
+                raise Exception("Logic error!")
+            start_id = chunk.next_chunks[0]
+
+    def __pretty_print(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], prefix: str = "") -> List[str]:
+        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
+        output: List[str] = []
+
+        while True:
+            # Grab the chunk to operate on.
+            chunk = chunks_by_id[start_id]
+
+            if isinstance(chunk, Loop):
+                raise Exception("TODO")
+            elif isinstance(chunk, IfBody):
+                if chunk.true_chunks:
+                    output.append(f"{prefix}{{")
+                    true_start = self.__get_entry_block(chunk.true_chunks)
+                    output.extend(self.__pretty_print(true_start, chunk.true_chunks, prefix=f"{prefix}    "))
+                    output.append(f"{prefix}}}")
+                else:
+                    raise Exception("Logic error!")
+
+                if chunk.false_chunks:
+                    output.append(f"{prefix}else")
+                    output.append(f"{prefix}{{")
+                    false_start = self.__get_entry_block(chunk.false_chunks)
+                    output.extend(self.__pretty_print(false_start, chunk.false_chunks, prefix=f"{prefix}    "))
+                    output.append(f"{prefix}}}")
+            else:
+                for action in chunk.actions:
+                    if isinstance(action, ConvertedAction):
+                        output.append(f"{prefix}{action}{';' if action.semi else ''}")
+                    else:
+                        output.append(f"{prefix}UNCONVERTED: {action}")
+
+            # Go to the next chunk
+            if not chunk.next_chunks:
+                break
+            if len(chunk.next_chunks) != 1:
+                # We've checked so this should be impossible.
+                raise Exception("Logic error!")
+            start_id = chunk.next_chunks[0]
+
+        return output
 
     def __decompile(self) -> str:
         # First, we need to construct a control flow graph.
@@ -1065,10 +1357,21 @@ class ByteCodeDecompiler(VerboseOutput):
         self.vprint("Cleaning up and checking graph...")
         chunks_loops_and_ifs = self.__check_graph(start_id, chunks_loops_and_ifs)
 
-        # TODO: Need to go through and start actually converting statements now.
-        self.vprint(chunks_loops_and_ifs)
+        # Now, its safe to start actually evaluating the stack.
+        self.__eval_chunks(start_id, chunks_loops_and_ifs)
 
-        return "TODO"
+        # Finally, let's print the code!
+        if self.main:
+            prefix = "    "
+        else:
+            prefix = ""
+        code = os.linesep.join(self.__pretty_print(start_id, chunks_loops_and_ifs, prefix=prefix))
+
+        if self.main:
+            code = f"void main(){os.linesep}{{{os.linesep}{code}{os.linesep}}}"
+        self.vprint(f"Final code:{os.linesep}{code}")
+
+        return code
 
     def decompile(self, verbose: bool = False) -> str:
         with self.debugging(verbose):
