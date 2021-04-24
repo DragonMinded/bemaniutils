@@ -615,17 +615,22 @@ class DefineFunction2Action(AP2Action):
 
 
 class Expression:
-    # This is just a type class for all things that can be expressions.
-    pass
+    # Any thing that can be evaluated for a result, such as a variable
+    # reference, function call, or mathematical operation.
+    def render(self, nested: bool = False) -> str:
+        raise NotImplementedError()
 
 
 # A bunch of stuff for implementing PushAction
 class GenericObject(Expression):
     def __init__(self, name: str) -> None:
-        self.__name = name
+        self.name = name
 
     def __repr__(self) -> str:
-        return self.__name
+        return self.name
+
+    def render(self, nested: bool = False) -> str:
+        return self.name
 
 
 NULL = GenericObject('NULL')
@@ -642,6 +647,9 @@ class Register(Expression):
         self.no = no
 
     def __repr__(self) -> str:
+        return f"Register({self.no})"
+
+    def render(self, nested: bool = False) -> str:
         return f"registers[{self.no}]"
 
 
@@ -2586,6 +2594,12 @@ class StringConstant(Expression):
         self.alias = alias
 
     def __repr__(self) -> str:
+        if self.alias:
+            return f"StringConstant({hex(self.const)}: {self.alias})"
+        else:
+            return f"StringConstant({hex(self.const)}: {StringConstant.property_to_name(self.const)})"
+
+    def render(self, nested: bool = False) -> str:
         if self.alias:
             return self.alias
         else:

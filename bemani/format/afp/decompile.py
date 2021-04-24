@@ -95,14 +95,14 @@ class Statement(ConvertedAction):
 
 def object_ref(obj: Any) -> str:
     if isinstance(obj, (GenericObject, Variable, Member)):
-        return repr(obj)
+        return obj.render(nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")
 
 
-def value_ref(param: Any) -> str:
-    if isinstance(param, (Expression)):
-        return repr(param)
+def value_ref(param: Any, parens: bool = False) -> str:
+    if isinstance(param, Expression):
+        return param.render(nested=parens)
     elif isinstance(param, (str, int, float)):
         return repr(param)
     else:
@@ -113,7 +113,7 @@ def name_ref(param: Any) -> str:
     if isinstance(param, str):
         return param
     elif isinstance(param, StringConstant):
-        return repr(param)
+        return param.render()
     else:
         raise Exception(f"Unsupported nameref {param} ({type(param)})")
 
@@ -161,7 +161,7 @@ class ExpressionStatement(Statement):
         self.expr = expr
 
     def __repr__(self) -> str:
-        return f"{self.expr}"
+        return f"{self.expr.render()}"
 
 
 class StopMovieStatement(Statement):
@@ -183,6 +183,9 @@ class FunctionCall(Expression):
         self.params = params
 
     def __repr__(self) -> str:
+        return self.render()
+
+    def render(self, nested: bool = False) -> str:
         name = name_ref(self.name)
         params = [value_ref(param) for param in self.params]
         return f"{name}({', '.join(params)})"
@@ -196,6 +199,9 @@ class MethodCall(Expression):
         self.params = params
 
     def __repr__(self) -> str:
+        return self.render()
+
+    def render(self, nested: bool = False) -> str:
         obj = object_ref(self.objectref)
         name = name_ref(self.name)
         params = [value_ref(param) for param in self.params]
@@ -210,7 +216,14 @@ class NewFunction(Expression):
         self.body = body
 
     def __repr__(self) -> str:
-        return f"new function({repr(self.funcname) or '<anonymous function>'}, {hex(self.flags)}, 'TODO: ByteCode')"
+        return self.render()
+
+    def render(self, nested: bool = False) -> str:
+        val = f"new function({repr(self.funcname) or '<anonymous function>'}, {hex(self.flags)}, 'TODO: ByteCode')"
+        if nested:
+            return f"({val})"
+        else:
+            return val
 
 
 class NewObject(Expression):
@@ -220,9 +233,16 @@ class NewObject(Expression):
         self.params = params
 
     def __repr__(self) -> str:
+        return self.render()
+
+    def render(self, nested: bool = False) -> str:
         objname = name_ref(self.objname)
         params = [value_ref(param) for param in self.params]
-        return f"new {objname}({', '.join(params)})"
+        val = f"new {objname}({', '.join(params)})"
+        if nested:
+            return f"({val})"
+        else:
+            return val
 
 
 class SetMemberStatement(Statement):
@@ -298,7 +318,7 @@ class IsUndefinedIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val = value_ref(self.conditional)
+        val = value_ref(self.conditional, parens=True)
         if self.negate:
             return f"if ({val} is not UNDEFINED)"
         else:
@@ -314,7 +334,7 @@ class IsBooleanIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val = value_ref(self.conditional)
+        val = value_ref(self.conditional, parens=True)
         if self.negate:
             return f"if ({val} is False)"
         else:
@@ -331,8 +351,8 @@ class IsEqualIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1)
-        val2 = value_ref(self.conditional2)
+        val1 = value_ref(self.conditional1, parens=True)
+        val2 = value_ref(self.conditional2, parens=True)
         return f"if ({val1} {'!=' if self.negate else '=='} {val2})"
 
 
@@ -346,8 +366,8 @@ class IsStrictEqualIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1)
-        val2 = value_ref(self.conditional2)
+        val1 = value_ref(self.conditional1, parens=True)
+        val2 = value_ref(self.conditional2, parens=True)
         return f"if ({val1} {'!==' if self.negate else '==='} {val2})"
 
 
@@ -361,8 +381,8 @@ class MagnitudeIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1)
-        val2 = value_ref(self.conditional2)
+        val1 = value_ref(self.conditional1, parens=True)
+        val2 = value_ref(self.conditional2, parens=True)
         return f"if ({val1} {'<' if self.negate else '>'} {val2})"
 
 
@@ -376,8 +396,8 @@ class MagnitudeEqualIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1)
-        val2 = value_ref(self.conditional2)
+        val1 = value_ref(self.conditional1, parens=True)
+        val2 = value_ref(self.conditional2, parens=True)
         return f"if ({val1} {'<=' if self.negate else '>='} {val2})"
 
 
@@ -553,6 +573,9 @@ class Variable(Expression):
         self.name = name
 
     def __repr__(self) -> str:
+        return f"Variable({name_ref(self.name)})"
+
+    def render(self, nested: bool = False) -> str:
         return name_ref(self.name)
 
 
@@ -562,6 +585,9 @@ class Member(Expression):
         self.member = member
 
     def __repr__(self) -> str:
+        return self.render()
+
+    def render(self, nested: bool = False) -> str:
         member = name_ref(self.member)
         ref = object_ref(self.objectref)
         return f"{ref}.{member}"
