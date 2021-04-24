@@ -1,7 +1,19 @@
 import os
 from typing import Any, Dict, List, Sequence, Tuple, Set, Union, Optional, cast
 
-from .types import AP2Action, JumpAction, IfAction, PushAction, Expression, Register, GenericObject, StringConstant, StoreRegisterAction, DefineFunction2Action
+from .types import (
+    AP2Action,
+    JumpAction,
+    IfAction,
+    PushAction,
+    AddNumVariableAction,
+    Expression,
+    Register,
+    GenericObject,
+    StringConstant,
+    StoreRegisterAction,
+    DefineFunction2Action,
+)
 from .util import VerboseOutput
 
 
@@ -122,6 +134,14 @@ def name_ref(param: Any) -> str:
 ArbitraryOpcode = Union[AP2Action, ConvertedAction]
 
 
+class DefineLabelStatement(Statement):
+    def __init__(self, location: int) -> None:
+        self.location = location
+
+    def render(self, prefix: str) -> List[str]:
+        return [f"label_{self.location}:"]
+
+
 class BreakStatement(Statement):
     # A break from a loop (forces execution to the next line after the loop).
     def __repr__(self) -> str:
@@ -202,6 +222,23 @@ class PlayMovieStatement(Statement):
         return [f"{prefix}builtin_StartPlaying();"]
 
 
+class ArithmeticExpression(Expression):
+    def __init__(self, left: Any, op: str, right: Any) -> None:
+        self.left = left
+        self.op = op
+        self.right = right
+
+    def __repr__(self) -> str:
+        left = value_ref(self.left, parens=True)
+        right = value_ref(self.right, parens=True)
+        return f"{left} {self.op} {right}"
+
+    def render(self, nested: bool = False) -> str:
+        left = value_ref(self.left, parens=True)
+        right = value_ref(self.right, parens=True)
+        return f"{left} {self.op} {right}"
+
+
 class FunctionCall(Expression):
     # Call a method on an object.
     def __init__(self, name: Union[str, StringConstant], params: List[Any]) -> None:
@@ -273,22 +310,36 @@ class NewObject(Expression):
 
 class SetMemberStatement(Statement):
     # Call a method on an object.
-    def __init__(self, objectref: Any, name: Union[str, StringConstant], valueref: Any) -> None:
+    def __init__(self, objectref: Any, name: Union[str, Expression], valueref: Any) -> None:
         self.objectref = objectref
         self.name = name
         self.valueref = valueref
 
     def __repr__(self) -> str:
-        ref = object_ref(self.objectref)
-        name = name_ref(self.name)
-        val = value_ref(self.valueref)
-        return f"{ref}.{name} = {val}"
+        try:
+            ref = object_ref(self.objectref)
+            name = name_ref(self.name)
+            val = value_ref(self.valueref)
+            return f"{ref}.{name} = {val}"
+        except Exception:
+            # This is not a simple string object reference.
+            ref = object_ref(self.objectref)
+            name = value_ref(self.name)
+            val = value_ref(self.valueref)
+            return f"{ref}[{name}] = {val}"
 
     def render(self, prefix: str) -> List[str]:
-        ref = object_ref(self.objectref)
-        name = name_ref(self.name)
-        val = value_ref(self.valueref)
-        return [f"{prefix}{ref}.{name} = {val};"]
+        try:
+            ref = object_ref(self.objectref)
+            name = name_ref(self.name)
+            val = value_ref(self.valueref)
+            return [f"{prefix}{ref}.{name} = {val};"]
+        except Exception:
+            # This is not a simple string object reference.
+            ref = object_ref(self.objectref)
+            name = value_ref(self.name)
+            val = value_ref(self.valueref)
+            return [f"{prefix}{ref}[{name}] = {val};"]
 
 
 class DeleteVariableStatement(Statement):
@@ -665,7 +716,7 @@ class Variable(Expression):
 
 
 class Member(Expression):
-    def __init__(self, objectref: Any, member: Union[str, StringConstant]) -> None:
+    def __init__(self, objectref: Any, member: Union[str, Expression]) -> None:
         self.objectref = objectref
         self.member = member
 
@@ -673,9 +724,15 @@ class Member(Expression):
         return self.render()
 
     def render(self, nested: bool = False) -> str:
-        member = name_ref(self.member)
-        ref = object_ref(self.objectref)
-        return f"{ref}.{member}"
+        try:
+            member = name_ref(self.member)
+            ref = object_ref(self.objectref)
+            return f"{ref}.{member}"
+        except Exception:
+            # This is not a simple string object reference.
+            member = value_ref(self.member)
+            ref = object_ref(self.objectref)
+            return f"{ref}[{member}]"
 
 
 class BitVector:
@@ -1337,7 +1394,35 @@ class ByteCodeDecompiler(VerboseOutput):
                 break
 
             if len(chunks_by_id[cur_id].next_chunks) == 1:
-                # This is just a goto/chunk, move on to the next one.
+                if not isinstance(cur_chunk, ByteCodeChunk):
+                    # This is an already-handled loop or if, don't bother checking for
+                    # if-goto patterns.
+                    cur_id = chunks_by_id[cur_id].next_chunks[0]
+                    continue
+
+                last_action = cur_chunk.actions[-1]
+                if not isinstance(last_action, IfAction):
+                    # This is just a goto/chunk, move on to the next one.
+                    cur_id = chunks_by_id[cur_id].next_chunks[0]
+                    continue
+
+                # This is an if with a goto in the true clause. Verify that and
+                # then convert it.
+                jump_offset = offset_map[last_action.jump_if_true_offset]
+                if jump_offset == chunks_by_id[cur_id].next_chunks[0]:
+                    # We have an if that goes to the next chunk on true, so we've
+                    # lost the false path. This is a problem.
+                    raise Exception("Logic error!")
+
+                # Conver this to an if-goto statement, much like we do in loops.
+                cur_chunk.actions[-1] = IntermediateIf(
+                    last_action,
+                    [GotoStatement(jump_offset)],
+                    [],
+                    negate=False,
+                )
+
+                self.vprint("Converted if-goto pattern in chuk ID {cur_id} to intermediate if")
                 cur_id = chunks_by_id[cur_id].next_chunks[0]
                 continue
 
@@ -1546,6 +1631,21 @@ class ByteCodeDecompiler(VerboseOutput):
                 chunk.actions[i] = make_if_expr(action, False)
                 continue
 
+            if isinstance(action, AddNumVariableAction):
+                variable_name = stack.pop()
+                if not isinstance(variable_name, (str, StringConstant)):
+                    raise Exception("Logic error!")
+
+                chunk.actions[i] = SetVariableStatement(
+                    variable_name,
+                    ArithmeticExpression(
+                        Variable(variable_name),
+                        "+" if action.amount_to_add >= 0 else '-',
+                        abs(action.amount_to_add),
+                    )
+                )
+                continue
+
             if isinstance(action, AP2Action):
                 if action.opcode == AP2Action.STOP:
                     chunk.actions[i] = StopMovieStatement()
@@ -1630,9 +1730,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.SET_MEMBER:
                     set_value = stack.pop()
                     member_name = stack.pop()
-                    if not isinstance(member_name, (str, StringConstant)):
-                        self.vprint(chunk.actions)
-                        self.vprint(stack)
+                    if not isinstance(member_name, (str, Expression)):
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
 
@@ -1650,7 +1748,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if action.opcode == AP2Action.GET_MEMBER:
                     member_name = stack.pop()
-                    if not isinstance(member_name, (str, StringConstant)):
+                    if not isinstance(member_name, (str, Expression)):
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
                     stack.append(Member(object_reference, member_name))
@@ -1673,7 +1771,27 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = NopStatement()
                     continue
 
+                if action.opcode == AP2Action.ADD2:
+                    expr1 = stack.pop()
+                    expr2 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "+", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
             if isinstance(action, NullReturnStatement):
+                # We already handled this
+                continue
+
+            if isinstance(action, ContinueStatement):
+                # We already handled this
+                continue
+
+            if isinstance(action, BreakStatement):
+                # We already handled this
+                continue
+
+            if isinstance(action, GotoStatement):
                 # We already handled this
                 continue
 
@@ -1706,6 +1824,7 @@ class ByteCodeDecompiler(VerboseOutput):
             if isinstance(action, MultiAction):
                 for new_action in action.actions:
                     new_actions.append(new_action)
+                continue
 
             new_actions.append(action)
         return new_actions
@@ -1717,6 +1836,9 @@ class ByteCodeDecompiler(VerboseOutput):
         while True:
             # Grab the chunk to operate on.
             chunk = chunks_by_id[start_id]
+
+            # Make sure when we collapse chunks, we don't lose labels.
+            statements.append(DefineLabelStatement(start_id))
 
             if isinstance(chunk, Loop):
                 # Evaluate the loop
@@ -1766,6 +1888,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 for statement in new_statements:
                     if not isinstance(statement, Statement):
                         # We didn't convert a statement properly.
+                        self.vprint(statement)
                         raise Exception("Logic error!")
                     statements.append(statement)
 
