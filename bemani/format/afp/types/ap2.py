@@ -707,7 +707,7 @@ class StoreRegisterAction(AP2Action):
 
 class IfAction(AP2Action):
     def __init__(self, offset: int, comparison: str, jump_if_true_offset: int) -> None:
-        super().__init__(offset, AP2Action.IF2)
+        super().__init__(offset, AP2Action.IF)
         self.comparison = comparison
         self.jump_if_true_offset = jump_if_true_offset
 
