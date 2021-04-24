@@ -639,7 +639,6 @@ class DoWhileStatement(Statement):
             *entries,
             f"{prefix}}}",
             f"{prefix}while(True);",
-            "",
         ]
 
 
@@ -2194,7 +2193,122 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return new_statements
 
-    def __eliminate_unused_labels(self, statements: Sequence[Statement]) -> List[Statement]:
+    def __collapse_identical_labels(self, statements: Sequence[Statement]) -> List[Statement]:
+        # Go through and find labels that point at gotos, remove them and point the
+        # gotos to those labels at the second gotos.
+        statements = list(statements)
+
+        def find_labels_and_gotos(statements: Sequence[Statement]) -> Dict[int, int]:
+            label_and_goto: Dict[int, int] = {}
+
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else None
+                if (
+                    isinstance(cur_statement, DefineLabelStatement) and
+                    isinstance(next_statement, GotoStatement)
+                ):
+                    label_and_goto[cur_statement.location] = next_statement.location
+
+                elif isinstance(cur_statement, DoWhileStatement):
+                    label_and_goto.update(find_labels_and_gotos(cur_statement.body))
+
+                elif isinstance(cur_statement, IfStatement):
+                    label_and_goto.update(find_labels_and_gotos(cur_statement.true_statements))
+                    label_and_goto.update(find_labels_and_gotos(cur_statement.false_statements))
+
+            return label_and_goto
+
+        def reduce_labels_and_gotos(pairs: Dict[int, int]) -> Dict[int, int]:
+            changed = True
+            while changed:
+                changed = False
+
+                for label, goto in pairs.items():
+                    if goto in pairs:
+                        pairs[label] = pairs[goto]
+                        changed = True
+
+            return pairs
+
+        while True:
+            redundant_pairs = reduce_labels_and_gotos(find_labels_and_gotos(statements))
+            if not redundant_pairs:
+                break
+
+            # Whether we change the tree this pass. If not, we should bail.
+            updated: bool = False
+
+            def update_gotos(statement: Statement) -> Statement:
+                nonlocal updated
+
+                if isinstance(statement, GotoStatement):
+                    if statement.location in redundant_pairs:
+                        statement.location = redundant_pairs[statement.location]
+                        updated = True
+                return statement
+
+            statements = self.__walk(statements, update_gotos)
+            if not updated:
+                break
+
+        return statements
+
+    def __remove_useless_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Go through and find gotos that point at the very next line and remove them.
+        # This can happen due to the way we analyze if statements.
+        statements = list(statements)
+
+        def find_goto_next_line(statements: Sequence[Statement], next_instruction: Statement) -> List[Statement]:
+            gotos: List[Statement] = []
+
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else next_instruction
+
+                if (
+                    isinstance(cur_statement, GotoStatement) and
+                    isinstance(next_statement, DefineLabelStatement)
+                ):
+                    if cur_statement.location == next_statement.location:
+                        gotos.append(cur_statement)
+
+                elif isinstance(cur_statement, DoWhileStatement):
+                    # Loops do not "flow" into the next line, they can only "break" to the next
+                    # line. Goto of the next line has already been converted to a "break" statement.
+                    gotos.extend(find_goto_next_line(cur_statement.body, NopStatement()))
+
+                elif isinstance(cur_statement, IfStatement):
+                    # The next statement for both the if and else body is the next statement we have
+                    # looked up, either the next statement in this group of statements, or the next
+                    # statement in the parent.
+                    gotos.extend(find_goto_next_line(cur_statement.true_statements, next_statement))
+                    gotos.extend(find_goto_next_line(cur_statement.false_statements, next_statement))
+
+            return gotos
+
+        # Whether we made at least one substitution.
+        changed: bool = False
+
+        while True:
+            gotos = find_goto_next_line(statements, NopStatement())
+            if not gotos:
+                break
+
+            def remove_goto(statement: Statement) -> Optional[Statement]:
+                nonlocal changed
+
+                for goto in gotos:
+                    if statement is goto:
+                        changed = True
+                        return None
+                return statement
+
+            statements = self.__walk(statements, remove_goto)
+
+        return statements, changed
+
+    def __eliminate_unused_labels(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find labels that nothing is pointing at, and remove them.
         locations: Set[int] = set()
 
@@ -2204,16 +2318,20 @@ class ByteCodeDecompiler(VerboseOutput):
             return statement
 
         self.__walk(statements, find_goto)
+        changed: bool = False
 
         def remove_label(statement: Statement) -> Optional[Statement]:
+            nonlocal changed
+
             if isinstance(statement, DefineLabelStatement):
                 if statement.location not in locations:
+                    changed = True
                     return None
             return statement
 
-        return self.__walk(statements, remove_label)
+        return self.__walk(statements, remove_label), changed
 
-    def __eliminate_useless_continues(self, statements: Sequence[Statement]) -> List[Statement]:
+    def __eliminate_useless_control_flows(self, statements: Sequence[Statement]) -> List[Statement]:
         # Go through and find continue statements on the last line of a do-while.
         def remove_continue(statement: Statement) -> Optional[Statement]:
             if isinstance(statement, DoWhileStatement):
@@ -2221,7 +2339,10 @@ class ByteCodeDecompiler(VerboseOutput):
                     statement.body.pop()
             return statement
 
-        return self.__walk(statements, remove_continue)
+        statements = self.__walk(statements, remove_continue)
+        if isinstance(statements[-1], NullReturnStatement):
+            return statements[:-1]
+        return statements
 
     def __pretty_print(self, start_id: int, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
@@ -2264,8 +2385,14 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__eval_chunks(start_id, chunks_loops_and_ifs, offset_map)
 
         # Now, let's do some clean-up passes.
-        statements = self.__eliminate_unused_labels(statements)
-        statements = self.__eliminate_useless_continues(statements)
+        statements = self.__collapse_identical_labels(statements)
+        statements = self.__eliminate_useless_control_flows(statements)
+        while True:
+            statements, changed1 = self.__eliminate_unused_labels(statements)
+            statements, changed2 = self.__remove_useless_gotos(statements)
+
+            if not changed1 and not changed2:
+                break
 
         # Finally, let's print the code!
         code = self.__pretty_print(start_id, statements, prefix="    " if self.main else "")
