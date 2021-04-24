@@ -618,7 +618,7 @@ class Expression:
     # Any thing that can be evaluated for a result, such as a variable
     # reference, function call, or mathematical operation.
     def render(self, nested: bool = False) -> str:
-        raise NotImplementedError()
+        raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
 # A bunch of stuff for implementing PushAction

@@ -74,10 +74,10 @@ class ControlFlow:
 
 class ConvertedAction:
     # An action that has been analyzed and converted to an intermediate representation.
-    semi = False
+    pass
 
 
-class MultiStatementAction(ConvertedAction):
+class MultiAction(ConvertedAction):
     # An action that allows us to expand the number of lines we have to work with, for
     # opcodes that perform more than one statement's worth of actions.
     def __init__(self, actions: Sequence[ConvertedAction]) -> None:
@@ -85,12 +85,13 @@ class MultiStatementAction(ConvertedAction):
 
     def __repr__(self) -> str:
         # We should never emit one of these in printing.
-        return f"MultiStatementAction({self.actions})"
+        return f"MultiAction({self.actions})"
 
 
 class Statement(ConvertedAction):
     # This is just a type class for finished statements.
-    semi = True
+    def render(self, prefix: str) -> List[str]:
+        raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
 def object_ref(obj: Any) -> str:
@@ -126,11 +127,17 @@ class BreakStatement(Statement):
     def __repr__(self) -> str:
         return "break"
 
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}break;"]
+
 
 class ContinueStatement(Statement):
     # A continue in a loop (forces execution to the top of the loop).
     def __repr__(self) -> str:
         return "continue"
+
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}continue;"]
 
 
 class GotoStatement(Statement):
@@ -141,6 +148,9 @@ class GotoStatement(Statement):
     def __repr__(self) -> str:
         return f"goto label_{self.location}"
 
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}goto label_{self.location};"]
+
 
 class NullReturnStatement(Statement):
     # A statement which directs the control flow to the end of the code, but
@@ -148,11 +158,18 @@ class NullReturnStatement(Statement):
     def __repr__(self) -> str:
         return "return"
 
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}return;"]
+
 
 class NopStatement(Statement):
     # A literal no-op. We will get rid of these in an optimizing pass.
     def __repr__(self) -> str:
         return "nop"
+
+    def render(self, prefix: str) -> List[str]:
+        # We should never render this!
+        raise Exception("Logic error!")
 
 
 class ExpressionStatement(Statement):
@@ -163,17 +180,26 @@ class ExpressionStatement(Statement):
     def __repr__(self) -> str:
         return f"{self.expr.render()}"
 
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}{self.expr.render()};"]
+
 
 class StopMovieStatement(Statement):
     # Stop the movie, this is an actionscript-specific opcode.
     def __repr__(self) -> str:
         return "builtin_StopPlaying()"
 
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}builtin_StopPlaying();"]
+
 
 class PlayMovieStatement(Statement):
     # Play the movie, this is an actionscript-specific opcode.
     def __repr__(self) -> str:
         return "builtin_StartPlaying()"
+
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}builtin_StartPlaying();"]
 
 
 class FunctionCall(Expression):
@@ -258,6 +284,12 @@ class SetMemberStatement(Statement):
         val = value_ref(self.valueref)
         return f"{ref}.{name} = {val}"
 
+    def render(self, prefix: str) -> List[str]:
+        ref = object_ref(self.objectref)
+        name = name_ref(self.name)
+        val = value_ref(self.valueref)
+        return [f"{prefix}{ref}.{name} = {val};"]
+
 
 class DeleteVariableStatement(Statement):
     # Call a method on an object.
@@ -267,6 +299,10 @@ class DeleteVariableStatement(Statement):
     def __repr__(self) -> str:
         name = name_ref(self.name)
         return f"del {name}"
+
+    def render(self, prefix: str) -> List[str]:
+        name = name_ref(self.name)
+        return [f"{prefix}delete {name};"]
 
 
 class StoreRegisterStatement(Statement):
@@ -278,6 +314,10 @@ class StoreRegisterStatement(Statement):
     def __repr__(self) -> str:
         val = value_ref(self.valueref)
         return f"{self.register} = {val}"
+
+    def render(self, prefix: str) -> List[str]:
+        val = value_ref(self.valueref)
+        return [f"{prefix}{self.register} = {val};"]
 
 
 class SetVariableStatement(Statement):
@@ -291,6 +331,11 @@ class SetVariableStatement(Statement):
         val = value_ref(self.valueref)
         return f"{name} = {val}"
 
+    def render(self, prefix: str) -> List[str]:
+        name = name_ref(self.name)
+        val = value_ref(self.valueref)
+        return [f"{prefix}{name} = {val};"]
+
 
 class SetLocalStatement(Statement):
     # Define a local variable with a value.
@@ -303,6 +348,11 @@ class SetLocalStatement(Statement):
         val = value_ref(self.valueref)
         return f"local {name} = {val}"
 
+    def render(self, prefix: str) -> List[str]:
+        name = name_ref(self.name)
+        val = value_ref(self.valueref)
+        return [f"{prefix}local {name} = {val};"]
+
 
 class IfExpr(ConvertedAction):
     # This is just for typing.
@@ -310,9 +360,6 @@ class IfExpr(ConvertedAction):
 
 
 class IsUndefinedIf(IfExpr):
-    # No semicolon on this.
-    semi = False
-
     def __init__(self, conditional: Any, negate: bool) -> None:
         self.conditional = conditional
         self.negate = negate
@@ -326,9 +373,6 @@ class IsUndefinedIf(IfExpr):
 
 
 class IsBooleanIf(IfExpr):
-    # No semicolon on this.
-    semi = False
-
     def __init__(self, conditional: Any, negate: bool) -> None:
         self.conditional = conditional
         self.negate = negate
@@ -342,9 +386,6 @@ class IsBooleanIf(IfExpr):
 
 
 class IsEqualIf(IfExpr):
-    # No semicolon on this.
-    semi = False
-
     def __init__(self, conditional1: Any, conditional2: Any, negate: bool) -> None:
         self.conditional1 = conditional1
         self.conditional2 = conditional2
@@ -357,9 +398,6 @@ class IsEqualIf(IfExpr):
 
 
 class IsStrictEqualIf(IfExpr):
-    # No semicolon on this.
-    semi = False
-
     def __init__(self, conditional1: Any, conditional2: Any, negate: bool) -> None:
         self.conditional1 = conditional1
         self.conditional2 = conditional2
@@ -372,9 +410,6 @@ class IsStrictEqualIf(IfExpr):
 
 
 class MagnitudeIf(IfExpr):
-    # No semicolon on this.
-    semi = False
-
     def __init__(self, conditional1: Any, conditional2: Any, negate: bool) -> None:
         self.conditional1 = conditional1
         self.conditional2 = conditional2
@@ -387,9 +422,6 @@ class MagnitudeIf(IfExpr):
 
 
 class MagnitudeEqualIf(IfExpr):
-    # No semicolon on this.
-    semi = False
-
     def __init__(self, conditional1: Any, conditional2: Any, negate: bool) -> None:
         self.conditional1 = conditional1
         self.conditional2 = conditional2
@@ -402,9 +434,6 @@ class MagnitudeEqualIf(IfExpr):
 
 
 class IfStatement(Statement):
-    # If statements aren't semicoloned.
-    semi = False
-
     def __init__(self, cond: IfExpr, true_statements: Sequence[Statement], false_statements: Sequence[Statement]) -> None:
         self.cond = cond
         self.true_statements = true_statements
@@ -413,11 +442,11 @@ class IfStatement(Statement):
     def __repr__(self) -> str:
         true_entries: List[str] = []
         for statement in self.true_statements:
-            true_entries.extend([f"  {s}" for s in (str(statement) + (';' if statement.semi else '')).split(os.linesep)])
+            true_entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
 
         false_entries: List[str] = []
         for statement in self.false_statements:
-            false_entries.extend([f"  {s}" for s in (str(statement) + (';' if statement.semi else '')).split(os.linesep)])
+            false_entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
 
         if false_entries:
             return os.linesep.join([
@@ -433,6 +462,62 @@ class IfStatement(Statement):
                 os.linesep.join(true_entries),
                 "}"
             ])
+
+    def render(self, prefix: str) -> List[str]:
+        true_entries: List[str] = []
+        for statement in self.true_statements:
+            true_entries.extend(statement.render(prefix=prefix + "    "))
+
+        false_entries: List[str] = []
+        for statement in self.false_statements:
+            false_entries.extend(statement.render(prefix=prefix + "    "))
+
+        if false_entries:
+            return [
+                f"{prefix}{self.cond}",
+                f"{prefix}{{",
+                *true_entries,
+                f"{prefix}}}",
+                f"{prefix}else",
+                f"{prefix}{{",
+                *false_entries,
+                f"{prefix}}}"
+            ]
+        else:
+            return [
+                f"{prefix}{self.cond}",
+                f"{prefix}{{",
+                *true_entries,
+                f"{prefix}}}"
+            ]
+
+
+class DoWhileStatement(Statement):
+    def __init__(self, body: Sequence[Statement]) -> None:
+        self.body = body
+
+    def __repr__(self) -> str:
+        entries: List[str] = []
+        for statement in self.body:
+            entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
+
+        return os.linesep.join([
+            "do {",
+            os.linesep.join(entries),
+            "} while(True);"
+        ])
+
+    def render(self, prefix: str) -> List[str]:
+        entries: List[str] = []
+        for statement in self.body:
+            entries.extend(statement.render(prefix=prefix + "    "))
+
+        return [
+            f"{prefix}do",
+            f"{prefix}{{",
+            *entries,
+            f"{prefix}}} while(True);",
+        ]
 
 
 class IntermediateIf(ConvertedAction):
@@ -1388,7 +1473,7 @@ class ByteCodeDecompiler(VerboseOutput):
         # Return the tree, stripped of all dead code (most likely just the return sentinel).
         return new_chunks
 
-    def __eval_stack(self, chunk: ByteCodeChunk, offset_map: Dict[int, int]) -> None:
+    def __eval_stack(self, chunk: ByteCodeChunk, offset_map: Dict[int, int]) -> List[ConvertedAction]:
         stack: List[Any] = []
 
         def make_if_expr(action: IfAction, negate: bool) -> IfExpr:
@@ -1448,7 +1533,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 for reg in action.registers:
                     store_actions.append(StoreRegisterStatement(reg, set_value))
 
-                chunk.actions[i] = MultiStatementAction(store_actions)
+                chunk.actions[i] = MultiAction(store_actions)
                 continue
 
             if isinstance(action, JumpAction):
@@ -1606,8 +1691,11 @@ class ByteCodeDecompiler(VerboseOutput):
             raise Exception(f"TODO: {action}")
 
         # Now, clean up code generation.
-        new_actions: List[ArbitraryOpcode] = []
+        new_actions: List[ConvertedAction] = []
         for action in chunk.actions:
+            if not isinstance(action, ConvertedAction):
+                # We should have handled all AP2Actions at this point!
+                raise Exception("Logic error!")
             if isinstance(action, NopStatement):
                 # Filter out noops.
                 continue
@@ -1615,15 +1703,16 @@ class ByteCodeDecompiler(VerboseOutput):
                 if new_actions and isinstance(new_actions[-1], NullReturnStatement):
                     # Filter out redundant return statements.
                     continue
-            if isinstance(action, MultiStatementAction):
+            if isinstance(action, MultiAction):
                 for new_action in action.actions:
                     new_actions.append(new_action)
 
             new_actions.append(action)
-        chunk.actions = new_actions
+        return new_actions
 
-    def __eval_chunks(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> None:
+    def __eval_chunks(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> List[Statement]:
         chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
+        statements: List[Statement] = []
 
         while True:
             # Grab the chunk to operate on.
@@ -1632,19 +1721,53 @@ class ByteCodeDecompiler(VerboseOutput):
             if isinstance(chunk, Loop):
                 # Evaluate the loop
                 self.vprint(f"Evaluating graph in Loop {chunk.id}")
-                self.__eval_chunks(chunk.id, chunk.chunks, offset_map)
+                statements.append(
+                    DoWhileStatement(self.__eval_chunks(chunk.id, chunk.chunks, offset_map))
+                )
             elif isinstance(chunk, IfBody):
-                # Evaluate the if body
-                if chunk.true_chunks:
-                    self.vprint(f"Evaluating graph of IfBody {chunk.id} true case")
-                    true_start = self.__get_entry_block(chunk.true_chunks)
-                    self.__eval_chunks(true_start, chunk.true_chunks, offset_map)
-                if chunk.false_chunks:
-                    self.vprint(f"Evaluating graph of IfBody {chunk.id} false case")
-                    false_start = self.__get_entry_block(chunk.false_chunks)
-                    self.__eval_chunks(false_start, chunk.false_chunks, offset_map)
+                # We should have evaluated this earlier!
+                raise Exception("Logic error!")
             else:
-                self.__eval_stack(chunk, offset_map)
+                new_statements = self.__eval_stack(chunk, offset_map)
+
+                # We need to check and see if the last entry is an IfExpr, and hoist it
+                # into a statement here.
+                if isinstance(new_statements[-1], IfExpr):
+                    if_body = chunk.next_chunks[0]
+                    if_body_chunk = chunks_by_id[if_body]
+
+                    if not isinstance(if_body_chunk, IfBody):
+                        # IfBody should always follow a chunk that ends with an if.
+                        raise Exception("Logic error!")
+
+                    # Evaluate the if body
+                    true_statements: List[Statement] = []
+                    if if_body_chunk.true_chunks:
+                        self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} true case")
+                        true_start = self.__get_entry_block(if_body_chunk.true_chunks)
+                        true_statements = self.__eval_chunks(true_start, if_body_chunk.true_chunks, offset_map)
+                    false_statements: List[Statement] = []
+                    if if_body_chunk.false_chunks:
+                        self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} false case")
+                        false_start = self.__get_entry_block(if_body_chunk.false_chunks)
+                        false_statements = self.__eval_chunks(false_start, if_body_chunk.false_chunks, offset_map)
+
+                    # Convert this IfExpr to a full-blown IfStatement.
+                    new_statements[-1] = IfStatement(
+                        new_statements[-1],
+                        true_statements,
+                        false_statements,
+                    )
+
+                    # Skip evaluating the IfBody next iteration.
+                    chunk = if_body_chunk
+
+                # Verify that we converted all the statements properly.
+                for statement in new_statements:
+                    if not isinstance(statement, Statement):
+                        # We didn't convert a statement properly.
+                        raise Exception("Logic error!")
+                    statements.append(statement)
 
             # Go to the next chunk
             if not chunk.next_chunks:
@@ -1654,47 +1777,15 @@ class ByteCodeDecompiler(VerboseOutput):
                 raise Exception("Logic error!")
             start_id = chunk.next_chunks[0]
 
-    def __pretty_print(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], prefix: str = "") -> List[str]:
-        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
+        return statements
+
+    def __pretty_print(self, start_id: int, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
 
-        while True:
-            # Grab the chunk to operate on.
-            chunk = chunks_by_id[start_id]
+        for statement in statements:
+            output.extend(statement.render(prefix))
 
-            if isinstance(chunk, Loop):
-                raise Exception("TODO")
-            elif isinstance(chunk, IfBody):
-                if chunk.true_chunks:
-                    output.append(f"{prefix}{{")
-                    true_start = self.__get_entry_block(chunk.true_chunks)
-                    output.extend(self.__pretty_print(true_start, chunk.true_chunks, prefix=f"{prefix}    "))
-                    output.append(f"{prefix}}}")
-                else:
-                    raise Exception("Logic error!")
-
-                if chunk.false_chunks:
-                    output.append(f"{prefix}else")
-                    output.append(f"{prefix}{{")
-                    false_start = self.__get_entry_block(chunk.false_chunks)
-                    output.extend(self.__pretty_print(false_start, chunk.false_chunks, prefix=f"{prefix}    "))
-                    output.append(f"{prefix}}}")
-            else:
-                for action in chunk.actions:
-                    if isinstance(action, ConvertedAction):
-                        output.append(f"{prefix}{action}{';' if action.semi else ''}")
-                    else:
-                        output.append(f"{prefix}UNCONVERTED: {action}")
-
-            # Go to the next chunk
-            if not chunk.next_chunks:
-                break
-            if len(chunk.next_chunks) != 1:
-                # We've checked so this should be impossible.
-                raise Exception("Logic error!")
-            start_id = chunk.next_chunks[0]
-
-        return output
+        return os.linesep.join(output)
 
     def __decompile(self) -> str:
         # First, we need to construct a control flow graph.
@@ -1726,14 +1817,10 @@ class ByteCodeDecompiler(VerboseOutput):
         chunks_loops_and_ifs = self.__check_graph(start_id, chunks_loops_and_ifs)
 
         # Now, its safe to start actually evaluating the stack.
-        self.__eval_chunks(start_id, chunks_loops_and_ifs, offset_map)
+        statements = self.__eval_chunks(start_id, chunks_loops_and_ifs, offset_map)
 
         # Finally, let's print the code!
-        if self.main:
-            prefix = "    "
-        else:
-            prefix = ""
-        code = os.linesep.join(self.__pretty_print(start_id, chunks_loops_and_ifs, prefix=prefix))
+        code = self.__pretty_print(start_id, statements, prefix="    " if self.main else "")
 
         if self.main:
             code = f"void main(){os.linesep}{{{os.linesep}{code}{os.linesep}}}"
