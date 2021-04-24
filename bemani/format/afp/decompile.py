@@ -24,6 +24,7 @@ class ByteCode:
     # A list of bytecodes to execute.
     def __init__(self, actions: Sequence[AP2Action], end_offset: int) -> None:
         self.actions = list(actions)
+        self.start_offset = self.actions[0].offset
         self.end_offset = end_offset
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
@@ -822,10 +823,14 @@ class BitVector:
         return self
 
     def setBit(self, bit: int) -> "BitVector":
+        if bit < 0 or bit >= len(self.__bits):
+            raise Exception("Logic error!")
         self.__bits[bit] = True
         return self
 
     def clearBit(self, bit: int) -> "BitVector":
+        if bit < 0 or bit >= len(self.__bits):
+            raise Exception("Logic error!")
         self.__bits[bit] = False
         return self
 
@@ -1025,7 +1030,6 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Finally, return chunks of contiguous execution.
         chunks: List[ByteCodeChunk] = []
-        chunkid: int = 0
         for start, flow in flows.items():
             if start == end:
                 # We don't want to render out the end of the graph, it was only there to make
@@ -1034,31 +1038,57 @@ class ByteCodeDecompiler(VerboseOutput):
 
             if len(flow.next_flow) == 1 and flow.next_flow[0] == end:
                 # This flow is a termination state.
-                chunks.append(ByteCodeChunk(chunkid, self.bytecode.actions[flow.beginning:flow.end], []))
-                chunkid += 1
+                chunks.append(ByteCodeChunk(self.bytecode.actions[flow.beginning].offset, self.bytecode.actions[flow.beginning:flow.end], []))
             else:
                 next_chunks: List[int] = []
                 for ano in flow.next_flow:
                     if ano == end:
                         raise Exception("Logic error!")
                     next_chunks.append(self.bytecode.actions[ano].offset)
-                chunks.append(ByteCodeChunk(chunkid, self.bytecode.actions[flow.beginning:flow.end], next_chunks))
-                chunkid += 1
+                chunks.append(ByteCodeChunk(self.bytecode.actions[flow.beginning].offset, self.bytecode.actions[flow.beginning:flow.end], next_chunks))
 
-        # Calculate who points to us as well, for posterity.
+        # Calculate who points to us as well, for posterity. We can still use chunk.id as
+        # the offset of the chunk since we haven't converted yet.
         entries: Dict[int, List[int]] = {}
-        offset_to_id: Dict[int, int] = {}
         for chunk in chunks:
             # We haven't emitted any non-AP2Actions yet, so we are safe in casting here.
-            chunk_offset = cast(AP2Action, chunk.actions[0]).offset
-            offset_to_id[chunk_offset] = chunk.id
             for next_chunk in chunk.next_chunks:
-                entries[next_chunk] = entries.get(next_chunk, []) + [chunk_offset]
+                entries[next_chunk] = entries.get(next_chunk, []) + [chunk.id]
 
         for chunk in chunks:
             # We haven't emitted any non-AP2Actions yet, so we are safe in casting here.
-            chunk_offset = cast(AP2Action, chunk.actions[0]).offset
-            chunk.previous_chunks = entries.get(chunk_offset, [])
+            chunk.previous_chunks = entries.get(chunk.id, [])
+
+        # Now, eliminate any dead code since it will trip us up later. Chunk ID is still the
+        # offset of the first entry in the chunk since we haven't assigned IDs yet.
+        while True:
+            dead_chunk_ids = {c.id for c in chunks if not c.previous_chunks and c.id != self.bytecode.start_offset}
+            if dead_chunk_ids:
+                self.vprint(f"Elimitating dead code chunks {', '.join(str(d) for d in dead_chunk_ids)}")
+                chunks = [c for c in chunks if c.id not in dead_chunk_ids]
+
+                for chunk in chunks:
+                    for c in chunk.next_chunks:
+                        if c in dead_chunk_ids:
+                            # Hoo this shouldn't be possible!
+                            raise Exception("Logic error!")
+                    chunk.previous_chunks = [c for c in chunk.previous_chunks if c not in dead_chunk_ids]
+            else:
+                break
+
+        # Sort by start, so IDs make more sense.
+        chunks = sorted(chunks, key=lambda c: c.id)
+
+        # Now, calculate contiguous IDs for each remaining chunk.
+        offset_to_id: Dict[int, int] = {}
+        chunk_id: int = 0
+        for chunk in chunks:
+            # We haven't emitted any non-AP2Actions yet, so we are safe in casting here.
+            offset_to_id[chunk.id] = chunk_id
+            chunk.id = chunk_id
+
+            chunk_id += 1
+        end_chunk_id = chunk_id
 
         # Now, convert the offsets to chunk ID pointers.
         end_previous_chunks: List[int] = []
@@ -1068,15 +1098,15 @@ class ByteCodeDecompiler(VerboseOutput):
                 chunk.next_chunks = [offset_to_id[c] for c in chunk.next_chunks]
             else:
                 # Point this chunk at the end of bytecode sentinel.
-                chunk.next_chunks = [chunkid]
+                chunk.next_chunks = [end_chunk_id]
                 end_previous_chunks.append(chunk.id)
             chunk.previous_chunks = [offset_to_id[c] for c in chunk.previous_chunks]
 
         # Add the "return" chunk now that we've converted everything.
-        chunks.append(ByteCodeChunk(chunkid, [], [], previous_chunks=end_previous_chunks))
-        offset_to_id[self.bytecode.end_offset] = chunkid
+        chunks.append(ByteCodeChunk(end_chunk_id, [], [], previous_chunks=end_previous_chunks))
+        offset_to_id[self.bytecode.end_offset] = end_chunk_id
 
-        return (sorted(chunks, key=lambda c: c.id), offset_to_id)
+        return (chunks, offset_to_id)
 
     def __get_entry_block(self, chunks: Sequence[ArbitraryCodeChunk]) -> int:
         start_id: int = -1
@@ -1471,12 +1501,20 @@ class ByteCodeDecompiler(VerboseOutput):
                     # This is an already-handled loop or if, don't bother checking for
                     # if-goto patterns.
                     cur_id = chunks_by_id[cur_id].next_chunks[0]
+                    if cur_id not in chunks_by_id:
+                        raise Exception("Logic error!")
                     continue
 
                 last_action = cur_chunk.actions[-1]
                 if not isinstance(last_action, IfAction):
                     # This is just a goto/chunk, move on to the next one.
-                    cur_id = chunks_by_id[cur_id].next_chunks[0]
+                    next_id = chunks_by_id[cur_id].next_chunks[0]
+                    if next_id not in chunks_by_id:
+                        self.vprint(f"Chunk ID {cur_id} is a goto outside of this if.")
+                        chunks_by_id[cur_id].next_chunks = []
+                        break
+
+                    cur_id = next_id
                     continue
 
                 # This is an if with a goto in the true clause. Verify that and
@@ -1488,15 +1526,21 @@ class ByteCodeDecompiler(VerboseOutput):
                     raise Exception("Logic error!")
 
                 # Conver this to an if-goto statement, much like we do in loops.
+                next_id = chunks_by_id[cur_id].next_chunks[0]
                 cur_chunk.actions[-1] = IntermediateIf(
                     last_action,
                     [GotoStatement(jump_offset)],
-                    [],
+                    [GotoStatement(next_id)] if next_id not in chunks_by_id else [],
                     negate=False,
                 )
 
-                self.vprint("Converted if-goto pattern in chuk ID {cur_id} to intermediate if")
-                cur_id = chunks_by_id[cur_id].next_chunks[0]
+                self.vprint(f"Converted if-goto pattern in chunk ID {cur_id} to intermediate if")
+                if next_id not in chunks_by_id:
+                    # This goto is at the end of a list of statements. Let's cap it off and
+                    # move on.
+                    chunks_by_id[cur_id].next_chunks = []
+                    break
+                cur_id = next_id
                 continue
 
             if not isinstance(cur_chunk, ByteCodeChunk):
@@ -1955,6 +1999,14 @@ class ByteCodeDecompiler(VerboseOutput):
                     stack.append(ArithmeticExpression(expr1, "*", expr2))
 
                     chunk.actions[i] = NopStatement()
+
+                if action.opcode == AP2Action.DIVIDE:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "/", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
                     continue
 
                 if action.opcode == AP2Action.MODULO:
