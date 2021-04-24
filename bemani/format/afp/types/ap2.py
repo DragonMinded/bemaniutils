@@ -274,7 +274,8 @@ class AP2Action:
     # Define a variable in the local movieclip or function, without a value.
     DEFINE_LOCAL2 = 34
 
-    # Init an array from the stack. I haven't figured out what it needs to push and pop.
+    # Init an array from the stack. Pops the array's number of items, and then an item each
+    # to add to the array. Then it adds the array to the stack.
     INIT_ARRAY = 35
 
     # Init an object from the stack.

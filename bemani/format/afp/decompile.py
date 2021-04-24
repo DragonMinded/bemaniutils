@@ -13,6 +13,9 @@ from .types import (
     StringConstant,
     StoreRegisterAction,
     DefineFunction2Action,
+    GotoFrame2Action,
+    UNDEFINED,
+    GLOBAL,
 )
 from .util import VerboseOutput
 
@@ -107,7 +110,7 @@ class Statement(ConvertedAction):
 
 
 def object_ref(obj: Any) -> str:
-    if isinstance(obj, (GenericObject, Variable, Member)):
+    if isinstance(obj, (GenericObject, Variable, Member, MethodCall, FunctionCall)):
         return obj.render(nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")
@@ -222,6 +225,54 @@ class PlayMovieStatement(Statement):
         return [f"{prefix}builtin_StartPlaying();"]
 
 
+class DebugTraceStatement(Statement):
+    # Print a debug trace if supported.
+    def __init__(self, trace: Any) -> None:
+        self.trace = trace
+
+    def __repr__(self) -> str:
+        trace = value_ref(self.trace)
+        return f"builtin_DebugTrace({trace})"
+
+    def render(self, prefix: str) -> List[str]:
+        trace = value_ref(self.trace)
+        return [f"{prefix}builtin_DebugTrace({trace});"]
+
+
+class GotoFrameStatement(Statement):
+    # Go to a specified frame in the animation.
+    def __init__(self, frame: Any) -> None:
+        self.frame = frame
+
+    def __repr__(self) -> str:
+        frame = value_ref(self.frame)
+        return f"builtin_GotoFrame({frame})"
+
+    def render(self, prefix: str) -> List[str]:
+        frame = value_ref(self.frame)
+        return [f"{prefix}builtin_GotoFrame({frame});"]
+
+
+class CloneSpriteStatement(Statement):
+    # Clone a sprite.
+    def __init__(self, obj_to_clone: Any, name: Union[str, Expression], depth: Union[int, Expression]) -> None:
+        self.obj_to_clone = obj_to_clone
+        self.name = name
+        self.depth = depth
+
+    def __repr__(self) -> str:
+        obj = object_ref(self.obj_to_clone)
+        name = value_ref(self.name)
+        depth = value_ref(self.depth)
+        return f"builtin_CloneSprite({obj}, {name}, {depth})"
+
+    def render(self, prefix: str) -> List[str]:
+        obj = object_ref(self.obj_to_clone)
+        name = value_ref(self.name)
+        depth = value_ref(self.depth)
+        return [f"{prefix}builtin_CloneSprite({obj}, {name}, {depth});"]
+
+
 class ArithmeticExpression(Expression):
     def __init__(self, left: Any, op: str, right: Any) -> None:
         self.left = left
@@ -236,7 +287,24 @@ class ArithmeticExpression(Expression):
     def render(self, nested: bool = False) -> str:
         left = value_ref(self.left, parens=True)
         right = value_ref(self.right, parens=True)
-        return f"{left} {self.op} {right}"
+
+        if nested and self.op == '-':
+            return f"({left} {self.op} {right})"
+        else:
+            return f"{left} {self.op} {right}"
+
+
+class Array(Expression):
+    # Call a method on an object.
+    def __init__(self, params: List[Any]) -> None:
+        self.params = params
+
+    def __repr__(self) -> str:
+        return self.render()
+
+    def render(self, nested: bool = False) -> str:
+        params = [value_ref(param) for param in self.params]
+        return f"[{', '.join(params)}]"
 
 
 class FunctionCall(Expression):
@@ -310,7 +378,7 @@ class NewObject(Expression):
 
 class SetMemberStatement(Statement):
     # Call a method on an object.
-    def __init__(self, objectref: Any, name: Union[str, Expression], valueref: Any) -> None:
+    def __init__(self, objectref: Any, name: Union[str, int, Expression], valueref: Any) -> None:
         self.objectref = objectref
         self.name = name
         self.valueref = valueref
@@ -353,7 +421,7 @@ class DeleteVariableStatement(Statement):
 
     def render(self, prefix: str) -> List[str]:
         name = name_ref(self.name)
-        return [f"{prefix}delete {name};"]
+        return [f"{prefix}del {name};"]
 
 
 class StoreRegisterStatement(Statement):
@@ -555,7 +623,8 @@ class DoWhileStatement(Statement):
         return os.linesep.join([
             "do {",
             os.linesep.join(entries),
-            "} while(True);"
+            "}",
+            "while(True);"
         ])
 
     def render(self, prefix: str) -> List[str]:
@@ -567,7 +636,9 @@ class DoWhileStatement(Statement):
             f"{prefix}do",
             f"{prefix}{{",
             *entries,
-            f"{prefix}}} while(True);",
+            f"{prefix}}}",
+            f"{prefix}while(True);",
+            "",
         ]
 
 
@@ -716,7 +787,9 @@ class Variable(Expression):
 
 
 class Member(Expression):
-    def __init__(self, objectref: Any, member: Union[str, Expression]) -> None:
+    # A member can be an array entry in an array, or an object member as accessed
+    # in array lookup syntax or dot notation.
+    def __init__(self, objectref: Any, member: Union[str, int, Expression]) -> None:
         self.objectref = objectref
         self.member = member
 
@@ -1562,9 +1635,9 @@ class ByteCodeDecompiler(VerboseOutput):
         stack: List[Any] = []
 
         def make_if_expr(action: IfAction, negate: bool) -> IfExpr:
-            if action.comparison in ["IS DEFINED", "IS NOT UNDEFINED"]:
+            if action.comparison in ["IS UNDEFINED", "IS NOT UNDEFINED"]:
                 conditional = stack.pop()
-                return IsUndefinedIf(conditional, negate=negate != (action.comparison == "IS DEFINED"))
+                return IsUndefinedIf(conditional, negate=negate != (action.comparison == "IS UNDEFINED"))
             if action.comparison in ["IS TRUE", "IS FALSE"]:
                 conditional = stack.pop()
                 return IsBooleanIf(conditional, negate=negate != (action.comparison == "IS FALSE"))
@@ -1585,7 +1658,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 conditional1 = stack.pop()
                 return MagnitudeEqualIf(conditional1, conditional2, negate=negate != (action.comparison == "<="))
 
-            raise Exception("TODO: {action}")
+            raise Exception(f"TODO: {action}")
 
         for i in range(len(chunk.actions)):
             action = chunk.actions[i]
@@ -1602,6 +1675,24 @@ class ByteCodeDecompiler(VerboseOutput):
                 stack.append(NewFunction(action.name, action.flags, action.body))
 
                 chunk.actions[i] = NopStatement()
+                continue
+
+            if isinstance(action, GotoFrame2Action):
+                after: Statement
+
+                if action.stop:
+                    after = StopMovieStatement()
+                else:
+                    after = PlayMovieStatement()
+
+                frame = stack.pop()
+                if action.additional_frames:
+                    frame = ArithmeticExpression(frame, '+', action.additional_frames)
+
+                chunk.actions[i] = MultiAction([
+                    GotoFrameStatement(frame),
+                    after,
+                ])
                 continue
 
             if isinstance(action, StoreRegisterAction):
@@ -1659,11 +1750,25 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = NullReturnStatement()
                     continue
 
+                if action.opcode == AP2Action.CLONE_SPRITE:
+                    depth = stack.pop()
+                    if not isinstance(depth, (int, Expression)):
+                        raise Exception("Logic error!")
+                    name = stack.pop()
+                    if not isinstance(name, (str, Expression)):
+                        raise Exception("Logic error!")
+                    obj = stack.pop()
+                    chunk.actions[i] = CloneSpriteStatement(obj, name, depth)
+                    continue
+
                 if action.opcode == AP2Action.GET_VARIABLE:
                     variable_name = stack.pop()
-                    if not isinstance(variable_name, (str, StringConstant)):
-                        raise Exception("Logic error!")
-                    stack.append(Variable(variable_name))
+                    if isinstance(variable_name, (str, StringConstant)):
+                        stack.append(Variable(variable_name))
+                    else:
+                        # This is probably a reference to a variable by
+                        # string concatenation.
+                        stack.append(Member(GLOBAL, variable_name))
 
                     chunk.actions[i] = NopStatement()
                     continue
@@ -1674,6 +1779,34 @@ class ByteCodeDecompiler(VerboseOutput):
                         raise Exception("Logic error!")
 
                     chunk.actions[i] = DeleteVariableStatement(variable_name)
+                    continue
+
+                if action.opcode == AP2Action.TO_NUMBER:
+                    obj_ref = stack.pop()
+                    stack.append(FunctionCall('int', [obj_ref]))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.TO_STRING:
+                    obj_ref = stack.pop()
+                    stack.append(FunctionCall('str', [obj_ref]))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.INCREMENT:
+                    obj_ref = stack.pop()
+                    stack.append(ArithmeticExpression(obj_ref, '+', 1))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.DECREMENT:
+                    obj_ref = stack.pop()
+                    stack.append(ArithmeticExpression(obj_ref, '-', 1))
+
+                    chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.CALL_METHOD:
@@ -1721,16 +1854,19 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.SET_VARIABLE:
                     set_value = stack.pop()
                     local_name = stack.pop()
-                    if not isinstance(local_name, (str, StringConstant)):
-                        raise Exception("Logic error!")
+                    if isinstance(local_name, (str, StringConstant)):
+                        chunk.actions[i] = SetVariableStatement(local_name, set_value)
+                    else:
+                        # This is probably a reference to a variable by
+                        # string concatenation.
+                        chunk.actions[i] = SetMemberStatement(GLOBAL, local_name, set_value)
 
-                    chunk.actions[i] = SetVariableStatement(local_name, set_value)
                     continue
 
                 if action.opcode == AP2Action.SET_MEMBER:
                     set_value = stack.pop()
                     member_name = stack.pop()
-                    if not isinstance(member_name, (str, Expression)):
+                    if not isinstance(member_name, (str, int, Expression)):
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
 
@@ -1746,9 +1882,18 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = SetLocalStatement(local_name, set_value)
                     continue
 
+                if action.opcode == AP2Action.DEFINE_LOCAL2:
+                    local_name = stack.pop()
+                    if not isinstance(local_name, (str, StringConstant)):
+                        raise Exception("Logic error!")
+
+                    # TODO: Should this be NULL?
+                    chunk.actions[i] = SetLocalStatement(local_name, UNDEFINED)
+                    continue
+
                 if action.opcode == AP2Action.GET_MEMBER:
                     member_name = stack.pop()
-                    if not isinstance(member_name, (str, Expression)):
+                    if not isinstance(member_name, (str, int, Expression)):
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
                     stack.append(Member(object_reference, member_name))
@@ -1771,10 +1916,75 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = NopStatement()
                     continue
 
+                if action.opcode == AP2Action.INIT_ARRAY:
+                    num_entries = stack.pop()
+                    if not isinstance(num_entries, int):
+                        raise Exception("Logic error!")
+                    params = []
+                    for _ in range(num_entries):
+                        params.append(stack.pop())
+                    stack.append(Array(params))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.TRACE:
+                    trace_obj = stack.pop()
+                    chunk.actions[i] = DebugTraceStatement(trace_obj)
+                    continue
+
                 if action.opcode == AP2Action.ADD2:
                     expr1 = stack.pop()
                     expr2 = stack.pop()
                     stack.append(ArithmeticExpression(expr1, "+", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.SUBTRACT:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "-", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.MULTIPLY:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "*", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.MODULO:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "%", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.BIT_OR:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "|", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.BIT_AND:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "&", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.BIT_XOR:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "^", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
