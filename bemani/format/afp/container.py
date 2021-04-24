@@ -29,7 +29,7 @@ class PMAN:
         self.flags2 = flags2
         self.flags3 = flags3
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'flags': [self.flags1, self.flags2, self.flags3],
             'entries': self.entries,
@@ -64,7 +64,7 @@ class Texture:
         self.compressed = compressed
         self.img = imgdata
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'name': self.name,
             'width': self.width,
@@ -85,7 +85,7 @@ class TextureRegion:
         self.right = right
         self.bottom = bottom
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'texture': self.textureno,
             'left': self.left,
@@ -117,7 +117,7 @@ class Unknown1:
         if len(data) != 12:
             raise Exception("Unexpected length for Unknown1 structure!")
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'name': self.name,
             'data': "".join(_hex(x) for x in self.data),
@@ -133,7 +133,7 @@ class Unknown2:
         if len(data) != 4:
             raise Exception("Unexpected length for Unknown2 structure!")
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'data': "".join(_hex(x) for x in self.data),
         }
@@ -215,7 +215,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             with self.debugging(verbose):
                 self.__parse(verbose)
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'endian': self.endian,
             'features': self.features,
@@ -223,19 +223,19 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             'obfuscated': self.text_obfuscated,
             'legacy_lz': self.legacy_lz,
             'modern_lz': self.modern_lz,
-            'textures': [tex.as_dict() for tex in self.textures],
-            'texturemap': self.texturemap.as_dict(),
-            'textureregion': [reg.as_dict() for reg in self.texture_to_region],
-            'regionmap': self.regionmap.as_dict(),
-            'swfdata': [data.as_dict() for data in self.swfdata],
-            'swfmap': self.swfmap.as_dict(),
+            'textures': [tex.as_dict(*args, **kwargs) for tex in self.textures],
+            'texturemap': self.texturemap.as_dict(*args, **kwargs),
+            'textureregion': [reg.as_dict(*args, **kwargs) for reg in self.texture_to_region],
+            'regionmap': self.regionmap.as_dict(*args, **kwargs),
+            'swfdata': [data.as_dict(*args, **kwargs) for data in self.swfdata],
+            'swfmap': self.swfmap.as_dict(*args, **kwargs),
             'fontdata': str(self.fontdata) if self.fontdata is not None else None,
-            'shapes': [shape.as_dict() for shape in self.shapes],
-            'shapemap': self.shapemap.as_dict(),
-            'unknown1': [unk.as_dict() for unk in self.unknown1],
-            'unknown1map': self.unk_pman1.as_dict(),
-            'unknown2': [unk.as_dict() for unk in self.unknown2],
-            'unknown2map': self.unk_pman2.as_dict(),
+            'shapes': [shape.as_dict(*args, **kwargs) for shape in self.shapes],
+            'shapemap': self.shapemap.as_dict(*args, **kwargs),
+            'unknown1': [unk.as_dict(*args, **kwargs) for unk in self.unknown1],
+            'unknown1map': self.unk_pman1.as_dict(*args, **kwargs),
+            'unknown2': [unk.as_dict(*args, **kwargs) for unk in self.unknown2],
+            'unknown2map': self.unk_pman2.as_dict(*args, **kwargs),
         }
 
     @staticmethod

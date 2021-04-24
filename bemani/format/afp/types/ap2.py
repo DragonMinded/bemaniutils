@@ -1,4 +1,9 @@
-from typing import Dict, List, Set, Tuple
+import os
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Tuple, Optional
+
+if TYPE_CHECKING:
+    # This is a circular dependency otherwise.
+    from ..decompile import ByteCode
 
 
 class AP2Tag:
@@ -574,8 +579,261 @@ class AP2Action:
         self.offset = offset
         self.opcode = opcode
 
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'offset': self.offset,
+            'action': AP2Action.action_to_name(self.opcode),
+        }
+
     def __repr__(self) -> str:
         return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}"
+
+
+class DefineFunction2Action(AP2Action):
+    def __init__(self, offset: int, name: Optional[str], flags: int, body: "ByteCode") -> None:
+        super().__init__(offset, AP2Action.DEFINE_FUNCTION2)
+        self.name = name
+        self.flags = flags
+        self.body = body
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'name': self.name,
+            'flags': self.flags,
+            'body': self.body.as_dict(*args, **kwargs),
+        }
+
+    def __repr__(self) -> str:
+        bytecode = [f"  {line}" for line in str(self.body).split(os.linesep)]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}, Name: {self.name or '<anonymous function>'}, Flags: {hex(self.flags)}",
+            *bytecode,
+            f"END_{action_name}",
+        ])
+
+
+# A bunch of stuff for implementing PushAction
+class GenericObject:
+    def __init__(self, name: str) -> None:
+        self.__name = name
+
+    def __repr__(self) -> str:
+        return self.__name
+
+
+NULL = GenericObject('NULL')
+UNDEFINED = GenericObject('UNDEFINED')
+THIS = GenericObject('THIS')
+ROOT = GenericObject('ROOT')
+PARENT = GenericObject('PARENT')
+CLIP = GenericObject('CLIP')
+GLOBAL = GenericObject('GLOBAL')
+
+
+class Register:
+    def __init__(self, no: int) -> None:
+        self.no = no
+
+    def __repr__(self) -> str:
+        return f"Register {self.no}"
+
+
+class PushAction(AP2Action):
+    def __init__(self, offset: int, objects: List[Any]) -> None:
+        super().__init__(offset, AP2Action.PUSH)
+        self.objects = objects
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            # TODO: We need to do better than this when exporting objects,
+            # we should preserve their type.
+            'objects': [repr(o) for o in self.objects],
+        }
+
+    def __repr__(self) -> str:
+        objects = [f"  {repr(obj)}" for obj in self.objects]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}",
+            *objects,
+            f"END_{action_name}",
+        ])
+
+
+class InitRegisterAction(AP2Action):
+    def __init__(self, offset: int, registers: List[Register]) -> None:
+        super().__init__(offset, AP2Action.INIT_REGISTER)
+        self.registers = registers
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'registers': [r.no for r in self.registers],
+        }
+
+    def __repr__(self) -> str:
+        registers = [f"  {reg}" for reg in self.registers]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}",
+            *registers,
+            f"END_{action_name}",
+        ])
+
+
+class StoreRegisterAction(AP2Action):
+    def __init__(self, offset: int, registers: List[Register]) -> None:
+        super().__init__(offset, AP2Action.STORE_REGISTER)
+        self.registers = registers
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'registers': [r.no for r in self.registers],
+        }
+
+    def __repr__(self) -> str:
+        registers = [f"  {reg}" for reg in self.registers]
+        action_name = AP2Action.action_to_name(self.opcode)
+        return os.linesep.join([
+            f"{self.offset}: {action_name}",
+            *registers,
+            f"END_{action_name}",
+        ])
+
+
+class IfAction(AP2Action):
+    def __init__(self, offset: int, comparison: str, jump_if_true_offset: int) -> None:
+        super().__init__(offset, AP2Action.IF2)
+        self.comparison = comparison
+        self.jump_if_true_offset = jump_if_true_offset
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'jump_if_true_offset': self.jump_if_true_offset,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Comparison: {self.comparison}, Offset To Jump To If True: {self.jump_if_true_offset}"
+
+
+class JumpAction(AP2Action):
+    def __init__(self, offset: int, jump_offset: int) -> None:
+        super().__init__(offset, AP2Action.JUMP)
+        self.jump_offset = jump_offset
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'jump_offset': self.jump_offset,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Offset To Jump To: {self.jump_offset}"
+
+
+class WithAction(AP2Action):
+    def __init__(self, offset: int, unknown: bytes) -> None:
+        super().__init__(offset, AP2Action.WITH)
+        self.unknown = unknown
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            # TODO: We need to do better than this, so I guess it comes down to having
+            # a better idea how WITH works.
+            'unknown': str(self.unknown),
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Unknown: {self.unknown!r}"
+
+
+class GotoFrame2Action(AP2Action):
+    def __init__(self, offset: int, additional_frames: int, stop: bool) -> None:
+        super().__init__(offset, AP2Action.GOTO_FRAME2)
+        self.additional_frames = additional_frames
+        self.stop = stop
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'additiona_frames': self.additional_frames,
+            'stop': self.stop,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Additional Frames: {self.additional_frames}, Stop On Arrival: {'yes' if self.stop else 'no'}"
+
+
+class AddNumVariableAction(AP2Action):
+    def __init__(self, offset: int, amount_to_add: int) -> None:
+        super().__init__(offset, AP2Action.ADD_NUM_VARIABLE)
+        self.amount_to_add = amount_to_add
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'amount_to_add': self.amount_to_add,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Amount To Add: {self.amount_to_add}"
+
+
+class AddNumRegisterAction(AP2Action):
+    def __init__(self, offset: int, register: Register, amount_to_add: int) -> None:
+        super().__init__(offset, AP2Action.ADD_NUM_REGISTER)
+        self.register = register
+        self.amount_to_add = amount_to_add
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'register': self.register.no,
+            'amount_to_add': self.amount_to_add,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Register: {self.register}, Amount To Add: {self.amount_to_add}"
+
+
+class GetURL2Action(AP2Action):
+    def __init__(self, offset: int, action: int) -> None:
+        super().__init__(offset, AP2Action.GET_URL2)
+        self.action = action
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'action': self.action,
+        }
+
+    def __repr__(self) -> str:
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Action: {self.action}"
+
+
+class StartDragAction(AP2Action):
+    def __init__(self, offset: int, constrain: Optional[bool]) -> None:
+        super().__init__(offset, AP2Action.START_DRAG)
+        self.constrain = constrain
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'constrain': self.constrain,
+        }
+
+    def __repr__(self) -> str:
+        if self.constrain is None:
+            cstr = "check stack"
+        else:
+            cstr = "yes" if self.constrain else "no"
+        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Constrain Mouse: {cstr}"
 
 
 class AP2Object:

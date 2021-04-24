@@ -102,6 +102,12 @@ def main() -> int:
         help="The file to print",
     )
     print_parser.add_argument(
+        "-d",
+        "--decompile-bytecode",
+        action="store_true",
+        help="Attempt to decompile and print bytecode instead of printing the raw representation.",
+    )
+    print_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -118,6 +124,12 @@ def main() -> int:
         "bsi",
         metavar="BSIFILE",
         help="The BSI file to parse",
+    )
+    parseafp_parser.add_argument(
+        "-d",
+        "--decompile-bytecode",
+        action="store_true",
+        help="Attempt to decompile and print bytecode instead of printing the raw representation.",
     )
     parseafp_parser.add_argument(
         "-v",
@@ -427,7 +439,7 @@ def main() -> int:
             afpfile = TXP2File(bfp.read(), verbose=args.verbose)
 
         # Now, print it
-        print(json.dumps(afpfile.as_dict(), sort_keys=True, indent=4))
+        print(json.dumps(afpfile.as_dict(decompile_bytecode=args.decompile_bytecode), sort_keys=True, indent=4))
 
     if args.action == "parseafp":
         # First, load the AFP and BSI files
@@ -437,7 +449,7 @@ def main() -> int:
 
         # Now, print it
         swf.parse(verbose=args.verbose)
-        print(json.dumps(swf.as_dict(), sort_keys=True, indent=4))
+        print(json.dumps(swf.as_dict(decompile_bytecode=args.decompile_bytecode), sort_keys=True, indent=4))
 
     if args.action == "parsegeo":
         # First, load the AFP and BSI files

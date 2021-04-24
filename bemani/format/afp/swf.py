@@ -3,9 +3,34 @@ import struct
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
+from .decompile import ByteCode
 from .types import Matrix, Color, Point, Rectangle
-from .types import AP2Action, AP2Tag, AP2Property
-from .util import TrackedCoverage, VerboseOutput, _hex
+from .types import (
+    AP2Action,
+    AP2Tag,
+    AP2Property,
+    DefineFunction2Action,
+    InitRegisterAction,
+    StoreRegisterAction,
+    JumpAction,
+    WithAction,
+    PushAction,
+    AddNumVariableAction,
+    AddNumRegisterAction,
+    IfAction,
+    GetURL2Action,
+    StartDragAction,
+    GotoFrame2Action,
+    Register,
+    NULL,
+    UNDEFINED,
+    THIS,
+    ROOT,
+    PARENT,
+    CLIP,
+    GLOBAL,
+)
+from .util import TrackedCoverage, VerboseOutput
 
 
 class NamedTagReference:
@@ -13,7 +38,7 @@ class NamedTagReference:
         self.swf = swf_name
         self.tag = tag_name
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'swf': self.swf,
             'tag': self.tag,
@@ -23,201 +48,18 @@ class NamedTagReference:
         return f"{self.swf}.{self.tag}"
 
 
-class DefineFunction2Action(AP2Action):
-    def __init__(self, offset: int, name: Optional[str], flags: int, body: "ByteCode") -> None:
-        super().__init__(offset, AP2Action.DEFINE_FUNCTION2)
-        self.name = name
-        self.flags = flags
-        self.body = body
-
-    def __repr__(self) -> str:
-        bytecode = [f"  {line}" for line in str(self.body).split(os.linesep)]
-        action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}, Name: {self.name or '<anonymous function>'}, Flags: {hex(self.flags)}",
-            *bytecode,
-            f"END_{action_name}",
-        ])
-
-
-# A bunch of stuff for implementing PushAction
-class GenericObject:
-    def __init__(self, name: str) -> None:
-        self.__name = name
-
-    def __repr__(self) -> str:
-        return self.__name
-
-
-NULL = GenericObject('NULL')
-UNDEFINED = GenericObject('UNDEFINED')
-THIS = GenericObject('THIS')
-ROOT = GenericObject('ROOT')
-PARENT = GenericObject('PARENT')
-CLIP = GenericObject('CLIP')
-GLOBAL = GenericObject('GLOBAL')
-
-
-class Register:
-    def __init__(self, no: int) -> None:
-        self.no = no
-
-    def __repr__(self) -> str:
-        return f"Register {self.no}"
-
-
-class PushAction(AP2Action):
-    def __init__(self, offset: int, objects: List[Any]) -> None:
-        super().__init__(offset, AP2Action.PUSH)
-        self.objects = objects
-
-    def __repr__(self) -> str:
-        objects = [f"  {repr(obj)}" for obj in self.objects]
-        action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}",
-            *objects,
-            f"END_{action_name}",
-        ])
-
-
-class InitRegisterAction(AP2Action):
-    def __init__(self, offset: int, registers: List[Register]) -> None:
-        super().__init__(offset, AP2Action.INIT_REGISTER)
-        self.registers = registers
-
-    def __repr__(self) -> str:
-        registers = [f"  {reg}" for reg in self.registers]
-        action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}",
-            *registers,
-            f"END_{action_name}",
-        ])
-
-
-class StoreRegisterAction(AP2Action):
-    def __init__(self, offset: int, registers: List[Register]) -> None:
-        super().__init__(offset, AP2Action.STORE_REGISTER)
-        self.registers = registers
-
-    def __repr__(self) -> str:
-        registers = [f"  {reg}" for reg in self.registers]
-        action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}",
-            *registers,
-            f"END_{action_name}",
-        ])
-
-
-class IfAction(AP2Action):
-    def __init__(self, offset: int, jump_if_true_offset: int) -> None:
-        super().__init__(offset, AP2Action.IF)
-        self.jump_if_true_offset = jump_if_true_offset
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Offset To Jump To If True: {self.jump_if_true_offset}"
-
-
-class If2Action(AP2Action):
-    def __init__(self, offset: int, comparison: str, jump_if_true_offset: int) -> None:
-        super().__init__(offset, AP2Action.IF2)
-        self.comparison = comparison
-        self.jump_if_true_offset = jump_if_true_offset
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Comparison: {self.comparison}, Offset To Jump To If True: {self.jump_if_true_offset}"
-
-
-class JumpAction(AP2Action):
-    def __init__(self, offset: int, jump_offset: int) -> None:
-        super().__init__(offset, AP2Action.JUMP)
-        self.jump_offset = jump_offset
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Offset To Jump To: {self.jump_offset}"
-
-
-class WithAction(AP2Action):
-    def __init__(self, offset: int, unknown: bytes) -> None:
-        super().__init__(offset, AP2Action.WITH)
-        self.unknown = unknown
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Unknown: {self.unknown!r}"
-
-
-class GotoFrame2Action(AP2Action):
-    def __init__(self, offset: int, additional_frames: int, stop: bool) -> None:
-        super().__init__(offset, AP2Action.GOTO_FRAME2)
-        self.additional_frames = additional_frames
-        self.stop = stop
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Additional Frames: {self.additional_frames}, Stop On Arrival: {'yes': if self.stop else 'no'}"
-
-
-class AddNumVariableAction(AP2Action):
-    def __init__(self, offset: int, amount_to_add: int) -> None:
-        super().__init__(offset, AP2Action.ADD_NUM_VARIABLE)
-        self.amount_to_add = amount_to_add
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Amount To Add: {self.amount_to_add}"
-
-
-class AddNumRegisterAction(AP2Action):
-    def __init__(self, offset: int, register: Register, amount_to_add: int) -> None:
-        super().__init__(offset, AP2Action.ADD_NUM_REGISTER)
-        self.register = register
-        self.amount_to_add = amount_to_add
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Register: {self.register}, Amount To Add: {self.amount_to_add}"
-
-
-class GetURL2Action(AP2Action):
-    def __init__(self, offset: int, action: int) -> None:
-        super().__init__(offset, AP2Action.GET_URL2)
-        self.action = action
-
-    def __repr__(self) -> str:
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Action: {self.action}"
-
-
-class StartDragAction(AP2Action):
-    def __init__(self, offset: int, constrain: Optional[bool]) -> None:
-        super().__init__(offset, AP2Action.START_DRAG)
-        self.constrain = constrain
-
-    def __repr__(self) -> str:
-        if self.constrain is None:
-            cstr = "check stack"
-        else:
-            cstr = "yes" if self.constrain else "no"
-        return f"{self.offset}: {AP2Action.action_to_name(self.opcode)}, Constrain Mouse: {cstr}"
-
-
-class ByteCode:
-    # A list of bytecodes to execute.
-    def __init__(self, actions: List[AP2Action]) -> None:
-        self.actions = actions
-
-    def __repr__(self) -> str:
-        entries: List[str] = []
-        for action in self.actions:
-            entries.extend([f"  {s}" for s in str(action).split(os.linesep)])
-
-        return f"ByteCode({os.linesep}{os.linesep.join(entries)}{os.linesep})"
-
-
 class TagPointer:
     # A pointer to a tag in this SWF by Tag ID and containing an optional initialization bytecode
     # to run for this tag when it is placed/executed.
     def __init__(self, id: Optional[int], init_bytecode: Optional[ByteCode] = None) -> None:
         self.id = id
         self.init_bytecode = init_bytecode
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'id': self.id,
+            'init_bytecode': self.init_bytecode.as_dict(*args, **kwargs) if self.init_bytecode else None,
+        }
 
 
 class Frame:
@@ -229,10 +71,17 @@ class Frame:
         self.num_tags = num_tags
 
         # A list of any imported tags that are to be placed this frame.
-        self.imported_tags = imported_tags
+        self.imported_tags = imported_tags or []
 
         # The current tag we're processing, if any.
         self.current_tag = 0
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'start_tag_offset': self.start_tag_offset,
+            'num_tags': self.num_tags,
+            'imported_tags': [i.as_dict(*args, **kwargs) for i in self.imported_tags],
+        }
 
 
 class Tag:
@@ -240,8 +89,11 @@ class Tag:
     def __init__(self, id: Optional[int]) -> None:
         self.id = id
 
-    def children(self) -> List["Tag"]:
-        return []
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'id': self.id,
+            'type': self.__class__.__name__,
+        }
 
 
 class AP2ShapeTag(Tag):
@@ -250,6 +102,12 @@ class AP2ShapeTag(Tag):
 
         # The reference is the name of a shape (geo structure) that defines this primitive or sprite.
         self.reference = reference
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'reference': self.reference,
+        }
 
 
 class AP2DefineFontTag(Tag):
@@ -268,6 +126,14 @@ class AP2DefineFontTag(Tag):
         # in the texture map.
         self.heights = heights
 
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'fontname': self.fontname,
+            'xml_prefix': self.xml_prefix,
+            'heights': self.heights,
+        }
+
 
 class AP2DoActionTag(Tag):
     def __init__(self, bytecode: ByteCode) -> None:
@@ -277,6 +143,12 @@ class AP2DoActionTag(Tag):
         # The bytecode is the actual execution that we expect to perform once
         # this tag is placed/executed.
         self.bytecode = bytecode
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'bytecode': self.bytecode.as_dict(*args, **kwargs),
+        }
 
 
 class AP2PlaceObjectTag(Tag):
@@ -330,6 +202,22 @@ class AP2PlaceObjectTag(Tag):
         # fires.
         self.triggers = triggers
 
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'object_id': self.object_id,
+            'depth': self.depth,
+            'source_tag_id': self.source_tag_id,
+            'name': self.name,
+            'blend': self.blend,
+            'update': self.update,
+            'transform': self.transform.as_dict(*args, **kwargs) if self.transform is not None else None,
+            'rotation_offset': self.rotation_offset.as_dict(*args, **kwargs) if self.rotation_offset is not None else None,
+            'mult_color': self.mult_color.as_dict(*args, **kwargs) if self.mult_color is not None else None,
+            'add_color': self.add_color.as_dict(*args, **kwargs) if self.add_color is not None else None,
+            'triggers': {i: [b.as_dict(*args, **kwargs) for b in t] for (i, t) in self.triggers.items()}
+        }
+
     def __repr__(self) -> str:
         return f"AP2PlaceObjectTag(object_id={self.object_id}, depth={self.depth})"
 
@@ -345,6 +233,13 @@ class AP2RemoveObjectTag(Tag):
         # The depth (level) that we should remove objects from.
         self.depth = depth
 
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'object_id': self.object_id,
+            'depth': self.depth,
+        }
+
 
 class AP2DefineSpriteTag(Tag):
     def __init__(self, id: int, tags: List[Tag], frames: List[Frame]) -> None:
@@ -357,8 +252,12 @@ class AP2DefineSpriteTag(Tag):
         # The list of frames this SWF occupies.
         self.frames = frames
 
-    def children(self) -> List["Tag"]:
-        return self.tags
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'tags': [t.as_dict(*args, **kwargs) for t in self.tags],
+            'frames': [f.as_dict(*args, **kwargs) for f in self.frames],
+        }
 
 
 class AP2DefineEditTextTag(Tag):
@@ -380,6 +279,16 @@ class AP2DefineEditTextTag(Tag):
 
         # The default text that should be present in the control when it is initially placed/executed.
         self.default_text = default_text
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'font_tag_id': self.font_tag_id,
+            'font_height': self.font_height,
+            'rect': self.rect.as_dict(*args, **kwargs),
+            'color': self.color.as_dict(*args, **kwargs),
+            'default_text': self.default_text,
+        }
 
 
 class SWF(TrackedCoverage, VerboseOutput):
@@ -448,11 +357,19 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             print(f"Uncovered string: {hex(offset)} - {string}", file=sys.stderr)
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'name': self.name,
-            'data': "".join(_hex(x) for x in self.data),
-            'descramble_info': "".join(_hex(x) for x in self.descramble_info),
+            'exported_name': self.exported_name,
+            'data_version': self.data_version,
+            'container_version': self.container_version,
+            'fps': self.fps,
+            'color': self.color.as_dict(*args, **kwargs) if self.color is not None else None,
+            'location': self.location.as_dict(*args, **kwargs),
+            'exported_tags': self.exported_tags,
+            'imported_tags': {i: self.imported_tags[i].as_dict(*args, **kwargs) for i in self.imported_tags},
+            'tags': [t.as_dict(*args, **kwargs) for t in self.tags],
+            'frames': [f.as_dict(*args, **kwargs) for f in self.frames],
         }
 
     def __parse_bytecode(self, datachunk: bytes, string_offsets: List[int] = [], prefix: str = "") -> ByteCode:
@@ -851,7 +768,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 offset_ptr += 3
 
                 self.vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}")
-                actions.append(IfAction(lineno, jump_if_true_offset))
+                actions.append(IfAction(lineno, "IS TRUE", jump_if_true_offset))
             elif opcode == AP2Action.IF2:
                 if2_type, jump_if_true_offset = struct.unpack(">Bh", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
                 jump_if_true_offset += (lineno + 4)
@@ -864,7 +781,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     3: ">",
                     4: "<=",
                     5: ">=",
-                    6: "!",
+                    6: "IS FALSE",
                     7: "BITAND",
                     8: "BITNOTAND",
                     9: "STRICT ==",
@@ -874,7 +791,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 }[if2_type]
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} {if2_typestr}, Offset If True: {jump_if_true_offset}")
-                actions.append(If2Action(lineno, if2_typestr, jump_if_true_offset))
+                actions.append(IfAction(lineno, if2_typestr, jump_if_true_offset))
             elif opcode == AP2Action.JUMP:
                 jump_offset = struct.unpack(">h", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
                 jump_offset += (lineno + 3)
@@ -937,7 +854,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             else:
                 raise Exception(f"Can't advance, no handler for opcode {opcode} ({hex(opcode)})!")
 
-        return ByteCode(actions)
+        return ByteCode(actions, offset_ptr)
 
     def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "") -> Tag:
         if tagid == AP2Tag.AP2_SHAPE:

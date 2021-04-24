@@ -8,7 +8,7 @@ class Color:
         self.b = b
         self.a = a
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'r': self.r,
             'g': self.g,
@@ -37,7 +37,7 @@ class Point:
     def identity() -> "Point":
         return Point(0.0, 0.0)
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'x': self.x,
             'y': self.y,
@@ -67,7 +67,7 @@ class Rectangle:
         self.bottom = bottom
         self.right = right
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'left': self.left,
             'top': self.top,
@@ -103,6 +103,16 @@ class Matrix:
     @staticmethod
     def identity() -> "Matrix":
         return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'a': self.a,
+            'b': self.b,
+            'c': self.c,
+            'd': self.d,
+            'tx': self.tx,
+            'ty': self.ty,
+        }
 
     def multiply_point(self, point: Point) -> Point:
         return Point(

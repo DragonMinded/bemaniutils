@@ -34,13 +34,13 @@ class Shape:
         # Whether this is parsed.
         self.parsed = False
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'name': self.name,
-            'vertex_points': [p.as_dict() for p in self.vertex_points],
-            'tex_points': [p.as_dict() for p in self.tex_points],
-            'tex_colors': [c.as_dict() for c in self.tex_colors],
-            'draw_params': [d.as_dict() for d in self.draw_params],
+            'vertex_points': [p.as_dict(*args, **kwargs) for p in self.vertex_points],
+            'tex_points': [p.as_dict(*args, **kwargs) for p in self.tex_points],
+            'tex_colors': [c.as_dict(*args, **kwargs) for c in self.tex_colors],
+            'draw_params': [d.as_dict(*args, **kwargs) for d in self.draw_params],
         }
 
     def __repr__(self) -> str:
@@ -205,12 +205,12 @@ class DrawParams:
         self.vertexes = vertexes
         self.blend = blend
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'flags': self.flags,
             'region': self.region,
             'vertexes': self.vertexes,
-            'blend': self.blend.as_dict() if self.blend else None,
+            'blend': self.blend.as_dict(*args, **kwargs) if self.blend else None,
         }
 
     def __repr__(self) -> str:
