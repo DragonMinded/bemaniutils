@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Sequence, Tuple, Set, Union, Optional, cast
+from typing import Any, Dict, List, Sequence, Tuple, Set, Union, Optional, Callable, cast
 
 from .types import (
     AP2Action,
@@ -364,11 +364,11 @@ class StoreRegisterStatement(Statement):
 
     def __repr__(self) -> str:
         val = value_ref(self.valueref)
-        return f"{self.register} = {val}"
+        return f"{self.register.render()} = {val}"
 
     def render(self, prefix: str) -> List[str]:
         val = value_ref(self.valueref)
-        return [f"{prefix}{self.register} = {val};"]
+        return [f"{prefix}{self.register.render()} = {val};"]
 
 
 class SetVariableStatement(Statement):
@@ -487,8 +487,8 @@ class MagnitudeEqualIf(IfExpr):
 class IfStatement(Statement):
     def __init__(self, cond: IfExpr, true_statements: Sequence[Statement], false_statements: Sequence[Statement]) -> None:
         self.cond = cond
-        self.true_statements = true_statements
-        self.false_statements = false_statements
+        self.true_statements = list(true_statements)
+        self.false_statements = list(false_statements)
 
     def __repr__(self) -> str:
         true_entries: List[str] = []
@@ -545,7 +545,7 @@ class IfStatement(Statement):
 
 class DoWhileStatement(Statement):
     def __init__(self, body: Sequence[Statement]) -> None:
-        self.body = body
+        self.body = list(body)
 
     def __repr__(self) -> str:
         entries: List[str] = []
@@ -1902,6 +1902,65 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return statements
 
+    def __walk(self, statements: Sequence[Statement], do: Callable[[Statement], Optional[Statement]]) -> List[Statement]:
+        new_statements: List[Statement] = []
+
+        for statement in statements:
+            if isinstance(statement, DoWhileStatement):
+                new_statement = do(statement)
+                if new_statement and isinstance(new_statement, DoWhileStatement):
+                    new_statement.body = self.__walk(new_statement.body, do)
+                    new_statements.append(new_statement)
+                elif new_statement is not None:
+                    # Cannot currently handle changing a statement with children to a new
+                    # type of statement.
+                    raise Exception("Logic error!")
+            elif isinstance(statement, IfStatement):
+                new_statement = do(statement)
+                if new_statement and isinstance(new_statement, IfStatement):
+                    statement.true_statements = self.__walk(statement.true_statements, do)
+                    statement.false_statements = self.__walk(statement.false_statements, do)
+                    new_statements.append(new_statement)
+                elif new_statement is not None:
+                    # Cannot currently handle changing a statement with children to a new
+                    # type of statement.
+                    raise Exception("Logic error!")
+            else:
+                new_statement = do(statement)
+                if new_statement:
+                    new_statements.append(new_statement)
+
+        return new_statements
+
+    def __eliminate_unused_labels(self, statements: Sequence[Statement]) -> List[Statement]:
+        # Go through and find labels that nothing is pointing at, and remove them.
+        locations: Set[int] = set()
+
+        def find_goto(statement: Statement) -> Statement:
+            if isinstance(statement, GotoStatement):
+                locations.add(statement.location)
+            return statement
+
+        self.__walk(statements, find_goto)
+
+        def remove_label(statement: Statement) -> Optional[Statement]:
+            if isinstance(statement, DefineLabelStatement):
+                if statement.location not in locations:
+                    return None
+            return statement
+
+        return self.__walk(statements, remove_label)
+
+    def __eliminate_useless_continues(self, statements: Sequence[Statement]) -> List[Statement]:
+        # Go through and find continue statements on the last line of a do-while.
+        def remove_continue(statement: Statement) -> Optional[Statement]:
+            if isinstance(statement, DoWhileStatement):
+                if statement.body and isinstance(statement.body[-1], ContinueStatement):
+                    statement.body.pop()
+            return statement
+
+        return self.__walk(statements, remove_continue)
+
     def __pretty_print(self, start_id: int, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
 
@@ -1941,6 +2000,10 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Now, its safe to start actually evaluating the stack.
         statements = self.__eval_chunks(start_id, chunks_loops_and_ifs, offset_map)
+
+        # Now, let's do some clean-up passes.
+        statements = self.__eliminate_unused_labels(statements)
+        statements = self.__eliminate_useless_continues(statements)
 
         # Finally, let's print the code!
         code = self.__pretty_print(start_id, statements, prefix="    " if self.main else "")
