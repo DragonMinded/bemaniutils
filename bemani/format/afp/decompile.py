@@ -30,7 +30,11 @@ class ByteCode:
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         if kwargs.get('decompile_bytecode', False):
             decompiler = ByteCodeDecompiler(self)
-            code = decompiler.decompile(verbose=True)
+            decompiler.decompile(verbose=True)
+            code = decompiler.as_string(prefix="    ", verbose=True)
+            opar = '{'
+            cpar = '}'
+            code = f"main(){os.linesep}{opar}{os.linesep}{code}{os.linesep}{cpar}"
 
             return {
                 'code': code,
@@ -352,8 +356,7 @@ class MethodCall(Expression):
 
 class NewFunction(Expression):
     # Create a new function.
-    def __init__(self, funcname: Optional[str], flags: int, body: ByteCode) -> None:
-        self.funcname = funcname
+    def __init__(self, flags: int, body: ByteCode) -> None:
         self.flags = flags
         self.body = body
 
@@ -361,7 +364,15 @@ class NewFunction(Expression):
         return self.render("")
 
     def render(self, parent_prefix: str, nested: bool = False) -> str:
-        val = f"new function({repr(self.funcname) or '<anonymous function>'}, {hex(self.flags)}, 'TODO: ByteCode')"
+        # This feels somewhat like a hack, but the bytecode inside the function definition
+        # *is* independent of the bytecode in this function, except for the shared string table.
+        decompiler = ByteCodeDecompiler(self.body)
+        decompiler.decompile(verbose=True)
+        code = decompiler.as_string(prefix=parent_prefix + "    ")
+
+        opar = '{'
+        cpar = '}'
+        val = f"new Function({hex(self.flags)}, {opar}{os.linesep}{code}{os.linesep}{parent_prefix}{cpar})"
         if nested:
             return f"({val})"
         else:
@@ -875,11 +886,17 @@ class BitVector:
 
 
 class ByteCodeDecompiler(VerboseOutput):
-    def __init__(self, bytecode: ByteCode, main: bool = True) -> None:
+    def __init__(self, bytecode: ByteCode) -> None:
         super().__init__()
 
         self.bytecode = bytecode
-        self.main = main
+        self.__statements: Optional[List[Statement]] = None
+
+    @property
+    def statements(self) -> List[Statement]:
+        if self.__statements is None:
+            raise Exception("Call decompile() first before retrieving statements!")
+        return self.__statements
 
     def __graph_control_flow(self) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
         # Start by assuming that the whole bytecode never directs flow. This is, confusingly,
@@ -1724,10 +1741,14 @@ class ByteCodeDecompiler(VerboseOutput):
                 continue
 
             if isinstance(action, DefineFunction2Action):
-                # TODO: We need to recursively decompile this function and add its contents here.
-                stack.append(NewFunction(action.name, action.flags, action.body))
+                if action.name:
+                    # This defines a global function, so it won't go on the stack.
+                    chunk.actions[i] = SetVariableStatement(action.name, NewFunction(action.flags, action.body))
+                else:
+                    # This defines a function object, most likely for attaching to a member of an object.
+                    stack.append(NewFunction(action.flags, action.body))
+                    chunk.actions[i] = NopStatement()
 
-                chunk.actions[i] = NopStatement()
                 continue
 
             if isinstance(action, GotoFrame2Action):
@@ -2358,7 +2379,7 @@ class ByteCodeDecompiler(VerboseOutput):
             return statements[:-1]
         return statements
 
-    def __pretty_print(self, start_id: int, statements: Sequence[Statement], prefix: str = "") -> str:
+    def __pretty_print(self, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
 
         for statement in statements:
@@ -2366,7 +2387,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return os.linesep.join(output)
 
-    def __decompile(self) -> str:
+    def __decompile(self) -> None:
         # First, we need to construct a control flow graph.
         self.vprint("Generating control flow graph...")
         chunks, offset_map = self.__graph_control_flow()
@@ -2408,15 +2429,15 @@ class ByteCodeDecompiler(VerboseOutput):
             if not changed1 and not changed2:
                 break
 
-        # Finally, let's print the code!
-        code = self.__pretty_print(start_id, statements, prefix="    " if self.main else "")
+        # Finally, let's save the code!
+        self.__statements = statements
 
-        if self.main:
-            code = f"void main(){os.linesep}{{{os.linesep}{code}{os.linesep}}}"
-        self.vprint(f"Final code:{os.linesep}{code}")
-
-        return code
-
-    def decompile(self, verbose: bool = False) -> str:
+    def as_string(self, prefix: str = "", verbose: bool = False) -> str:
         with self.debugging(verbose):
-            return self.__decompile()
+            code = self.__pretty_print(self.statements, prefix=prefix)
+            self.vprint(f"Final code:{os.linesep}{code}")
+            return code
+
+    def decompile(self, verbose: bool = False) -> None:
+        with self.debugging(verbose):
+            self.__decompile()
