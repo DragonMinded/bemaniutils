@@ -1305,23 +1305,23 @@ class ByteCodeDecompiler(VerboseOutput):
         header_chunks = [c for c in loop.chunks if c.id == loop.id]
         if len(header_chunks) != 1:
             # Should never happen, only one should match ID.
-            raise Exception("Logic error!")
+            raise Exception("Logic error, didn't find the header chunk based on Loop ID!")
         header_chunk = header_chunks[0]
 
         # Identify external jumps from the header.
         break_points = [i for i in header_chunk.next_chunks if i not in internal_jump_points]
         if len(break_points) > 1:
             # We should not have two exits here, if so this isn't a loop!
-            raise Exception("Logic error!")
-
-        # Identify the break and continue jump points.
+            raise Exception("Logic error, loop has more than one next chunk to jump to on break!")
         if not break_points:
             # This might be possible, but I don't know how to deal with it.
-            raise Exception("Logic error!")
+            raise Exception("Logic error, loop has no chunk to jump to on break!")
+
+        # Identify the break and continue jump points.
         break_point = break_points[0]
         continue_point = header_chunk.id
 
-        self.vprint(f"Loop breaks to {break_point} and continues to {continue_point}")
+        self.vprint(f"Loop ID {loop.id} breaks to {break_point} and continues to {continue_point}")
 
         # Now, go through each chunk, identify whether it has an if, and fix up the
         # if statements.
@@ -1329,7 +1329,7 @@ class ByteCodeDecompiler(VerboseOutput):
             if not chunk.next_chunks:
                 # All chunks need a next chunk of some type, the only one that doesn't
                 # is the end chunk which should never be part of a loop.
-                raise Exception("Logic error!")
+                raise Exception(f"Logic error, chunk ID {chunk.id} has no successor and we haven't broken the graph yet!")
             if not isinstance(chunk, ByteCodeChunk):
                 # We don't need to fix up loops, we already did this in a previous
                 # fixup.
@@ -1341,7 +1341,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # This is either an unconditional break/continue or an
                     # internal jump.
                     if len(chunk.next_chunks) != 1:
-                        raise Exception("Logic error!")
+                        raise Exception(f"Logic error, chunk ID {chunk.id} has jump control action but {len(chunk.next_chunks)} next chunks!")
                     next_chunk = chunk.next_chunks[0]
 
                     if next_chunk == break_point:
@@ -1367,8 +1367,12 @@ class ByteCodeDecompiler(VerboseOutput):
                     true_jump_point = offset_map[cast(IfAction, last_action).jump_if_true_offset]
                     false_jump_points = [n for n in chunk.next_chunks if n != true_jump_point]
                     if len(false_jump_points) != 1:
-                        raise Exception("Logic error!")
+                        raise Exception("Logic error, didn't get exactly one false case jump point!")
                     false_jump_point = false_jump_points[0]
+                    if true_jump_point == false_jump_point:
+                        # This might be a stubbed-out if statement or debug code. Maybe the right
+                        # thing to do here is to convert it to a goto? Let's see if we ever hit it.
+                        raise Exception("Logic error, true and false jump point are identical!")
 
                     # Calculate true and false jump points, see if they are break/continue/goto.
                     true_action: Optional[Statement] = None
@@ -1407,6 +1411,11 @@ class ByteCodeDecompiler(VerboseOutput):
                             false_action = GotoStatement(false_jump_point)
                         chunk.next_chunks = [n for n in chunk.next_chunks if n != false_jump_point]
 
+                    if true_action is None and false_action is None:
+                        # This is an internal-only if statement, we don't care. We will handle it in
+                        # a later if logic step.
+                        continue
+
                     if true_action is None and false_action is not None:
                         true_action = false_action
                         false_action = None
@@ -1414,20 +1423,33 @@ class ByteCodeDecompiler(VerboseOutput):
                     else:
                         negate = False
 
-                    if true_action is None and false_action is None:
-                        # This is an internal-only if statement, we don't care.
-                        continue
-
                     chunk.actions[-1] = IntermediateIf(
                         cast(IfAction, last_action),
                         [true_action],
                         [false_action] if false_action else [],
                         negate=negate,
                     )
-                    continue
+
+        # At this point, all chunks in our list should point only to other chunks in our list.
+        for chunk in loop.chunks:
+            for n in chunk.next_chunks:
+                if n not in internal_jump_points:
+                    raise Exception(f"Found unconverted next chunk {n} in chunk ID {chunk.id}!")
+            if isinstance(chunk, ByteCodeChunk):
+                last_action = chunk.actions[-1]
+                if isinstance(last_action, AP2Action):
+                    if last_action.opcode == AP2Action.IF and len(chunk.next_chunks) != 2:
+                        raise Exception(f"Somehow messed up the next pointers on if statement in chunk ID {chunk.id}!")
+                    if last_action.opcode in [AP2Action.JUMP, AP2Action.RETURN, AP2Action.THROW] and len(chunk.next_chunks) != 1:
+                        raise Exception(f"Somehow messed up the next pointers on control flow statement in chunk ID {chunk.id}!")
+                else:
+                    if len(chunk.next_chunks) > 1:
+                        raise Exception(f"Somehow messed up the next pointers on converted statement in chunk ID {chunk.id}!")
 
         # Now, we have converted all external jumps to either break or goto, so we don't
-        # need to keep track of the next chunk aside from the break location.
+        # need to keep track of the next chunk aside from the break location. We know this
+        # is the correct location to break form in normal circumstances because we verified
+        # it above.
         loop.next_chunks = [break_point]
 
         return loop
@@ -1444,9 +1466,6 @@ class ByteCodeDecompiler(VerboseOutput):
         # Go through and gather up all loops in the chunks.
         loops: Dict[int, Set[int]] = {}
         for chunk in chunks:
-            if chunk.id == start_id:
-                continue
-
             for nextid in chunk.next_chunks:
                 # If this next chunk dominates us, then that means we found a loop.
                 if nextid in dominators[chunk.id]:
@@ -1473,7 +1492,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                     # We found a loop!
                     if header in loops:
-                        raise Exception("Logic error!")
+                        raise Exception(f"Logic error, loop with header {header} was already found!")
                     loops[header] = blocks
 
         # Now, we need to reduce our list of chunks down to non-loops only. We do this
@@ -1481,6 +1500,7 @@ class ByteCodeDecompiler(VerboseOutput):
         # inner loops, and converting that. Once we do that, we remove the chunks from
         # our list, add it to that new loop, and convert all other loops that might
         # reference it to point at the loop instead.
+        deleted_chunks: Set[int] = set()
         while loops:
             delete_header: Optional[int] = None
             delete_blocks: Set[int] = set()
@@ -1491,6 +1511,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         # This particular block of code is the header of another loop,
                         # so we shouldn't convert this loop until we handle the inner
                         # loop.
+                        self.vprint(f"Skipping loop with header {header} for now because it contains another unconverted loop with header {block}.")
                         break
                 else:
                     # This loop does not contain any loops of its own. It is safe to
@@ -1503,6 +1524,8 @@ class ByteCodeDecompiler(VerboseOutput):
                     # the graph at any spot where we successfully converted a jump
                     # to a break/continue/goto.
                     new_loop = self.__analyze_loop_jumps(new_loop, offset_map)
+                    if len(new_loop.next_chunks) != 1:
+                        raise Exception(f"Newly created loop ID {new_loop.id} has more than one exit point!")
                     chunks_by_id[header] = new_loop
 
                     # These blocks are now part of the loop, so we need to remove them
@@ -1513,7 +1536,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
             if delete_header is None:
                 # We must find at LEAST one loop that has no inner loops of its own.
-                raise Exception("Logic error!")
+                raise Exception("Logic error, we found no fixable loops, yet have at least one loop to fix up!")
 
             # Remove this loop from the processing list
             del loops[delete_header]
@@ -1526,13 +1549,21 @@ class ByteCodeDecompiler(VerboseOutput):
                 del chunks_by_id[block]
 
             # Verify that we don't have any existing chunks that point at the non-header portion of the loop.
-            for _, chunk_or_loop in chunks_by_id.items():
+            for chunk_id, chunk_or_loop in chunks_by_id.items():
                 for nextid in chunk_or_loop.next_chunks:
                     if nextid in delete_blocks:
                         # Woah, we point at a chunk inside this loop that isn't the header!
-                        raise Exception("Logic error!")
+                        raise Exception(f"Logic error, chunkd ID {chunk_id} points into loop ID {delete_header} body!")
 
-        return [chunks_by_id[i] for i in chunks_by_id]
+            # Update our master list of chunks we deleted.
+            deleted_chunks.update(delete_blocks)
+
+        # Finally, construct our new list of chunks and verify that we didn't accidentally keep any that we shouldn't have.
+        updated_chunks = [chunks_by_id[i] for i in chunks_by_id]
+        for new_chunk in updated_chunks:
+            if new_chunk.id in deleted_chunks:
+                raise Exception(f"Chunk ID {new_chunk.id} in list of chunks we converted but we expected it to be deleted!")
+        return updated_chunks
 
     def __break_graph(self, chunks: Sequence[Union[ByteCodeChunk, Loop]], offset_map: Dict[int, int]) -> None:
         for chunk in chunks:
