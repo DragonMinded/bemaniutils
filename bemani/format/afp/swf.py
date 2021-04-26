@@ -1412,7 +1412,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             raise Exception(f"Unrecognzied magic {magic}!")
         if length != len(data):
             raise Exception(f"Unexpected length in AFP header, {length} != {len(data)}!")
-        if ap2_data_version not in [8, 9, 10]:
+        if ap2_data_version not in [7, 8, 9, 10]:
             raise Exception(f"Unsupported AP2 container version {ap2_data_version}!")
         if version != 0x200:
             raise Exception(f"Unsupported AP2 version {version}!")
