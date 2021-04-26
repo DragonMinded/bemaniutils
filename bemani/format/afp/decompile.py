@@ -110,27 +110,31 @@ class Statement(ConvertedAction):
         raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
-def object_ref(obj: Any) -> str:
-    if isinstance(obj, (GenericObject, Variable, Member, MethodCall, FunctionCall)):
-        return obj.render(nested=True)
+def object_ref(obj: Any, parent_prefix: str) -> str:
+    if isinstance(obj, (GenericObject, Variable, Member, MethodCall, FunctionCall, Register)):
+        return obj.render(parent_prefix, nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")
 
 
-def value_ref(param: Any, parens: bool = False) -> str:
-    if isinstance(param, Expression):
-        return param.render(nested=parens)
+def value_ref(param: Any, parent_prefix: str, parens: bool = False) -> str:
+    if isinstance(param, StringConstant):
+        # Treat this as a string constant.
+        return repr(param.render(parent_prefix))
+    elif isinstance(param, Expression):
+        return param.render(parent_prefix, nested=parens)
     elif isinstance(param, (str, int, float)):
         return repr(param)
     else:
         raise Exception(f"Unsupported valueref {param} ({type(param)})")
 
 
-def name_ref(param: Any) -> str:
+def name_ref(param: Any, parent_prefix: str) -> str:
+    # Reference a name, so strings should not be quoted.
     if isinstance(param, str):
         return param
     elif isinstance(param, StringConstant):
-        return param.render()
+        return param.render(parent_prefix)
     else:
         raise Exception(f"Unsupported nameref {param} ({type(param)})")
 
@@ -202,10 +206,10 @@ class ExpressionStatement(Statement):
         self.expr = expr
 
     def __repr__(self) -> str:
-        return f"{self.expr.render()}"
+        return f"{self.expr.render('')}"
 
     def render(self, prefix: str) -> List[str]:
-        return [f"{prefix}{self.expr.render()};"]
+        return [f"{prefix}{self.expr.render(prefix)};"]
 
 
 class StopMovieStatement(Statement):
@@ -232,11 +236,11 @@ class DebugTraceStatement(Statement):
         self.trace = trace
 
     def __repr__(self) -> str:
-        trace = value_ref(self.trace)
+        trace = value_ref(self.trace, "")
         return f"builtin_DebugTrace({trace})"
 
     def render(self, prefix: str) -> List[str]:
-        trace = value_ref(self.trace)
+        trace = value_ref(self.trace, prefix)
         return [f"{prefix}builtin_DebugTrace({trace});"]
 
 
@@ -246,11 +250,11 @@ class GotoFrameStatement(Statement):
         self.frame = frame
 
     def __repr__(self) -> str:
-        frame = value_ref(self.frame)
+        frame = value_ref(self.frame, "")
         return f"builtin_GotoFrame({frame})"
 
     def render(self, prefix: str) -> List[str]:
-        frame = value_ref(self.frame)
+        frame = value_ref(self.frame, prefix)
         return [f"{prefix}builtin_GotoFrame({frame});"]
 
 
@@ -262,15 +266,15 @@ class CloneSpriteStatement(Statement):
         self.depth = depth
 
     def __repr__(self) -> str:
-        obj = object_ref(self.obj_to_clone)
-        name = value_ref(self.name)
-        depth = value_ref(self.depth)
+        obj = object_ref(self.obj_to_clone, "")
+        name = value_ref(self.name, "")
+        depth = value_ref(self.depth, "")
         return f"builtin_CloneSprite({obj}, {name}, {depth})"
 
     def render(self, prefix: str) -> List[str]:
-        obj = object_ref(self.obj_to_clone)
-        name = value_ref(self.name)
-        depth = value_ref(self.depth)
+        obj = object_ref(self.obj_to_clone, prefix)
+        name = value_ref(self.name, prefix)
+        depth = value_ref(self.depth, prefix)
         return [f"{prefix}builtin_CloneSprite({obj}, {name}, {depth});"]
 
 
@@ -281,13 +285,13 @@ class ArithmeticExpression(Expression):
         self.right = right
 
     def __repr__(self) -> str:
-        left = value_ref(self.left, parens=True)
-        right = value_ref(self.right, parens=True)
+        left = value_ref(self.left, "", parens=True)
+        right = value_ref(self.right, "", parens=True)
         return f"{left} {self.op} {right}"
 
-    def render(self, nested: bool = False) -> str:
-        left = value_ref(self.left, parens=True)
-        right = value_ref(self.right, parens=True)
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        left = value_ref(self.left, parent_prefix, parens=True)
+        right = value_ref(self.right, parent_prefix, parens=True)
 
         if nested and self.op == '-':
             return f"({left} {self.op} {right})"
@@ -301,10 +305,10 @@ class Array(Expression):
         self.params = params
 
     def __repr__(self) -> str:
-        return self.render()
+        return self.render("")
 
-    def render(self, nested: bool = False) -> str:
-        params = [value_ref(param) for param in self.params]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        params = [value_ref(param, parent_prefix) for param in self.params]
         return f"[{', '.join(params)}]"
 
 
@@ -315,29 +319,35 @@ class FunctionCall(Expression):
         self.params = params
 
     def __repr__(self) -> str:
-        return self.render()
+        return self.render("")
 
-    def render(self, nested: bool = False) -> str:
-        name = name_ref(self.name)
-        params = [value_ref(param) for param in self.params]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        name = name_ref(self.name, parent_prefix)
+        params = [value_ref(param, parent_prefix) for param in self.params]
         return f"{name}({', '.join(params)})"
 
 
 class MethodCall(Expression):
     # Call a method on an object.
-    def __init__(self, objectref: Any, name: Union[str, StringConstant], params: List[Any]) -> None:
+    def __init__(self, objectref: Any, name: Union[str, int, Expression], params: List[Any]) -> None:
         self.objectref = objectref
         self.name = name
         self.params = params
 
     def __repr__(self) -> str:
-        return self.render()
+        return self.render("")
 
-    def render(self, nested: bool = False) -> str:
-        obj = object_ref(self.objectref)
-        name = name_ref(self.name)
-        params = [value_ref(param) for param in self.params]
-        return f"{obj}.{name}({', '.join(params)})"
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        try:
+            obj = object_ref(self.objectref, parent_prefix)
+            name = name_ref(self.name, parent_prefix)
+            params = [value_ref(param, parent_prefix) for param in self.params]
+            return f"{obj}.{name}({', '.join(params)})"
+        except Exception:
+            obj = object_ref(self.objectref, parent_prefix)
+            name = value_ref(self.name, parent_prefix)
+            params = [value_ref(param, parent_prefix) for param in self.params]
+            return f"{obj}[{name}]({', '.join(params)})"
 
 
 class NewFunction(Expression):
@@ -348,9 +358,9 @@ class NewFunction(Expression):
         self.body = body
 
     def __repr__(self) -> str:
-        return self.render()
+        return self.render("")
 
-    def render(self, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         val = f"new function({repr(self.funcname) or '<anonymous function>'}, {hex(self.flags)}, 'TODO: ByteCode')"
         if nested:
             return f"({val})"
@@ -365,11 +375,11 @@ class NewObject(Expression):
         self.params = params
 
     def __repr__(self) -> str:
-        return self.render()
+        return self.render('')
 
-    def render(self, nested: bool = False) -> str:
-        objname = name_ref(self.objname)
-        params = [value_ref(param) for param in self.params]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        objname = name_ref(self.objname, parent_prefix)
+        params = [value_ref(param, parent_prefix) for param in self.params]
         val = f"new {objname}({', '.join(params)})"
         if nested:
             return f"({val})"
@@ -386,28 +396,28 @@ class SetMemberStatement(Statement):
 
     def __repr__(self) -> str:
         try:
-            ref = object_ref(self.objectref)
-            name = name_ref(self.name)
-            val = value_ref(self.valueref)
+            ref = object_ref(self.objectref, "")
+            name = name_ref(self.name, "")
+            val = value_ref(self.valueref, "")
             return f"{ref}.{name} = {val}"
         except Exception:
             # This is not a simple string object reference.
-            ref = object_ref(self.objectref)
-            name = value_ref(self.name)
-            val = value_ref(self.valueref)
+            ref = object_ref(self.objectref, "")
+            name = value_ref(self.name, "")
+            val = value_ref(self.valueref, "")
             return f"{ref}[{name}] = {val}"
 
     def render(self, prefix: str) -> List[str]:
         try:
-            ref = object_ref(self.objectref)
-            name = name_ref(self.name)
-            val = value_ref(self.valueref)
+            ref = object_ref(self.objectref, prefix)
+            name = name_ref(self.name, prefix)
+            val = value_ref(self.valueref, prefix)
             return [f"{prefix}{ref}.{name} = {val};"]
         except Exception:
             # This is not a simple string object reference.
-            ref = object_ref(self.objectref)
-            name = value_ref(self.name)
-            val = value_ref(self.valueref)
+            ref = object_ref(self.objectref, prefix)
+            name = value_ref(self.name, prefix)
+            val = value_ref(self.valueref, prefix)
             return [f"{prefix}{ref}[{name}] = {val};"]
 
 
@@ -417,11 +427,11 @@ class DeleteVariableStatement(Statement):
         self.name = name
 
     def __repr__(self) -> str:
-        name = name_ref(self.name)
+        name = name_ref(self.name, "")
         return f"del {name}"
 
     def render(self, prefix: str) -> List[str]:
-        name = name_ref(self.name)
+        name = name_ref(self.name, prefix)
         return [f"{prefix}del {name};"]
 
 
@@ -432,12 +442,12 @@ class StoreRegisterStatement(Statement):
         self.valueref = valueref
 
     def __repr__(self) -> str:
-        val = value_ref(self.valueref)
-        return f"{self.register.render()} = {val}"
+        val = value_ref(self.valueref, "")
+        return f"{self.register.render('')} = {val}"
 
     def render(self, prefix: str) -> List[str]:
-        val = value_ref(self.valueref)
-        return [f"{prefix}{self.register.render()} = {val};"]
+        val = value_ref(self.valueref, prefix)
+        return [f"{prefix}{self.register.render(prefix)} = {val};"]
 
 
 class SetVariableStatement(Statement):
@@ -447,13 +457,13 @@ class SetVariableStatement(Statement):
         self.valueref = valueref
 
     def __repr__(self) -> str:
-        name = name_ref(self.name)
-        val = value_ref(self.valueref)
+        name = name_ref(self.name, "")
+        val = value_ref(self.valueref, "")
         return f"{name} = {val}"
 
     def render(self, prefix: str) -> List[str]:
-        name = name_ref(self.name)
-        val = value_ref(self.valueref)
+        name = name_ref(self.name, prefix)
+        val = value_ref(self.valueref, prefix)
         return [f"{prefix}{name} = {val};"]
 
 
@@ -464,13 +474,13 @@ class SetLocalStatement(Statement):
         self.valueref = valueref
 
     def __repr__(self) -> str:
-        name = name_ref(self.name)
-        val = value_ref(self.valueref)
+        name = name_ref(self.name, "")
+        val = value_ref(self.valueref, "")
         return f"local {name} = {val}"
 
     def render(self, prefix: str) -> List[str]:
-        name = name_ref(self.name)
-        val = value_ref(self.valueref)
+        name = name_ref(self.name, prefix)
+        val = value_ref(self.valueref, prefix)
         return [f"{prefix}local {name} = {val};"]
 
 
@@ -485,7 +495,7 @@ class IsUndefinedIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val = value_ref(self.conditional, parens=True)
+        val = value_ref(self.conditional, "", parens=True)
         if self.negate:
             return f"if ({val} is not UNDEFINED)"
         else:
@@ -498,7 +508,7 @@ class IsBooleanIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val = value_ref(self.conditional, parens=True)
+        val = value_ref(self.conditional, "", parens=True)
         if self.negate:
             return f"if ({val} is False)"
         else:
@@ -512,8 +522,8 @@ class IsEqualIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1, parens=True)
-        val2 = value_ref(self.conditional2, parens=True)
+        val1 = value_ref(self.conditional1, "", parens=True)
+        val2 = value_ref(self.conditional2, "", parens=True)
         return f"if ({val1} {'!=' if self.negate else '=='} {val2})"
 
 
@@ -524,8 +534,8 @@ class IsStrictEqualIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1, parens=True)
-        val2 = value_ref(self.conditional2, parens=True)
+        val1 = value_ref(self.conditional1, "", parens=True)
+        val2 = value_ref(self.conditional2, "", parens=True)
         return f"if ({val1} {'!==' if self.negate else '==='} {val2})"
 
 
@@ -536,8 +546,8 @@ class MagnitudeIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1, parens=True)
-        val2 = value_ref(self.conditional2, parens=True)
+        val1 = value_ref(self.conditional1, "", parens=True)
+        val2 = value_ref(self.conditional2, "", parens=True)
         return f"if ({val1} {'<' if self.negate else '>'} {val2})"
 
 
@@ -548,8 +558,8 @@ class MagnitudeEqualIf(IfExpr):
         self.negate = negate
 
     def __repr__(self) -> str:
-        val1 = value_ref(self.conditional1, parens=True)
-        val2 = value_ref(self.conditional2, parens=True)
+        val1 = value_ref(self.conditional1, "", parens=True)
+        val2 = value_ref(self.conditional2, "", parens=True)
         return f"if ({val1} {'<=' if self.negate else '>='} {val2})"
 
 
@@ -780,10 +790,10 @@ class Variable(Expression):
         self.name = name
 
     def __repr__(self) -> str:
-        return f"Variable({name_ref(self.name)})"
+        return f"Variable({name_ref(self.name, '')})"
 
-    def render(self, nested: bool = False) -> str:
-        return name_ref(self.name)
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        return name_ref(self.name, parent_prefix)
 
 
 class Member(Expression):
@@ -794,17 +804,17 @@ class Member(Expression):
         self.member = member
 
     def __repr__(self) -> str:
-        return self.render()
+        return self.render("")
 
-    def render(self, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         try:
-            member = name_ref(self.member)
-            ref = object_ref(self.objectref)
+            member = name_ref(self.member, parent_prefix)
+            ref = object_ref(self.objectref, parent_prefix)
             return f"{ref}.{member}"
         except Exception:
             # This is not a simple string object reference.
-            member = value_ref(self.member)
-            ref = object_ref(self.objectref)
+            member = value_ref(self.member, parent_prefix)
+            ref = object_ref(self.objectref, parent_prefix)
             return f"{ref}[{member}]"
 
 
@@ -1854,7 +1864,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if action.opcode == AP2Action.CALL_METHOD:
                     method_name = stack.pop()
-                    if not isinstance(method_name, (str, StringConstant)):
+                    if not isinstance(method_name, (str, int, Expression)):
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
                     num_params = stack.pop()
@@ -1977,8 +1987,8 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.ADD2:
-                    expr1 = stack.pop()
                     expr2 = stack.pop()
+                    expr1 = stack.pop()
                     stack.append(ArithmeticExpression(expr1, "+", expr2))
 
                     chunk.actions[i] = NopStatement()
@@ -1998,6 +2008,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     stack.append(ArithmeticExpression(expr1, "*", expr2))
 
                     chunk.actions[i] = NopStatement()
+                    continue
 
                 if action.opcode == AP2Action.DIVIDE:
                     expr2 = stack.pop()
@@ -2005,7 +2016,6 @@ class ByteCodeDecompiler(VerboseOutput):
                     stack.append(ArithmeticExpression(expr1, "/", expr2))
 
                     chunk.actions[i] = NopStatement()
-                    continue
                     continue
 
                 if action.opcode == AP2Action.MODULO:
@@ -2068,6 +2078,10 @@ class ByteCodeDecompiler(VerboseOutput):
             self.vprint(chunk.actions)
             self.vprint(stack)
             raise Exception(f"TODO: {action}")
+
+        # Make sure we consumed the stack.
+        if stack:
+            raise Exception(f"Stack not empty, contains {stack}!")
 
         # Now, clean up code generation.
         new_actions: List[ConvertedAction] = []
