@@ -72,7 +72,7 @@ class ControlFlow:
 
     def split(self, offset: int, link: bool = False) -> Tuple["ControlFlow", "ControlFlow"]:
         if not self.contains(offset):
-            raise Exception(f"This ControlFlow does not contain offset {offset}")
+            raise Exception(f"Logic error, this ControlFlow does not contain offset {offset}")
 
         # First, make the second half that the first half will point to.
         second = ControlFlow(
@@ -218,7 +218,7 @@ class NopStatement(Statement):
 
     def render(self, prefix: str) -> List[str]:
         # We should never render this!
-        raise Exception("Logic error!")
+        raise Exception("Logic error, a NopStatement should never make it to the render stage!")
 
 
 class ExpressionStatement(Statement):
@@ -921,25 +921,25 @@ class BitVector:
 
     def setBit(self, bit: int) -> "BitVector":
         if bit < 0 or bit >= len(self.__bits):
-            raise Exception("Logic error!")
+            raise Exception(f"Logic error, trying to set bit {bit} of a bitvector length {len(self.__bits)}!")
         self.__bits[bit] = True
         return self
 
     def clearBit(self, bit: int) -> "BitVector":
         if bit < 0 or bit >= len(self.__bits):
-            raise Exception("Logic error!")
+            raise Exception(f"Logic error, trying to set bit {bit} of a bitvector length {len(self.__bits)}!")
         self.__bits[bit] = False
         return self
 
     def orVector(self, other: "BitVector") -> "BitVector":
         if len(self.__bits) != len(other.__bits):
-            raise Exception("Cannot or different-sized bitvectors!")
+            raise Exception(f"Logic error, trying to combine bitvector of size {len(self.__bits)} with another of size {len(other.__bits)}!")
         self.__bits = {i: (self.__bits[i] or other.__bits[i]) for i in self.__bits}
         return self
 
     def andVector(self, other: "BitVector") -> "BitVector":
         if len(self.__bits) != len(other.__bits):
-            raise Exception("Cannot and different-sized bitvectors!")
+            raise Exception(f"Logic error, trying to combine bitvector of size {len(self.__bits)} with another of size {len(other.__bits)}!")
         self.__bits = {i: (self.__bits[i] and other.__bits[i]) for i in self.__bits}
         return self
 
@@ -947,7 +947,7 @@ class BitVector:
         if not isinstance(other, BitVector):
             return NotImplemented
         if len(self.__bits) != len(other.__bits):
-            raise Exception("Cannot compare different-sized bitvectors!")
+            raise Exception(f"Logic error, trying to compare bitvector of size {len(self.__bits)} with another of size {len(other.__bits)}!")
 
         for i in self.__bits:
             if self.__bits[i] != other.__bits[i]:
@@ -995,7 +995,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if cf.contains(opcodeno):
                     return start
 
-            raise Exception(f"Offset {opcodeno} somehow not in our control flow graph!")
+            raise Exception(f"Logic error, offset {opcodeno} somehow not in our control flow graph!")
 
         # Now, walk the entire bytecode, and every control flow point split the graph at that point.
         for i, action in enumerate(self.bytecode.actions):
@@ -1094,7 +1094,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     if action.jump_if_true_offset == self.bytecode.end_offset:
                         dest_action = end
                     else:
-                        raise Exception(f"{action} conditional jumps to an opcode that doesn't exist!")
+                        raise Exception(f"{action} conditionally jumps to an opcode that doesn't exist!")
 
                 # If the destination action flow already starts with the jump offset,
                 # then we're good, we just need to point our current split at this new
@@ -1135,7 +1135,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     self.vprint(f"{action} action repointed {flows[current_action_flow]} to new chunk")
             elif action.opcode == AP2Action.IF2:
                 # We don't emit this anymore, so this is a problem.
-                raise Exception("Logic error!")
+                raise Exception("Logic error, unexpected AP2Action.IF2 opcode which we should not emit in parsing stage!")
 
         # Finally, return chunks of contiguous execution.
         chunks: List[ByteCodeChunk] = []
@@ -1179,7 +1179,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     for c in chunk.next_chunks:
                         if c in dead_chunk_ids:
                             # Hoo this shouldn't be possible!
-                            raise Exception("Logic error!")
+                            raise Exception(f"Logic error, chunk ID {chunk.id} points at a dead code chunk we're eliminating!")
                     chunk.previous_chunks = [c for c in chunk.previous_chunks if c not in dead_chunk_ids]
             else:
                 break
@@ -1217,6 +1217,36 @@ class ByteCodeDecompiler(VerboseOutput):
         # Add the "return" chunk now that we've converted everything.
         chunks.append(ByteCodeChunk(end_chunk_id, [], [], previous_chunks=end_previous_chunks))
 
+        # Verify a few invariants about the tree we just created.
+        num_start_chunks = 0
+        num_end_chunks = 0
+        for chunk in chunks:
+            if not chunk.next_chunks:
+                num_end_chunks += 1
+            if not chunk.previous_chunks:
+                if chunk.id != offset_to_id[self.bytecode.start_offset]:
+                    raise Exception(f"Start of graph found at ID {chunk.id} but expected to be {offset_to_id[self.bytecode.start_offset]}!")
+                num_start_chunks += 1
+
+            if chunk.actions:
+                # We haven't done any fixing up, we're guaranteed this is an AP2Action.
+                last_action = cast(AP2Action, chunk.actions[-1])
+
+                if last_action.opcode in [AP2Action.THROW, AP2Action.RETURN, AP2Action.JUMP] and len(chunk.next_chunks) != 1:
+                    raise Exception(f"Chunk ID {chunk.id} has control flow action expecting one next chunk but has {len(chunk.next_chunks)}!")
+                if len(chunk.next_chunks) == 2 and last_action.opcode != AP2Action.IF:
+                    raise Exception(f"Chunk ID {chunk.id} has two next chunks but control flow action is not an if statement!")
+                if len(chunk.next_chunks) > 2:
+                    raise Exception(f"Chunk ID {chunk.id} has more than two next chunks!")
+
+        # Num start chunks can be 0 (if the start chunk is a loop beginning) or 1 (if its a normal chunk).
+        if num_start_chunks > 1:
+            raise Exception(f"Found {num_start_chunks} start chunks but expecting at most 1!")
+        # Num end chunks can only be 1 as we created an artificial end chunk.
+        if num_end_chunks != 1:
+            raise Exception(f"Found {num_end_chunks} end chunks but expecting exactly 1!")
+
+        # Now that we're satisfied with the tree we created, return it.
         return (chunks, offset_to_id)
 
     def __get_entry_block(self, chunks: Sequence[ArbitraryCodeChunk]) -> int:
@@ -1226,18 +1256,15 @@ class ByteCodeDecompiler(VerboseOutput):
                 if start_id != -1:
                     # This should never happen, we have one entrypoint. If we run into
                     # this we might need to do dead code analysis and discarding.
-                    raise Exception("Logic error!")
+                    raise Exception("Logic error, more than one start block found!")
                 start_id = chunk.id
 
         if start_id == -1:
             # We should never get to this as we always have at least one entrypoint.
-            raise Exception("Logic error!")
+            raise Exception("Logic error, no start block found!")
         return start_id
 
-    def __compute_dominators(self, chunks: Sequence[ByteCodeChunk]) -> Dict[int, Set[int]]:
-        # Find the start of the graph (the node with no previous entries).
-        start_id = self.__get_entry_block(chunks)
-
+    def __compute_dominators(self, start_id: int, chunks: Sequence[ByteCodeChunk]) -> Dict[int, Set[int]]:
         # Compute dominators recursively
         chunklen = len(chunks)
         dominators: Dict[int, BitVector] = {chunk.id: BitVector(chunklen, init=True) for chunk in chunks}
@@ -1396,9 +1423,13 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return loop
 
-    def __separate_loops(self, chunks: Sequence[ByteCodeChunk], dominators: Dict[int, Set[int]], offset_map: Dict[int, int]) -> List[Union[ByteCodeChunk, Loop]]:
-        # Find the start of the graph (the node with no previous entries).
-        start_id = self.__get_entry_block(chunks)
+    def __separate_loops(
+        self,
+        start_id: int,
+        chunks: Sequence[ByteCodeChunk],
+        dominators: Dict[int, Set[int]],
+        offset_map: Dict[int, int],
+    ) -> List[Union[ByteCodeChunk, Loop]]:
         chunks_by_id: Dict[int, Union[ByteCodeChunk, Loop]] = {chunk.id: chunk for chunk in chunks}
 
         # Go through and gather up all loops in the chunks.
@@ -2300,7 +2331,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 # We need to check and see if the last entry is an IfExpr, and hoist it
                 # into a statement here.
-                if isinstance(new_statements[-1], IfExpr):
+                if new_statements and isinstance(new_statements[-1], IfExpr):
                     if_body = chunk.next_chunks[0]
                     if_body_chunk = chunks_by_id[if_body]
 
@@ -2541,14 +2572,15 @@ class ByteCodeDecompiler(VerboseOutput):
         # First, we need to construct a control flow graph.
         self.vprint("Generating control flow graph...")
         chunks, offset_map = self.__graph_control_flow()
+        start_id = offset_map[self.bytecode.start_offset]
 
         # Now, compute dominators so we can locate back-refs.
         self.vprint("Generating dominator list...")
-        dominators = self.__compute_dominators(chunks)
+        dominators = self.__compute_dominators(start_id, chunks)
 
         # Now, separate chunks out into chunks and loops.
         self.vprint("Identifying and separating loops...")
-        chunks_and_loops = self.__separate_loops(chunks, dominators, offset_map)
+        chunks_and_loops = self.__separate_loops(start_id, chunks, dominators, offset_map)
 
         # Now, break the graph anywhere where we have control
         # flow that ends the execution (return, throw, goto end).
@@ -2557,7 +2589,6 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Now, identify any remaining control flow logic.
         self.vprint("Identifying and separating ifs...")
-        start_id = self.__get_entry_block(chunks_and_loops)
         chunks_loops_and_ifs = self.__separate_ifs(start_id, chunks_and_loops, offset_map)
 
         # At this point, we *should* have a directed graph where there are no
