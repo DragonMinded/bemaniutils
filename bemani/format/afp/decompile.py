@@ -773,10 +773,10 @@ class IntermediateIf(ConvertedAction):
 
 
 class ByteCodeChunk:
-    def __init__(self, id: int, actions: Sequence[ArbitraryOpcode], next_chunks: List[int], previous_chunks: List[int] = []) -> None:
+    def __init__(self, id: int, actions: Sequence[ArbitraryOpcode], next_chunks: List[int] = [], previous_chunks: List[int] = []) -> None:
         self.id = id
         self.actions = list(actions)
-        self.next_chunks = next_chunks
+        self.next_chunks = next_chunks or []
         self.previous_chunks = previous_chunks or []
 
     def __repr__(self) -> str:
@@ -1253,16 +1253,16 @@ class ByteCodeDecompiler(VerboseOutput):
         return (chunks, offset_to_id)
 
     def __get_entry_block(self, chunks: Sequence[ArbitraryCodeChunk]) -> int:
-        start_id: int = -1
+        start_id: Optional[int] = None
         for chunk in chunks:
             if not chunk.previous_chunks:
-                if start_id != -1:
+                if start_id is not None:
                     # This should never happen, we have one entrypoint. If we run into
                     # this we might need to do dead code analysis and discarding.
                     raise Exception("Logic error, more than one start block found!")
                 start_id = chunk.id
 
-        if start_id == -1:
+        if start_id is None:
             # We should never get to this as we always have at least one entrypoint.
             raise Exception("Logic error, no start block found!")
         return start_id
@@ -1594,6 +1594,8 @@ class ByteCodeDecompiler(VerboseOutput):
                             self.vprint(f"Converting jump to end of code in {chunk.id} into a null return.")
                             chunk.actions[-1] = NullReturnStatement()
                         else:
+                            if last_action.opcode == AP2Action.IF:
+                                raise Exception("Logic error, unexpected if statement with only one successor!")
                             self.vprint(f"Converting fall-through to end of code in {chunk.id} into a null return.")
                             chunk.actions.append(NullReturnStatement())
                         chunk.next_chunks = []
@@ -1607,7 +1609,7 @@ class ByteCodeDecompiler(VerboseOutput):
         visited: Set[int] = set()
 
         # First, let's find all the successors to the left side.
-        candidates: List[int] = [left]
+        candidates: List[int] = [left] if left in chunks_by_id else []
         while candidates:
             for candidate in candidates:
                 visited.add(candidate)
@@ -1615,36 +1617,49 @@ class ByteCodeDecompiler(VerboseOutput):
             new_candidates = []
             for candidate in candidates:
                 # We can avoid re-traversing what we've already traversed, as we only want to color
-                # in the part of the tree that we're interested in.
-                new_candidates.extend([c for c in chunks_by_id[candidate].next_chunks if c not in visited])
+                # in the part of the tree that we're interested in. We are also not interested in
+                # goto/return/throw statements as they should be treated the same as not finding an
+                # end.
+                new_candidates.extend([c for c in chunks_by_id[candidate].next_chunks if c not in visited and c in chunks_by_id])
             candidates = new_candidates
 
         # Now, lets do the same with the right, and the first one we encounter that's visited is our guy.
-        candidates = [right]
+        candidates = [right] if right in chunks_by_id else []
         while candidates:
-            for candidate in candidates:
-                if candidate in visited:
-                    return candidate
+            possible_candidates = [c for c in candidates if c in visited]
+            if len(possible_candidates) == 1:
+                return possible_candidates[0]
+            if len(possible_candidates) > 1:
+                # This shouldn't be possible, I don't think? Let's enforce it as an invariant because I don't know what it means if this happens.
+                raise Exception(f"Logic error, found too many candidates {possible_candidates} as shallowest successor to {start_chunk}!")
 
             new_candidates = []
             for candidate in candidates:
                 # We can't take the same shortcut here as above, as we are trying to ask the question
                 # of what's the shallowest successor, not color them in.
-                new_candidates.extend(chunks_by_id[candidate].next_chunks)
+                new_candidates.extend([c for c in chunks_by_id[candidate].next_chunks if c in chunks_by_id])
             candidates = new_candidates
 
         # If we didn't find a successor, that means one of the control paths leads to end of execution.
         return None
 
     def __gather_chunks(self, start_chunk: int, end_chunk: Optional[int], chunks_by_id: Dict[int, ArbitraryCodeChunk]) -> List[ArbitraryCodeChunk]:
+        # Gather all chunks starting with the start_chunk, walking the tree until we hit
+        # end_chunk. Return all chunks in that walk up to but not including the end_chunk.
+        # If end_chunk is None, then just walk the tree until we hit the end, including all
+        # of those nodes. Note that if some chunks point at ndes we don't have in our
+        # chunks_by_id map, we assume they are goto/return/throw statements and ignore them.
+
         visited: Set[int] = set()
         chunks: List[ArbitraryCodeChunk] = []
         candidates: List[int] = [start_chunk]
 
         while candidates:
             first_candidate = candidates.pop()
-            if first_candidate in visited:
-                # We already visited this node.
+            if first_candidate in visited or first_candidate not in chunks_by_id:
+                # We already visited this node, no need to include it or its children
+                # twice, or the node isn't in our list of nodes to gather (its a goto/
+                # return/throw) and we don't care to try to grab it.
                 continue
 
             if end_chunk is None or first_candidate != end_chunk:
@@ -1654,14 +1669,24 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # The chunk list is all chunks that belong in this sequence. Now, kill any pointers to the end chunk.
         for chunk in chunks:
-            if end_chunk is not None:
-                chunk.next_chunks = [n for n in chunk.next_chunks if n != end_chunk]
             if chunk.id == start_chunk:
+                # This is safe to do because we've already encapsulated loops into Loop structures and broken
+                # their chains. So we break this in order to find it again as the start chunk later.
                 chunk.previous_chunks = []
+
+        # Make sure we have one and only one start chunk.
+        num_start_chunks: int = 0
+        for chunk in chunks:
+            if not chunk.previous_chunks:
+                num_start_chunks += 1
+        if chunks and num_start_chunks != 1:
+            # We're allowed to gather zero chunks (say an if with no else), but if we gather at least one
+            # chunk, we should better have one and only one start to the flow.
+            raise Exception(f"Logic error, splitting chunks by start chunk {start_chunk} should leave us with one start, but we got {num_start_chunks}!")
 
         return chunks
 
-    def __separate_ifs(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> List[ArbitraryCodeChunk]:
+    def __separate_ifs(self, start_id: int, end_id: Optional[int], chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> List[ArbitraryCodeChunk]:
         chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
         cur_id = start_id
 
@@ -1671,8 +1696,14 @@ class ByteCodeDecompiler(VerboseOutput):
             cur_chunk = chunks_by_id[cur_id]
             if isinstance(cur_chunk, Loop):
                 self.vprint(f"Examining loop {cur_chunk.id} body for if statements...")
-                cur_chunk.chunks = self.__separate_ifs(cur_chunk.id, cur_chunk.chunks, offset_map)
+                cur_chunk.chunks = self.__separate_ifs(cur_chunk.id, None, cur_chunk.chunks, offset_map)
                 self.vprint(f"Finished examining loop {cur_chunk.id} body for if statements...")
+
+            # Filter out anything pointing at the end chunk, since we know that's where we will end up
+            # when we leave this if statement anyway. Don't do this for if statements as we need to
+            # preserve the jump point in that case.
+            if len(chunks_by_id[cur_id].next_chunks) == 1:
+                chunks_by_id[cur_id].next_chunks = [c for c in chunks_by_id[cur_id].next_chunks if c != end_id]
 
             if not chunks_by_id[cur_id].next_chunks:
                 # We're done!
@@ -1682,9 +1713,11 @@ class ByteCodeDecompiler(VerboseOutput):
                 if not isinstance(cur_chunk, ByteCodeChunk):
                     # This is an already-handled loop or if, don't bother checking for
                     # if-goto patterns.
-                    cur_id = chunks_by_id[cur_id].next_chunks[0]
-                    if cur_id not in chunks_by_id:
-                        raise Exception("Logic error!")
+                    next_id = chunks_by_id[cur_id].next_chunks[0]
+                    if next_id not in chunks_by_id:
+                        raise Exception(f"Logic error, we can't jump to the next chunk for loop {cur_id} as it is outside of our scope!")
+
+                    cur_id = next_id
                     continue
 
                 last_action = cur_chunk.actions[-1]
@@ -1699,65 +1732,41 @@ class ByteCodeDecompiler(VerboseOutput):
                     cur_id = next_id
                     continue
 
-                # This is an if with a goto in the true clause. Verify that and
-                # then convert it.
-                jump_offset = offset_map[last_action.jump_if_true_offset]
-                if jump_offset == chunks_by_id[cur_id].next_chunks[0]:
-                    # We have an if that goes to the next chunk on true, so we've
-                    # lost the false path. This is a problem.
-                    raise Exception("Logic error!")
-
-                # Conver this to an if-goto statement, much like we do in loops.
-                next_id = chunks_by_id[cur_id].next_chunks[0]
-                cur_chunk.actions[-1] = IntermediateIf(
-                    last_action,
-                    [GotoStatement(jump_offset)],
-                    [GotoStatement(next_id)] if next_id not in chunks_by_id else [],
-                    negate=False,
-                )
-
-                self.vprint(f"Converted if-goto pattern in chunk ID {cur_id} to intermediate if")
-                if next_id not in chunks_by_id:
-                    # This goto is at the end of a list of statements. Let's cap it off and
-                    # move on.
-                    chunks_by_id[cur_id].next_chunks = []
-                    break
-                cur_id = next_id
-                continue
+                raise Exception(f"Logic error, IfAction with only one child in chunk {cur_chunk}!")
 
             if not isinstance(cur_chunk, ByteCodeChunk):
                 # We should only be looking at bytecode chunks at this point, all other
                 # types should have a single next chunk.
-                raise Exception("Logic error!")
+                raise Exception(f"Logic error, found converted Loop or If chunk {cur_chunk.id} with multiple successors!")
 
+            if len(chunks_by_id[cur_id].next_chunks) != 2:
+                # This needs to be an if statement.
+                raise Exception(f"Logic error, expected 2 successors but got {len(chunks_by_id[cur_id].next_chunks)} in chunk {cur_chunk.id}!")
             last_action = cur_chunk.actions[-1]
             if not isinstance(last_action, IfAction):
                 # This needs, again, to be an if statement.
-                raise Exception("Logic error!")
-            if len(chunks_by_id[cur_id].next_chunks) != 2:
-                # This needs to be an if statement.
-                raise Exception("Logic error!")
+                raise Exception("Logic error, only IfActions can have multiple successors in chunk {cur_chunk.id}!")
 
             # This should be an if statement. Figure out if it is an if-else or an
             # if, and if both branches return.
             if_end = self.__find_shallowest_successor(cur_id, chunks_by_id)
-
-            # This is a normal if or if-else, let's compile the true and false
-            # statements.
             true_jump_point = offset_map[last_action.jump_if_true_offset]
             false_jump_points = [n for n in cur_chunk.next_chunks if n != true_jump_point]
             if len(false_jump_points) != 1:
-                raise Exception("Logic error!")
+                raise Exception("Logic error, got more than one false jump point for an if statement!")
             false_jump_point = false_jump_points[0]
 
             if true_jump_point == false_jump_point:
                 # This should never happen.
-                raise Exception("Logic error!")
+                raise Exception("Logic error, both true and false jumps are to the same location!")
 
             self.vprint(f"Chunk ID {cur_id} is an if statement with true node {true_jump_point} and false node {false_jump_point} and ending at {if_end}")
 
             true_chunks: List[ArbitraryCodeChunk] = []
-            if true_jump_point != if_end:
+            if true_jump_point not in chunks_by_id and true_jump_point != if_end:
+                self.vprint(f"If statement true jump point {true_jump_point} is a goto!")
+                true_chunks.append(ByteCodeChunk(-1, [GotoStatement(true_jump_point)]))
+            elif true_jump_point not in {if_end, end_id}:
                 self.vprint(f"Gathering true path starting with {true_jump_point} and ending with {if_end} and detecting if statements within it as well.")
 
                 # First, grab all the chunks in this if statement body.
@@ -1768,10 +1777,13 @@ class ByteCodeDecompiler(VerboseOutput):
                     del chunks_by_id[chunk.id]
 
                 # Now, recursively attempt to detect if statements within this chunk as well.
-                true_chunks = self.__separate_ifs(true_jump_point, true_chunks, offset_map)
+                true_chunks = self.__separate_ifs(true_jump_point, if_end, true_chunks, offset_map)
 
             false_chunks: List[ArbitraryCodeChunk] = []
-            if false_jump_point != if_end:
+            if false_jump_point not in chunks_by_id and false_jump_point != if_end:
+                self.vprint(f"If statement false jump point {false_jump_point} is a goto!")
+                false_chunks.append(ByteCodeChunk(-1, [GotoStatement(false_jump_point)]))
+            elif false_jump_point not in {if_end, end_id}:
                 self.vprint(f"Gathering false path starting with {false_jump_point} and ending with {if_end} and detecting if statements within it as well.")
 
                 # First, grab all the chunks in this if statement body.
@@ -1782,7 +1794,11 @@ class ByteCodeDecompiler(VerboseOutput):
                     del chunks_by_id[chunk.id]
 
                 # Now, recursively attempt to detect if statements within this chunk as well.
-                false_chunks = self.__separate_ifs(false_jump_point, false_chunks, offset_map)
+                false_chunks = self.__separate_ifs(false_jump_point, if_end, false_chunks, offset_map)
+
+            if (not true_chunks) and (not false_chunks):
+                # We should have at least one!
+                raise Exception("Logic error, if statement has no code for if or else!")
 
             if false_chunks and (not true_chunks):
                 negate = True
@@ -1792,10 +1808,6 @@ class ByteCodeDecompiler(VerboseOutput):
             else:
                 negate = False
                 if_id = true_jump_point
-
-            if (not true_chunks) and (not false_chunks):
-                # We should have at least one!
-                raise Exception("Logic error!")
 
             # Add a new if body that this current chunk points to. At this point, chunks_by_id contains
             # none of the chunks in the true or false bodies of the if, so we add it back to the graph
@@ -2629,7 +2641,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Now, identify any remaining control flow logic.
         self.vprint("Identifying and separating ifs...")
-        chunks_loops_and_ifs = self.__separate_ifs(start_id, chunks_and_loops, offset_map)
+        chunks_loops_and_ifs = self.__separate_ifs(start_id, None, chunks_and_loops, offset_map)
 
         # At this point, we *should* have a directed graph where there are no
         # backwards refs and every fork has been identified as an if. This means
