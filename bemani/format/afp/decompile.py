@@ -7,10 +7,12 @@ from .types import (
     IfAction,
     PushAction,
     AddNumVariableAction,
+    AddNumRegisterAction,
     Expression,
     Register,
     GenericObject,
     StringConstant,
+    InitRegisterAction,
     StoreRegisterAction,
     DefineFunction2Action,
     GotoFrame2Action,
@@ -194,6 +196,21 @@ class NullReturnStatement(Statement):
         return [f"{prefix}return;"]
 
 
+class ReturnStatement(Statement):
+    # A statement which directs the control flow to the end of the code,
+    # returning the top of the stack.
+    def __init__(self, ret: Any) -> None:
+        self.ret = ret
+
+    def __repr__(self) -> str:
+        ret = value_ref(self.ret, "")
+        return f"return {ret}"
+
+    def render(self, prefix: str) -> List[str]:
+        ret = value_ref(self.ret, prefix)
+        return [f"{prefix}return {ret};"]
+
+
 class NopStatement(Statement):
     # A literal no-op. We will get rid of these in an optimizing pass.
     def __repr__(self) -> str:
@@ -232,6 +249,24 @@ class PlayMovieStatement(Statement):
 
     def render(self, prefix: str) -> List[str]:
         return [f"{prefix}builtin_StartPlaying();"]
+
+
+class NextFrameStatement(Statement):
+    # Advance to the next frame, this is an actionscript-specific opcode.
+    def __repr__(self) -> str:
+        return "builtin_GotoNextFrame()"
+
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}builtin_GotoNextFrame();"]
+
+
+class PreviousFrameStatement(Statement):
+    # Advance to the previous frame, this is an actionscript-specific opcode.
+    def __repr__(self) -> str:
+        return "builtin_GotoPreviousFrame()"
+
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}builtin_GotoPreviousFrame();"]
 
 
 class DebugTraceStatement(Statement):
@@ -301,6 +336,19 @@ class ArithmeticExpression(Expression):
             return f"({left} {self.op} {right})"
         else:
             return f"{left} {self.op} {right}"
+
+
+class NotExpression(Expression):
+    def __init__(self, obj: Any) -> None:
+        self.obj = obj
+
+    def __repr__(self) -> str:
+        obj = value_ref(self.obj, "", parens=True)
+        return f"not {obj}"
+
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        obj = value_ref(self.obj, parent_prefix, parens=True)
+        return f"not {obj}"
 
 
 class Array(Expression):
@@ -444,6 +492,35 @@ class DeleteVariableStatement(Statement):
     def render(self, prefix: str) -> List[str]:
         name = name_ref(self.name, prefix)
         return [f"{prefix}del {name};"]
+
+
+class DeleteMemberStatement(Statement):
+    # Call a method on an object.
+    def __init__(self, objectref: Any, name: Union[str, int, Expression]) -> None:
+        self.objectref = objectref
+        self.name = name
+
+    def __repr__(self) -> str:
+        try:
+            ref = object_ref(self.objectref, "")
+            name = name_ref(self.name, "")
+            return f"del {ref}.{name}"
+        except Exception:
+            # This is not a simple string object reference.
+            ref = object_ref(self.objectref, "")
+            name = value_ref(self.name, "")
+            return f"del {ref}[{name}]"
+
+    def render(self, prefix: str) -> List[str]:
+        try:
+            ref = object_ref(self.objectref, prefix)
+            name = name_ref(self.name, prefix)
+            return [f"{prefix}del {ref}.{name};"]
+        except Exception:
+            # This is not a simple string object reference.
+            ref = object_ref(self.objectref, prefix)
+            name = value_ref(self.name, prefix)
+            return [f"{prefix}del {ref}[{name}];"]
 
 
 class StoreRegisterStatement(Statement):
@@ -1786,6 +1863,16 @@ class ByteCodeDecompiler(VerboseOutput):
                 chunk.actions[i] = MultiAction(store_actions)
                 continue
 
+            if isinstance(action, InitRegisterAction):
+                # Same as the above statement, but we are initializing to UNDEFINED.
+                init_actions: List[StoreRegisterStatement] = []
+
+                for reg in action.registers:
+                    init_actions.append(StoreRegisterStatement(reg, UNDEFINED))
+
+                chunk.actions[i] = MultiAction(init_actions)
+                continue
+
             if isinstance(action, JumpAction):
                 # This could possibly be a jump to the very next line, but we will wait for the
                 # optimization pass to figure that out.
@@ -1811,6 +1898,17 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
                 continue
 
+            if isinstance(action, AddNumRegisterAction):
+                chunk.actions[i] = StoreRegisterStatement(
+                    action.register,
+                    ArithmeticExpression(
+                        action.register,
+                        "+" if action.amount_to_add >= 0 else '-',
+                        abs(action.amount_to_add),
+                    )
+                )
+                continue
+
             if isinstance(action, AP2Action):
                 if action.opcode == AP2Action.STOP:
                     chunk.actions[i] = StopMovieStatement()
@@ -1822,6 +1920,14 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if action.opcode == AP2Action.END:
                     chunk.actions[i] = NullReturnStatement()
+                    continue
+
+                if action.opcode == AP2Action.NEXT_FRAME:
+                    chunk.actions[i] = NextFrameStatement()
+                    continue
+
+                if action.opcode == AP2Action.PREVIOUS_FRAME:
+                    chunk.actions[i] = PreviousFrameStatement()
                     continue
 
                 if action.opcode == AP2Action.CLONE_SPRITE:
@@ -1845,6 +1951,15 @@ class ByteCodeDecompiler(VerboseOutput):
                         stack.append(Member(GLOBAL, variable_name))
 
                     chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.DELETE:
+                    member_name = stack.pop()
+                    if not isinstance(member_name, (str, int, Expression)):
+                        raise Exception("Logic error!")
+                    obj_name = stack.pop()
+
+                    chunk.actions[i] = DeleteMemberStatement(obj_name, member_name)
                     continue
 
                 if action.opcode == AP2Action.DELETE2:
@@ -1883,6 +1998,28 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = NopStatement()
                     continue
 
+                if action.opcode == AP2Action.NOT:
+                    obj_ref = stack.pop()
+                    stack.append(NotExpression(obj_ref))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.INSTANCEOF:
+                    name_ref = stack.pop()
+                    obj_to_check = stack.pop()
+                    stack.append(FunctionCall('isinstance', [obj_to_check, name_ref]))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.TYPEOF:
+                    obj_to_check = stack.pop()
+                    stack.append(FunctionCall('typeof', [obj_to_check]))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
                 if action.opcode == AP2Action.CALL_METHOD:
                     method_name = stack.pop()
                     if not isinstance(method_name, (str, int, Expression)):
@@ -1912,6 +2049,11 @@ class ByteCodeDecompiler(VerboseOutput):
                     stack.append(FunctionCall(function_name, params))
 
                     chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.RETURN:
+                    retval = stack.pop()
+                    chunk.actions[i] = ReturnStatement(retval)
                     continue
 
                 if action.opcode == AP2Action.POP:
