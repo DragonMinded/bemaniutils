@@ -971,6 +971,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         self.bytecode = bytecode
         self.__statements: Optional[List[Statement]] = None
+        self.__goto_body_id: int = -1
 
     @property
     def statements(self) -> List[Statement]:
@@ -1599,6 +1600,44 @@ class ByteCodeDecompiler(VerboseOutput):
                             self.vprint(f"Converting fall-through to end of code in {chunk.id} into a null return.")
                             chunk.actions.append(NullReturnStatement())
                         chunk.next_chunks = []
+                    elif len(chunk.next_chunks) == 2:
+                        if last_action.opcode != AP2Action.IF:
+                            raise Exception("Logic error, expected if statement with two successors!")
+
+                        # This is an if statement, let's see if any of the arms point to a return.
+                        true_jump_point = offset_map[cast(IfAction, last_action).jump_if_true_offset]
+                        false_jump_points = [n for n in chunk.next_chunks if n != true_jump_point]
+                        if len(false_jump_points) != 1:
+                            raise Exception("Logic error, got more than one false jump point for an if statement!")
+                        false_jump_point = false_jump_points[0]
+                        end_offset = offset_map[self.bytecode.end_offset]
+
+                        true_action: Optional[Statement] = None
+                        if true_jump_point == end_offset:
+                            self.vprint(f"Converting jump if true to external point into return statement in {chunk.id}.")
+                            true_action = NullReturnStatement()
+                            chunk.next_chunks = [c for c in chunk.next_chunks if c != true_jump_point]
+
+                        false_action: Optional[Statement] = None
+                        if false_jump_point == end_offset:
+                            self.vprint(f"Converting jump if false to external point into return statement in {chunk.id}.")
+                            false_action = NullReturnStatement()
+                            chunk.next_chunks = [c for c in chunk.next_chunks if c != false_jump_point]
+
+                        if true_action or false_action:
+                            if (not true_action) and false_action:
+                                true_action = false_action
+                                false_action = None
+                                negate = True
+                            else:
+                                negate = False
+
+                            chunk.actions[-1] = IntermediateIf(
+                                cast(IfAction, last_action),
+                                [true_action],
+                                [false_action] if false_action else [],
+                                negate=negate,
+                            )
 
     def __find_shallowest_successor(self, start_chunk: int, chunks_by_id: Dict[int, ArbitraryCodeChunk]) -> Optional[int]:
         if len(chunks_by_id[start_chunk].next_chunks) != 2:
@@ -1765,7 +1804,8 @@ class ByteCodeDecompiler(VerboseOutput):
             true_chunks: List[ArbitraryCodeChunk] = []
             if true_jump_point not in chunks_by_id and true_jump_point != if_end:
                 self.vprint(f"If statement true jump point {true_jump_point} is a goto!")
-                true_chunks.append(ByteCodeChunk(-1, [GotoStatement(true_jump_point)]))
+                true_chunks.append(ByteCodeChunk(self.__goto_body_id, [GotoStatement(true_jump_point)]))
+                self.__goto_body_id -= 1
             elif true_jump_point not in {if_end, end_id}:
                 self.vprint(f"Gathering true path starting with {true_jump_point} and ending with {if_end} and detecting if statements within it as well.")
 
@@ -1782,7 +1822,8 @@ class ByteCodeDecompiler(VerboseOutput):
             false_chunks: List[ArbitraryCodeChunk] = []
             if false_jump_point not in chunks_by_id and false_jump_point != if_end:
                 self.vprint(f"If statement false jump point {false_jump_point} is a goto!")
-                false_chunks.append(ByteCodeChunk(-1, [GotoStatement(false_jump_point)]))
+                false_chunks.append(ByteCodeChunk(self.__goto_body_id, [GotoStatement(false_jump_point)]))
+                self.__goto_body_id -= 1
             elif false_jump_point not in {if_end, end_id}:
                 self.vprint(f"Gathering false path starting with {false_jump_point} and ending with {if_end} and detecting if statements within it as well.")
 
@@ -1804,10 +1845,13 @@ class ByteCodeDecompiler(VerboseOutput):
                 negate = True
                 true_chunks = false_chunks
                 false_chunks = []
-                if_id = false_jump_point
             else:
                 negate = False
-                if_id = true_jump_point
+
+            # Lets use a brand new ID here for easier traversal and so we don't accidentally
+            # reuse the ID of one of our parents if a jump point is a goto.
+            if_id = self.__goto_body_id
+            self.__goto_body_id -= 1
 
             # Add a new if body that this current chunk points to. At this point, chunks_by_id contains
             # none of the chunks in the true or false bodies of the if, so we add it back to the graph
