@@ -957,6 +957,9 @@ class BitVector:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def __len__(self) -> int:
+        return len(self.__bits)
+
     @property
     def bitsSet(self) -> Set[int]:
         return {i for i in self.__bits if self.__bits[i]}
@@ -1269,6 +1272,12 @@ class ByteCodeDecompiler(VerboseOutput):
         chunklen = len(chunks)
         dominators: Dict[int, BitVector] = {chunk.id: BitVector(chunklen, init=True) for chunk in chunks}
         dominators[start_id].setAllBitsTo(False).setBit(start_id)
+
+        # Verify that the chunk IDs are contiguous. Otherwise this algorithm fails, since it
+        # assigns an integer ID to each bit in a bitfield contiguously.
+        for chunk in chunks:
+            if chunk.id < 0 or chunk.id >= len(chunks):
+                raise Exception("Chunk ID {chunk.id} is outside of our created BitVector, the ID space of chunks is non-contiguous!")
 
         changed = True
         while changed:
