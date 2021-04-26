@@ -1703,9 +1703,9 @@ class ByteCodeDecompiler(VerboseOutput):
         # Now, lets do the same with the right, and the first one we encounter that's visited is our guy.
         candidates = [right] if right in chunks_by_id else []
         while candidates:
-            possible_candidates = [c for c in candidates if c in visited]
+            possible_candidates = {c for c in candidates if c in visited}
             if len(possible_candidates) == 1:
-                return possible_candidates[0]
+                return possible_candidates.pop()
             if len(possible_candidates) > 1:
                 # This shouldn't be possible, I don't think? Let's enforce it as an invariant because I don't know what it means if this happens.
                 raise Exception(f"Logic error, found too many candidates {possible_candidates} as shallowest successor to {start_chunk}!")
@@ -1993,8 +1993,18 @@ class ByteCodeDecompiler(VerboseOutput):
                 }[action.comparison]
 
                 return TwoParameterIf(conditional1, comp, conditional2)
+            elif action.comparison in [IfAction.BITAND, IfAction.NOT_BITAND]:
+                conditional2 = get_stack()
+                conditional1 = get_stack()
+                comp = TwoParameterIf.NOT_EQUALS if action.comparison == IfAction.BITAND else TwoParameterIf.EQUALS
+
+                return TwoParameterIf(
+                    ArithmeticExpression(conditional1, "&", conditional2),
+                    comp,
+                    0,
+                )
             else:
-                raise Exception(f"TODO: {action}")
+                raise Exception(f"Logic error, unknown if action {action}!")
 
         # TODO: Everywhere that we assert on a type needs to be updated to check for a borrow, and if the borrow
         # exists we should instead set the borrow to check for that type.
@@ -2734,8 +2744,8 @@ class ByteCodeDecompiler(VerboseOutput):
             elif isinstance(statement, IfStatement):
                 new_statement = do(statement)
                 if new_statement and isinstance(new_statement, IfStatement):
-                    statement.true_statements = self.__walk(statement.true_statements, do)
-                    statement.false_statements = self.__walk(statement.false_statements, do)
+                    statement.true_statements = self.__walk(new_statement.true_statements, do)
+                    statement.false_statements = self.__walk(new_statement.false_statements, do)
                     new_statements.append(new_statement)
                 elif new_statement is not None:
                     # Cannot currently handle changing a statement with children to a new
