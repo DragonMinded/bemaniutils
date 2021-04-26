@@ -180,6 +180,9 @@ class ContinueStatement(Statement):
 class GotoStatement(Statement):
     # A goto, including the ID of the chunk we want to jump to.
     def __init__(self, location: int) -> None:
+        if location < 0:
+            raise Exception(f"Logic error, attempting to go to artificially inserted location {location}!")
+
         self.location = location
 
     def __repr__(self) -> str:
@@ -2600,9 +2603,6 @@ class ByteCodeDecompiler(VerboseOutput):
             else:
                 next_chunk_id = next_id
 
-            # Make sure when we collapse chunks, we don't lose labels.
-            statements.append(DefineLabelStatement(start_id))
-
             if isinstance(chunk, Loop):
                 # Evaluate the loop. No need to update per-chunk stacks here since we will do it in a child eval.
                 self.vprint(f"Evaluating graph in Loop {chunk.id}")
@@ -2614,6 +2614,10 @@ class ByteCodeDecompiler(VerboseOutput):
                 # We should have evaluated this earlier!
                 raise Exception("Logic error!")
             else:
+                if start_id >= 0:
+                    # Make sure when we collapse chunks, we don't lose labels.
+                    statements.append(DefineLabelStatement(start_id))
+
                 # Grab the computed start stack for this ID
                 stack = stacks[chunk.id]
                 del stacks[chunk.id]
