@@ -117,7 +117,7 @@ class Statement(ConvertedAction):
 
 
 def object_ref(obj: Any, parent_prefix: str) -> str:
-    if isinstance(obj, (GenericObject, Variable, Member, MethodCall, FunctionCall, Register)):
+    if isinstance(obj, (GenericObject, Variable, TempVariable, BorrowedStackEntry, Member, MethodCall, FunctionCall, Register)):
         return obj.render(parent_prefix, nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")
@@ -151,6 +151,9 @@ ArbitraryOpcode = Union[AP2Action, ConvertedAction]
 class DefineLabelStatement(Statement):
     def __init__(self, location: int) -> None:
         self.location = location
+
+    def __repr__(self) -> str:
+        return f"label_{self.location}:"
 
     def render(self, prefix: str) -> List[str]:
         return [f"label_{self.location}:"]
@@ -315,6 +318,21 @@ class CloneSpriteStatement(Statement):
         name = value_ref(self.name, prefix)
         depth = value_ref(self.depth, prefix)
         return [f"{prefix}builtin_CloneSprite({obj}, {name}, {depth});"]
+
+
+class BorrowedStackEntry(Expression):
+    def __init__(self, parent_stack_id: int, borrow_no: int) -> None:
+        self.parent_stack_id = parent_stack_id
+        self.borrow_no = borrow_no
+        self.tempvar: Optional[str] = None
+
+    def __repr__(self) -> str:
+        return f"BorrowedStackEntry({self.parent_stack_id}, {self.borrow_no}, {self.tempvar})"
+
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        if self.tempvar:
+            return self.tempvar
+        raise Exception("Logic error, a bare BorrowedStackEntry should never make it to the render stage!")
 
 
 class ArithmeticExpression(Expression):
@@ -884,6 +902,30 @@ class Variable(Expression):
         return name_ref(self.name, parent_prefix)
 
 
+class TempVariable(Expression):
+    # This is solely for recognizing when a stack which is being reconciled already has
+    # a variable.
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __repr__(self) -> str:
+        return f"TempVariable({self.name})"
+
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        return self.name
+
+
+class InsertionLocation(Statement):
+    def __init__(self, location: int) -> None:
+        self.location = location
+
+    def __repr__(self) -> str:
+        return f"<INSERTION POINT FOR {self.location}>"
+
+    def render(self, prefix: str) -> List[str]:
+        raise Exception("Logic error, an InsertionLocation should never make it to the render stage!")
+
+
 class Member(Expression):
     # A member can be an array entry in an array, or an object member as accessed
     # in array lookup syntax or dot notation.
@@ -971,6 +1013,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         self.bytecode = bytecode
         self.__statements: Optional[List[Statement]] = None
+        self.__tmpvar_id: int = 0
         self.__goto_body_id: int = -1
 
     @property
@@ -1913,35 +1956,52 @@ class ByteCodeDecompiler(VerboseOutput):
         # Return the tree, stripped of all dead code (most likely just the return sentinel).
         return new_chunks
 
-    def __eval_stack(self, chunk: ByteCodeChunk, offset_map: Dict[int, int]) -> List[ConvertedAction]:
-        stack: List[Any] = []
+    def __eval_stack(self, chunk: ByteCodeChunk, stack: List[Any], offset_map: Dict[int, int]) -> Tuple[List[ConvertedAction], List[Any], List[BorrowedStackEntry]]:
+        # Make a copy of the stack so we can safely modify it ourselves.
+        stack = [s for s in stack]
+        borrows: List[BorrowedStackEntry] = []
+
+        def get_stack() -> Any:
+            nonlocal stack
+            nonlocal borrows
+
+            if stack:
+                return stack.pop()
+
+            # We must borrow from a future invocation that might goto us.
+            self.vprint("Borrowing a value from the stack, to be filled in later!")
+            borrow = BorrowedStackEntry(chunk.id, len(borrows))
+            borrows.append(borrow)
+            return borrow
 
         def make_if_expr(action: IfAction, negate: bool) -> IfExpr:
             if action.comparison in [IfAction.IS_UNDEFINED, IfAction.IS_NOT_UNDEFINED]:
-                conditional = stack.pop()
+                conditional = get_stack()
                 return IsUndefinedIf(conditional, negate=negate != (action.comparison == IfAction.IS_UNDEFINED))
             if action.comparison in [IfAction.IS_TRUE, IfAction.IS_FALSE]:
-                conditional = stack.pop()
+                conditional = get_stack()
                 return IsBooleanIf(conditional, negate=negate != (action.comparison == IfAction.IS_FALSE))
             if action.comparison in [IfAction.EQUALS, IfAction.NOT_EQUALS]:
-                conditional2 = stack.pop()
-                conditional1 = stack.pop()
+                conditional2 = get_stack()
+                conditional1 = get_stack()
                 return IsEqualIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.NOT_EQUALS))
             if action.comparison in [IfAction.STRICT_EQUALS, IfAction.STRICT_NOT_EQUALS]:
-                conditional2 = stack.pop()
-                conditional1 = stack.pop()
+                conditional2 = get_stack()
+                conditional1 = get_stack()
                 return IsStrictEqualIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.STRICT_NOT_EQUALS))
             if action.comparison in [IfAction.LT, IfAction.GT]:
-                conditional2 = stack.pop()
-                conditional1 = stack.pop()
+                conditional2 = get_stack()
+                conditional1 = get_stack()
                 return MagnitudeIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.LT))
             if action.comparison in [IfAction.LT_EQUALS, IfAction.GT_EQUALS]:
-                conditional2 = stack.pop()
-                conditional1 = stack.pop()
+                conditional2 = get_stack()
+                conditional1 = get_stack()
                 return MagnitudeEqualIf(conditional1, conditional2, negate=negate != (action.comparison == IfAction.LT_EQUALS))
 
             raise Exception(f"TODO: {action}")
 
+        # TODO: Everywhere that we assert on a type needs to be updated to check for a borrow, and if the borrow
+        # exists we should instead set the borrow to check for that type.
         for i in range(len(chunk.actions)):
             action = chunk.actions[i]
 
@@ -1971,7 +2031,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 else:
                     after = PlayMovieStatement()
 
-                frame = stack.pop()
+                frame = get_stack()
                 if action.additional_frames:
                     frame = ArithmeticExpression(frame, '+', action.additional_frames)
 
@@ -1986,7 +2046,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 # So we need to expand the stack. But we can't mid-iteration without a lot of
                 # shenanigans, so we instead invent a new type of ConvertedAction that can contain
                 # multiple statements.
-                set_value = stack.pop()
+                set_value = get_stack()
                 if action.preserve_stack:
                     stack.append(set_value)
 
@@ -2019,7 +2079,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 continue
 
             if isinstance(action, AddNumVariableAction):
-                variable_name = stack.pop()
+                variable_name = get_stack()
                 if not isinstance(variable_name, (str, StringConstant)):
                     raise Exception("Logic error!")
 
@@ -2066,18 +2126,18 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.CLONE_SPRITE:
-                    depth = stack.pop()
+                    depth = get_stack()
                     if not isinstance(depth, (int, Expression)):
                         raise Exception("Logic error!")
-                    name = stack.pop()
+                    name = get_stack()
                     if not isinstance(name, (str, Expression)):
                         raise Exception("Logic error!")
-                    obj = stack.pop()
+                    obj = get_stack()
                     chunk.actions[i] = CloneSpriteStatement(obj, name, depth)
                     continue
 
                 if action.opcode == AP2Action.GET_VARIABLE:
-                    variable_name = stack.pop()
+                    variable_name = get_stack()
                     if isinstance(variable_name, (str, StringConstant)):
                         stack.append(Variable(variable_name))
                     else:
@@ -2089,16 +2149,16 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.DELETE:
-                    member_name = stack.pop()
+                    member_name = get_stack()
                     if not isinstance(member_name, (str, int, Expression)):
                         raise Exception("Logic error!")
-                    obj_name = stack.pop()
+                    obj_name = get_stack()
 
                     chunk.actions[i] = DeleteMemberStatement(obj_name, member_name)
                     continue
 
                 if action.opcode == AP2Action.DELETE2:
-                    variable_name = stack.pop()
+                    variable_name = get_stack()
                     if not isinstance(variable_name, (str, StringConstant)):
                         raise Exception("Logic error!")
 
@@ -2106,95 +2166,95 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.TO_NUMBER:
-                    obj_ref = stack.pop()
+                    obj_ref = get_stack()
                     stack.append(FunctionCall('int', [obj_ref]))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.TO_STRING:
-                    obj_ref = stack.pop()
+                    obj_ref = get_stack()
                     stack.append(FunctionCall('str', [obj_ref]))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.INCREMENT:
-                    obj_ref = stack.pop()
+                    obj_ref = get_stack()
                     stack.append(ArithmeticExpression(obj_ref, '+', 1))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.DECREMENT:
-                    obj_ref = stack.pop()
+                    obj_ref = get_stack()
                     stack.append(ArithmeticExpression(obj_ref, '-', 1))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.NOT:
-                    obj_ref = stack.pop()
+                    obj_ref = get_stack()
                     stack.append(NotExpression(obj_ref))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.INSTANCEOF:
-                    name_ref = stack.pop()
-                    obj_to_check = stack.pop()
+                    name_ref = get_stack()
+                    obj_to_check = get_stack()
                     stack.append(FunctionCall('isinstance', [obj_to_check, name_ref]))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.TYPEOF:
-                    obj_to_check = stack.pop()
+                    obj_to_check = get_stack()
                     stack.append(FunctionCall('typeof', [obj_to_check]))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.CALL_METHOD:
-                    method_name = stack.pop()
+                    method_name = get_stack()
                     if not isinstance(method_name, (str, int, Expression)):
                         raise Exception("Logic error!")
-                    object_reference = stack.pop()
-                    num_params = stack.pop()
+                    object_reference = get_stack()
+                    num_params = get_stack()
                     if not isinstance(num_params, int):
                         raise Exception("Logic error!")
                     params = []
                     for _ in range(num_params):
-                        params.append(stack.pop())
+                        params.append(get_stack())
                     stack.append(MethodCall(object_reference, method_name, params))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.CALL_FUNCTION:
-                    function_name = stack.pop()
+                    function_name = get_stack()
                     if not isinstance(function_name, (str, StringConstant)):
                         raise Exception("Logic error!")
-                    num_params = stack.pop()
+                    num_params = get_stack()
                     if not isinstance(num_params, int):
                         raise Exception("Logic error!")
                     params = []
                     for _ in range(num_params):
-                        params.append(stack.pop())
+                        params.append(get_stack())
                     stack.append(FunctionCall(function_name, params))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.RETURN:
-                    retval = stack.pop()
+                    retval = get_stack()
                     chunk.actions[i] = ReturnStatement(retval)
                     continue
 
                 if action.opcode == AP2Action.POP:
                     # This is a discard. Let's see if its discarding a function or method
                     # call. If so, that means the return doesn't matter.
-                    discard = stack.pop()
+                    discard = get_stack()
                     if isinstance(discard, MethodCall):
                         # It is! Let's act on the statement.
                         chunk.actions[i] = ExpressionStatement(discard)
@@ -2203,8 +2263,8 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.SET_VARIABLE:
-                    set_value = stack.pop()
-                    local_name = stack.pop()
+                    set_value = get_stack()
+                    local_name = get_stack()
                     if isinstance(local_name, (str, StringConstant)):
                         chunk.actions[i] = SetVariableStatement(local_name, set_value)
                     else:
@@ -2215,18 +2275,18 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.SET_MEMBER:
-                    set_value = stack.pop()
-                    member_name = stack.pop()
+                    set_value = get_stack()
+                    member_name = get_stack()
                     if not isinstance(member_name, (str, int, Expression)):
                         raise Exception("Logic error!")
-                    object_reference = stack.pop()
+                    object_reference = get_stack()
 
                     chunk.actions[i] = SetMemberStatement(object_reference, member_name, set_value)
                     continue
 
                 if action.opcode == AP2Action.DEFINE_LOCAL:
-                    set_value = stack.pop()
-                    local_name = stack.pop()
+                    set_value = get_stack()
+                    local_name = get_stack()
                     if not isinstance(local_name, (str, StringConstant)):
                         raise Exception("Logic error!")
 
@@ -2234,7 +2294,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.DEFINE_LOCAL2:
-                    local_name = stack.pop()
+                    local_name = get_stack()
                     if not isinstance(local_name, (str, StringConstant)):
                         raise Exception("Logic error!")
 
@@ -2243,107 +2303,125 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.GET_MEMBER:
-                    member_name = stack.pop()
+                    member_name = get_stack()
                     if not isinstance(member_name, (str, int, Expression)):
                         raise Exception("Logic error!")
-                    object_reference = stack.pop()
+                    object_reference = get_stack()
                     stack.append(Member(object_reference, member_name))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.NEW_OBJECT:
-                    object_name = stack.pop()
+                    object_name = get_stack()
                     if not isinstance(object_name, (str, StringConstant)):
                         raise Exception("Logic error!")
-                    num_params = stack.pop()
+                    num_params = get_stack()
                     if not isinstance(num_params, int):
                         raise Exception("Logic error!")
                     params = []
                     for _ in range(num_params):
-                        params.append(stack.pop())
+                        params.append(get_stack())
                     stack.append(NewObject(object_name, params))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.INIT_ARRAY:
-                    num_entries = stack.pop()
+                    num_entries = get_stack()
                     if not isinstance(num_entries, int):
                         raise Exception("Logic error!")
                     params = []
                     for _ in range(num_entries):
-                        params.append(stack.pop())
+                        params.append(get_stack())
                     stack.append(Array(params))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.TRACE:
-                    trace_obj = stack.pop()
+                    trace_obj = get_stack()
                     chunk.actions[i] = DebugTraceStatement(trace_obj)
                     continue
 
                 if action.opcode == AP2Action.ADD2:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "+", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.SUBTRACT:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "-", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.MULTIPLY:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "*", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.DIVIDE:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "/", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.MODULO:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "%", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.BIT_OR:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "|", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.BIT_AND:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "&", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.BIT_XOR:
-                    expr2 = stack.pop()
-                    expr1 = stack.pop()
+                    expr2 = get_stack()
+                    expr1 = get_stack()
                     stack.append(ArithmeticExpression(expr1, "^", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.EQUALS2:
+                    expr2 = get_stack()
+                    expr1 = get_stack()
+                    stack.append(ArithmeticExpression(expr1, "==", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.PUSH_DUPLICATE:
+                    # TODO: This might benefit from generating a temp variable assignment
+                    # and pushing that onto the stack twice, instead of whatever's on the stack.
+                    dup = get_stack()
+                    stack.append(dup)
+                    stack.append(dup)
 
                     chunk.actions[i] = NopStatement()
                     continue
@@ -2377,10 +2455,6 @@ class ByteCodeDecompiler(VerboseOutput):
             self.vprint(stack)
             raise Exception(f"TODO: {action}")
 
-        # Make sure we consumed the stack.
-        if stack:
-            raise Exception(f"Stack not empty, contains {stack}!")
-
         # Now, clean up code generation.
         new_actions: List[ConvertedAction] = []
         for action in chunk.actions:
@@ -2400,30 +2474,160 @@ class ByteCodeDecompiler(VerboseOutput):
                 continue
 
             new_actions.append(action)
-        return new_actions
+
+        # Finally, return everything we did.
+        return new_actions, stack, borrows
 
     def __eval_chunks(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> List[Statement]:
+        stack: Dict[int, List[Any]] = {start_id: []}
+        insertables: Dict[int, List[Statement]] = {}
+        other_locs: Dict[int, int] = {}
+
+        statements, borrowed_stack_entries = self.__eval_chunks_impl(start_id, chunks, None, stack, insertables, other_locs, offset_map)
+
+        # Go through and fix up borrowed entries.
+        for entry in borrowed_stack_entries:
+            if entry.parent_stack_id not in insertables:
+                raise Exception(f"Logic error, borrowed stack entry {entry} points at nonexistent insertable!")
+            insertable_list = insertables[entry.parent_stack_id]
+            if entry.borrow_no < 0 or entry.borrow_no >= len(insertable_list):
+                raise Exception(f"Logic error, borrowed stack entry {entry} points at nonexistent insertable!")
+            insertable = insertable_list[entry.borrow_no]
+            if not isinstance(insertable, SetVariableStatement):
+                raise Exception(f"Logic error, expected a SetVariableStatement, got {insertable}!")
+
+            self.vprint(f"Returning borrowed stack entry {entry} by assigning it temp variable {insertable.name}")
+            entry.tempvar = name_ref(insertable.name, "")
+
+        # Now, go through and fix up any insertables.
+        def fixup(statements: Sequence[Statement]) -> List[Statement]:
+            new_statements: List[Statement] = []
+
+            for statement in statements:
+                if isinstance(statement, DoWhileStatement):
+                    statement.body = fixup(statement.body)
+                    new_statements.append(statement)
+                elif isinstance(statement, IfStatement):
+                    statement.true_statements = fixup(statement.true_statements)
+                    statement.false_statements = fixup(statement.false_statements)
+                    new_statements.append(statement)
+                else:
+                    if isinstance(statement, InsertionLocation):
+                        # Convert to any statements we need to insert.
+                        if statement.location in insertables:
+                            self.vprint("Inserting temp variable assignments into insertion location {stataement.location}")
+                            for stmt in insertables[statement.location]:
+                                new_statements.append(stmt)
+                    else:
+                        new_statements.append(statement)
+            return new_statements
+
+        statements = fixup(statements)
+
+        # Make sure we consumed the stack.
+        for cid, leftovers in stack.items():
+            if leftovers:
+                raise Exception(f"Stack not empty, chunk {cid} contains {stack}!")
+
+        # Finally, return the statements!
+        return statements
+
+    def __eval_chunks_impl(
+        self,
+        start_id: int,
+        chunks: Sequence[ArbitraryCodeChunk],
+        next_id: Optional[int],
+        stacks: Dict[int, List[Any]],
+        insertables: Dict[int, List[Statement]],
+        other_stack_locs: Dict[int, int],
+        offset_map: Dict[int, int],
+    ) -> Tuple[List[Statement], List[BorrowedStackEntry]]:
         chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
         statements: List[Statement] = []
+        borrowed_entries: List[BorrowedStackEntry] = []
+
+        def reconcile_stacks(cur_chunk: int, new_stack_id: int, new_stack: List[Any]) -> List[Statement]:
+            if new_stack_id in stacks:
+                if len(stacks[new_stack_id]) != len(new_stack):
+                    raise Exception(f"Logic error, cannot reconcile {stacks[new_stack_id]} with {new_stack}!")
+                if cur_chunk == other_stack_locs[new_stack_id]:
+                    raise Exception("Logic error, cannot reconcile variable names with self!")
+                other_chunk = other_stack_locs[new_stack_id]
+
+                self.vprint(
+                    f"Merging stack {stacks[new_stack_id]} for chunk ID {new_stack_id} with {new_stack}, " +
+                    f"and scheduling chunks {cur_chunk} and {other_chunk} for variable definitions."
+                )
+
+                stack: List[Any] = []
+                definitions: List[Statement] = []
+                for j in range(len(new_stack)):
+                    # Walk the stack backwards to mimic the order in which a stack entry would be pulled.
+                    i = (len(new_stack) - (j + 1))
+                    new_entry = new_stack[i]
+                    old_entry = stacks[new_stack_id][i]
+
+                    if new_entry != old_entry:
+                        if isinstance(old_entry, TempVariable):
+                            # This is already converted in another stack, so we just need to use the same.
+                            tmpname = old_entry.name
+
+                            insertables[cur_chunk] = insertables.get(cur_chunk, []) + [SetVariableStatement(tmpname, new_entry)]
+
+                            stack.append(TempVariable(tmpname))
+                            self.vprint(f"Reusing temporary variable {tmpname} to hold stack value {new_stack[i]}")
+                        else:
+                            tmpname = f"tempvar_{self.__tmpvar_id}"
+                            self.__tmpvar_id += 1
+
+                            insertables[cur_chunk] = insertables.get(cur_chunk, []) + [SetVariableStatement(tmpname, new_entry)]
+                            insertables[other_chunk] = insertables.get(other_chunk, []) + [SetVariableStatement(tmpname, old_entry)]
+
+                            stack.append(TempVariable(tmpname))
+                            self.vprint(f"Creating temporary variable {tmpname} to hold stack values {new_stack[i]} and {stacks[new_stack_id][i]}")
+                    else:
+                        stack.append(new_entry)
+
+                stacks[new_stack_id] = stack
+                return definitions
+            else:
+                self.vprint(f"Defining stack for chunk ID {new_stack_id} to be {new_stack}")
+                other_stack_locs[new_stack_id] = cur_chunk
+                stacks[new_stack_id] = new_stack
+                return []
 
         while True:
             # Grab the chunk to operate on.
             chunk = chunks_by_id[start_id]
+            if len(chunk.next_chunks) > 1:
+                # We've checked so this should be impossible.
+                raise Exception("Logic error!")
+            if chunk.next_chunks:
+                next_chunk_id = chunk.next_chunks[0]
+            else:
+                next_chunk_id = next_id
 
             # Make sure when we collapse chunks, we don't lose labels.
             statements.append(DefineLabelStatement(start_id))
 
             if isinstance(chunk, Loop):
-                # Evaluate the loop
+                # Evaluate the loop. No need to update per-chunk stacks here since we will do it in a child eval.
                 self.vprint(f"Evaluating graph in Loop {chunk.id}")
-                statements.append(
-                    DoWhileStatement(self.__eval_chunks(chunk.id, chunk.chunks, offset_map))
-                )
+                loop_statements, new_borrowed_entries = self.__eval_chunks_impl(chunk.id, chunk.chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
+
+                statements.append(DoWhileStatement(loop_statements))
+                borrowed_entries.extend(new_borrowed_entries)
             elif isinstance(chunk, IfBody):
                 # We should have evaluated this earlier!
                 raise Exception("Logic error!")
             else:
-                new_statements = self.__eval_stack(chunk, offset_map)
+                # Grab the computed start stack for this ID
+                stack = stacks[chunk.id]
+                del stacks[chunk.id]
+
+                # Calculate the statements for this chunk, as well as the leftover stack entries and any borrows.
+                self.vprint(f"Evaluating graph of ByteCodeChunk {chunk.id}")
+                new_statements, stack_leftovers, new_borrowed_entries = self.__eval_stack(chunk, stack, offset_map)
 
                 # We need to check and see if the last entry is an IfExpr, and hoist it
                 # into a statement here.
@@ -2433,19 +2637,45 @@ class ByteCodeDecompiler(VerboseOutput):
 
                     if not isinstance(if_body_chunk, IfBody):
                         # IfBody should always follow a chunk that ends with an if.
+                        raise Exception(f"Logic error, expecting an IfBody chunk but got {if_body_chunk}!")
+
+                    if if_body in stacks:
+                        # Nothing should ever create a stack pointing at an IfBody except this code here.
+                        raise Exception(f"Logic error, IfBody ID {if_body} already has a stack {stacks[if_body]}!")
+
+                    # Recalculate next chunk ID since we're calculating two chunks here.
+                    if len(if_body_chunk.next_chunks) > 1:
+                        # We've checked so this should be impossible.
                         raise Exception("Logic error!")
+                    if if_body_chunk.next_chunks:
+                        next_chunk_id = if_body_chunk.next_chunks[0]
+                    else:
+                        next_chunk_id = next_id
+                    self.vprint(f"Recalculated next ID for IfBody {if_body} to be {next_chunk_id}")
 
                     # Evaluate the if body
                     true_statements: List[Statement] = []
                     if if_body_chunk.true_chunks:
                         self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} true case")
                         true_start = self.__get_entry_block(if_body_chunk.true_chunks)
-                        true_statements = self.__eval_chunks(true_start, if_body_chunk.true_chunks, offset_map)
+                        if true_start in stacks:
+                            raise Exception("Logic error, unexpected stack for IF!")
+                        else:
+                            # The stack for both of these is the leftovers from the previous evaluation as they
+                            # rollover.
+                            stacks[true_start] = [s for s in stack_leftovers]
+                        true_statements, true_borrowed_entries = self.__eval_chunks_impl(true_start, if_body_chunk.true_chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
                     false_statements: List[Statement] = []
                     if if_body_chunk.false_chunks:
                         self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} false case")
                         false_start = self.__get_entry_block(if_body_chunk.false_chunks)
-                        false_statements = self.__eval_chunks(false_start, if_body_chunk.false_chunks, offset_map)
+                        if false_start in stacks:
+                            raise Exception("Logic error, unexpected stack for IF!")
+                        else:
+                            # The stack for both of these is the leftovers from the previous evaluation as they
+                            # rollover.
+                            stacks[false_start] = [s for s in stack_leftovers]
+                        false_statements, false_borrowed_entries = self.__eval_chunks_impl(false_start, if_body_chunk.false_chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
 
                     # Convert this IfExpr to a full-blown IfStatement.
                     new_statements[-1] = IfStatement(
@@ -2456,24 +2686,40 @@ class ByteCodeDecompiler(VerboseOutput):
 
                     # Skip evaluating the IfBody next iteration.
                     chunk = if_body_chunk
+                else:
+                    # We must propagate the stack to the next entry. If it already exists we must merge it.
+                    new_next_id = next_chunk_id
+                    if new_statements:
+                        last_new_statement = new_statements[-1]
+                        if isinstance(last_new_statement, GotoStatement):
+                            new_next_id = last_new_statement.location
+                        if isinstance(last_new_statement, ReturnStatement):
+                            new_next_id = None
+
+                    if new_next_id:
+                        reconcile_stacks(chunk.id, new_next_id, stack_leftovers)
+                        sentinels: List[Statement] = [InsertionLocation(chunk.id)]
+                        if new_statements and isinstance(new_statements[-1], GotoStatement):
+                            sentinels.append(new_statements[-1])
+                            new_statements = new_statements[:-1]
+                        new_statements.extend(sentinels)
+                    else:
+                        if stack_leftovers:
+                            raise Exception(f"Logic error, reached execution end and have stack entries {stack_leftovers} still!")
 
                 # Verify that we converted all the statements properly.
                 for statement in new_statements:
                     if not isinstance(statement, Statement):
                         # We didn't convert a statement properly.
-                        self.vprint(statement)
-                        raise Exception("Logic error!")
+                        raise Exception(f"Logic error, {statement} is not converted!")
                     statements.append(statement)
 
             # Go to the next chunk
             if not chunk.next_chunks:
                 break
-            if len(chunk.next_chunks) != 1:
-                # We've checked so this should be impossible.
-                raise Exception("Logic error!")
             start_id = chunk.next_chunks[0]
 
-        return statements
+        return statements, stack
 
     def __walk(self, statements: Sequence[Statement], do: Callable[[Statement], Optional[Statement]]) -> List[Statement]:
         new_statements: List[Statement] = []
