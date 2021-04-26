@@ -1037,7 +1037,10 @@ class ByteCodeDecompiler(VerboseOutput):
                         dest_action = j
                         break
                 else:
-                    raise Exception(f"{action} jumps to an opcode that doesn't exist!")
+                    if action.jump_offset == self.bytecode.end_offset:
+                        dest_action = end
+                    else:
+                        raise Exception(f"{action} jumps to an opcode that doesn't exist!")
 
                 # If the destination action flow already starts with the jump offset,
                 # then we're good, we just need to point our current split at this new
@@ -1088,7 +1091,10 @@ class ByteCodeDecompiler(VerboseOutput):
                         dest_action = j
                         break
                 else:
-                    raise Exception(f"{action} conditional jumps to an opcode that doesn't exist!")
+                    if action.jump_if_true_offset == self.bytecode.end_offset:
+                        dest_action = end
+                    else:
+                        raise Exception(f"{action} conditional jumps to an opcode that doesn't exist!")
 
                 # If the destination action flow already starts with the jump offset,
                 # then we're good, we just need to point our current split at this new
@@ -1136,19 +1142,18 @@ class ByteCodeDecompiler(VerboseOutput):
         for start, flow in flows.items():
             if start == end:
                 # We don't want to render out the end of the graph, it was only there to make
-                # the above algorithm easier.
+                # the above algorithm easier. We'll add it back later after we fix up the
+                # chunks based on start_offset, which the end chunk would not have on account
+                # of containing zero instructions.
                 continue
 
-            if len(flow.next_flow) == 1 and flow.next_flow[0] == end:
-                # This flow is a termination state.
-                chunks.append(ByteCodeChunk(self.bytecode.actions[flow.beginning].offset, self.bytecode.actions[flow.beginning:flow.end], []))
-            else:
-                next_chunks: List[int] = []
-                for ano in flow.next_flow:
-                    if ano == end:
-                        raise Exception("Logic error!")
+            next_chunks: List[int] = []
+            for ano in flow.next_flow:
+                if ano == end:
+                    next_chunks.append(self.bytecode.end_offset)
+                else:
                     next_chunks.append(self.bytecode.actions[ano].offset)
-                chunks.append(ByteCodeChunk(self.bytecode.actions[flow.beginning].offset, self.bytecode.actions[flow.beginning:flow.end], next_chunks))
+            chunks.append(ByteCodeChunk(self.bytecode.actions[flow.beginning].offset, self.bytecode.actions[flow.beginning:flow.end], next_chunks))
 
         # Calculate who points to us as well, for posterity. We can still use chunk.id as
         # the offset of the chunk since we haven't converted yet.
@@ -1191,7 +1196,9 @@ class ByteCodeDecompiler(VerboseOutput):
             chunk.id = chunk_id
 
             chunk_id += 1
+
         end_chunk_id = chunk_id
+        offset_to_id[self.bytecode.end_offset] = end_chunk_id
 
         # Now, convert the offsets to chunk ID pointers.
         end_previous_chunks: List[int] = []
@@ -1199,6 +1206,8 @@ class ByteCodeDecompiler(VerboseOutput):
             if chunk.next_chunks:
                 # Normal chunk.
                 chunk.next_chunks = [offset_to_id[c] for c in chunk.next_chunks]
+                if end_chunk_id in chunk.next_chunks:
+                    end_previous_chunks.append(chunk.id)
             else:
                 # Point this chunk at the end of bytecode sentinel.
                 chunk.next_chunks = [end_chunk_id]
@@ -1207,7 +1216,6 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Add the "return" chunk now that we've converted everything.
         chunks.append(ByteCodeChunk(end_chunk_id, [], [], previous_chunks=end_previous_chunks))
-        offset_to_id[self.bytecode.end_offset] = end_chunk_id
 
         return (chunks, offset_to_id)
 
