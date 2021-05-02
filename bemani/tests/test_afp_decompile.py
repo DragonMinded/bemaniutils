@@ -235,6 +235,25 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: STOP", "101: RETURN"])
         self.assertEqual(self.__equiv(chunks_by_id[1]), [])
 
+    def test_dead_code_elimination_end(self) -> None:
+        # Return case
+        bytecode = self.__make_bytecode([
+            AP2Action(100, AP2Action.STOP),
+            AP2Action(101, AP2Action.END),
+            AP2Action(102, AP2Action.END),
+        ])
+        chunks_by_id, offset_map = self.__call_graph(bytecode)
+        self.assertEqual(offset_map, {100: 0, 103: 1})
+        self.assertItemsEqual(chunks_by_id.keys(), {0, 1})
+        self.assertItemsEqual(chunks_by_id[0].previous_chunks, [])
+        self.assertItemsEqual(chunks_by_id[0].next_chunks, [1])
+        self.assertItemsEqual(chunks_by_id[1].previous_chunks, [0])
+        self.assertItemsEqual(chunks_by_id[1].next_chunks, [])
+
+        # Also verify the code
+        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: STOP", "101: END"])
+        self.assertEqual(self.__equiv(chunks_by_id[1]), [])
+
     def test_dead_code_elimination_throw(self) -> None:
         # Throw case
         bytecode = self.__make_bytecode([
@@ -467,3 +486,34 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertEqual(self.__equiv(chunks_by_id[6]), ["112: PUSH\n  'd'\nEND_PUSH"])
         self.assertEqual(self.__equiv(chunks_by_id[7]), ["113: END"])
         self.assertEqual(self.__equiv(chunks_by_id[8]), [])
+
+    def test_if_handling_diamond_end_both_sides(self) -> None:
+        # If true-false diamond case but the cases never converge.
+        bytecode = self.__make_bytecode([
+            # Beginning of the if statement.
+            PushAction(100, [True]),
+            IfAction(101, IfAction.IS_TRUE, 104),
+            # False case (fall through from if).
+            PushAction(102, ['b']),
+            AP2Action(103, AP2Action.END),
+            # True case.
+            PushAction(104, ['a']),
+            AP2Action(105, AP2Action.END),
+        ])
+        chunks_by_id, offset_map = self.__call_graph(bytecode)
+        self.assertEqual(offset_map, {100: 0, 102: 1, 104: 2, 106: 3})
+        self.assertItemsEqual(chunks_by_id.keys(), {0, 1, 2, 3})
+        self.assertItemsEqual(chunks_by_id[0].previous_chunks, [])
+        self.assertItemsEqual(chunks_by_id[0].next_chunks, [1, 2])
+        self.assertItemsEqual(chunks_by_id[1].previous_chunks, [0])
+        self.assertItemsEqual(chunks_by_id[1].next_chunks, [3])
+        self.assertItemsEqual(chunks_by_id[2].previous_chunks, [0])
+        self.assertItemsEqual(chunks_by_id[2].next_chunks, [3])
+        self.assertItemsEqual(chunks_by_id[3].previous_chunks, [1, 2])
+        self.assertItemsEqual(chunks_by_id[3].next_chunks, [])
+
+        # Also verify the code
+        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: PUSH\n  'b'\nEND_PUSH", "103: END"])
+        self.assertEqual(self.__equiv(chunks_by_id[2]), ["104: PUSH\n  'a'\nEND_PUSH", "105: END"])
+        self.assertEqual(self.__equiv(chunks_by_id[3]), [])

@@ -1060,7 +1060,7 @@ class ByteCodeDecompiler(VerboseOutput):
             current_action = i
             next_action = i + 1
 
-            if action.opcode in [AP2Action.THROW, AP2Action.RETURN]:
+            if action.opcode in [AP2Action.THROW, AP2Action.RETURN, AP2Action.END]:
                 # This should end execution, so we should cap off the current execution
                 # and send it to the end.
                 current_action_flow = find(current_action)
@@ -1290,7 +1290,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 # We haven't done any fixing up, we're guaranteed this is an AP2Action.
                 last_action = cast(AP2Action, chunk.actions[-1])
 
-                if last_action.opcode in [AP2Action.THROW, AP2Action.RETURN, AP2Action.JUMP] and len(chunk.next_chunks) != 1:
+                if last_action.opcode in [AP2Action.THROW, AP2Action.RETURN, AP2Action.JUMP, AP2Action.END] and len(chunk.next_chunks) != 1:
                     raise Exception(f"Chunk ID {chunk.id} has control flow action expecting one next chunk but has {len(chunk.next_chunks)}!")
                 if len(chunk.next_chunks) == 2 and last_action.opcode != AP2Action.IF:
                     raise Exception(f"Chunk ID {chunk.id} has two next chunks but control flow action is not an if statement!")
@@ -1487,7 +1487,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if isinstance(last_action, AP2Action):
                     if last_action.opcode == AP2Action.IF and len(chunk.next_chunks) != 2:
                         raise Exception(f"Somehow messed up the next pointers on if statement in chunk ID {chunk.id}!")
-                    if last_action.opcode in [AP2Action.JUMP, AP2Action.RETURN, AP2Action.THROW] and len(chunk.next_chunks) != 1:
+                    if last_action.opcode in [AP2Action.JUMP, AP2Action.RETURN, AP2Action.THROW, AP2Action.END] and len(chunk.next_chunks) != 1:
                         raise Exception(f"Somehow messed up the next pointers on control flow statement in chunk ID {chunk.id}!")
                 else:
                     if len(chunk.next_chunks) > 1:
@@ -1628,7 +1628,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 # Examine the last instruction.
                 last_action = chunk.actions[-1]
                 if isinstance(last_action, AP2Action):
-                    if last_action.opcode in [AP2Action.THROW, AP2Action.RETURN]:
+                    if last_action.opcode in [AP2Action.THROW, AP2Action.RETURN, AP2Action.END]:
                         # The last action already dictates what we should do here. Break
                         # the chain at this point.
                         self.vprint(f"Breaking chain on {chunk.id} because it is a {last_action}.")
