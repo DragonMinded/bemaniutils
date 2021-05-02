@@ -534,7 +534,7 @@ class TestAFPDecompile(ExtendedTestCase):
     def __call_decompile(self, bytecode: ByteCode) -> List[Statement]:
         # Just create a dummy compiler so we can access the internal method for testing.
         bcd = ByteCodeDecompiler(bytecode)
-        bcd.decompile()
+        bcd.decompile(verbose=self.verbose)
         return bcd.statements
 
     def __equiv(self, statements: List[Statement]) -> List[str]:
@@ -602,7 +602,7 @@ class TestAFPDecompile(ExtendedTestCase):
         statements = self.__call_decompile(bytecode)
         self.assertEqual(self.__equiv(statements), ["throw 'exception'"])
 
-    def test_if_handling_basic(self) -> None:
+    def test_if_handling_basic_flow_to_end(self) -> None:
         # If by itself case.
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
@@ -750,3 +750,36 @@ class TestAFPDecompile(ExtendedTestCase):
 
         # TODO: The output should be optimized to remove redundant return statements.
         self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n  return\n} else {\n  builtin_StopPlaying()\n  return\n}"])
+
+    def test_if_handling_or(self) -> None:
+        # Two ifs that together make an or (if register == 1 or register == 3)
+        bytecode = self.__make_bytecode([
+            # Beginning of the first if statement.
+            PushAction(100, [Register(0), 1]),
+            IfAction(101, IfAction.EQUALS, 104),
+            # False case (circuit not broken, register is not equal to 1)
+            PushAction(102, [Register(0), 2]),
+            IfAction(103, IfAction.NOT_EQUALS, 106),
+            # This is the true case
+            AP2Action(104, AP2Action.PLAY),
+            JumpAction(105, 107),
+            # This is the false case
+            AP2Action(106, AP2Action.STOP),
+            # This is the fall-through after the if.
+            PushAction(107, ['strval']),
+            AP2Action(108, AP2Action.RETURN),
+        ])
+        statements = self.__call_decompile(bytecode)
+
+        # TODO: This should be optimized as a compound if statement.
+        self.assertEqual(self.__equiv(statements), [
+            "if (registers[0] != 1) {\n"
+            "  if (registers[0] != 2) {\n"
+            "    builtin_StopPlaying()\n"
+            "    label_4:\n"
+            "    return 'strval'\n"
+            "  }\n"
+            "}",
+            "builtin_StartPlaying()",
+            "goto label_4",
+        ])
