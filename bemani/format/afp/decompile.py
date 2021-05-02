@@ -217,6 +217,22 @@ class ReturnStatement(Statement):
         return [f"{prefix}return {ret};"]
 
 
+class ThrowStatement(Statement):
+    # A statement which raises an exception. It appears that there is no
+    # 'catch' in this version of bytecode so it must be used only as an
+    # assert.
+    def __init__(self, exc: Any) -> None:
+        self.exc = exc
+
+    def __repr__(self) -> str:
+        exc = value_ref(self.exc, "")
+        return f"throw {exc}"
+
+    def render(self, prefix: str) -> List[str]:
+        exc = value_ref(self.exc, prefix)
+        return [f"{prefix}throw {exc};"]
+
+
 class NopStatement(Statement):
     # A literal no-op. We will get rid of these in an optimizing pass.
     def __repr__(self) -> str:
@@ -2257,6 +2273,11 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = ReturnStatement(retval)
                     continue
 
+                if action.opcode == AP2Action.THROW:
+                    retval = get_stack()
+                    chunk.actions[i] = ThrowStatement(retval)
+                    continue
+
                 if action.opcode == AP2Action.POP:
                     # This is a discard. Let's see if its discarding a function or method
                     # call. If so, that means the return doesn't matter.
@@ -2635,6 +2656,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 # Calculate the statements for this chunk, as well as the leftover stack entries and any borrows.
                 self.vprint(f"Evaluating graph of ByteCodeChunk {chunk.id}")
                 new_statements, stack_leftovers, new_borrowed_entries = self.__eval_stack(chunk, stack, offset_map)
+                borrowed_entries.extend(new_borrowed_entries)
 
                 # We need to check and see if the last entry is an IfExpr, and hoist it
                 # into a statement here.
@@ -2671,7 +2693,17 @@ class ByteCodeDecompiler(VerboseOutput):
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
                             stacks[true_start] = [s for s in stack_leftovers]
-                        true_statements, true_borrowed_entries = self.__eval_chunks_impl(true_start, if_body_chunk.true_chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
+                        true_statements, true_borrowed_entries = self.__eval_chunks_impl(
+                            true_start,
+                            if_body_chunk.true_chunks,
+                            next_chunk_id,
+                            stacks,
+                            insertables,
+                            other_stack_locs,
+                            offset_map,
+                        )
+                        borrowed_entries.extend(true_borrowed_entries)
+
                     false_statements: List[Statement] = []
                     if if_body_chunk.false_chunks:
                         self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} false case")
@@ -2682,7 +2714,16 @@ class ByteCodeDecompiler(VerboseOutput):
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
                             stacks[false_start] = [s for s in stack_leftovers]
-                        false_statements, false_borrowed_entries = self.__eval_chunks_impl(false_start, if_body_chunk.false_chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
+                        false_statements, false_borrowed_entries = self.__eval_chunks_impl(
+                            false_start,
+                            if_body_chunk.false_chunks,
+                            next_chunk_id,
+                            stacks,
+                            insertables,
+                            other_stack_locs,
+                            offset_map,
+                        )
+                        borrowed_entries.extend(false_borrowed_entries)
 
                     # Convert this IfExpr to a full-blown IfStatement.
                     new_statements[-1] = IfStatement(
@@ -2726,7 +2767,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 break
             start_id = chunk.next_chunks[0]
 
-        return statements, stack
+        return statements, borrowed_entries
 
     def __walk(self, statements: Sequence[Statement], do: Callable[[Statement], Optional[Statement]]) -> List[Statement]:
         new_statements: List[Statement] = []
