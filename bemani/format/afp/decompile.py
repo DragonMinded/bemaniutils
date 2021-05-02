@@ -1519,17 +1519,28 @@ class ByteCodeDecompiler(VerboseOutput):
                         [false_action] if false_action else [],
                     )
 
+                if last_action.opcode in [AP2Action.RETURN, AP2Action.THROW, AP2Action.END]:
+                    if len(chunk.next_chunks) != 1:
+                        raise Exception(f"Logic error, chunkd ID {chunk.id} returns, throws or end to multiple blocks!")
+                    if chunk.next_chunks[0] != offset_map[self.bytecode.end_offset]:
+                        raise Exception(f"Expected chunk ID {chunk.id} to jump to return block but jumped elsewhere!")
+                    # We will convert this later.
+                    self.vprint("Severing link to return address.")
+                    chunk.next_chunks = []
+
         # At this point, all chunks in our list should point only to other chunks in our list.
         for chunk in loop.chunks:
             for n in chunk.next_chunks:
                 if n not in internal_jump_points:
-                    raise Exception(f"Found unconverted next chunk {n} in chunk ID {chunk.id}!")
+                    raise Exception(f"Found unconverted next chunk {n} in chunk ID {chunk.id}, for loop ID {loop.id} with break point {break_point}!")
             if isinstance(chunk, ByteCodeChunk):
                 last_action = chunk.actions[-1]
                 if isinstance(last_action, AP2Action):
                     if last_action.opcode == AP2Action.IF and len(chunk.next_chunks) != 2:
                         raise Exception(f"Somehow messed up the next pointers on if statement in chunk ID {chunk.id}!")
-                    if last_action.opcode in [AP2Action.JUMP, AP2Action.RETURN, AP2Action.THROW, AP2Action.END] and len(chunk.next_chunks) != 1:
+                    if last_action.opcode == AP2Action.JUMP and len(chunk.next_chunks) != 1:
+                        raise Exception(f"Somehow messed up the next pointers on control flow statement in chunk ID {chunk.id}!")
+                    if last_action.opcode in [AP2Action.RETURN, AP2Action.THROW, AP2Action.END] and len(chunk.next_chunks) != 0:
                         raise Exception(f"Somehow messed up the next pointers on control flow statement in chunk ID {chunk.id}!")
                 else:
                     if len(chunk.next_chunks) > 1:
@@ -1578,6 +1589,27 @@ class ByteCodeDecompiler(VerboseOutput):
                                     blocks_to_examine.append(predecessor)
 
                     self.vprint(f"Found loop with header {header} and blocks {', '.join(str(b) for b in blocks)}.")
+
+                    # Now, make sure we scoop up any remaining if/else bodies not found in the backwards walk.
+                    changed: bool = True
+                    while changed:
+                        changed = False
+
+                        for b in blocks:
+                            # Explicitly exclude the header here, as it will only point at the break
+                            # location which will usually pass the following dominator test.
+                            if b == header:
+                                continue
+                            add_id: Optional[int] = None
+                            for cid, doms in dominators.items():
+                                if dominators[b] == doms - {cid} and cid not in blocks and cid != header:
+                                    add_id = cid
+                                    break
+                            if add_id is not None:
+                                self.vprint(f"Chunk {cid} should be included in loop list!")
+                                blocks.add(add_id)
+                                changed = True
+                                break
 
                     # We found a loop!
                     if header in loops:
@@ -3100,6 +3132,33 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return self.__walk(statements, swap_empty_ifs)
 
+    def __verify_balanced_labels(self, statements: Sequence[Statement]) -> None:
+        gotos: Set[int] = set()
+        labels: Set[int] = set()
+
+        # Gather gotos and labels and make sure they're balanced.
+        def gather_gotos_and_labels(statement: Statement) -> Optional[Statement]:
+            nonlocal gotos
+            nonlocal labels
+
+            if isinstance(statement, GotoStatement):
+                gotos.add(statement.location)
+            elif isinstance(statement, DefineLabelStatement):
+                labels.add(statement.location)
+            return statement
+
+        self.__walk(statements, gather_gotos_and_labels)
+
+        unmatched_gotos = gotos - labels
+        unmatched_labels = labels - gotos
+
+        if unmatched_gotos:
+            formatted_labels = ", ".join(f"label_{x}" for x in unmatched_gotos)
+            raise Exception(f"Logic error, gotos found jumping to the following labels which don't exist: {formatted_labels}")
+        if unmatched_labels:
+            formatted_labels = ", ".join(f"label_{x}" for x in unmatched_labels)
+            raise Exception(f"Logic error, labels found with no gotos pointing at them: {formatted_labels}")
+
     def __pretty_print(self, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
 
@@ -3150,6 +3209,9 @@ class ByteCodeDecompiler(VerboseOutput):
             if not changed1 and not changed2:
                 break
         statements = self.__swap_empty_ifs(statements)
+
+        # Let's sanity check the code for a few things that might trip us up.
+        self.__verify_balanced_labels(statements)
 
         # Finally, let's save the code!
         self.__statements = statements
