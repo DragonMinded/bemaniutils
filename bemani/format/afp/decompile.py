@@ -1033,12 +1033,12 @@ class ByteCodeDecompiler(VerboseOutput):
             raise Exception("Call decompile() first before retrieving statements!")
         return self.__statements
 
-    def __graph_control_flow(self) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
+    def __graph_control_flow(self, bytecode: ByteCode) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
         # Start by assuming that the whole bytecode never directs flow. This is, confusingly,
         # indexed by AP2Action offset, not by actual bytecode offset, so we can avoid the
         # prickly problem of opcodes that take more than one byte in the data.
         flows: Dict[int, ControlFlow] = {}
-        end = len(self.bytecode.actions)
+        end = len(bytecode.actions)
         beginning = 0
 
         # The end of the program.
@@ -1056,7 +1056,7 @@ class ByteCodeDecompiler(VerboseOutput):
             raise Exception(f"Logic error, offset {opcodeno} somehow not in our control flow graph!")
 
         # Now, walk the entire bytecode, and every control flow point split the graph at that point.
-        for i, action in enumerate(self.bytecode.actions):
+        for i, action in enumerate(bytecode.actions):
             current_action = i
             next_action = i + 1
 
@@ -1090,12 +1090,12 @@ class ByteCodeDecompiler(VerboseOutput):
                 # First, we need to find the jump point and make sure that its the start
                 # of a section.
                 action = cast(JumpAction, action)
-                for j, dest in enumerate(self.bytecode.actions):
+                for j, dest in enumerate(bytecode.actions):
                     if dest.offset == action.jump_offset:
                         dest_action = j
                         break
                 else:
-                    if action.jump_offset == self.bytecode.end_offset:
+                    if action.jump_offset == bytecode.end_offset:
                         dest_action = end
                     else:
                         raise Exception(f"{action} jumps to an opcode that doesn't exist!")
@@ -1144,12 +1144,12 @@ class ByteCodeDecompiler(VerboseOutput):
                 # First, we need to find the jump point and make sure that its the start
                 # of a section.
                 action = cast(IfAction, action)
-                for j, dest in enumerate(self.bytecode.actions):
+                for j, dest in enumerate(bytecode.actions):
                     if dest.offset == action.jump_if_true_offset:
                         dest_action = j
                         break
                 else:
-                    if action.jump_if_true_offset == self.bytecode.end_offset:
+                    if action.jump_if_true_offset == bytecode.end_offset:
                         dest_action = end
                     else:
                         raise Exception(f"{action} conditionally jumps to an opcode that doesn't exist!")
@@ -1208,10 +1208,10 @@ class ByteCodeDecompiler(VerboseOutput):
             next_chunks: List[int] = []
             for ano in flow.next_flow:
                 if ano == end:
-                    next_chunks.append(self.bytecode.end_offset)
+                    next_chunks.append(bytecode.end_offset)
                 else:
-                    next_chunks.append(self.bytecode.actions[ano].offset)
-            chunks.append(ByteCodeChunk(self.bytecode.actions[flow.beginning].offset, self.bytecode.actions[flow.beginning:flow.end], next_chunks))
+                    next_chunks.append(bytecode.actions[ano].offset)
+            chunks.append(ByteCodeChunk(bytecode.actions[flow.beginning].offset, bytecode.actions[flow.beginning:flow.end], next_chunks))
 
         # Calculate who points to us as well, for posterity. We can still use chunk.id as
         # the offset of the chunk since we haven't converted yet.
@@ -1228,7 +1228,7 @@ class ByteCodeDecompiler(VerboseOutput):
         # Now, eliminate any dead code since it will trip us up later. Chunk ID is still the
         # offset of the first entry in the chunk since we haven't assigned IDs yet.
         while True:
-            dead_chunk_ids = {c.id for c in chunks if not c.previous_chunks and c.id != self.bytecode.start_offset}
+            dead_chunk_ids = {c.id for c in chunks if not c.previous_chunks and c.id != bytecode.start_offset}
             if dead_chunk_ids:
                 self.vprint(f"Elimitating dead code chunks {', '.join(str(d) for d in dead_chunk_ids)}")
                 chunks = [c for c in chunks if c.id not in dead_chunk_ids]
@@ -1256,7 +1256,7 @@ class ByteCodeDecompiler(VerboseOutput):
             chunk_id += 1
 
         end_chunk_id = chunk_id
-        offset_to_id[self.bytecode.end_offset] = end_chunk_id
+        offset_to_id[bytecode.end_offset] = end_chunk_id
 
         # Now, convert the offsets to chunk ID pointers.
         end_previous_chunks: List[int] = []
@@ -1282,8 +1282,8 @@ class ByteCodeDecompiler(VerboseOutput):
             if not chunk.next_chunks:
                 num_end_chunks += 1
             if not chunk.previous_chunks:
-                if chunk.id != offset_to_id[self.bytecode.start_offset]:
-                    raise Exception(f"Start of graph found at ID {chunk.id} but expected to be {offset_to_id[self.bytecode.start_offset]}!")
+                if chunk.id != offset_to_id[bytecode.start_offset]:
+                    raise Exception(f"Start of graph found at ID {chunk.id} but expected to be {offset_to_id[bytecode.start_offset]}!")
                 num_start_chunks += 1
 
             if chunk.actions:
@@ -2935,7 +2935,7 @@ class ByteCodeDecompiler(VerboseOutput):
     def __decompile(self) -> None:
         # First, we need to construct a control flow graph.
         self.vprint("Generating control flow graph...")
-        chunks, offset_map = self.__graph_control_flow()
+        chunks, offset_map = self.__graph_control_flow(self.bytecode)
         start_id = offset_map[self.bytecode.start_offset]
 
         # Now, compute dominators so we can locate back-refs.
