@@ -26,7 +26,7 @@ class ByteCode:
     # A list of bytecodes to execute.
     def __init__(self, actions: Sequence[AP2Action], end_offset: int) -> None:
         self.actions = list(actions)
-        self.start_offset = self.actions[0].offset
+        self.start_offset = self.actions[0].offset if actions else None
         self.end_offset = end_offset
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
@@ -3248,4 +3248,8 @@ class ByteCodeDecompiler(VerboseOutput):
 
     def decompile(self, verbose: bool = False) -> None:
         with self.debugging(verbose):
-            self.__decompile()
+            if self.bytecode.start_offset is None:
+                self.vprint("ByteCode is empty, decompiling to nothing!")
+                self.__statements = []
+            else:
+                self.__decompile()
