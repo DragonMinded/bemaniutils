@@ -1061,10 +1061,11 @@ class BitVector:
 
 
 class ByteCodeDecompiler(VerboseOutput):
-    def __init__(self, bytecode: ByteCode) -> None:
+    def __init__(self, bytecode: ByteCode, optimize: bool = False) -> None:
         super().__init__()
 
         self.bytecode = bytecode
+        self.optimize = optimize
         self.__statements: Optional[List[Statement]] = None
         self.__tmpvar_id: int = 0
         self.__goto_body_id: int = -1
@@ -1461,17 +1462,14 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if last_action.opcode == AP2Action.IF:
                     # Calculate true and false jump points.
-                    true_jump_point = offset_map[cast(IfAction, last_action).jump_if_true_offset]
-                    false_jump_points = [n for n in chunk.next_chunks if n != true_jump_point]
-                    if len(false_jump_points) != 1:
-                        raise Exception("Logic error, didn't get exactly one false case jump point!")
-                    false_jump_point = false_jump_points[0]
-                    if true_jump_point == false_jump_point:
-                        # This might be a stubbed-out if statement or debug code. Maybe the right
-                        # thing to do here is to convert it to a goto? Let's see if we ever hit it.
-                        raise Exception("Logic error, true and false jump point are identical!")
+                    true_jump_point, false_jump_point = self.__get_jump_points(chunk, offset_map)
+                    end_offset = offset_map[self.bytecode.end_offset]
 
                     # Calculate true and false jump points, see if they are break/continue/goto.
+                    # Its possible for the true and false jump points to be equal if this is an
+                    # if statement which jumps to the next line of code in the true case. The below
+                    # code will still work (it will change both the true and false points to a break,
+                    # continue or return statement).
                     true_action: Optional[Statement] = None
                     if true_jump_point == break_point:
                         self.vprint("Converting jump if true to loop break into break statement.")
@@ -1482,7 +1480,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         true_action = ContinueStatement()
                         chunk.next_chunks = [n for n in chunk.next_chunks if n != true_jump_point]
                     elif true_jump_point not in internal_jump_points:
-                        if true_jump_point == offset_map[self.bytecode.end_offset]:
+                        if true_jump_point == end_offset:
                             self.vprint("Converting jump if true to external point into return statement.")
                             true_action = NullReturnStatement()
                         else:
@@ -1500,7 +1498,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         false_action = ContinueStatement()
                         chunk.next_chunks = [n for n in chunk.next_chunks if n != false_jump_point]
                     elif false_jump_point not in internal_jump_points:
-                        if false_jump_point == offset_map[self.bytecode.end_offset]:
+                        if false_jump_point == end_offset:
                             self.vprint("Converting jump if false to external point into return statement.")
                             false_action = NullReturnStatement()
                         else:
@@ -1686,6 +1684,24 @@ class ByteCodeDecompiler(VerboseOutput):
                 raise Exception(f"Chunk ID {new_chunk.id} in list of chunks we converted but we expected it to be deleted!")
         return updated_chunks
 
+    def __get_jump_points(self, chunk: ByteCodeChunk, offset_map: Dict[int, int]) -> Tuple[int, int]:
+        action = chunk.actions[-1]
+
+        if isinstance(action, IfAction):
+            true_jump_point = offset_map[action.jump_if_true_offset]
+            false_jump_points = [n for n in chunk.next_chunks if n != true_jump_point]
+            if len(false_jump_points) != 1:
+                if chunk.next_chunks[0] != chunk.next_chunks[1]:
+                    raise Exception(f"Logic error, got more than one false jump point for if statement in chunk {chunk.id}")
+                else:
+                    false_jump_point = true_jump_point
+            else:
+                false_jump_point = false_jump_points[0]
+
+            return true_jump_point, false_jump_point
+        else:
+            raise Exception(f"Logic error, expecting JumpAction but got {action} in chunk {chunk.id}!")
+
     def __break_graph(self, chunks: Sequence[Union[ByteCodeChunk, Loop]], offset_map: Dict[int, int]) -> None:
         for chunk in chunks:
             if chunk.id == offset_map[self.bytecode.end_offset]:
@@ -1716,22 +1732,21 @@ class ByteCodeDecompiler(VerboseOutput):
                             chunk.actions[-1] = NullReturnStatement()
                         else:
                             if last_action.opcode == AP2Action.IF:
-                                raise Exception("Logic error, unexpected if statement with only one successor!")
+                                raise Exception(f"Logic error, unexpected if statement with only one successor in {chunk.id}!")
                             self.vprint(f"Converting fall-through to end of code in {chunk.id} into a null return.")
                             chunk.actions.append(NullReturnStatement())
                         chunk.next_chunks = []
                     elif len(chunk.next_chunks) == 2:
                         if last_action.opcode != AP2Action.IF:
-                            raise Exception("Logic error, expected if statement with two successors!")
+                            raise Exception(f"Logic error, expected if statement with two successors in {chunk.id}!")
 
                         # This is an if statement, let's see if any of the arms point to a return.
-                        true_jump_point = offset_map[cast(IfAction, last_action).jump_if_true_offset]
-                        false_jump_points = [n for n in chunk.next_chunks if n != true_jump_point]
-                        if len(false_jump_points) != 1:
-                            raise Exception("Logic error, got more than one false jump point for an if statement!")
-                        false_jump_point = false_jump_points[0]
+                        true_jump_point, false_jump_point = self.__get_jump_points(chunk, offset_map)
                         end_offset = offset_map[self.bytecode.end_offset]
 
+                        # It's possible for the true and false jump point to be equal, if the code being
+                        # decompiled has not been optimized. The below code will produce the correct
+                        # result for this case (true and false cases both containing the same return).
                         true_action: Optional[Statement] = None
                         if true_jump_point == end_offset:
                             self.vprint(f"Converting jump if true to external point into return statement in {chunk.id}.")
@@ -1866,7 +1881,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # if-goto patterns.
                     next_id = chunks_by_id[cur_id].next_chunks[0]
                     if next_id not in chunks_by_id:
-                        raise Exception(f"Logic error, we can't jump to the next chunk for loop {cur_id} as it is outside of our scope!")
+                        raise Exception(f"Logic error, we can't jump to chunk {next_id} for loop {cur_id} as it is outside of our scope!")
 
                     cur_id = next_id
                     continue
@@ -1901,12 +1916,7 @@ class ByteCodeDecompiler(VerboseOutput):
             # This should be an if statement. Figure out if it is an if-else or an
             # if, and if both branches return.
             if_end = self.__find_shallowest_successor(cur_id, chunks_by_id)
-            true_jump_point = offset_map[last_action.jump_if_true_offset]
-            false_jump_points = [n for n in cur_chunk.next_chunks if n != true_jump_point]
-            if len(false_jump_points) != 1:
-                raise Exception("Logic error, got more than one false jump point for an if statement!")
-            false_jump_point = false_jump_points[0]
-
+            true_jump_point, false_jump_point = self.__get_jump_points(cur_chunk, offset_map)
             if true_jump_point == false_jump_point:
                 # This should never happen.
                 raise Exception("Logic error, both true and false jumps are to the same location!")
@@ -1929,7 +1939,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     del chunks_by_id[chunk.id]
 
                 # Now, recursively attempt to detect if statements within this chunk as well.
-                true_chunks = self.__separate_ifs(true_jump_point, if_end, true_chunks, offset_map)
+                true_chunks = self.__separate_ifs(true_jump_point, if_end if if_end is not None else end_id, true_chunks, offset_map)
 
             false_chunks: List[ArbitraryCodeChunk] = []
             if false_jump_point not in chunks_by_id and false_jump_point != if_end:
@@ -1947,7 +1957,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     del chunks_by_id[chunk.id]
 
                 # Now, recursively attempt to detect if statements within this chunk as well.
-                false_chunks = self.__separate_ifs(false_jump_point, if_end, false_chunks, offset_map)
+                false_chunks = self.__separate_ifs(false_jump_point, if_end if if_end is not None else end_id, false_chunks, offset_map)
 
             if (not true_chunks) and (not false_chunks):
                 # We should have at least one!
@@ -2030,12 +2040,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
             # Find the true and false jump points, walk those graphs and assign logical predecessors
             # to each of them.
-            true_jump_point = offset_map[last_action.jump_if_true_offset]
-            false_jump_points = [n for n in cur_chunk.next_chunks if n != true_jump_point]
-            if len(false_jump_points) != 1:
-                raise Exception("Logic error, got more than one false jump point for an if statement!")
-            false_jump_point = false_jump_points[0]
-
+            true_jump_point, false_jump_point = self.__get_jump_points(cur_chunk, offset_map)
             if true_jump_point == false_jump_point:
                 # This should never happen.
                 raise Exception("Logic error, both true and false jumps are to the same location!")
@@ -3179,9 +3184,18 @@ class ByteCodeDecompiler(VerboseOutput):
         if unmatched_gotos:
             formatted_labels = ", ".join(f"label_{x}" for x in unmatched_gotos)
             raise Exception(f"Logic error, gotos found jumping to the following labels which don't exist: {formatted_labels}")
-        if unmatched_labels:
+        if unmatched_labels and self.optimize:
             formatted_labels = ", ".join(f"label_{x}" for x in unmatched_labels)
             raise Exception(f"Logic error, labels found with no gotos pointing at them: {formatted_labels}")
+
+    def __verify_no_empty_ifs(self, statements: Sequence[Statement]) -> None:
+        def check_ifs(statement: Statement) -> Optional[Statement]:
+            if isinstance(statement, IfStatement):
+                if (not statement.true_statements) and (not statement.false_statements):
+                    raise Exception(f"If statement {statement} has no true or false statements inside it!")
+            return statement
+
+        self.__walk(statements, check_ifs)
 
     def __pretty_print(self, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
@@ -3224,18 +3238,20 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__eval_chunks(start_id, chunks_loops_and_ifs, offset_map)
 
         # Now, let's do some clean-up passes.
-        statements = self.__collapse_identical_labels(statements)
-        statements = self.__eliminate_useless_control_flows(statements)
-        while True:
-            statements, changed1 = self.__eliminate_unused_labels(statements)
-            statements, changed2 = self.__remove_useless_gotos(statements)
+        if self.optimize:
+            statements = self.__collapse_identical_labels(statements)
+            statements = self.__eliminate_useless_control_flows(statements)
+            while True:
+                statements, changed1 = self.__eliminate_unused_labels(statements)
+                statements, changed2 = self.__remove_useless_gotos(statements)
 
-            if not changed1 and not changed2:
-                break
-        statements = self.__swap_empty_ifs(statements)
+                if not changed1 and not changed2:
+                    break
+            statements = self.__swap_empty_ifs(statements)
 
         # Let's sanity check the code for a few things that might trip us up.
         self.__verify_balanced_labels(statements)
+        self.__verify_no_empty_ifs(statements)
 
         # Finally, let's save the code!
         self.__statements = statements

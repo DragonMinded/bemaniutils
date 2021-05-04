@@ -121,7 +121,7 @@ class TestAFPControlGraph(ExtendedTestCase):
 
     def __call_graph(self, bytecode: ByteCode) -> Tuple[Dict[int, ByteCodeChunk], Dict[int, int]]:
         # Just create a dummy compiler so we can access the internal method for testing.
-        bcd = ByteCodeDecompiler(bytecode)
+        bcd = ByteCodeDecompiler(bytecode, optimize=True)
 
         # Call it, return the data in an easier to test fashion.
         chunks, offset_map = bcd._ByteCodeDecompiler__graph_control_flow(bytecode)
@@ -533,7 +533,7 @@ class TestAFPDecompile(ExtendedTestCase):
 
     def __call_decompile(self, bytecode: ByteCode) -> List[Statement]:
         # Just create a dummy compiler so we can access the internal method for testing.
-        bcd = ByteCodeDecompiler(bytecode)
+        bcd = ByteCodeDecompiler(bytecode, optimize=True)
         bcd.decompile(verbose=self.verbose)
         return bcd.statements
 
