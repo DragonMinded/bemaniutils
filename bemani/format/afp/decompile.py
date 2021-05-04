@@ -143,7 +143,7 @@ class Statement(ConvertedAction):
 
 
 def object_ref(obj: Any, parent_prefix: str) -> str:
-    if isinstance(obj, (GenericObject, Variable, TempVariable, BorrowedStackEntry, Member, MethodCall, FunctionCall, Register)):
+    if isinstance(obj, (GenericObject, Variable, TempVariable, Member, MethodCall, FunctionCall, Register)):
         return obj.render(parent_prefix, nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")
@@ -2742,11 +2742,31 @@ class ByteCodeDecompiler(VerboseOutput):
 
         def reconcile_stacks(cur_chunk: int, new_stack_id: int, new_stack: List[Any]) -> List[Statement]:
             if new_stack_id in stacks:
-                if len(stacks[new_stack_id]) != len(new_stack):
-                    raise Exception(f"Logic error, cannot reconcile {stacks[new_stack_id]} with {new_stack}!")
                 if cur_chunk == other_stack_locs[new_stack_id]:
                     raise Exception("Logic error, cannot reconcile variable names with self!")
                 other_chunk = other_stack_locs[new_stack_id]
+                if len(stacks[new_stack_id]) != len(new_stack):
+                    min_len = min(len(stacks[new_stack_id]), len(new_stack))
+                    max_len = max(len(stacks[new_stack_id]), len(new_stack))
+                    borrows = max_len - min_len
+                    if borrows <= 0:
+                        raise Exception("Logic error!")
+
+                    # It doesn't matter what it is, just mark the stack entry as being poisoned since
+                    # we couldn't reconcile it. We want to throw an exception down the line if we
+                    # run into this value, as we needed it but only sometimes got it.
+                    borrow_vals = [BorrowedStackEntry(new_stack_id, -1) for _ in range(borrows)]
+
+                    if min_len > 0:
+                        stacks[new_stack_id] = [*borrow_vals, *stacks[new_stack_id][-min_len:]]
+                        new_stack = [*borrow_vals, new_stack[-min_len:]]
+                    else:
+                        stacks[new_stack_id] = [*borrow_vals]
+                        new_stack = [*borrow_vals]
+                    self.vprint(f"Chopped off {borrows} values from longest stack and replaced with BorrowedStackEntry for {new_stack_id}")
+
+                    if len(new_stack) != len(stacks[new_stack_id]):
+                        raise Exception(f"Logic error, expected {new_stack} and {stacks[new_stack_id]} to be equal length!")
 
                 self.vprint(
                     f"Merging stack {stacks[new_stack_id]} for chunk ID {new_stack_id} with {new_stack}, " +
@@ -2782,10 +2802,11 @@ class ByteCodeDecompiler(VerboseOutput):
                     else:
                         stack.append(new_entry)
 
+                self.vprint(f"Redefining stack for chunk ID {new_stack_id} to be {stack} after merging multiple paths")
                 stacks[new_stack_id] = stack
                 return definitions
             else:
-                self.vprint(f"Defining stack for chunk ID {new_stack_id} to be {new_stack}")
+                self.vprint(f"Defining stack for chunk ID {new_stack_id} to be {new_stack} based on evaluation of {cur_chunk}")
                 other_stack_locs[new_stack_id] = cur_chunk
                 stacks[new_stack_id] = new_stack
                 return []
@@ -2821,7 +2842,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 del stacks[chunk.id]
 
                 # Calculate the statements for this chunk, as well as the leftover stack entries and any borrows.
-                self.vprint(f"Evaluating graph of ByteCodeChunk {chunk.id}")
+                self.vprint(f"Evaluating graph of ByteCodeChunk {chunk.id} with stack {stack}")
                 new_statements, stack_leftovers, new_borrowed_entries = self.__eval_stack(chunk, stack, offset_map)
                 borrowed_entries.extend(new_borrowed_entries)
 
@@ -2860,6 +2881,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
                             stacks[true_start] = [s for s in stack_leftovers]
+                        self.vprint(f"True start {true_start} of IfBody has stack {stacks[true_start]}")
                         true_statements, true_borrowed_entries = self.__eval_chunks_impl(
                             true_start,
                             if_body_chunk.true_chunks,
@@ -2881,6 +2903,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
                             stacks[false_start] = [s for s in stack_leftovers]
+                        self.vprint(f"False start {false_start} of IfBody has stack {stacks[false_start]}")
                         false_statements, false_borrowed_entries = self.__eval_chunks_impl(
                             false_start,
                             if_body_chunk.false_chunks,
@@ -2908,7 +2931,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         last_new_statement = new_statements[-1]
                         if isinstance(last_new_statement, GotoStatement):
                             new_next_id = last_new_statement.location
-                        if isinstance(last_new_statement, ReturnStatement):
+                        if isinstance(last_new_statement, (ThrowStatement, NullReturnStatement, ReturnStatement)):
                             new_next_id = None
 
                     if new_next_id:
@@ -2919,6 +2942,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             new_statements = new_statements[:-1]
                         new_statements.extend(sentinels)
                     else:
+                        stack_leftovers = [s for s in stack_leftovers if not isinstance(s, BorrowedStackEntry)]
                         if stack_leftovers:
                             raise Exception(f"Logic error, reached execution end and have stack entries {stack_leftovers} still!")
 
