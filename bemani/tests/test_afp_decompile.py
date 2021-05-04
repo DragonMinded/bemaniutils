@@ -663,9 +663,7 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(104, AP2Action.PLAY),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: The output should be optimized to remove redundant return statements.
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n  return\n} else {\n  builtin_StopPlaying()\n  return\n}"])
+        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n} else {\n  builtin_StopPlaying()\n}"])
 
     def test_if_handling_diamond_return_to_end(self) -> None:
         # If true-false diamond case but the cases never converge.
@@ -747,9 +745,7 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(105, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: The output should be optimized to remove redundant return statements.
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n  return\n} else {\n  builtin_StopPlaying()\n  return\n}"])
+        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n} else {\n  builtin_StopPlaying()\n}"])
 
     def test_if_handling_or(self) -> None:
         # Two ifs that together make an or (if register == 1 or register == 3)

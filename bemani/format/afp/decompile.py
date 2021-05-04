@@ -1057,7 +1057,7 @@ class BitVector:
 
 
 class ByteCodeDecompiler(VerboseOutput):
-    def __init__(self, bytecode: ByteCode, optimize: bool = False) -> None:
+    def __init__(self, bytecode: ByteCode, optimize: bool = True) -> None:
         super().__init__()
 
         self.bytecode = bytecode
@@ -3015,6 +3015,89 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return statements
 
+    def __remove_goto_return(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Go through and find labels that point at returns, convert any gotos pointing
+        # at them to returns.
+        def find_labels(statements: Sequence[Statement], next_statement: Optional[Statement]) -> Set[int]:
+            labels: Set[int] = set()
+
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else next_statement
+                if (
+                    isinstance(cur_statement, DefineLabelStatement) and
+                    isinstance(next_statement, NullReturnStatement)
+                ):
+                    labels.add(cur_statement.location)
+
+                elif isinstance(cur_statement, DoWhileStatement):
+                    labels.update(find_labels(cur_statement.body, next_statement))
+
+                elif isinstance(cur_statement, IfStatement):
+                    labels.update(find_labels(cur_statement.true_statements, next_statement))
+                    labels.update(find_labels(cur_statement.false_statements, next_statement))
+
+            return labels
+
+        labels = find_labels(statements, None)
+
+        updated: bool = False
+
+        def update_gotos(statement: Statement) -> Statement:
+            nonlocal updated
+
+            if isinstance(statement, GotoStatement):
+                if statement.location in labels:
+                    return NullReturnStatement()
+                    updated = True
+            return statement
+
+        statements = self.__walk(statements, update_gotos)
+        return statements, updated
+
+    def __eliminate_useless_returns(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Go through and find returns that are on the "last" line. Basically, any
+        # return statement where the next return statement is another return statement
+        # or the end of a function.
+        def find_returns(statements: Sequence[Statement], next_statement: Statement) -> Set[NullReturnStatement]:
+            returns: Set[NullReturnStatement] = set()
+
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else next_statement
+                if (
+                    isinstance(cur_statement, NullReturnStatement) and
+                    isinstance(next_statement, NullReturnStatement)
+                ):
+                    returns.add(cur_statement)
+
+                elif isinstance(cur_statement, DoWhileStatement):
+                    returns.update(find_returns(cur_statement.body, next_statement))
+
+                elif isinstance(cur_statement, IfStatement):
+                    returns.update(find_returns(cur_statement.true_statements, next_statement))
+                    returns.update(find_returns(cur_statement.false_statements, next_statement))
+
+            return returns
+
+        # Instead of an empty next statement, make up a return so we catch anything
+        # without needing multiple conditionals above.
+        returns = find_returns(statements, NullReturnStatement())
+
+        updated: bool = False
+
+        def remove_returns(statement: Statement) -> Statement:
+            nonlocal updated
+
+            for removable in returns:
+                if removable is statement:
+                    updated = True
+                    return None
+            return statement
+
+        statements = self.__walk(statements, remove_returns)
+        return statements, updated
+
     def __remove_useless_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find gotos that point at the very next line and remove them.
         # This can happen due to the way we analyze if statements.
@@ -3092,33 +3175,49 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return self.__walk(statements, remove_label), changed
 
-    def __eliminate_useless_control_flows(self, statements: Sequence[Statement]) -> List[Statement]:
+    def __eliminate_useless_continues(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find continue statements on the last line of a do-while.
+        changed: bool = False
+
         def remove_continue(statement: Statement) -> Optional[Statement]:
+            nonlocal changed
+
             if isinstance(statement, DoWhileStatement):
                 if statement.body and isinstance(statement.body[-1], ContinueStatement):
+                    changed = True
                     statement.body.pop()
             return statement
 
         statements = self.__walk(statements, remove_continue)
-        if isinstance(statements[-1], NullReturnStatement):
-            return statements[:-1]
-        return statements
+        return statements, changed
 
     def __swap_empty_ifs(self, statements: Sequence[Statement]) -> List[Statement]:
         # Go through and find continue statements on the last line of a do-while.
+        changed: bool = False
+
         def swap_empty_ifs(statement: Statement) -> Optional[Statement]:
+            nonlocal changed
+
             if isinstance(statement, IfStatement):
                 if statement.false_statements and (not statement.true_statements):
                     # Swap this, invert the conditional
+                    changed = True
                     return IfStatement(
                         statement.cond.invert(),
                         statement.false_statements,
                         statement.true_statements,
                     )
+                elif (not statement.true_statements) and (not statement.false_statements):
+                    # Drop the if, it has no body.
+                    changed = True
+                    return None
             return statement
 
-        return self.__walk(statements, swap_empty_ifs)
+        while True:
+            changed = False
+            statements = self.__walk(statements, swap_empty_ifs)
+            if not changed:
+                return statements
 
     def __verify_balanced_labels(self, statements: Sequence[Statement]) -> None:
         gotos: Set[int] = set()
@@ -3199,12 +3298,25 @@ class ByteCodeDecompiler(VerboseOutput):
         # Now, let's do some clean-up passes.
         if self.optimize:
             statements = self.__collapse_identical_labels(statements)
-            statements = self.__eliminate_useless_control_flows(statements)
             while True:
-                statements, changed1 = self.__eliminate_unused_labels(statements)
-                statements, changed2 = self.__remove_useless_gotos(statements)
+                any_changed = False
 
-                if not changed1 and not changed2:
+                statements, changed = self.__eliminate_useless_continues(statements)
+                any_changed = any_changed or changed
+
+                statements, changed = self.__eliminate_unused_labels(statements)
+                any_changed = any_changed or changed
+
+                statements, changed = self.__remove_useless_gotos(statements)
+                any_changed = any_changed or changed
+
+                statements, changed = self.__remove_goto_return(statements)
+                any_changed = any_changed or changed
+
+                statements, changed = self.__eliminate_useless_returns(statements)
+                any_changed = any_changed or changed
+
+                if not any_changed:
                     break
             statements = self.__swap_empty_ifs(statements)
 
