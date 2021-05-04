@@ -16,6 +16,9 @@ from .types import (
     StoreRegisterAction,
     DefineFunction2Action,
     GotoFrame2Action,
+    WithAction,
+    GetURL2Action,
+    StartDragAction,
     UNDEFINED,
     GLOBAL,
 )
@@ -2252,6 +2255,21 @@ class ByteCodeDecompiler(VerboseOutput):
                 chunk.actions[i] = make_if_expr(action)
                 continue
 
+            if isinstance(action, WithAction):
+                # TODO: I have to figure out what "with" actually even does.
+                # It sets some context and local variables, but to what?
+                raise Exception(f"TODO: {action}")
+
+            if isinstance(action, GetURL2Action):
+                # TODO: I have to figure out what "geturl2" actually even does.
+                # It is something to do with getting the "URL" of the current
+                # movie clip.
+                raise Exception(f"TODO: {action}")
+
+            if isinstance(action, StartDragAction):
+                # TODO: I have to implement this, if I ever come across it.
+                raise Exception(f"TODO: {action}")
+
             if isinstance(action, AddNumVariableAction):
                 variable_name = stack.pop()
                 if not isinstance(variable_name, (str, StringConstant)):
@@ -2467,7 +2485,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     set_value = stack.pop()
                     local_name = stack.pop()
                     if not isinstance(local_name, (str, StringConstant)):
-                        raise Exception("Logic error!")
+                        raise Exception(f"Logic error, local name {local_name} is not a string!")
 
                     chunk.actions[i] = SetLocalStatement(local_name, set_value)
                     continue
@@ -2475,7 +2493,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.DEFINE_LOCAL2:
                     local_name = stack.pop()
                     if not isinstance(local_name, (str, StringConstant)):
-                        raise Exception("Logic error!")
+                        raise Exception(f"Logic error, local name {local_name} is not a string!")
 
                     # TODO: Should this be NULL?
                     chunk.actions[i] = SetLocalStatement(local_name, UNDEFINED)
@@ -2591,6 +2609,30 @@ class ByteCodeDecompiler(VerboseOutput):
                     expr2 = stack.pop()
                     expr1 = stack.pop()
                     stack.append(ArithmeticExpression(expr1, "==", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.STRICT_EQUALS:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "===", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.GREATER:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, ">", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.LESS2:
+                    expr2 = stack.pop()
+                    expr1 = stack.pop()
+                    stack.append(ArithmeticExpression(expr1, "<", expr2))
 
                     chunk.actions[i] = NopStatement()
                     continue
@@ -2774,7 +2816,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         stack.append(new_entry)
 
                 self.vprint(f"Redefining stack for chunk ID {new_stack_id} to be {stack} after merging multiple paths")
-                stacks[new_stack_id] = stack
+                stacks[new_stack_id] = stack[::-1]
                 return definitions
             else:
                 self.vprint(f"Defining stack for chunk ID {new_stack_id} to be {new_stack} based on evaluation of {cur_chunk}")
