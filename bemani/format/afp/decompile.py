@@ -368,6 +368,24 @@ class CloneSpriteStatement(Statement):
         return [f"{prefix}builtin_CloneSprite({obj}, {name}, {depth});"]
 
 
+class GetURL2Statement(Statement):
+    # Load the URL given in the parameters, with any possible target.
+    def __init__(self, action: int, url: Any, target: Any) -> None:
+        self.action = action
+        self.url = url
+        self.target = target
+
+    def __repr__(self) -> str:
+        url = value_ref(self.url, "")
+        target = value_ref(self.target, "")
+        return f"builtin_GetURL2({self.action}, {url}, {target})"
+
+    def render(self, prefix: str) -> List[str]:
+        url = value_ref(self.url, "")
+        target = value_ref(self.target, "")
+        return [f"{prefix}builtin_GetURL2({self.action}, {url}, {target});"]
+
+
 class MaybeStackEntry(Expression):
     def __init__(self, parent_stack_id: int) -> None:
         self.parent_stack_id = parent_stack_id
@@ -2419,7 +2437,10 @@ class ByteCodeDecompiler(VerboseOutput):
                 # TODO: I have to figure out what "geturl2" actually even does.
                 # It is something to do with getting the "URL" of the current
                 # movie clip.
-                raise Exception(f"TODO: {action}")
+                url = stack.pop()
+                target = stack.pop()
+                chunk.actions[i] = GetURL2Statement(action.action, url, target)
+                continue
 
             if isinstance(action, StartDragAction):
                 # TODO: I have to implement this, if I ever come across it.
@@ -2861,7 +2882,6 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
                 continue
 
-            self.vprint(chunk.actions)
             self.vprint(stack)
             raise Exception(f"TODO: {action}")
 

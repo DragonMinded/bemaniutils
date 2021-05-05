@@ -394,7 +394,7 @@ class AP2Action:
 
     # Gets a single 8-bit integer as an opcode param, take the top two bits of that param as the
     # action to take. Looks like it is similar to SWF GET_URL2 action. Supported actions are 0,
-    # 2 and 3. It pops two objects from the stack to perform against.
+    # 1 and 3. It pops two objects from the stack to perform against.
     GET_URL2 = 69
 
     # Pops a value from the stack, jumps to offset from opcode params if value is truthy.
