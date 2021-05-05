@@ -895,9 +895,13 @@ class ForStatement(DoWhileStatement):
 
         inc_init = value_ref(self.inc_init, "")
         inc_assign = value_ref(self.inc_assign, "")
+        if self.local:
+            local = "local "
+        else:
+            local = ""
 
         return [
-            f"{prefix}for ({self.inc_variable} = {inc_init}; {self.cond}; {self.inc_variable} = {inc_assign}) {{",
+            f"{prefix}for ({local}{self.inc_variable} = {inc_init}; {self.cond}; {self.inc_variable} = {inc_assign}) {{",
             f"{prefix}{{",
             *entries,
             f"{prefix}}}",
@@ -906,7 +910,32 @@ class ForStatement(DoWhileStatement):
 
 class WhileStatement(DoWhileStatement):
     # Special case of a DoWhileStatement that tracks its own exit condition.
-    pass
+    def __init__(self, cond: IfExpr, body: Sequence[Statement]) -> None:
+        super().__init__(body)
+        self.cond = cond
+
+    def __repr__(self) -> str:
+        entries: List[str] = []
+        for statement in self.body:
+            entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
+
+        return os.linesep.join([
+            f"while ({self.cond}) {{",
+            os.linesep.join(entries),
+            "}"
+        ])
+
+    def render(self, prefix: str) -> List[str]:
+        entries: List[str] = []
+        for statement in self.body:
+            entries.extend(statement.render(prefix=prefix + "    "))
+
+        return [
+            f"{prefix}while ({self.cond}) {{",
+            f"{prefix}{{",
+            *entries,
+            f"{prefix}}}",
+        ]
 
 
 class IntermediateIf(ConvertedAction):
@@ -3408,13 +3437,53 @@ class ByteCodeDecompiler(VerboseOutput):
             return statement.valueref
         return None
 
-    def __convert_for_loops(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+    def __extract_condition(self, possible_if: Statement, required_variable: Optional[str]) -> Tuple[Optional[IfExpr], List[Statement]]:
+        if isinstance(possible_if, IfStatement):
+            if len(possible_if.true_statements) == 1 and isinstance(possible_if.true_statements[0], BreakStatement):
+                # This is possibly a candidate, check the condition's variable usage.
+                if isinstance(possible_if.cond, IsUndefinedIf):
+                    if required_variable is not None:
+                        try:
+                            if_variable = object_ref(possible_if.cond.conditional, "")
+                        except Exception:
+                            if_variable = None
+                        if required_variable != if_variable:
+                            return None
+                    return possible_if.cond, possible_if.false_statements
+                elif isinstance(possible_if.cond, IsBooleanIf):
+                    if required_variable is not None:
+                        try:
+                            if_variable = object_ref(possible_if.cond.conditional, "")
+                        except Exception:
+                            if_variable = None
+                        if required_variable != if_variable:
+                            return None
+                    return possible_if.cond, possible_if.false_statements
+                elif isinstance(possible_if.cond, TwoParameterIf):
+                    if required_variable is not None:
+                        try:
+                            if_variable1 = object_ref(possible_if.cond.conditional1, "")
+                        except Exception:
+                            if_variable1 = None
+                        if if_variable1 == required_variable:
+                            return possible_if.cond, possible_if.false_statements
+
+                        try:
+                            if_variable2 = object_ref(possible_if.cond.conditional2, "")
+                        except Exception:
+                            if_variable2 = None
+                        if if_variable2 == required_variable:
+                            return possible_if.cond.swap(), possible_if.false_statements
+                    return possible_if.cond, possible_if.false_statements
+        return None, []
+
+    def __convert_loops(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Convert any do {} while loops that resemble for statements into actual for statements.
         # First, we need to hoist any increment to the actual end of the loop in case its in the
         # last statement of some if/else condition. This isn't going to be perfectly accurate because
         # there can be all sorts of bizarre for statements, but it should be good enough for most
         # cases to make better code.
-        def convert_fors(statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        def convert_loops(statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
             new_statements: List[Statement] = []
             updated_statements: Dict[DoWhileStatement, DoWhileStatement] = {}
             changed: bool = False
@@ -3425,10 +3494,10 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if isinstance(cur_statement, IfStatement):
                     # Don't care about this, but we need to recursively walk its children.
-                    cur_statement.true_statements, new_changed = convert_fors(cur_statement.true_statements)
+                    cur_statement.true_statements, new_changed = convert_loops(cur_statement.true_statements)
                     changed = changed or new_changed
 
-                    cur_statement.false_statements, new_changed = convert_fors(cur_statement.false_statements)
+                    cur_statement.false_statements, new_changed = convert_loops(cur_statement.false_statements)
                     changed = changed or new_changed
 
                     new_statements.append(cur_statement)
@@ -3439,15 +3508,32 @@ class ByteCodeDecompiler(VerboseOutput):
                             cur_statement = new
                             break
 
+                    if not isinstance(cur_statement, (ForStatement, WhileStatement)):
+                        # This might be a candidate for white statement hoisting.
+                        if len(cur_statement.body) > 0:
+                            # Let's see if the first statement is an if statement with a break.
+                            possible_cond, false_body = self.__extract_condition(cur_statement.body[0], None)
+                        else:
+                            possible_cond = None
+
+                        if possible_cond is not None:
+                            # This is a for statement. Let's convert it.
+                            cur_statement = WhileStatement(
+                                possible_cond.invert(),
+                                # Drop the if statement, since we are incorporating it.
+                                false_body + cur_statement.body[1:],
+                            )
+                            changed = True
+
                     # Need to recursively walk through and perform stuff on the body of this.
-                    cur_statement.body, new_changed = convert_fors(cur_statement.body)
+                    cur_statement.body, new_changed = convert_loops(cur_statement.body)
                     changed = changed or new_changed
 
                     new_statements.append(cur_statement)
                 elif (
                     isinstance(cur_statement, (SetMemberStatement, StoreRegisterStatement, SetVariableStatement, SetLocalStatement)) and
                     isinstance(next_statement, DoWhileStatement) and
-                    not isinstance(next_statement, (ForStatement, WhileStatement))
+                    not isinstance(next_statement, ForStatement)
                 ):
                     # This is a possible conversion that hasn't been converted yet. Let's try to grab
                     # the increment variable.
@@ -3465,63 +3551,38 @@ class ByteCodeDecompiler(VerboseOutput):
                     else:
                         inc_assignment = self.__get_assignment(next_statement.body[-1])
 
-                    possible_if = None
-                    swap = False
                     if inc_variable is not None:
-                        # Let's see if the first statement is an if statement with a break.
-                        possible_if = next_statement.body[0]
-                        if isinstance(possible_if, IfStatement):
-                            if len(possible_if.true_statements) == 1 and isinstance(possible_if.true_statements[0], BreakStatement):
-                                # This is possibly a candidate, check the condition's variable usage.
-                                if isinstance(possible_if.cond, IsUndefinedIf):
-                                    try:
-                                        if_variable = object_ref(possible_if.cond.conditional, "")
-                                    except Exception:
-                                        if_variable = None
-                                    if if_variable != inc_variable:
-                                        inc_variable = None
-                                elif isinstance(possible_if.cond, IsBooleanIf):
-                                    try:
-                                        if_variable = object_ref(possible_if.cond.conditional, "")
-                                    except Exception:
-                                        if_variable = None
-                                    if if_variable != inc_variable:
-                                        inc_variable = None
-                                elif isinstance(possible_if.cond, TwoParameterIf):
-                                    try:
-                                        if_variable1 = object_ref(possible_if.cond.conditional1, "")
-                                    except Exception:
-                                        if_variable1 = None
-                                    try:
-                                        if_variable2 = object_ref(possible_if.cond.conditional2, "")
-                                    except Exception:
-                                        if_variable2 = None
-                                    if if_variable1 != inc_variable and if_variable2 != inc_variable:
-                                        inc_variable = None
-                                    elif if_variable2 == inc_variable:
-                                        swap = True
-                                else:
-                                    # Shouldn't happen, but let's handle it by bailing.
-                                    inc_variable = None
-                            else:
-                                # This isn't a candidate, the conditional isn't a break by itself.
-                                inc_variable = None
+                        # This is a while statement previously converted, possibly due to
+                        # an incomplete increment variable hoisting. We can further convert
+                        # it to a for statement, but we need the conditional.
+                        if isinstance(next_statement, WhileStatement):
+                            possible_cond = next_statement.cond.invert()
+                            if isinstance(possible_cond, TwoParameterIf):
+                                try:
+                                    if_variable = object_ref(possible_cond.conditional2, "")
+                                    if inc_variable == if_variable:
+                                        possible_cond = possible_cond.swap()
+                                except Exception:
+                                    pass
+                            false_body = []
                         else:
-                            # Can't be a for loop, it doesn't have a conditional for breakinng.
-                            inc_variable = None
+                            # Let's see if the first statement is an if statement with a break.
+                            possible_cond, false_body = self.__extract_condition(next_statement.body[0], inc_variable)
+                    else:
+                        possible_cond = None
 
-                    if inc_variable is not None:
+                    if inc_variable is not None and possible_cond is not None:
                         # This is a for statement. Let's convert it.
-                        cond = cast(IfStatement, possible_if).cond.invert()
                         updated_statements[next_statement] = ForStatement(
                             inc_variable,
                             self.__get_assignment(cur_statement),
-                            cond.swap() if swap else cond,
+                            possible_cond.invert(),
                             inc_assignment,
                             # Drop the increment and the if statement, since we are incorporating them.
-                            next_statement.body[1:-1],
+                            false_body + (next_statement.body[:-1] if isinstance(next_statement, WhileStatement) else next_statement.body[1:-1]),
                             local=isinstance(cur_statement, SetLocalStatement),
                         )
+                        changed = True
                     else:
                         new_statements.append(cur_statement)
                 else:
@@ -3530,7 +3591,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
             return new_statements, changed
 
-        return convert_fors(statements)
+        return convert_loops(statements)
 
     def __swap_empty_ifs(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Get rid of empty if statements. If statements with empty if bodies and nonempty
@@ -3708,7 +3769,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     self.__remove_useless_gotos,
                     self.__remove_goto_return,
                     self.__eliminate_useless_returns,
-                    self.__convert_for_loops,
+                    self.__convert_loops,
                     self.__swap_empty_ifs,
                     self.__drop_unneeded_else,
                 ]:

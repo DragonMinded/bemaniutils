@@ -798,16 +798,11 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(107, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: This should be optimized as a while statement.
         self.assertEqual(self.__equiv(statements), [
             "local finished = False",
-            "do {\n"
-            "  if (finished) {\n"
-            "    break\n"
-            "  }\n"
+            "while (not finished) {\n"
             "  builtin_GotoNextFrame()\n"
-            "} while (True)"
+            "}"
         ])
 
     def test_advanced_while(self) -> None:
@@ -835,20 +830,15 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(112, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: This should be optimized as a while statement.
         self.assertEqual(self.__equiv(statements), [
             "local finished = False",
-            "do {\n"
-            "  if (finished) {\n"
-            "    break\n"
-            "  }\n"
+            "while (not finished) {\n"
             "  if (not some_condition) {\n"
             "    builtin_StopPlaying()\n"
             "    break\n"
             "  }\n"
             "  builtin_GotoNextFrame()\n"
-            "} while (True)"
+            "}"
         ])
 
     def test_basic_for(self) -> None:
