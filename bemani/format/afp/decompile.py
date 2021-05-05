@@ -2548,7 +2548,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # This is a discard. Let's see if its discarding a function or method
                     # call. If so, that means the return doesn't matter.
                     discard = stack.pop()
-                    if isinstance(discard, MethodCall):
+                    if isinstance(discard, (FunctionCall, MethodCall)):
                         # It is! Let's act on the statement.
                         chunk.actions[i] = ExpressionStatement(discard)
                     else:
