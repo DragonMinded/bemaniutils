@@ -1220,7 +1220,7 @@ class BitVector:
 
 
 class ByteCodeDecompiler(VerboseOutput):
-    def __init__(self, bytecode: ByteCode, optimize: bool = True) -> None:
+    def __init__(self, bytecode: ByteCode, optimize: bool = False) -> None:
         super().__init__()
 
         self.bytecode = bytecode
@@ -2105,7 +2105,11 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 next_id = chunks_by_id[cur_id].next_chunks[0]
                 if next_id not in chunks_by_id:
-                    raise Exception(f"Logic error, we can't jump to chunk {next_id} for chunk {cur_id} as it is outside of our scope!")
+                    # We need to go to the next chunk, but we don't own it. Convert it to a goto.
+                    self.vprint(f"Chunk ID {cur_id} needs a goto after empty if.")
+                    cur_chunk.actions.append(GotoStatement(next_id))
+                    chunks_by_id[cur_id].next_chunks = []
+                    break
 
                 cur_id = next_id
                 continue
@@ -3184,10 +3188,10 @@ class ByteCodeDecompiler(VerboseOutput):
                         if isinstance(last_new_statement, GotoStatement):
                             # Replace the next IDs with just the goto.
                             new_next_ids = {last_new_statement.location}
-                        if isinstance(last_new_statement, (ThrowStatement, NullReturnStatement, ReturnStatement)):
+                        elif isinstance(last_new_statement, (ThrowStatement, NullReturnStatement, ReturnStatement)):
                             # We don't have a next ID, we're returning.
                             new_next_ids = set()
-                        if isinstance(last_new_statement, IntermediateIf):
+                        elif isinstance(last_new_statement, IntermediateIf):
                             # We have potentially more than one next ID, given what statements exist
                             # inside the true/false chunks.
                             intermediates: List[Statement] = []
@@ -3221,23 +3225,13 @@ class ByteCodeDecompiler(VerboseOutput):
 
                         # Insert a sentinel for where temporary variables can be added if we
                         # need to in the future.
-                        sentinels: List[Statement] = [InsertionLocation(chunk.id)]
+                        sentinels: List[Union[Statement, IntermediateIf]] = [InsertionLocation(chunk.id)]
 
-                        # If we have a goto, we need to insert the tempvar assignment before it.
-                        if new_statements and isinstance(new_statements[-1], GotoStatement):
+                        # If we have a goto or intermediate if, we need to insert the tempvar assignment before it.
+                        # This is because in both cases we will redirect control flow, so we need to make sure
+                        # tempvar assignment happens before that redirection for the code to make sense.
+                        if new_statements and isinstance(new_statements[-1], (GotoStatement, IntermediateIf)):
                             sentinels.append(new_statements[-1])
-                            new_statements = new_statements[:-1]
-
-                        # If we have an intermediate If, we need to insert the tempvar before it
-                        # and also render it out to a real if statement.
-                        if new_statements and isinstance(new_statements[-1], IntermediateIf):
-                            sentinels.append(
-                                IfStatement(
-                                    cast(IfExpr, new_statements[-1].parent_action),
-                                    new_statements[-1].true_statements,
-                                    new_statements[-1].false_statements,
-                                )
-                            )
                             new_statements = new_statements[:-1]
 
                         # Add our new statements to the end of the statement list.
@@ -3250,10 +3244,28 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 # Verify that we converted all the statements properly.
                 for statement in new_statements:
-                    if not isinstance(statement, Statement):
+                    if isinstance(statement, IntermediateIf):
+                        # Intermediate if conditional (such as a break/return/goto inside
+                        # a loop.
+                        if not isinstance(statement.parent_action, IfExpr):
+                            raise Exception(f"Logic error, found unconverted IntermediateIf {statement}!")
+
+                        if not statement.true_statements and not statement.false_statements:
+                            self.vprint(f"Skipping adding if statement {statement} because it is an empty sentinel!")
+                        else:
+                            statements.append(
+                                IfStatement(
+                                    statement.parent_action,
+                                    statement.true_statements,
+                                    statement.false_statements,
+                                )
+                            )
+                    elif isinstance(statement, Statement):
+                        # Regular statement.
+                        statements.append(statement)
+                    else:
                         # We didn't convert a statement properly.
                         raise Exception(f"Logic error, {statement} is not converted!")
-                    statements.append(statement)
 
             # Go to the next chunk
             if not chunk.next_chunks:
