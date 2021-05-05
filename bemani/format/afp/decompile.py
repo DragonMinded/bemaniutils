@@ -955,7 +955,7 @@ class WhileStatement(DoWhileStatement):
 
 
 class IntermediateIf(ConvertedAction):
-    def __init__(self, parent_action: IfAction, true_statements: Sequence[Statement], false_statements: Sequence[Statement]) -> None:
+    def __init__(self, parent_action: Union[IfAction, IfExpr], true_statements: Sequence[Statement], false_statements: Sequence[Statement]) -> None:
         self.parent_action = parent_action
         self.true_statements = list(true_statements)
         self.false_statements = list(false_statements)
@@ -2835,9 +2835,13 @@ class ByteCodeDecompiler(VerboseOutput):
                 continue
 
             if isinstance(action, IntermediateIf):
-                # A partially-converted if from loop detection. Let's hoist it out properly.
-                chunk.actions[i] = IfStatement(
-                    make_if_expr(action.parent_action),
+                # A partially-converted if from loop detection. Leave as-is, this
+                # is the job of our caller since it needs to follow the stack to
+                # the next jump given the statements in this intermediate if. The
+                # only thing we convert is the expression, since we need the current
+                # stack to do that.
+                chunk.actions[i] = IntermediateIf(
+                    make_if_expr(cast(IfAction, action.parent_action)),
                     action.true_statements,
                     action.false_statements,
                 )
@@ -3020,6 +3024,10 @@ class ByteCodeDecompiler(VerboseOutput):
                     statements.append(DefineLabelStatement(start_id))
 
                 # Grab the computed start stack for this ID
+                if chunk.id not in stacks:
+                    # We somehow failed to assign a stack to this chunk but got here anyway?
+                    raise Exception(f"Logic error, stack for {chunk.id} does not exist!")
+
                 stack = stacks[chunk.id]
                 del stacks[chunk.id]
 
@@ -3064,7 +3072,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} true case")
                         true_start = self.__get_entry_block(if_body_chunk.true_chunks)
                         if true_start in stacks:
-                            raise Exception("Logic error, unexpected stack for IF!")
+                            raise Exception("Logic error, unexpected stack for if!")
                         else:
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
@@ -3087,7 +3095,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} false case")
                         false_start = self.__get_entry_block(if_body_chunk.false_chunks)
                         if false_start in stacks:
-                            raise Exception("Logic error, unexpected stack for IF!")
+                            raise Exception("Logic error, unexpected stack for if!")
                         else:
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
@@ -3116,22 +3124,72 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk = if_body_chunk
                 else:
                     # We must propagate the stack to the next entry. If it already exists we must merge it.
-                    new_next_id = next_chunk_id
+                    new_next_ids: Set[int] = {next_chunk_id}
                     if new_statements:
                         last_new_statement = new_statements[-1]
                         if isinstance(last_new_statement, GotoStatement):
-                            new_next_id = last_new_statement.location
+                            # Replace the next IDs with just the goto.
+                            new_next_ids = {last_new_statement.location}
                         if isinstance(last_new_statement, (ThrowStatement, NullReturnStatement, ReturnStatement)):
-                            new_next_id = None
+                            # We don't have a next ID, we're returning.
+                            new_next_ids = set()
+                        if isinstance(last_new_statement, IntermediateIf):
+                            # We have potentially more than one next ID, given what statements exist
+                            # inside the true/false chunks.
+                            intermediates: List[Statement] = []
+                            if len(last_new_statement.true_statements) > 1:
+                                raise Exception(f"Logic error, expected only one true statement in intermediate if {last_new_statement}!")
+                            else:
+                                intermediates.extend(last_new_statement.true_statements)
+                            if len(last_new_statement.false_statements) > 1:
+                                raise Exception(f"Logic error, expected only one false statement in intermediate if {last_new_statement}!")
+                            else:
+                                intermediates.extend(last_new_statement.false_statements)
 
-                    if new_next_id:
-                        reconcile_stacks(chunk.id, new_next_id, stack_leftovers)
+                            for stmt in intermediates:
+                                if isinstance(stmt, GotoStatement):
+                                    new_next_ids.add(stmt.location)
+                                elif isinstance(stmt, (ThrowStatement, NullReturnStatement, ReturnStatement, ContinueStatement)):
+                                    # Do nothing. Three of these cases point at the end of the program, one
+                                    # points back at the top of the loop which we've already covered. Maybe
+                                    # we should assert here like we do below? Not sure.
+                                    pass
+                                elif isinstance(stmt, BreakStatement):
+                                    # This points at the next chunk ID after the loop.
+                                    if next_id is not None:
+                                        new_next_ids.add(next_id)
+                                else:
+                                    raise Exception(f"Logic error, unexpected statement {stmt}!")
+
+                    if new_next_ids:
+                        for new_next_id in new_next_ids:
+                            reconcile_stacks(chunk.id, new_next_id, [s for s in stack_leftovers])
+
+                        # Insert a sentinel for where temporary variables can be added if we
+                        # need to in the future.
                         sentinels: List[Statement] = [InsertionLocation(chunk.id)]
+
+                        # If we have a goto, we need to insert the tempvar assignment before it.
                         if new_statements and isinstance(new_statements[-1], GotoStatement):
                             sentinels.append(new_statements[-1])
                             new_statements = new_statements[:-1]
+
+                        # If we have an intermediate If, we need to insert the tempvar before it
+                        # and also render it out to a real if statement.
+                        if new_statements and isinstance(new_statements[-1], IntermediateIf):
+                            sentinels.append(
+                                IfStatement(
+                                    cast(IfExpr, new_statements[-1].parent_action),
+                                    new_statements[-1].true_statements,
+                                    new_statements[-1].false_statements,
+                                )
+                            )
+                            new_statements = new_statements[:-1]
+
+                        # Add our new statements to the end of the statement list.
                         new_statements.extend(sentinels)
                     else:
+                        # We have nowhere else to go, verify that we have an empty stack.
                         stack_leftovers = [s for s in stack_leftovers if not isinstance(s, MaybeStackEntry)]
                         if stack_leftovers:
                             raise Exception(f"Logic error, reached execution end and have stack entries {stack_leftovers} still!")
