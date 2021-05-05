@@ -3,7 +3,7 @@ import unittest
 from typing import Dict, List, Sequence, Tuple, Union
 
 from bemani.tests.helpers import ExtendedTestCase
-from bemani.format.afp.types.ap2 import AP2Action, IfAction, JumpAction, PushAction, Register
+from bemani.format.afp.types.ap2 import AP2Action, IfAction, JumpAction, PushAction, AddNumVariableAction, Register
 from bemani.format.afp.decompile import BitVector, ByteCode, ByteCodeChunk, ControlFlow, ByteCodeDecompiler, Statement
 
 
@@ -778,4 +778,158 @@ class TestAFPDecompile(ExtendedTestCase):
             "}",
             "builtin_StartPlaying()",
             "goto label_4",
+        ])
+
+    def test_basic_while(self) -> None:
+        # A basic while statement.
+        bytecode = self.__make_bytecode([
+            # Define exit condition variable.
+            PushAction(100, ["finished", False]),
+            AP2Action(101, AP2Action.DEFINE_LOCAL),
+            # Check exit condition.
+            PushAction(102, ["finished"]),
+            AP2Action(103, AP2Action.GET_VARIABLE),
+            IfAction(104, IfAction.IS_TRUE, 107),
+            # Loop code.
+            AP2Action(105, AP2Action.NEXT_FRAME),
+            # Loop finished jump back to beginning.
+            JumpAction(106, 102),
+            # End of loop.
+            AP2Action(107, AP2Action.END),
+        ])
+        statements = self.__call_decompile(bytecode)
+
+        # TODO: This should be optimized as a while statement.
+        self.assertEqual(self.__equiv(statements), [
+            "local finished = False",
+            "do {\n"
+            "  if (finished) {\n"
+            "    break\n"
+            "  }\n"
+            "  builtin_GotoNextFrame()\n"
+            "} while (True)"
+        ])
+
+    def test_advanced_while(self) -> None:
+        # A basic while statement.
+        bytecode = self.__make_bytecode([
+            # Define exit condition variable.
+            PushAction(100, ["finished", False]),
+            AP2Action(101, AP2Action.DEFINE_LOCAL),
+            # Check exit condition.
+            PushAction(102, ["finished"]),
+            AP2Action(103, AP2Action.GET_VARIABLE),
+            IfAction(104, IfAction.IS_TRUE, 112),
+            # Loop code with a continue statement.
+            PushAction(105, ["some_condition"]),
+            AP2Action(106, AP2Action.GET_VARIABLE),
+            IfAction(107, IfAction.IS_FALSE, 110),
+            AP2Action(108, AP2Action.NEXT_FRAME),
+            # Continue statement.
+            JumpAction(109, 102),
+            # Exit early.
+            AP2Action(110, AP2Action.STOP),
+            # Break statement.
+            JumpAction(111, 112),
+            # End of loop.
+            AP2Action(112, AP2Action.END),
+        ])
+        statements = self.__call_decompile(bytecode)
+
+        # TODO: This should be optimized as a while statement.
+        self.assertEqual(self.__equiv(statements), [
+            "local finished = False",
+            "do {\n"
+            "  if (finished) {\n"
+            "    break\n"
+            "  }\n"
+            "  if (not some_condition) {\n"
+            "    builtin_StopPlaying()\n"
+            "    break\n"
+            "  } else {\n"
+            "    builtin_GotoNextFrame()\n"
+            "  }\n"
+            "} while (True)"
+        ])
+
+    def test_basic_for(self) -> None:
+        # A basic for statement.
+        bytecode = self.__make_bytecode([
+            # Define exit condition variable.
+            PushAction(100, ["i", 0]),
+            AP2Action(101, AP2Action.DEFINE_LOCAL),
+            # Check exit condition.
+            PushAction(102, [10, "i"]),
+            AP2Action(103, AP2Action.GET_VARIABLE),
+            IfAction(104, IfAction.LT_EQUALS, 109),
+            # Loop code.
+            AP2Action(105, AP2Action.NEXT_FRAME),
+            # Increment, also the continue point.
+            PushAction(106, ["i"]),
+            AddNumVariableAction(107, 1),
+            # Loop finished jump back to beginning.
+            JumpAction(108, 102),
+            # End of loop.
+            AP2Action(109, AP2Action.END),
+        ])
+        statements = self.__call_decompile(bytecode)
+
+        # TODO: This should be optimized as a for statement.
+        self.assertEqual(self.__equiv(statements), [
+            "local i = 0",
+            "do {\n"
+            "  if (10 <= i) {\n"
+            "    break\n"
+            "  }\n"
+            "  builtin_GotoNextFrame()\n"
+            "  i = i + 1\n"
+            "} while (True)"
+        ])
+
+    def test_advanced_for(self) -> None:
+        # A basic for statement.
+        bytecode = self.__make_bytecode([
+            # Define exit condition variable.
+            PushAction(100, ["i", 0]),
+            AP2Action(101, AP2Action.DEFINE_LOCAL),
+            # Check exit condition.
+            PushAction(102, [10, "i"]),
+            AP2Action(103, AP2Action.GET_VARIABLE),
+            IfAction(104, IfAction.LT_EQUALS, 115),
+            # Loop code with a continue statement.
+            PushAction(105, ["some_condition"]),
+            AP2Action(106, AP2Action.GET_VARIABLE),
+            IfAction(107, IfAction.IS_FALSE, 110),
+            AP2Action(108, AP2Action.NEXT_FRAME),
+            # Continue statement.
+            JumpAction(109, 112),
+            # Exit early.
+            AP2Action(110, AP2Action.STOP),
+            # Break statement.
+            JumpAction(111, 115),
+            # Increment, also the continue point.
+            PushAction(112, ["i"]),
+            AddNumVariableAction(113, 1),
+            # Loop finished jump back to beginning.
+            JumpAction(114, 102),
+            # End of loop.
+            AP2Action(115, AP2Action.END),
+        ])
+        statements = self.__call_decompile(bytecode)
+
+        # TODO: This should be optimized as a for statement.
+        self.assertEqual(self.__equiv(statements), [
+            "local i = 0",
+            "do {\n"
+            "  if (10 <= i) {\n"
+            "    break\n"
+            "  }\n"
+            "  if (not some_condition) {\n"
+            "    builtin_StopPlaying()\n"
+            "    break\n"
+            "  } else {\n"
+            "    builtin_GotoNextFrame()\n"
+            "    i = i + 1\n"
+            "  }\n"
+            "} while (True)"
         ])

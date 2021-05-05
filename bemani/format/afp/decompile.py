@@ -795,8 +795,7 @@ class DoWhileStatement(Statement):
         return os.linesep.join([
             "do {",
             os.linesep.join(entries),
-            "}",
-            "while(True);"
+            "} while (True)"
         ])
 
     def render(self, prefix: str) -> List[str]:
@@ -809,7 +808,7 @@ class DoWhileStatement(Statement):
             f"{prefix}{{",
             *entries,
             f"{prefix}}}",
-            f"{prefix}while(True);",
+            f"{prefix}while (True);",
         ]
 
 
@@ -3099,7 +3098,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
     def __eliminate_useless_returns(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find returns that are on the "last" line. Basically, any
-        # return statement where the next return statement is another return statement
+        # return statement where the next statement is another return statement
         # or the end of a function.
         def find_returns(statements: Sequence[Statement], next_statement: Statement) -> Set[NullReturnStatement]:
             returns: Set[NullReturnStatement] = set()
@@ -3218,20 +3217,49 @@ class ByteCodeDecompiler(VerboseOutput):
         return self.__walk(statements, remove_label), changed
 
     def __eliminate_useless_continues(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
-        # Go through and find continue statements on the last line of a do-while.
-        changed: bool = False
+        # Go through and find continues that are on the "last" line of a while. Basically, any
+        # continue statement where the next statement is another continue statement or the end
+        # of a loop.
+        def find_continues(statements: Sequence[Statement], next_statement: Statement) -> Set[ContinueStatement]:
+            continues: Set[ContinueStatement] = set()
 
-        def remove_continue(statement: Statement) -> Optional[Statement]:
-            nonlocal changed
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else next_statement
+                if (
+                    isinstance(cur_statement, ContinueStatement) and
+                    isinstance(next_statement, ContinueStatement)
+                ):
+                    continues.add(cur_statement)
 
-            if isinstance(statement, DoWhileStatement):
-                if statement.body and isinstance(statement.body[-1], ContinueStatement):
-                    changed = True
-                    statement.body.pop()
+                elif isinstance(cur_statement, DoWhileStatement):
+                    # Clever hack, where we pretend the next value after the loop is a continue,
+                    # because hitting the bottom of a loop is actually a continue.
+                    continues.update(find_continues(cur_statement.body, ContinueStatement()))
+
+                elif isinstance(cur_statement, IfStatement):
+                    continues.update(find_continues(cur_statement.true_statements, next_statement))
+                    continues.update(find_continues(cur_statement.false_statements, next_statement))
+
+            return continues
+
+        # Instead of an empty next statement, make up a return because that's what
+        # falling off the end of execution means.
+        continues = find_continues(statements, NullReturnStatement())
+
+        updated: bool = False
+
+        def remove_continues(statement: Statement) -> Statement:
+            nonlocal updated
+
+            for removable in continues:
+                if removable is statement:
+                    updated = True
+                    return None
             return statement
 
-        statements = self.__walk(statements, remove_continue)
-        return statements, changed
+        statements = self.__walk(statements, remove_continues)
+        return statements, updated
 
     def __swap_empty_ifs(self, statements: Sequence[Statement]) -> List[Statement]:
         # Go through and find continue statements on the last line of a do-while.
