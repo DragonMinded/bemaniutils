@@ -846,9 +846,8 @@ class TestAFPDecompile(ExtendedTestCase):
             "  if (not some_condition) {\n"
             "    builtin_StopPlaying()\n"
             "    break\n"
-            "  } else {\n"
-            "    builtin_GotoNextFrame()\n"
             "  }\n"
+            "  builtin_GotoNextFrame()\n"
             "} while (True)"
         ])
 
@@ -873,17 +872,10 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(109, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: This should be optimized as a for statement.
         self.assertEqual(self.__equiv(statements), [
-            "local i = 0",
-            "do {\n"
-            "  if (10 <= i) {\n"
-            "    break\n"
-            "  }\n"
+            "for (local i = 0; i < 10; i = i + 1) {\n"
             "  builtin_GotoNextFrame()\n"
-            "  i = i + 1\n"
-            "} while (True)"
+            "}"
         ])
 
     def test_advanced_for(self) -> None:
@@ -916,20 +908,12 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(115, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: This should be optimized as a for statement.
         self.assertEqual(self.__equiv(statements), [
-            "local i = 0",
-            "do {\n"
-            "  if (10 <= i) {\n"
-            "    break\n"
-            "  }\n"
+            "for (local i = 0; i < 10; i = i + 1) {\n"
             "  if (not some_condition) {\n"
             "    builtin_StopPlaying()\n"
             "    break\n"
-            "  } else {\n"
-            "    builtin_GotoNextFrame()\n"
-            "    i = i + 1\n"
             "  }\n"
-            "} while (True)"
+            "  builtin_GotoNextFrame()\n"
+            "}"
         ])
