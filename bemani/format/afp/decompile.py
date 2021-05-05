@@ -1043,6 +1043,7 @@ class Loop:
         self.previous_chunks: List[int] = []
         self.next_chunks: List[int] = []
         self.chunks = list(chunks)
+        self.post_statements: List[Statement] = []
 
         for chunk in chunks:
             for nextid in chunk.next_chunks:
@@ -2039,24 +2040,40 @@ class ByteCodeDecompiler(VerboseOutput):
                     # if-goto patterns.
                     next_id = chunks_by_id[cur_id].next_chunks[0]
                     if next_id not in chunks_by_id:
-                        raise Exception(f"Logic error, we can't jump to chunk {next_id} for loop {cur_id} as it is outside of our scope!")
+                        # We need to go to the next chunk, but we don't own it. Convert it to a goto.
+                        if isinstance(cur_chunk, Loop):
+                            self.vprint(f"Loop ID {cur_id} needs a goto outside of this if.")
+                            cur_chunk.post_statements.append(GotoStatement(next_id))
+                            chunks_by_id[cur_id].next_chunks = []
+                            break
+                        else:
+                            raise Exception(f"Logic error, we can't jump to chunk {next_id} for if {cur_id} as it is outside of our scope!")
 
                     cur_id = next_id
                     continue
 
                 last_action = cur_chunk.actions[-1]
-                if not isinstance(last_action, IfAction):
-                    # This is just a goto/chunk, move on to the next one.
-                    next_id = chunks_by_id[cur_id].next_chunks[0]
+                if isinstance(last_action, IfAction):
+                    raise Exception(f"Logic error, IfAction with only one child in chunk {cur_chunk}!")
+
+                next_id = chunks_by_id[cur_id].next_chunks[0]
+                if isinstance(last_action, AP2Action) and last_action.opcode in [AP2Action.THROW, AP2Action.RETURN, AP2Action.END, AP2Action.JUMP]:
                     if next_id not in chunks_by_id:
+                        # This is just a goto/chunk, move on to the next one.
                         self.vprint(f"Chunk ID {cur_id} is a goto outside of this if.")
                         chunks_by_id[cur_id].next_chunks = []
                         break
 
-                    cur_id = next_id
-                    continue
+                else:
+                    if next_id not in chunks_by_id:
+                        # We need to go to the next chunk, but we don't own it. Convert it to a goto.
+                        self.vprint(f"Chunk ID {cur_id} needs a goto outside of this if.")
+                        cur_chunk.actions.append(GotoStatement(next_id))
+                        chunks_by_id[cur_id].next_chunks = []
+                        break
 
-                raise Exception(f"Logic error, IfAction with only one child in chunk {cur_chunk}!")
+                cur_id = next_id
+                continue
 
             if not isinstance(cur_chunk, ByteCodeChunk):
                 # We should only be looking at bytecode chunks at this point, all other
@@ -2105,6 +2122,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 # First, grab all the chunks in this if statement body.
                 true_chunks = self.__gather_chunks(true_jump_point, if_end, chunks_by_id)
+                self.vprint(f"True chunks are {', '.join(str(c.id) for c in true_chunks)}")
 
                 # Delete these chunks from our chunk mapping since we're putting them in an if body.
                 for chunk in true_chunks:
@@ -2123,6 +2141,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 # First, grab all the chunks in this if statement body.
                 false_chunks = self.__gather_chunks(false_jump_point, if_end, chunks_by_id)
+                self.vprint(f"False chunks are {', '.join(str(c.id) for c in false_chunks)}")
 
                 # Delete these chunks from our chunk mapping since we're putting them in an if body.
                 for chunk in false_chunks:
@@ -3049,6 +3068,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 self.vprint(f"Evaluating graph in Loop {chunk.id}")
                 loop_statements = self.__eval_chunks_impl(chunk.id, chunk.chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
                 statements.append(DoWhileStatement(loop_statements))
+                statements.extend(chunk.post_statements)
             elif isinstance(chunk, IfBody):
                 # We should have evaluated this earlier!
                 raise Exception("Logic error!")
