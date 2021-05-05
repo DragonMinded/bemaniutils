@@ -1156,13 +1156,22 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x40000:
                 # Some pair of shorts, not sure, its in DDR PS3 data.
                 unhandled_flags &= ~0x40000
-                x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
-                self.add_coverage(dataoffset + running_pointer, 4)
-                running_pointer += 4
 
-                # TODO: I have no idea what these are.
-                point = Point(float(x) * 3.051758e-05, float(y) * 3.051758e-05)
-                self.vprint(f"{prefix}    Point: {point}")
+                # This is a bit nasty, but the newest version of data we see in
+                # Bishi with this flag set is 0x8, and the oldest version in DDR
+                # PS3 is also 0x8. Newer AFP versions do something with this flag
+                # but Bishi straight-up ignores it (no code to even check it), so
+                # we must use a heuristic for determining if this is parseable...
+                if running_pointer == len(datachunk):
+                    pass
+                else:
+                    x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                    self.add_coverage(dataoffset + running_pointer, 4)
+                    running_pointer += 4
+
+                    # TODO: I have no idea what these are.
+                    point = Point(float(x) * 3.051758e-05, float(y) * 3.051758e-05)
+                    self.vprint(f"{prefix}    Point: {point}")
 
             if flags & 0x80000:
                 # Some pair of shorts, not sure, its in DDR PS3 data.
