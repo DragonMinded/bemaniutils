@@ -628,9 +628,6 @@ class TestAFPDecompile(ExtendedTestCase):
             # "returning" early from a function.
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: The output should be optimized to remove the early return and move the
-        # start playing section inside the if.
         self.assertEqual(self.__equiv(statements), ["if (not True) {\n  return\n}", "builtin_StartPlaying()"])
 
     def test_if_handling_diamond(self) -> None:

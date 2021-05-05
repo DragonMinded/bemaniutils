@@ -426,6 +426,22 @@ class Array(Expression):
         return f"[{', '.join(params)}]"
 
 
+class Object(Expression):
+    # Call a method on an object.
+    def __init__(self, params: Dict[Any, Any]) -> None:
+        self.params = params
+
+    def __repr__(self) -> str:
+        return self.render("")
+
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        params = [f"{value_ref(key, parent_prefix)}: {value_ref(val, parent_prefix)}" for (key, val) in self.params.items()]
+        lpar = "{"
+        rpar = "}"
+
+        return f"{lpar}{', '.join(params)}{rpar}"
+
+
 class FunctionCall(Expression):
     # Call a method on an object.
     def __init__(self, name: Union[str, StringConstant], params: List[Any]) -> None:
@@ -2653,10 +2669,24 @@ class ByteCodeDecompiler(VerboseOutput):
                     num_entries = stack.pop()
                     if not isinstance(num_entries, int):
                         raise Exception("Logic error!")
-                    params = []
+                    arrparams = []
                     for _ in range(num_entries):
-                        params.append(stack.pop())
-                    stack.append(Array(params))
+                        arrparams.append(stack.pop())
+                    stack.append(Array(arrparams))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.INIT_OBJECT:
+                    num_entries = stack.pop()
+                    if not isinstance(num_entries, int):
+                        raise Exception("Logic error!")
+                    objparams: Dict[Any, Any] = {}
+                    for _ in range(num_entries):
+                        val = stack.pop()
+                        key = stack.pop()
+                        objparams[key] = val
+                    stack.append(Object(objparams))
 
                     chunk.actions[i] = NopStatement()
                     continue
@@ -2726,6 +2756,22 @@ class ByteCodeDecompiler(VerboseOutput):
                     expr2 = stack.pop()
                     expr1 = stack.pop()
                     stack.append(ArithmeticExpression(expr1, "^", expr2))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.BIT_L_SHIFT:
+                    shift_amt = stack.pop()
+                    shift_val = stack.pop()
+                    stack.append(ArithmeticExpression(shift_val, "<<", shift_amt))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode in {AP2Action.BIT_R_SHIFT, AP2Action.BIT_U_R_SHIFT}:
+                    shift_amt = stack.pop()
+                    shift_val = stack.pop()
+                    stack.append(ArithmeticExpression(shift_val, ">>", shift_amt))
 
                     chunk.actions[i] = NopStatement()
                     continue
