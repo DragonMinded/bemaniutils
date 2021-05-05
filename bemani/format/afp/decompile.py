@@ -2058,8 +2058,22 @@ class ByteCodeDecompiler(VerboseOutput):
             if_end = self.__find_shallowest_successor(cur_id, chunks_by_id)
             true_jump_point, false_jump_point = self.__get_jump_points(cur_chunk, offset_map)
             if true_jump_point == false_jump_point:
-                # This should never happen.
-                raise Exception("Logic error, both true and false jumps are to the same location!")
+                # This is an optimized-away if statement, render it out as an empty intermediate If
+                # and set the jump point to the next location.
+                self.vprint(f"Chunk ID {cur_id} is an empty if statement")
+                chunks_by_id[cur_id].next_chunks = [true_jump_point]
+                cur_chunk.actions[-1] = IntermediateIf(
+                    last_action,
+                    [],
+                    [],
+                )
+
+                next_id = chunks_by_id[cur_id].next_chunks[0]
+                if next_id not in chunks_by_id:
+                    raise Exception(f"Logic error, we can't jump to chunk {next_id} for chunk {cur_id} as it is outside of our scope!")
+
+                cur_id = next_id
+                continue
 
             self.vprint(f"Chunk ID {cur_id} is an if statement with true node {true_jump_point} and false node {false_jump_point} and ending at {if_end}")
 
