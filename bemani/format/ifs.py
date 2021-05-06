@@ -140,8 +140,8 @@ class IFS:
                     raise Exception(f"{fn} not found in {external_file} IFS!")
             else:
                 filedata = data[start:(start + size)]
-            if len(filedata) != size:
-                raise Exception(f"Couldn't extract file data for {fn}!")
+                if len(filedata) != size:
+                    raise Exception(f"Couldn't extract file data for {fn}!")
             self.__files[fn] = filedata
 
         # Now, find all of the index files that are available.
