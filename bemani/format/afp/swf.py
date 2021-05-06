@@ -111,7 +111,7 @@ class AP2ShapeTag(Tag):
 
 
 class AP2DefineFontTag(Tag):
-    def __init__(self, id: int, fontname: str, xml_prefix: str, heights: List[int]) -> None:
+    def __init__(self, id: int, fontname: str, xml_prefix: str, heights: List[int], text_indexes: List[int]) -> None:
         super().__init__(id)
 
         # The font name is just the pretty name of the font.
@@ -126,12 +126,66 @@ class AP2DefineFontTag(Tag):
         # in the texture map.
         self.heights = heights
 
+        # The list of text indexes are concatenated with the above prefix and height
+        # as a hex value to grab the actual character location in the font. It can
+        # be interpreted as an ascii value using chr() most of the time.
+        self.text_indexes = text_indexes
+
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
             'fontname': self.fontname,
             'xml_prefix': self.xml_prefix,
             'heights': self.heights,
+            'text_indexes': self.text_indexes,
+        }
+
+
+class AP2TextChar:
+    def __init__(self, font_text_index: int, width: float) -> None:
+        # Given the parent line's font, this is an offset into the font's text indexes.
+        # This allows you to look up what actual character is being displayed at this
+        # location.
+        self.font_text_index = font_text_index
+
+        # This is the width of the character. Don't know why this isn't looked up in
+        # the font?
+        self.width = width
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'font_text_index': self.font_text_index,
+            'width': self.width,
+        }
+
+
+class AP2TextLine:
+    def __init__(self, font_tag: Optional[int], height: int, xpos: float, ypos: float, entries: List[AP2TextChar]) -> None:
+        self.font_tag = font_tag
+        self.font_height = height
+        self.xpos = xpos
+        self.ypos = ypos
+        self.entries = entries
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'font_tag': self.font_tag,
+            'font_height': self.font_height,
+            'xpos': self.xpos,
+            'ypos': self.ypos,
+            'entries': [e.as_dict(*args, **kwargs) for e in self.entries],
+        }
+
+
+class AP2DefineTextTag(Tag):
+    def __init__(self, id: int, lines: List[AP2TextLine]) -> None:
+        super().__init__(id)
+
+        self.lines = lines
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            'lines': [line.as_dict(*args, **kwargs) for line in self.lines],
         }
 
 
@@ -871,24 +925,36 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             return AP2DefineSpriteTag(sprite_id, tags, frames)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
-            unk, font_id, fontname_offset, xml_prefix_offset, data_offset, data_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
+            unk, font_id, fontname_offset, xml_prefix_offset, text_index_count, height_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
             self.add_coverage(dataoffset, 12)
 
             fontname = self.__get_string(fontname_offset)
             xml_prefix = self.__get_string(xml_prefix_offset)
 
-            self.vprint(f"{prefix}    Tag ID: {font_id}, Unknown: {unk}, Font Name: {fontname}, XML Prefix: {xml_prefix}, Entries: {data_count}")
+            self.vprint(
+                f"{prefix}    Tag ID: {font_id}, Unknown: {unk}, Font Name: {fontname}, "
+                f"XML Prefix: {xml_prefix}, Text Index Entries: {text_index_count}, Height Entries: {height_count}"
+            )
+
+            text_indexes: List[int] = []
+            for i in range(text_index_count):
+                entry_offset = dataoffset + 12 + (i * 2)
+                entry_value = struct.unpack("<H", ap2data[entry_offset:(entry_offset + 2)])[0]
+                text_indexes.append(entry_value)
+                self.add_coverage(entry_offset, 2)
+
+                self.vprint(f"{prefix}      Text Index: {i}: {entry_value} ({chr(entry_value)})")
 
             heights: List[int] = []
-            for i in range(data_count):
-                entry_offset = dataoffset + 12 + (data_offset * 2) + (i * 2)
+            for i in range(height_count):
+                entry_offset = dataoffset + 12 + (text_index_count * 2) + (i * 2)
                 entry_value = struct.unpack("<H", ap2data[entry_offset:(entry_offset + 2)])[0]
                 heights.append(entry_value)
                 self.add_coverage(entry_offset, 2)
 
                 self.vprint(f"{prefix}      Height: {entry_value}")
 
-            return AP2DefineFontTag(font_id, fontname, xml_prefix, heights)
+            return AP2DefineFontTag(font_id, fontname, xml_prefix, heights, text_indexes)
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
             bytecode = self.__parse_bytecode(datachunk, prefix=prefix)
@@ -1005,10 +1071,10 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                multcolor.r = float(r) * 0.003921569
-                multcolor.g = float(g) * 0.003921569
-                multcolor.b = float(b) * 0.003921569
-                multcolor.a = float(a) * 0.003921569
+                multcolor.r = float(r) / 255.0
+                multcolor.g = float(g) / 255.0
+                multcolor.b = float(b) / 255.0
+                multcolor.a = float(a) / 255.0
                 self.vprint(f"{prefix}    Mult Color: {multcolor}")
 
             if flags & 0x1000:
@@ -1018,10 +1084,10 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                addcolor.r = float(r) * 0.003921569
-                addcolor.g = float(g) * 0.003921569
-                addcolor.b = float(b) * 0.003921569
-                addcolor.a = float(a) * 0.003921569
+                addcolor.r = float(r) / 255.0
+                addcolor.g = float(g) / 255.0
+                addcolor.b = float(b) / 255.0
+                addcolor.a = float(a) / 255.0
                 self.vprint(f"{prefix}    Add Color: {addcolor}")
 
             if flags & 0x2000:
@@ -1031,10 +1097,10 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                multcolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
-                multcolor.g = float((rgba >> 16) & 0xFF) * 0.003921569
-                multcolor.b = float((rgba >> 8) & 0xFF) * 0.003921569
-                multcolor.a = float(rgba & 0xFF) * 0.003921569
+                multcolor.r = float((rgba >> 24) & 0xFF) / 255.0
+                multcolor.g = float((rgba >> 16) & 0xFF) / 255.0
+                multcolor.b = float((rgba >> 8) & 0xFF) / 255.0
+                multcolor.a = float(rgba & 0xFF) / 255.0
                 self.vprint(f"{prefix}    Mult Color: {multcolor}")
 
             if flags & 0x4000:
@@ -1044,10 +1110,10 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                addcolor.r = float((rgba >> 24) & 0xFF) * 0.003921569
-                addcolor.g = float((rgba >> 16) & 0xFF) * 0.003921569
-                addcolor.b = float((rgba >> 8) & 0xFF) * 0.003921569
-                addcolor.a = float(rgba & 0xFF) * 0.003921569
+                addcolor.r = float((rgba >> 24) & 0xFF) / 255.0
+                addcolor.g = float((rgba >> 16) & 0xFF) / 255.0
+                addcolor.b = float((rgba >> 8) & 0xFF) / 255.0
+                addcolor.a = float(rgba & 0xFF) / 255.0
                 self.vprint(f"{prefix}    Add Color: {addcolor}")
 
             bytecodes: Dict[int, List[ByteCode]] = {}
@@ -1228,9 +1294,85 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.add_coverage(dataoffset, 4)
 
             return AP2RemoveObjectTag(object_id, depth)
+        elif tagid == AP2Tag.AP2_DEFINE_TEXT:
+            flags, text_id, text_data_count, sub_data_total_count, text_data_offset, sub_data_base_offset = struct.unpack(
+                "<HHHHHH",
+                ap2data[dataoffset:(dataoffset + 12)],
+            )
+            self.add_coverage(dataoffset, 12)
+            if flags != 0:
+                raise Exception(f"Unexpected flags {hex(flags)} in AP2_DEFINE_TEXT!")
+
+            extra_data = (12 + (20 * text_data_count) + (4 * sub_data_total_count))
+            if size < extra_data:
+                raise Exception(f"Unexpected size {size}, expected at least {extra_data} for AP2_DEFINE_TEXT!")
+            if size > extra_data:
+                # There seems to be some amount of data left over at the end, not sure what it
+                # is or does. I don't see any references to it being used in the tag loader.
+                pass
+
+            self.vprint(f"{prefix}    Tag ID: {text_id}, Count of Entries: {text_data_count}, Count of Sub Entries: {sub_data_total_count}")
+            lines: List[AP2TextLine] = []
+            for i in range(text_data_count):
+                chunk_data_offset = dataoffset + text_data_offset + (20 * i)
+                chunk_flags, sub_data_count, font_tag, font_height, xpos, ypos, sub_data_offset, rgba = struct.unpack(
+                    "<IHHHHHHI",
+                    ap2data[chunk_data_offset:(chunk_data_offset + 20)],
+                )
+                self.add_coverage(chunk_data_offset, 20)
+
+                if not (chunk_flags & 0x1):
+                    xpos = 0.0
+                else:
+                    xpos = float(xpos) / 20.0
+                if not (chunk_flags & 0x2):
+                    ypos = 0.0
+                else:
+                    ypos = float(ypos) / 20.0
+                if not (chunk_flags & 0x8):
+                    font_tag = None
+
+                color = Color(
+                    float(rgba & 0xFF) / 255.0,
+                    float((rgba >> 8) & 0xFF) / 255.0,
+                    float((rgba >> 16) & 0xFF) / 255.0,
+                    float((rgba >> 24) & 0xFF) / 255.0,
+                )
+
+                self.vprint(f"{prefix}      Font Tag: {font_tag}, Font Height: {font_height}, X: {xpos}, Y: {ypos}, Count of Sub-Entries: {sub_data_count}, Color: {color}")
+
+                base_offset = dataoffset + (sub_data_offset * 4) + sub_data_base_offset
+                offsets: List[AP2TextChar] = []
+                for i in range(sub_data_count):
+                    sub_chunk_offset = base_offset + (i * 4)
+                    font_text_index, xoff = struct.unpack(
+                        "<HH",
+                        ap2data[sub_chunk_offset:(sub_chunk_offset + 4)],
+                    )
+                    self.add_coverage(sub_chunk_offset, 4)
+
+                    entry_width = round(float(xoff) / 20.0, 5)
+                    offsets.append(AP2TextChar(font_text_index, entry_width))
+
+                    self.vprint(f"{prefix}        Font Text Index: {font_text_index}, X: {xpos}, Width: {entry_width}")
+
+                    # Make room for next character.
+                    xpos = round(xpos + entry_width, 5)
+
+                lines.append(
+                    AP2TextLine(
+                        font_tag,
+                        font_height,
+                        xpos,
+                        ypos,
+                        offsets,
+                    )
+                )
+
+            return AP2DefineTextTag(text_id, lines)
         elif tagid == AP2Tag.AP2_DEFINE_EDIT_TEXT:
             if size != 44:
-                raise Exception("Invalid size {size} to get data from AP2_DEFINE_EDIT_TEXT!")
+                raise Exception(f"Invalid size {size} to get data from AP2_DEFINE_EDIT_TEXT!")
 
             flags, edit_text_id, defined_font_tag_id, font_height, unk_str2_offset = struct.unpack("<IHHHH", ap2data[dataoffset:(dataoffset + 12)])
             self.add_coverage(dataoffset, 12)
@@ -1274,6 +1416,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             return AP2DefineEditTextTag(edit_text_id, defined_font_tag_id, font_height, rect, color, default_text=default_text)
         else:
+            self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
     def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "") -> Tuple[List[Tag], List[Frame]]:
