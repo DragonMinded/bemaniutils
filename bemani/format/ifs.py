@@ -295,7 +295,7 @@ class IFS:
                 lz77 = Lz77()
                 filedata = lz77.decompress(filedata[8:])
             else:
-                raise Exception('Unrecognized compression!')
+                filedata = filedata[8:] + filedata[0:8]
 
         if self.__decode_binxml and os.path.splitext(filename)[1] == '.xml':
             benc = BinaryEncoding()
