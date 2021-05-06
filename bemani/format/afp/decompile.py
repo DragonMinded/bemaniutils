@@ -368,6 +368,20 @@ class CloneSpriteStatement(Statement):
         return [f"{prefix}builtin_CloneSprite({obj}, {name}, {depth});"]
 
 
+class RemoveSpriteStatement(Statement):
+    # Clone a sprite.
+    def __init__(self, obj_to_remove: Any) -> None:
+        self.obj_to_remove = obj_to_remove
+
+    def __repr__(self) -> str:
+        obj = object_ref(self.obj_to_remove, "")
+        return f"builtin_RemoveSprite({obj})"
+
+    def render(self, prefix: str) -> List[str]:
+        obj = object_ref(self.obj_to_remove, prefix)
+        return [f"{prefix}builtin_RemoveSprite({obj});"]
+
+
 class GetURL2Statement(Statement):
     # Load the URL given in the parameters, with any possible target.
     def __init__(self, action: int, url: Any, target: Any) -> None:
@@ -2525,6 +2539,11 @@ class ByteCodeDecompiler(VerboseOutput):
                         raise Exception("Logic error!")
                     obj = stack.pop()
                     chunk.actions[i] = CloneSpriteStatement(obj, name, depth)
+                    continue
+
+                if action.opcode == AP2Action.REMOVE_SPRITE:
+                    obj = stack.pop()
+                    chunk.actions[i] = RemoveSpriteStatement(obj)
                     continue
 
                 if action.opcode == AP2Action.GET_VARIABLE:
