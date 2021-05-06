@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from typing import Optional
+
 from bemani.format import IFS
 
 
@@ -34,11 +36,29 @@ def main() -> None:
         root = root + '/'
     root = os.path.realpath(root)
 
-    fp = open(args.file, 'rb')
-    data = fp.read()
-    fp.close()
+    fileroot = os.path.dirname(os.path.realpath(args.file))
 
-    ifs = IFS(data, args.convert_xml_files, args.convert_texture_files)
+    def load_ifs(fname: str, root: bool=False) -> Optional[IFS]:
+        fname = os.path.join(fileroot, fname)
+        if os.path.isfile(fname):
+            fp = open(fname, 'rb')
+            data = fp.read()
+            fp.close()
+
+            return IFS(
+                data,
+                decode_binxml=root and args.convert_xml_files,
+                decode_textures=root and args.convert_texture_files,
+                keep_hex_names=not root,
+                reference_loader=load_ifs,
+            )
+        else:
+            return None
+
+    ifs = load_ifs(args.file, root=True)
+    if ifs is None:
+        raise Exception(f"Couldn't locate file {args.file}!")
+
     for fn in ifs.filenames:
         print(f'Extracting {fn} to disk...')
         realfn = os.path.join(root, fn)

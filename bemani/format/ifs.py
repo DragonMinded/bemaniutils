@@ -3,7 +3,7 @@ import io
 import os
 import struct
 from PIL import Image  # type: ignore
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from bemani.protocol.binary import BinaryEncoding
 from bemani.protocol.xml import XmlEncoding
@@ -18,14 +18,23 @@ class IFS:
     the games out there including non-rhythm games that use this format.
     """
 
-    def __init__(self, data: bytes, decode_binxml: bool=False, decode_textures: bool=False) -> None:
+    def __init__(
+        self,
+        data: bytes,
+        decode_binxml: bool=False,
+        decode_textures: bool=False,
+        keep_hex_names: bool=False,
+        reference_loader: Optional[Callable[[str], Optional["IFS"]]]=None,
+    ) -> None:
         self.__files: Dict[str, bytes] = {}
         self.__formats: Dict[str, str] = {}
         self.__compressed: Dict[str, bool] = {}
         self.__imgsize: Dict[str, Tuple[int, int, int, int]] = {}
         self.__uvsize: Dict[str, Tuple[int, int, int, int]] = {}
         self.__decode_binxml = decode_binxml
+        self.__keep_hex_names = keep_hex_names
         self.__decode_textures = decode_textures
+        self.__loader = reference_loader
         self.__parse_file(data)
 
     def __fix_name(self, filename: str) -> str:
@@ -68,16 +77,39 @@ class IFS:
             if header is None:
                 raise Exception('Invalid IFS file!')
 
-        files: Dict[str, Tuple[int, int, int]] = {}
+        files: Dict[str, Tuple[int, int, int, Optional[str]]] = {}
 
         if header.name != 'imgfs':
             raise Exception('Unknown IFS format!')
+
+        # Grab any super-files that this file might reference.
+        header_md5: Optional[int] = None
+        header_size: Optional[int] = None
+        supers: List[Tuple[str, bytes]] = [('__INVALID__', b'')]
+
+        for child in header.children:
+            if child.name == "_info_":
+                header_md5 = child.child_value('md5')  # NOQA
+                header_size = child.child_value('size')  # NOQA
+            elif child.name == "_super_":
+                super_name = child.value
+                super_md5 = child.child_value('md5')
+                supers.append((super_name, super_md5))
 
         def get_children(parent: str, node: Node) -> None:
             real_name = self.__fix_name(node.name)
             if node.data_type == '3s32':
                 node_name = os.path.join(parent, real_name).replace(f'{os.sep}imgfs{os.sep}', '')
-                files[node_name] = (node.value[0] + data_index, node.value[1], node.value[2])
+                ref = None
+                for subnode in node.children:
+                    if subnode.name == 'i':
+                        super_ref = subnode.value
+                        if super_ref > 0 or super_ref < len(supers):
+                            ref = supers[super_ref][0]
+                        else:
+                            ref = supers[0][0]
+
+                files[node_name] = (node.value[0] + data_index, node.value[1], node.value[2], ref)
             else:
                 for subchild in node.children:
                     get_children(os.path.join(parent, f"{real_name}{os.sep}"), subchild)
@@ -85,9 +117,31 @@ class IFS:
         # Recursively walk the entire filesystem extracting files and their locations.
         get_children(os.sep, header)
 
+        # Cache of other file data.
+        otherdata: Dict[str, IFS] = {}
+
         for fn in files:
-            (start, size, pack_time) = files[fn]
-            filedata = data[start:(start + size)]
+            (start, size, pack_time, external_file) = files[fn]
+            if external_file is not None:
+                if external_file not in otherdata:
+                    if self.__loader is None:
+                        ifsdata = None
+                    else:
+                        ifsdata = self.__loader(external_file)
+
+                    if ifsdata is None:
+                        raise Exception(f"Couldn't extract file data for {fn} referencing IFS file {external_file}!")
+                    else:
+                        otherdata[external_file] = ifsdata
+
+                if fn in otherdata[external_file].filenames:
+                    filedata = otherdata[external_file].read_file(fn)
+                else:
+                    raise Exception(f"{fn} not found in {external_file} IFS!")
+            else:
+                filedata = data[start:(start + size)]
+            if len(filedata) != size:
+                raise Exception(f"Couldn't extract file data for {fn}!")
             self.__files[fn] = filedata
 
         # Now, find all of the index files that are available.
@@ -101,8 +155,20 @@ class IFS:
                 benc = BinaryEncoding()
                 texdata = benc.decode(self.__files[filename])
 
+                if texdata is None:
+                    # Now, try as XML
+                    xenc = XmlEncoding()
+                    texdata = xenc.decode(
+                        b'<?xml encoding="ascii"?>' +
+                        self.__files[filename]
+                    )
+
+                    if texdata is None:
+                        continue
+
                 if texdata.name != 'texturelist':
                     raise Exception(f"Unexpected name {texdata.name} in texture list!")
+
                 if texdata.attribute('compress') == 'avslz':
                     compressed = True
                 else:
@@ -131,7 +197,8 @@ class IFS:
 
                             # Remove old index, update file to new index.
                             self.__files[newname] = self.__files[oldname]
-                            del self.__files[oldname]
+                            if not self.__keep_hex_names:
+                                del self.__files[oldname]
 
                             # Remember the attributes for this file so we can extract it later.
                             self.__compressed[newname] = compressed
@@ -165,6 +232,17 @@ class IFS:
                 benc = BinaryEncoding()
                 afpdata = benc.decode(self.__files[filename])
 
+                if afpdata is None:
+                    # Now, try as XML
+                    xenc = XmlEncoding()
+                    afpdata = xenc.decode(
+                        b'<?xml encoding="ascii"?>' +
+                        self.__files[filename]
+                    )
+
+                    if afpdata is None:
+                        continue
+
                 if afpdata.name != 'afplist':
                     raise Exception(f"Unexpected name {afpdata.name} in afp list!")
 
@@ -183,7 +261,8 @@ class IFS:
                         if oldname in self.__files:
                             # Remove old index, update file to new index.
                             self.__files[newname] = self.__files[oldname]
-                            del self.__files[oldname]
+                            if not self.__keep_hex_names:
+                                del self.__files[oldname]
 
                     # Now, fix up the shape files as well.
                     geodata = child.child_value("geo")
@@ -198,7 +277,8 @@ class IFS:
                             if oldname in self.__files:
                                 # Remove old index, update file to new index.
                                 self.__files[newname] = self.__files[oldname]
-                                del self.__files[oldname]
+                                if not self.__keep_hex_names:
+                                    del self.__files[oldname]
 
     @property
     def filenames(self) -> List[str]:
