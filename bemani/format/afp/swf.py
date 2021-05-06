@@ -211,7 +211,8 @@ class AP2PlaceObjectTag(Tag):
         object_id: int,
         depth: int,
         src_tag_id: Optional[int],
-        name: Optional[str],
+        movie_name: Optional[str],
+        placed_name: Optional[int],
         blend: Optional[int],
         update: bool,
         transform: Optional[Matrix],
@@ -233,8 +234,11 @@ class AP2PlaceObjectTag(Tag):
         # The source tag ID (should point at an AP2ShapeTag or AP2SpriteTag by ID) if present.
         self.source_tag_id = src_tag_id
 
-        # The name of this object, if present.
-        self.name = name
+        # The name of the object this should be placed in, if present.
+        self.movie_name = movie_name
+
+        # A name index, possibly referred to later by a Name Reference tag section.
+        self.placed_name = placed_name
 
         # The blend mode of this object, if present.
         self.blend = blend
@@ -262,7 +266,8 @@ class AP2PlaceObjectTag(Tag):
             'object_id': self.object_id,
             'depth': self.depth,
             'source_tag_id': self.source_tag_id,
-            'name': self.name,
+            'movie_name': self.movie_name,
+            'placed_name': self.placed_name,
             'blend': self.blend,
             'update': self.update,
             'transform': self.transform.as_dict(*args, **kwargs) if self.transform is not None else None,
@@ -296,7 +301,7 @@ class AP2RemoveObjectTag(Tag):
 
 
 class AP2DefineSpriteTag(Tag):
-    def __init__(self, id: int, tags: List[Tag], frames: List[Frame]) -> None:
+    def __init__(self, id: int, tags: List[Tag], frames: List[Frame], references: Dict[int, str]) -> None:
         super().__init__(id)
 
         # The list of tags that this sprite consists of. Sprites are, much like vanilla
@@ -306,11 +311,15 @@ class AP2DefineSpriteTag(Tag):
         # The list of frames this SWF occupies.
         self.frames = frames
 
+        # A list of object reference IDs to strings as used in bytecode.
+        self.references = references
+
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
             'tags': [t.as_dict(*args, **kwargs) for t in self.tags],
             'frames': [f.as_dict(*args, **kwargs) for f in self.frames],
+            'references': self.references,
         }
 
 
@@ -393,6 +402,9 @@ class SWF(TrackedCoverage, VerboseOutput):
         # "execute" that frame.
         self.frames: List[Frame] = []
 
+        # Reference LUT for mapping object reference IDs to names a used in bytecode.
+        self.references: Dict[int, str] = {}
+
         # SWF string table. This is used for faster lookup of strings as well as
         # tracking which strings in the table have been parsed correctly.
         self.__strings: Dict[int, Tuple[str, bool]] = {}
@@ -424,6 +436,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             'imported_tags': {i: self.imported_tags[i].as_dict(*args, **kwargs) for i in self.imported_tags},
             'tags': [t.as_dict(*args, **kwargs) for t in self.tags],
             'frames': [f.as_dict(*args, **kwargs) for f in self.frames],
+            'references': self.references,
         }
 
     def __parse_bytecode(self, datachunk: bytes, string_offsets: List[int] = [], prefix: str = "") -> ByteCode:
@@ -921,9 +934,9 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + 4, 4)
 
             self.vprint(f"{prefix}    Tag ID: {sprite_id}")
-            tags, frames = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix)
+            tags, frames, references = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix)
 
-            return AP2DefineSpriteTag(sprite_id, tags, frames)
+            return AP2DefineSpriteTag(sprite_id, tags, frames, references)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
             unk, font_id, fontname_offset, xml_prefix_offset, text_index_count, height_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
             self.add_coverage(dataoffset, 12)
@@ -982,23 +995,24 @@ class SWF(TrackedCoverage, VerboseOutput):
             else:
                 src_tag_id = None
 
+            placed_name = None
             if flags & 0x10:
                 unhandled_flags &= ~0x10
-                unk2 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
+                placed_name = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
-                self.vprint(f"{prefix}    Unk2: {hex(unk2)}")
 
+                self.vprint(f"{prefix}    Placed Name ID: {placed_name}")
+
+            movie_name = None
             if flags & 0x20:
-                # Has name component.
+                # Has movie name component.
                 unhandled_flags &= ~0x20
                 nameoffset = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
-                name = self.__get_string(nameoffset)
+                movie_name = self.__get_string(nameoffset)
                 running_pointer += 2
-                self.vprint(f"{prefix}    Name: {name}")
-            else:
-                name = None
+                self.vprint(f"{prefix}    Movie Name: {movie_name}")
 
             if flags & 0x40:
                 unhandled_flags &= ~0x40
@@ -1276,7 +1290,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 object_id,
                 depth,
                 src_tag_id=src_tag_id,
-                name=name,
+                movie_name=movie_name,
+                placed_name=placed_name,
                 blend=blend,
                 update=True if (flags & 0x1) else False,
                 transform=transform if (flags & 0x4) else None,
@@ -1419,8 +1434,8 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "") -> Tuple[List[Tag], List[Frame]]:
-        unknown_tags_flags, unknown_tags_count, frame_count, tags_count, unknown_tags_offset, frame_offset, tags_offset = struct.unpack(
+    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "") -> Tuple[List[Tag], List[Frame], Dict[int, str]]:
+        name_reference_flags, name_reference_count, frame_count, tags_count, name_reference_offset, frame_offset, tags_offset = struct.unpack(
             "<HHIIIII",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
         )
@@ -1428,7 +1443,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # Fix up pointers.
         tags_offset += tags_base_offset
-        unknown_tags_offset += tags_base_offset
+        name_reference_offset += tags_base_offset
         frame_offset += tags_base_offset
 
         # First, parse regular tags.
@@ -1462,18 +1477,19 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.vprint(f"{prefix}  Frame Start Tag: {start_tag_offset}, Count: {num_tags_to_play}")
             frame_offset += 4
 
-        # Now, parse unknown tags? I have no idea what these are, but they're referencing strings that
-        # are otherwise unused.
-        self.vprint(f"{prefix}Number of Unknown Tags: {unknown_tags_count}, Flags: {hex(unknown_tags_flags)}")
-        for i in range(unknown_tags_count):
-            unk1, stringoffset = struct.unpack("<HH", ap2data[unknown_tags_offset:(unknown_tags_offset + 4)])
+        # Finally, parse place object name references.
+        self.vprint(f"{prefix}Number of Object Name References: {name_reference_count}, Flags: {hex(name_reference_flags)}")
+        references: Dict[int, str] = {}
+        for i in range(name_reference_count):
+            index, stringoffset = struct.unpack("<HH", ap2data[name_reference_offset:(name_reference_offset + 4)])
             strval = self.__get_string(stringoffset)
-            self.add_coverage(unknown_tags_offset, 4)
+            self.add_coverage(name_reference_offset, 4)
+            references[index] = strval
 
-            self.vprint(f"{prefix}  Unknown Tag: {hex(unk1)} Name: {strval}")
-            unknown_tags_offset += 4
+            self.vprint(f"{prefix}  Name Reference: {index}, Name: {strval}")
+            name_reference_offset += 4
 
-        return tags, frames
+        return tags, frames, references
 
     def __descramble(self, scrambled_data: bytes, descramble_info: bytes) -> bytes:
         swap_len = {
@@ -1610,7 +1626,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             imported_tag_initializers_offset = struct.unpack("<I", data[56:60])[0]
             self.add_coverage(56, 4)
         else:
-            # Unknown offset is not present.
+            # Imported tag initializer bytecode not present.
             imported_tag_initializers_offset = None
 
         # String table
@@ -1665,7 +1681,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
         self.add_coverage(36, 4)
-        self.tags, self.frames = self.__parse_tags(ap2_data_version, version, data, tags_offset)
+        self.tags, self.frames, self.references = self.__parse_tags(ap2_data_version, version, data, tags_offset)
 
         # Imported tags sections
         imported_tags_count = struct.unpack("<h", data[34:36])[0]
