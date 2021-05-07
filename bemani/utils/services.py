@@ -9,12 +9,19 @@ from bemani.protocol import EAmuseProtocol
 from bemani.backend import Dispatch, UnrecognizedPCBIDException
 from bemani.backend.iidx import IIDXFactory
 from bemani.backend.popn import PopnMusicFactory
+from bemani.backend.popnhell import PopnHelloFactory
 from bemani.backend.jubeat import JubeatFactory
 from bemani.backend.bishi import BishiBashiFactory
 from bemani.backend.ddr import DDRFactory
 from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
 from bemani.backend.museca import MusecaFactory
+#from bemani.backend.roadfighters import RoadFightersFactory
+from bemani.backend.dm import DrummaniaFactory
+from bemani.backend.gf import GuitarFreaksFactory
+#from bemani.backend.danevo import DanceEvolutionFactory
+#from bemani.backend.gitadora import GitadoraFactory
+#from bemani.backend.otomedius import OtomediusFactory
 from bemani.common import GameConstants
 from bemani.data import Data
 
@@ -30,7 +37,7 @@ def receive_healthcheck(path: str) -> Response:
     redirect_uri = config['server'].get('redirect')
     if redirect_uri is None:
         # Return a standard status OKAY message.
-        return Response("Services OK.")
+        return Response("When the when you when they and you.")
     else:
         # Redirect to the configured location.
         return redirect(redirect_uri, code=308)  # type: ignore
@@ -137,6 +144,8 @@ def register_games() -> None:
 
     if config.get('support', {}).get(GameConstants.POPN_MUSIC, False):
         PopnMusicFactory.register_all()
+    if config.get('support', {}).get(GameConstants.POPN_HELLO, False):
+        PopnHelloFactory.register_all()
     if config.get('support', {}).get(GameConstants.JUBEAT, False):
         JubeatFactory.register_all()
     if config.get('support', {}).get(GameConstants.IIDX, False):
@@ -151,6 +160,18 @@ def register_games() -> None:
         SoundVoltexFactory.register_all()
     if config.get('support', {}).get(GameConstants.MUSECA, False):
         MusecaFactory.register_all()
+    #if config.get('support', {}).get(GameConstants.ROAD_FIGHTERS, False):
+    #    RoadFightersFactory.register_all()
+    if config.get('support', {}).get(GameConstants.DRUMMANIA, False):
+        DrummaniaFactory.register_all()
+    if config.get('support', {}).get(GameConstants.GUITARFREAKS, False):
+        GuitarFreaksFactory.register_all()
+    #if config.get('support', {}).get(GameConstants.GITADORA, False):
+    #    GitadoraFactory.register_all()
+    #if config.get('support', {}).get(GameConstants.OTOMEDIUS, False):
+    #   OtomediusFactory.register_all()
+    # if config.get('support', {}).get(GameConstants.DANCE_EVOLUTION, False):
+    #    DanceEvolutionFactory.register_all()
 
 
 if __name__ == '__main__':

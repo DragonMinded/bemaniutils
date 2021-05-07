@@ -12,7 +12,7 @@ import struct
 import yaml  # type: ignore
 import xml.etree.ElementTree as ET
 from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.engine import CursorResult  # type: ignore
+from sqlalchemy.engine.result import ResultProxy  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
@@ -75,7 +75,7 @@ class ImportBase:
         self.__session.commit()
         self.__batch = False
 
-    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None) -> CursorResult:
+    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None) -> ResultProxy:
         if not self.__batch:
             raise Exception('Logic error, cannot execute outside of a batch!')
 
@@ -367,16 +367,29 @@ class ImportPopn(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        actual_version = {
-            '19': VersionConstants.POPN_MUSIC_TUNE_STREET,
-            '20': VersionConstants.POPN_MUSIC_FANTASIA,
-            '21': VersionConstants.POPN_MUSIC_SUNNY_PARK,
-            '22': VersionConstants.POPN_MUSIC_LAPISTORIA,
-            '23': VersionConstants.POPN_MUSIC_ECLALE,
-            '24': VersionConstants.POPN_MUSIC_USANEKO,
-        }.get(version, -1)
+        if version in ['15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26']:
+            actual_version = {
+                '15': VersionConstants.POPN_MUSIC_ADVENTURE,
+                '16': VersionConstants.POPN_MUSIC_PARTY,
+                '17': VersionConstants.POPN_MUSIC_THE_MOVIE,
+                '18': VersionConstants.POPN_MUSIC_SENGOKU_RETSUDEN,
+                '19': VersionConstants.POPN_MUSIC_TUNE_STREET,
+                '20': VersionConstants.POPN_MUSIC_FANTASIA,
+                '21': VersionConstants.POPN_MUSIC_SUNNY_PARK,
+                '22': VersionConstants.POPN_MUSIC_LAPISTORIA,
+                '23': VersionConstants.POPN_MUSIC_ECLALE,
+                '24': VersionConstants.POPN_MUSIC_USANEKO,
+                '25': VersionConstants.POPN_MUSIC_PEACE,
+                '26': VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES,
+            }.get(version, -1)
+        elif version in ['omni-24', 'omni-25']:
+            actual_version = {
+                'omni-24': VersionConstants.POPN_MUSIC_USANEKO,
+                'omni-25': VersionConstants.POPN_MUSIC_PEACE,
+            }.get(version, -1) + DBConstants.OMNIMIX_VERSION_BUMP
 
-        if actual_version == VersionConstants.POPN_MUSIC_TUNE_STREET:
+        if actual_version in [VersionConstants.POPN_MUSIC_SENGOKU_RETSUDEN,
+                              VersionConstants.POPN_MUSIC_TUNE_STREET]:
             # Pop'n 19 has extra charts for old play modes (challenge and enjoy mode).
             # Cho challenge is analogous to regular mode in newer games, but Pop'n
             # 19 doesn't have easy charts, just 5 button charts.
@@ -385,7 +398,7 @@ class ImportPopn(ImportBase):
             # Newer pop'n has charts for easy, normal, hyper, another
             self.charts = [0, 1, 2, 3]
         else:
-            raise Exception("Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24!")
+            raise Exception("Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24, omni-24, 25, omni-25, 26!")
 
         super().__init__(config, GameConstants.POPN_MUSIC, actual_version, no_combine, update)
 
@@ -404,8 +417,388 @@ class ImportPopn(ImportBase):
                 if offset >= start and offset < end:
                     return (offset - start) + section.PointerToRawData
             raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
+        game_version = self.version if self.version < 10000 else self.version - 10000
+        if game_version == VersionConstants.POPN_MUSIC_ADVENTURE:
+            # Based on J39:J:A:A:2010040500
 
-        if self.version == VersionConstants.POPN_MUSIC_TUNE_STREET:
+            # Normal offset for music DB, size
+            offset = 0x159FC0
+            step = 72
+            length = 976
+
+            # Offset and step of file DB
+            file_offset = 0x299D60
+            file_step = 24
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = -1
+            english_artist_offset = -1
+            extended_genre_offset = -1
+            charts_offset = 6
+            folder_offset = 7
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 10
+            hyper_offset = 11
+            ex_offset = 13
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 14
+            battle_hyper_offset = 15
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 16
+            hyper_file_offset = 17
+            ex_file_offset = 19
+            battle_normal_file_offset = 20
+            battle_hyper_file_offset = 21
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event flags?
+                'B'  # Event flags?
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # Easy difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'x'  # ??
+                'x'  # ??
+                'x'  # ??
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # Easy chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    True,  # Always an easy chart
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+        elif game_version == VersionConstants.POPN_MUSIC_PARTY:
+            # Based on J39:J:A:A:2010040500
+
+            # Normal offset for music DB, size
+            offset = 0x159FC0
+            step = 72
+            length = 976
+
+            # Offset and step of file DB
+            file_offset = 0x299D60
+            file_step = 24
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = -1
+            english_artist_offset = -1
+            extended_genre_offset = -1
+            charts_offset = 6
+            folder_offset = 7
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 10
+            hyper_offset = 11
+            ex_offset = 13
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 14
+            battle_hyper_offset = 15
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 16
+            hyper_file_offset = 17
+            ex_file_offset = 19
+            battle_normal_file_offset = 20
+            battle_hyper_file_offset = 21
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event flags?
+                'B'  # Event flags?
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # Easy difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'x'  # ??
+                'x'  # ??
+                'x'  # ??
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # Easy chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    True,  # Always an easy chart
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+        elif game_version == VersionConstants.POPN_MUSIC_THE_MOVIE:
+            # Based on J39:J:A:A:2010040500
+
+            # Normal offset for music DB, size
+            offset = 0x159FC0
+            step = 72
+            length = 976
+
+            # Offset and step of file DB
+            file_offset = 0x299D60
+            file_step = 24
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = -1
+            english_artist_offset = -1
+            extended_genre_offset = -1
+            charts_offset = 6
+            folder_offset = 7
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 10
+            hyper_offset = 11
+            ex_offset = 13
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 14
+            battle_hyper_offset = 15
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 16
+            hyper_file_offset = 17
+            ex_file_offset = 19
+            battle_normal_file_offset = 20
+            battle_hyper_file_offset = 21
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event flags?
+                'B'  # Event flags?
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # Easy difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'x'  # ??
+                'x'  # ??
+                'x'  # ??
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # Easy chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    True,  # Always an easy chart
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+        elif game_version == VersionConstants.POPN_MUSIC_SENGOKU_RETSUDEN:
+            # Based on J39:J:A:A:2010040500
+
+            # Normal offset for music DB, size
+            offset = 0x159FC0
+            step = 72
+            length = 976
+
+            # Offset and step of file DB
+            file_offset = 0x299D60
+            file_step = 24
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = -1
+            english_artist_offset = -1
+            extended_genre_offset = -1
+            charts_offset = 6
+            folder_offset = 7
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 10
+            hyper_offset = 11
+            ex_offset = 13
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 14
+            battle_hyper_offset = 15
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 16
+            hyper_file_offset = 17
+            ex_file_offset = 19
+            battle_normal_file_offset = 20
+            battle_hyper_file_offset = 21
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event flags?
+                'B'  # Event flags?
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # Easy difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'x'  # ??
+                'x'  # ??
+                'x'  # ??
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # Easy chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    True,  # Always an easy chart
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+        elif game_version == VersionConstants.POPN_MUSIC_TUNE_STREET:
             # Based on K39:J:A:A:2010122200
 
             # Normal offset for music DB, size
@@ -500,7 +893,7 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
-        elif self.version == VersionConstants.POPN_MUSIC_FANTASIA:
+        elif game_version == VersionConstants.POPN_MUSIC_FANTASIA:
             # Based on L39:J:A:A:2012091900
 
             # Normal offset for music DB, size
@@ -595,7 +988,7 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
-        elif self.version == VersionConstants.POPN_MUSIC_SUNNY_PARK:
+        elif game_version == VersionConstants.POPN_MUSIC_SUNNY_PARK:
             # Based on M39:J:A:A:2014061900
 
             # Normal offset for music DB, size
@@ -691,7 +1084,7 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
-        elif self.version == VersionConstants.POPN_MUSIC_LAPISTORIA:
+        elif game_version == VersionConstants.POPN_MUSIC_LAPISTORIA:
             # Based on M39:J:A:A:2015081900
 
             # Normal offset for music DB, size
@@ -786,7 +1179,7 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
-        elif self.version == VersionConstants.POPN_MUSIC_ECLALE:
+        elif game_version == VersionConstants.POPN_MUSIC_ECLALE:
             # Based on M39:J:A:A:2016100500
 
             # Normal offset for music DB, size
@@ -882,16 +1275,16 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
-        elif self.version == VersionConstants.POPN_MUSIC_USANEKO:
-            # Based on M39:J:A:A:2018101500
+        elif game_version == VersionConstants.POPN_MUSIC_USANEKO:
+            # Based on M39:J:A:A:2018082100
 
             # Normal offset for music DB, size
-            offset = 0x299210
+            offset = 0x299410
             step = 172
             length = 1704
 
             # Offset and step of file DB
-            file_offset = 0x28AF08
+            file_offset = 0x28B108
             file_step = 32
 
             # Standard lookups
@@ -979,6 +1372,201 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
+        elif game_version == VersionConstants.POPN_MUSIC_PEACE:
+            # Based on M39:J:A:A:2020092800
+
+            # Normal offset for music DB, size
+            offset = 0x2C7C78
+            step = 172
+            length = 1877
+
+            # Offset and step of file DB
+            file_offset = 0x2B8010
+            file_step = 32
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = 4
+            english_artist_offset = 5
+            extended_genre_offset = -1
+            charts_offset = 8
+            folder_offset = 9
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 13
+            hyper_offset = 14
+            ex_offset = 15
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 16
+            battle_hyper_offset = 17
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 19
+            hyper_file_offset = 20
+            ex_file_offset = 21
+            battle_normal_file_offset = 22
+            battle_hyper_file_offset = 23
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'I'  # English Title
+                'I'  # English Artist
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event unlocks?
+                'I'  # Event unlocks?
+                'B'  # Easy difficulty
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'xx'  # Unknown pointer
+                'H'  # Easy chart pointer
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    mask & 0x0080000 > 0,  # Easy chart bit
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+        elif game_version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES:
+            # Based on M39:J:A:A:2020120900
+
+            # Normal offset for music DB, size
+            offset = 0x2C7938
+            step = 172
+            length = 1914
+
+            # Offset and step of file DB
+            file_offset = 0x2B7810
+            file_step = 32
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = 4
+            english_artist_offset = 5
+            extended_genre_offset = -1
+            charts_offset = 8
+            folder_offset = 9
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 13
+            hyper_offset = 14
+            ex_offset = 15
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 16
+            battle_hyper_offset = 17
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 19
+            hyper_file_offset = 20
+            ex_file_offset = 21
+            battle_normal_file_offset = 22
+            battle_hyper_file_offset = 23
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'I'  # English Title
+                'I'  # English Artist
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event unlocks?
+                'I'  # Event unlocks?
+                'B'  # Easy difficulty
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'xx'  # Unknown pointer
+                'H'  # Easy chart pointer
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    mask & 0x0080000 > 0,  # Easy chart bit
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+
         else:
             raise Exception(f'Unsupported version {self.version}')
 
@@ -1061,6 +1649,122 @@ class ImportPopn(ImportBase):
                 songinfo['genre'] == 'ＤＵＭＭＹ'
             ):
                 # This is a song the intern left in
+                continue
+
+            # Fix accent issues with title/artist
+            accent_lut: Dict[str, str] = {
+                "鵝": "7",
+                "圄": "à",
+                "圉": "ä",
+                "鵤": "Ä",
+                "鵑": "👁",
+                "鶤": "©",
+                "圈": "é",
+                "鵐": "ê",
+                "鵙": "Ə",
+                "鵲": "ë",
+                "！": "!",
+                "囿": "♥",
+                "鶚": "㊙",
+                "鶉": "ó",
+                "鶇": "ö",
+                "鶲": "Ⓟ",
+                "鶫": "²",
+                "圍": "@",
+                "圖": "ţ",
+                "鵺": "Ü",
+                "囎": ":",
+                "囂": "♡",
+                "釁": "🐾",
+            }
+
+            for orig, rep in accent_lut.items():
+                songinfo['title'] = songinfo['title'].replace(orig, rep)
+                songinfo['artist'] = songinfo['artist'].replace(orig, rep)
+                songinfo['title_en'] = songinfo['title_en'].replace(orig, rep)
+                songinfo['artist_en'] = songinfo['artist_en'].replace(orig, rep)
+                songinfo['genre'] = songinfo['genre'].replace(orig, rep)
+            songs.append(songinfo)
+
+        return songs
+
+    def scrape_xml(self, xmlfile: str, songs: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
+        with open(xmlfile, 'rb') as xmlhandle:
+            xmldata = xmlhandle.read().decode('shift_jisx0213')
+            root = ET.fromstring(xmldata)
+
+        for music_entry in root.findall('music'):
+            difficulties = [0, 0, 0, 0, 0, 0]
+            filenames = ['', '', '', '', '', '']
+            diff_map = {
+                'ep': 0,
+                'np': 1,
+                'hp': 2,
+                'op': 3,
+                'bp_n': 4,
+                'bp_h': 5,
+            }
+            charts = music_entry.find('charts')
+            if charts is not None:
+                for chart in charts.findall('chart'):
+                    chart_idx = diff_map.get(chart.attrib['idx'])
+                    if chart.find('diff') is not None:
+                        difficulties[chart_idx] = int(chart.find('diff').text)
+                        filenames[chart_idx] = f'{chart.find("folder").text}/{chart.find("filename").text}'
+            # Check if song metadata is in this entry
+            if music_entry.find('fw_title') is not None:
+                songinfo = {
+                    'id': int(music_entry.attrib['id']),
+                    'title': music_entry.find('fw_title').text,
+                    'artist': music_entry.find('fw_artist').text,
+                    'genre': music_entry.find('fw_genre').text,
+                    'comment': music_entry.find('genre').text,
+                    'title_en': music_entry.find('title').text,
+                    'artist_en': music_entry.find('artist').text,
+                    'long_genre': '',
+                    'folder': music_entry.find('folder').text,
+                    'difficulty': {
+                        'standard': {
+                            'easy': difficulties[0],
+                            'normal': difficulties[1],
+                            'hyper': difficulties[2],
+                            'ex': difficulties[3],
+                        },
+                        'battle': {
+                            'normal': difficulties[4],
+                            'hyper': difficulties[5],
+                        }
+                    },
+                    'file': {
+                        'standard': {
+                            'easy': filenames[0],
+                            'normal': filenames[1],
+                            'hyper': filenames[2],
+                            'ex': filenames[3],
+                        },
+                        'battle': {
+                            'normal': filenames[4],
+                            'hyper': filenames[5],
+                        },
+                    },
+                }
+            # It's not here so find the entry at the current song id
+            else:
+                for song in songs:
+                    if song['id'] == int(music_entry.attrib['id']):
+                        if difficulties is not None:
+                            for diff, i in zip(['easy', 'normal', 'hyper', 'ex'], range(4)):
+                                song['difficulty']['standard'][diff] = difficulties[i] if difficulties[i] else song['difficulty']['standard'][diff]
+                                song['file']['standard'][diff] = filenames[i] if filenames[i] else song['file']['standard'][diff]
+
+                            song['difficulty']['battle']['normal'] = difficulties[4] if difficulties[4] else song['difficulty']['battle']['normal']
+                            song['difficulty']['battle']['hyper'] = difficulties[5] if difficulties[5] else song['difficulty']['battle']['hyper']
+                            song['file']['battle']['normal'] = filenames[4] if filenames[4] else song['file']['battle']['normal']
+                            song['file']['battle']['hyper'] = filenames[5] if filenames[5] else song['file']['battle']['hyper']
+                        else:
+                            song['genre'] = music_entry.find('fw_genre').text
+                            song['comment'] = music_entry.find('genre').text
+                        break
                 continue
 
             # Fix accent issues with title/artist
@@ -1205,6 +1909,631 @@ class ImportPopn(ImportBase):
                 )
             self.finish_batch()
 
+class ImportGitadora(ImportBase):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        version: str,
+        no_combine: bool,
+        update: bool,
+    ) -> None:
+        if version in ['gitadora', 'overdrive', 'triboost', 'triboostreevolve', 'matixx', 'exchain', 'nextage']:
+            actual_version = {
+                'gitadora': VersionConstants.GITADORA,
+                'overdrive': VersionConstants.GITADORA_OVERDRIVE,
+                'triboost': VersionConstants.GITADORA_TRIBOOST,
+                'triboostreevolve': VersionConstants.GITADORA_TRIBOOST_RE_EVOLVE,
+                'matixx': VersionConstants.GITADORA_MATIXX,
+                'exchain': VersionConstants.GITADORA_EXCHAIN,
+                'nextage': VersionConstants.GITADORA_NEXTAGE,
+            }.get(version, -1)
+
+        elif version == 'all':
+            actual_version = None
+        
+        if actual_version in [
+            None,
+            VersionConstants.GITADORA,
+            VersionConstants.GITADORA_OVERDRIVE,
+            VersionConstants.GITADORA_TRIBOOST,
+            VersionConstants.GITADORA_TRIBOOST_RE_EVOLVE,
+            VersionConstants.GITADORA_MATIXX,
+            VersionConstants.GITADORA_EXCHAIN,
+            VersionConstants.GITADORA_NEXTAGE,
+        ]:
+            self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+        else: 
+            raise Exception("Unsupported GITADORA version! Please use one of the following: gitadora, overdrive, triboost, triboostreevolve, matixx, exchain, nextage")
+        
+        super().__init__(config, GameConstants.GITADORA, actual_version, no_combine, update)
+    
+    def scrape(self, xmlfile: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        if self.version is None:
+            raise Exception("Can't scrape database for 'all' version!")
+
+        try:
+            #probably UTF-8 music DB
+            tree = ET.parse(xmlfile)
+            root = tree.getroot()
+        except ValueError:
+            # Probably shift-jis emblems
+            with open(xmlfile, 'rb') as xmlhandle:
+                xmldata = xmlhandle.read().decode('shift_jisx0213')
+            root = ET.fromstring(xmldata)
+
+        root = tree.getroot()
+        songs = []
+        for music_entry in root.findall('mdb_data'):
+            songid = int(music_entry.find('music_id').text)
+            bpm = float(music_entry.find('bpm').text)
+            bpm2 = float(music_entry.find('bpm2').text)
+            title = music_entry.find('title_name').text
+            artist = music_entry.find('artist_title_ascii').text
+            genre = float(music_entry.find('genre').text)
+            if bpm2 < 0 and bpm > 0:
+                bpm = bpm2
+            difficulties = music_entry.find("xg_diff_list").text.split()
+    
+            song = {
+                        'id': songid,
+                        'title': title,
+                        'artist': artist,
+                        'genre': genre,
+                        'bpm': bpm,
+                        'bpm2': bpm2,
+                        'difficulty': {
+                            'drum_basic': int(difficulties[6]),
+                            'drum_advanced': int(difficulties[7]),
+                            'drum_extreme': int(difficulties[8]),
+                            'drum_master': int(difficulties[9]),
+                            'guitar_basic': int(difficulties[1]),
+                            'guitar_advanced': int(difficulties[2]),
+                            'guitar_extreme': int(difficulties[3]),
+                            'guitar_master': int(difficulties[4]),
+                            'bass_basic': int(difficulties[11]),
+                            'bass_advanced': int(difficulties[12]),
+                            'bass_extreme': int(difficulties[13]),
+                            'bass_master': int(difficulties[14]),
+                        },
+                    }
+            songs.append(song)
+        return songs
+
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        if self.version is None:
+            raise Exception('Can\'t look up database for \'all\' version!')
+
+        # Grab music info from remote server
+        music = self.remote_music(server, token)
+        songs = music.get_all_songs(self.game, self.version)
+        lut: Dict[int, Dict[str, Any]] = {}
+        chart_map = {
+            0: 'drum_basic',
+            1: 'drum_advanced',
+            2: 'drum_extreme',
+            3: 'drum_master',
+            4: 'guitar_basic',
+            5: 'guitar_advanced',
+            6: 'guitar_extreme',
+            7: 'guitar_master',
+            8: 'bass_basic',
+            9: 'bass_advanced',
+            10: 'bass_extreme',
+            11: 'bass_master',
+        }
+
+        # Format it the way we expect
+        for song in songs:
+            if song.chart not in chart_map:
+                # Ignore charts on songs we don't support/care about.
+                continue
+
+            if song.id not in lut:
+                lut[song.id] = {
+                    'id': song.id,
+                    'title': song.name,
+                    'artist': song.artist,
+                    'genre': song.genre,
+                    'bpm': song.data.get_int('bpm'),
+                    'bpm2': song.data.get_int('bpm2'),
+                    'difficulty': {
+                        'drum_basic': 0,
+                        'drum_advanced': 1,
+                        'drum_extreme': 2,
+                        'drum_master': 3,
+                        'guitar_basic': 4,
+                        'guitar_advanced': 5,
+                        'guitar_extreme': 6,
+                        'guitar_master': 7,
+                        'bass_basic': 8,
+                        'bass_advanced': 9,
+                        'bass_extreme': 10,
+                        'bass_master': 11,
+                    },
+                }
+            lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_int('difficulty')
+
+        # Reassemble the data
+        reassembled_songs = [val for _, val in lut.items()]
+
+
+        return reassembled_songs
+
+    def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
+        if self.version is None:
+            raise Exception('Can\'t import GITADORA database for \'all\' version!')
+
+        chart_map: Dict[int, str] = {
+            0: 'drum_basic',
+            1: 'drum_advanced',
+            2: 'drum_extreme',
+            3: 'drum_master',
+            4: 'guitar_basic',
+            5: 'guitar_advanced',
+            6: 'guitar_extreme',
+            7: 'guitar_master',
+            8: 'bass_basic',
+            9: 'bass_advanced',
+            10: 'bass_extreme',
+            11: 'bass_master',
+        }
+        for song in songs:
+            songid = song['id']
+
+            self.start_batch()
+            for chart in self.charts:
+                # First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(songid, chart)
+                
+                if 1 == 1:
+                    # First, try to find in the DB from another version
+                    if self.no_combine is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart]],
+                        'bpm': song['bpm'],
+                        'bpm2': song['bpm2'],
+                    }
+                else:
+                    # First, try to find in the DB from another version
+                    if self.no_combine is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart - 3]],
+                        'bpm': song['bpm'],
+                        'bpm2': song['bpm2'],
+                    }
+                print(next_id)
+                self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
+            self.finish_batch()
+
+class ImportDrummania(ImportBase):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        version: str,
+        no_combine: bool,
+        update: bool,
+    ) -> None:
+        if version in ['v4', 'v5', 'v6', 'v7', 'v8']:
+            actual_version = {
+                'v4': VersionConstants.DRUMMANIA_V4,
+                'v5': VersionConstants.DRUMMANIA_V5,
+                'v6': VersionConstants.DRUMMANIA_V6,
+                'v7': VersionConstants.DRUMMANIA_V7,
+                'v8': VersionConstants.DRUMMANIA_V8,
+            }.get(version, -1)
+
+        elif version == 'all':
+            actual_version = None
+        
+        if actual_version in [
+            None,
+            VersionConstants.DRUMMANIA_V4,
+            VersionConstants.DRUMMANIA_V5,
+            VersionConstants.DRUMMANIA_V6,
+            VersionConstants.DRUMMANIA_V7,
+            VersionConstants.DRUMMANIA_V8,
+        ]:
+            self.charts = [0, 1, 2, 3]
+
+        else:
+            raise Exception("Unsupported Drummania version! Please use one of the following: v4, v5, v6, v7, or v8.")
+
+        super().__init__(config, GameConstants.DRUMMANIA, actual_version, no_combine, update)
+
+    def scrape(self, xmlfile: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        if self.version is None:
+            raise Exception('Can\'t scrape database for \'all\' version!')
+
+        try:
+            # Probably UTF-8 music DB
+            tree = ET.parse(xmlfile)
+            root = tree.getroot()
+        except ValueError:
+            # Probably shift-jis emblems
+            with open(xmlfile, 'rb') as xmlhandle:
+                xmldata = xmlhandle.read().decode('shift_jisx0213')
+            root = ET.fromstring(xmldata)
+        
+        root = tree.getroot()
+        songs = []
+        for music_entry in root.findall('mdb_data'):
+            songid = int(music_entry.find('music_id').text)
+            bpm = float(music_entry.find('bpm').text)
+            bpm2 = float(music_entry.find('bpm2').text)
+            title = music_entry.find('title_ascii').text
+            if bpm2 < 0 and bpm > 0:
+                bpm = bpm2
+            difficulties = music_entry.find("classics_diff_list").text.split()
+    
+            song = {
+                        'id': songid,
+                        'title': title,
+                        'artist': "",
+                        'genre': "",
+                        'bpm': bpm,
+                        'bpm2': bpm2,
+                        'difficulty': {
+                            'beginner': int(difficulties[12]),
+                            'basic': int(difficulties[13]),
+                            'advanced': int(difficulties[14]),
+                            'extreme': int(difficulties[15]),
+                        },
+                    }
+            songs.append(song)
+        return songs
+
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        if self.version is None:
+            raise Exception('Can\'t look up database for \'all\' version!')
+
+        # Grab music info from remote server
+        music = self.remote_music(server, token)
+        songs = music.get_all_songs(self.game, self.version)
+        lut: Dict[int, Dict[str, Any]] = {}
+        chart_map = {
+            0: 'beginner',
+            1: 'basic',
+            2: 'advanced',
+            3: 'extreme',
+        }
+
+        # Format it the way we expect
+        for song in songs:
+            if song.chart not in chart_map:
+                # Ignore charts on songs we don't support/care about.
+                continue
+
+            if song.id not in lut:
+                lut[song.id] = {
+                    'id': song.id,
+                    'title': song.name,
+                    'artist': song.artist,
+                    'genre': song.genre,
+                    'bpm': song.data.get_int('bpm'),
+                    'bpm2': song.data.get_int('bpm2'),
+                    'difficulty': {
+                        'beginner': 0,
+                        'basic': 1,
+                        'advanced': 2,
+                        'extreme': 3,
+                    },
+                }
+            lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_int('difficulty')
+
+        # Reassemble the data
+        reassembled_songs = [val for _, val in lut.items()]
+
+
+        return reassembled_songs
+
+
+    def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
+        if self.version is None:
+            raise Exception('Can\'t import Drummania database for \'all\' version!')
+
+        chart_map: Dict[int, str] = {
+            0: 'beginner',
+            1: 'basic',
+            2: 'advanced',
+            3: 'extreme',
+        }
+        for song in songs:
+            songid = song['id']
+
+            self.start_batch()
+            for chart in self.charts:
+                # First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(songid, chart)
+                
+                if(chart <= 2):
+                    # First, try to find in the DB from another version
+                    if self.no_combine is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart]],
+                        'bpm': song['bpm'],
+                        'bpm2': song['bpm2'],
+                    }
+                else:
+                    # First, try to find in the DB from another version
+                    if self.no_combine is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart - 3]],
+                        'bpm': song['bpm'],
+                        'bpm2': song['bpm2'],
+                    }
+                print(next_id)
+                self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
+            self.finish_batch()
+
+    def import_metadata(self, tsvfile: str) -> None:
+        if self.version is not None:
+            raise Exception("Unsupported Drummania version, expected one of the following: all")
+
+        with open(tsvfile, newline='') as tsvhandle:
+            drummaniareader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')  # type: ignore
+            for row in drummaniareader:
+                songid = int(row[0])
+                name = row[1]
+                artist = row[2]
+
+                print(f"Setting name/artist for {songid} all charts")
+                self.start_batch()
+                for chart in self.charts:
+                    self.update_metadata_for_song(songid, chart, name, artist)
+                self.finish_batch()
+
+class ImportGuitarFreaks(ImportBase):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        version: str,
+        no_combine: bool,
+        update: bool,
+    ) -> None:
+        if version in ['v4', 'v5', 'v6', 'v7', 'v8']:
+            actual_version = {
+                'v4': VersionConstants.GUITARFREAKS_V4,
+                'v5': VersionConstants.GUITARFREAKS_V5,
+                'v6': VersionConstants.GUITARFREAKS_V6,
+                'v7': VersionConstants.GUITARFREAKS_V7,
+                'v8': VersionConstants.GUITARFREAKS_V8,
+            }.get(version, -1)
+
+        elif version == 'all':
+            actual_version = None
+        
+        if actual_version in [
+            None,
+            VersionConstants.GUITARFREAKS_V4,
+            VersionConstants.GUITARFREAKS_V5,
+            VersionConstants.GUITARFREAKS_V6,
+            VersionConstants.GUITARFREAKS_V7,
+            VersionConstants.GUITARFREAKS_V8,
+        ]:
+            self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,]
+
+        else:
+            raise Exception("Unsupported GuitarFreaks version! Please use one of the following: v4, v5, v6, v7, or v8.")
+
+        super().__init__(config, GameConstants.GUITARFREAKS, actual_version, no_combine, update)
+
+    def scrape(self, xmlfile: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        if self.version is None:
+            raise Exception('Can\'t scrape database for \'all\' version!')
+
+        try:
+            # Probably UTF-8 music DB
+            tree = ET.parse(xmlfile)
+            root = tree.getroot()
+        except ValueError:
+            # Probably shift-jis emblems
+            with open(xmlfile, 'rb') as xmlhandle:
+                xmldata = xmlhandle.read().decode('shift_jisx0213')
+            root = ET.fromstring(xmldata)
+        
+        root = tree.getroot()
+        songs = []
+        for music_entry in root.findall('mdb_data'):
+            songid = int(music_entry.find('music_id').text)
+            bpm = float(music_entry.find('bpm').text)
+            bpm2 = float(music_entry.find('bpm2').text)
+            title = music_entry.find('title_ascii').text
+            if bpm2 < 0 and bpm > 0:
+                bpm = bpm2
+            difficulties = music_entry.find("classics_diff_list").text.split()
+    
+            song = {
+                        'id': songid,
+                        'title': title,
+                        'artist': "",
+                        'genre': "",
+                        'bpm': bpm,
+                        'bpm2': bpm2,
+                        'difficulty': {
+                            'guitar_beginner': int(difficulties[0]),
+                            'guitar_basic': int(difficulties[1]),
+                            'guitar_advanced': int(difficulties[2]),
+                            'guitar_extreme': int(difficulties[3]),
+                            'bass_beginner': int(difficulties[4]),
+                            'bass_basic': int(difficulties[5]),
+                            'bass_advanced': int(difficulties[6]),
+                            'bass_extreme': int(difficulties[7]),
+                            'open_beginner': int(difficulties[8]),
+                            'open_basic': int(difficulties[9]),
+                            'open_advanced': int(difficulties[10]),
+                            'open_extreme': int(difficulties[11]),
+                        },
+                    }
+            songs.append(song)
+        return songs
+
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        if self.version is None:
+            raise Exception('Can\'t look up database for \'all\' version!')
+
+        # Grab music info from remote server
+        music = self.remote_music(server, token)
+        songs = music.get_all_songs(self.game, self.version)
+        lut: Dict[int, Dict[str, Any]] = {}
+        chart_map = {
+            0: 'guitar_beginner',
+            1: 'guitar_basic',
+            2: 'guitar_advanced',
+            3: 'guitar_extreme',
+            4: 'bass_beginner',
+            5: 'bass_basic',
+            6: 'bass_advanced',
+            7: 'bass_extreme',
+            8: 'open_beginner',
+            9: 'open_basic',
+            10: 'open_advanced',
+            11: 'open_extreme',
+        }
+
+        # Format it the way we expect
+        for song in songs:
+            if song.chart not in chart_map:
+                # Ignore charts on songs we don't support/care about.
+                continue
+
+            if song.id not in lut:
+                lut[song.id] = {
+                    'id': song.id,
+                    'title': song.name,
+                    'artist': song.artist,
+                    'genre': song.genre,
+                    'bpm': song.data.get_int('bpm'),
+                    'bpm2': song.data.get_int('bpm2'),
+                    'difficulty': {
+                        'guitar_beginner': 0,
+                        'guitar_basic': 1,
+                        'guitar_advanced': 2,
+                        'guitar_extreme': 3,
+                        'bass_beginner': 4,
+                        'bass_basic': 5,
+                        'bass_advanced': 6,
+                        'bass_extreme': 7,
+                        'open_beginner': 8,
+                        'open_basic': 9,
+                        'open_advanced': 10,
+                        'open_extreme': 11,
+                    },
+                }
+            lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_int('difficulty')
+
+        # Reassemble the data
+        reassembled_songs = [val for _, val in lut.items()]
+
+
+        return reassembled_songs
+
+
+    def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
+        if self.version is None:
+            raise Exception('Can\'t import Drummania database for \'all\' version!')
+
+        chart_map: Dict[int, str] = {
+            0: 'guitar_beginner',
+            1: 'guitar_basic',
+            2: 'guitar_advanced',
+            3: 'guitar_extreme',
+            4: 'bass_beginner',
+            5: 'bass_basic',
+            6: 'bass_advanced',
+            7: 'bass_extreme',
+            8: 'open_beginner',
+            9: 'open_basic',
+            10: 'open_advanced',
+            11: 'open_extreme',
+        }
+        for song in songs:
+            songid = song['id']
+
+            self.start_batch()
+            for chart in self.charts:
+                # First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(songid, chart)
+                
+                if(chart <= 2):
+                    # First, try to find in the DB from another version
+                    if self.no_combine is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart]],
+                        'bpm': song['bpm'],
+                        'bpm2': song['bpm2'],
+                    }
+                else:
+                    # First, try to find in the DB from another version
+                    if self.no_combine is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart - 3]],
+                        'bpm': song['bpm'],
+                        'bpm2': song['bpm2'],
+                    }
+                print(next_id)
+                self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
+            self.finish_batch()
+
+    def import_metadata(self, tsvfile: str) -> None:
+        if self.version is not None:
+            raise Exception("Unsupported GuitarFreaks version, expected one of the following: all")
+
+        with open(tsvfile, newline='') as tsvhandle:
+            guitarfreaksreader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')  # type: ignore
+            for row in guitarfreaksreader:
+                songid = int(row[0])
+                name = row[1]
+                artist = row[2]
+
+                print(f"Setting name/artist for {songid} all charts")
+                self.start_batch()
+                for chart in self.charts:
+                    self.update_metadata_for_song(songid, chart, name, artist)
+                self.finish_batch()
+
 
 class ImportJubeat(ImportBase):
 
@@ -1215,14 +2544,25 @@ class ImportJubeat(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        actual_version = {
-            'saucer': VersionConstants.JUBEAT_SAUCER,
-            'saucer-fulfill': VersionConstants.JUBEAT_SAUCER_FULFILL,
-            'prop': VersionConstants.JUBEAT_PROP,
-            'qubell': VersionConstants.JUBEAT_QUBELL,
-            'clan': VersionConstants.JUBEAT_CLAN,
-            'all': None,  # Special case for importing metadata
-        }.get(version, -1)
+        if version in ['saucer', 'saucer-fulfill', 'prop', 'qubell', 'clan', 'festo']:
+            actual_version = {
+                'saucer': VersionConstants.JUBEAT_SAUCER,
+                'saucer-fulfill': VersionConstants.JUBEAT_SAUCER_FULFILL,
+                'prop': VersionConstants.JUBEAT_PROP,
+                'qubell': VersionConstants.JUBEAT_QUBELL,
+                'clan': VersionConstants.JUBEAT_CLAN,
+                'festo': VersionConstants.JUBEAT_FESTO,
+            }.get(version, -1)
+        elif version in ['omni-prop', 'omni-qubell', 'omni-clan', 'omni-festo']:
+            actual_version = {
+                'omni-prop': VersionConstants.JUBEAT_PROP,
+                'omni-qubell': VersionConstants.JUBEAT_QUBELL,
+                'omni-clan': VersionConstants.JUBEAT_CLAN,
+                'omni-festo': VersionConstants.JUBEAT_FESTO,
+            }.get(version, -1) + DBConstants.OMNIMIX_VERSION_BUMP
+
+        elif version == 'all':
+            actual_version = None
 
         if actual_version in [
             None,
@@ -1231,10 +2571,18 @@ class ImportJubeat(ImportBase):
             VersionConstants.JUBEAT_PROP,
             VersionConstants.JUBEAT_QUBELL,
             VersionConstants.JUBEAT_CLAN,
+            VersionConstants.JUBEAT_FESTO,
+            VersionConstants.JUBEAT_PROP + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.JUBEAT_QUBELL + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.JUBEAT_CLAN + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.JUBEAT_FESTO + DBConstants.OMNIMIX_VERSION_BUMP,
         ]:
-            self.charts = [0, 1, 2]
+            self.charts = [0, 1, 2, 3, 4, 5]
+        # jubeat festo adds in separation of normal and hard mode scores.
+        # This adds a duplicate of each chart so that we show separated scores.
+
         else:
-            raise Exception("Unsupported Jubeat version, expected one of the following: saucer, saucer-fulfill, prop, qubell, clan!")
+            raise Exception("Unsupported Jubeat version, expected one of the following: saucer, saucer-fulfill, prop, omni-prop, qubell, omni-qubell, clan, omni-clan, festo, omni-festo!")
 
         super().__init__(config, GameConstants.JUBEAT, actual_version, no_combine, update)
 
@@ -1265,9 +2613,10 @@ class ImportJubeat(ImportBase):
                 int(music_entry.find('level_ext').text),
             ]
             genre = "other"
-            for possible_genre in music_entry.find('genre'):
-                if int(possible_genre.text) != 0:
-                    genre = str(possible_genre.tag)
+            if music_entry.find('genre') is not None:  # Qubell extend music_info doesn't have this field
+                for possible_genre in music_entry.find('genre'):
+                    if int(possible_genre.text) != 0:
+                        genre = str(possible_genre.tag)
 
             songs.append({
                 'id': songid,
@@ -1290,6 +2639,7 @@ class ImportJubeat(ImportBase):
             VersionConstants.JUBEAT_PROP,
             VersionConstants.JUBEAT_QUBELL,
             VersionConstants.JUBEAT_CLAN,
+            VersionConstants.JUBEAT_FESTO,
         }:
             for emblem_entry in root.find('emblem_list') or []:
                 print(emblem_entry)
@@ -1355,6 +2705,7 @@ class ImportJubeat(ImportBase):
             VersionConstants.JUBEAT_PROP,
             VersionConstants.JUBEAT_QUBELL,
             VersionConstants.JUBEAT_CLAN,
+            VersionConstants.JUBEAT_FESTO,
         }:
             game = self.remote_game(server, token)
             for item in game.get_items(self.game, self.version):
@@ -1369,6 +2720,39 @@ class ImportJubeat(ImportBase):
                     })
 
         return reassembled_songs, emblems
+
+    def __revivals(self, songid: int, chart: int) -> Optional[int]:
+        old_id = self.get_music_id_for_song(songid, chart)
+        if old_id is not None:
+            return old_id
+
+        # In qubell and clan omnimix, PPAP and Bonjour the world are placed
+        # at this arbitrary songid since they weren't assigned one originally
+        # In jubeat festo, these songs were given proper songids so we need to account for this
+        legacy_to_modern_map = {
+            71000001: 70000124,
+            71000002: 70000154,
+            50000020: 80000037,
+        }
+
+        legacy_songid = legacy_to_modern_map.get(songid)
+        if legacy_songid is not None:
+            old_id = self.get_music_id_for_song(legacy_songid, chart)
+            if old_id is not None:
+                return old_id
+        modern_to_legacy_map = {
+            70000124: 71000001,
+            70000154: 71000002,
+            80000037: 50000020,
+        }
+
+        modern_songid = modern_to_legacy_map.get(songid)
+        if modern_songid is not None:
+            old_id = self.get_music_id_for_song(modern_songid, chart)
+            if old_id is not None:
+                return old_id
+        # Failed, so create a new one
+        return None
 
     def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
         if self.version is None:
@@ -1389,21 +2773,38 @@ class ImportJubeat(ImportBase):
 
             self.start_batch()
             for chart in self.charts:
-                # First, try to find in the DB from another version
-                old_id = self.get_music_id_for_song(songid, chart)
-                if self.no_combine or old_id is None:
-                    # Insert original
-                    print(f"New entry for {songid} chart {chart}")
-                    next_id = self.get_next_music_id()
+                if(chart <= 2):
+                    # First, try to find in the DB from another version
+                    old_id = self.__revivals(songid, chart)
+                    if self.no_combine or old_id is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = old_id
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart]],
+                        'bpm_min': song['bpm_min'],
+                        'bpm_max': song['bpm_max'],
+                    }
                 else:
-                    # Insert pointing at same ID so scores transfer
-                    print(f"Reused entry for {songid} chart {chart}")
-                    next_id = old_id
-                data = {
-                    'difficulty': song['difficulty'][chart_map[chart]],
-                    'bpm_min': song['bpm_min'],
-                    'bpm_max': song['bpm_max'],
-                }
+                    # First, try to find in the DB from another version
+                    old_id = self.__revivals(songid, chart)
+                    if self.no_combine or old_id is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = old_id
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart - 3]],
+                        'bpm_min': song['bpm_min'],
+                        'bpm_max': song['bpm_max'],
+                    }
                 self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
             self.finish_batch()
 
@@ -1470,30 +2871,42 @@ class ImportIIDX(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        if version in ['20', '21', '22', '23', '24']:
+        if version in ['20', '21', '22', '23', '24', '25', '26', '27', '28']:
             actual_version = {
                 '20': VersionConstants.IIDX_TRICORO,
                 '21': VersionConstants.IIDX_SPADA,
                 '22': VersionConstants.IIDX_PENDUAL,
                 '23': VersionConstants.IIDX_COPULA,
                 '24': VersionConstants.IIDX_SINOBUZ,
+                '25': VersionConstants.IIDX_CANNON_BALLERS,
+                '26': VersionConstants.IIDX_ROOTAGE,
+                '27': VersionConstants.IIDX_HEROIC_VERSE,
+                '28': VersionConstants.IIDX_BISTROVER,
             }[version]
             self.charts = [0, 1, 2, 3, 4, 5, 6]
-        elif version in ['omni-20', 'omni-21', 'omni-22', 'omni-23', 'omni-24']:
+        elif version in ['omni-20', 'omni-21', 'omni-22', 'omni-23', 'omni-24', 'omni-25', 'omni-26', 'omni-27']:
             actual_version = {
                 'omni-20': VersionConstants.IIDX_TRICORO,
                 'omni-21': VersionConstants.IIDX_SPADA,
                 'omni-22': VersionConstants.IIDX_PENDUAL,
                 'omni-23': VersionConstants.IIDX_COPULA,
                 'omni-24': VersionConstants.IIDX_SINOBUZ,
+                'omni-25': VersionConstants.IIDX_CANNON_BALLERS,
+                'omni-26': VersionConstants.IIDX_ROOTAGE,
+                'omni-27': VersionConstants.IIDX_HEROIC_VERSE,
+                'omni-28': VersionConstants.IIDX_BISTROVER,
             }[version] + DBConstants.OMNIMIX_VERSION_BUMP
             self.charts = [0, 1, 2, 3, 4, 5, 6]
         elif version == 'all':
             actual_version = None
-            self.charts = [0, 1, 2, 3, 4, 5, 6]
+            self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         else:
-            raise Exception("Unsupported IIDX version, expected one of the following: 20, 21, 22, 23, 24, omni-20, omni-21, omni-22, omni-23, omni-24!")
-
+            raise Exception("Unsupported IIDX version, expected one of the following: 20, 21, 22, 23, 24, 25, 26, 27, 28, omni-20, omni-21, omni-22, omni-23, omni-24, omni-25, omni-26, omni-27!")
+        if actual_version is not None:
+            if actual_version >= (VersionConstants.IIDX_HEROIC_VERSE + DBConstants.OMNIMIX_VERSION_BUMP) or \
+                    (actual_version >= VersionConstants.IIDX_HEROIC_VERSE and
+                        actual_version < DBConstants.OMNIMIX_VERSION_BUMP):
+                self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         super().__init__(config, GameConstants.IIDX, actual_version, no_combine, update)
 
     def __gather_sound_files(self, directory: str) -> Dict[int, str]:
@@ -1502,11 +2915,16 @@ class ImportIIDX(ImportBase):
             for filename in filenames:
                 songid, extension = os.path.splitext(filename)
                 if extension == '.1' or extension == '.ifs':
-                    try:
-                        files[int(songid)] = os.path.join(directory, os.path.join(dirpath, filename))
-                    except ValueError:
-                        # Invalid file
-                        pass
+                    if filename != '12030-p0.ifs':  # for some reason POODLE SPL/DPL is stored in 12030.ifs so this file should not be read.
+                        if '-p0' in songid:         # prefer -p0 since that one extends the chart to include the SPL/DPL charts
+                            songid = songid.replace('-p0', '')
+                        if songid + '-p0' + extension in filenames:
+                            filename = songid + '-p0' + extension
+                        try:
+                            files[int(songid)] = os.path.join(directory, os.path.join(dirpath, filename))
+                        except ValueError:
+                            # Invalid file
+                            pass
 
             for dirname in dirnames:
                 files.update(self.__gather_sound_files(os.path.join(directory, dirname)))
@@ -1545,6 +2963,18 @@ class ImportIIDX(ImportBase):
             16212: 21066,
             22096: 23030,
             22097: 23051,
+            21214: 11101,
+            21221: 14101,
+            21225: 15104,
+            21226: 15102,
+            21231: 15101,
+            21237: 15103,
+            21240: 16105,
+            21242: 16104,
+            21253: 16103,
+            21258: 16102,
+            21262: 16101,
+            21220: 14100,
         }
         # Some charts were changed, and others kept the same on these
         if chart in [0, 1, 2]:
@@ -1581,6 +3011,18 @@ class ImportIIDX(ImportBase):
             21066: 16212,
             23030: 22096,
             23051: 22097,
+            11101: 21214,
+            14101: 21221,
+            15104: 21225,
+            15102: 21226,
+            15101: 21231,
+            15103: 21237,
+            16105: 21240,
+            16104: 21242,
+            16103: 21253,
+            16102: 21258,
+            16101: 21262,
+            14100: 21220,
         }
         # Some charts were changed, and others kept the same on tehse
         if chart in [0, 1, 2]:
@@ -1592,6 +3034,77 @@ class ImportIIDX(ImportBase):
             if old_id is not None:
                 return old_id
 
+        legg_map = {
+            1017: 1100, 4005: 4100,
+            4001: 4101, 5014: 5100,
+            11032: 11100, 11012: 11101,
+            12002: 12100, 12016: 12101,
+            13010: 13100, 13038: 13101,
+            14009: 14100, 14046: 14101,
+            14022: 14102, 15023: 15101,
+            15007: 15102, 15061: 15103,
+            15004: 15104, 15045: 15105,
+            16050: 16101, 16045: 16102,
+            16031: 16103, 16015: 16104,
+            16002: 16105, 17060: 17101,
+            17028: 17102, 18025: 18100,
+            18011: 18103, 19063: 19100,
+            20100: 20103, 20039: 20104,
+            20068: 20105, 20024: 20106,
+            20019: 20107, 21012: 21100,
+            21059: 21101, 21069: 21102,
+            21073: 21103, 21052: 21104,
+            21048: 21105, 21050: 21106,
+            21029: 21107, 21089: 21108,
+            1005: 21204, 4020: 21205,
+            5007: 21206, 6013: 21207,
+            7038: 21208, 8023: 21209,
+            8024: 21210, 9001: 21211,
+            9051: 21212, 9033: 21213,
+            11028: 21215, 12010: 21216,
+            12052: 21217, 12053: 21218,
+            12054: 21219, 23054: 23100,
+            14053: 21222, 15000: 21223,
+            15001: 21224, 23031: 23101,
+            15014: 21227, 24041: 24100,
+            15015: 21228, 15016: 21229,
+            15020: 21230, 23070: 23102,
+            15025: 21232, 15026: 21233,
+            15032: 21234, 15041: 21235,
+            15054: 21236, 24011: 24101,
+            16000: 21238, 16001: 21239,
+            16011: 21241, 16016: 21243,
+            16017: 21244, 16018: 21245,
+            16020: 21246, 16021: 21247,
+            16022: 21248, 16024: 21249,
+            16025: 21250, 16028: 21251,
+            16030: 21252, 14012: 21264,
+            16034: 21254, 16038: 21255,
+            16040: 21256, 16042: 21257,
+            16047: 21259, 16049: 21260,
+            15005: 21261, 15008: 21263,
+            22008: 22101, 22013: 22102,
+            22024: 22103, 22027: 22104,
+            22031: 22105, 22089: 22106,
+            22006: 22107,
+        }
+        # HV and above remove song ids for leggendaria charts and move them
+        if chart == 7 or chart == 9:
+            old_legg_id = legg_map.get(songid)
+            old_chart = 2 if chart == 7 else 5
+            if old_legg_id is not None:
+                old_id = self.get_music_id_for_song(old_legg_id, old_chart)
+                if old_id is not None:
+                    return old_id
+
+        if chart == 2 or chart == 5:
+            source_to_legg = {value: key for (key, value) in legg_map.items()}
+            old_legg_id = source_to_legg.get(songid)
+            old_chart = 7 if chart == 2 else 9
+            if old_legg_id is not None:
+                old_id = self.get_music_id_for_song(old_legg_id, old_chart)
+                if old_id is not None:
+                    return old_id
         # Failed, so create a new one
         return None
 
@@ -1605,7 +3118,7 @@ class ImportIIDX(ImportBase):
                 return 1
         return chart
 
-    def scrape(self, binfile: str, assets_dir: Optional[str]) -> List[Dict[str, Any]]:
+    def scrape(self, binfile: str, assets_dir: Optional[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise Exception('Can\'t import IIDX database for \'all\' version!')
 
@@ -1620,73 +3133,321 @@ class ImportIIDX(ImportBase):
         finally:
             bh.close()
 
-        musicdb = IIDXMusicDB(binarydata)
+        import_qpros = True  # by default, try to import qpros
+        try:
+            pe = pefile.PE(data=binarydata, fast_load=True)
+        except BaseException:
+            import_qpros = False  # if it failed then we're reading a music db file, not the executable
+
+        def virtual_to_physical(offset: int) -> int:
+            for section in pe.sections:
+                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
+                end = start + section.SizeOfRawData
+
+                if offset >= start and offset < end:
+                    return (offset - start) + section.PointerToRawData
+            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
+
         songs: List[Dict[str, Any]] = []
-        for song in musicdb.songs:
-            bpm = (0, 0)
-            notecounts = [0, 0, 0, 0, 0, 0]
+        if not import_qpros:
+            musicdb = IIDXMusicDB(binarydata)
+            for song in musicdb.songs:
+                bpm = (0, 0)
+                notecounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-            if song.id in self.BANNED_CHARTS:
-                continue
+                if song.id in self.BANNED_CHARTS:
+                    continue
 
-            if sound_files is not None:
-                if song.id in sound_files:
-                    # Look up chart info!
-                    filename = sound_files[song.id]
-                    _, extension = os.path.splitext(filename)
-                    data = None
+                if sound_files is not None:
+                    if song.id in sound_files:
+                        # Look up chart info!
+                        filename = sound_files[song.id]
+                        _, extension = os.path.splitext(filename)
+                        data = None
 
-                    if extension == '.1':
-                        fp = open(filename, 'rb')
-                        data = fp.read()
-                        fp.close()
+                        if extension == '.1':
+                            fp = open(filename, 'rb')
+                            data = fp.read()
+                            fp.close()
+                        else:
+                            fp = open(filename, 'rb')
+                            ifsdata = fp.read()
+                            fp.close()
+                            ifs = IFS(ifsdata)
+                            for fn in ifs.filenames:
+                                _, extension = os.path.splitext(fn)
+                                if extension == '.1':
+                                    data = ifs.read_file(fn)
+
+                        if data is not None:
+                            iidxchart = IIDXChart(data)
+                            bpm_min, bpm_max = iidxchart.bpm
+                            bpm = (bpm_min, bpm_max)
+                            notecounts = iidxchart.notecounts
+                        else:
+                            print(f"Could not find chart information for song {song.id}!")
                     else:
-                        fp = open(filename, 'rb')
-                        ifsdata = fp.read()
-                        fp.close()
-                        ifs = IFS(ifsdata)
-                        for fn in ifs.filenames:
-                            _, extension = os.path.splitext(fn)
-                            if extension == '.1':
-                                data = ifs.read_file(fn)
-
-                    if data is not None:
-                        iidxchart = IIDXChart(data)
-                        bpm_min, bpm_max = iidxchart.bpm
-                        bpm = (bpm_min, bpm_max)
-                        notecounts = iidxchart.notecounts
-                    else:
-                        print(f"Could not find chart information for song {song.id}!")
+                        print(f"No chart information because chart for song {song.id} is missing!")
+                if self.version < VersionConstants.IIDX_HEROIC_VERSE or \
+                    (self.version < (VersionConstants.IIDX_HEROIC_VERSE + DBConstants.OMNIMIX_VERSION_BUMP) and
+                        self.version > DBConstants.OMNIMIX_VERSION_BUMP):
+                    songs.append({
+                        'id': song.id,
+                        'title': song.title,
+                        'artist': song.artist,
+                        'genre': song.genre,
+                        'bpm_min': bpm[0],
+                        'bpm_max': bpm[1],
+                        'difficulty': {
+                            'spn': song.difficulties[0],
+                            'sph': song.difficulties[1],
+                            'spa': song.difficulties[2],
+                            'dpn': song.difficulties[3],
+                            'dph': song.difficulties[4],
+                            'dpa': song.difficulties[5],
+                        },
+                        'notecount': {
+                            'spn': notecounts[0],
+                            'sph': notecounts[1],
+                            'spa': notecounts[2],
+                            'dpn': notecounts[3],
+                            'dph': notecounts[4],
+                            'dpa': notecounts[5],
+                        },
+                    })
                 else:
-                    print(f"No chart information because chart for song {song.id} is missing!")
+                    songs.append({
+                        'id': song.id,
+                        'title': song.title,
+                        'artist': song.artist,
+                        'genre': song.genre,
+                        'bpm_min': bpm[0],
+                        'bpm_max': bpm[1],
+                        'difficulty': {
+                            'spn': song.difficulties[0],
+                            'sph': song.difficulties[1],
+                            'spa': song.difficulties[2],
+                            'dpn': song.difficulties[3],
+                            'dph': song.difficulties[4],
+                            'dpa': song.difficulties[5],
+                            'spb': song.difficulties[6],
+                            'spl': song.difficulties[7],
+                            'dpb': song.difficulties[8],
+                            'dpl': song.difficulties[9],
+                        },
+                        'notecount': {
+                            'spn': notecounts[0],
+                            'sph': notecounts[1],
+                            'spa': notecounts[2],
+                            'dpn': notecounts[3],
+                            'dph': notecounts[4],
+                            'dpa': notecounts[5],
+                            'spb': notecounts[6],
+                            'spl': notecounts[7],
+                            'dpb': notecounts[8],
+                            'dpl': notecounts[9],
+                        },
+                    })
+        qpros: List[Dict[str, Any]] = []
+        if self.version == VersionConstants.IIDX_TRICORO:
+            stride = 4
+            qp_head_offset = 0x1CCB18    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 79          # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x1CCC58
+            qp_hair_length = 103
+            qp_face_offset = 0x1CCDF8
+            qp_face_length = 50
+            qp_hand_offset = 0x1CCEC0
+            qp_hand_length = 103
+            qp_body_offset = 0x1CD060
+            qp_body_length = 106
+            filename_offset = 0
+            packedfmt = (
+                'I'  # filename
+            )
+        if self.version == VersionConstants.IIDX_SPADA:
+            stride = 4
+            qp_head_offset = 0x213B50    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 125         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x213D48
+            qp_hair_length = 126
+            qp_face_offset = 0x213F40
+            qp_face_length = 72
+            qp_hand_offset = 0x214060
+            qp_hand_length = 135
+            qp_body_offset = 0x214280
+            qp_body_length = 135
+            filename_offset = 0
+            packedfmt = (
+                'I'  # filename
+            )
+        if self.version == VersionConstants.IIDX_PENDUAL:
+            stride = 4
+            qp_head_offset = 0x1D5228    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 163         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x1D54B8
+            qp_hair_length = 182
+            qp_face_offset = 0x1D5790
+            qp_face_length = 106
+            qp_hand_offset = 0x1D5938
+            qp_hand_length = 184
+            qp_body_offset = 0x1D5C18
+            qp_body_length = 191
+            filename_offset = 0
+            packedfmt = (
+                'I'  # filename
+            )
+        if self.version == VersionConstants.IIDX_COPULA:
+            stride = 8
+            qp_head_offset = 0x12F9D8    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 186         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x12FFA8
+            qp_hair_length = 202
+            qp_face_offset = 0x1305F8
+            qp_face_length = 126
+            qp_hand_offset = 0x1309E8
+            qp_hand_length = 206
+            qp_body_offset = 0x131058
+            qp_body_length = 211
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'I'  # filename
+                'I'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_SINOBUZ:
+            stride = 8
+            qp_head_offset = 0x149F88    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 211         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x14A620
+            qp_hair_length = 245
+            qp_face_offset = 0x14ADC8
+            qp_face_length = 152
+            qp_hand_offset = 0x14B288
+            qp_hand_length = 236
+            qp_body_offset = 0x14B9E8
+            qp_body_length = 256
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'I'  # filename
+                'I'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_CANNON_BALLERS:
+            stride = 16
+            qp_head_offset = 0x2339E0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 231         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x234850
+            qp_hair_length = 267
+            qp_face_offset = 0x235900
+            qp_face_length = 173
+            qp_hand_offset = 0x2363D0
+            qp_hand_length = 261
+            qp_body_offset = 0x237420
+            qp_body_length = 282
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'L'  # filename
+                'L'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_ROOTAGE:
+            stride = 16
+            qp_head_offset = 0x5065F0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 259         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x507620
+            qp_hair_length = 288
+            qp_face_offset = 0x508820
+            qp_face_length = 193
+            qp_hand_offset = 0x509430
+            qp_hand_length = 287
+            qp_body_offset = 0x50A620
+            qp_body_length = 304
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'L'  # filename
+                'L'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_HEROIC_VERSE:
+            stride = 16
+            qp_head_offset = 0x82E6B0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 290         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x82F8D0
+            qp_hair_length = 312
+            qp_face_offset = 0x82AFB0
+            qp_face_length = 215
+            qp_hand_offset = 0x82BD20
+            qp_hand_length = 321
+            qp_body_offset = 0x82D130
+            qp_body_length = 344
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'L'  # filename
+                'L'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_BISTROVER:
+            stride = 16
+            qp_head_offset = 0x81A2F0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 303         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x81B5E0
+            qp_hair_length = 320
+            qp_face_offset = 0x81C9E0
+            qp_face_length = 223
+            qp_hand_offset = 0x81D7D0
+            qp_hand_length = 334
+            qp_body_offset = 0x818CA0
+            qp_body_length = 357
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'L'  # filename
+                'L'  # string containing id and name of the part
+            )
 
-            songs.append({
-                'id': song.id,
-                'title': song.title,
-                'artist': song.artist,
-                'genre': song.genre,
-                'bpm_min': bpm[0],
-                'bpm_max': bpm[1],
-                'difficulty': {
-                    'spn': song.difficulties[0],
-                    'sph': song.difficulties[1],
-                    'spa': song.difficulties[2],
-                    'dpn': song.difficulties[3],
-                    'dph': song.difficulties[4],
-                    'dpa': song.difficulties[5],
-                },
-                'notecount': {
-                    'spn': notecounts[0],
-                    'sph': notecounts[1],
-                    'spa': notecounts[2],
-                    'dpn': notecounts[3],
-                    'dph': notecounts[4],
-                    'dpa': notecounts[5],
-                },
-            })
-        return songs
+        def read_string(offset: int) -> str:
+            # First, translate load offset in memory to disk offset
+            offset = virtual_to_physical(offset)
 
-    def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
+            # Now, grab bytes until we're null-terminated
+            bytestring = []
+            while binarydata[offset] != 0:
+                bytestring.append(binarydata[offset])
+                offset = offset + 1
+
+            # Its shift-jis encoded, so decode it now
+            return bytes(bytestring).decode('shift_jisx0213')
+
+        def read_qpro_db(offset: int, length: int, qp_type: str) -> None:
+            for qpro_id in range(length):
+                chunkoffset = offset + (stride * qpro_id)
+                chunkdata = binarydata[chunkoffset:(chunkoffset + stride)]
+                unpacked = struct.unpack(packedfmt, chunkdata)
+                filename = read_string(unpacked[filename_offset]).replace('qp_', '')
+                remove = f'_{qp_type}.ifs'
+                filename = filename.replace(remove, '').replace('_head1.ifs', '').replace('_head2.ifs', '')
+                if self.version in [VersionConstants.IIDX_TRICORO, VersionConstants.IIDX_SPADA, VersionConstants.IIDX_PENDUAL]:
+                    name = filename  # qpro names are not stored in these 3 games so use the identifier instead
+                else:
+                    name = read_string(unpacked[qpro_id_offset])[4:]  # qpro name is stored in second string of form "000:name"
+                qproinfo = {
+                    'identifier': filename,
+                    'id': qpro_id,
+                    'name': name,
+                    'type': qp_type,
+                }
+                qpros.append(qproinfo)
+        if import_qpros:
+            read_qpro_db(qp_head_offset, qp_head_length, 'head')
+            read_qpro_db(qp_hair_offset, qp_hair_length, 'hair')
+            read_qpro_db(qp_face_offset, qp_face_length, 'face')
+            read_qpro_db(qp_hand_offset, qp_hand_length, 'hand')
+            read_qpro_db(qp_body_offset, qp_body_length, 'body')
+
+        return songs, qpros
+
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise Exception('Can\'t look up IIDX database for \'all\' version!')
 
@@ -1701,6 +3462,10 @@ class ImportIIDX(ImportBase):
             3: 'dpn',
             4: 'dph',
             5: 'dpa',
+            6: 'spb',
+            7: 'spl',
+            8: 'dpb',
+            9: 'dpl',
         }
 
         # Format it the way we expect
@@ -1726,6 +3491,10 @@ class ImportIIDX(ImportBase):
                         'dpn': 0,
                         'dph': 0,
                         'dpa': 0,
+                        'spb': 0,
+                        'spl': 0,
+                        'dpb': 0,
+                        'dpl': 0,
                     },
                     'notecount': {
                         'spn': 0,
@@ -1734,6 +3503,10 @@ class ImportIIDX(ImportBase):
                         'dpn': 0,
                         'dph': 0,
                         'dpa': 0,
+                        'spb': 0,
+                        'spl': 0,
+                        'dpb': 0,
+                        'dpl': 0,
                     },
                 }
             if song.chart in chart_map:
@@ -1741,7 +3514,18 @@ class ImportIIDX(ImportBase):
                 lut[song.id]['notecount'][chart_map[song.chart]] = song.data.get_int('notecount')
 
         # Return the reassembled data
-        return [val for _, val in lut.items()]
+        qpros: List[Dict[str, Any]] = []
+        game = self.remote_game(server, token)
+        for item in game.get_items(self.game, self.version):
+            if item.type == 'qpro':
+                qpros.append({
+                    'identifier': item.data.get_str('identifier'),
+                    'id': item.id,
+                    'name': item.data.get_str('name'),
+                    'type': item.data.get_str('type'),
+                })
+
+        return [val for _, val in lut.items()], qpros
 
     def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
         if self.version is None:
@@ -1755,11 +3539,17 @@ class ImportIIDX(ImportBase):
             3: 'dpn',
             4: 'dph',
             5: 'dpa',
+            6: 'spb',
+            7: 'spl',
+            8: 'dpb',
+            9: 'dpl',
         }
         for song in songs:
             self.start_batch()
             for chart in self.charts:
-                if chart == 6:
+                if chart == 6 and (self.version < VersionConstants.IIDX_HEROIC_VERSE or
+                                   (self.version < (VersionConstants.IIDX_HEROIC_VERSE + DBConstants.OMNIMIX_VERSION_BUMP) and
+                                    self.version > DBConstants.OMNIMIX_VERSION_BUMP)):
                     # Beginner chart
                     songdata: Dict[str, Any] = {}
                 else:
@@ -1781,6 +3571,29 @@ class ImportIIDX(ImportBase):
                     next_id = old_id
                 self.insert_music_id_for_song(next_id, song['id'], chart, song['title'], song['artist'], song['genre'], songdata)
             self.finish_batch()
+
+    def import_qpros(self, qpros: List[Dict[str, Any]]) -> None:
+        if self.version is None:
+            raise Exception('Can\'t import IIDX database for \'all\' version!')
+
+        self.start_batch()
+        for i, qpro in enumerate(qpros):
+            # Make importing faster but still do it in chunks
+            if (i % 16) == 15:
+                self.finish_batch()
+                self.start_batch()
+
+            print(f"New catalog entry for {qpro['id']}")
+            self.insert_catalog_entry(
+                f"qp_{qpro['type']}",
+                qpro['id'],
+                {
+                    'name': qpro['name'],
+                    'identifier': qpro['identifier'],
+                },
+            )
+
+        self.finish_batch()
 
     def import_metadata(self, tsvfile: str) -> None:
         if self.version is not None:
@@ -1817,17 +3630,19 @@ class ImportDDR(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        if version in ['12', '13', '14', '15', '16']:
+        if version in ['12', '13', '14', '15', '16', '17']:
             actual_version = {
                 '12': VersionConstants.DDR_X2,
                 '13': VersionConstants.DDR_X3_VS_2NDMIX,
                 '14': VersionConstants.DDR_2013,
                 '15': VersionConstants.DDR_2014,
                 '16': VersionConstants.DDR_ACE,
+                '17': VersionConstants.DDR_A20,
+            
             }[version]
             self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         else:
-            raise Exception("Unsupported DDR version, expected one of the following: 12, 13, 14, 15, 16")
+            raise Exception("Unsupported DDR version, expected one of the following: 12, 13, 14, 15, 16, 17")
 
         super().__init__(config, GameConstants.DDR, actual_version, no_combine, update)
 
@@ -2496,15 +4311,16 @@ class ImportSDVX(ImportBase):
             '2': VersionConstants.SDVX_INFINITE_INFECTION,
             '3': VersionConstants.SDVX_GRAVITY_WARS,
             '4': VersionConstants.SDVX_HEAVENLY_HAVEN,
+            '5': VersionConstants.SDVX_VIVID_WAVE,
         }.get(version, -1)
         if actual_version == VersionConstants.SDVX_BOOTH:
             self.charts = [0, 1, 2]
         elif actual_version in [VersionConstants.SDVX_INFINITE_INFECTION, VersionConstants.SDVX_GRAVITY_WARS]:
             self.charts = [0, 1, 2, 3]
-        elif actual_version == VersionConstants.SDVX_HEAVENLY_HAVEN:
+        elif actual_version == VersionConstants.SDVX_HEAVENLY_HAVEN or actual_version == VersionConstants.SDVX_VIVID_WAVE:
             self.charts = [0, 1, 2, 3, 4]
         else:
-            raise Exception("Unsupported SDVX version, expected one of the following: 1, 2, 3, 4!")
+            raise Exception("Unsupported SDVX version, expected one of the following: 1, 2, 3, 4, 5!")
 
         super().__init__(config, GameConstants.SDVX, actual_version, no_combine, update)
 
@@ -2680,7 +4496,7 @@ class ImportSDVX(ImportBase):
 
                     difficulties[offset] = int(difficulty.find('difnum').text)
                     limited[offset] = int(difficulty.find('limited').text)
-            elif self.version == VersionConstants.SDVX_HEAVENLY_HAVEN:
+            elif self.version == VersionConstants.SDVX_HEAVENLY_HAVEN or self.version == VersionConstants.SDVX_VIVID_WAVE:
                 # Find normal info about the song
                 info = music_entry.find('info')
                 title = info.find('title_name').text
@@ -2971,7 +4787,7 @@ class ImportReflecBeat(ImportBase):
         # We always have 4 charts, even if we're importing from Colette and below,
         # so that we guarantee a stable song ID. We'll be in trouble if Reflec
         # ever adds a fifth chart.
-        if version in ['1', '2', '3', '4', '5', '6']:
+        if version in ['1', '2', '3', '4', '5', '6', '7']:
             actual_version = {
                 '1': VersionConstants.REFLEC_BEAT,
                 '2': VersionConstants.REFLEC_BEAT_LIMELIGHT,
@@ -2979,10 +4795,14 @@ class ImportReflecBeat(ImportBase):
                 '4': VersionConstants.REFLEC_BEAT_GROOVIN,
                 '5': VersionConstants.REFLEC_BEAT_VOLZZA,
                 '6': VersionConstants.REFLEC_BEAT_VOLZZA_2,
+                '7': VersionConstants.REFLEC_BEAT_REFLESIA,
             }[version]
             self.charts = [0, 1, 2, 3]
+        elif version == 'omni-6':
+            self.charts = [0, 1, 2, 3]
+            actual_version = VersionConstants.REFLEC_BEAT_VOLZZA_2 + DBConstants.OMNIMIX_VERSION_BUMP
         else:
-            raise Exception("Unsupported ReflecBeat version, expected one of the following: 1, 2, 3, 4, 5, 6")
+            raise Exception("Unsupported ReflecBeat version, expected one of the following: 1, 2, 3, 4, 5, 6, omni-6, 7")
 
         super().__init__(config, GameConstants.REFLEC_BEAT, actual_version, no_combine, update)
 
@@ -3063,7 +4883,7 @@ class ImportReflecBeat(ImportBase):
             chart_offset = 0x1E4
             chart_length = 0x20
             difficulties_offset = 0x1CC
-        elif self.version == VersionConstants.REFLEC_BEAT_VOLZZA_2:
+        elif self.version in [VersionConstants.REFLEC_BEAT_VOLZZA_2, VersionConstants.REFLEC_BEAT_VOLZZA_2 + DBConstants.OMNIMIX_VERSION_BUMP]:
             # Based on MBR:J:A:A:2016100400
             offset = 0x1CBC68
             stride = 552
@@ -3075,6 +4895,20 @@ class ImportReflecBeat(ImportBase):
             artist_offset = 0xB8
             artist_length = 0x80
             chart_offset = 0x1E4
+            chart_length = 0x20
+            difficulties_offset = 0x1CC
+        elif self.version == VersionConstants.REFLEC_BEAT_REFLESIA:
+            # Based on MBR:J:A:A:2019031300
+            offset = 0x1B3398
+            stride = 556
+            max_songs = 945
+            max_difficulties = 4
+
+            song_offset = 0x38
+            song_length = 0x80
+            artist_offset = 0xB8
+            artist_length = 0x80
+            chart_offset = 0x1E5
             chart_length = 0x20
             difficulties_offset = 0x1CC
         else:
@@ -3094,7 +4928,7 @@ class ImportReflecBeat(ImportBase):
             return inb[:end].decode('shift_jisx0213')
 
         def convert_version(songid: int, folder: int) -> int:
-            if self.version == VersionConstants.REFLEC_BEAT_VOLZZA_2:
+            if self.version >= VersionConstants.REFLEC_BEAT_VOLZZA_2:
                 # Reflec Volzza 2 appears from network and DLL perspective to be identical
                 # to Volzza 1, including what version the game thinks it is for songs. So,
                 # hard code the new song IDs so we can show the difference on the frontend.
@@ -3103,7 +4937,9 @@ class ImportReflecBeat(ImportBase):
                         return 6
                     if songid >= 788:
                         return 6
-
+                # Reflesia is actually rb6 but we are treating it as rb7 so reflect that here
+                if folder == 6:
+                    return 7
             return folder
 
         songs = []
@@ -3442,12 +5278,16 @@ if __name__ == "__main__":
         popn = ImportPopn(config, args.version, args.no_combine, args.update)
         if args.bin:
             songs = popn.scrape(args.bin)
+            if args.xml:
+                songs = popn.scrape_xml(args.xml, songs)
+        elif args.xml:
+            songs = popn.scrape_xml(args.xml)
         elif args.server and args.token:
             songs = popn.lookup(args.server, args.token)
         else:
             raise Exception(
                 'No game DLL provided and no remote server specified! Please ' +
-                'provide either a --bin or a --server and --token option!'
+                'provide a --bin, --xml, or a --server and --token option!'
             )
         popn.import_music_db(songs)
         popn.close()
@@ -3473,6 +5313,67 @@ if __name__ == "__main__":
             jubeat.import_emblems(emblems)
         jubeat.close()
 
+    elif args.series == GameConstants.GITADORA:
+        gtd = ImportGitadora(config, args.version, args.no_combine, args.update)
+        if args.tsv is not None:
+            # Special case for Jubeat, grab the title/artist metadata that was
+            # hand-populated since its not in the music DB.
+            #gtd.import_metadata(args.tsv)
+            print("GITADORA does not require that you import a TSV.")
+        else:
+            # Normal case, doing a music DB or emblem import.
+            if args.xml is not None:
+                songs = gtd.scrape(args.xml)
+            elif args.server and args.token:
+                songs = gtd.lookup(args.server, args.token)
+            else:
+                raise Exception(
+                    'No music_info.xml or TSV provided and no remote server specified! Please ' +
+                    'provide either a --xml, --tsv or a --server and --token option!'
+                )
+            gtd.import_music_db(songs)
+        gtd.close()
+    
+    elif args.series == GameConstants.DRUMMANIA:
+        dm = ImportDrummania(config, args.version, args.no_combine, args.update)
+        if args.tsv is not None:
+            # Special case for Jubeat, grab the title/artist metadata that was
+            # hand-populated since its not in the music DB.
+            dm.import_metadata(args.tsv)
+        else:
+            # Normal case, doing a music DB or emblem import.
+            if args.xml is not None:
+                songs = dm.scrape(args.xml)
+            elif args.server and args.token:
+                songs = dm.lookup(args.server, args.token)
+            else:
+                raise Exception(
+                    'No music_info.xml or TSV provided and no remote server specified! Please ' +
+                    'provide either a --xml, --tsv or a --server and --token option!'
+                )
+            dm.import_music_db(songs)
+        dm.close()
+
+    elif args.series == GameConstants.GUITARFREAKS:
+        gf = ImportGuitarFreaks(config, args.version, args.no_combine, args.update)
+        if args.tsv is not None:
+            # Special case for Jubeat, grab the title/artist metadata that was
+            # hand-populated since its not in the music DB.
+            gf.import_metadata(args.tsv)
+        else:
+            # Normal case, doing a music DB or emblem import.
+            if args.xml is not None:
+                songs = gf.scrape(args.xml)
+            elif args.server and args.token:
+                songs = gf.lookup(args.server, args.token)
+            else:
+                raise Exception(
+                    'No music_info.xml or TSV provided and no remote server specified! Please ' +
+                    'provide either a --xml, --tsv or a --server and --token option!'
+                )
+            gf.import_music_db(songs)
+        gf.close()
+
     elif args.series == GameConstants.IIDX:
         iidx = ImportIIDX(config, args.version, args.no_combine, args.update)
         if args.tsv is not None:
@@ -3482,15 +5383,16 @@ if __name__ == "__main__":
         else:
             # Normal case, doing a music DB import.
             if args.bin is not None:
-                songs = iidx.scrape(args.bin, args.assets)
+                songs, qpros = iidx.scrape(args.bin, args.assets)
             elif args.server and args.token:
-                songs = iidx.lookup(args.server, args.token)
+                songs, qpros = iidx.lookup(args.server, args.token)
             else:
                 raise Exception(
                     'No music_data.bin or TSV provided and no remote server specified! Please ' +
                     'provide either a --bin, --tsv or a --server and --token option!'
                 )
             iidx.import_music_db(songs)
+            iidx.import_qpros(qpros)
         iidx.close()
 
     elif args.series == GameConstants.DDR:
@@ -3498,7 +5400,7 @@ if __name__ == "__main__":
         if args.server and args.token:
             songs = ddr.lookup(args.server, args.token)
         else:
-            if args.version == '16':
+            if args.version >= '16':
                 if args.bin is None:
                     raise Exception('No startup.arc provided!')
                 # DDR Ace has a different format altogether
@@ -3515,6 +5417,7 @@ if __name__ == "__main__":
                 songs = ddr.hydrate(songs, args.xml)
         ddr.import_music_db(songs)
         ddr.close()
+        
 
     elif args.series == GameConstants.SDVX:
         sdvx = ImportSDVX(config, args.version, args.no_combine, args.update)
@@ -3579,3 +5482,4 @@ if __name__ == "__main__":
 
     else:
         raise Exception('Unsupported game series!')
+
