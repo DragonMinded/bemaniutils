@@ -1048,8 +1048,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                transform.a = float(a_int) * 0.0009765625
-                transform.d = float(d_int) * 0.0009765625
+                transform.a = float(a_int) / 1024.0
+                transform.d = float(d_int) / 1024.0
                 self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
             if flags & 0x200:
@@ -1059,8 +1059,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                transform.b = float(b_int) * 0.0009765625
-                transform.c = float(c_int) * 0.0009765625
+                transform.b = float(b_int) / 1024.0
+                transform.c = float(c_int) / 1024.0
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
             if flags & 0x400:
@@ -1616,7 +1616,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         if flags & 0x2:
             # FPS can be either an integer or a float.
-            self.fps = struct.unpack("<i", data[24:28])[0] * 0.0009765625
+            self.fps = struct.unpack("<i", data[24:28])[0] / 1024.0
         else:
             self.fps = struct.unpack("<f", data[24:28])[0]
         self.add_coverage(24, 4)
