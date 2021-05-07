@@ -1,0 +1,230 @@
+lets record some game packets lol
+
+- logout
+      
+            <playdata>
+            <stage>
+                <no __type="u8">1</no>
+                <musicid __type="s32">1757</musicid>
+                <newmusic __type="u8">1</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage>
+                <no __type="u8">1</no>
+                <seqmode __type="s8">1</seqmode>
+                <clear __type="u8">1</clear>
+                <auto_clear __type="u8">0</auto_clear>
+                <score __type="u32">946798</score>
+                <flags __type="u32">0</flags>
+                <fullcombo __type="u8">1</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">177</combo>
+                <skill_point __type="s32">360</skill_point>
+                <skill_perc __type="s32">9112</skill_perc>
+                <result_rank __type="s8">5</result_rank>
+                <difficulty __type="s8">12</difficulty>
+                <combo_rate __type="s8">100</combo_rate>
+                <perfect_rate __type="s8">83</perfect_rate>
+            </playdata>
+
+            <playdata>
+            <stage>
+                <no __type="u8">2</no>
+                <musicid __type="s32">1757</musicid>
+                <newmusic __type="u8">1</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage>
+                <no __type="u8">2</no>
+                <seqmode __type="s8">2</seqmode>
+                <clear __type="u8">1</clear>
+                <auto_clear __type="u8">0</auto_clear>
+                <score __type="u32">934095</score>
+                <flags __type="u32">0</flags>
+                <fullcombo __type="u8">1</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">420</combo>
+                <skill_point __type="s32">853</skill_point>
+                <skill_perc __type="s32">9240</skill_perc>
+                <result_rank __type="s8">5</result_rank>
+                <difficulty __type="s8">28</difficulty>
+                <combo_rate __type="s8">100</combo_rate>
+                <perfect_rate __type="s8">85</perfect_rate>
+            </playdata>
+
+            <playdata>
+            <stage>
+                <no __type="u8">3</no>
+                <musicid __type="s32">1757</musicid>
+                <newmusic __type="u8">1</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage> 
+                <no __type="u8">3</no>
+                <seqmode __type="s8">3</seqmode>
+                <clear __type="u8">0</clear>
+                <auto_clear __type="u8">0</auto_clear>
+                <score __type="u32">97928</score>
+                <flags __type="u32">0</flags>
+                <fullcombo __type="u8">0</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">105</combo>
+                <skill_point __type="s32">916</skill_point>
+                <skill_perc __type="s32">-1</skill_perc>
+                <result_rank __type="s8">0</result_rank>
+                <difficulty __type="s8">52</difficulty>
+                <combo_rate __type="s8">40</combo_rate>
+                <perfect_rate __type="s8">15</perfect_rate>
+            </playdata>
+
+
+            <stage>
+                <no __type="u8">1</no>
+                <musicid __type="s32">1750</musicid>
+                <newmusic __type="u8">1</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage>
+
+            <playdata>
+                <no __type="u8">1</no>
+                <seqmode __type="s8">3</seqmode>
+                <clear __type="u8">1</clear>
+                <auto_clear __type="u8">1</auto_clear>
+                <score __type="u32">358792</score>
+                <flags __type="u32">256</flags>
+                <fullcombo __type="u8">0</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">196</combo>
+                <skill_point __type="s32">356</skill_point>
+                <skill_perc __type="s32">2923</skill_perc>
+                <result_rank __type="s8">2</result_rank>
+                <difficulty __type="s8">37</difficulty>
+                <combo_rate __type="s8">44</combo_rate>
+                <perfect_rate __type="s8">40</perfect_rate>
+            </playdata>
+
+
+
+- login
+
+            <standard nr="2">
+                <musicdata musicid="1757">
+                    <mdata __type="s16" __count="20">0 -1 9112 9240 -1 -2 -2 -2 -2 -2 -2 5 5 0 -2 -2 -2 -2 -2 -2</mdata>
+                    <flag __type="u16" __count="4">6 0 6 0</flag>
+                    <sdata __type="s16" __count="3">2 853 0</sdata>
+                    <bdata __type="s32" __count="2">0 0</bdata>
+                </musicdata>
+                <musicdata musicid="1750">
+                    <mdata __type="s16" __count="20">0 -1 -2 -2 2923 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2</mdata>
+                    <flag __type="u16" __count="4">0 0 0 8</flag>
+                    <sdata __type="s16" __count="3">3 356 0</sdata>
+                    <bdata __type="s32" __count="2">0 0</bdata>
+                </musicdata>
+
+
+
+- playing an EASY mode set
+
+    - save
+            <stage>
+                <no __type="u8">1</no>
+                <musicid __type="s32">1757</musicid>
+                <newmusic __type="u8">1</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage>
+            <stage>
+                <no __type="u8">2</no>
+                <musicid __type="s32">1541</musicid>
+                <newmusic __type="u8">0</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage>
+            <stage>
+                <no __type="u8">3</no>
+                <musicid __type="s32">1536</musicid>
+                <newmusic __type="u8">0</newmusic>
+                <longmusic __type="u8">0</longmusic>
+                <kind __type="u8">0</kind>
+            </stage>
+            
+            <playdata>
+                <no __type="u8">1</no>
+                <seqmode __type="s8">0</seqmode>
+                <clear __type="u8">1</clear>
+                <auto_clear __type="u8">0</auto_clear>
+                <score __type="u32">708292</score>
+                <flags __type="u32">0</flags>
+                <fullcombo __type="u8">0</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">75</combo>
+                <skill_point __type="s32">0</skill_point>
+                <skill_perc __type="s32">0</skill_perc>
+                <result_rank __type="s8">5</result_rank>
+                <difficulty __type="s8">1</difficulty>
+                <combo_rate __type="s8">80</combo_rate>
+                <perfect_rate __type="s8">78</perfect_rate>
+            </playdata>
+            <playdata>
+                <no __type="u8">2</no>
+                <seqmode __type="s8">0</seqmode>
+                <clear __type="u8">1</clear>
+                <auto_clear __type="u8">0</auto_clear>
+                <score __type="u32">650668</score>
+                <flags __type="u32">0</flags>
+                <fullcombo __type="u8">0</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">121</combo>
+                <skill_point __type="s32">0</skill_point>
+                <skill_perc __type="s32">0</skill_perc>
+                <result_rank __type="s8">4</result_rank>
+                <difficulty __type="s8">3</difficulty>
+                <combo_rate __type="s8">76</combo_rate>
+                <perfect_rate __type="s8">67</perfect_rate>
+            </playdata>
+            <playdata>
+                <no __type="u8">3</no>
+                <seqmode __type="s8">0</seqmode>
+                <clear __type="u8">1</clear>
+                <auto_clear __type="u8">0</auto_clear>
+                <score __type="u32">682446</score>
+                <flags __type="u32">0</flags>
+                <fullcombo __type="u8">0</fullcombo>
+                <excellent __type="u8">0</excellent>
+                <combo __type="u32">83</combo>
+                <skill_point __type="s32">0</skill_point>
+                <skill_perc __type="s32">0</skill_perc>
+                <result_rank __type="s8">3</result_rank>
+                <difficulty __type="s8">2</difficulty>
+                <combo_rate __type="s8">84</combo_rate>
+                <perfect_rate __type="s8">70</perfect_rate>
+            </playdata>
+
+    - login
+            <standard nr="4">
+                <musicdata musicid="1757">
+                    <mdata __type="s16" __count="20">0 -1 9112 9240 -1 -2 -2 -2 -2 -2 -2 5 5 0 -2 -2 -2 -2 -2 -2</mdata>
+                    <flag __type="u16" __count="4">6 0 6 0</flag>
+                    <sdata __type="s16" __count="3">2 853 0</sdata>
+                    <bdata __type="s32" __count="2">0 0</bdata>
+                </musicdata>
+                <musicdata musicid="1130">
+                    <mdata __type="s16" __count="20">-1 -1 -2 -2 -1 -2 -2 -2 -2 -2 -2 -2 -2 0 -2 -2 -2 -2 -2 -2</mdata>
+                    <flag __type="u16" __count="4">0 0 0 0</flag>
+                    <sdata __type="s16" __count="3">-1 0 0</sdata>
+                    <bdata __type="s32" __count="2">0 0</bdata>
+                </musicdata>
+                <musicdata musicid="961">
+                    <mdata __type="s16" __count="20">-1 -1 -2 -2 -1 -2 -2 -2 -2 -2 -2 -2 -2 0 -2 -2 -2 -2 -2 -2</mdata>
+                    <flag __type="u16" __count="4">0 0 0 0</flag>
+                    <sdata __type="s16" __count="3">-1 0 0</sdata>
+                    <bdata __type="s32" __count="2">0 0</bdata>
+                </musicdata>
+                <musicdata musicid="1750">
+                    <mdata __type="s16" __count="20">0 -1 -2 -2 2923 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2 -2</mdata>
+                    <flag __type="u16" __count="4">0 0 0 8</flag>
+                    <sdata __type="s16" __count="3">3 356 0</sdata>
+                    <bdata __type="s32" __count="2">0 0</bdata>
+                </musicdata>
+            </standard>
