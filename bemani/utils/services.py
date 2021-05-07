@@ -37,7 +37,7 @@ def receive_healthcheck(path: str) -> Response:
     redirect_uri = config['server'].get('redirect')
     if redirect_uri is None:
         # Return a standard status OKAY message.
-        return Response("When the when you when they and you.")
+        return Response("Services OK.")
     else:
         # Redirect to the configured location.
         return redirect(redirect_uri, code=308)  # type: ignore
