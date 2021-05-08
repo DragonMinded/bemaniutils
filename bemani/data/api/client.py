@@ -42,6 +42,22 @@ class APIClient:
         self.allow_stats = allow_stats
         self.allow_scores = allow_scores
 
+    def __content_type_valid(self, content_type: str) -> bool:
+        if ';' in content_type:
+            left, right = content_type.split(';', 1)
+            left = left.strip().lower()
+            right = right.strip().lower()
+
+            if left == 'application/json' and ('=' in right):
+                identifier, charset = right.split('=', 1)
+                identifier = identifier.strip()
+                charset = charset.strip()
+
+                if identifier == 'charset' and charset == 'utf-8':
+                    # This is valid.
+                    return True
+        return False
+
     def __exchange_data(self, request_uri: str, request_args: Dict[str, Any]) -> Dict[str, Any]:
         if self.base_uri[-1:] != '/':
             uri = f'{self.base_uri}/{request_uri}'
@@ -66,7 +82,8 @@ class APIClient:
         except Exception:
             raise APIException('Failed to query remote server!')
 
-        if r.headers['content-type'] != 'application/json; charset=utf-8':
+        # Verify that content type is in the form of "application/json; charset=utf-8".
+        if not self.__content_type_valid(r.headers['content-type']):
             raise APIException(f'API returned invalid content type \'{r.headers["content-type"]}\'!')
 
         jsondata = r.json()
