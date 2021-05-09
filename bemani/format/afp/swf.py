@@ -177,6 +177,18 @@ class AP2TextLine:
         }
 
 
+class AP2DefineMorphShape(Tag):
+    def __init__(self, id: int) -> None:
+        # TODO: I need to figure out what morph shapes actually DO, and take the
+        # values that I parsed out store them here...
+        super().__init__(id)
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+        }
+
+
 class AP2DefineTextTag(Tag):
     def __init__(self, id: int, lines: List[AP2TextLine]) -> None:
         super().__init__(id)
@@ -185,6 +197,7 @@ class AP2DefineTextTag(Tag):
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
+            **super().as_dict(*args, **kwargs),
             'lines': [line.as_dict(*args, **kwargs) for line in self.lines],
         }
 
@@ -1430,6 +1443,143 @@ class SWF(TrackedCoverage, VerboseOutput):
                 default_text = None
 
             return AP2DefineEditTextTag(edit_text_id, defined_font_tag_id, font_height, rect, color, default_text=default_text)
+        elif tagid == AP2Tag.AP2_DEFINE_MORPH_SHAPE:
+            unk1, unk2, define_shape_id, _0x2c_count, _0x2e_count, another_count = struct.unpack("<HHHHHH", ap2data[dataoffset:(dataoffset + 12)])
+            self.add_coverage(dataoffset, 12)
+
+            _0x2c_offset, _0x2e_offset, another_offset = struct.unpack("<HHH", ap2data[(dataoffset + 44):(dataoffset + 50)])
+            self.add_coverage(dataoffset + 44, 6)
+
+            self.vprint(f"{prefix}    Tag ID: {define_shape_id}, Unk1: {unk1}, Unk2: {unk2}, Count1: {_0x2c_count}, Count2: {_0x2e_count}, Another Count: {another_count}")
+
+            for label, off, sz in [("0x2c", _0x2c_offset, _0x2c_count), ("0x2e", _0x2e_offset, _0x2e_count)]:
+                for i in range(sz):
+                    short_offset = dataoffset + off + (2 * i)
+                    loc = struct.unpack("<H", ap2data[short_offset:(short_offset + 2)])[0]
+                    self.add_coverage(short_offset, 2)
+
+                    chunk_offset = dataoffset + loc
+                    flags, unk3, unk4 = struct.unpack("<HBB", ap2data[chunk_offset:(chunk_offset + 4)])
+                    self.add_coverage(chunk_offset, 4)
+                    chunk_offset += 4
+
+                    self.vprint(f"{prefix}      {label} Flags: {hex(flags)}, Unk3: {unk3}, Unk4-1: {(unk4 >> 2) & 0x3}, Unk4-2: {(unk4 & 0x3)}")
+
+                    unprocessed_flags = flags
+                    if flags & 0x1:
+                        int1, int2 = struct.unpack("<HH", ap2data[chunk_offset:(chunk_offset + 4)])
+                        self.add_coverage(chunk_offset, 4)
+                        chunk_offset += 4
+                        unprocessed_flags &= ~0x1
+
+                        # TODO: In game, 20.0 is divided by int1 cast to float, then int2 cast to float divided by 20.0 is
+                        # subtracted from the first value, and that is multiplied by some percentage, and then the
+                        # second value is added back in.
+
+                        self.vprint(f"{prefix}        Unknown Int1: {int1}, Int2: {int2}")
+
+                    if flags & 0x12:
+                        intval, src_ptr = struct.unpack("<HH", ap2data[chunk_offset:(chunk_offset + 4)])
+                        self.add_coverage(chunk_offset, 4)
+                        chunk_offset += 4
+                        unprocessed_flags &= ~0x12
+
+                        self.vprint(f"{prefix}        Unknown Float: {float(intval) / 20.0}, Source Bitmap ID: {src_ptr}")
+
+                    if flags & 0x4:
+                        rgba1, rgba2 = struct.unpack("<II", ap2data[chunk_offset:(chunk_offset + 8)])
+                        self.add_coverage(chunk_offset, 8)
+                        chunk_offset += 8
+                        unprocessed_flags &= ~0x4
+
+                        color1 = Color(
+                            r=(rgba1 & 0xFF) / 255.0,
+                            g=((rgba1 >> 8) & 0xFF) / 255.0,
+                            b=((rgba1 >> 16) & 0xFF) / 255.0,
+                            a=((rgba1 >> 24) & 0xFF) / 255.0,
+                        )
+
+                        color2 = Color(
+                            r=(rgba2 & 0xFF) / 255.0,
+                            g=((rgba2 >> 8) & 0xFF) / 255.0,
+                            b=((rgba2 >> 16) & 0xFF) / 255.0,
+                            a=((rgba2 >> 24) & 0xFF) / 255.0,
+                        )
+
+                        self.vprint(f"{prefix}        Start Color: {color1}, End Color: {color2}")
+
+                    if flags & 0x8:
+                        a1, d1, a2, d2, b1, c1, b2, c2, tx1, ty1, tx2, ty2 = struct.unpack("<IIIIIIIIIIII", ap2data[chunk_offset:(chunk_offset + 48)])
+                        self.add_coverage(chunk_offset, 48)
+                        chunk_offset += 48
+                        unprocessed_flags &= ~0x4
+
+                        matrix1 = Matrix(
+                            a=a1,
+                            b=b1,
+                            c=c1,
+                            d=d1,
+                            tx=tx1,
+                            ty=ty1,
+                        )
+
+                        matrix2 = Matrix(
+                            a=a2,
+                            b=b2,
+                            c=c2,
+                            d=d2,
+                            tx=tx2,
+                            ty=ty2,
+                        )
+
+                        self.vprint(f"{prefix}        Start Matrix: {matrix1}, End Matrix: {matrix2}")
+
+                    if flags & 0x20:
+                        # TODO: This is kinda complicated and I don't see any data using it yet, looks like it
+                        # has a 2-byte count, a 2 byte offset, and passes in whether flags bits 0x80 and 0x300
+                        # are set.
+                        raise Exception("TODO, this whole section!")
+
+                    if unprocessed_flags:
+                        raise Exception(f"Failed to process flags {hex(unprocessed_flags)}")
+
+            for i in range(another_count):
+                short_offset = dataoffset + another_offset + (2 * i)
+                loc = struct.unpack("<H", ap2data[short_offset:(short_offset + 2)])[0]
+                self.add_coverage(short_offset, 2)
+
+                chunk_offset = dataoffset + loc
+                unk5, some_count, a, b, c, unk6, i1, i2, i3, i4 = struct.unpack(
+                    "<HHBBBBHHHH",
+                    ap2data[chunk_offset:(chunk_offset + 16)]
+                )
+                self.add_coverage(chunk_offset, 16)
+                chunk_offset += 16
+
+                f1 = float(i1) / 20.0
+                f2 = float(i2) / 20.0
+                f3 = float(i3) / 20.0
+                f4 = float(i4) / 20.0
+
+                self.vprint(f"{prefix}      Unk5: {unk5}, Unk6: {unk6}, F1: {f1}, F2: {f2}, F3: {f3}, F4: {f4}, ABC: {a} {b} {c}, Count: {some_count}")
+
+                for j in range(some_count):
+                    shorts = struct.unpack("<HHHHHHHH", ap2data[chunk_offset:(chunk_offset + 16)])
+                    self.add_coverage(chunk_offset, 16)
+                    chunk_offset += 16
+
+                    fv1 = float(shorts[0] + i1) / 20.0
+                    fv2 = float(shorts[1] + i2) / 20.0
+                    fv3 = float(shorts[2] + i3) / 20.0
+                    fv4 = float(shorts[3] + i4) / 20.0
+                    fv5 = float(shorts[0] + i1 + shorts[4]) / 20.0
+                    fv6 = float(shorts[1] + i2 + shorts[5]) / 20.0
+                    fv7 = float(shorts[2] + i3 + shorts[6]) / 20.0
+                    fv8 = float(shorts[3] + i4 + shorts[7]) / 20.0
+
+                    self.vprint(f"{prefix}        Floats: {fv1} {fv2} {fv3} {fv4} {fv5} {fv6} {fv7} {fv8}")
+
+            return AP2DefineMorphShape(define_shape_id)
         else:
             self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
