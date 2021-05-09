@@ -189,6 +189,18 @@ class AP2DefineMorphShape(Tag):
         }
 
 
+class AP2DefineButton(Tag):
+    def __init__(self, id: int) -> None:
+        # TODO: I need to figure out what buttons actually DO, and take the
+        # values that I parsed out store them here...
+        super().__init__(id)
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+        }
+
+
 class AP2DefineTextTag(Tag):
     def __init__(self, id: int, lines: List[AP2TextLine]) -> None:
         super().__init__(id)
@@ -425,9 +437,9 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Whether this is parsed or not.
         self.parsed = False
 
-    def print_coverage(self) -> None:
+    def print_coverage(self, *args: Any, **kwargs: Any) -> None:
         # First print uncovered bytes
-        super().print_coverage()
+        super().print_coverage(*args, **kwargs)
 
         # Now, print uncovered strings
         for offset, (string, covered) in self.__strings.items():
@@ -1580,6 +1592,170 @@ class SWF(TrackedCoverage, VerboseOutput):
                     self.vprint(f"{prefix}        Floats: {fv1} {fv2} {fv3} {fv4} {fv5} {fv6} {fv7} {fv8}")
 
             return AP2DefineMorphShape(define_shape_id)
+        elif tagid == AP2Tag.AP2_DEFINE_BUTTON:
+            flags, button_id, source_tags_count, bytecode_count = struct.unpack("<HHHH", ap2data[dataoffset:(dataoffset + 8)])
+            self.add_coverage(dataoffset, 8)
+
+            self.vprint(f"{prefix}    Tag ID: {button_id}, Flags: {hex(flags)}, Source Tags Count: {source_tags_count}, Unknown Count: {bytecode_count}")
+            running_offset = dataoffset + 8
+
+            for _ in range(source_tags_count):
+                loc = struct.unpack("<H", ap2data[running_offset:(running_offset + 2)])[0]
+                self.add_coverage(running_offset, 2)
+                running_offset += 2
+
+                chunk_offset = dataoffset + loc
+                status_bitmask, depth, src_tag_id = struct.unpack("<IHH", ap2data[chunk_offset:(chunk_offset + 8)])
+                self.add_coverage(chunk_offset, 8)
+
+                chunk_offset += 8
+                rest_of_bitmask = status_bitmask & (~(0x20 + 0x100 + 0x200 + 0x400 + 0x800 + 0x1000 + 0x2000 + 0x4000 + 0x8000))
+
+                self.vprint(f"{prefix}      Offset: {hex(loc)}, Flags: {hex(status_bitmask)}, Source Flags: {hex(rest_of_bitmask)}, Depth: {depth}, Source Tag ID: {src_tag_id}")
+
+                # Parse the bitmask
+                if status_bitmask & 0x20:
+                    # Blend parameter:
+                    blend = struct.unpack("<B", ap2data[chunk_offset:(chunk_offset + 1)])[0]
+                    self.add_coverage(chunk_offset, 4)
+                    chunk_offset += 4
+                    self.vprint(f"{prefix}        Blend: {hex(blend)}")
+                else:
+                    blend = None
+
+                transform = Matrix.identity()
+
+                if status_bitmask & 0x100:
+                    # Parse scale component of matrix.
+                    a_int, d_int = struct.unpack("<ii", ap2data[chunk_offset:(chunk_offset + 8)])
+                    self.add_coverage(chunk_offset, 8)
+                    chunk_offset += 8
+
+                    transform.a = float(a_int) / 1024.0
+                    transform.d = float(d_int) / 1024.0
+                    self.vprint(f"{prefix}        Transform Matrix A: {transform.a}, D: {transform.d}")
+
+                if status_bitmask & 0x200:
+                    # Parse rotate component of matrix.
+                    b_int, c_int = struct.unpack("<ii", ap2data[chunk_offset:(chunk_offset + 8)])
+                    self.add_coverage(chunk_offset, 8)
+                    chunk_offset += 8
+
+                    transform.b = float(b_int) / 1024.0
+                    transform.c = float(c_int) / 1024.0
+                    self.vprint(f"{prefix}        Transform Matrix B: {transform.b}, C: {transform.c}")
+
+                if status_bitmask & 0x400:
+                    # Parse transpose component of matrix.
+                    tx_int, ty_int = struct.unpack("<ii", ap2data[chunk_offset:(chunk_offset + 8)])
+                    self.add_coverage(chunk_offset, 8)
+                    chunk_offset += 8
+
+                    transform.tx = float(tx_int) / 20.0
+                    transform.ty = float(ty_int) / 20.0
+                    self.vprint(f"{prefix}        Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
+
+                # Handle object colors
+                multcolor = Color(1.0, 1.0, 1.0, 1.0)
+                addcolor = Color(0.0, 0.0, 0.0, 0.0)
+
+                if flags & 0x800:
+                    # Multiplicative color present.
+                    r, g, b, a = struct.unpack("<HHHH", ap2data[chunk_offset:(chunk_offset + 8)])
+                    self.add_coverage(chunk_offset, 8)
+                    chunk_offset += 8
+
+                    multcolor.r = float(r) / 255.0
+                    multcolor.g = float(g) / 255.0
+                    multcolor.b = float(b) / 255.0
+                    multcolor.a = float(a) / 255.0
+                    self.vprint(f"{prefix}        Mult Color: {multcolor}")
+
+                if flags & 0x1000:
+                    # Additive color present.
+                    r, g, b, a = struct.unpack("<HHHH", ap2data[chunk_offset:(chunk_offset + 8)])
+                    self.add_coverage(chunk_offset, 8)
+                    chunk_offset += 8
+
+                    addcolor.r = float(r) / 255.0
+                    addcolor.g = float(g) / 255.0
+                    addcolor.b = float(b) / 255.0
+                    addcolor.a = float(a) / 255.0
+                    self.vprint(f"{prefix}        Add Color: {addcolor}")
+
+                if flags & 0x2000:
+                    # Multiplicative color present, smaller integers.
+                    rgba = struct.unpack("<I", ap2data[chunk_offset:(chunk_offset + 4)])[0]
+                    self.add_coverage(chunk_offset, 4)
+                    chunk_offset += 4
+
+                    multcolor.r = float((rgba >> 24) & 0xFF) / 255.0
+                    multcolor.g = float((rgba >> 16) & 0xFF) / 255.0
+                    multcolor.b = float((rgba >> 8) & 0xFF) / 255.0
+                    multcolor.a = float(rgba & 0xFF) / 255.0
+                    self.vprint(f"{prefix}        Mult Color: {multcolor}")
+
+                if flags & 0x4000:
+                    # Additive color present, smaller integers.
+                    rgba = struct.unpack("<I", ap2data[chunk_offset:(chunk_offset + 4)])[0]
+                    self.add_coverage(chunk_offset, 4)
+                    chunk_offset += 4
+
+                    addcolor.r = float((rgba >> 24) & 0xFF) / 255.0
+                    addcolor.g = float((rgba >> 16) & 0xFF) / 255.0
+                    addcolor.b = float((rgba >> 8) & 0xFF) / 255.0
+                    addcolor.a = float(rgba & 0xFF) / 255.0
+                    self.vprint(f"{prefix}        Add Color: {addcolor}")
+
+                if flags & 0x8000:
+                    # Some sort of filter data? Not sure what this is either. Needs more investigation
+                    # if I encounter files with it.
+                    count, filter_size = struct.unpack("<HH", ap2data[chunk_offset:(chunk_offset + 4)])
+                    self.add_coverage(chunk_offset, 4)
+                    running_pointer += filter_size
+
+                    # TODO: This is not understood at all. I need to find data that uses it to continue.
+                    # running_pointer + 4 starts a series of shorts (exactly count of them) which are
+                    # all in the range of 0-7, corresponding to some sort of filter. They get sizes
+                    # looked up and I presume there's data following this corresponding to those sizes.
+                    # I don't know however as I've not encountered data with this bit.
+                    self.vprint(f"{prefix}        Unknown Filter data Count: {count}, Size: {filter_size}")
+
+            for _ in range(bytecode_count):
+                loc = struct.unpack("<H", ap2data[running_offset:(running_offset + 2)])[0]
+                self.add_coverage(running_offset, 2)
+                running_offset += 2
+
+                chunk_offset = dataoffset + loc
+                status_bitmask, keycode = struct.unpack("<HBxxxxx", ap2data[chunk_offset:(chunk_offset + 8)])
+                self.add_coverage(chunk_offset, 8)
+
+                # TODO: chunk_offset + 8 is a bytecode chunk that needs to be processed with __parse_bytecode
+                # but we don't know the length. The game just parses until it hits the end of the buffer or
+                # an END tag.
+
+                self.vprint(f"{prefix}      Offset: {hex(loc)}, Bytecode Bitmask: {hex(status_bitmask)}, Keycode: {keycode}")
+                raise Exception("TODO: Need to examine this section further if I find data with it!")
+
+            # Looks like sound data is either there for 4 button statuses or not there.
+            if flags & 0x2:
+                sound_count = 4
+            else:
+                sound_count = 0
+
+            for _ in range(sound_count):
+                loc = struct.unpack("<H", ap2data[running_offset:(running_offset + 2)])[0]
+                self.add_coverage(running_offset, 2)
+                running_offset += 2
+
+                chunk_offset = dataoffset + loc
+                unk1, sound_source_tag = struct.unpack("<HH", ap2data[chunk_offset:(chunk_offset + 4)])
+                self.add_coverage(chunk_offset, 4)
+
+                self.vprint(f"{prefix}      Offset: {hex(loc)}, Sound Unk1: {unk1}, Source Tag ID: {sound_source_tag}")
+                raise Exception("TODO: Need to examine this section further if I find data with it!")
+
+            return AP2DefineButton(button_id)
         else:
             self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
