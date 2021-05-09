@@ -1,6 +1,6 @@
 import sys
 
-from typing import Any, List
+from typing import Any, List, Optional, Tuple
 
 
 def _hex(data: int) -> str:
@@ -74,14 +74,19 @@ class TrackedCoverage:
                 raise Exception(f"Already covered {hex(offset)}!")
             self.coverage[i] = True
 
-    def print_coverage(self) -> None:
+    def print_coverage(self, req_start: Optional[int] = None, req_end: Optional[int] = None) -> None:
+        for start, offset in self.get_uncovered_chunks(req_start, req_end):
+            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+
+    def get_uncovered_chunks(self, req_start: Optional[int] = None, req_end: Optional[int] = None, adjust_offsets: bool = False) -> List[Tuple[int, int]]:
         # First offset that is not coverd in a run.
         start = None
+        chunks: List[Tuple[int, int]] = []
 
         for offset, covered in enumerate(self.coverage):
             if covered:
                 if start is not None:
-                    print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+                    chunks.append((start, offset))
                     start = None
             else:
                 if start is None:
@@ -89,7 +94,38 @@ class TrackedCoverage:
         if start is not None:
             # Print final range
             offset = len(self.coverage)
-            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+            chunks.append((start, offset))
+
+        if req_start is None and req_end is None:
+            return chunks
+
+        filtered_chunks: List[Tuple[int, int]] = []
+        for start, end in chunks:
+            if start >= end:
+                raise Exception("Logic error!")
+
+            if req_start is not None:
+                if end <= req_start:
+                    # Don't care this is wholly before our start filter.
+                    continue
+                if start < req_start and end > req_start:
+                    # This overlaps our start filter, so update the start to be
+                    # our start filter.
+                    start = req_start
+            if req_end is not None:
+                if start >= req_end:
+                    # Don't care, this is wholly after our end filter.
+                    continue
+                if start < req_end and end > req_end:
+                    # This overlaps our end filter, so update the end to be
+                    # our end filter.
+                    end = req_end
+
+            if adjust_offsets:
+                filtered_chunks.append((start - req_start if req_start else 0, end - req_start if req_start else 0))
+            else:
+                filtered_chunks.append((start, end))
+        return filtered_chunks
 
 
 class VerboseOutputManager:
