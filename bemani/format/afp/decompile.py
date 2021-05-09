@@ -489,6 +489,12 @@ class FunctionCall(Expression):
         return f"{name}({', '.join(params)})"
 
 
+class GetTimeFunctionCall(FunctionCall):
+    # Call the built-in 'get time' method which returns the current playback position.
+    def __init__(self) -> None:
+        super().__init__("builtin_GetCurrentPlaybackPosition", [])
+
+
 class MethodCall(Expression):
     # Call a method on an object.
     def __init__(self, objectref: Any, name: Union[str, int, Expression], params: List[Any]) -> None:
@@ -2892,6 +2898,11 @@ class ByteCodeDecompiler(VerboseOutput):
                     stack.append(dup)
                     stack.append(dup)
 
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.GET_TIME:
+                    stack.append(GetTimeFunctionCall())
                     chunk.actions[i] = NopStatement()
                     continue
 
