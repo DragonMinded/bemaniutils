@@ -3,11 +3,11 @@ from PIL import Image  # type: ignore
 
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag
 from .types import Color, Matrix, Point
-from .geo import Shape
+from .geo import Shape, DrawParams
 from .util import VerboseOutput
 
 
-class Clip:
+class RegisteredClip:
     # A movie clip that we are rendering, frame by frame. These are manifest by the root
     # SWF as well as AP2DefineSpriteTags which are essentially embedded movie clips. The
     # tag_id is the AP2DefineSpriteTag that created us, or None if this is the clip for
@@ -16,75 +16,96 @@ class Clip:
         self.tag_id = tag_id
         self.frames = frames
         self.tags = tags
-        self.frameno = 0
-        self.__last_frameno = -1
-        self.__finished = False
-
-    def clone(self) -> "Clip":
-        return Clip(
-            self.tag_id,
-            self.frames,
-            self.tags,
-        )
-
-    @property
-    def frame(self) -> Frame:
-        # The current frame object.
-        if self.frameno >= len(self.frames):
-            raise Exception("Logic error!")
-        return self.frames[self.frameno]
-
-    def advance(self) -> None:
-        # Advance the clip by one frame after we finished processing that frame.
-        if self.running:
-            self.frameno += 1
-
-    def clear(self) -> None:
-        # Clear the dirty flag on this clip until we advance to the next frame.
-        self.__last_frameno = self.frameno
-
-    def remove(self) -> None:
-        # Schedule this clip to be removed.
-        self.__finished = True
-
-    @property
-    def finished(self) -> bool:
-        # Whether we've hit the end of the clip and should get rid of this object or not.
-        return (self.__finished or (self.frameno == len(self.frames)))
-
-    @property
-    def running(self) -> bool:
-        return not self.finished
-
-    @property
-    def dirty(self) -> bool:
-        # Whether we are in need of processing this frame or not.
-        return self.running and (self.frameno != self.__last_frameno)
 
     def __repr__(self) -> str:
-        return f"Clip(tag_id={self.tag_id}, frames={len(self.frames)}, frameno={self.frameno}, running={self.running}, dirty={self.dirty})"
+        return f"RegisteredClip(tag_id={self.tag_id})"
+
+
+class RegisteredShape:
+    # A shape that we are rendering, as placed by some placed clip somewhere.
+    def __init__(self, tag_id: int, vertex_points: List[Point], tex_points: List[Point], tex_colors: List[Color], draw_params: List[DrawParams]) -> None:
+        self.tag_id = tag_id
+        self.vertex_points: List[Point] = vertex_points
+        self.tex_points: List[Point] = tex_points
+        self.tex_colors: List[Color] = tex_colors
+        self.draw_params: List[DrawParams] = draw_params
+
+    def __repr__(self) -> str:
+        return f"RegisteredShape(tag_id={self.tag_id}, vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
 
 
 class PlacedObject:
-    # An object that occupies the screen at some depth. Placed by an AP2PlaceObjectTag
-    # that is inside the root SWF or an AP2DefineSpriteTag (essentially an embedded
-    # movie clip).
-    def __init__(self, parent_clip: Clip, tag: AP2PlaceObjectTag, drawable: Union[Clip, Shape]) -> None:
-        self.parent_clip = parent_clip
-        # TODO: Get rid of tag reference, instead grab the variables we need.
-        self.tag = tag
-        self.drawable = drawable
+    # An object that occupies the screen at some depth.
+    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int) -> None:
+        self.__object_id = object_id
+        self.__depth = depth
+        self.rotation_offset = rotation_offset
+        self.transform = transform
+        self.mult_color = mult_color
+        self.add_color = add_color
+        self.blend = blend
+
+    @property
+    def source(self) -> Union[RegisteredClip, RegisteredShape]:
+        raise NotImplementedError("Only implemented in subclass!")
 
     @property
     def depth(self) -> int:
-        return self.tag.depth
+        return self.__depth
 
     @property
     def object_id(self) -> int:
-        return self.tag.object_id
+        return self.__object_id
 
     def __repr__(self) -> str:
-        return f"PlacedObject(parent_clip={self.parent_clip}, object_id={self.object_id}, depth={self.depth})"
+        return f"PlacedObject(object_id={self.object_id}, depth={self.depth})"
+
+
+class PlacedShape(PlacedObject):
+    # A shape that occupies its parent clip at some depth. Placed by an AP2PlaceObjectTag
+    # referencing an AP2ShapeTag.
+    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, source: RegisteredShape) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend)
+        self.__source = source
+
+    @property
+    def source(self) -> RegisteredShape:
+        return self.__source
+
+    def __repr__(self) -> str:
+        return f"PlacedShape(object_id={self.object_id}, depth={self.depth}, source={self.source})"
+
+
+class PlacedClip(PlacedObject):
+    # A movieclip that occupies its parent clip at some depth. Placed by an AP2PlaceObjectTag
+    # referencing an AP2DefineSpriteTag. Essentially an embedded movie clip.
+    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, source: RegisteredClip) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend)
+        self.placed_objects: List[PlacedObject] = []
+        self.frame: int = 0
+        self.__source = source
+
+    @property
+    def source(self) -> RegisteredClip:
+        return self.__source
+
+    def advance(self) -> None:
+        if self.frame < len(self.source.frames):
+            self.frame += 1
+
+    @property
+    def finished(self) -> bool:
+        return self.frame == len(self.source.frames)
+
+    @property
+    def running(self) -> bool:
+        for obj in self.placed_objects:
+            if isinstance(obj, PlacedClip) and obj.running:
+                return True
+        return not self.finished
+
+    def __repr__(self) -> str:
+        return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, running={self.running}, finished={self.finished})"
 
 
 class AFPRenderer(VerboseOutput):
@@ -95,12 +116,8 @@ class AFPRenderer(VerboseOutput):
         self.textures: Dict[str, Image.Image] = textures
         self.swfs: Dict[str, SWF] = swfs
 
-        # Internal render parameters
-        self.__visible_tag: Optional[int] = None
-        self.__registered_shapes: Dict[int, Shape] = {}
-        self.__registered_sprites: Dict[int, Clip] = {}
-        self.__placed_objects: List[PlacedObject] = []
-        self.__clips: List[Clip] = []
+        # Internal render parameters.
+        self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip]] = {}
 
     def add_shape(self, name: str, data: Shape) -> None:
         # Register a named shape with the renderer.
@@ -147,51 +164,59 @@ class AFPRenderer(VerboseOutput):
 
         return paths
 
-    def __place(self, tag: Tag, parent_clip: Clip, prefix: str = "") -> List[Clip]:
+    def __place(self, tag: Tag, operating_clip: PlacedClip, prefix: str = "") -> Tuple[Optional[PlacedClip], bool]:
         # "Place" a tag on the screen. Most of the time, this means performing the action of the tag,
         # such as defining a shape (registering it with our shape list) or adding/removing an object.
         if isinstance(tag, AP2ShapeTag):
-            self.vprint(f"{prefix}    Loading {tag.reference} into shape slot {tag.id}")
+            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}")
 
             if tag.reference not in self.shapes:
                 raise Exception(f"Cannot find shape reference {tag.reference}!")
-            if tag.id in self.__registered_shapes:
-                raise Exception(f"Cannot register {tag.reference} as shape slot {tag.id} is already taken!")
+            if tag.id in self.__registered_objects:
+                raise Exception(f"Cannot register {tag.reference} as object slot {tag.id} is already taken!")
 
-            self.__registered_shapes[tag.id] = self.shapes[tag.reference]
+            self.__registered_objects[tag.id] = RegisteredShape(
+                tag.id,
+                self.shapes[tag.reference].vertex_points,
+                self.shapes[tag.reference].tex_points,
+                self.shapes[tag.reference].tex_colors,
+                self.shapes[tag.reference].draw_params,
+            )
 
-            # No additional movie clips were spawned.
-            return []
+            # Didn't place a new clip, didn't change anything.
+            return None, False
+
         elif isinstance(tag, AP2DefineSpriteTag):
-            self.vprint(f"{prefix}    Loading Sprite into sprite slot {tag.id}")
+            self.vprint(f"{prefix}    Loading Sprite into object slot {tag.id}")
 
-            if tag.id in self.__registered_sprites:
-                raise Exception(f"Cannot register sprite as sprite slot {tag.id} is already taken!")
+            if tag.id in self.__registered_objects:
+                raise Exception(f"Cannot register sprite as object slot {tag.id} is already taken!")
 
             # Register a new clip that we might reference to execute.
-            self.__registered_sprites[tag.id] = Clip(tag.id, tag.frames, tag.tags)
+            self.__registered_objects[tag.id] = RegisteredClip(tag.id, tag.frames, tag.tags)
 
-            # We didn't add the clip to our processing target yet.
-            return []
+            # Didn't place a new clip, didn't change anything.
+            return None, False
+
         elif isinstance(tag, AP2PlaceObjectTag):
             if tag.update:
                 self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
                 updated = False
 
-                for obj in self.__placed_objects:
+                for obj in operating_clip.placed_objects:
                     if obj.object_id == tag.object_id and obj.depth == tag.depth:
                         # As far as I can tell, pretty much only color and matrix stuff can be updated.
-                        obj.tag.mult_color = tag.mult_color or obj.tag.mult_color
-                        obj.tag.add_color = tag.add_color or obj.tag.add_color
-                        obj.tag.transform = tag.transform or obj.tag.transform
-                        obj.tag.rotation_offset = tag.rotation_offset or obj.tag.rotation_offset
+                        obj.mult_color = tag.mult_color or obj.mult_color
+                        obj.add_color = tag.add_color or obj.add_color
+                        obj.transform = tag.transform or obj.transform
+                        obj.rotation_offset = tag.rotation_offset or obj.rotation_offset
                         updated = True
 
                 if not updated:
                     print(f"WARNING: Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
 
-                # We finished!
-                return []
+                # Didn't place a new clip, did change something.
+                return None, True
             else:
                 if tag.source_tag_id is None:
                     raise Exception("Cannot place a tag with no source ID and no update flags!")
@@ -199,24 +224,46 @@ class AFPRenderer(VerboseOutput):
                 # TODO: Handle ON_LOAD triggers for this object. Many of these are just calls into
                 # the game to set the current frame that we're on, but sometimes its important.
 
-                if tag.source_tag_id in self.__registered_sprites:
-                    # This is a sprite placement reference. We need to start this
-                    # clip so that we can process its own animation frames in order to reference
-                    # its objects when rendering.
+                if tag.source_tag_id in self.__registered_objects:
+                    self.vprint(f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
 
-                    self.vprint(f"{prefix}    Placing Sprite {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
-                    new_clip = self.__registered_sprites[tag.source_tag_id].clone()
-                    self.__placed_objects.append(PlacedObject(parent_clip, tag, new_clip))
+                    newobj = self.__registered_objects[tag.source_tag_id]
+                    if isinstance(newobj, RegisteredShape):
+                        operating_clip.placed_objects.append(
+                            PlacedShape(
+                                tag.object_id,
+                                tag.depth,
+                                tag.rotation_offset or Point.identity(),
+                                tag.transform or Matrix.identity(),
+                                tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
+                                tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.blend or 0,
+                                newobj,
+                            )
+                        )
 
-                    return [new_clip]
+                        # Didn't place a new clip, changed the parent clip.
+                        return None, True
+                    elif isinstance(newobj, RegisteredClip):
+                        placed_clip = PlacedClip(
+                            tag.object_id,
+                            tag.depth,
+                            tag.rotation_offset or Point.identity(),
+                            tag.transform or Matrix.identity(),
+                            tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
+                            tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                            tag.blend or 0,
+                            newobj,
+                        )
+                        operating_clip.placed_objects.append(placed_clip)
 
-                if tag.source_tag_id in self.__registered_shapes:
-                    self.vprint(f"{prefix}    Placing Shape {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
-                    self.__placed_objects.append(PlacedObject(parent_clip, tag, self.__registered_shapes[tag.source_tag_id]))
-
-                    return []
+                        # Placed a new clip, changed the parent.
+                        return placed_clip, True
+                    else:
+                        raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
 
                 raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
+
         elif isinstance(tag, AP2RemoveObjectTag):
             self.vprint(f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}")
 
@@ -224,13 +271,13 @@ class AFPRenderer(VerboseOutput):
                 # Remove the identified object by object ID and depth.
                 # Remember removed objects so we can stop any clips.
                 removed_objects = [
-                    obj for obj in self.__placed_objects
+                    obj for obj in operating_clip.placed_objects
                     if obj.object_id == tag.object_id and obj.depth == tag.depth
                 ]
 
                 # Get rid of the objects that we're removing from the master list.
-                self.__placed_objects = [
-                    obj for obj in self.__placed_objects
+                operating_clip.placed_objects = [
+                    obj for obj in operating_clip.placed_objects
                     if not(obj.object_id == tag.object_id and obj.depth == tag.depth)
                 ]
             else:
@@ -238,188 +285,171 @@ class AFPRenderer(VerboseOutput):
                 # ordered so much as apppending to the list means the last placed object at a
                 # depth comes last.
                 removed_objects = []
-                for i in range(len(self.__placed_objects)):
-                    real_index = len(self.__placed_objects) - (i + 1)
+                for i in range(len(operating_clip.placed_objects)):
+                    real_index = len(operating_clip.placed_objects) - (i + 1)
 
-                    if self.__placed_objects[real_index].depth == tag.depth:
-                        removed_objects = self.__placed_objects[real_index:(real_index + 1)]
-                        self.__placed_objects = self.__placed_objects[:real_index] + self.__placed_objects[(real_index + 1):]
+                    if operating_clip.placed_objects[real_index].depth == tag.depth:
+                        removed_objects = operating_clip.placed_objects[real_index:(real_index + 1)]
+                        operating_clip.placed_objects = operating_clip.placed_objects[:real_index] + operating_clip.placed_objects[(real_index + 1):]
                         break
 
             if not removed_objects:
                 print(f"WARNING: Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
 
-            # Now, if we removed a sprite, go through and drop all of its children.
-            while removed_objects:
-                # Keep track of new clips that we need to drop.
-                new_removed_objects = []
+            # Didn't place a new clip, changed parent clip.
+            return None, True
 
-                for obj in removed_objects:
-                    if obj.tag.source_tag_id in self.__registered_sprites:
-                        # This is a sprite placement reference, stop the clip.
-                        for clip in self.__clips:
-                            if clip is obj.drawable:
-                                clip.remove()
-
-                        # Log what we're killing, schedule child clips for removal as well.
-                        for o in self.__placed_objects:
-                            if o.parent_clip is obj.drawable:
-                                self.vprint(f"{prefix}    Removing Object ID {o.tag.object_id} from Depth {o.tag.depth} after removing sprite with ID {tag.object_id} and depth {tag.depth}")
-                                new_removed_objects.append(o)
-
-                        # Kill any objects placed by this clip.
-                        self.__placed_objects = [
-                            o for o in self.__placed_objects
-                            if not(o.parent_clip is obj.drawable)
-                        ]
-
-                # Now, do it again.
-                removed_objects = new_removed_objects
-
-            return []
         elif isinstance(tag, AP2DoActionTag):
             print("WARNING: Unhandled DO_ACTION tag!")
-            return []
+
+            # Didn't place a new clip.
+            return None, False
+
         elif isinstance(tag, AP2DefineFontTag):
             print("WARNING: Unhandled DEFINE_FONT tag!")
-            return []
+
+            # Didn't place a new clip.
+            return None, False
+
         elif isinstance(tag, AP2DefineEditTextTag):
             print("WARNING: Unhandled DEFINE_EDIT_TEXT tag!")
-            return []
+
+            # Didn't place a new clip.
+            return None, False
+
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
     def __render_object(self, img: Image.Image, renderable: PlacedObject, parent_transform: Matrix, parent_origin: Point) -> None:
-        if renderable.tag.source_tag_id is None:
-            self.vprint("    Nothing to render!")
-            return
-
-        # Look up the affine transformation matrix for this object.
-        transform = parent_transform.multiply(renderable.tag.transform or Matrix.identity())
+        # Compute the affine transformation matrix for this object.
+        transform = parent_transform.multiply(renderable.transform)
 
         # Calculate the inverse so we can map canvas space back to texture space.
         try:
             inverse = transform.inverse()
         except ZeroDivisionError:
+            # If this happens, that means one of the scaling factors was zero, making
+            # this object invisible. We can ignore this since the object should not
+            # be drawn.
             print(f"WARNING: Transform Matrix {transform} has zero scaling factor, making it non-invertible!")
             return
 
         # Render individual shapes if this is a sprite.
-        if renderable.tag.source_tag_id in self.__registered_sprites:
+        if isinstance(renderable, PlacedClip):
             # This is a sprite placement reference.
             objs = sorted(
-                [o for o in self.__placed_objects if o.parent_clip is renderable.drawable],
+                renderable.placed_objects,
                 key=lambda obj: obj.depth,
             )
             for obj in objs:
-                self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip.tag_id} onto Depth {obj.depth}")
-                self.__render_object(img, obj, transform, parent_origin.add(renderable.tag.rotation_offset or Point.identity()))
+                self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.source.tag_id} onto Depth {obj.depth}")
+                self.__render_object(img, obj, transform, parent_origin.add(renderable.rotation_offset))
+        elif isinstance(renderable, PlacedShape):
+            # This is a shape draw reference.
+            shape = renderable.source
 
-            return
+            # Calculate add color if it is present.
+            add_color = (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
+            mult_color = renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)
+            blend = renderable.blend or 0
 
-        # This is a shape draw reference.
-        shape = self.__registered_shapes[renderable.tag.source_tag_id]
+            # Now, render out shapes.
+            for params in shape.draw_params:
+                if not (params.flags & 0x1):
+                    # Not instantiable, don't render.
+                    return
 
-        # Calculate add color if it is present.
-        add_color = (renderable.tag.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
-        mult_color = renderable.tag.mult_color or Color(1.0, 1.0, 1.0, 1.0)
-        blend = renderable.tag.blend or 0
+                if params.flags & 0x8:
+                    # TODO: Need to support blending and UV coordinate colors here.
+                    print(f"WARNING: Unhandled shape blend color {params.blend}")
+                if params.flags & 0x4:
+                    # TODO: Need to support blending and UV coordinate colors here.
+                    print("WARNING: Unhandled UV coordinate color!")
 
-        # Now, render out shapes.
-        for params in shape.draw_params:
-            if not (params.flags & 0x1):
-                # Not instantiable, don't render.
-                return
+                texture = None
+                if params.flags & 0x2:
+                    # We need to look up the texture for this.
+                    if params.region not in self.textures:
+                        raise Exception(f"Cannot find texture reference {params.region}!")
+                    texture = self.textures[params.region]
 
-            if params.flags & 0x8:
-                # TODO: Need to support blending and UV coordinate colors here.
-                print(f"WARNING: Unhandled shape blend color {params.blend}")
-            if params.flags & 0x4:
-                # TODO: Need to support blending and UV coordinate colors here.
-                print("WARNING: Unhandled UV coordinate color!")
+                if texture is not None:
+                    # If the origin is not specified, assume it is the center of the texture.
+                    # TODO: Setting the rotation offset to Point(texture.width / 2, texture.height / 2)
+                    # when we don't have a rotation offset works for Bishi but breaks other games.
+                    # Perhaps there's a tag flag for this?
+                    origin = parent_origin.add(renderable.rotation_offset)
 
-            texture = None
-            if params.flags & 0x2:
-                # We need to look up the texture for this.
-                if params.region not in self.textures:
-                    raise Exception(f"Cannot find texture reference {params.region}!")
-                texture = self.textures[params.region]
+                    # See if we can cheat and use the faster blitting method.
+                    if (
+                        add_color == (0, 0, 0, 0) and
+                        mult_color.r == 1.0 and
+                        mult_color.g == 1.0 and
+                        mult_color.b == 1.0 and
+                        mult_color.a == 1.0 and
+                        transform.b == 0.0 and
+                        transform.c == 0.0 and
+                        transform.a == 1.0 and
+                        transform.d == 1.0 and
+                        blend == 0
+                    ):
+                        # We can!
+                        cutin = transform.multiply_point(Point.identity().subtract(origin))
+                        cutoff = Point.identity()
+                        if cutin.x < 0:
+                            cutoff.x = -cutin.x
+                            cutin.x = 0
+                        if cutin.y < 0:
+                            cutoff.y = -cutin.y
+                            cutin.y = 0
 
-            if texture is not None:
-                # If the origin is not specified, assume it is the center of the texture.
-                # TODO: Setting the rotation offset to Point(texture.width / 2, texture.height / 2)
-                # when we don't have a rotation offset works for Bishi but breaks other games.
-                # Perhaps there's a tag flag for this?
-                origin = parent_origin.add(renderable.tag.rotation_offset or Point.identity())
+                        img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
+                    else:
+                        # Now, render out the texture.
+                        imgmap = list(img.getdata())
+                        texmap = list(texture.getdata())
 
-                # See if we can cheat and use the faster blitting method.
-                if (
-                    add_color == (0, 0, 0, 0) and
-                    mult_color.r == 1.0 and
-                    mult_color.g == 1.0 and
-                    mult_color.b == 1.0 and
-                    mult_color.a == 1.0 and
-                    transform.b == 0.0 and
-                    transform.c == 0.0 and
-                    transform.a == 1.0 and
-                    transform.d == 1.0 and
-                    blend == 0
-                ):
-                    # We can!
-                    cutin = transform.multiply_point(Point.identity().subtract(origin))
-                    cutoff = Point.identity()
-                    if cutin.x < 0:
-                        cutoff.x = -cutin.x
-                        cutin.x = 0
-                    if cutin.y < 0:
-                        cutoff.y = -cutin.y
-                        cutin.y = 0
+                        # Calculate the maximum range of update this texture can possibly reside in.
+                        pix1 = transform.multiply_point(Point.identity().subtract(origin))
+                        pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, 0)))
+                        pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texture.height)))
+                        pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, texture.height)))
 
-                    img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
-                else:
-                    # Now, render out the texture.
-                    imgmap = list(img.getdata())
-                    texmap = list(texture.getdata())
+                        # Map this to the rectangle we need to sweep in the rendering image.
+                        minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
+                        maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, img.width)
+                        miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
+                        maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
 
-                    # Calculate the maximum range of update this texture can possibly reside in.
-                    pix1 = transform.multiply_point(Point.identity().subtract(origin))
-                    pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, 0)))
-                    pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texture.height)))
-                    pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, texture.height)))
+                        for imgy in range(miny, maxy):
+                            for imgx in range(minx, maxx):
+                                # Determine offset
+                                imgoff = imgx + (imgy * img.width)
 
-                    # Map this to the rectangle we need to sweep in the rendering image.
-                    minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
-                    maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, img.width)
-                    miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
-                    maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
+                                # Calculate what texture pixel data goes here.
+                                texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+                                texx, texy = texloc.as_tuple()
 
-                    for imgy in range(miny, maxy):
-                        for imgx in range(minx, maxx):
-                            # Determine offset
-                            imgoff = imgx + (imgy * img.width)
+                                # If we're out of bounds, don't update.
+                                if texx < 0 or texy < 0 or texx >= texture.width or texy >= texture.height:
+                                    continue
 
-                            # Calculate what texture pixel data goes here.
-                            texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
-                            texx, texy = texloc.as_tuple()
+                                # Blend it.
+                                texoff = texx + (texy * texture.width)
 
-                            # If we're out of bounds, don't update.
-                            if texx < 0 or texy < 0 or texx >= texture.width or texy >= texture.height:
-                                continue
+                                if blend == 0:
+                                    imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                elif blend == 8:
+                                    imgmap[imgoff] = self.__blend_additive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                elif blend == 9:
+                                    imgmap[imgoff] = self.__blend_subtractive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                else:
+                                    print(f"WARNING: Unsupported blend {blend}")
+                                    imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
 
-                            # Blend it.
-                            texoff = texx + (texy * texture.width)
-
-                            if blend == 0:
-                                imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                            elif blend == 8:
-                                imgmap[imgoff] = self.__blend_additive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                            elif blend == 9:
-                                imgmap[imgoff] = self.__blend_subtractive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                            else:
-                                print(f"WARNING: Unsupported blend {blend}")
-                                imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-
-                    img.putdata(imgmap)
+                        img.putdata(imgmap)
+        else:
+            raise Exception(f"Unknown placed object type to render {renderable}!")
 
     def __clamp(self, color: Union[float, int]) -> int:
         return min(max(0, round(color)), 255)
@@ -524,15 +554,63 @@ class AFPRenderer(VerboseOutput):
             self.__clamp(dest[3] - (255 * srcpercent)),
         )
 
+    def __process_tags(self, clip: PlacedClip, prefix: str = "  ") -> bool:
+        self.vprint(f"{prefix}Handling placed clip {clip.object_id} at depth {clip.depth}")
+
+        # Track whether anything in ourselves or our children changes during this processing.
+        changed = False
+
+        # Clips that are part of our own placed objects which we should handle.
+        child_clips = [c for c in clip.placed_objects if isinstance(c, PlacedClip)]
+
+        # Execute each tag in the frame.
+        if not clip.finished:
+            frame = clip.source.frames[clip.frame]
+            tags = clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
+
+            for tagno, tag in enumerate(tags):
+                # Perform the action of this tag.
+                self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}")
+                new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
+                changed = changed or clip_changed
+
+                # If we create a new movie clip, process it as well for this frame.
+                if new_clip:
+                    changed = changed or self.__process_tags(new_clip, prefix=prefix + "  ")
+
+        # Now, handle each of the existing clips.
+        for child in child_clips:
+            changed = changed or self.__process_tags(child, prefix=prefix + "  ")
+
+        # Now, advance the frame for this clip.
+        clip.advance()
+
+        self.vprint(f"{prefix}Finished handling placed clip {clip.object_id} at depth {clip.depth}")
+
+        # Return if anything was modified.
+        return changed
+
+    def __find_renderable(self, clip: PlacedClip, tag: Optional[int]) -> Optional[PlacedClip]:
+        if clip.source.tag_id == tag:
+            return clip
+
+        for obj in clip.placed_objects:
+            if isinstance(obj, PlacedClip):
+                maybe = self.__find_renderable(obj, tag)
+                if maybe is not None:
+                    return maybe
+
+        return None
+
     def __render(self, swf: SWF, export_tag: Optional[str]) -> Tuple[int, List[Image.Image]]:
         # If we are rendering an exported tag, we want to perform the actions of the
         # rest of the SWF but not update any layers as a result.
-        self.__visible_tag = None
+        visible_tag = None
         if export_tag is not None:
             # Make sure this tag is actually present in the SWF.
             if export_tag not in swf.exported_tags:
                 raise Exception(f'{export_tag} is not exported by {swf.exported_name}!')
-            self.__visible_tag = swf.exported_tags[export_tag]
+            visible_tag = swf.exported_tags[export_tag]
 
         # TODO: We have to resolve imports.
 
@@ -541,79 +619,54 @@ class AFPRenderer(VerboseOutput):
         frames: List[Image.Image] = []
         frameno: int = 0
 
-        # Reset any registered clips.
-        self.__clips = [Clip(None, swf.frames, swf.tags)] if len(swf.frames) > 0 else []
+        # Create a root clip for the movie to play.
+        root_clip = PlacedClip(
+            -1,
+            -1,
+            Point.identity(),
+            Matrix.identity(),
+            Color(1.0, 1.0, 1.0, 1.0),
+            Color(0.0, 0.0, 0.0, 0.0),
+            0,
+            RegisteredClip(
+                None,
+                swf.frames,
+                swf.tags,
+            ),
+        )
 
-        # Reset any registered shapes.
-        self.__registered_shapes = {}
-        self.__registered_sprites = {}
+        # Reset any registered objects.
+        self.__registered_objects = {}
 
         try:
-            while any(c.running for c in self.__clips):
+            while root_clip.running:
                 # Create a new image to render into.
                 time = spf * float(frameno)
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
                 self.vprint(f"Rendering Frame {frameno} ({time}s)")
 
                 # Go through all registered clips, place all needed tags.
-                changed = False
-                while any(c.dirty for c in self.__clips):
-                    newclips: List[Clip] = []
-                    for clip in self.__clips:
-                        # See if the clip needs handling (might have been placed and needs to run).
-                        if clip.dirty and clip.frame.current_tag < clip.frame.num_tags:
-                            self.vprint(f"  Sprite Tag ID: {clip.tag_id}, Current Frame: {clip.frame.start_tag_offset + clip.frame.current_tag}, Num Frames: {clip.frame.num_tags}")
-                            newclips.extend(self.__place(clip.tags[clip.frame.start_tag_offset + clip.frame.current_tag], parent_clip=clip))
-                            clip.frame.current_tag += 1
-                            changed = True
-
-                        if clip.dirty and clip.frame.current_tag == clip.frame.num_tags:
-                            # We handled this clip.
-                            clip.clear()
-
-                    # Add any new clips that we should process next frame.
-                    self.__clips.extend(newclips)
+                changed = self.__process_tags(root_clip)
 
                 if changed or frameno == 0:
                     # Now, render out the placed objects. We sort by depth so that we can
                     # get the layering correct, but its important to preserve the original
                     # insertion order for delete requests.
                     curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
-                    for obj in sorted(self.__placed_objects, key=lambda obj: obj.depth):
-                        if self.__visible_tag != obj.parent_clip.tag_id:
-                            continue
 
-                        self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.parent_clip.tag_id} onto Depth {obj.depth}")
-                        self.__render_object(curimage, obj, Matrix.identity(), Point.identity())
+                    clip = self.__find_renderable(root_clip, visible_tag)
+                    if clip:
+                        for obj in sorted(clip.placed_objects, key=lambda obj: obj.depth):
+                            self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.source.tag_id} onto Depth {obj.depth}")
+                            self.__render_object(curimage, obj, root_clip.transform, root_clip.rotation_offset)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
                     curimage = frames[-1].copy()
 
-                # Advance all the clips and frame now that we processed and rendered them.
-                for clip in self.__clips:
-                    if clip.dirty:
-                        raise Exception("Logic error!")
-                    clip.advance()
+                # Advance our bookkeeping.
                 frames.append(curimage)
                 frameno += 1
-
-                # Garbage collect any clips that we're finished with.
-                removed_referenced_tag = False
-                for c in self.__clips:
-                    if c.finished:
-                        if self.__visible_tag == c.tag_id:
-                            removed_referenced_tag = True
-
-                        self.vprint(f"  Removing clip based on Tag ID {clip.tag_id} because it is finished playing.")
-
-                self.__clips = [c for c in self.__clips if not c.finished]
-
-                # Exit early if we removed all tags we would be rendering.
-                if removed_referenced_tag and self.__clips:
-                    if not any(c.tag_id == self.__visible_tag for c in self.__clips):
-                        self.vprint("Finishing early because the tag we are rendering has deconstructed.")
-                        break
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
             print(f"WARNING: Interrupted early, will render only {len(frames)} of animation!")
