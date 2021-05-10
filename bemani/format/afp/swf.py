@@ -464,7 +464,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             'references': self.references,
         }
 
-    def __parse_bytecode(self, datachunk: bytes, string_offsets: List[int] = [], prefix: str = "") -> ByteCode:
+    def __parse_bytecode(self, bytecode_name: Optional[str], datachunk: bytes, string_offsets: List[int] = [], prefix: str = "") -> ByteCode:
         # First, we need to check if this is a SWF-style bytecode or an AP2 bytecode.
         ap2_sentinel = struct.unpack("<B", datachunk[0:1])[0]
 
@@ -518,7 +518,9 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname or '<anonymous function>'}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}")
 
-                function = self.__parse_bytecode(datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
+                # No name for this chunk, it will only ever be decompiled and printed in the context of another
+                # chunk.
+                function = self.__parse_bytecode(None, datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
 
                 self.vprint(f"{prefix}      END_{action_name}")
 
@@ -930,9 +932,9 @@ class SWF(TrackedCoverage, VerboseOutput):
             else:
                 raise Exception(f"Can't advance, no handler for opcode {opcode} ({hex(opcode)})!")
 
-        return ByteCode(actions, offset_ptr)
+        return ByteCode(bytecode_name, actions, offset_ptr)
 
-    def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, prefix: str = "") -> Tag:
+    def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, tag_frame: int, prefix: str = "") -> Tag:
         if tagid == AP2Tag.AP2_SHAPE:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
@@ -959,7 +961,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + 4, 4)
 
             self.vprint(f"{prefix}    Tag ID: {sprite_id}")
-            tags, frames, references = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, prefix="      " + prefix)
+            tags, frames, references = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, tag_frame, prefix="      " + prefix)
 
             return AP2DefineSpriteTag(sprite_id, tags, frames, references)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
@@ -995,7 +997,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             return AP2DefineFontTag(font_id, fontname, xml_prefix, heights, text_indexes)
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
-            bytecode = self.__parse_bytecode(datachunk, prefix=prefix)
+            bytecode = self.__parse_bytecode(f"on_enter_frame_{tag_frame}", datachunk, prefix=prefix)
             self.add_coverage(dataoffset, size)
 
             return AP2DoActionTag(bytecode)
@@ -1219,7 +1221,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         bytecode_length = beginning_to_end[bytecode_offset] - bytecode_offset
 
                         self.vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, ByteCode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}")
-                        bytecode = self.__parse_bytecode(datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ")
+                        bytecode = self.__parse_bytecode(f"on_tag_{object_id}_event", datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ")
                         self.add_coverage(dataoffset + bytecode_offset, bytecode_length)
 
                         bytecodes[evt_flags] = [*bytecodes.get(evt_flags, []), bytecode]
@@ -1760,7 +1762,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, prefix: str = "") -> Tuple[List[Tag], List[Frame], Dict[int, str]]:
+    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, sprite_frame: int, prefix: str = "") -> Tuple[List[Tag], List[Frame], Dict[int, str]]:
         name_reference_flags, name_reference_count, frame_count, tags_count, name_reference_offset, frame_offset, tags_offset = struct.unpack(
             "<HHIIIII",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
@@ -1772,7 +1774,26 @@ class SWF(TrackedCoverage, VerboseOutput):
         name_reference_offset += tags_base_offset
         frame_offset += tags_base_offset
 
-        # First, parse regular tags.
+        # First, parse frames.
+        frames: List[Frame] = []
+        tag_to_frame: Dict[int, int] = {}
+        self.vprint(f"{prefix}Number of Frames: {frame_count}")
+        for i in range(frame_count):
+            frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
+            self.add_coverage(frame_offset, 4)
+
+            start_tag_offset = frame_info & 0xFFFFF
+            num_tags_to_play = (frame_info >> 20) & 0xFFF
+            frames.append(Frame(start_tag_offset, num_tags_to_play))
+
+            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_offset}, Count: {num_tags_to_play}")
+            for j in range(num_tags_to_play):
+                if start_tag_offset + j in tag_to_frame:
+                    raise Exception("Logic error!")
+                tag_to_frame[start_tag_offset + j] = i
+            frame_offset += 4
+
+        # Now, parse regular tags.
         tags: List[Tag] = []
         self.vprint(f"{prefix}Number of Tags: {tags_count}")
         for i in range(tags_count):
@@ -1786,22 +1807,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
             self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
-            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, prefix=prefix))
+            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, tag_to_frame[i] + sprite_frame, prefix=prefix))
             tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
-
-        # Now, parse frames.
-        frames: List[Frame] = []
-        self.vprint(f"{prefix}Number of Frames: {frame_count}")
-        for i in range(frame_count):
-            frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
-            self.add_coverage(frame_offset, 4)
-
-            start_tag_offset = frame_info & 0xFFFFF
-            num_tags_to_play = (frame_info >> 20) & 0xFFF
-            frames.append(Frame(start_tag_offset, num_tags_to_play))
-
-            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_offset}, Count: {num_tags_to_play}")
-            frame_offset += 4
 
         # Finally, parse place object name references.
         self.vprint(f"{prefix}Number of Object Name References: {name_reference_count}, Flags: {hex(name_reference_flags)}")
@@ -2007,7 +2014,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
         self.add_coverage(36, 4)
-        self.tags, self.frames, self.references = self.__parse_tags(ap2_data_version, version, data, tags_offset)
+        self.tags, self.frames, self.references = self.__parse_tags(ap2_data_version, version, data, tags_offset, 0)
 
         # Imported tags sections
         imported_tags_count = struct.unpack("<h", data[34:36])[0]
@@ -2057,7 +2064,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 if action_bytecode_length != 0:
                     self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, ByteCode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
                     bytecode_data = data[(action_bytecode_offset + imported_tag_initializers_offset):(action_bytecode_offset + imported_tag_initializers_offset + action_bytecode_length)]
-                    bytecode = self.__parse_bytecode(bytecode_data)
+                    bytecode = self.__parse_bytecode(f"on_import_tag_{tag_id}", bytecode_data)
                 else:
                     self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No ByteCode Present")
                     bytecode = None

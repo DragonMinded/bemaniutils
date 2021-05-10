@@ -439,7 +439,7 @@ def main() -> int:
             afpfile = TXP2File(bfp.read(), verbose=args.verbose)
 
         # Now, print it
-        print(json.dumps(afpfile.as_dict(decompile_bytecode=args.decompile_bytecode), sort_keys=True, indent=4))
+        print(json.dumps(afpfile.as_dict(decompile_bytecode=args.decompile_bytecode, verbose=args.verbose), sort_keys=True, indent=4))
 
     if args.action == "parseafp":
         # First, load the AFP and BSI files
@@ -449,7 +449,7 @@ def main() -> int:
 
         # Now, print it
         swf.parse(verbose=args.verbose)
-        print(json.dumps(swf.as_dict(decompile_bytecode=args.decompile_bytecode), sort_keys=True, indent=4))
+        print(json.dumps(swf.as_dict(decompile_bytecode=args.decompile_bytecode, verbose=args.verbose), sort_keys=True, indent=4))
 
     if args.action == "parsegeo":
         # First, load the AFP and BSI files

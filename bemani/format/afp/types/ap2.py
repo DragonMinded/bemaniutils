@@ -618,7 +618,7 @@ class DefineFunction2Action(AP2Action):
 class Expression:
     # Any thing that can be evaluated for a result, such as a variable
     # reference, function call, or mathematical operation.
-    def render(self, parent_prefix: str, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
         raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
@@ -630,7 +630,7 @@ class GenericObject(Expression):
     def __repr__(self) -> str:
         return self.name
 
-    def render(self, parent_prefix: str, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
         return self.name
 
 
@@ -650,7 +650,7 @@ class Register(Expression):
     def __repr__(self) -> str:
         return f"Register({self.no})"
 
-    def render(self, parent_prefix: str, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
         return f"registers[{self.no}]"
 
 
@@ -2600,7 +2600,7 @@ class StringConstant(Expression):
         else:
             return f"StringConstant({hex(self.const)}: {StringConstant.property_to_name(self.const)})"
 
-    def render(self, parent_prefix: str, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
         if self.alias:
             return self.alias
         else:

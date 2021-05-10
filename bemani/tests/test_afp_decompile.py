@@ -115,6 +115,7 @@ class TestAFPControlGraph(ExtendedTestCase):
 
     def __make_bytecode(self, actions: Sequence[AP2Action]) -> ByteCode:
         return ByteCode(
+            None,
             actions,
             actions[-1].offset + 1,
         )
@@ -527,6 +528,7 @@ class TestAFPDecompile(ExtendedTestCase):
 
     def __make_bytecode(self, actions: Sequence[AP2Action]) -> ByteCode:
         return ByteCode(
+            None,
             actions,
             actions[-1].offset + 1,
         )
