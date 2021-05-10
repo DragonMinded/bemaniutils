@@ -47,9 +47,6 @@ class HelloPopnMusic(
         root = Node.void('game')
         
 
-        if refid is None:
-            return None
-
 
         userid = self.data.remote.user.from_refid(self.game, self.version, request.attribute('refid'))
 
@@ -70,8 +67,6 @@ class HelloPopnMusic(
         #game_load
         root = Node.void('game')
 
-        if refid is None:
-            return None
 
         userid = self.data.remote.user.from_refid(self.game, self.version, request.attribute('refid'))
         profile = self.get_profile(userid)
@@ -94,9 +89,7 @@ class HelloPopnMusic(
 
     def handle_game_load_m_request(self, request: Node) -> Node:
         #game_load_m
-        refid = request.attribute('refid')
-        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        profile = self.get_profile(userid)
+        userid = self.data.remote.user.from_refid(self.game, self.version, request.attribute('refid'))
 
         #get scores
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
