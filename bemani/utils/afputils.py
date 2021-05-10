@@ -36,19 +36,19 @@ def write_bytecode(swf: SWF, directory: str, verbose: bool=False) -> None:
                     for trigger in triggers:
                         buff.append(trigger.decompile(verbose=verbose))
             elif isinstance(tag, AP2DefineSpriteTag):
-                lut.update(tag.references)
+                lut.update(tag.labels)
                 bytecode_from_frames(tag.frames)
                 bytecode_from_tags(tag.tags)
 
-    lut.update(swf.references)
+    lut.update(swf.labels)
     bytecode_from_frames(swf.frames)
     bytecode_from_tags(swf.tags)
 
-    # If we have references, put them at the top as global defines.
+    # If we have frame labels, put them at the top as global defines.
     if lut:
         buff = [
             os.linesep.join([
-                '// Defined string references from SWF container, as used for frame lookups.',
+                '// Defined frame labels from SWF container, as used for frame lookups.',
                 'FRAME_LUT = {',
                 *[f"    {name!r}: {frame}," for name, frame in lut.items()],
                 '};',
