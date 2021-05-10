@@ -1,5 +1,23 @@
 from .geo import Shape, DrawParams
-from .swf import SWF, NamedTagReference
+from .swf import (
+    SWF,
+    NamedTagReference,
+    Frame,
+    Tag,
+    TagPointer,
+    AP2ShapeTag,
+    AP2DefineFontTag,
+    AP2TextChar,
+    AP2TextLine,
+    AP2DefineMorphShapeTag,
+    AP2DefineButtonTag,
+    AP2DefineTextTag,
+    AP2DoActionTag,
+    AP2PlaceObjectTag,
+    AP2RemoveObjectTag,
+    AP2DefineSpriteTag,
+    AP2DefineEditTextTag,
+)
 from .container import TXP2File, PMAN, Texture, TextureRegion, Unknown1, Unknown2
 from .render import AFPRenderer
 from .types import Matrix, Color, Point, Rectangle, AP2Tag, AP2Action, AP2Object, AP2Pointer
@@ -9,6 +27,21 @@ __all__ = [
     'Shape',
     'DrawParams',
     'SWF',
+    'Frame',
+    'Tag',
+    'TagPointer',
+    'AP2ShapeTag',
+    'AP2DefineFontTag',
+    'AP2TextChar',
+    'AP2TextLine',
+    'AP2DefineMorphShapeTag',
+    'AP2DefineButtonTag',
+    'AP2DefineTextTag',
+    'AP2DoActionTag',
+    'AP2PlaceObjectTag',
+    'AP2RemoveObjectTag',
+    'AP2DefineSpriteTag',
+    'AP2DefineEditTextTag',
     'NamedTagReference',
     'TXP2File',
     'PMAN',

@@ -7,17 +7,67 @@ import os.path
 import sys
 import textwrap
 from PIL import Image, ImageDraw  # type: ignore
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from bemani.format.afp import TXP2File, Shape, SWF, AFPRenderer, Color
+from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color
 from bemani.format import IFS
+
+
+def write_bytecode(swf: SWF, directory: str, verbose: bool=False) -> None:
+    # Actually place the files down.
+    os.makedirs(directory, exist_ok=True)
+
+    # Buffer for where the decompiled data goes.
+    buff: List[str] = []
+    lut: Dict[str, int] = {}
+
+    def bytecode_from_frames(frames: List[Frame]) -> None:
+        for frame in frames:
+            for tag in frame.imported_tags:
+                if tag.init_bytecode:
+                    buff.append(tag.init_bytecode.decompile(verbose=verbose))
+
+    def bytecode_from_tags(tags: List[Tag]) -> None:
+        for tag in tags:
+            if isinstance(tag, AP2DoActionTag):
+                buff.append(tag.bytecode.decompile(verbose=verbose))
+            elif isinstance(tag, AP2PlaceObjectTag):
+                for _, triggers in tag.triggers.items():
+                    for trigger in triggers:
+                        buff.append(trigger.decompile(verbose=verbose))
+            elif isinstance(tag, AP2DefineSpriteTag):
+                lut.update(tag.references)
+                bytecode_from_frames(tag.frames)
+                bytecode_from_tags(tag.tags)
+
+    lut.update(swf.references)
+    bytecode_from_frames(swf.frames)
+    bytecode_from_tags(swf.tags)
+
+    # If we have references, put them at the top as global defines.
+    if lut:
+        buff = [
+            os.linesep.join([
+                '// Defined string references from SWF container, as used for frame lookups.',
+                'FRAME_LUT = {',
+                *[f"    {name!r}: {frame}," for name, frame in lut.items()],
+                '};',
+            ]),
+            *buff,
+        ]
+
+    # Now, write it out.
+    filename = os.path.join(directory, swf.exported_name) + ".code"
+    print(f"Writing code to {filename}...")
+    with open(filename, "wb") as bfp:
+        bfp.write(f"{os.linesep}{os.linesep}".join(buff).encode('utf-8'))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker")
     subparsers = parser.add_subparsers(help='Action to take', dest='action')
 
-    extract_parser = subparsers.add_parser('extract', help='Extract relevant textures from TXP2 container')
+    extract_parser = subparsers.add_parser('extract', help='Extract relevant file data and textures from a TXP2 container')
     extract_parser.add_argument(
         "file",
         metavar="FILE",
@@ -69,6 +119,12 @@ def main() -> int:
         "--write-binaries",
         action="store_true",
         help="Write binary SWF files to disk",
+    )
+    extract_parser.add_argument(
+        "-y",
+        "--write-bytecode",
+        action="store_true",
+        help="Write decompiled bytecode files to disk",
     )
 
     update_parser = subparsers.add_parser('update', help='Update relevant textures in a TXP2 container from a directory')
@@ -132,6 +188,32 @@ def main() -> int:
         help="Attempt to decompile and print bytecode instead of printing the raw representation.",
     )
     parseafp_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
+    )
+
+    decompile_parser = subparsers.add_parser('decompile', help='Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container')
+    decompile_parser.add_argument(
+        "afp",
+        metavar="AFPFILE",
+        help="The AFP file to parse",
+    )
+    decompile_parser.add_argument(
+        "bsi",
+        metavar="BSIFILE",
+        help="The BSI file to parse",
+    )
+    decompile_parser.add_argument(
+        "-d",
+        "--directory",
+        metavar="DIR",
+        default='.',
+        type=str,
+        help="Directory to extract to after decompiling. Defaults to current directory.",
+    )
+    decompile_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -390,6 +472,9 @@ def main() -> int:
                     if not announced.get(texturename, False):
                         print(f"Cannot extract sprites from {texturename} because it is not a supported format!")
                         announced[texturename] = True
+        if args.write_bytecode:
+            for swf in afpfile.swfdata:
+                write_bytecode(swf, args.dir, verbose=args.verbose)
 
     if args.action == "update":
         # First, parse the file out
@@ -450,6 +535,16 @@ def main() -> int:
         # Now, print it
         swf.parse(verbose=args.verbose)
         print(json.dumps(swf.as_dict(decompile_bytecode=args.decompile_bytecode, verbose=args.verbose), sort_keys=True, indent=4))
+
+    if args.action == "decompile":
+        # First, load the AFP and BSI files
+        with open(args.afp, "rb") as bafp:
+            with open(args.bsi, "rb") as bbsi:
+                swf = SWF("<unnamed>", bafp.read(), bbsi.read())
+
+        # Now, decompile it
+        swf.parse(verbose=args.verbose)
+        write_bytecode(swf, args.directory, verbose=args.verbose)
 
     if args.action == "parsegeo":
         # First, load the AFP and BSI files

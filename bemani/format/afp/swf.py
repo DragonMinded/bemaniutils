@@ -177,7 +177,7 @@ class AP2TextLine:
         }
 
 
-class AP2DefineMorphShape(Tag):
+class AP2DefineMorphShapeTag(Tag):
     def __init__(self, id: int) -> None:
         # TODO: I need to figure out what morph shapes actually DO, and take the
         # values that I parsed out store them here...
@@ -189,7 +189,7 @@ class AP2DefineMorphShape(Tag):
         }
 
 
-class AP2DefineButton(Tag):
+class AP2DefineButtonTag(Tag):
     def __init__(self, id: int) -> None:
         # TODO: I need to figure out what buttons actually DO, and take the
         # values that I parsed out store them here...
@@ -326,7 +326,7 @@ class AP2RemoveObjectTag(Tag):
 
 
 class AP2DefineSpriteTag(Tag):
-    def __init__(self, id: int, tags: List[Tag], frames: List[Frame], references: Dict[int, str]) -> None:
+    def __init__(self, id: int, tags: List[Tag], frames: List[Frame], references: Dict[str, int]) -> None:
         super().__init__(id)
 
         # The list of tags that this sprite consists of. Sprites are, much like vanilla
@@ -428,7 +428,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         self.frames: List[Frame] = []
 
         # Reference LUT for mapping object reference IDs to names a used in bytecode.
-        self.references: Dict[int, str] = {}
+        self.references: Dict[str, int] = {}
 
         # SWF string table. This is used for faster lookup of strings as well as
         # tracking which strings in the table have been parsed correctly.
@@ -934,7 +934,18 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         return ByteCode(bytecode_name, actions, offset_ptr)
 
-    def __parse_tag(self, ap2_version: int, afp_version: int, ap2data: bytes, tagid: int, size: int, dataoffset: int, tag_frame: int, prefix: str = "") -> Tag:
+    def __parse_tag(
+        self,
+        ap2_version: int,
+        afp_version: int,
+        ap2data: bytes,
+        tagid: int,
+        size: int,
+        dataoffset: int,
+        tag_parent_sprite: Optional[int],
+        tag_frame: int,
+        prefix: str = "",
+    ) -> Tag:
         if tagid == AP2Tag.AP2_SHAPE:
             if size != 4:
                 raise Exception(f"Invalid shape size {size}")
@@ -961,7 +972,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + 4, 4)
 
             self.vprint(f"{prefix}    Tag ID: {sprite_id}")
-            tags, frames, references = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, tag_frame, prefix="      " + prefix)
+            tags, frames, references = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, sprite_id, prefix="      " + prefix)
 
             return AP2DefineSpriteTag(sprite_id, tags, frames, references)
         elif tagid == AP2Tag.AP2_DEFINE_FONT:
@@ -997,7 +1008,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             return AP2DefineFontTag(font_id, fontname, xml_prefix, heights, text_indexes)
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
-            bytecode = self.__parse_bytecode(f"on_enter_frame_{tag_frame}", datachunk, prefix=prefix)
+            bytecode = self.__parse_bytecode(f"on_enter_{f'sprite_{tag_parent_sprite}' if tag_parent_sprite is not None else 'main'}_frame_{tag_frame}", datachunk, prefix=prefix)
             self.add_coverage(dataoffset, size)
 
             return AP2DoActionTag(bytecode)
@@ -1593,7 +1604,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     self.vprint(f"{prefix}        Floats: {fv1} {fv2} {fv3} {fv4} {fv5} {fv6} {fv7} {fv8}")
 
-            return AP2DefineMorphShape(define_shape_id)
+            return AP2DefineMorphShapeTag(define_shape_id)
         elif tagid == AP2Tag.AP2_DEFINE_BUTTON:
             flags, button_id, source_tags_count, bytecode_count = struct.unpack("<HHHH", ap2data[dataoffset:(dataoffset + 8)])
             self.add_coverage(dataoffset, 8)
@@ -1757,12 +1768,20 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}      Offset: {hex(loc)}, Sound Unk1: {unk1}, Source Tag ID: {sound_source_tag}")
                 raise Exception("TODO: Need to examine this section further if I find data with it!")
 
-            return AP2DefineButton(button_id)
+            return AP2DefineButtonTag(button_id)
         else:
             self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
-    def __parse_tags(self, ap2_version: int, afp_version: int, ap2data: bytes, tags_base_offset: int, sprite_frame: int, prefix: str = "") -> Tuple[List[Tag], List[Frame], Dict[int, str]]:
+    def __parse_tags(
+        self,
+        ap2_version: int,
+        afp_version: int,
+        ap2data: bytes,
+        tags_base_offset: int,
+        sprite: Optional[int],
+        prefix: str = "",
+    ) -> Tuple[List[Tag], List[Frame], Dict[str, int]]:
         name_reference_flags, name_reference_count, frame_count, tags_count, name_reference_offset, frame_offset, tags_offset = struct.unpack(
             "<HHIIIII",
             ap2data[tags_base_offset:(tags_base_offset + 24)]
@@ -1807,19 +1826,19 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
             self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
-            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, tag_to_frame[i] + sprite_frame, prefix=prefix))
+            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, sprite, tag_to_frame[i], prefix=prefix))
             tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
 
         # Finally, parse place object name references.
         self.vprint(f"{prefix}Number of Object Name References: {name_reference_count}, Flags: {hex(name_reference_flags)}")
-        references: Dict[int, str] = {}
+        references: Dict[str, int] = {}
         for i in range(name_reference_count):
-            index, stringoffset = struct.unpack("<HH", ap2data[name_reference_offset:(name_reference_offset + 4)])
+            frameno, stringoffset = struct.unpack("<HH", ap2data[name_reference_offset:(name_reference_offset + 4)])
             strval = self.__get_string(stringoffset)
             self.add_coverage(name_reference_offset, 4)
-            references[index] = strval
+            references[strval] = frameno
 
-            self.vprint(f"{prefix}  Name Reference: {index}, Name: {strval}")
+            self.vprint(f"{prefix}  Frame Number: {frameno}, Name: {strval}")
             name_reference_offset += 4
 
         return tags, frames, references
@@ -2014,7 +2033,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
         self.add_coverage(36, 4)
-        self.tags, self.frames, self.references = self.__parse_tags(ap2_data_version, version, data, tags_offset, 0)
+        self.tags, self.frames, self.references = self.__parse_tags(ap2_data_version, version, data, tags_offset, None)
 
         # Imported tags sections
         imported_tags_count = struct.unpack("<h", data[34:36])[0]
