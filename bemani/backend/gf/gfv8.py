@@ -132,7 +132,8 @@ class GuitarFreaksV8(
         info = Node.void('info')
         root.add_child(info)
 
-        info.add_child(Node.string('message', "Brought to you by PhaseII! Hosted on phaseii.iidxfan.xyz. Login today!"))
+        #TODO: this will be a webui arcade setting in the future
+        info.add_child(Node.string('message', "Beamniutils Server"))
 
         assert_report_state = Node.u8('assert_report_state', 0)
         root.add_child(assert_report_state)
