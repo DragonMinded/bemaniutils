@@ -76,7 +76,7 @@ class HelloPopnMusic(
         userid = self.data.remote.user.from_refid(self.game, self.version, request.attribute('refid'))
         profile = self.get_profile(userid)
 
-        for n in range(11):
+        for n in range(12):
             chara = Node.void('chara')
             chara.set_attribute('id', str(n))
             chara.set_attribute('love', "5")
