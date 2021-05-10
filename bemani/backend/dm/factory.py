@@ -2,10 +2,7 @@ from typing import Dict, Optional, Any
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.dm.dmv8 import DrummaniaV8
-from bemani.backend.dm.dmv7 import DrummaniaV7
-from bemani.backend.dm.dmv6 import DrummaniaV6
-from bemani.backend.dm.dmv5 import DrummaniaV5
-from bemani.backend.dm.dmv4 import DrummaniaV4
+
 
 from bemani.backend.dm.stubs import (
     Drummania1st,
@@ -21,6 +18,10 @@ from bemani.backend.dm.stubs import (
     DrummaniaV,
     DrummaniaV2,
     DrummaniaV3,
+    DrummaniaV4,
+    DrummaniaV5,
+    DrummaniaV6,
+    DrummaniaV7,
 )
 from bemani.common import Model, VersionConstants
 from bemani.data import Data

@@ -10,7 +10,7 @@ from bemani.common import ValidatedDict, GameConstants, VersionConstants, Time, 
 from bemani.data import UserID, Score, Data
 from bemani.protocol import Node
 
-from bemani.backend.gf.gfv7 import GuitarFreaksV7
+from bemani.backend.gf.stubs import GuitarFreaksV7
 
 class GuitarFreaksV8(
     EventLogHandler,

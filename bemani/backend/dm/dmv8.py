@@ -10,7 +10,7 @@ from bemani.common import ValidatedDict, GameConstants, VersionConstants, Time, 
 from bemani.data import UserID, Score, Data
 from bemani.protocol import Node
 
-from bemani.backend.dm.dmv7 import DrummaniaV7
+from bemani.backend.dm.stubs import DrummaniaV7
 
 class DrummaniaV8(
     EventLogHandler,

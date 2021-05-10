@@ -2,10 +2,6 @@ from typing import Dict, Optional, Any
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.gf.gfv8 import GuitarFreaksV8
-from bemani.backend.gf.gfv7 import GuitarFreaksV7
-from bemani.backend.gf.gfv6 import GuitarFreaksV6
-from bemani.backend.gf.gfv5 import GuitarFreaksV5
-from bemani.backend.gf.gfv4 import GuitarFreaksV4
 
 from bemani.backend.gf.stubs import (
     GuitarFreaks1st,
@@ -22,6 +18,10 @@ from bemani.backend.gf.stubs import (
     GuitarFreaksV,
     GuitarFreaksV2,
     GuitarFreaksV3,
+    GuitarFreaksV4,
+    GuitarFreaksV5,
+    GuitarFreaksV6,
+    GuitarFreaksV7,
 )
 from bemani.common import Model, VersionConstants
 from bemani.data import Data
