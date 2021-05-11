@@ -288,6 +288,15 @@ class ExpressionStatement(Statement):
         return [f"{prefix}{self.expr.render(prefix, verbose=verbose)};"]
 
 
+class StopSoundStatement(Statement):
+    # Stop all sounds, this is an actionscript-specific opcode.
+    def __repr__(self) -> str:
+        return "builtin_StopAllSounds()"
+
+    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+        return [f"{prefix}builtin_StopAllSounds();"]
+
+
 class StopMovieStatement(Statement):
     # Stop the movie, this is an actionscript-specific opcode.
     def __repr__(self) -> str:
@@ -497,6 +506,12 @@ class GetTimeFunctionCall(FunctionCall):
     # Call the built-in 'get time' method which returns the current playback position.
     def __init__(self) -> None:
         super().__init__("builtin_GetCurrentPlaybackPosition", [])
+
+
+class GetPathFunctionCall(FunctionCall):
+    # Call the built-in 'get time' method which returns the current playback position.
+    def __init__(self, movieclip: Any) -> None:
+        super().__init__("builtin_GetPathOfMovie", [movieclip])
 
 
 class MethodCall(Expression):
@@ -2211,6 +2226,9 @@ class ByteCodeDecompiler(VerboseOutput):
         # exist before combining them, and we can't do that until we walk the stack, and the
         # stack walking algorithm both a) comes later and b) relies on all ifs being processed.
         # So, this stays as a beta for now, and will possibly be integrated at a later time.
+        # If we want to use this, we should probably reformat it to work on the finished
+        # statement list we get after fully rendering the stack, and use it in the optimization
+        # pass phase to rewrite code with fewer (possibly sometimes no) gotos.
         chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
         chunks_examined: Set[int] = set()
 
@@ -2540,6 +2558,10 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk.actions[i] = PreviousFrameStatement()
                     continue
 
+                if action.opcode == AP2Action.STOP_SOUND:
+                    chunk.actions[i] = StopSoundStatement()
+                    continue
+
                 if action.opcode == AP2Action.CLONE_SPRITE:
                     depth = stack.pop()
                     if not isinstance(depth, (int, Expression)):
@@ -2554,35 +2576,6 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.REMOVE_SPRITE:
                     obj = stack.pop()
                     chunk.actions[i] = RemoveSpriteStatement(obj)
-                    continue
-
-                if action.opcode == AP2Action.GET_VARIABLE:
-                    variable_name = stack.pop()
-                    if isinstance(variable_name, (str, StringConstant)):
-                        stack.append(Variable(variable_name))
-                    else:
-                        # This is probably a reference to a variable by
-                        # string concatenation.
-                        stack.append(Member(GLOBAL, variable_name))
-
-                    chunk.actions[i] = NopStatement()
-                    continue
-
-                if action.opcode == AP2Action.DELETE:
-                    member_name = stack.pop()
-                    if not isinstance(member_name, (str, int, Expression)):
-                        raise Exception("Logic error!")
-                    obj_name = stack.pop()
-
-                    chunk.actions[i] = DeleteMemberStatement(obj_name, member_name)
-                    continue
-
-                if action.opcode == AP2Action.DELETE2:
-                    variable_name = stack.pop()
-                    if not isinstance(variable_name, (str, StringConstant)):
-                        raise Exception("Logic error!")
-
-                    chunk.actions[i] = DeleteVariableStatement(variable_name)
                     continue
 
                 if action.opcode == AP2Action.TO_NUMBER:
@@ -2687,6 +2680,18 @@ class ByteCodeDecompiler(VerboseOutput):
                         chunk.actions[i] = NopStatement()
                     continue
 
+                if action.opcode == AP2Action.GET_VARIABLE:
+                    variable_name = stack.pop()
+                    if isinstance(variable_name, (str, StringConstant)):
+                        stack.append(Variable(variable_name))
+                    else:
+                        # This is probably a reference to a variable by
+                        # string concatenation.
+                        stack.append(Member(GLOBAL, variable_name))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
                 if action.opcode == AP2Action.SET_VARIABLE:
                     set_value = stack.pop()
                     local_name = stack.pop()
@@ -2699,6 +2704,33 @@ class ByteCodeDecompiler(VerboseOutput):
 
                     continue
 
+                if action.opcode == AP2Action.DELETE:
+                    member_name = stack.pop()
+                    if not isinstance(member_name, (str, int, Expression)):
+                        raise Exception("Logic error!")
+                    obj_name = stack.pop()
+
+                    chunk.actions[i] = DeleteMemberStatement(obj_name, member_name)
+                    continue
+
+                if action.opcode == AP2Action.DELETE2:
+                    variable_name = stack.pop()
+                    if not isinstance(variable_name, (str, StringConstant)):
+                        raise Exception("Logic error!")
+
+                    chunk.actions[i] = DeleteVariableStatement(variable_name)
+                    continue
+
+                if action.opcode == AP2Action.GET_MEMBER:
+                    member_name = stack.pop()
+                    if not isinstance(member_name, (str, int, Expression)):
+                        raise Exception("Logic error!")
+                    object_reference = stack.pop()
+                    stack.append(Member(object_reference, member_name))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
                 if action.opcode == AP2Action.SET_MEMBER:
                     set_value = stack.pop()
                     member_name = stack.pop()
@@ -2707,6 +2739,30 @@ class ByteCodeDecompiler(VerboseOutput):
                     object_reference = stack.pop()
 
                     chunk.actions[i] = SetMemberStatement(object_reference, member_name, set_value)
+                    continue
+
+                if action.opcode == AP2Action.GET_PROPERTY:
+                    property_int = stack.pop()
+                    if not isinstance(property_int, int):
+                        # Its possible that code which uses this outdated SWF GET_PROPERTY call
+                        # might dynamically calculate the integer which it wants to use to get
+                        # a property on. But, probably not. I haven't seen any code use this or
+                        # SET_PROPERTY so this is just here for documentation.
+                        raise Exception("Logic error!")
+                    object_reference = stack.pop()
+                    stack.append(Member(object_reference, StringConstant(property_int + 0x100)))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.SET_PROPERTY:
+                    set_value = stack.pop()
+                    property_int = stack.pop()
+                    if not isinstance(property_int, int):
+                        raise Exception("Logic error!")
+                    object_reference = stack.pop()
+
+                    chunk.actions[i] = SetMemberStatement(object_reference, StringConstant(property_int + 0x100), set_value)
                     continue
 
                 if action.opcode == AP2Action.DEFINE_LOCAL:
@@ -2723,18 +2779,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     if not isinstance(local_name, (str, StringConstant)):
                         raise Exception(f"Logic error, local name {local_name} is not a string!")
 
-                    # TODO: Should this be NULL?
                     chunk.actions[i] = SetLocalStatement(local_name, UNDEFINED)
-                    continue
-
-                if action.opcode == AP2Action.GET_MEMBER:
-                    member_name = stack.pop()
-                    if not isinstance(member_name, (str, int, Expression)):
-                        raise Exception("Logic error!")
-                    object_reference = stack.pop()
-                    stack.append(Member(object_reference, member_name))
-
-                    chunk.actions[i] = NopStatement()
                     continue
 
                 if action.opcode == AP2Action.NEW_OBJECT:
@@ -2896,8 +2941,6 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.PUSH_DUPLICATE:
-                    # TODO: This might benefit from generating a temp variable assignment
-                    # and pushing that onto the stack twice, instead of whatever's on the stack.
                     dup = stack.pop()
                     stack.append(dup)
                     stack.append(dup)
@@ -2909,6 +2952,57 @@ class ByteCodeDecompiler(VerboseOutput):
                     stack.append(GetTimeFunctionCall())
                     chunk.actions[i] = NopStatement()
                     continue
+
+                if action.opcode == AP2Action.TARGET_PATH:
+                    clip = stack.pop()
+                    stack.append(GetPathFunctionCall(clip))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.CAST_OP:
+                    obj_ref = stack.pop()
+                    class_ref = stack.pop()
+                    stack.append(FunctionCall('cast', [obj_ref, class_ref]))
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                if action.opcode == AP2Action.IMPLEMENTS_OP:
+                    # This appears to be completely unimplemented/broken in
+                    # Bishi so I have no idea what it intends to do. Probably
+                    # I could look at the SWF spec and infer the functionality
+                    # but there aren't any files that I've found in any games
+                    # that use this opcode, so meh.
+                    raise Exception(f"TODO: {action}")
+
+                if action.opcode == AP2Action.STACK_SWAP:
+                    first = stack.pop()
+                    second = stack.pop()
+                    stack.append(first)
+                    stack.append(second)
+
+                    chunk.actions[i] = NopStatement()
+                    continue
+
+                # None of the below actions are understood outside of the fact
+                # that they operate entirely on the stack. They do not appear to
+                # be used in any game code I've come across and might be remnants
+                # of when the code was for playing SWF directly.
+                if action.opcode == AP2Action.ENUMERATE2:
+                    raise Exception(f"TODO: {action}")
+
+                if action.opcode == AP2Action.EXTENDS:
+                    raise Exception(f"TODO: {action}")
+
+                if action.opcode == AP2Action.END_DRAG:
+                    raise Exception(f"TODO: {action}")
+
+                if action.opcode == AP2Action.NEW_METHOD:
+                    raise Exception(f"TODO: {action}")
+
+                if action.opcode == AP2Action.GET_TARGET:
+                    raise Exception(f"TODO: {action}")
 
             if isinstance(action, NullReturnStatement):
                 # We already handled this
@@ -2939,8 +3033,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
                 continue
 
-            self.vprint(stack)
-            raise Exception(f"TODO: {action}")
+            raise Exception(f"Unexpected action {action}, the cases above should be exhaustive!")
 
         # Now, clean up code generation.
         new_actions: List[ConvertedAction] = []
@@ -3982,6 +4075,29 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if not any_changed:
                     break
+
+        # TODO: There's definitely a lot missing from this decompilation process.
+        # For one, function definitions do not include any mention of number of
+        # arguments. It appears that functions take arguments in the registers
+        # and when you call a function/method, the values that are popped from
+        # the stack for the function/method call are placed into registers for the
+        # function itself to access. However, there's some implicit parameters such
+        # as "_this" which is even checked for in some Bishi code. Ideally the code
+        # can be cross-referenced with function calls to determine the number of
+        # arguments and the decompilation can be improved in that regard, but we
+        # would need to nail down function call semantics better. The TRACE opcode
+        # is still active in Bishi and its output can be coaxed to appear in stdout
+        # so it would be possible to craft some bytecode and print out the register
+        # contents in a function call to nail this down, but it is left as a future
+        # enhancement.
+
+        # TODO: If statements still don't support compound or properly, and resort
+        # to using nasty gotos. We have a prototype of an algorithm above with its
+        # own TODO section that can possibly fix this, but I haven't taken the time
+        # to try to fix it up and integrate it. It would produde far more readable
+        # code in some instances. We also would probably want to collapse some really
+        # long if chains to swithc statements or if/elif/else blocks for readability
+        # but that is also left as a future enhancement.
 
         # Let's sanity check the code for a few things that might trip us up.
         self.__verify_balanced_labels(statements)

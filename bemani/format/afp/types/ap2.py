@@ -210,10 +210,11 @@ class AP2Action:
     # variable with that name equal to the first object.
     SET_VARIABLE = 15
 
-    # Similar to get variable.
+    # Similar to GET_MEMBER, but the member value is an integer in the range 0x0-0x15 which
+    # gets added to 0x100 and looked up in StringConstants.
     GET_PROPERTY = 16
 
-    # Simiar to set variable.
+    # Similar to SET_MEMBER in exactly the same way GET_PROPERTY is similar to GET_MEMBER.
     SET_PROPERTY = 17
 
     # Clone a sprite that's specified on the stack.
@@ -656,7 +657,9 @@ class Register(Expression):
 
 class StringConstant(Expression):
     __PROPERTIES: List[Tuple[int, str]] = [
-        # Seems to be properties on every object.
+        # Seems to be properties on every object. These also match the original
+        # SWF properties up to 0x115. GET_PROPERTY and SET_PROPERTY use these
+        # values to determine what to look up on an object.
         (0x100, '_x'),
         (0x101, '_y'),
         (0x102, '_xscale'),
