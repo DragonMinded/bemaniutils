@@ -642,11 +642,11 @@ class AFPRenderer(VerboseOutput):
 
                 # If we create a new movie clip, process it as well for this frame.
                 if new_clip:
-                    changed = changed or self.__process_tags(new_clip, prefix=prefix + "  ")
+                    changed = self.__process_tags(new_clip, prefix=prefix + "  ") or changed
 
         # Now, handle each of the existing clips.
         for child in child_clips:
-            changed = changed or self.__process_tags(child, prefix=prefix + "  ")
+            changed = self.__process_tags(child, prefix=prefix + "  ") or changed
 
         # Now, advance the frame for this clip.
         clip.advance()
