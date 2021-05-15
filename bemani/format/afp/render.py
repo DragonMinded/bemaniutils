@@ -421,6 +421,7 @@ class AFPRenderer(VerboseOutput):
                         miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
                         maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
 
+                        announced = False
                         for imgy in range(miny, maxy):
                             for imgx in range(minx, maxx):
                                 # Determine offset
@@ -437,14 +438,31 @@ class AFPRenderer(VerboseOutput):
                                 # Blend it.
                                 texoff = texx + (texy * texture.width)
 
-                                if blend == 0:
+                                if blend == 0 or blend == 2:
                                     imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                elif blend == 3:
+                                    imgmap[imgoff] = self.__blend_multiply(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this
+                                # in Jubeat and it implements it using OpenGL equation Src * (1 - Dst) + Dst * 1.
+                                # TODO: blend mode 5, which is "lighten" blending according to SWF references. Jubeat does not
+                                # premultiply by alpha, but the GL/DX equation is max(Src * As, Dst * 1).
+                                # TODO: blend mode 6, which is "darken" blending according to SWF references. Jubeat does not
+                                # premultiply by alpha, but the GL/DX equation is min(Src * As, Dst * 1).
+                                # TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
+                                # that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
+                                # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
+                                # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
                                 elif blend == 8:
-                                    imgmap[imgoff] = self.__blend_additive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                                elif blend == 9:
-                                    imgmap[imgoff] = self.__blend_subtractive(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                    imgmap[imgoff] = self.__blend_addition(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                elif blend == 9 or blend == 70:
+                                    imgmap[imgoff] = self.__blend_subtraction(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
+                                # Src * (1 - Dst) + Dst * (1 - Src).
                                 else:
-                                    print(f"WARNING: Unsupported blend {blend}")
+                                    if not announced:
+                                        # Don't print it for every pixel.
+                                        print(f"WARNING: Unsupported blend {blend}")
+                                        announced = True
                                     imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
 
                         img.putdata(imgmap)
@@ -465,6 +483,10 @@ class AFPRenderer(VerboseOutput):
         # A RGBA color tuple where all values are 0-255, used to calculate the final color.
         add_color: Tuple[int, int, int, int],
     ) -> Tuple[int, int, int, int]:
+        # "Normal" blend mode, which is just alpha blending. Various games use the DX
+        # equation Src * As + Dst * (1 - As). We premultiply Dst by Ad as well, since
+        # we are blitting onto a destination that could have transparency.
+
         # Calculate multiplicative and additive colors against the source.
         src = (
             self.__clamp((src[0] * mult_color.r) + add_color[0]),
@@ -490,7 +512,7 @@ class AFPRenderer(VerboseOutput):
             self.__clamp(255 * (srcpercent + destpercent * destremainder)),
         )
 
-    def __blend_additive(
+    def __blend_addition(
         self,
         # RGBA color tuple representing what's already at the dest.
         dest: Tuple[int, int, int, int],
@@ -501,6 +523,10 @@ class AFPRenderer(VerboseOutput):
         # A RGBA color tuple where all values are 0-255, used to calculate the final color.
         add_color: Tuple[int, int, int, int],
     ) -> Tuple[int, int, int, int]:
+        # "Addition" blend mode, which is used for fog/clouds/etc. Various games use the DX
+        # equation Src * As + Dst * 1. It appears jubeat does not premultiply the source
+        # by its alpha component.
+
         # Calculate multiplicative and additive colors against the source.
         src = (
             self.__clamp((src[0] * mult_color.r) + add_color[0]),
@@ -522,7 +548,7 @@ class AFPRenderer(VerboseOutput):
             self.__clamp(dest[3] + (255 * srcpercent)),
         )
 
-    def __blend_subtractive(
+    def __blend_subtraction(
         self,
         # RGBA color tuple representing what's already at the dest.
         dest: Tuple[int, int, int, int],
@@ -533,6 +559,10 @@ class AFPRenderer(VerboseOutput):
         # A RGBA color tuple where all values are 0-255, used to calculate the final color.
         add_color: Tuple[int, int, int, int],
     ) -> Tuple[int, int, int, int]:
+        # "Subtraction" blend mode, used for darkening an image. Various games use the DX
+        # equation Dst * 1 - Src * As. It appears jubeat does not premultiply the source
+        # by its alpha component much like the "additive" blend above..
+
         # Calculate multiplicative and additive colors against the source.
         src = (
             self.__clamp((src[0] * mult_color.r) + add_color[0]),
@@ -552,6 +582,42 @@ class AFPRenderer(VerboseOutput):
             self.__clamp(dest[1] - (float(src[1]) * srcpercent)),
             self.__clamp(dest[2] - (float(src[2]) * srcpercent)),
             self.__clamp(dest[3] - (255 * srcpercent)),
+        )
+
+    def __blend_multiply(
+        self,
+        # RGBA color tuple representing what's already at the dest.
+        dest: Tuple[int, int, int, int],
+        # RGBA color tuple representing the source we want to blend to the dest.
+        src: Tuple[int, int, int, int],
+        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
+        mult_color: Color,
+        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
+        add_color: Tuple[int, int, int, int],
+    ) -> Tuple[int, int, int, int]:
+        # "Multiply" blend mode, used for darkening an image. Various games use the DX
+        # equation Src * 0 + Dst * Src. It appears jubeat uses the alternative formula
+        # Src * Dst + Dst * (1 - As) which reduces to the first equation as long as the
+        # source alpha is always 255.
+
+        # Calculate multiplicative and additive colors against the source.
+        src = (
+            self.__clamp((src[0] * mult_color.r) + add_color[0]),
+            self.__clamp((src[1] * mult_color.g) + add_color[1]),
+            self.__clamp((src[2] * mult_color.b) + add_color[2]),
+            self.__clamp((src[3] * mult_color.a) + add_color[3]),
+        )
+
+        # Short circuit for speed.
+        if src[3] == 0:
+            return dest
+
+        # Calculate alpha blending.
+        return (
+            self.__clamp(255 * ((float(dest[0]) / 255.0) * (float(src[0]) / 255.0))),
+            self.__clamp(255 * ((float(dest[1]) / 255.0) * (float(src[1]) / 255.0))),
+            self.__clamp(255 * ((float(dest[2]) / 255.0) * (float(src[2]) / 255.0))),
+            self.__clamp(255 * ((float(dest[3]) / 255.0) * (float(src[3]) / 255.0))),
         )
 
     def __process_tags(self, clip: PlacedClip, prefix: str = "  ") -> bool:
