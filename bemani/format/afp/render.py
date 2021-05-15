@@ -200,23 +200,65 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2PlaceObjectTag):
             if tag.update:
-                self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
-                updated = False
+                for i in range(len(operating_clip.placed_objects) - 1, -1, -1):
+                    obj = operating_clip.placed_objects[i]
 
-                for obj in operating_clip.placed_objects:
                     if obj.object_id == tag.object_id and obj.depth == tag.depth:
-                        # As far as I can tell, pretty much only color and matrix stuff can be updated.
-                        obj.mult_color = tag.mult_color or obj.mult_color
-                        obj.add_color = tag.add_color or obj.add_color
-                        obj.transform = tag.transform or obj.transform
-                        obj.rotation_offset = tag.rotation_offset or obj.rotation_offset
-                        updated = True
+                        new_mult_color = tag.mult_color or obj.mult_color
+                        new_add_color = tag.add_color or obj.add_color
+                        new_transform = tag.transform or obj.transform
+                        new_rotation_offset = tag.rotation_offset or obj.rotation_offset
+                        new_blend = tag.blend or obj.blend
 
-                if not updated:
-                    print(f"WARNING: Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
+                        if tag.source_tag_id is not None and tag.source_tag_id != obj.source.tag_id:
+                            # This completely updates the pointed-at object.
+                            self.vprint(f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}")
+
+                            newobj = self.__registered_objects[tag.source_tag_id]
+                            if isinstance(newobj, RegisteredShape):
+                                operating_clip.placed_objects[i] = PlacedShape(
+                                    obj.object_id,
+                                    obj.depth,
+                                    new_rotation_offset,
+                                    new_transform,
+                                    new_mult_color,
+                                    new_add_color,
+                                    new_blend,
+                                    newobj,
+                                )
+
+                                # Didn't place a new clip, changed the parent clip.
+                                return None, True
+                            elif isinstance(newobj, RegisteredClip):
+                                new_clip = PlacedClip(
+                                    tag.object_id,
+                                    tag.depth,
+                                    new_rotation_offset,
+                                    new_transform,
+                                    new_mult_color,
+                                    new_add_color,
+                                    new_blend,
+                                    newobj,
+                                )
+                                operating_clip.placed_objects[i] = new_clip
+
+                                # Placed a new clip, changed the parent.
+                                return new_clip, True
+                            else:
+                                raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
+                        else:
+                            # As far as I can tell, pretty much only color and matrix stuff can be updated.
+                            self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
+                            obj.mult_color = new_mult_color
+                            obj.add_color = new_add_color
+                            obj.transform = new_transform
+                            obj.rotation_offset = new_rotation_offset
+                            obj.blend = new_blend
+                            return None, True
 
                 # Didn't place a new clip, did change something.
-                return None, True
+                print(f"WARNING: Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
+                return None, False
             else:
                 if tag.source_tag_id is None:
                     raise Exception("Cannot place a tag with no source ID and no update flags!")
