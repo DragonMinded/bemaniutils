@@ -2373,6 +2373,12 @@ class ByteCodeDecompiler(VerboseOutput):
         # Make a copy of the stack so we can safely modify it ourselves.
         stack = [s for s in stack]
 
+        # TODO: Its possible for there to be a function/method call with no subsequent use of the return
+        # value and no POP to clear the stack. If this is the case, technically the function WAS called,
+        # just the result was completely ignored. This shows up in a few Pop'n animations. What should
+        # happen is that we check the stack for any leftover function/method calls and re-insert them
+        # into the spot where they were called since we know that they aren't used.
+
         def make_if_expr(action: IfAction) -> IfExpr:
             if action.comparison in [IfAction.IS_UNDEFINED, IfAction.IS_NOT_UNDEFINED]:
                 conditional = stack.pop()
