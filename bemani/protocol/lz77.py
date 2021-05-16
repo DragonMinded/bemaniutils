@@ -13,6 +13,8 @@ try:
         clib = ctypes.cdll.LoadLibrary(os.path.join(clib_path, files[0]))
         clib.decompress.argtypes = (ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)
         clib.decompress.restype = ctypes.c_int
+        clib.compress.argtypes = (ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)
+        clib.compress.restype = ctypes.c_int
 except Exception:
     clib = None
 
