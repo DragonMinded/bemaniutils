@@ -41,12 +41,13 @@ def blend_normal(
     # Calculate alpha blending.
     srcpercent = src[3] / 255.0
     destpercent = dest[3] / 255.0
-    destremainder = 1.0 - srcpercent
+    srcremaineder = 1.0 - srcpercent
+    new_alpha = (srcpercent + destpercent * srcremaineder)
     return (
-        clamp((dest[0] * destpercent * destremainder) + (src[0] * srcpercent)),
-        clamp((dest[1] * destpercent * destremainder) + (src[1] * srcpercent)),
-        clamp((dest[2] * destpercent * destremainder) + (src[2] * srcpercent)),
-        clamp(255 * (srcpercent + destpercent * destremainder)),
+        clamp(((dest[0] * destpercent * srcremaineder) + (src[0] * srcpercent)) / new_alpha),
+        clamp(((dest[1] * destpercent * srcremaineder) + (src[1] * srcpercent)) / new_alpha),
+        clamp(((dest[2] * destpercent * srcremaineder) + (src[2] * srcpercent)) / new_alpha),
+        clamp(255 * new_alpha)
     )
 
 
