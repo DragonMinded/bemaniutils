@@ -246,7 +246,7 @@ def main() -> int:
         metavar="PATH",
         type=str,
         required=True,
-        help='A path to render, specified either as "moviename" or "moviename.exportedtag".',
+        help='A path to render, specified as "moviename" of the animation to render. Use the "list" command to discover paths in a file.',
     )
     render_parser.add_argument(
         "--output",

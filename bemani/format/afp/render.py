@@ -98,15 +98,8 @@ class PlacedClip(PlacedObject):
     def finished(self) -> bool:
         return self.frame == len(self.source.frames)
 
-    @property
-    def running(self) -> bool:
-        for obj in self.placed_objects:
-            if isinstance(obj, PlacedClip) and obj.running:
-                return True
-        return not self.finished
-
     def __repr__(self) -> str:
-        return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, running={self.running}, finished={self.finished})"
+        return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, finished={self.finished})"
 
 
 class AFPRenderer(VerboseOutput):
@@ -118,6 +111,8 @@ class AFPRenderer(VerboseOutput):
 
         self.shapes: Dict[str, Shape] = shapes
         self.textures: Dict[str, Image.Image] = textures
+
+        # TODO: We have to resolve imports.
         self.swfs: Dict[str, SWF] = swfs
 
         # Internal render parameters.
@@ -140,19 +135,13 @@ class AFPRenderer(VerboseOutput):
         self.swfs[name] = data
 
     def render_path(self, path: str, background_color: Optional[Color] = None, verbose: bool = False, only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
-        # Given a path to a SWF root animation or an exported animation inside a SWF,
-        # attempt to render it to a list of frames, one per image.
-        components = path.split(".")
-
-        if len(components) > 2:
-            raise Exception('Expected a path in the form of "moviename" or "moviename.exportedtag"!')
-
+        # Given a path to a SWF root animation, attempt to render it to a list of frames.
         for name, swf in self.swfs.items():
-            if swf.exported_name == components[0]:
+            if swf.exported_name == path:
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    return self.__render(swf, components[1] if len(components) > 1 else None, only_depths=only_depths)
+                    return self.__render(swf, only_depths=only_depths)
 
         raise Exception(f'{path} not found in registered SWFs!')
 
@@ -162,9 +151,6 @@ class AFPRenderer(VerboseOutput):
 
         for name, swf in self.swfs.items():
             paths.append(swf.exported_name)
-
-            for export_tag in swf.exported_tags:
-                paths.append(f"{swf.exported_name}.{export_tag}")
 
         return paths
 
@@ -508,30 +494,7 @@ class AFPRenderer(VerboseOutput):
         # Return if anything was modified.
         return changed
 
-    def __find_renderable(self, clip: PlacedClip, tag: Optional[int]) -> Optional[PlacedClip]:
-        if clip.source.tag_id == tag:
-            return clip
-
-        for obj in clip.placed_objects:
-            if isinstance(obj, PlacedClip):
-                maybe = self.__find_renderable(obj, tag)
-                if maybe is not None:
-                    return maybe
-
-        return None
-
-    def __render(self, swf: SWF, export_tag: Optional[str], only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
-        # If we are rendering an exported tag, we want to perform the actions of the
-        # rest of the SWF but not update any layers as a result.
-        visible_tag = None
-        if export_tag is not None:
-            # Make sure this tag is actually present in the SWF.
-            if export_tag not in swf.exported_tags:
-                raise Exception(f'{export_tag} is not exported by {swf.exported_name}!')
-            visible_tag = swf.exported_tags[export_tag]
-
-        # TODO: We have to resolve imports.
-
+    def __render(self, swf: SWF, only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
         # Now, let's go through each frame, performing actions as necessary.
         spf = 1.0 / swf.fps
         frames: List[Image.Image] = []
@@ -557,7 +520,7 @@ class AFPRenderer(VerboseOutput):
         self.__registered_objects = {}
 
         try:
-            while root_clip.running:
+            while not root_clip.finished:
                 # Create a new image to render into.
                 time = spf * frameno
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
@@ -571,11 +534,7 @@ class AFPRenderer(VerboseOutput):
                     # get the layering correct, but its important to preserve the original
                     # insertion order for delete requests.
                     curimage = Image.new("RGBA", (int(swf.location.width), int(swf.location.height)), color=color.as_tuple())
-
-                    clip = self.__find_renderable(root_clip, visible_tag)
-                    if clip:
-                        for obj in sorted(clip.placed_objects, key=lambda obj: obj.depth):
-                            curimage = self.__render_object(curimage, obj, root_clip.transform, root_clip.rotation_offset, only_depths=only_depths)
+                    curimage = self.__render_object(curimage, root_clip, root_clip.transform, root_clip.rotation_offset, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
