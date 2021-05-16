@@ -117,6 +117,18 @@ setup(
                     "bemani/protocol/xml.py",
                 ]
             ),
+            Extension(
+                "bemani.format.afp.blend",
+                [
+                    "bemani/format/afp/blend.py",
+                ]
+            ),
+            Extension(
+                "bemani.format.afp.types.generic",
+                [
+                    "bemani/format/afp/types/generic.py",
+                ]
+            ),
         ],
         language_level=3,
     ),

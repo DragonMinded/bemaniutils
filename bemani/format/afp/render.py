@@ -1,6 +1,7 @@
 from typing import Dict, List, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
+from .blend import blend_normal, blend_addition, blend_subtraction, blend_multiply
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag
 from .types import Color, Matrix, Point
 from .geo import Shape, DrawParams
@@ -488,9 +489,9 @@ class AFPRenderer(VerboseOutput):
                                 texoff = texx + (texy * texwidth)
 
                                 if blend == 0 or blend == 2:
-                                    imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                    imgmap[imgoff] = blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
                                 elif blend == 3:
-                                    imgmap[imgoff] = self.__blend_multiply(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                    imgmap[imgoff] = blend_multiply(imgmap[imgoff], texmap[texoff], mult_color, add_color)
                                 # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this
                                 # in Jubeat and it implements it using OpenGL equation Src * (1 - Dst) + Dst * 1.
                                 # TODO: blend mode 5, which is "lighten" blending according to SWF references. Jubeat does not
@@ -502,9 +503,9 @@ class AFPRenderer(VerboseOutput):
                                 # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
                                 # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
                                 elif blend == 8:
-                                    imgmap[imgoff] = self.__blend_addition(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                    imgmap[imgoff] = blend_addition(imgmap[imgoff], texmap[texoff], mult_color, add_color)
                                 elif blend == 9 or blend == 70:
-                                    imgmap[imgoff] = self.__blend_subtraction(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                    imgmap[imgoff] = blend_subtraction(imgmap[imgoff], texmap[texoff], mult_color, add_color)
                                 # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
                                 # Src * (1 - Dst) + Dst * (1 - Src).
                                 else:
@@ -512,162 +513,11 @@ class AFPRenderer(VerboseOutput):
                                         # Don't print it for every pixel.
                                         print(f"WARNING: Unsupported blend {blend}")
                                         announced = True
-                                    imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
+                                    imgmap[imgoff] = blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
 
                         img.putdata(imgmap)
         else:
             raise Exception(f"Unknown placed object type to render {renderable}!")
-
-    def __clamp(self, color: Union[float, int]) -> int:
-        return min(max(0, round(color)), 255)
-
-    def __blend_normal(
-        self,
-        # RGBA color tuple representing what's already at the dest.
-        dest: Tuple[int, int, int, int],
-        # RGBA color tuple representing the source we want to blend to the dest.
-        src: Tuple[int, int, int, int],
-        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
-        mult_color: Color,
-        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
-        add_color: Tuple[int, int, int, int],
-    ) -> Tuple[int, int, int, int]:
-        # "Normal" blend mode, which is just alpha blending. Various games use the DX
-        # equation Src * As + Dst * (1 - As). We premultiply Dst by Ad as well, since
-        # we are blitting onto a destination that could have transparency.
-
-        # Calculate multiplicative and additive colors against the source.
-        src = (
-            self.__clamp((src[0] * mult_color.r) + add_color[0]),
-            self.__clamp((src[1] * mult_color.g) + add_color[1]),
-            self.__clamp((src[2] * mult_color.b) + add_color[2]),
-            self.__clamp((src[3] * mult_color.a) + add_color[3]),
-        )
-
-        # Short circuit for speed.
-        if src[3] == 0:
-            return dest
-        if src[3] == 255:
-            return src
-
-        # Calculate alpha blending.
-        srcpercent = src[3] / 255.0
-        destpercent = dest[3] / 255.0
-        destremainder = 1.0 - srcpercent
-        return (
-            self.__clamp((dest[0] * destpercent * destremainder) + (src[0] * srcpercent)),
-            self.__clamp((dest[1] * destpercent * destremainder) + (src[1] * srcpercent)),
-            self.__clamp((dest[2] * destpercent * destremainder) + (src[2] * srcpercent)),
-            self.__clamp(255 * (srcpercent + destpercent * destremainder)),
-        )
-
-    def __blend_addition(
-        self,
-        # RGBA color tuple representing what's already at the dest.
-        dest: Tuple[int, int, int, int],
-        # RGBA color tuple representing the source we want to blend to the dest.
-        src: Tuple[int, int, int, int],
-        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
-        mult_color: Color,
-        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
-        add_color: Tuple[int, int, int, int],
-    ) -> Tuple[int, int, int, int]:
-        # "Addition" blend mode, which is used for fog/clouds/etc. Various games use the DX
-        # equation Src * As + Dst * 1. It appears jubeat does not premultiply the source
-        # by its alpha component.
-
-        # Calculate multiplicative and additive colors against the source.
-        src = (
-            self.__clamp((src[0] * mult_color.r) + add_color[0]),
-            self.__clamp((src[1] * mult_color.g) + add_color[1]),
-            self.__clamp((src[2] * mult_color.b) + add_color[2]),
-            self.__clamp((src[3] * mult_color.a) + add_color[3]),
-        )
-
-        # Short circuit for speed.
-        if src[3] == 0:
-            return dest
-
-        # Calculate alpha blending.
-        srcpercent = src[3] / 255.0
-        return (
-            self.__clamp(dest[0] + (src[0] * srcpercent)),
-            self.__clamp(dest[1] + (src[1] * srcpercent)),
-            self.__clamp(dest[2] + (src[2] * srcpercent)),
-            self.__clamp(dest[3] + (255 * srcpercent)),
-        )
-
-    def __blend_subtraction(
-        self,
-        # RGBA color tuple representing what's already at the dest.
-        dest: Tuple[int, int, int, int],
-        # RGBA color tuple representing the source we want to blend to the dest.
-        src: Tuple[int, int, int, int],
-        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
-        mult_color: Color,
-        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
-        add_color: Tuple[int, int, int, int],
-    ) -> Tuple[int, int, int, int]:
-        # "Subtraction" blend mode, used for darkening an image. Various games use the DX
-        # equation Dst * 1 - Src * As. It appears jubeat does not premultiply the source
-        # by its alpha component much like the "additive" blend above..
-
-        # Calculate multiplicative and additive colors against the source.
-        src = (
-            self.__clamp((src[0] * mult_color.r) + add_color[0]),
-            self.__clamp((src[1] * mult_color.g) + add_color[1]),
-            self.__clamp((src[2] * mult_color.b) + add_color[2]),
-            self.__clamp((src[3] * mult_color.a) + add_color[3]),
-        )
-
-        # Short circuit for speed.
-        if src[3] == 0:
-            return dest
-
-        # Calculate alpha blending.
-        srcpercent = src[3] / 255.0
-        return (
-            self.__clamp(dest[0] - (src[0] * srcpercent)),
-            self.__clamp(dest[1] - (src[1] * srcpercent)),
-            self.__clamp(dest[2] - (src[2] * srcpercent)),
-            self.__clamp(dest[3] - (255 * srcpercent)),
-        )
-
-    def __blend_multiply(
-        self,
-        # RGBA color tuple representing what's already at the dest.
-        dest: Tuple[int, int, int, int],
-        # RGBA color tuple representing the source we want to blend to the dest.
-        src: Tuple[int, int, int, int],
-        # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
-        mult_color: Color,
-        # A RGBA color tuple where all values are 0-255, used to calculate the final color.
-        add_color: Tuple[int, int, int, int],
-    ) -> Tuple[int, int, int, int]:
-        # "Multiply" blend mode, used for darkening an image. Various games use the DX
-        # equation Src * 0 + Dst * Src. It appears jubeat uses the alternative formula
-        # Src * Dst + Dst * (1 - As) which reduces to the first equation as long as the
-        # source alpha is always 255.
-
-        # Calculate multiplicative and additive colors against the source.
-        src = (
-            self.__clamp((src[0] * mult_color.r) + add_color[0]),
-            self.__clamp((src[1] * mult_color.g) + add_color[1]),
-            self.__clamp((src[2] * mult_color.b) + add_color[2]),
-            self.__clamp((src[3] * mult_color.a) + add_color[3]),
-        )
-
-        # Short circuit for speed.
-        if src[3] == 0:
-            return dest
-
-        # Calculate alpha blending.
-        return (
-            self.__clamp(255 * ((dest[0] / 255.0) * (src[0] / 255.0))),
-            self.__clamp(255 * ((dest[1] / 255.0) * (src[1] / 255.0))),
-            self.__clamp(255 * ((dest[2] / 255.0) * (src[2] / 255.0))),
-            self.__clamp(255 * ((dest[3] / 255.0) * (src[3] / 255.0))),
-        )
 
     def __process_tags(self, clip: PlacedClip, prefix: str = "  ") -> bool:
         self.vprint(f"{prefix}Handling placed clip {clip.object_id} at depth {clip.depth}")
@@ -767,7 +617,7 @@ class AFPRenderer(VerboseOutput):
                     # Now, render out the placed objects. We sort by depth so that we can
                     # get the layering correct, but its important to preserve the original
                     # insertion order for delete requests.
-                    curimage = Image.new("RGBA", (swf.location.width, swf.location.height), color=color.as_tuple())
+                    curimage = Image.new("RGBA", (int(swf.location.width), int(swf.location.height)), color=color.as_tuple())
 
                     clip = self.__find_renderable(root_clip, visible_tag)
                     if clip:
