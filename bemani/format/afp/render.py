@@ -347,6 +347,8 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DoActionTag):
             print("WARNING: Unhandled DO_ACTION tag!")
+            if self.verbose:
+                print(tag.bytecode.decompile())
 
             # Didn't place a new clip.
             return None, False
