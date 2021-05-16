@@ -489,7 +489,8 @@ class Object(Expression):
 
 class FunctionCall(Expression):
     # Call a method on an object.
-    def __init__(self, name: Union[str, StringConstant], params: List[Any]) -> None:
+    def __init__(self, insertion_ref: int, name: Union[str, StringConstant], params: List[Any]) -> None:
+        self.insertion_ref = insertion_ref
         self.name = name
         self.params = params
 
@@ -504,19 +505,20 @@ class FunctionCall(Expression):
 
 class GetTimeFunctionCall(FunctionCall):
     # Call the built-in 'get time' method which returns the current playback position.
-    def __init__(self) -> None:
-        super().__init__("builtin_GetCurrentPlaybackPosition", [])
+    def __init__(self, insertion_ref: int) -> None:
+        super().__init__(insertion_ref, "builtin_GetCurrentPlaybackPosition", [])
 
 
 class GetPathFunctionCall(FunctionCall):
     # Call the built-in 'get time' method which returns the current playback position.
-    def __init__(self, movieclip: Any) -> None:
-        super().__init__("builtin_GetPathOfMovie", [movieclip])
+    def __init__(self, insertion_ref: int, movieclip: Any) -> None:
+        super().__init__(insertion_ref, "builtin_GetPathOfMovie", [movieclip])
 
 
 class MethodCall(Expression):
     # Call a method on an object.
-    def __init__(self, objectref: Any, name: Union[str, int, Expression], params: List[Any]) -> None:
+    def __init__(self, insertion_ref: int, objectref: Any, name: Union[str, int, Expression], params: List[Any]) -> None:
+        self.insertion_ref = insertion_ref
         self.objectref = objectref
         self.name = name
         self.params = params
@@ -1177,6 +1179,17 @@ class InsertionLocation(Statement):
         raise Exception("Logic error, an InsertionLocation should never make it to the render stage!")
 
 
+class OriginalCallLocation(Statement):
+    def __init__(self, insertion_id: int) -> None:
+        self.insertion_id = insertion_id
+
+    def __repr__(self) -> str:
+        return f"<INSERTION POINT FOR {self.insertion_id}>"
+
+    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+        raise Exception("Logic error, an InsertionLocation should never make it to the render stage!")
+
+
 class Member(Expression):
     # A member can be an array entry in an array, or an object member as accessed
     # in array lookup syntax or dot notation.
@@ -1267,6 +1280,7 @@ class ByteCodeDecompiler(VerboseOutput):
         self.__statements: Optional[List[Statement]] = None
         self.__tmpvar_id: int = 0
         self.__goto_body_id: int = -1
+        self.__insertion_id: int = 0
 
     @property
     def statements(self) -> List[Statement]:
@@ -2586,16 +2600,18 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if action.opcode == AP2Action.TO_NUMBER:
                     obj_ref = stack.pop()
-                    stack.append(FunctionCall('int', [obj_ref]))
+                    stack.append(FunctionCall(self.__insertion_id, 'int', [obj_ref]))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.TO_STRING:
                     obj_ref = stack.pop()
-                    stack.append(FunctionCall('str', [obj_ref]))
+                    stack.append(FunctionCall(self.__insertion_id, 'str', [obj_ref]))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.INCREMENT:
@@ -2622,16 +2638,18 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.INSTANCEOF:
                     name_ref = stack.pop()
                     obj_to_check = stack.pop()
-                    stack.append(FunctionCall('isinstance', [obj_to_check, name_ref]))
+                    stack.append(FunctionCall(self.__insertion_id, 'isinstance', [obj_to_check, name_ref]))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.TYPEOF:
                     obj_to_check = stack.pop()
-                    stack.append(FunctionCall('typeof', [obj_to_check]))
+                    stack.append(FunctionCall(self.__insertion_id, 'typeof', [obj_to_check]))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.CALL_METHOD:
@@ -2645,9 +2663,10 @@ class ByteCodeDecompiler(VerboseOutput):
                     params = []
                     for _ in range(num_params):
                         params.append(stack.pop())
-                    stack.append(MethodCall(object_reference, method_name, params))
+                    stack.append(MethodCall(self.__insertion_id, object_reference, method_name, params))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.CALL_FUNCTION:
@@ -2660,9 +2679,10 @@ class ByteCodeDecompiler(VerboseOutput):
                     params = []
                     for _ in range(num_params):
                         params.append(stack.pop())
-                    stack.append(FunctionCall(function_name, params))
+                    stack.append(FunctionCall(self.__insertion_id, function_name, params))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.RETURN:
@@ -2955,23 +2975,27 @@ class ByteCodeDecompiler(VerboseOutput):
                     continue
 
                 if action.opcode == AP2Action.GET_TIME:
-                    stack.append(GetTimeFunctionCall())
-                    chunk.actions[i] = NopStatement()
+                    stack.append(GetTimeFunctionCall(self.__insertion_id))
+
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.TARGET_PATH:
                     clip = stack.pop()
-                    stack.append(GetPathFunctionCall(clip))
+                    stack.append(GetPathFunctionCall(self.__insertion_id, clip))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.CAST_OP:
                     obj_ref = stack.pop()
                     class_ref = stack.pop()
-                    stack.append(FunctionCall('cast', [obj_ref, class_ref]))
+                    stack.append(FunctionCall(self.__insertion_id, 'cast', [obj_ref, class_ref]))
 
-                    chunk.actions[i] = NopStatement()
+                    chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
+                    self.__insertion_id += 1
                     continue
 
                 if action.opcode == AP2Action.IMPLEMENTS_OP:
@@ -3067,10 +3091,11 @@ class ByteCodeDecompiler(VerboseOutput):
     def __eval_chunks(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> List[Statement]:
         stack: Dict[int, List[Any]] = {start_id: []}
         insertables: Dict[int, List[Statement]] = {}
+        orphaned_functions: Dict[int, Union[FunctionCall, MethodCall]] = {}
         other_locs: Dict[int, int] = {}
 
         # Convert all chunks to a list of statements.
-        statements = self.__eval_chunks_impl(start_id, chunks, None, stack, insertables, other_locs, offset_map)
+        statements = self.__eval_chunks_impl(start_id, chunks, None, stack, insertables, orphaned_functions, other_locs, offset_map)
 
         # Now, go through and fix up any insertables.
         def fixup(statements: Sequence[Statement]) -> List[Statement]:
@@ -3091,11 +3116,20 @@ class ByteCodeDecompiler(VerboseOutput):
                             self.vprint(f"Inserting temp variable assignments into insertion location {statement.location}")
                             for stmt in insertables[statement.location]:
                                 new_statements.append(stmt)
+                    elif isinstance(statement, OriginalCallLocation):
+                        # Convert any orphaned function calls to calls without an assignment.
+                        if statement.insertion_id in orphaned_functions:
+                            self.vprint(f"Inserting orphaned function into insertion location {statement.insertion_id}")
+                            new_statements.append(ExpressionStatement(orphaned_functions[statement.insertion_id]))
+                            del orphaned_functions[statement.insertion_id]
                     else:
                         new_statements.append(statement)
             return new_statements
 
         statements = fixup(statements)
+
+        if orphaned_functions:
+            raise Exception(f"Unexpected leftover orphan functions {orphaned_functions}!")
 
         # Make sure we consumed the stack.
         for cid, leftovers in stack.items():
@@ -3112,6 +3146,7 @@ class ByteCodeDecompiler(VerboseOutput):
         next_id: Optional[int],
         stacks: Dict[int, List[Any]],
         insertables: Dict[int, List[Statement]],
+        orphaned_functions: Dict[int, Union[FunctionCall, MethodCall]],
         other_stack_locs: Dict[int, int],
         offset_map: Dict[int, int],
     ) -> List[Statement]:
@@ -3203,7 +3238,7 @@ class ByteCodeDecompiler(VerboseOutput):
             if isinstance(chunk, Loop):
                 # Evaluate the loop. No need to update per-chunk stacks here since we will do it in a child eval.
                 self.vprint(f"Evaluating graph in Loop {chunk.id}")
-                loop_statements = self.__eval_chunks_impl(chunk.id, chunk.chunks, next_chunk_id, stacks, insertables, other_stack_locs, offset_map)
+                loop_statements = self.__eval_chunks_impl(chunk.id, chunk.chunks, next_chunk_id, stacks, insertables, orphaned_functions, other_stack_locs, offset_map)
                 statements.append(DoWhileStatement(loop_statements))
                 statements.extend(chunk.post_statements)
             elif isinstance(chunk, IfBody):
@@ -3275,6 +3310,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             next_chunk_id,
                             stacks,
                             insertables,
+                            orphaned_functions,
                             other_stack_locs,
                             offset_map,
                         )
@@ -3298,6 +3334,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             next_chunk_id,
                             stacks,
                             insertables,
+                            orphaned_functions,
                             other_stack_locs,
                             offset_map,
                         )
@@ -3371,7 +3408,12 @@ class ByteCodeDecompiler(VerboseOutput):
                         new_statements.extend(sentinels)
                     else:
                         # We have nowhere else to go, verify that we have an empty stack.
-                        stack_leftovers = [s for s in stack_leftovers if not isinstance(s, MaybeStackEntry)]
+                        orphans = [s for s in stack_leftovers if isinstance(s, (FunctionCall, MethodCall))]
+                        stack_leftovers = [s for s in stack_leftovers if not isinstance(s, (MaybeStackEntry, FunctionCall, MethodCall))]
+                        for func in orphans:
+                            if func.insertion_ref in orphaned_functions:
+                                raise Exception(f"Logic error, already have an insertion ID {func.insertion_ref}!")
+                            orphaned_functions[func.insertion_ref] = func
                         if stack_leftovers:
                             raise Exception(f"Logic error, reached execution end and have stack entries {stack_leftovers} still!")
 
