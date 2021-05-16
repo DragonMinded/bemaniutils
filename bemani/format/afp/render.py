@@ -433,7 +433,7 @@ class AFPRenderer(VerboseOutput):
                         transform.c == 0.0 and
                         transform.a == 1.0 and
                         transform.d == 1.0 and
-                        blend == 0
+                        (blend == 0 or blend == 2)
                     ):
                         # We can!
                         cutin = transform.multiply_point(Point.identity().subtract(origin))
@@ -451,34 +451,41 @@ class AFPRenderer(VerboseOutput):
                         imgmap = list(img.getdata())
                         texmap = list(texture.getdata())
 
+                        # These are calculated properties and caching them outside of the loop
+                        # speeds things up a bit.
+                        imgwidth = img.width
+                        imgheight = img.height
+                        texwidth = texture.width
+                        texheight = texture.height
+
                         # Calculate the maximum range of update this texture can possibly reside in.
                         pix1 = transform.multiply_point(Point.identity().subtract(origin))
-                        pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, 0)))
-                        pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texture.height)))
-                        pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texture.width, texture.height)))
+                        pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, 0)))
+                        pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texheight)))
+                        pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, texheight)))
 
                         # Map this to the rectangle we need to sweep in the rendering image.
                         minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
-                        maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, img.width)
+                        maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, imgwidth)
                         miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
-                        maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, img.height)
+                        maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, imgheight)
 
                         announced = False
                         for imgy in range(miny, maxy):
                             for imgx in range(minx, maxx):
                                 # Determine offset
-                                imgoff = imgx + (imgy * img.width)
+                                imgoff = imgx + (imgy * imgwidth)
 
                                 # Calculate what texture pixel data goes here.
                                 texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
                                 texx, texy = texloc.as_tuple()
 
                                 # If we're out of bounds, don't update.
-                                if texx < 0 or texy < 0 or texx >= texture.width or texy >= texture.height:
+                                if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
                                     continue
 
                                 # Blend it.
-                                texoff = texx + (texy * texture.width)
+                                texoff = texx + (texy * texwidth)
 
                                 if blend == 0 or blend == 2:
                                     imgmap[imgoff] = self.__blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
@@ -544,13 +551,13 @@ class AFPRenderer(VerboseOutput):
             return src
 
         # Calculate alpha blending.
-        srcpercent = (float(src[3]) / 255.0)
-        destpercent = (float(dest[3]) / 255.0)
+        srcpercent = src[3] / 255.0
+        destpercent = dest[3] / 255.0
         destremainder = 1.0 - srcpercent
         return (
-            self.__clamp((float(dest[0]) * destpercent * destremainder) + (float(src[0]) * srcpercent)),
-            self.__clamp((float(dest[1]) * destpercent * destremainder) + (float(src[1]) * srcpercent)),
-            self.__clamp((float(dest[2]) * destpercent * destremainder) + (float(src[2]) * srcpercent)),
+            self.__clamp((dest[0] * destpercent * destremainder) + (src[0] * srcpercent)),
+            self.__clamp((dest[1] * destpercent * destremainder) + (src[1] * srcpercent)),
+            self.__clamp((dest[2] * destpercent * destremainder) + (src[2] * srcpercent)),
             self.__clamp(255 * (srcpercent + destpercent * destremainder)),
         )
 
@@ -582,11 +589,11 @@ class AFPRenderer(VerboseOutput):
             return dest
 
         # Calculate alpha blending.
-        srcpercent = (float(src[3]) / 255.0)
+        srcpercent = src[3] / 255.0
         return (
-            self.__clamp(dest[0] + (float(src[0]) * srcpercent)),
-            self.__clamp(dest[1] + (float(src[1]) * srcpercent)),
-            self.__clamp(dest[2] + (float(src[2]) * srcpercent)),
+            self.__clamp(dest[0] + (src[0] * srcpercent)),
+            self.__clamp(dest[1] + (src[1] * srcpercent)),
+            self.__clamp(dest[2] + (src[2] * srcpercent)),
             self.__clamp(dest[3] + (255 * srcpercent)),
         )
 
@@ -618,11 +625,11 @@ class AFPRenderer(VerboseOutput):
             return dest
 
         # Calculate alpha blending.
-        srcpercent = (float(src[3]) / 255.0)
+        srcpercent = src[3] / 255.0
         return (
-            self.__clamp(dest[0] - (float(src[0]) * srcpercent)),
-            self.__clamp(dest[1] - (float(src[1]) * srcpercent)),
-            self.__clamp(dest[2] - (float(src[2]) * srcpercent)),
+            self.__clamp(dest[0] - (src[0] * srcpercent)),
+            self.__clamp(dest[1] - (src[1] * srcpercent)),
+            self.__clamp(dest[2] - (src[2] * srcpercent)),
             self.__clamp(dest[3] - (255 * srcpercent)),
         )
 
@@ -656,10 +663,10 @@ class AFPRenderer(VerboseOutput):
 
         # Calculate alpha blending.
         return (
-            self.__clamp(255 * ((float(dest[0]) / 255.0) * (float(src[0]) / 255.0))),
-            self.__clamp(255 * ((float(dest[1]) / 255.0) * (float(src[1]) / 255.0))),
-            self.__clamp(255 * ((float(dest[2]) / 255.0) * (float(src[2]) / 255.0))),
-            self.__clamp(255 * ((float(dest[3]) / 255.0) * (float(src[3]) / 255.0))),
+            self.__clamp(255 * ((dest[0] / 255.0) * (src[0] / 255.0))),
+            self.__clamp(255 * ((dest[1] / 255.0) * (src[1] / 255.0))),
+            self.__clamp(255 * ((dest[2] / 255.0) * (src[2] / 255.0))),
+            self.__clamp(255 * ((dest[3] / 255.0) * (src[3] / 255.0))),
         )
 
     def __process_tags(self, clip: PlacedClip, prefix: str = "  ") -> bool:
@@ -749,7 +756,7 @@ class AFPRenderer(VerboseOutput):
         try:
             while root_clip.running:
                 # Create a new image to render into.
-                time = spf * float(frameno)
+                time = spf * frameno
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
                 self.vprint(f"Rendering Frame {frameno} ({time}s)")
 
