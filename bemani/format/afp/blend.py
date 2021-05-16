@@ -1,6 +1,6 @@
 import multiprocessing
 from PIL import Image  # type: ignore
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 
 from .types.generic import Color, Matrix, Point
 
@@ -11,14 +11,14 @@ def clamp(color: float) -> int:
 
 def blend_normal(
     # RGBA color tuple representing what's already at the dest.
-    dest: Tuple[int, int, int, int],
+    dest: Sequence[int],
     # RGBA color tuple representing the source we want to blend to the dest.
-    src: Tuple[int, int, int, int],
+    src: Sequence[int],
     # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
     mult_color: Color,
     # A RGBA color tuple where all values are 0-255, used to calculate the final color.
     add_color: Tuple[int, int, int, int],
-) -> Tuple[int, int, int, int]:
+) -> Sequence[int]:
     # "Normal" blend mode, which is just alpha blending. Various games use the DX
     # equation Src * As + Dst * (1 - As). We premultiply Dst by Ad as well, since
     # we are blitting onto a destination that could have transparency.
@@ -51,14 +51,14 @@ def blend_normal(
 
 def blend_addition(
     # RGBA color tuple representing what's already at the dest.
-    dest: Tuple[int, int, int, int],
+    dest: Sequence[int],
     # RGBA color tuple representing the source we want to blend to the dest.
-    src: Tuple[int, int, int, int],
+    src: Sequence[int],
     # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
     mult_color: Color,
     # A RGBA color tuple where all values are 0-255, used to calculate the final color.
     add_color: Tuple[int, int, int, int],
-) -> Tuple[int, int, int, int]:
+) -> Sequence[int]:
     # "Addition" blend mode, which is used for fog/clouds/etc. Various games use the DX
     # equation Src * As + Dst * 1. It appears jubeat does not premultiply the source
     # by its alpha component.
@@ -87,14 +87,14 @@ def blend_addition(
 
 def blend_subtraction(
     # RGBA color tuple representing what's already at the dest.
-    dest: Tuple[int, int, int, int],
+    dest: Sequence[int],
     # RGBA color tuple representing the source we want to blend to the dest.
-    src: Tuple[int, int, int, int],
+    src: Sequence[int],
     # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
     mult_color: Color,
     # A RGBA color tuple where all values are 0-255, used to calculate the final color.
     add_color: Tuple[int, int, int, int],
-) -> Tuple[int, int, int, int]:
+) -> Sequence[int]:
     # "Subtraction" blend mode, used for darkening an image. Various games use the DX
     # equation Dst * 1 - Src * As. It appears jubeat does not premultiply the source
     # by its alpha component much like the "additive" blend above..
@@ -123,14 +123,14 @@ def blend_subtraction(
 
 def blend_multiply(
     # RGBA color tuple representing what's already at the dest.
-    dest: Tuple[int, int, int, int],
+    dest: Sequence[int],
     # RGBA color tuple representing the source we want to blend to the dest.
-    src: Tuple[int, int, int, int],
+    src: Sequence[int],
     # A pre-scaled color where all values are 0.0-1.0, used to calculate the final color.
     mult_color: Color,
     # A RGBA color tuple where all values are 0-255, used to calculate the final color.
     add_color: Tuple[int, int, int, int],
-) -> Tuple[int, int, int, int]:
+) -> Sequence[int]:
     # "Multiply" blend mode, used for darkening an image. Various games use the DX
     # equation Src * 0 + Dst * Src. It appears jubeat uses the alternative formula
     # Src * Dst + Dst * (1 - As) which reduces to the first equation as long as the
@@ -166,12 +166,8 @@ def affine_composite(
     origin: Point,
     blendfunc: int,
     texture: Image.Image,
-) -> List[Tuple[int, int, int, int]]:
-    # Get the data in an easier to manipulate and faster to update fashion.
-    imgmap = list(img.getdata())
-    texmap = list(texture.getdata())
-    cores = multiprocessing.cpu_count()
-
+    single_threaded: bool = False,
+) -> Image.Image:
     # Warn if we have an unsupported blend.
     if blendfunc not in {0, 2, 3, 8, 9, 70}:
         print(f"WARNING: Unsupported blend {blendfunc}")
@@ -195,7 +191,12 @@ def affine_composite(
     miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
     maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, imgheight)
 
-    if cores < 2:
+    cores = multiprocessing.cpu_count()
+    if single_threaded or cores < 2:
+        # Get the data in an easier to manipulate and faster to update fashion.
+        imgmap = list(img.getdata())
+        texmap = list(texture.getdata())
+
         # We don't have enough CPU cores to bother multiprocessing.
         for imgy in range(miny, maxy):
             for imgx in range(minx, maxx):
@@ -213,7 +214,12 @@ def affine_composite(
                 # Blend it.
                 texoff = texx + (texy * texwidth)
                 imgmap[imgoff] = affine_blend_impl(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc)
+
+        img.putdata(imgmap)
     else:
+        imgbytes = img.tobytes('raw', 'RGBA')
+        texbytes = texture.tobytes('raw', 'RGBA')
+
         # Let's spread the load across multiple processors.
         procs: List[multiprocessing.Process] = []
         work: multiprocessing.Queue = multiprocessing.Queue()
@@ -236,8 +242,8 @@ def affine_composite(
                     add_color,
                     mult_color,
                     blendfunc,
-                    imgmap,
-                    texmap,
+                    imgbytes,
+                    texbytes,
                 ),
             )
             procs.append(proc)
@@ -247,25 +253,25 @@ def affine_composite(
             work.put(imgy)
             expected += 1
 
-        lines: List[List[Tuple[int, int, int, int]]] = [
-            imgmap[x:(x + imgwidth)]
+        lines: List[bytes] = [
+            imgbytes[x:(x + (imgwidth * 4))]
             for x in range(
                 0,
-                imgwidth * imgheight,
-                imgwidth,
+                imgwidth * imgheight * 4,
+                imgwidth * 4,
             )
         ]
         for _ in range(expected):
             imgy, result = results.get()
             lines[imgy] = result
-        imgmap = [pixel for line in lines for pixel in line]
 
         for proc in procs:
             work.put(None)
         for proc in procs:
             proc.join()
 
-    return imgmap
+        img = Image.frombytes('RGBA', (imgwidth, imgheight), b''.join(lines))
+    return img
 
 
 def pixel_renderer(
@@ -281,20 +287,20 @@ def pixel_renderer(
     add_color: Tuple[int, int, int, int],
     mult_color: Color,
     blendfunc: int,
-    imgmap: List[Tuple[int, int, int, int]],
-    texmap: List[Tuple[int, int, int, int]],
+    imgbytes: bytes,
+    texbytes: bytes,
 ) -> None:
     while True:
         imgy = work.get()
         if imgy is None:
             return
 
-        result: List[Tuple[int, int, int, int]] = []
+        result: List[Sequence[int]] = []
         for imgx in range(imgwidth):
             # Determine offset
             imgoff = imgx + (imgy * imgwidth)
             if imgx < minx or imgx >= maxx:
-                result.append(imgmap[imgoff])
+                result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
                 continue
 
             # Calculate what texture pixel data goes here.
@@ -303,23 +309,26 @@ def pixel_renderer(
 
             # If we're out of bounds, don't update.
             if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-                result.append(imgmap[imgoff])
+                result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
                 continue
 
             # Blend it.
             texoff = texx + (texy * texwidth)
-            result.append(affine_blend_impl(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc))
+            result.append(affine_blend_impl(add_color, mult_color, texbytes[(texoff * 4):((texoff + 1) * 4)], imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
 
-        results.put((imgy, result))
+        linebytes = bytes([channel for pixel in result for channel in pixel])
+        results.put((imgy, linebytes))
 
 
 def affine_blend_impl(
     add_color: Tuple[int, int, int, int],
     mult_color: Color,
-    src_color: Tuple[int, int, int, int],
-    dest_color: Tuple[int, int, int, int],
+    # This should be a sequence of exactly 4 values, either bytes or a tuple.
+    src_color: Sequence[int],
+    # This should be a sequence of exactly 4 values, either bytes or a tuple.
+    dest_color: Sequence[int],
     blendfunc: int,
-) -> Tuple[int, int, int, int]:
+) -> Sequence[int]:
     if blendfunc == 3:
         return blend_multiply(dest_color, src_color, mult_color, add_color)
     # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this

@@ -265,7 +265,12 @@ def main() -> int:
         "--background-color",
         type=str,
         default=None,
-        help="Set the background color of the animation, overriding a default if present in the SWF.",
+        help="Set the background color of the animation as a comma-separated RGB or RGBA color, overriding a default if present in the SWF.",
+    )
+    render_parser.add_argument(
+        "--disable-threads",
+        action="store_true",
+        help="Disable multi-threaded rendering.",
     )
 
     list_parser = subparsers.add_parser('list', help='List out the possible paths to render from a series of SWFs')
@@ -282,6 +287,12 @@ def main() -> int:
         action="store_true",
         help="Display verbuse debugging output",
     )
+    list_parser.add_argument(
+        "--disable-threads",
+        action="store_true",
+        help="Disable multi-threaded rendering.",
+    )
+
 
     args = parser.parse_args()
 
@@ -560,7 +571,7 @@ def main() -> int:
     if args.action in ["render", "list"]:
         # This is a complicated one, as we need to be able to specify multiple
         # directories of files as well as support IFS files and TXP2 files.
-        renderer = AFPRenderer()
+        renderer = AFPRenderer(single_threaded=args.disable_threads)
 
         # TODO: Allow specifying individual folders and such.
         for container in args.container:
@@ -700,6 +711,7 @@ def main() -> int:
 
             # Render the gif/webp frames.
             duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color)
+
             if len(images) == 0:
                 raise Exception("Did not render any frames!")
 

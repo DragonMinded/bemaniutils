@@ -110,8 +110,11 @@ class PlacedClip(PlacedObject):
 
 
 class AFPRenderer(VerboseOutput):
-    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}) -> None:
+    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False) -> None:
         super().__init__()
+
+        # Options for rendering
+        self.__single_threaded = single_threaded
 
         self.shapes: Dict[str, Shape] = shapes
         self.textures: Dict[str, Image.Image] = textures
@@ -363,7 +366,7 @@ class AFPRenderer(VerboseOutput):
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
-    def __render_object(self, img: Image.Image, renderable: PlacedObject, parent_transform: Matrix, parent_origin: Point) -> None:
+    def __render_object(self, img: Image.Image, renderable: PlacedObject, parent_transform: Matrix, parent_origin: Point) -> Image.Image:
         # Compute the affine transformation matrix for this object.
         transform = parent_transform.multiply(renderable.transform)
 
@@ -375,7 +378,7 @@ class AFPRenderer(VerboseOutput):
             # this object invisible. We can ignore this since the object should not
             # be drawn.
             print(f"WARNING: Transform Matrix {transform} has zero scaling factor, making it non-invertible!")
-            return
+            return img
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -386,7 +389,7 @@ class AFPRenderer(VerboseOutput):
             )
             for obj in objs:
                 self.vprint(f"    Rendering placed object ID {obj.object_id} from sprite {obj.source.tag_id} onto Depth {obj.depth}")
-                self.__render_object(img, obj, transform, parent_origin.add(renderable.rotation_offset))
+                img = self.__render_object(img, obj, transform, parent_origin.add(renderable.rotation_offset))
         elif isinstance(renderable, PlacedShape):
             # This is a shape draw reference.
             shape = renderable.source
@@ -400,7 +403,7 @@ class AFPRenderer(VerboseOutput):
             for params in shape.draw_params:
                 if not (params.flags & 0x1):
                     # Not instantiable, don't render.
-                    return
+                    return img
 
                 if params.flags & 0x8:
                     # TODO: Need to support blending and UV coordinate colors here.
@@ -449,9 +452,11 @@ class AFPRenderer(VerboseOutput):
                         img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
                     else:
                         # We can't, so do the slow render that's correct.
-                        img.putdata(affine_composite(img, add_color, mult_color, transform, inverse, origin, blend, texture))
+                        img = affine_composite(img, add_color, mult_color, transform, inverse, origin, blend, texture, single_threaded=self.__single_threaded)
         else:
             raise Exception(f"Unknown placed object type to render {renderable}!")
+
+        return img
 
     def __process_tags(self, clip: PlacedClip, prefix: str = "  ") -> bool:
         self.vprint(f"{prefix}Handling placed clip {clip.object_id} at depth {clip.depth}")
@@ -557,7 +562,7 @@ class AFPRenderer(VerboseOutput):
                     if clip:
                         for obj in sorted(clip.placed_objects, key=lambda obj: obj.depth):
                             self.vprint(f"  Rendering placed object ID {obj.object_id} from sprite {obj.source.tag_id} onto Depth {obj.depth}")
-                            self.__render_object(curimage, obj, root_clip.transform, root_clip.rotation_offset)
+                            curimage = self.__render_object(curimage, obj, root_clip.transform, root_clip.rotation_offset)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
