@@ -1,3 +1,4 @@
+import multiprocessing
 from PIL import Image  # type: ignore
 from typing import List, Tuple
 
@@ -169,6 +170,7 @@ def affine_composite(
     # Get the data in an easier to manipulate and faster to update fashion.
     imgmap = list(img.getdata())
     texmap = list(texture.getdata())
+    cores = multiprocessing.cpu_count()
 
     # Warn if we have an unsupported blend.
     if blendfunc not in {0, 2, 3, 8, 9, 70}:
@@ -193,44 +195,133 @@ def affine_composite(
     miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
     maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, imgheight)
 
-    for imgy in range(miny, maxy):
-        for imgx in range(minx, maxx):
-            # Determine offset
-            imgoff = imgx + (imgy * imgwidth)
+    if cores < 2:
+        # We don't have enough CPU cores to bother multiprocessing.
+        for imgy in range(miny, maxy):
+            for imgx in range(minx, maxx):
+                # Determine offset
+                imgoff = imgx + (imgy * imgwidth)
 
-            # Blit this pixel.
-            imgmap[imgoff] = affine_blend_point(imgx, imgy, imgwidth, imgheight, add_color, mult_color, imgmap[imgoff], inverse, origin, blendfunc, texwidth, texheight, texmap)
+                # Calculate what texture pixel data goes here.
+                texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+                texx, texy = texloc.as_tuple()
+
+                # If we're out of bounds, don't update.
+                if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
+                    continue
+
+                # Blend it.
+                texoff = texx + (texy * texwidth)
+                imgmap[imgoff] = affine_blend_impl(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc)
+    else:
+        # Let's spread the load across multiple processors.
+        procs: List[multiprocessing.Process] = []
+        work: multiprocessing.Queue = multiprocessing.Queue()
+        results: multiprocessing.Queue = multiprocessing.Queue()
+        expected: int = 0
+
+        for _ in range(cores):
+            proc = multiprocessing.Process(
+                target=pixel_renderer,
+                args=(
+                    work,
+                    results,
+                    minx,
+                    maxx,
+                    imgwidth,
+                    texwidth,
+                    texheight,
+                    inverse,
+                    origin,
+                    add_color,
+                    mult_color,
+                    blendfunc,
+                    imgmap,
+                    texmap,
+                ),
+            )
+            procs.append(proc)
+            proc.start()
+
+        for imgy in range(miny, maxy):
+            work.put(imgy)
+            expected += 1
+
+        lines: List[List[Tuple[int, int, int, int]]] = [
+            imgmap[x:(x + imgwidth)]
+            for x in range(
+                0,
+                imgwidth * imgheight,
+                imgwidth,
+            )
+        ]
+        for _ in range(expected):
+            imgy, result = results.get()
+            lines[imgy] = result
+        imgmap = [pixel for line in lines for pixel in line]
+
+        for proc in procs:
+            work.put(None)
+        for proc in procs:
+            proc.join()
 
     return imgmap
 
-def affine_blend_point(
-    imgx: int,
-    imgy: int,
+
+def pixel_renderer(
+    work: multiprocessing.Queue,
+    results: multiprocessing.Queue,
+    minx: int,
+    maxx: int,
     imgwidth: int,
-    imgheight: int,
-    add_color: Tuple[int, int, int, int],
-    mult_color: Color,
-    dest_color: Tuple[int, int, int, int],
-    inverse: Matrix,
-    origin: Point,
-    blendfunc: int,
     texwidth: int,
     texheight: int,
+    inverse: Matrix,
+    origin: Point,
+    add_color: Tuple[int, int, int, int],
+    mult_color: Color,
+    blendfunc: int,
+    imgmap: List[Tuple[int, int, int, int]],
     texmap: List[Tuple[int, int, int, int]],
+) -> None:
+    while True:
+        imgy = work.get()
+        if imgy is None:
+            return
+
+        result: List[Tuple[int, int, int, int]] = []
+        for imgx in range(imgwidth):
+            # Determine offset
+            imgoff = imgx + (imgy * imgwidth)
+            if imgx < minx or imgx >= maxx:
+                result.append(imgmap[imgoff])
+                continue
+
+            # Calculate what texture pixel data goes here.
+            texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+            texx, texy = texloc.as_tuple()
+
+            # If we're out of bounds, don't update.
+            if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
+                result.append(imgmap[imgoff])
+                continue
+
+            # Blend it.
+            texoff = texx + (texy * texwidth)
+            result.append(affine_blend_impl(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc))
+
+        results.put((imgy, result))
+
+
+def affine_blend_impl(
+    add_color: Tuple[int, int, int, int],
+    mult_color: Color,
+    src_color: Tuple[int, int, int, int],
+    dest_color: Tuple[int, int, int, int],
+    blendfunc: int,
 ) -> Tuple[int, int, int, int]:
-    # Calculate what texture pixel data goes here.
-    texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
-    texx, texy = texloc.as_tuple()
-
-    # If we're out of bounds, don't update.
-    if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-        return dest_color
-
-    # Blend it.
-    texoff = texx + (texy * texwidth)
-
     if blendfunc == 3:
-        return blend_multiply(dest_color, texmap[texoff], mult_color, add_color)
+        return blend_multiply(dest_color, src_color, mult_color, add_color)
     # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this
     # in Jubeat and it implements it using OpenGL equation Src * (1 - Dst) + Dst * 1.
     # TODO: blend mode 5, which is "lighten" blending according to SWF references. Jubeat does not
@@ -242,10 +333,10 @@ def affine_blend_point(
     # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
     # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
     elif blendfunc == 8:
-        return blend_addition(dest_color, texmap[texoff], mult_color, add_color)
+        return blend_addition(dest_color, src_color, mult_color, add_color)
     elif blendfunc == 9 or blendfunc == 70:
-        return blend_subtraction(dest_color, texmap[texoff], mult_color, add_color)
+        return blend_subtraction(dest_color, src_color, mult_color, add_color)
     # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
     # Src * (1 - Dst) + Dst * (1 - Src).
     else:
-        return blend_normal(dest_color, texmap[texoff], mult_color, add_color)
+        return blend_normal(dest_color, src_color, mult_color, add_color)
