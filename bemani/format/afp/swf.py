@@ -1241,7 +1241,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             if flags & 0x10000:
                 # Some sort of filter data? Not sure what this is either. Needs more investigation
-                # if I encounter files with it.
+                # if I encounter files with it. This seems to match up with SWF documentation on
+                # filters. Still have yet to see any files with it.
                 unhandled_flags &= ~0x10000
                 count, filter_size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
                 self.add_coverage(dataoffset + running_pointer, 4)
@@ -1256,9 +1257,10 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             rotation_offset = None
             if flags & 0x1000000:
-                # Some sort of point, perhaps an x, y offset for the object or a center point for rotation?
+                # I am certain that this is the rotation origin, as treating it as such works for
+                # basically all files.
                 unhandled_flags &= ~0x1000000
-                x, y = struct.unpack("<II", datachunk[running_pointer:(running_pointer + 8)])
+                x, y = struct.unpack("<ii", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
@@ -1272,7 +1274,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Rotation Origin: {rotation_offset}")
 
             if flags & 0x40000:
-                # Some pair of shorts, not sure, its in DDR PS3 data.
+                # This appears in newer IIDX to be an alternative method for populating
+                # transform scaling.
                 unhandled_flags &= ~0x40000
 
                 # This is a bit nasty, but the newest version of data we see in
@@ -1283,24 +1286,25 @@ class SWF(TrackedCoverage, VerboseOutput):
                 if running_pointer == len(datachunk):
                     pass
                 else:
-                    x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                    a_int, d_int = struct.unpack("<hh", datachunk[running_pointer:(running_pointer + 4)])
                     self.add_coverage(dataoffset + running_pointer, 4)
                     running_pointer += 4
 
-                    # TODO: I have no idea what these are.
-                    point = Point(float(x) * 3.051758e-05, float(y) * 3.051758e-05)
-                    self.vprint(f"{prefix}    Point: {point}")
+                    transform.a = float(a_int) / 32768.0
+                    transform.d = float(d_int) / 32768.0
+                    self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
             if flags & 0x80000:
-                # Some pair of shorts, not sure, its in DDR PS3 data.
+                # This appears in newer IIDX to be an alternative method for populating
+                # transform rotation.
                 unhandled_flags &= ~0x80000
-                x, y = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                b_int, c_int = struct.unpack("<hh", datachunk[running_pointer:(running_pointer + 4)])
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                # TODO: I have no idea what these are.
-                point = Point(float(x) * 3.051758e-05, float(y) * 3.051758e-05)
-                self.vprint(f"{prefix}    Point: {point}")
+                transform.b = float(b_int) / 32768.0
+                transform.c = float(c_int) / 32768.0
+                self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
             # This flag states whether we are creating a new object on this depth, or updating one.
             unhandled_flags &= ~0xD
@@ -2008,7 +2012,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.vprint("  0x4: Imported tag initializer section present")
         else:
             self.vprint("  0x4: Imported tag initializer section not present")
-        self.vprint(f"Dimensions: {self.location.width}x{self.location.height}")
+        self.vprint(f"Dimensions: {int(self.location.width)}x{int(self.location.height)}")
         self.vprint(f"Requested FPS: {self.fps}")
 
         # Exported assets
