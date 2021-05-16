@@ -268,6 +268,12 @@ def main() -> int:
         help="Set the background color of the animation as a comma-separated RGB or RGBA color, overriding a default if present in the SWF.",
     )
     render_parser.add_argument(
+        "--only-depths",
+        type=str,
+        default=None,
+        help="Only render objects on these depth planes. Can provide either a number or a comma-separated list of numbers.",
+    )
+    render_parser.add_argument(
         "--disable-threads",
         action="store_true",
         help="Disable multi-threaded rendering.",
@@ -292,7 +298,6 @@ def main() -> int:
         action="store_true",
         help="Disable multi-threaded rendering.",
     )
-
 
     args = parser.parse_args()
 
@@ -710,7 +715,11 @@ def main() -> int:
                 color = None
 
             # Render the gif/webp frames.
-            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color)
+            if args.only_depths is not None:
+                depths = [int(d.strip()) for d in args.only_depths.split(",")]
+            else:
+                depths = None
+            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color, only_depths=depths)
 
             if len(images) == 0:
                 raise Exception("Did not render any frames!")

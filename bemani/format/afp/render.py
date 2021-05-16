@@ -139,7 +139,7 @@ class AFPRenderer(VerboseOutput):
             data.parse()
         self.swfs[name] = data
 
-    def render_path(self, path: str, background_color: Optional[Color] = None, verbose: bool = False) -> Tuple[int, List[Image.Image]]:
+    def render_path(self, path: str, background_color: Optional[Color] = None, verbose: bool = False, only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
         # Given a path to a SWF root animation or an exported animation inside a SWF,
         # attempt to render it to a list of frames, one per image.
         components = path.split(".")
@@ -152,7 +152,7 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    return self.__render(swf, components[1] if len(components) > 1 else None)
+                    return self.__render(swf, components[1] if len(components) > 1 else None, only_depths=only_depths)
 
         raise Exception(f'{path} not found in registered SWFs!')
 
@@ -366,7 +366,15 @@ class AFPRenderer(VerboseOutput):
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
-    def __render_object(self, img: Image.Image, renderable: PlacedObject, parent_transform: Matrix, parent_origin: Point, prefix: str="") -> Image.Image:
+    def __render_object(
+        self,
+        img: Image.Image,
+        renderable: PlacedObject,
+        parent_transform: Matrix,
+        parent_origin: Point,
+        only_depths: Optional[List[int]] = None,
+        prefix: str="",
+    ) -> Image.Image:
         self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}")
 
         # Compute the affine transformation matrix for this object.
@@ -390,7 +398,7 @@ class AFPRenderer(VerboseOutput):
                 key=lambda obj: obj.depth,
             )
             for obj in objs:
-                img = self.__render_object(img, obj, transform, parent_origin.add(renderable.rotation_offset), prefix=prefix + " ")
+                img = self.__render_object(img, obj, transform, parent_origin.add(renderable.rotation_offset), only_depths=only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             # This is a shape draw reference.
             shape = renderable.source
@@ -404,6 +412,9 @@ class AFPRenderer(VerboseOutput):
             for params in shape.draw_params:
                 if not (params.flags & 0x1):
                     # Not instantiable, don't render.
+                    return img
+                if only_depths is not None and renderable.depth not in only_depths:
+                    # Not on the correct depth plane.
                     return img
 
                 if params.flags & 0x8:
@@ -507,7 +518,7 @@ class AFPRenderer(VerboseOutput):
 
         return None
 
-    def __render(self, swf: SWF, export_tag: Optional[str]) -> Tuple[int, List[Image.Image]]:
+    def __render(self, swf: SWF, export_tag: Optional[str], only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
         # If we are rendering an exported tag, we want to perform the actions of the
         # rest of the SWF but not update any layers as a result.
         visible_tag = None
@@ -562,7 +573,7 @@ class AFPRenderer(VerboseOutput):
                     clip = self.__find_renderable(root_clip, visible_tag)
                     if clip:
                         for obj in sorted(clip.placed_objects, key=lambda obj: obj.depth):
-                            curimage = self.__render_object(curimage, obj, root_clip.transform, root_clip.rotation_offset)
+                            curimage = self.__render_object(curimage, obj, root_clip.transform, root_clip.rotation_offset, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
