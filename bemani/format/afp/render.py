@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
-from .blend import blend_normal, blend_addition, blend_subtraction, blend_multiply
+from .blend import affine_composite
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag
 from .types import Color, Matrix, Point
 from .geo import Shape, DrawParams
@@ -448,74 +448,8 @@ class AFPRenderer(VerboseOutput):
 
                         img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
                     else:
-                        # Now, render out the texture.
-                        imgmap = list(img.getdata())
-                        texmap = list(texture.getdata())
-
-                        # These are calculated properties and caching them outside of the loop
-                        # speeds things up a bit.
-                        imgwidth = img.width
-                        imgheight = img.height
-                        texwidth = texture.width
-                        texheight = texture.height
-
-                        # Calculate the maximum range of update this texture can possibly reside in.
-                        pix1 = transform.multiply_point(Point.identity().subtract(origin))
-                        pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, 0)))
-                        pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texheight)))
-                        pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, texheight)))
-
-                        # Map this to the rectangle we need to sweep in the rendering image.
-                        minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
-                        maxx = min(int(max(pix1.x, pix2.x, pix3.x, pix4.x)) + 1, imgwidth)
-                        miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
-                        maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, imgheight)
-
-                        announced = False
-                        for imgy in range(miny, maxy):
-                            for imgx in range(minx, maxx):
-                                # Determine offset
-                                imgoff = imgx + (imgy * imgwidth)
-
-                                # Calculate what texture pixel data goes here.
-                                texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
-                                texx, texy = texloc.as_tuple()
-
-                                # If we're out of bounds, don't update.
-                                if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-                                    continue
-
-                                # Blend it.
-                                texoff = texx + (texy * texwidth)
-
-                                if blend == 0 or blend == 2:
-                                    imgmap[imgoff] = blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                                elif blend == 3:
-                                    imgmap[imgoff] = blend_multiply(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                                # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this
-                                # in Jubeat and it implements it using OpenGL equation Src * (1 - Dst) + Dst * 1.
-                                # TODO: blend mode 5, which is "lighten" blending according to SWF references. Jubeat does not
-                                # premultiply by alpha, but the GL/DX equation is max(Src * As, Dst * 1).
-                                # TODO: blend mode 6, which is "darken" blending according to SWF references. Jubeat does not
-                                # premultiply by alpha, but the GL/DX equation is min(Src * As, Dst * 1).
-                                # TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
-                                # that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
-                                # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
-                                # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
-                                elif blend == 8:
-                                    imgmap[imgoff] = blend_addition(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                                elif blend == 9 or blend == 70:
-                                    imgmap[imgoff] = blend_subtraction(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-                                # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
-                                # Src * (1 - Dst) + Dst * (1 - Src).
-                                else:
-                                    if not announced:
-                                        # Don't print it for every pixel.
-                                        print(f"WARNING: Unsupported blend {blend}")
-                                        announced = True
-                                    imgmap[imgoff] = blend_normal(imgmap[imgoff], texmap[texoff], mult_color, add_color)
-
-                        img.putdata(imgmap)
+                        # We can't, so do the slow render that's correct.
+                        img.putdata(affine_composite(img, add_color, mult_color, transform, inverse, origin, blend, texture))
         else:
             raise Exception(f"Unknown placed object type to render {renderable}!")
 
