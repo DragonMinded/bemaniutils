@@ -1,6 +1,7 @@
 import multiprocessing
+import signal
 from PIL import Image  # type: ignore
-from typing import List, Sequence, Tuple
+from typing import Any, List, Sequence, Tuple
 
 from .types.generic import Color, Matrix, Point
 
@@ -225,6 +226,14 @@ def affine_composite(
         work: multiprocessing.Queue = multiprocessing.Queue()
         results: multiprocessing.Queue = multiprocessing.Queue()
         expected: int = 0
+        interrupted: bool = False
+
+        def ctrlc(sig: Any, frame: Any) -> None:
+            nonlocal interrupted
+            interrupted = True
+
+        original_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, ctrlc)
 
         for _ in range(cores):
             proc = multiprocessing.Process(
@@ -269,6 +278,10 @@ def affine_composite(
             work.put(None)
         for proc in procs:
             proc.join()
+
+        signal.signal(signal.SIGINT, original_handler)
+        if interrupted:
+            raise KeyboardInterrupt()
 
         img = Image.frombytes('RGBA', (imgwidth, imgheight), b''.join(lines))
     return img
