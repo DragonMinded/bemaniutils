@@ -141,6 +141,7 @@ class APIClient:
                 VersionConstants.IIDX_COPULA: '23',
                 VersionConstants.IIDX_SINOBUZ: '24',
                 VersionConstants.IIDX_CANNON_BALLERS: '25',
+                VersionConstants.IIDX_ROOTAGE: '26',
             },
             GameConstants.JUBEAT: {
                 VersionConstants.JUBEAT_SAUCER: '5',
