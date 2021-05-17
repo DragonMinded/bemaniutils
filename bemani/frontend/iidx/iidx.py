@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, Optional, Tuple, List
 
 from flask_caching import Cache  # type: ignore
 
@@ -60,6 +60,18 @@ class IIDXFrontend(FrontendBase):
             21066: 16212,
             23030: 22096,
             23051: 22097,
+            11101: 21214,
+            14101: 21221,
+            15104: 21225,
+            15102: 21226,
+            15101: 21231,
+            15103: 21237,
+            16105: 21240,
+            16104: 21242,
+            16103: 21253,
+            16102: 21258,
+            16101: 21262,
+            14100: 21220,
         }
         # Some charts were changed, and others kept the same on these
         if chart in [0, 1, 2]:
@@ -113,8 +125,12 @@ class IIDXFrontend(FrontendBase):
             'rival_win_lose': (flags & 0x040) != 0,
             'rival_info': (flags & 0x080) != 0,
             'hide_play_count': (flags & 0x100) != 0,
+            'disable_graph_cutin': (flags & 0x200) != 0,
+            'classic_hispeed': (flags & 0x400) != 0,
+            'hide_iidx_id': (flags & 0x1000) != 0,
             'disable_song_preview': settings_dict.get_int('disable_song_preview') != 0,
             'effector_lock': settings_dict.get_int('effector_lock') != 0,
+            'disable_hcn_color': settings_dict.get_int('disable_hcn_color') != 0,
         }
 
     def format_settings(self, settings_dict: ValidatedDict) -> Dict[str, Any]:
@@ -132,6 +148,41 @@ class IIDXFrontend(FrontendBase):
             'judge': settings_dict.get_int('judge'),
             'pacemaker': settings_dict.get_int('pacemaker'),
             'effector_preset': settings_dict.get_int('effector_preset'),
+            'explosion_size': settings_dict.get_int('explosion_size'),
+            'note_preview': settings_dict.get_int('note_preview'),
+        }
+
+    def format_qpro(self, qpro_dict: ValidatedDict) -> Dict[str, Any]:
+        return {
+            'body': qpro_dict.get_int('body'),
+            'face': qpro_dict.get_int('face'),
+            'hair': qpro_dict.get_int('hair'),
+            'hand': qpro_dict.get_int('hand'),
+            'head': qpro_dict.get_int('head'),
+        }
+
+    def get_all_items(self, versions: list) -> Dict[str, List[Dict[str, Any]]]:
+        result = {}
+        for version in versions:
+            qpro = self.__format_iidx_extras(version)
+            result[version] = qpro['qpros']
+        return result
+
+    def __format_iidx_extras(self, version) -> Dict[str, List[Dict[str, Any]]]:
+        # Gotta look up the unlock catalog
+        items = self.data.local.game.get_items(self.game, version)
+
+        return {
+            "qpros": [
+                {
+                    "identifier": item.data.get_str("identifier"),
+                    "id": str(item.id),
+                    "name": item.data.get_str("name"),
+                    "type": item.type[3:],
+                }
+                for item in items
+                if item.type in ['qp_body', 'qp_face', 'qp_hair', 'qp_hand', 'qp_head']
+            ],
         }
 
     def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
@@ -149,6 +200,7 @@ class IIDXFrontend(FrontendBase):
             'ddan': self.format_dan_rank(profile.get_int('dgrade', -1)),
             'srank': profile.get_int('sgrade', -1),
             'drank': profile.get_int('dgrade', -1),
+            'qpro': self.format_qpro(profile.get_dict('qpro')),
         })
         if 'shop_location' in profile:
             shop_id = profile.get_int('shop_location')

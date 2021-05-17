@@ -5,10 +5,14 @@ var pagenav = new History(valid_versions);
 
 var menu_option_names = {
     'alphabet': 'alphabet folders',
+    'classic_hispeed': 'classic hispeed',
     'difficulty': 'difficulty folders',
+    'disable_graph_cutin': 'disable graph cut-in',
+    'disable_hcn_color': 'disable hcn color',
     'disable_song_preview': 'disable song previews',
     'effector_lock': 'lock effector',
     'grade': 'grade folders',
+    'hide_iidx_id': 'hide iidx id',
     'hide_play_count': 'hide play count on profile',
     'rival_info': 'rival info box',
     'rival_played': 'rival played folders',
@@ -24,8 +28,12 @@ var valid_menu_options = [
     'rival_win_lose',
     'rival_info',
     'hide_play_count',
+    'disable_graph_cutin',
+    'classic_hispeed',
+    'hide_iidx_id',
     'disable_song_preview',
     'effector_lock',
+    'disable_hcn_color',
 ];
 var theme_option_names = {
     'beam': 'Note Beam',
@@ -40,7 +48,16 @@ var theme_option_names = {
     'voice': 'Menu Announcer Voice',
     'pacemaker': 'Pacemaker Skin',
     'effector_preset': 'Effector Preset',
+    'explosion_size': 'Explosion Size',
+    'note_preview': 'Note Preview',
 };
+var valid_qpro_options = [
+    'body',
+    'face',
+    'hair',
+    'hand',
+    'head',
+];
 
 var settings_view = React.createClass({
 
@@ -53,10 +70,13 @@ var settings_view = React.createClass({
             version: version,
             menu_changed: {},
             theme_changed: {},
+            qpro_changed: {},
             menu_saving: {},
             theme_saving: {},
+            qpro_saving: {},
             menu_saved: {},
             theme_saved: {},
+            qpro_saved: {},
             new_name: window.player[version].name,
             editing_name: false,
             new_prefecture: window.player[version].prefecture,
@@ -75,6 +95,21 @@ var settings_view = React.createClass({
             this.focus_element.focus();
             this.already_focused = this.focus_element;
         }
+    },
+
+    setQproChanged: function(val) {
+        this.state.qpro_changed[this.state.version] = val;
+        return this.state.qpro_changed
+    },
+
+    setQproSaving: function(val) {
+        this.state.qpro_saving[this.state.version] = val;
+        return this.state.qpro_saving;
+    },
+
+    setQproSaved: function(val) {
+        this.state.qpro_saved[this.state.version] = val;
+        return this.state.qpro_saved;
     },
 
     setMenuChanged: function(val) {
@@ -105,6 +140,27 @@ var settings_view = React.createClass({
     setThemeSaved: function(val) {
         this.state.theme_saved[this.state.version] = val;
         return this.state.theme_saved;
+    },
+
+    saveQproOptions: function(event) {
+        this.setState({qpro_saving: this.setQproSaving(true), qpro_saved: this.setQproSaved(false)});
+        AJAX.post(
+            Link.get('updateqpro'),
+            {
+                version: this.state.version,
+                qpro: this.state.player[this.state.version].qpro,
+            },
+            function(response) {
+                var player = this.state.player
+                player[response.version].qpro = response.qpro;
+                this.setState({
+                    player: player,
+                    qpro_saving: this.setQproSaving(false),
+                    qpro_saved: this.setQproSaved(true),
+                    qpro_changed: this.setQproChanged(false),
+                })
+            }.bind(this)
+        )
     },
 
     saveMenuOptions: function(event) {
@@ -258,11 +314,12 @@ var settings_view = React.createClass({
     },
 
     renderPrefecture: function(player) {
+        regions = this.state.version >= 25 ? Regions2 : Regions;
         return (
             <LabelledSection vertical={true} label="Prefecture">{
                 !this.state.editing_prefecture ?
                     <span>
-                        <span>{Regions[player.prefecture]}</span>
+                        <span>{regions[player.prefecture]}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_prefecture: true});
@@ -273,7 +330,7 @@ var settings_view = React.createClass({
                         <SelectInt
                             name="prefecture"
                             value={this.state.new_prefecture}
-                            choices={Regions}
+                            choices={regions}
                             onChange={function(choice) {
                                 this.setState({new_prefecture: choice});
                             }.bind(this)}
@@ -350,6 +407,62 @@ var settings_view = React.createClass({
                         {this.renderDJName(player)}
                         {this.renderPrefecture(player)}
                         {this.renderHomeArcade(player)}
+                    </div>
+                    <div className="section">
+                        <h3>QPro</h3>
+                        <form className="inline">
+                            <div className="fields">
+                                {
+                                    valid_qpro_options.map(function(qpro_option) {
+                                        var player = this.state.player[this.state.version]
+                                        var items = window.qpros[this.state.version].filter(function (qpro) {                                                
+                                            return qpro.type == qpro_option
+                                        });
+                                        var results = {};
+                                        items
+                                            .map(function(item) { return { 'id': item.id, 'name': `${item.name}` } })
+                                            .forEach (value => results[value.id] = value.name);
+                                        return (
+                                            <div className="field">
+                                            <b>{qpro_option}</b>
+                                            <br/>
+                                            <SelectInt
+                                                name={qpro_option}
+                                                value={player.qpro[qpro_option]}
+                                                choices={results}
+                                                onChange={function(choice) {
+                                                    var player = this.state.player;
+                                                    player[this.state.version].qpro[qpro_option] = choice;
+                                                    this.setState({
+                                                        player: player,
+                                                        qpro_changed: this.setQproChanged(true),
+                                                    })
+                                                }.bind(this)}
+                                            />
+                                        </div>
+                                        )
+                                    }.bind(this))
+                                }
+                                <div className="field">
+                                    <input
+                                        type="submit"
+                                        value="save"
+                                        disabled={!this.state.qpro_changed[this.state.version]}
+                                        onClick={function(event) {
+                                            this.saveQproOptions(event);
+                                        }.bind(this)}
+                                    />
+                                    { this.state.qpro_saving[this.state.version] ?
+                                        <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                        null
+                                    }
+                                    { this.state.qpro_saved[this.state.version] ?
+                                        <span>&#x2713;</span> :
+                                        null
+                                    }
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div className="section">
                         <h3>Theme</h3>

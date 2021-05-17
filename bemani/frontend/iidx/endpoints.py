@@ -317,15 +317,20 @@ def viewsettings() -> Response:
     djinfo = frontend.get_all_player_info([userid])[userid]
     if not djinfo:
         abort(404)
-
+    versions = sorted(
+        [version for (game, version, name) in frontend.all_games()],
+        reverse=True,
+    )
     return render_react(
         'IIDX Game Settings',
         'iidx/settings.react.js',
         {
             'player': djinfo,
             'versions': {version: name for (game, version, name) in frontend.all_games()},
+            'qpros': frontend.get_all_items(versions),
         },
         {
+            'updateqpro': url_for('iidx_pages.updateqpro'),
             'updateflags': url_for('iidx_pages.updateflags'),
             'updatesettings': url_for('iidx_pages.updatesettings'),
             'updatename': url_for('iidx_pages.updatename'),
@@ -362,11 +367,15 @@ def updateflags() -> Dict[str, Any]:
     flagint += 0x040 if flags['rival_win_lose'] else 0
     flagint += 0x080 if flags['rival_info'] else 0
     flagint += 0x100 if flags['hide_play_count'] else 0
+    flagint += 0x200 if flags['disable_graph_cutin'] else 0
+    flagint += 0x400 if flags['classic_hispeed'] else 0
+    flagint += 0x1000 if flags['hide_iidx_id'] else 0
     settings_dict.replace_int('flags', flagint)
 
     # Update special case flags
     settings_dict.replace_int('disable_song_preview', 1 if flags['disable_song_preview'] else 0)
     settings_dict.replace_int('effector_lock', 1 if flags['effector_lock'] else 0)
+    settings_dict.replace_int('disable_hcn_color', 1 if flags['disable_hcn_color'] else 0)
 
     # Update the settings dict
     profile.replace_dict('settings', settings_dict)
@@ -375,6 +384,37 @@ def updateflags() -> Dict[str, Any]:
     # Return updated flags
     return {
         'flags': frontend.format_flags(settings_dict),
+        'version': version,
+    }
+
+
+@iidx_pages.route('/options/qpro/update', methods=['POST'])
+@jsonify
+@loginrequired
+def updateqpro() -> Dict[str, Any]:
+    frontend = IIDXFrontend(g.data, g.config, g.cache)
+    qpros = request.get_json()['qpro']
+    version = int(request.get_json()['version'])
+    user = g.data.local.user.get_user(g.userID)
+    if user is None:
+        raise Exception('Unable to find user to update!')
+
+    # Grab profile and qpro dict that needs updating
+    profile = g.data.local.user.get_profile(GameConstants.IIDX, version, user.id)
+    if profile is None:
+        raise Exception('Unable to find profile to update!')
+    qpro_dict = profile.get_dict('qpro')
+
+    for qpro in qpros:
+        qpro_dict.replace_int(qpro, qpros[qpro])
+
+    # Update the qpro dict
+    profile.replace_dict('qpro', qpro_dict)
+    g.data.local.user.put_profile(GameConstants.IIDX, version, user.id, profile)
+
+    # Return updated qpro
+    return {
+        'qpro': frontend.format_qpro(qpro_dict),
         'version': version,
     }
 
