@@ -155,11 +155,30 @@ class CatalogObject(BaseObject):
         else:
             return {"emblems": []}
 
+    def __format_iidx_extras(self) -> Dict[str, List[Dict[str, Any]]]:
+        # Gotta look up the unlock catalog
+        items = self.data.local.game.get_items(self.game, self.version)
+
+        return {
+            "qpros": [
+                {
+                    "identifier": item.data.get_str("identifier"),
+                    "id": str(item.id),
+                    "name": item.data.get_str("name"),
+                    "type": item.type[3:],
+                }
+                for item in items
+                if item.type in ['qp_body', 'qp_face', 'qp_hair', 'qp_hand', 'qp_head']
+            ],
+        }
+
     def __format_extras(self) -> Dict[str, List[Dict[str, Any]]]:
         if self.game == GameConstants.SDVX:
             return self.__format_sdvx_extras()
         elif self.game == GameConstants.JUBEAT:
             return self.__format_jubeat_extras()
+        elif self.game == GameConstants.IIDX:
+            return self.__format_iidx_extras()
         else:
             return {}
 
