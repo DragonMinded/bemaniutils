@@ -59,6 +59,9 @@ class VersionConstants:
     IIDX_COPULA: Final[int] = 23
     IIDX_SINOBUZ: Final[int] = 24
     IIDX_CANNON_BALLERS: Final[int] = 25
+    IIDX_ROOTAGE: Final[int] = 26
+    IIDX_HEROIC_VERSE: Final[int] = 27
+    IIDX_BISTROVER: Final[int] = 28
 
     JUBEAT: Final[int] = 1
     JUBEAT_RIPPLES: Final[int] = 2
