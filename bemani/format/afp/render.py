@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
 from .blend import affine_composite
-from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag
+from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag, AP2PlaceCameraTag
 from .types import Color, Matrix, Point
 from .geo import Shape, DrawParams
 from .util import VerboseOutput
@@ -347,6 +347,12 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DefineEditTextTag):
             print("WARNING: Unhandled DEFINE_EDIT_TEXT tag!")
+
+            # Didn't place a new clip.
+            return None, False
+
+        elif isinstance(tag, AP2PlaceCameraTag):
+            print("WARNING: Unhandled PLACE_CAMERA tag!")
 
             # Didn't place a new clip.
             return None, False
