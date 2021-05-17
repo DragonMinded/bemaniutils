@@ -43,12 +43,18 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
     saved_loc: List[int] = []
 
     while True:
-        chunk = data[base:(base + 16)]
-        base = base + 16
+        if hex(pe.FILE_HEADER.Machine) == '0x8664':  # 64 bit
+            chunk = data[base:(base + 24)]
+            base = base + 24
 
-        (nodetype, mandatory, outoffset, width, nameptr, defaultptr) = struct.unpack('<BBHIII', chunk)
+            (nodetype, mandatory, outoffset, width, nameptr, defaultptr) = struct.unpack('<BBHIQQ', chunk)
+        else:  # 32 bit
+            chunk = data[base:(base + 16)]
+            base = base + 16
 
-        if nodetype == 0xFF:
+            (nodetype, mandatory, outoffset, width, nameptr, defaultptr) = struct.unpack('<BBHIII', chunk)
+
+        if nodetype == 0xFF or nodetype == 0x00:  # if nodetype is 0 then we probably read garbage
             # End of nodes, see if we should exit
             if len(saved_root) == 0:
                 break
@@ -67,9 +73,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
         except ValueError:
             pass
 
-        if nodetype == 0x00:
-            raise Exception(f'Invalid node type 0x{nodetype:02x}')
-        elif nodetype == 0x01:
+        if nodetype == 0x01:
             # This is a void node, so we should handle by recursing
             node = Node.void(name)
             root.add_child(node)
