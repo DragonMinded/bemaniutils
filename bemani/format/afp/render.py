@@ -530,7 +530,7 @@ class AFPRenderer(VerboseOutput):
                 # Create a new image to render into.
                 time = spf * frameno
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-                self.vprint(f"Rendering Frame {frameno} ({time}s)")
+                self.vprint(f"Rendering frame {frameno}/{len(root_clip.source.frames)} ({round(time, 2)}s)")
 
                 # Go through all registered clips, place all needed tags.
                 changed = self.__process_tags(root_clip)
