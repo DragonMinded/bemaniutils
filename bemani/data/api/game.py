@@ -38,6 +38,17 @@ class GlobalGameData(BaseGlobalData):
             },
         )
 
+    def __translate_iidx_qpros(self, entry: Dict[str, Any]) -> Item:
+        return Item(
+            f'qp_{entry["type"]}',
+            int(entry["id"]),
+            {
+                "identifier": entry["identifier"],
+                "name": entry["name"],
+                "type": entry["type"],
+            }
+        )
+
     def get_items(self, game: str, version: int) -> List[Item]:
         """
         Given a game/userid, find all items in the catalog.
@@ -67,6 +78,10 @@ class GlobalGameData(BaseGlobalData):
                 elif game == GameConstants.JUBEAT:
                     translation = {
                         "emblems": self.__translate_jubeat_emblems,
+                    }.get(catalogtype, None)
+                elif game == GameConstants.IIDX:
+                    translation = {
+                        "qpros": self.__translate_iidx_qpros,
                     }.get(catalogtype, None)
                 else:
                     translation = None
