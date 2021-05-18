@@ -4,7 +4,7 @@ import random
 import struct
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
-from discord_webhook import DiscordWebhook, DiscordEmbed
+from discord_webhook import DiscordWebhook, DiscordEmbed  # type: ignore
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.course import IIDXCourse
@@ -1068,7 +1068,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.set_attribute('pflg', '0')
         return root
 
-    def handle_IIDX26pc_shopregister_request(self, request: Node) -> Node: # Not used anymore????
+    def handle_IIDX26pc_shopregister_request(self, request: Node) -> Node:  # Not used anymore????
         root = Node.void('IIDX26pc')
         return root
 
@@ -1202,7 +1202,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, 'NO PLAY')
         now_clear_string = clear_map.get(now_clear, 'NO PLAY')
         # let's get the song info first
-        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
 
         # now we will build up the embed
         now = datetime.now()
@@ -1239,7 +1239,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         webhook.add_embed(scoreembed)
 
         # now we send the webhook!
-        response = webhook.execute()
+        webhook.execute()
 
         end = Node.void('IIDX26pc')
 
@@ -1626,7 +1626,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             map_data_node.set_attribute('bookshelf_release_num', str(map_data.data.get_int('bookshelf_release_num')))
             map_data_node.add_child(Node.bool('is_clear', map_data.data.get_bool('is_clear')))
             map_data_node.add_child(Node.binary('map_route_damage', map_data.data.get_bytes('map_route_damage')))
-        
+
         # DELABITY LABORATORY event
         event2_dict = profile.get_dict('event2')
         event2 = Node.void('event2')
@@ -1653,7 +1653,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             area_data.set_attribute('last_select_note', str(area.data.get_int('last_select_note')))
             area_data.set_attribute('normal_play_num', str(area.data.get_int('normal_play_num')))
             area_data.set_attribute('hyper_play_num', str(area.data.get_int('hyper_play_num')))
-            area_data.set_attribute('another_play_num', str(area.data.get_int('another_play_num'))) 
+            area_data.set_attribute('another_play_num', str(area.data.get_int('another_play_num')))
             area_data.set_attribute('area_clear_flg_list', str(area.data.get_int('area_clear_flg_list')))
             area_data.set_attribute('normal_grade_point', str(area.data.get_int('normal_grade_point')))
             area_data.set_attribute('hyper_grade_point', str(area.data.get_int('hyper_grade_point')))
@@ -2056,7 +2056,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             event2_dict.replace_int('floor_clear_flg_list', int(event2.attribute('floor_clear_flg_list')))
             event2_dict.replace_int('last_select_floor', int(event2.attribute('last_select_floor')))
             event2_dict.replace_int('tips_list', int(event2.attribute('tips_list')))
-            
+
             for area_data in event2.children:
                 if area_data.name != 'area_data':
                     continue
@@ -2067,7 +2067,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                     self.version,
                     userid,
                     area_id,
-                    f'area_data_floor_{floor_id}', # Save floor_id twice since the game seems to key by both
+                    f'area_data_floor_{floor_id}',  # Save floor_id twice since the game seems to key by both
                     {
                         'floor_id': floor_id,
                         'last_select_note': int(area_data.attribute('last_select_note')),

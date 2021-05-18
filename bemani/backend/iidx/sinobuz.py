@@ -3,6 +3,8 @@ import copy
 import random
 import struct
 from typing import Optional, Dict, Any, List, Tuple
+from datetime import datetime
+from discord_webhook import DiscordWebhook, DiscordEmbed  # type: ignore
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.course import IIDXCourse
@@ -1360,6 +1362,99 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         self.put_profile_by_extid(extid, request)
 
         return Node.void('IIDX24pc')
+
+    def handle_IIDX24pc_eaappliresult_request(self, request: Node) -> Node:
+        # first, we register the iidx webhook. this is done by sending all of our money to konami
+        if self.config['webhooks'][self.game] is None:
+            return Node.void('IIDX24pc')
+        webhook = DiscordWebhook(url=self.config['webhooks'][self.game])
+
+        clear_map = {
+            self.GAME_CLEAR_STATUS_NO_PLAY: 'NO PLAY',
+            self.GAME_CLEAR_STATUS_FAILED: 'FAILED',
+            self.GAME_CLEAR_STATUS_ASSIST_CLEAR: 'ASSIST CLEAR',
+            self.GAME_CLEAR_STATUS_EASY_CLEAR: 'EASY CLEAR',
+            self.GAME_CLEAR_STATUS_CLEAR: 'CLEAR',
+            self.GAME_CLEAR_STATUS_HARD_CLEAR: 'HARD CLEAR',
+            self.GAME_CLEAR_STATUS_EX_HARD_CLEAR: 'EX HARD CLEAR',
+            self.GAME_CLEAR_STATUS_FULL_COMBO: 'FULL COMBO',
+        }
+        # first we'll grab the data from the packet
+        # did = request.child_value('did')
+        # rid = request.child_value('rid')
+        name = request.child_value('name')
+        # qpro_hair = request.child_value('qpro_hair')
+        # qpro_head = request.child_value('qpro_head')
+        # qpro_body = request.child_value('qpro_body')
+        # qpro_hand = request.child_value('qpro_hand')
+        music_id = request.child_value('music_id')
+        class_id = request.child_value('class_id')
+        # no_save = request.child_value('no_save')
+        # is_couple = request.child_value('is_couple')
+        # target_graph = request.child_value('target_graph')
+        target_exscore = request.child_value('target_exscore')
+        # pacemaker = request.child_value('pacemaker')
+        best_clear = request.child_value('best_clear')
+        # best_djlevel = request.child_value('best_djlevel')
+        # best_exscore = request.child_value('best_exscore')
+        # best_misscount = request.child_value('best_misscount')
+        now_clear = request.child_value('now_clear')
+        # now_djlevel = request.child_value('now_djlevel')
+        now_exscore = request.child_value('now_exscore')
+        # now_misscount = request.child_value('now_misscount')
+        now_pgreat = request.child_value('now_pgreat')
+        now_great = request.child_value('now_great')
+        now_good = request.child_value('now_good')
+        now_bad = request.child_value('now_bad')
+        now_poor = request.child_value('now_poor')
+        now_combo = request.child_value('now_combo')
+        now_fast = request.child_value('now_fast')
+        now_slow = request.child_value('now_slow')
+        best_clear_string = clear_map.get(best_clear, 'NO PLAY')
+        now_clear_string = clear_map.get(now_clear, 'NO PLAY')
+        # let's get the song info first
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
+
+        # now we will build up the embed
+        now = datetime.now()
+
+        # now, we generate the embed
+        scoreembed = DiscordEmbed(title='New IIDX Score!', description="Login to see whole score.", color='fbba08')
+        scoreembed.set_footer(text=(now.strftime('Score was recorded on %m/%d/%y at %H:%M:%S')))
+
+        # lets give it an author
+        scoreembed.set_author(name=self.config['name'], url=self.config['server']['uri'])
+        # Set `inline=False` for the embed field to occupy the whole line
+        scoreembed.add_embed_field(name='DJ Name', value=(name), inline=False)
+        scoreembed.add_embed_field(name='Song', value=(song.name), inline=False)
+        scoreembed.add_embed_field(name='Artist', value=(song.artist), inline=False)
+        scoreembed.add_embed_field(name='Difficulty', value=(song.data.get('difficulty', 0)))
+        scoreembed.add_embed_field(name='Target EXScore', value=(target_exscore))
+        scoreembed.add_embed_field(name='Your EXScore', value=(now_exscore))
+        scoreembed.add_embed_field(name='Best Clear', value=best_clear_string)
+        scoreembed.add_embed_field(name='Clear Status', value=now_clear_string)
+        scoreembed.add_embed_field(name='Note Counts', value='How did you do?', inline=False)
+        scoreembed.add_embed_field(name=('Perfect Greats'), value=((now_pgreat)))
+        scoreembed.add_embed_field(name=('Greats'), value=((now_great)))
+        scoreembed.add_embed_field(name=('Goods'), value=((now_good)))
+        scoreembed.add_embed_field(name=('Bads'), value=((now_bad)))
+        scoreembed.add_embed_field(name=('Poors'), value=((now_poor)))
+
+        scoreembed.add_embed_field(name='Combo Breaks', value=(now_combo))
+
+        # scoreembed.add_embed_field(name='Timing Stats', value='Were you on time?', inline = False)
+        scoreembed.add_embed_field(name=('Slow'), value=((now_slow)))
+        scoreembed.add_embed_field(name=('Fast'), value=((now_fast)))
+
+        # add embed object to webhook
+        webhook.add_embed(scoreembed)
+
+        # now we send the webhook!
+        webhook.execute()
+
+        end = Node.void('IIDX24pc')
+
+        return end
 
     def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
         root = Node.void('IIDX24pc')

@@ -31,7 +31,7 @@ from bemani.backend.iidx.cannonballers import IIDXCannonBallers
 from bemani.backend.iidx.rootage import IIDXRootage
 from bemani.backend.iidx.heroicverse import IIDXHeroicVerse
 from bemani.backend.iidx.bistrover import IIDXBistrover
-from bemani.common import Model, VersionConstants, GameConstants
+from bemani.common import Model, VersionConstants
 from bemani.data import Data
 
 
