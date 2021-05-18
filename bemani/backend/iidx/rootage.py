@@ -456,65 +456,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX26ranking_entry_request(self, request: Node) -> Node:
-        extid = int(request.attribute('iidxid'))
-        courseid = int(request.attribute('coid'))
-        chart = int(request.attribute('clid'))
-        course_type = int(request.attribute('regist_type'))
-        clear_status = self.game_to_db_status(int(request.attribute('clr')))
-        pgreats = int(request.attribute('pgnum'))
-        greats = int(request.attribute('gnum'))
-
-        if course_type == 0:
-            index = self.COURSE_TYPE_INTERNET_RANKING
-        elif course_type == 1:
-            index = self.COURSE_TYPE_SECRET
-        else:
-            raise Exception('Unknown registration type for course entry!')
-
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-        if userid is not None:
-            # Update achievement to track course statistics
-            self.update_course(
-                userid,
-                index,
-                courseid,
-                chart,
-                clear_status,
-                pgreats,
-                greats,
-            )
-
-        # We should return the user's position, but its not displayed anywhere
-        # so fuck it.
-        root = Node.void('IIDX26ranking')
-        root.set_attribute('anum', '1')
-        root.set_attribute('jun', '1')
-        return root
-
-    def handle_IIDX26ranking_classicentry_request(self, request: Node) -> Node:
-        extid = int(request.attribute('iidx_id'))
-        courseid = int(request.attribute('course_id'))
-        coursestyle = int(request.attribute('play_style'))
-        clear_status = self.game_to_db_status(int(request.attribute('clear_flg')))
-        pgreats = int(request.attribute('pgnum'))
-        greats = int(request.attribute('gnum'))
-
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-        if userid is not None:
-            # Update achievement to track course statistics
-            self.update_course(
-                userid,
-                self.COURSE_TYPE_CLASSIC,
-                courseid,
-                coursestyle,
-                clear_status,
-                pgreats,
-                greats,
-            )
-
-        return Node.void('IIDX26ranking')
-
     def handle_IIDX26music_crate_request(self, request: Node) -> Node:
         root = Node.void('IIDX26music')
         attempts = self.get_clear_rates()
@@ -806,11 +747,10 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 data.set_attribute('name', profile.get_str('name'))
 
                 machine_name = ''
-                if 'shop_location' in profile:
-                    shop_id = profile.get_int('shop_location')
-                    machine = self.get_machine_by_id(shop_id)
-                    if machine is not None:
-                        machine_name = machine.name
+                shop_id = ID.parse_machine_id(request.attribute('location_id'))
+                machine = self.get_machine_by_id(shop_id)
+                if machine is not None:
+                    machine_name = machine.name
                 data.set_attribute('opname', machine_name)
                 data.set_attribute('rnum', str(record_num))
                 data.set_attribute('score', str(score[1].points))
@@ -1134,13 +1074,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root = self.get_profile_by_refid(refid)
         if root is None:
             root = Node.void('IIDX26pc')
-        # Shop register seems to be gone so let's just register a shop if one isn't already
-        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        profile = self.get_profile(userid)
-        if 'shop_location' not in profile:
-            location = ID.parse_machine_id(request.attribute('lid'))
-            profile.replace_int('shop_location', location)
-            self.put_profile(userid, profile)
         return root
 
     def handle_IIDX26pc_save_request(self, request: Node) -> Node:
@@ -1531,15 +1464,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
             rival.add_child(Node.bool('is_robo', False))
 
-            # If the user joined a particular shop, let the game know.
-            if 'shop_location' in other_profile:
-                shop_id = other_profile.get_int('shop_location')
-                machine = self.get_machine_by_id(shop_id)
-                if machine is not None:
-                    shop = Node.void('shop')
-                    rival.add_child(shop)
-                    shop.set_attribute('name', machine.name)
-
             qprodata = Node.void('qprodata')
             rival.add_child(qprodata)
             qpro = other_profile.get_dict('qpro')
@@ -1669,18 +1593,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.add_child(extra_boss_event)
         for i in range(9):
             extra_boss_event.set_attribute(f'orb_{i}', str(extra_boss_event_dict.get_int(f'orb_{i}')))
-
-        # If the user joined a particular shop, let the game know.
-        if 'shop_location' in profile:
-            shop_id = profile.get_int('shop_location')
-            machine = self.get_machine_by_id(shop_id)
-            if machine is not None:
-                join_shop = Node.void('join_shop')
-                root.add_child(join_shop)
-                join_shop.set_attribute('joinflg', '1')
-                join_shop.set_attribute('join_cflg', '1')
-                join_shop.set_attribute('join_id', ID.format_machine_id(machine.id))
-                join_shop.set_attribute('join_name', machine.name)
 
         # Step up mode
         step_dict = profile.get_dict('step')
@@ -2000,7 +1912,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         event1 = request.child('event1')
         if event1 is not None:
             event1_dict = newprofile.get_dict('event1')
-            event1_dict.replace_int('event_play_num', event1_dict.get_int('event_play_num') + 1)
+            event1_dict.increment_int('event_play_num')
             last_select_map = int(event1.attribute('last_select_map_id'))
             event1_dict.replace_int('play_gift', int(event1.attribute('play_gift')))
             event1_dict.replace_int('fragment_num', int(event1.attribute('fragment_num')))
