@@ -805,11 +805,10 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
                 data.set_attribute('name', profile.get_str('name'))
 
                 machine_name = ''
-                if 'shop_location' in profile:
-                    shop_id = profile.get_int('shop_location')
-                    machine = self.get_machine_by_id(shop_id)
-                    if machine is not None:
-                        machine_name = machine.name
+                shop_id = ID.parse_machine_id(request.attribute('location_id'))
+                machine = self.get_machine_by_id(shop_id)
+                if machine is not None:
+                    machine_name = machine.name
                 data.set_attribute('opname', machine_name)
                 data.set_attribute('rnum', str(record_num))
                 data.set_attribute('score', str(score[1].points))
@@ -1290,13 +1289,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         root = self.get_profile_by_refid(refid)
         if root is None:
             root = Node.void('IIDX25pc')
-        # Shop register seems to be gone so let's just register a shop if one isn't already
-        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        profile = self.get_profile(userid)
-        if 'shop_location' not in profile:
-            location = ID.parse_machine_id(request.attribute('lid'))
-            profile.replace_int('shop_location', location)
-            self.put_profile(userid, profile)
         return root
 
     def handle_IIDX25pc_save_request(self, request: Node) -> Node:
@@ -1668,15 +1660,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
 
             rival.add_child(Node.bool('is_robo', False))
 
-            # If the user joined a particular shop, let the game know.
-            if 'shop_location' in other_profile:
-                shop_id = other_profile.get_int('shop_location')
-                machine = self.get_machine_by_id(shop_id)
-                if machine is not None:
-                    shop = Node.void('shop')
-                    rival.add_child(shop)
-                    shop.set_attribute('name', machine.name)
-
             qprodata = Node.void('qprodata')
             rival.add_child(qprodata)
             qpro = other_profile.get_dict('qpro')
@@ -1800,18 +1783,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             onemore_data.set_attribute(f'challenge_num_{i}_n', str(omes_dict.get_int(f'challenge_num_{i}_n')))
             onemore_data.set_attribute(f'challenge_num_{i}_h', str(omes_dict.get_int(f'challenge_num_{i}_h')))
             onemore_data.set_attribute(f'challenge_num_{i}_a', str(omes_dict.get_int(f'challenge_num_{i}_a')))
-
-        # If the user joined a particular shop, let the game know.
-        if 'shop_location' in profile:
-            shop_id = profile.get_int('shop_location')
-            machine = self.get_machine_by_id(shop_id)
-            if machine is not None:
-                join_shop = Node.void('join_shop')
-                root.add_child(join_shop)
-                join_shop.set_attribute('joinflg', '1')
-                join_shop.set_attribute('join_cflg', '1')
-                join_shop.set_attribute('join_id', ID.format_machine_id(machine.id))
-                join_shop.set_attribute('join_name', machine.name)
 
         # Step up mode
         step_dict = profile.get_dict('step')
