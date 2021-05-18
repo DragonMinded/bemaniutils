@@ -168,7 +168,7 @@ class IIDXFrontend(FrontendBase):
             result[version] = qpro['qpros']
         return result
 
-    def __format_iidx_extras(self, version) -> Dict[str, List[Dict[str, Any]]]:
+    def __format_iidx_extras(self, version: int) -> Dict[str, List[Dict[str, Any]]]:
         # Gotta look up the unlock catalog
         items = self.data.local.game.get_items(self.game, version)
 

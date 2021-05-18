@@ -4,7 +4,7 @@ import random
 import struct
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
-from discord_webhook import DiscordWebhook, DiscordEmbed
+from discord_webhook import DiscordWebhook, DiscordEmbed  # type: ignore
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.course import IIDXCourse
@@ -1008,7 +1008,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         root.add_child(event1_phase)
         event1_phase.set_attribute('phase', str(event1))
 
-        extra_boss_event = Node.void('extra_boss_event') # Always enable IIDX AIR RACE 5
+        extra_boss_event = Node.void('extra_boss_event')  # Always enable IIDX AIR RACE 5
         root.add_child(extra_boss_event)
         extra_boss_event.set_attribute('phase', '4')
 
@@ -1395,7 +1395,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, 'NO PLAY')
         now_clear_string = clear_map.get(now_clear, 'NO PLAY')
         # let's get the song info first
-        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
 
         # now we will build up the embed
         now = datetime.now()
@@ -1432,7 +1432,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         webhook.add_embed(scoreembed)
 
         # now we send the webhook!
-        response = webhook.execute()
+        webhook.execute()
 
         end = Node.void('IIDX25pc')
 
@@ -1770,7 +1770,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         event1.set_attribute('engine_equip_parts', str(event1_dict.get_int('engine_equip_parts')))
         event1.set_attribute('tire_equip_parts', str(event1_dict.get_int('tire_equip_parts')))
         event1.set_attribute('gift_point', str(event1_dict.get_int('play_gift')))
-        
+
         for map_data in achievements:
             if map_data.type != 'map_data':
                 continue
@@ -1800,7 +1800,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             onemore_data.set_attribute(f'challenge_num_{i}_n', str(omes_dict.get_int(f'challenge_num_{i}_n')))
             onemore_data.set_attribute(f'challenge_num_{i}_h', str(omes_dict.get_int(f'challenge_num_{i}_h')))
             onemore_data.set_attribute(f'challenge_num_{i}_a', str(omes_dict.get_int(f'challenge_num_{i}_a')))
-
 
         # If the user joined a particular shop, let the game know.
         if 'shop_location' in profile:

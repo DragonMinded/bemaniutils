@@ -25,6 +25,10 @@ server:
     # Whether PCBIDs must be added to the network before games will work.
     enforce_pcbid: False
 
+# Discord webhook urls
+webhooks:
+    iidx: "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
+
 paseli:
     # Whether PASELI is enabled on the network.
     enabled: True
