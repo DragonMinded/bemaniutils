@@ -1659,12 +1659,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             area_data.set_attribute('hyper_grade_point', str(area.data.get_int('hyper_grade_point')))
             area_data.set_attribute('another_grade_point', str(area.data.get_int('another_grade_point')))
 
-        # arena_data = Node.void('arena_data')
-        # root.add_child(arena_data)
-        # arena_data.set_attribute('play_num', '0')
-        # arena_data.set_attribute('play_num_dp', '0')
-        # arena_data.set_attribute('play_num_sp', '0')
-
         tonyutsu = Node.void('tonyutsu')
         tonyutsu_dict = profile.get_dict('tonyutsu')
         tonyutsu.set_attribute('platinum_pass', str(tonyutsu_dict.get_int('platiunum_pass')))

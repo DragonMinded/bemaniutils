@@ -1801,15 +1801,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             onemore_data.set_attribute(f'challenge_num_{i}_h', str(omes_dict.get_int(f'challenge_num_{i}_h')))
             onemore_data.set_attribute(f'challenge_num_{i}_a', str(omes_dict.get_int(f'challenge_num_{i}_a')))
 
-        # arena_data = Node.void('arena_data')
-        # root.add_child(arena_data)
-        # arena_data.set_attribute('play_num', '0')
-        # arena_data.set_attribute('play_num_dp', '0')
-        # arena_data.set_attribute('play_num_sp', '0')
-        # cube_data = Node.void('cube_data')
-        # arena_data.add_child(cube_data)
-        # cube_data.set_attribute('cube', '0')
-        # cube_data.set_attribute('season_id', '0')
 
         # If the user joined a particular shop, let the game know.
         if 'shop_location' in profile:
@@ -2107,7 +2098,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             rankid = int(dj_rank.attribute('style'))
             rank = dj_rank.child_value('rank')
             point = dj_rank.child_value('point')
-            input('jiofea')
             self.data.local.user.put_achievement(
                 self.game,
                 self.version,
