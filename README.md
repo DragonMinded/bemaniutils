@@ -720,3 +720,23 @@ existing migrations do just that, so have a look at them under
 
 Once the script finishes, check out the created migration script to be sure its correct
 and then check it in.
+
+# Development Tips
+
+Several core components of this repo have a parallel C++ implementation for massive
+speed boosts. Several components are also cythonized to squeeze a bit more speed out of
+them as well. This project aims to provide a pure-python implementation of everything so
+it is not necessary to run with cythonized or compiled code either in development or
+production. However, if you want to benefit from the massive speed bumps provided by
+the equivalent implementations you can compile the code in-place for your development
+setup. The following will compile all needed libraries assuming you have a working
+C++ compiler and cython is set up to run on your computer:
+
+```
+python3 setup.py build_ext --inplace
+```
+
+If you are modifying files that have an equivalent C++ implementation and it changes
+their semantics, make sure to test both paths! If you are modifying code that is
+cythonized and you've compiled, make sure to re-run the above command or delete the
+compiled `.so` files, otherwise your changes will not show up when you test.
