@@ -5,6 +5,7 @@ __pycache__
 *.pyo
 .mypy_cache/
 *.c
+*.cpp
 *.o
 *.so
 build/

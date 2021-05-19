@@ -90,8 +90,11 @@ setup(
             Extension(
                 "bemani.protocol.lz77alt",
                 [
-                    "bemani/protocol/lz77.cpp",
-                ]
+                    "bemani/protocol/lz77.cxx",
+                ],
+                language="c++",
+                extra_compile_args=["-std=c++14"],
+                extra_link_args=["-std=c++14"],
             ),
             Extension(
                 "bemani.protocol.node",
@@ -127,8 +130,11 @@ setup(
                 "bemani.format.afp.blendalt",
                 [
                     "bemani/format/afp/blendalt.pyx",
-                    "bemani/format/afp/blendaltimpl.cpp",
-                ]
+                    "bemani/format/afp/blendaltimpl.cxx",
+                ],
+                language="c++",
+                extra_compile_args=["-std=c++14"],
+                extra_link_args=["-std=c++14"],
             ),
             Extension(
                 "bemani.format.afp.types.generic",
