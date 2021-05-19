@@ -374,16 +374,6 @@ class AFPRenderer(VerboseOutput):
         # Compute the affine transformation matrix for this object.
         transform = parent_transform.multiply(renderable.transform)
 
-        # Calculate the inverse so we can map canvas space back to texture space.
-        try:
-            inverse = transform.inverse()
-        except ZeroDivisionError:
-            # If this happens, that means one of the scaling factors was zero, making
-            # this object invisible. We can ignore this since the object should not
-            # be drawn.
-            print(f"WARNING: Transform Matrix {transform} has zero scaling factor, making it non-invertible!")
-            return img
-
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
             # This is a sprite placement reference.
@@ -458,7 +448,7 @@ class AFPRenderer(VerboseOutput):
                         img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
                     else:
                         # We can't, so do the slow render that's correct.
-                        img = affine_composite(img, add_color, mult_color, transform, inverse, origin, blend, texture, single_threaded=self.__single_threaded)
+                        img = affine_composite(img, add_color, mult_color, transform, origin, blend, texture, single_threaded=self.__single_threaded)
         else:
             raise Exception(f"Unknown placed object type to render {renderable}!")
 

@@ -124,6 +124,13 @@ setup(
                 ]
             ),
             Extension(
+                "bemani.format.afp.blendalt",
+                [
+                    "bemani/format/afp/blendalt.pyx",
+                    "bemani/format/afp/blendaltimpl.cpp",
+                ]
+            ),
+            Extension(
                 "bemani.format.afp.types.generic",
                 [
                     "bemani/format/afp/types/generic.py",
