@@ -22,7 +22,10 @@ def blend_normal(
 ) -> Sequence[int]:
     # "Normal" blend mode, which is just alpha blending. Various games use the DX
     # equation Src * As + Dst * (1 - As). We premultiply Dst by Ad as well, since
-    # we are blitting onto a destination that could have transparency.
+    # we are blitting onto a destination that could have transparency. Once we are
+    # done, we divide out the premultiplied Ad in order to put the pixes back to
+    # their full blended values since we are not setting the destination alpha to 1.0.
+    # This enables partial transparent backgrounds to work properly.
 
     # Calculate multiplicative and additive colors against the source.
     src = (
@@ -77,13 +80,13 @@ def blend_addition(
     if src[3] == 0:
         return dest
 
-    # Calculate alpha blending.
+    # Calculate final color blending.
     srcpercent = src[3] / 255.0
     return (
         clamp(dest[0] + (src[0] * srcpercent)),
         clamp(dest[1] + (src[1] * srcpercent)),
         clamp(dest[2] + (src[2] * srcpercent)),
-        clamp(dest[3] + (255 * srcpercent)),
+        dest[3],
     )
 
 
@@ -113,13 +116,13 @@ def blend_subtraction(
     if src[3] == 0:
         return dest
 
-    # Calculate alpha blending.
+    # Calculate final color blending.
     srcpercent = src[3] / 255.0
     return (
         clamp(dest[0] - (src[0] * srcpercent)),
         clamp(dest[1] - (src[1] * srcpercent)),
         clamp(dest[2] - (src[2] * srcpercent)),
-        clamp(dest[3] - (255 * srcpercent)),
+        dest[3],
     )
 
 
@@ -146,16 +149,12 @@ def blend_multiply(
         clamp((src[3] * mult_color.a) + add_color[3]),
     )
 
-    # Short circuit for speed.
-    if src[3] == 0:
-        return dest
-
-    # Calculate alpha blending.
+    # Calculate final color blending.
     return (
         clamp(255 * ((dest[0] / 255.0) * (src[0] / 255.0))),
         clamp(255 * ((dest[1] / 255.0) * (src[1] / 255.0))),
         clamp(255 * ((dest[2] / 255.0) * (src[2] / 255.0))),
-        clamp(255 * ((dest[3] / 255.0) * (src[3] / 255.0))),
+        dest[3],
     )
 
 
