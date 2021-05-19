@@ -2,11 +2,12 @@ import copy
 import json
 import traceback
 from typing import Any, Callable, Dict
-from flask import Flask, abort, request, Response, g  # type: ignore
+from flask import Flask, abort, request, Response  # type: ignore
 from functools import wraps
 
 from bemani.api.exceptions import APIException
 from bemani.api.objects import RecordsObject, ProfileObject, StatisticsObject, CatalogObject
+from bemani.api.types import g
 from bemani.common import GameConstants, APIConstants, VersionConstants
 from bemani.data import Data
 

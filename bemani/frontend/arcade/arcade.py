@@ -1,12 +1,14 @@
 from typing import Any, Dict, List
-from flask import Blueprint, request, Response, abort, url_for, g  # type: ignore
+from flask import Blueprint, request, Response, abort, url_for
 
 from bemani.backend.base import Base
 from bemani.common import CardCipher, CardCipherException, ValidatedDict, GameConstants
-from bemani.data import Arcade, Event, Machine
+from bemani.data import Arcade, ArcadeID, Event, Machine
 from bemani.frontend.app import loginrequired, jsonify, render_react, valid_pin
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
+from bemani.frontend.types import g
+
 
 arcade_pages = Blueprint(
     'arcade_pages',
@@ -132,6 +134,9 @@ def get_game_settings(arcade: Arcade) -> List[Dict[str, Any]]:
 @arcade_pages.route('/<int:arcadeid>')
 @loginrequired
 def viewarcade(arcadeid: int) -> Response:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
     arcade = g.data.local.machine.get_arcade(arcadeid)
     if g.userID not in arcade.owners:
         abort(403)
@@ -168,6 +173,9 @@ def viewarcade(arcadeid: int) -> Response:
 @jsonify
 @loginrequired
 def listarcade(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
     # Make sure the arcade is valid
     arcade = g.data.local.machine.get_arcade(arcadeid)
     if arcade is None:
@@ -190,6 +198,8 @@ def listarcade(arcadeid: int) -> Dict[str, Any]:
 @jsonify
 @loginrequired
 def addbalance(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
     credits = request.get_json()['credits']
     card = request.get_json()['card']
 
@@ -234,6 +244,8 @@ def addbalance(arcadeid: int) -> Dict[str, Any]:
 @jsonify
 @loginrequired
 def updatebalance(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
     credits = request.get_json()['credits']
 
     # Make sure the arcade is valid
@@ -269,6 +281,9 @@ def updatebalance(arcadeid: int) -> Dict[str, Any]:
 @jsonify
 @loginrequired
 def updatepin(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
     pin = request.get_json()['pin']
 
     # Make sure the arcade is valid
@@ -293,6 +308,9 @@ def updatepin(arcadeid: int) -> Dict[str, Any]:
 @jsonify
 @loginrequired
 def updatearcade(arcadeid: int, attribute: str) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
     # Attempt to look this arcade up
     new_value = request.get_json()['value']
     arcade = g.data.local.machine.get_arcade(arcadeid)
@@ -322,6 +340,9 @@ def updatearcade(arcadeid: int, attribute: str) -> Dict[str, Any]:
 @jsonify
 @loginrequired
 def updatesettings(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
     # Attempt to look this arcade up
     arcade = g.data.local.machine.get_arcade(arcadeid)
 

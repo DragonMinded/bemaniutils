@@ -1,10 +1,12 @@
 from typing import Dict, Any
-from flask import Blueprint, request, redirect, Response, url_for, make_response, render_template, g  # type: ignore
+from flask import Blueprint, request, redirect, Response, url_for, make_response, render_template
 
 from bemani.common import CardCipher, CardCipherException, AESCipher, Time
 from bemani.frontend.app import loginrequired, loginprohibited, success, error, jsonify, valid_email, valid_username, valid_pin, render_react
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
+from bemani.frontend.types import g
+
 
 account_pages = Blueprint(
     'account_pages',

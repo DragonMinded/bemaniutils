@@ -1,10 +1,12 @@
-from flask import Blueprint, Response, g  # type: ignore
+from flask import Blueprint, Response
 from typing import Dict, Any
 
 from bemani.data import News
 from bemani.frontend.app import loginrequired, render_react
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
+from bemani.frontend.types import g
+
 
 home_pages = Blueprint(
     'home_pages',

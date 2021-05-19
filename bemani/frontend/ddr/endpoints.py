@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
 import re
 from typing import Any, Dict, List, Optional
-from flask import Blueprint, request, Response, url_for, abort, g  # type: ignore
+from flask import Blueprint, request, Response, url_for, abort
 
 from bemani.common import ID, GameConstants
 from bemani.data import Link, UserID
@@ -9,6 +9,8 @@ from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.ddr.ddr import DDRFrontend
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
+from bemani.frontend.types import g
+
 
 ddr_pages = Blueprint(
     'ddr_pages',

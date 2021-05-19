@@ -288,7 +288,7 @@ class MachineData(BaseData):
         sql = "DELETE FROM `machine` WHERE pcbid = :pcbid LIMIT 1"
         self.execute(sql, {'pcbid': pcbid})
 
-    def create_arcade(self, name: str, description: str, data: Dict[str, Any], owners: List[int]) -> Arcade:
+    def create_arcade(self, name: str, description: str, data: Dict[str, Any], owners: List[UserID]) -> Arcade:
         """
         Given a set of values, create a new arcade and return the ID of that arcade.
 

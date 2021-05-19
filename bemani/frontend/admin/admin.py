@@ -1,10 +1,10 @@
 import random
 from typing import Dict, Tuple, Any, Optional
-from flask import Blueprint, request, Response, render_template, url_for, g  # type: ignore
+from flask import Blueprint, request, Response, render_template, url_for
 
 from bemani.backend.base import Base
 from bemani.common import CardCipher, CardCipherException, GameConstants
-from bemani.data import Arcade, Machine, User, News, Event, Server, Client
+from bemani.data import Arcade, Machine, User, UserID, News, Event, Server, Client
 from bemani.data.api.client import APIClient, NotAuthorizedAPIException, APIException
 from bemani.frontend.app import adminrequired, jsonify, valid_email, valid_username, valid_pin, render_react
 from bemani.frontend.iidx.iidx import IIDXFrontend
@@ -12,6 +12,7 @@ from bemani.frontend.jubeat.jubeat import JubeatFrontend
 from bemani.frontend.popn.popn import PopnMusicFrontend
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
+from bemani.frontend.types import g
 
 admin_pages = Blueprint(
     'admin_pages',
@@ -52,7 +53,7 @@ def format_machine(machine: Machine) -> Dict[str, Any]:
     }
 
 
-def format_card(card: Tuple[str, Optional[int]]) -> Dict[str, Any]:
+def format_card(card: Tuple[str, Optional[UserID]]) -> Dict[str, Any]:
     owner = None
     if card[1] is not None:
         user = g.data.local.user.get_user(card[1])
@@ -316,6 +317,8 @@ def viewnews() -> Response:
 @admin_pages.route('/users/<int:userid>')
 @adminrequired
 def viewuser(userid: int) -> Response:
+    # Cast the userID.
+    userid = UserID(userid)
     user = g.data.local.user.get_user(userid)
 
     def __format_card(card: str) -> str:
@@ -356,6 +359,8 @@ def viewuser(userid: int) -> Response:
 @jsonify
 @adminrequired
 def listuser(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
 
     def __format_card(card: str) -> str:
         try:
@@ -788,9 +793,9 @@ def searchusers() -> Dict[str, Any]:
             actual_userid = g.data.local.user.from_cardid(cardid)
             if actual_userid is None:
                 # Force a non-match below
-                actual_userid = -1
+                actual_userid = UserID(-1)
         except CardCipherException:
-            actual_userid = -1
+            actual_userid = UserID(-1)
     else:
         actual_userid = None
 
@@ -809,6 +814,9 @@ def searchusers() -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def updatebalance(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     credits = request.get_json()['credits']
     user = g.data.local.user.get_user(userid)
     arcades = g.data.local.machine.get_all_arcades()
@@ -843,6 +851,9 @@ def updatebalance(userid: int) -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def updateusername(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     username = request.get_json()['username']
     user = g.data.local.user.get_user(userid)
     # Make sure the user ID is valid
@@ -870,6 +881,9 @@ def updateusername(userid: int) -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def updateemail(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     email = request.get_json()['email']
     user = g.data.local.user.get_user(userid)
     # Make sure the user ID is valid
@@ -892,6 +906,9 @@ def updateemail(userid: int) -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def updatepin(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     pin = request.get_json()['pin']
     user = g.data.local.user.get_user(userid)
     # Make sure the user ID is valid
@@ -911,6 +928,9 @@ def updatepin(userid: int) -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def updatepassword(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     new1 = request.get_json()['new1']
     new2 = request.get_json()['new2']
     user = g.data.local.user.get_user(userid)
@@ -936,6 +956,9 @@ def updatepassword(userid: int) -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def removeusercard(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     # Grab card, convert it
     card = request.get_json()['card']
     try:
@@ -960,6 +983,9 @@ def removeusercard(userid: int) -> Dict[str, Any]:
 @jsonify
 @adminrequired
 def addusercard(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
     # Grab card, convert it
     card = request.get_json()['card']
     try:

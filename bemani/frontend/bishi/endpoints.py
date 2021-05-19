@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
 import re
 from typing import Any, Dict
-from flask import Blueprint, request, Response, url_for, abort, g  # type: ignore
+from flask import Blueprint, request, Response, url_for, abort
 
 from bemani.common import GameConstants
 from bemani.data import UserID
@@ -9,6 +9,7 @@ from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.bishi.bishi import BishiBashiFrontend
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
+from bemani.frontend.types import g
 
 
 bishi_pages = Blueprint(
