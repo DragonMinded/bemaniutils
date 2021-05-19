@@ -102,7 +102,7 @@ extern "C"
     int compress(uint8_t *indata, unsigned int inlen, uint8_t *outdata, unsigned int outlen)
     {
         uint32_t key = 0;
-        std::unordered_map<uint32_t, std::list<unsigned int>> starts;
+        std::unordered_map<uint32_t, std::list<unsigned int> > starts;
         bool eof = false;
         unsigned int outloc = 0;
         unsigned int inloc = 0;
