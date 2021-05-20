@@ -1,5 +1,9 @@
 #include <stdio.h>
 #include <math.h>
+#include <pthread.h>
+#include <list>
+
+#define MIN_THREAD_WORK 10
 
 extern "C"
 {
@@ -44,6 +48,24 @@ extern "C"
             };
         }
     } matrix_t;
+
+    typedef struct work {
+        intcolor_t *imgdata;
+        unsigned int imgwidth;
+        unsigned int minx;
+        unsigned int maxx;
+        unsigned int miny;
+        unsigned int maxy;
+        intcolor_t *texdata;
+        unsigned int texwidth;
+        unsigned int texheight;
+        matrix_t inverse;
+        point_t origin;
+        intcolor_t add_color;
+        floatcolor_t mult_color;
+        int blendfunc;
+        pthread_t *thread;
+    } work_t;
 
     inline unsigned char clamp(float color) {
         return fmin(fmax(0.0, roundf(color)), 255.0);
@@ -184,6 +206,35 @@ extern "C"
         return blend_normal(dest_color, src_color);
     }
 
+    void chunk_composite_fast(work_t *work) {
+        for (unsigned int imgy = work->miny; imgy < work->maxy; imgy++) {
+            for (unsigned int imgx = work->minx; imgx < work->maxx; imgx++) {
+                // Determine offset.
+                unsigned int imgoff = imgx + (imgy * work->imgwidth);
+
+                // Calculate what texture pixel data goes here.
+                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx, (float)imgy}).add(work->origin);
+                int texx = roundf(texloc.x);
+                int texy = roundf(texloc.y);
+
+                // If we're out of bounds, don't update.
+                if (texx < 0 or texy < 0 or texx >= (int)work->texwidth or texy >= (int)work->texheight) {
+                    continue;
+                }
+
+                // Blend it.
+                unsigned int texoff = texx + (texy * work->texwidth);
+                work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->texdata[texoff], work->imgdata[imgoff], work->blendfunc);
+            }
+        }
+    }
+
+    void *chunk_composite_worker(void *arg) {
+        work_t *work = (work_t *)arg;
+        chunk_composite_fast(work);
+        return NULL;
+    }
+
     int affine_composite_fast(
         unsigned char *imgbytes,
         unsigned int imgwidth,
@@ -200,31 +251,115 @@ extern "C"
         unsigned char *texbytes,
         unsigned int texwidth,
         unsigned int texheight,
-        int single_threaded
+        unsigned int threads
     ) {
         // Cast to a usable type.
         intcolor_t *imgdata = (intcolor_t *)imgbytes;
         intcolor_t *texdata = (intcolor_t *)texbytes;
 
-        for (unsigned int imgy = miny; imgy < maxy; imgy++) {
-            for (unsigned int imgx = minx; imgx < maxx; imgx++) {
-                // Determine offset.
-                unsigned int imgoff = imgx + (imgy * imgwidth);
+        if (threads == 1 || (maxy - miny) < (MIN_THREAD_WORK * 2)) {
+            // Just create a local work structure so we can call the common function.
+            work_t work;
+            work.imgdata = imgdata;
+            work.imgwidth = imgwidth;
+            work.minx = minx;
+            work.maxx = maxx;
+            work.miny = miny;
+            work.maxy = maxy;
+            work.texdata = texdata;
+            work.texwidth = texwidth;
+            work.texheight = texheight;
+            work.inverse = inverse;
+            work.origin = origin;
+            work.add_color = add_color;
+            work.mult_color = mult_color;
+            work.blendfunc = blendfunc;
 
-                // Calculate what texture pixel data goes here.
-                point_t texloc = inverse.multiply_point((point_t){(float)imgx, (float)imgy}).add(origin);
-                int texx = roundf(texloc.x);
-                int texy = roundf(texloc.y);
+            chunk_composite_fast(&work);
+        } else {
+            std::list<work_t *> workers;
+            work_t *mywork = NULL;
+            unsigned int imgy = miny;
+            unsigned int step = (maxy - miny) / threads;
+            if (step < MIN_THREAD_WORK) {
+                step = MIN_THREAD_WORK;
+            }
 
-                // If we're out of bounds, don't update.
-                if (texx < 0 or texy < 0 or texx >= (int)texwidth or texy >= (int)texheight) {
-                    continue;
+            for (unsigned int worker = 0; worker < threads; worker++) {
+                // We are slightly different if this is the last worker, because
+                // its going to this thread. Make sure it consumes the rest of the
+                // work, as well as not getting a pthread. Make sure each thread
+                // has a minimum amount of work so we don't waste pthread overhead
+                // starting and stopping it. Because of this, make sure that the
+                // last chunk we create is always our own.
+                unsigned int me = 0;
+                if (worker == (threads - 1) || (imgy + step) >= maxy) {
+                    me = 1;
                 }
 
-                // Blend it.
-                unsigned int texoff = texx + (texy * texwidth);
-                imgdata[imgoff] = blend_point(add_color, mult_color, texdata[texoff], imgdata[imgoff], blendfunc);
+                // Create storage for this worker.
+                pthread_t *thread = me ? NULL : (pthread_t *)malloc(sizeof(pthread_t));
+                work_t *work = (work_t *)malloc(sizeof(work_t));
+
+                // Pass to it all of the params it needs.
+                work->imgdata = imgdata;
+                work->imgwidth = imgwidth;
+                work->minx = minx;
+                work->maxx = maxx;
+                work->miny = imgy;
+                work->maxy = me ? maxy : imgy + step;
+                work->texdata = texdata;
+                work->texwidth = texwidth;
+                work->texheight = texheight;
+                work->inverse = inverse;
+                work->origin = origin;
+                work->add_color = add_color;
+                work->mult_color = mult_color;
+                work->blendfunc = blendfunc;
+                work->thread = thread;
+
+                if (me)
+                {
+                    // This is the row for this thread.
+                    mywork = work;
+
+                    // Always exit here, we might not have actually scheduled
+                    // the maximum permitted threads.
+                    break;
+                }
+                else
+                {
+                    // Kick off the thread.
+                    pthread_create(thread, NULL, chunk_composite_worker, work);
+
+                    // Save the row so we can access it for scheduling.
+                    workers.push_back(work);
+
+                    // The next chunk of work is the next step.
+                    imgy += step;
+                }
             }
+
+            // Now, run my own work.
+            chunk_composite_fast(mywork);
+
+            // Join on all threads once they're finished.
+            std::list<work_t *>::iterator work = workers.begin();
+
+            while(work != workers.end()) {
+                // Join the thread.
+                pthread_join(*((*work)->thread), NULL);
+
+                // Free the memory we allocated.
+                free((*work)->thread);
+                free((*work));
+
+                // Remove it from our bookkeeping.
+                work = workers.erase(work);
+            }
+
+            // Free the memory we allocated.
+            free(mywork);
         }
 
         return 0;

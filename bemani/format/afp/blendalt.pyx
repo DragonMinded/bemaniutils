@@ -1,3 +1,4 @@
+import multiprocessing
 from PIL import Image  # type: ignore
 from typing import Tuple
 
@@ -43,7 +44,7 @@ cdef extern int affine_composite_fast(
     unsigned char *texdata,
     unsigned int texwidth,
     unsigned int texheight,
-    int single_threaded
+    unsigned int threads
 )
 
 def affine_composite(
@@ -89,7 +90,7 @@ def affine_composite(
     miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
     maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, imgheight)
 
-    if maxx <= 0 or maxy <= 0:
+    if maxx <= minx or maxy <= miny:
         # This image is entirely off the screen!
         return img
 
@@ -102,6 +103,7 @@ def affine_composite(
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
     cdef matrix_t c_inverse = matrix_t(a=inverse.a, b=inverse.b, c=inverse.c, d=inverse.d, tx=inverse.tx, ty=inverse.ty)
     cdef point_t c_origin = point_t(x=origin.x, y=origin.y)
+    cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()
 
     # Call the C++ function.
     errors = affine_composite_fast(
@@ -120,7 +122,7 @@ def affine_composite(
         texbytes,
         texwidth,
         texheight,
-        single_threaded,
+        threads,
     )
     if errors != 0:
         raise Exception("Error raised in C++!")

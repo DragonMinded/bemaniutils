@@ -153,7 +153,7 @@ except ImportError:
         miny = max(int(min(pix1.y, pix2.y, pix3.y, pix4.y)), 0)
         maxy = min(int(max(pix1.y, pix2.y, pix3.y, pix4.y)) + 1, imgheight)
 
-        if maxx <= 0 or maxy <= 0:
+        if maxx <= minx or maxy <= miny:
             # This image is entirely off the screen!
             return img
 
