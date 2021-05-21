@@ -35,6 +35,15 @@ class RegisteredShape:
         return f"RegisteredShape(tag_id={self.tag_id}, vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
 
 
+class RegisteredDummy:
+    # An imported tag that we could not find.
+    def __init__(self, tag_id: int) -> None:
+        self.tag_id = tag_id
+
+    def __repr__(self) -> str:
+        return f"RegisteredDummy(tag_id={self.tag_id})"
+
+
 class PlacedObject:
     # An object that occupies the screen at some depth.
     def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int) -> None:
@@ -47,7 +56,7 @@ class PlacedObject:
         self.blend = blend
 
     @property
-    def source(self) -> Union[RegisteredClip, RegisteredShape]:
+    def source(self) -> Union[RegisteredClip, RegisteredShape, RegisteredDummy]:
         raise NotImplementedError("Only implemented in subclass!")
 
     @property
@@ -102,6 +111,17 @@ class PlacedClip(PlacedObject):
         return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, finished={self.finished})"
 
 
+class PlacedDummy(PlacedObject):
+    # A reference to an object we can't find because we're missing the import.
+    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, source: RegisteredDummy) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend)
+        self.__source = source
+
+    @property
+    def source(self) -> RegisteredDummy:
+        return self.__source
+
+
 class AFPRenderer(VerboseOutput):
     def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False) -> None:
         super().__init__()
@@ -109,14 +129,13 @@ class AFPRenderer(VerboseOutput):
         # Options for rendering
         self.__single_threaded = single_threaded
 
+        # Library of shapes (draw instructions), textures (actual images) and swfs (us and other files for imports).
         self.shapes: Dict[str, Shape] = shapes
         self.textures: Dict[str, Image.Image] = textures
-
-        # TODO: We have to resolve imports.
         self.swfs: Dict[str, SWF] = swfs
 
         # Internal render parameters.
-        self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip]] = {}
+        self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
 
     def add_shape(self, name: str, data: Shape) -> None:
         # Register a named shape with the renderer.
@@ -234,6 +253,20 @@ class AFPRenderer(VerboseOutput):
 
                                 # Placed a new clip, changed the parent.
                                 return new_clip, True
+                            elif isinstance(newobj, RegisteredDummy):
+                                operating_clip.placed_objects[i] = PlacedDummy(
+                                    obj.object_id,
+                                    obj.depth,
+                                    new_rotation_offset,
+                                    new_transform,
+                                    new_mult_color,
+                                    new_add_color,
+                                    new_blend,
+                                    newobj,
+                                )
+
+                                # Didn't place a new clip, changed the parent clip.
+                                return None, True
                             else:
                                 raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
                         else:
@@ -291,6 +324,22 @@ class AFPRenderer(VerboseOutput):
 
                         # Placed a new clip, changed the parent.
                         return placed_clip, True
+                    elif isinstance(newobj, RegisteredDummy):
+                        operating_clip.placed_objects.append(
+                            PlacedDummy(
+                                tag.object_id,
+                                tag.depth,
+                                tag.rotation_offset or Point.identity(),
+                                tag.transform or Matrix.identity(),
+                                tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
+                                tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.blend or 0,
+                                newobj,
+                            )
+                        )
+
+                        # Didn't place a new clip, changed the parent clip.
+                        return None, True
                     else:
                         raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
 
@@ -416,10 +465,7 @@ class AFPRenderer(VerboseOutput):
                     texture = self.textures[params.region]
 
                 if texture is not None:
-                    # If the origin is not specified, assume it is the center of the texture.
-                    # TODO: Setting the rotation offset to Point(texture.width / 2, texture.height / 2)
-                    # when we don't have a rotation offset works for Bishi but breaks other games.
-                    # Perhaps there's a tag flag for this?
+                    # If the origin is not specified, assume it is the top left corner.
                     origin = parent_origin.add(renderable.rotation_offset)
 
                     # See if we can cheat and use the faster blitting method.
@@ -449,6 +495,9 @@ class AFPRenderer(VerboseOutput):
                     else:
                         # We can't, so do the slow render that's correct.
                         img = affine_composite(img, add_color, mult_color, transform, origin, blend, texture, single_threaded=self.__single_threaded)
+        elif isinstance(renderable, PlacedDummy):
+            # Nothing to do!
+            pass
         else:
             raise Exception(f"Unknown placed object type to render {renderable}!")
 
@@ -490,7 +539,93 @@ class AFPRenderer(VerboseOutput):
         # Return if anything was modified.
         return changed
 
+    def __handle_imports(self, swf: SWF) -> Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]]:
+        external_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
+
+        # Go through, recursively resolve imports for all SWF files.
+        for tag_id, imp in swf.imported_tags.items():
+            for name, other in self.swfs.items():
+                if other.exported_name == imp.swf:
+                    # This SWF should have the tag reference.
+                    if imp.tag not in other.exported_tags:
+                        print(f"WARNING: {swf.exported_name} imports {imp} but that import is not in {other.exported_name}!")
+                        external_objects[tag_id] = RegisteredDummy(tag_id)
+                        break
+                    else:
+                        external_objects[tag_id] = self.__find_import(other, other.exported_tags[imp.tag])
+                        break
+            else:
+                print(f"WARNING: {swf.exported_name} imports {imp} but that SWF is not in our library!")
+                external_objects[tag_id] = RegisteredDummy(tag_id)
+
+        # Fix up tag IDs to point at our local definition of them.
+        for tid in external_objects:
+            external_objects[tid].tag_id = tid
+
+        # Return our newly populated registered object table containing all imports!
+        return external_objects
+
+    def __find_import(self, swf: SWF, tag_id: int) -> Union[RegisteredShape, RegisteredClip, RegisteredDummy]:
+        if tag_id in swf.imported_tags:
+            external_objects = self.__handle_imports(swf)
+            if tag_id not in external_objects:
+                raise Exception(f"Logic error, tag ID {tag_id} is an export for {swf.exported_name} but we didn't populate it!")
+            return external_objects[tag_id]
+
+        # We need to do a basic placement to find the registered object so we can return it.
+        root_clip = RegisteredClip(
+            None,
+            swf.frames,
+            swf.tags,
+        )
+
+        tag = self.__find_tag(root_clip, tag_id)
+        if tag is None:
+            print(f"WARNING: {swf.exported_name} exports {swf.imported_tags[tag_id]} but does not manifest an object!")
+            return RegisteredDummy(tag_id)
+        return tag
+
+    def __find_tag(self, clip: RegisteredClip, tag_id: int) -> Optional[Union[RegisteredShape, RegisteredClip, RegisteredDummy]]:
+        # Fake-execute this clip to find the tag we need to manifest.
+        for frame in clip.frames:
+            tags = clip.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
+
+            for tagno, tag in enumerate(tags):
+                # Attempt to place any tags.
+                if isinstance(tag, AP2ShapeTag):
+                    if tag.id == tag_id:
+                        # We need to be able to see this shape to place it.
+                        if tag.reference not in self.shapes:
+                            raise Exception(f"Cannot find shape reference {tag.reference}!")
+
+                        # This matched, so this is the import.
+                        return RegisteredShape(
+                            tag.id,
+                            self.shapes[tag.reference].vertex_points,
+                            self.shapes[tag.reference].tex_points,
+                            self.shapes[tag.reference].tex_colors,
+                            self.shapes[tag.reference].draw_params,
+                        )
+
+                elif isinstance(tag, AP2DefineSpriteTag):
+                    new_clip = RegisteredClip(tag.id, tag.frames, tag.tags)
+
+                    if tag.id == tag_id:
+                        # This matched, so it is the clip that we want to export.
+                        return new_clip
+
+                    # Recursively look in this as well.
+                    maybe_tag = self.__find_tag(new_clip, tag_id)
+                    if maybe_tag is not None:
+                        return maybe_tag
+
+        # We didn't find the tag we were after.
+        return None
+
     def __render(self, swf: SWF, only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
+        # First, let's attempt to resolve imports.
+        self.__registered_objects = self.__handle_imports(swf)
+
         # Now, let's go through each frame, performing actions as necessary.
         spf = 1.0 / swf.fps
         frames: List[Image.Image] = []
@@ -512,9 +647,7 @@ class AFPRenderer(VerboseOutput):
             ),
         )
 
-        # Reset any registered objects.
-        self.__registered_objects = {}
-
+        # Now play the frames of the root clip.
         try:
             while not root_clip.finished:
                 # Create a new image to render into.
