@@ -2,6 +2,7 @@
 import argparse
 import io
 import json
+import math
 import os
 import os.path
 import sys
@@ -800,13 +801,18 @@ def main() -> int:
                 filename = args.output[:-4]
                 ext = args.output[-4:]
 
-                for i, img in enumerate(images):
-                    fullname = f"{filename}-{i}{ext}"
+                # Figure out padding for the images.
+                frames = len(images)
+                if frames > 0:
+                    digits = f"0{int(math.log10(frames)) + 1}"
 
-                    with open(fullname, "wb") as bfp:
-                        img.save(bfp, format=fmt)
+                    for i, img in enumerate(images):
+                        fullname = f"{filename}-{i:{digits}}{ext}"
 
-                    print(f"Wrote animation frame to {fullname}")
+                        with open(fullname, "wb") as bfp:
+                            img.save(bfp, format=fmt)
+
+                        print(f"Wrote animation frame to {fullname}")
 
         elif args.action == "list":
             paths = renderer.list_paths(verbose=args.verbose)
