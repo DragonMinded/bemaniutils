@@ -30,6 +30,7 @@ class RegisteredShape:
         self.tex_points: List[Point] = tex_points
         self.tex_colors: List[Color] = tex_colors
         self.draw_params: List[DrawParams] = draw_params
+        self.rectangle: Optional[Image.image] = None
 
     def __repr__(self) -> str:
         return f"RegisteredShape(tag_id={self.tag_id}, vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
@@ -422,6 +423,7 @@ class AFPRenderer(VerboseOutput):
 
         # Compute the affine transformation matrix for this object.
         transform = parent_transform.multiply(renderable.transform)
+        origin = parent_origin.add(renderable.rotation_offset)
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -431,7 +433,7 @@ class AFPRenderer(VerboseOutput):
                 key=lambda obj: obj.depth,
             )
             for obj in objs:
-                img = self.__render_object(img, obj, transform, parent_origin.add(renderable.rotation_offset), only_depths=only_depths, prefix=prefix + " ")
+                img = self.__render_object(img, obj, transform, origin, only_depths=only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             # This is a shape draw reference.
             shape = renderable.source
@@ -450,9 +452,6 @@ class AFPRenderer(VerboseOutput):
                     # Not on the correct depth plane.
                     return img
 
-                if params.flags & 0x8:
-                    # TODO: Need to support blending and UV coordinate colors here.
-                    print(f"WARNING: Unhandled shape blend color {params.blend}")
                 if params.flags & 0x4:
                     # TODO: Need to support blending and UV coordinate colors here.
                     print("WARNING: Unhandled UV coordinate color!")
@@ -464,10 +463,25 @@ class AFPRenderer(VerboseOutput):
                         raise Exception(f"Cannot find texture reference {params.region}!")
                     texture = self.textures[params.region]
 
-                if texture is not None:
-                    # If the origin is not specified, assume it is the top left corner.
-                    origin = parent_origin.add(renderable.rotation_offset)
+                    if params.flags & 0x8:
+                        # TODO: This texture gets further blended somehow? Not sure this is ever used.
+                        print(f"WARNING: Unhandled texture blend color {params.blend}")
+                elif params.flags & 0x8:
+                    if shape.rectangle is None:
+                        # This is a raw rectangle. Its possible that the number of vertex points is
+                        # not 4, or that the four points in the vertex_points aren't the four corners
+                        # of a rectangle, but let's assume that doesn't happen for now.
+                        x_points = set(p.x for p in shape.vertex_points)
+                        y_points = set(p.y for p in shape.vertex_points)
+                        left = min(x_points)
+                        right = max(x_points)
+                        top = min(y_points)
+                        bottom = max(y_points)
 
+                        shape.rectangle = Image.new('RGBA', (int(right - left), int(bottom - top)), (params.blend.as_tuple()))
+                    texture = shape.rectangle
+
+                if texture is not None:
                     # See if we can cheat and use the faster blitting method.
                     if (
                         add_color == (0, 0, 0, 0) and

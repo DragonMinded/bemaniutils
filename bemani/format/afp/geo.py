@@ -152,10 +152,10 @@ class Shape:
                     raise Exception("Unhandled unknown dadta in GE2D structure!")
 
                 color = Color(
-                    r=(rgba & 0xFF) / 255.0,
-                    g=((rgba >> 8) & 0xFF) / 255.0,
-                    b=((rgba >> 16) & 0xFF) / 255.0,
-                    a=((rgba >> 24) & 0xFF) / 255.0,
+                    a=(rgba & 0xFF) / 255.0,
+                    b=((rgba >> 8) & 0xFF) / 255.0,
+                    g=((rgba >> 16) & 0xFF) / 255.0,
+                    r=((rgba >> 24) & 0xFF) / 255.0,
                 )
 
                 verticies: List[int] = []

@@ -1141,7 +1141,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x800:
                 # Multiplicative color present.
                 unhandled_flags &= ~0x800
-                r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
+                r, g, b, a = struct.unpack("<hhhh", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
@@ -1154,7 +1154,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x1000:
                 # Additive color present.
                 unhandled_flags &= ~0x1000
-                r, g, b, a = struct.unpack("<HHHH", datachunk[running_pointer:(running_pointer + 8)])
+                r, g, b, a = struct.unpack("<hhhh", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
