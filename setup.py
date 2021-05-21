@@ -142,6 +142,12 @@ setup(
                     "bemani/format/afp/types/generic.py",
                 ]
             ),
+            Extension(
+                "bemani.format.dxt",
+                [
+                    "bemani/format/dxt.py",
+                ]
+            ),
         ],
         language_level=3,
     ),
