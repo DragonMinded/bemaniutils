@@ -120,6 +120,17 @@ class Matrix:
             y=(self.b * point.x) + (self.d * point.y) + self.ty,
         )
 
+    def translate(self, point: Point) -> "Matrix":
+        new_point = self.multiply_point(point)
+        return Matrix(
+            a=self.a,
+            b=self.b,
+            c=self.c,
+            d=self.d,
+            tx=new_point.x,
+            ty=new_point.y,
+        )
+
     def multiply(self, other: "Matrix") -> "Matrix":
         return Matrix(
             a=self.a * other.a + self.b * other.c,

@@ -434,15 +434,13 @@ class AFPRenderer(VerboseOutput):
         img: Image.Image,
         renderable: PlacedObject,
         parent_transform: Matrix,
-        parent_origin: Point,
         only_depths: Optional[List[int]] = None,
         prefix: str="",
     ) -> Image.Image:
         self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}")
 
         # Compute the affine transformation matrix for this object.
-        transform = parent_transform.multiply(renderable.transform)
-        origin = parent_origin.add(renderable.rotation_offset)
+        transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_offset))
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -452,7 +450,7 @@ class AFPRenderer(VerboseOutput):
                 key=lambda obj: obj.depth,
             )
             for obj in objs:
-                img = self.__render_object(img, obj, transform, origin, only_depths=only_depths, prefix=prefix + " ")
+                img = self.__render_object(img, obj, transform, only_depths=only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             # This is a shape draw reference.
             shape = renderable.source
@@ -515,7 +513,7 @@ class AFPRenderer(VerboseOutput):
                         (blend == 0 or blend == 2)
                     ):
                         # We can!
-                        cutin = transform.multiply_point(Point.identity().subtract(origin))
+                        cutin = transform.multiply_point(Point.identity())
                         cutoff = Point.identity()
                         if cutin.x < 0:
                             cutoff.x = -cutin.x
@@ -527,7 +525,7 @@ class AFPRenderer(VerboseOutput):
                         img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
                     else:
                         # We can't, so do the slow render that's correct.
-                        img = affine_composite(img, add_color, mult_color, transform, origin, blend, texture, single_threaded=self.__single_threaded)
+                        img = affine_composite(img, add_color, mult_color, transform, blend, texture, single_threaded=self.__single_threaded)
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass
@@ -699,7 +697,7 @@ class AFPRenderer(VerboseOutput):
                     # get the layering correct, but its important to preserve the original
                     # insertion order for delete requests.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
-                    curimage = self.__render_object(curimage, root_clip, root_clip.transform, root_clip.rotation_offset, only_depths=only_depths)
+                    curimage = self.__render_object(curimage, root_clip, root_clip.transform, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")

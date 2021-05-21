@@ -114,7 +114,6 @@ except ImportError:
         add_color: Tuple[int, int, int, int],
         mult_color: Color,
         transform: Matrix,
-        origin: Point,
         blendfunc: int,
         texture: Image.Image,
         single_threaded: bool = False,
@@ -126,7 +125,6 @@ except ImportError:
             # If this happens, that means one of the scaling factors was zero, making
             # this object invisible. We can ignore this since the object should not
             # be drawn.
-            print(f"WARNING: Transform Matrix {transform} has zero scaling factor, making it non-invertible!")
             return img
 
         # Warn if we have an unsupported blend.
@@ -142,10 +140,10 @@ except ImportError:
         texheight = texture.height
 
         # Calculate the maximum range of update this texture can possibly reside in.
-        pix1 = transform.multiply_point(Point.identity().subtract(origin))
-        pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, 0)))
-        pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texheight)))
-        pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, texheight)))
+        pix1 = transform.multiply_point(Point.identity())
+        pix2 = transform.multiply_point(Point.identity().add(Point(texwidth, 0)))
+        pix3 = transform.multiply_point(Point.identity().add(Point(0, texheight)))
+        pix4 = transform.multiply_point(Point.identity().add(Point(texwidth, texheight)))
 
         # Map this to the rectangle we need to sweep in the rendering image.
         minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
@@ -170,7 +168,7 @@ except ImportError:
                     imgoff = imgx + (imgy * imgwidth)
 
                     # Calculate what texture pixel data goes here.
-                    texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+                    texloc = inverse.multiply_point(Point(float(imgx), float(imgy)))
                     texx, texy = texloc.as_tuple()
 
                     # If we're out of bounds, don't update.
@@ -197,7 +195,7 @@ except ImportError:
                 nonlocal interrupted
                 interrupted = True
 
-            original_handler = signal.getsignal(signal.SIGINT)
+            previous_handler = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, ctrlc)
 
             for _ in range(cores):
@@ -212,7 +210,6 @@ except ImportError:
                         texwidth,
                         texheight,
                         inverse,
-                        origin,
                         add_color,
                         mult_color,
                         blendfunc,
@@ -244,7 +241,7 @@ except ImportError:
             for proc in procs:
                 proc.join()
 
-            signal.signal(signal.SIGINT, original_handler)
+            signal.signal(signal.SIGINT, previous_handler)
             if interrupted:
                 raise KeyboardInterrupt()
 
@@ -260,7 +257,6 @@ except ImportError:
         texwidth: int,
         texheight: int,
         inverse: Matrix,
-        origin: Point,
         add_color: Tuple[int, int, int, int],
         mult_color: Color,
         blendfunc: int,
@@ -281,7 +277,7 @@ except ImportError:
                     continue
 
                 # Calculate what texture pixel data goes here.
-                texloc = inverse.multiply_point(Point(float(imgx), float(imgy))).add(origin)
+                texloc = inverse.multiply_point(Point(float(imgx), float(imgy)))
                 texx, texy = texloc.as_tuple()
 
                 # If we're out of bounds, don't update.

@@ -8,7 +8,6 @@ def affine_composite(
     add_color: Tuple[int, int, int, int],
     mult_color: Color,
     transform: Matrix,
-    origin: Point,
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,

@@ -60,7 +60,6 @@ extern "C"
         unsigned int texwidth;
         unsigned int texheight;
         matrix_t inverse;
-        point_t origin;
         intcolor_t add_color;
         floatcolor_t mult_color;
         int blendfunc;
@@ -213,7 +212,7 @@ extern "C"
                 unsigned int imgoff = imgx + (imgy * work->imgwidth);
 
                 // Calculate what texture pixel data goes here.
-                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx, (float)imgy}).add(work->origin);
+                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx, (float)imgy});
                 int texx = roundf(texloc.x);
                 int texy = roundf(texloc.y);
 
@@ -246,7 +245,6 @@ extern "C"
         intcolor_t add_color,
         floatcolor_t mult_color,
         matrix_t inverse,
-        point_t origin,
         int blendfunc,
         unsigned char *texbytes,
         unsigned int texwidth,
@@ -270,7 +268,6 @@ extern "C"
             work.texwidth = texwidth;
             work.texheight = texheight;
             work.inverse = inverse;
-            work.origin = origin;
             work.add_color = add_color;
             work.mult_color = mult_color;
             work.blendfunc = blendfunc;
@@ -312,7 +309,6 @@ extern "C"
                 work->texwidth = texwidth;
                 work->texheight = texheight;
                 work->inverse = inverse;
-                work->origin = origin;
                 work->add_color = add_color;
                 work->mult_color = mult_color;
                 work->blendfunc = blendfunc;

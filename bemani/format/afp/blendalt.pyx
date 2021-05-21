@@ -39,7 +39,6 @@ cdef extern int affine_composite_fast(
     intcolor_t add_color,
     floatcolor_t mult_color,
     matrix_t inverse,
-    point_t origin,
     int blendfunc,
     unsigned char *texdata,
     unsigned int texwidth,
@@ -52,7 +51,6 @@ def affine_composite(
     add_color: Tuple[int, int, int, int],
     mult_color: Color,
     transform: Matrix,
-    origin: Point,
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
@@ -64,7 +62,6 @@ def affine_composite(
         # If this happens, that means one of the scaling factors was zero, making
         # this object invisible. We can ignore this since the object should not
         # be drawn.
-        print(f"WARNING: Transform Matrix {transform} has zero scaling factor, making it non-invertible!")
         return img
 
     if blendfunc not in {0, 2, 3, 8, 9, 70}:
@@ -79,10 +76,10 @@ def affine_composite(
     texheight = texture.height
 
     # Calculate the maximum range of update this texture can possibly reside in.
-    pix1 = transform.multiply_point(Point.identity().subtract(origin))
-    pix2 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, 0)))
-    pix3 = transform.multiply_point(Point.identity().subtract(origin).add(Point(0, texheight)))
-    pix4 = transform.multiply_point(Point.identity().subtract(origin).add(Point(texwidth, texheight)))
+    pix1 = transform.multiply_point(Point.identity())
+    pix2 = transform.multiply_point(Point.identity().add(Point(texwidth, 0)))
+    pix3 = transform.multiply_point(Point.identity().add(Point(0, texheight)))
+    pix4 = transform.multiply_point(Point.identity().add(Point(texwidth, texheight)))
 
     # Map this to the rectangle we need to sweep in the rendering image.
     minx = max(int(min(pix1.x, pix2.x, pix3.x, pix4.x)), 0)
@@ -102,7 +99,6 @@ def affine_composite(
     cdef intcolor_t c_addcolor = intcolor_t(r=add_color[0], g=add_color[1], b=add_color[2], a=add_color[3])
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
     cdef matrix_t c_inverse = matrix_t(a=inverse.a, b=inverse.b, c=inverse.c, d=inverse.d, tx=inverse.tx, ty=inverse.ty)
-    cdef point_t c_origin = point_t(x=origin.x, y=origin.y)
     cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()
 
     # Call the C++ function.
@@ -117,7 +113,6 @@ def affine_composite(
         c_addcolor,
         c_multcolor,
         c_inverse,
-        c_origin,
         blendfunc,
         texbytes,
         texwidth,
