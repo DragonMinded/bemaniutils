@@ -280,6 +280,18 @@ def main() -> int:
         help="Force the aspect ratio of the rendered image, as a colon-separated aspect ratio such as 16:9 or 4:3.",
     )
     render_parser.add_argument(
+        "--scale-width",
+        type=float,
+        default=1.0,
+        help="Scale the width of the animation by some factor.",
+    )
+    render_parser.add_argument(
+        "--scale-height",
+        type=float,
+        default=1.0,
+        help="Scale the height of the animation by some factor.",
+    )
+    render_parser.add_argument(
         "--disable-threads",
         action="store_true",
         help="Disable multi-threaded rendering.",
@@ -754,6 +766,9 @@ def main() -> int:
                     else:
                         requested_height = new_height
 
+            requested_width *= args.scale_width
+            requested_height *= args.scale_height
+
             # Calculate the overall view matrix based on the requested width/height.
             transform = Matrix(
                 a=requested_width / swf_location.width,
@@ -763,7 +778,6 @@ def main() -> int:
                 tx=0.0,
                 ty=0.0,
             )
-            print(transform)
 
             # Render the gif/webp frames.
             if args.only_depths is not None:

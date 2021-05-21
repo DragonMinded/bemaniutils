@@ -666,7 +666,6 @@ class AFPRenderer(VerboseOutput):
 
         # Calculate actual size based on given movie transform.
         actual_size = movie_transform.multiply_point(Point(swf.location.width, swf.location.height)).as_tuple()
-        print(actual_size)
 
         # Create a root clip for the movie to play.
         root_clip = PlacedClip(
