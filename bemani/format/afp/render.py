@@ -3,7 +3,7 @@ from PIL import Image  # type: ignore
 
 from .blend import affine_composite
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag, AP2PlaceCameraTag
-from .types import Color, Matrix, Point
+from .types import Color, Matrix, Point, Rectangle
 from .geo import Shape, DrawParams
 from .util import VerboseOutput
 
@@ -154,14 +154,33 @@ class AFPRenderer(VerboseOutput):
             data.parse()
         self.swfs[name] = data
 
-    def render_path(self, path: str, background_color: Optional[Color] = None, verbose: bool = False, only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
+    def render_path(
+        self,
+        path: str,
+        background_color: Optional[Color] = None,
+        only_depths: Optional[List[int]] = None,
+        movie_transform: Matrix = Matrix.identity(),
+        verbose: bool = False,
+    ) -> Tuple[int, List[Image.Image]]:
         # Given a path to a SWF root animation, attempt to render it to a list of frames.
         for name, swf in self.swfs.items():
             if swf.exported_name == path:
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    return self.__render(swf, only_depths=only_depths)
+                    return self.__render(swf, only_depths, movie_transform)
+
+        raise Exception(f'{path} not found in registered SWFs!')
+
+    def compute_path_location(
+        self,
+        path: str,
+    ) -> Rectangle:
+        # Given a path to a SWF root animation, find its bounding rectangle.
+        for name, swf in self.swfs.items():
+            if swf.exported_name == path:
+                # This is the SWF we care about.
+                return swf.location
 
         raise Exception(f'{path} not found in registered SWFs!')
 
@@ -636,21 +655,25 @@ class AFPRenderer(VerboseOutput):
         # We didn't find the tag we were after.
         return None
 
-    def __render(self, swf: SWF, only_depths: Optional[List[int]] = None) -> Tuple[int, List[Image.Image]]:
+    def __render(self, swf: SWF, only_depths: Optional[List[int]], movie_transform: Matrix) -> Tuple[int, List[Image.Image]]:
         # First, let's attempt to resolve imports.
         self.__registered_objects = self.__handle_imports(swf)
 
-        # Now, let's go through each frame, performing actions as necessary.
+        # Initialize overall frame advancement stuff.
         spf = 1.0 / swf.fps
         frames: List[Image.Image] = []
         frameno: int = 0
+
+        # Calculate actual size based on given movie transform.
+        actual_size = movie_transform.multiply_point(Point(swf.location.width, swf.location.height)).as_tuple()
+        print(actual_size)
 
         # Create a root clip for the movie to play.
         root_clip = PlacedClip(
             -1,
             -1,
             Point.identity(),
-            Matrix.identity(),
+            movie_transform,
             Color(1.0, 1.0, 1.0, 1.0),
             Color(0.0, 0.0, 0.0, 0.0),
             0,
@@ -676,7 +699,7 @@ class AFPRenderer(VerboseOutput):
                     # Now, render out the placed objects. We sort by depth so that we can
                     # get the layering correct, but its important to preserve the original
                     # insertion order for delete requests.
-                    curimage = Image.new("RGBA", (int(swf.location.width), int(swf.location.height)), color=color.as_tuple())
+                    curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
                     curimage = self.__render_object(curimage, root_clip, root_clip.transform, root_clip.rotation_offset, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
@@ -688,6 +711,6 @@ class AFPRenderer(VerboseOutput):
                 frameno += 1
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
-            print(f"WARNING: Interrupted early, will render only {len(frames)} of animation!")
+            print(f"WARNING: Interrupted early, will render only {len(frames)}/{len(root_clip.source.frames)} frames of animation!")
 
         return int(spf * 1000.0), frames

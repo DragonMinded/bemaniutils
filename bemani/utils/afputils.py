@@ -9,7 +9,7 @@ import textwrap
 from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict, List
 
-from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color
+from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color, Matrix
 from bemani.format import IFS
 
 
@@ -272,6 +272,12 @@ def main() -> int:
         type=str,
         default=None,
         help="Only render objects on these depth planes. Can provide either a number or a comma-separated list of numbers.",
+    )
+    render_parser.add_argument(
+        "--force-aspect-ratio",
+        type=str,
+        default=None,
+        help="Force the aspect ratio of the rendered image, as a colon-separated aspect ratio such as 16:9 or 4:3.",
     )
     render_parser.add_argument(
         "--disable-threads",
@@ -714,12 +720,57 @@ def main() -> int:
             else:
                 color = None
 
+            # Calculate the size of the SWF so we can apply scaling options.
+            swf_location = renderer.compute_path_location(args.path)
+            requested_width = swf_location.width
+            requested_height = swf_location.height
+
+            # Allow overriding the aspect ratio.
+            if args.force_aspect_ratio:
+                ratio = args.force_aspect_ratio.split(":")
+                if len(ratio) != 2:
+                    raise Exception("Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!")
+
+                rx, ry = [float(r.strip()) for r in ratio]
+                if rx <= 0 or ry <= 0:
+                    raise Exception("Ratio must only include positive numbers!")
+
+                actual_ratio = rx / ry
+                swf_ratio = swf_location.width / swf_location.height
+
+                if abs(swf_ratio - actual_ratio) > 0.0001:
+                    new_width = actual_ratio * swf_location.height
+                    new_height = swf_location.width / actual_ratio
+
+                    if new_width < swf_location.width and new_height < swf_location.height:
+                        raise Exception("Impossible aspect ratio!")
+                    if new_width > swf_location.width and new_height > swf_location.height:
+                        raise Exception("Impossible aspect ratio!")
+
+                    # We know that one is larger and one is smaller, pick the larger.
+                    # This way we always stretch instead of shrinking.
+                    if new_width > swf_location.width:
+                        requested_width = new_width
+                    else:
+                        requested_height = new_height
+
+            # Calculate the overall view matrix based on the requested width/height.
+            transform = Matrix(
+                a=requested_width / swf_location.width,
+                b=0.0,
+                c=0.0,
+                d=requested_height / swf_location.height,
+                tx=0.0,
+                ty=0.0,
+            )
+            print(transform)
+
             # Render the gif/webp frames.
             if args.only_depths is not None:
                 depths = [int(d.strip()) for d in args.only_depths.split(",")]
             else:
                 depths = None
-            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color, only_depths=depths)
+            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color, only_depths=depths, movie_transform=transform)
 
             if len(images) == 0:
                 raise Exception("Did not render any frames!")
