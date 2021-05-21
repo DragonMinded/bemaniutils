@@ -670,7 +670,7 @@ class AFPRenderer(VerboseOutput):
             -1,
             -1,
             Point.identity(),
-            movie_transform,
+            Matrix.identity(),
             Color(1.0, 1.0, 1.0, 1.0),
             Color(0.0, 0.0, 0.0, 0.0),
             0,
@@ -697,7 +697,7 @@ class AFPRenderer(VerboseOutput):
                     # get the layering correct, but its important to preserve the original
                     # insertion order for delete requests.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
-                    curimage = self.__render_object(curimage, root_clip, root_clip.transform, only_depths=only_depths)
+                    curimage = self.__render_object(curimage, root_clip, movie_transform, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
