@@ -439,6 +439,8 @@ class AFPRenderer(VerboseOutput):
         img: Image.Image,
         renderable: PlacedObject,
         parent_transform: Matrix,
+        parent_mult_color: Color,
+        parent_add_color: Color,
         only_depths: Optional[List[int]] = None,
         prefix: str="",
     ) -> Image.Image:
@@ -446,6 +448,10 @@ class AFPRenderer(VerboseOutput):
 
         # Compute the affine transformation matrix for this object.
         transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_offset))
+
+        # Calculate add color if it is present.
+        mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(parent_mult_color)
+        add_color = (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)).multiply(parent_mult_color).add(parent_add_color)
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -460,24 +466,6 @@ class AFPRenderer(VerboseOutput):
             else:
                 new_only_depths = None
 
-            # We don't support mixing colors on sub-objects yet.
-            add_color = renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)
-            mult_color = renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)
-            if not (
-                add_color.r == 0.0 and
-                add_color.g == 0.0 and
-                add_color.b == 0.0 and
-                add_color.a == 0.0
-            ):
-                print(f"WARNING: Unhandled sprite additive color {add_color}!")
-            if not (
-                mult_color.r == 1.0 and
-                mult_color.g == 1.0 and
-                mult_color.b == 1.0 and
-                mult_color.a == 1.0
-            ):
-                print(f"WARNING: Unhandled sprite multiplicative color {mult_color}!")
-
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
             depths = set(obj.depth for obj in renderable.placed_objects)
@@ -485,7 +473,7 @@ class AFPRenderer(VerboseOutput):
                 for obj in renderable.placed_objects:
                     if obj.depth != depth:
                         continue
-                    img = self.__render_object(img, obj, transform, only_depths=new_only_depths, prefix=prefix + " ")
+                    img = self.__render_object(img, obj, transform, mult_color, add_color, only_depths=new_only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -493,10 +481,6 @@ class AFPRenderer(VerboseOutput):
 
             # This is a shape draw reference.
             shape = renderable.source
-
-            # Calculate add color if it is present.
-            add_color = renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)
-            mult_color = renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)
             blend = renderable.blend or 0
 
             # Now, render out shapes.
@@ -720,6 +704,10 @@ class AFPRenderer(VerboseOutput):
             ),
         )
 
+        # These could possibly be overwritten from an external source of we wanted.
+        actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
+        actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
+
         # Now play the frames of the root clip.
         try:
             while not root_clip.finished:
@@ -734,7 +722,7 @@ class AFPRenderer(VerboseOutput):
                 if changed or frameno == 0:
                     # Now, render out the placed objects.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
-                    curimage = self.__render_object(curimage, root_clip, movie_transform, only_depths=only_depths)
+                    curimage = self.__render_object(curimage, root_clip, movie_transform, actual_mult_color, actual_add_color, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")

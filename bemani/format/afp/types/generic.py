@@ -16,6 +16,22 @@ class Color:
             'a': self.a,
         }
 
+    def multiply(self, other: "Color") -> "Color":
+        return Color(
+            r=self.r * other.r,
+            g=self.g * other.g,
+            b=self.b * other.b,
+            a=self.a * other.a,
+        )
+
+    def add(self, other: "Color") -> "Color":
+        return Color(
+            r=self.r + other.r,
+            g=self.g + other.g,
+            b=self.b + other.b,
+            a=self.a + other.a,
+        )
+
     def as_tuple(self) -> Tuple[int, int, int, int]:
         return (
             int(self.r * 255),
