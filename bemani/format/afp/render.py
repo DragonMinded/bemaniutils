@@ -449,9 +449,10 @@ class AFPRenderer(VerboseOutput):
         # Compute the affine transformation matrix for this object.
         transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_offset))
 
-        # Calculate add color if it is present.
+        # Calculate blending and blend color if it is present.
         mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(parent_mult_color)
         add_color = (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)).multiply(parent_mult_color).add(parent_add_color)
+        blend = renderable.blend or 0
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -465,6 +466,9 @@ class AFPRenderer(VerboseOutput):
                     new_only_depths = None
             else:
                 new_only_depths = None
+
+            if blend not in {0, 2}:
+                print(f"WARNING: Unsupported sprite blend {blend}!")
 
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
@@ -481,7 +485,6 @@ class AFPRenderer(VerboseOutput):
 
             # This is a shape draw reference.
             shape = renderable.source
-            blend = renderable.blend or 0
 
             # Now, render out shapes.
             for params in shape.draw_params:
@@ -502,18 +505,34 @@ class AFPRenderer(VerboseOutput):
 
                     if params.flags & 0x8:
                         # TODO: This texture gets further blended somehow? Not sure this is ever used.
-                        print(f"WARNING: Unhandled texture blend color {params.blend}")
+                        print(f"WARNING: Unhandled texture blend color {params.blend}!")
                 elif params.flags & 0x8:
                     if shape.rectangle is None:
                         # This is a raw rectangle. Its possible that the number of vertex points is
                         # not 4, or that the four points in the vertex_points aren't the four corners
                         # of a rectangle, but let's assume that doesn't happen for now.
+                        if len(shape.vertex_points) != 4:
+                            print("WARNING: Unsupported non-rectangle shape!")
+
                         x_points = set(p.x for p in shape.vertex_points)
                         y_points = set(p.y for p in shape.vertex_points)
                         left = min(x_points)
                         right = max(x_points)
                         top = min(y_points)
                         bottom = max(y_points)
+
+                        # Make sure that the four corners are aligned.
+                        bad = False
+                        for point in x_points:
+                            if point not in {left, right}:
+                                bad = True
+                                break
+                        for point in y_points:
+                            if point not in {top, bottom}:
+                                bad = True
+                                break
+                        if bad:
+                            print("WARNING: Unsupported non-rectangle shape!")
 
                         shape.rectangle = Image.new('RGBA', (int(right - left), int(bottom - top)), (params.blend.as_tuple()))
                     texture = shape.rectangle
