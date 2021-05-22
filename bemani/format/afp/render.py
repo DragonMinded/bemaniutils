@@ -444,6 +444,17 @@ class AFPRenderer(VerboseOutput):
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
+            if only_depths is not None:
+                if renderable.depth not in only_depths:
+                    if renderable.depth != -1:
+                        # Not on the correct depth plane.
+                        return img
+                    new_only_depths = only_depths
+                else:
+                    new_only_depths = None
+            else:
+                new_only_depths = None
+
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
             depths = set(obj.depth for obj in renderable.placed_objects)
@@ -451,8 +462,12 @@ class AFPRenderer(VerboseOutput):
                 for obj in renderable.placed_objects:
                     if obj.depth != depth:
                         continue
-                    img = self.__render_object(img, obj, transform, only_depths=only_depths, prefix=prefix + " ")
+                    img = self.__render_object(img, obj, transform, only_depths=new_only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
+            if only_depths is not None and renderable.depth not in only_depths:
+                # Not on the correct depth plane.
+                return img
+
             # This is a shape draw reference.
             shape = renderable.source
 
@@ -465,9 +480,6 @@ class AFPRenderer(VerboseOutput):
             for params in shape.draw_params:
                 if not (params.flags & 0x1):
                     # Not instantiable, don't render.
-                    return img
-                if only_depths is not None and renderable.depth not in only_depths:
-                    # Not on the correct depth plane.
                     return img
 
                 if params.flags & 0x4:

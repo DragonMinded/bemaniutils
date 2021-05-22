@@ -1137,6 +1137,8 @@ class SWF(TrackedCoverage, VerboseOutput):
             # Handle object colors
             multcolor = Color(1.0, 1.0, 1.0, 1.0)
             addcolor = Color(0.0, 0.0, 0.0, 0.0)
+            multdisplayed = False
+            adddisplayed = False
 
             if flags & 0x800:
                 # Multiplicative color present.
@@ -1150,6 +1152,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 multcolor.b = float(b) / 255.0
                 multcolor.a = float(a) / 255.0
                 self.vprint(f"{prefix}    Mult Color: {multcolor}")
+                multdisplayed = True
 
             if flags & 0x1000:
                 # Additive color present.
@@ -1163,6 +1166,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 addcolor.b = float(b) / 255.0
                 addcolor.a = float(a) / 255.0
                 self.vprint(f"{prefix}    Add Color: {addcolor}")
+                adddisplayed = True
 
             if flags & 0x2000:
                 # Multiplicative color present, smaller integers.
@@ -1176,6 +1180,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 multcolor.b = float((rgba >> 8) & 0xFF) / 255.0
                 multcolor.a = float(rgba & 0xFF) / 255.0
                 self.vprint(f"{prefix}    Mult Color: {multcolor}")
+                multdisplayed = True
 
             if flags & 0x4000:
                 # Additive color present, smaller integers.
@@ -1189,6 +1194,15 @@ class SWF(TrackedCoverage, VerboseOutput):
                 addcolor.b = float((rgba >> 8) & 0xFF) / 255.0
                 addcolor.a = float(rgba & 0xFF) / 255.0
                 self.vprint(f"{prefix}    Add Color: {addcolor}")
+                adddisplayed = True
+
+            # For easier debugging, display the default color when the color
+            # is being used.
+            if flags & 0x8:
+                if not multdisplayed:
+                    self.vprint(f"{prefix}    Mult Color: {multcolor}")
+                if not adddisplayed:
+                    self.vprint(f"{prefix}    Add Color: {addcolor}")
 
             bytecodes: Dict[int, List[ByteCode]] = {}
             if flags & 0x80:
