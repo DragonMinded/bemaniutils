@@ -467,7 +467,7 @@ class AFPRenderer(VerboseOutput):
             else:
                 new_only_depths = None
 
-            if blend not in {0, 2}:
+            if blend not in {0, 1, 2}:
                 print(f"WARNING: Unsupported sprite blend {blend}!")
 
             # This is a sprite placement reference. Make sure that we render lower depths

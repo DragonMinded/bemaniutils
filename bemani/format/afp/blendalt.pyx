@@ -58,7 +58,7 @@ def affine_composite(
         # be drawn.
         return img
 
-    if blendfunc not in {0, 2, 3, 8, 9, 70}:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 70}:
         print(f"WARNING: Unsupported blend {blendfunc}")
         return img
 
