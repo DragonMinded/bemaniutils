@@ -92,12 +92,12 @@ extern "C"
         // Calculate alpha blending.
         float srcpercent = src.a / 255.0;
         float destpercent = dest.a / 255.0;
-        float srcremaineder = 1.0 - srcpercent;
-        float new_alpha = (srcpercent + destpercent * srcremaineder);
+        float srcremainder = 1.0 - srcpercent;
+        float new_alpha = fmin(fmax(0.0, srcpercent + destpercent * srcremainder), 1.0);
         return (intcolor_t){
-            clamp(((dest.r * destpercent * srcremaineder) + (src.r * srcpercent)) / new_alpha),
-            clamp(((dest.g * destpercent * srcremaineder) + (src.g * srcpercent)) / new_alpha),
-            clamp(((dest.b * destpercent * srcremaineder) + (src.b * srcpercent)) / new_alpha),
+            clamp(((dest.r * destpercent * srcremainder) + (src.r * srcpercent)) / new_alpha),
+            clamp(((dest.g * destpercent * srcremainder) + (src.g * srcpercent)) / new_alpha),
+            clamp(((dest.b * destpercent * srcremainder) + (src.b * srcpercent)) / new_alpha),
             clamp(255 * new_alpha)
         };
     }
@@ -121,7 +121,7 @@ extern "C"
             clamp(dest.r + (src.r * srcpercent)),
             clamp(dest.g + (src.g * srcpercent)),
             clamp(dest.b + (src.b * srcpercent)),
-            dest.a,
+            clamp(dest.a + (255 * srcpercent)),
         };
     }
 

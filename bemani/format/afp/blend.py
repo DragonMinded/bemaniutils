@@ -35,12 +35,12 @@ except ImportError:
         # Calculate alpha blending.
         srcpercent = src[3] / 255.0
         destpercent = dest[3] / 255.0
-        srcremaineder = 1.0 - srcpercent
-        new_alpha = (srcpercent + destpercent * srcremaineder)
+        srcremainder = 1.0 - srcpercent
+        new_alpha = max(min(0.0, srcpercent + destpercent * srcremainder), 1.0)
         return (
-            clamp(((dest[0] * destpercent * srcremaineder) + (src[0] * srcpercent)) / new_alpha),
-            clamp(((dest[1] * destpercent * srcremaineder) + (src[1] * srcpercent)) / new_alpha),
-            clamp(((dest[2] * destpercent * srcremaineder) + (src[2] * srcpercent)) / new_alpha),
+            clamp(((dest[0] * destpercent * srcremainder) + (src[0] * srcpercent)) / new_alpha),
+            clamp(((dest[1] * destpercent * srcremainder) + (src[1] * srcpercent)) / new_alpha),
+            clamp(((dest[2] * destpercent * srcremainder) + (src[2] * srcpercent)) / new_alpha),
             clamp(255 * new_alpha)
         )
 
@@ -64,7 +64,7 @@ except ImportError:
             clamp(dest[0] + (src[0] * srcpercent)),
             clamp(dest[1] + (src[1] * srcpercent)),
             clamp(dest[2] + (src[2] * srcpercent)),
-            dest[3],
+            clamp(dest[3] + (255 * srcpercent)),
         )
 
     def blend_subtraction(
