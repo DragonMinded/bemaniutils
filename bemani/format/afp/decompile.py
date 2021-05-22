@@ -2483,7 +2483,13 @@ class ByteCodeDecompiler(VerboseOutput):
                 # multiple statements.
                 set_value = stack.pop()
                 if action.preserve_stack:
-                    stack.append(set_value)
+                    # If we are only initializing one register, put the register back
+                    # on the stack instead of the value, to make decompiled output
+                    # better. This helps a lot when we initialize to a function call return.
+                    if len(action.registers) == 1:
+                        stack.append(action.registers[0])
+                    else:
+                        stack.append(set_value)
 
                 store_actions: List[StoreRegisterStatement] = []
 
