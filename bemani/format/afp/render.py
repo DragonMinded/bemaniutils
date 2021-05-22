@@ -306,9 +306,6 @@ class AFPRenderer(VerboseOutput):
                 if tag.source_tag_id is None:
                     raise Exception("Cannot place a tag with no source ID and no update flags!")
 
-                # TODO: Handle ON_LOAD triggers for this object. Many of these are just calls into
-                # the game to set the current frame that we're on, but sometimes its important.
-
                 if tag.source_tag_id in self.__registered_objects:
                     self.vprint(f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
 
@@ -330,6 +327,14 @@ class AFPRenderer(VerboseOutput):
                         # Didn't place a new clip, changed the parent clip.
                         return None, True
                     elif isinstance(newobj, RegisteredClip):
+                        # TODO: Handle ON_LOAD triggers for this object. Many of these are just calls into
+                        # the game to set the current frame that we're on, but sometimes its important.
+                        for flags, code in tag.triggers.items():
+                            for bytecode in code:
+                                print("WARNING: Unhandled PLACE_OBJECT trigger!")
+                                if self.verbose:
+                                    print(bytecode.decompile())
+
                         placed_clip = PlacedClip(
                             tag.object_id,
                             tag.depth,
