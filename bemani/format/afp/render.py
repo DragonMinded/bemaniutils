@@ -441,6 +441,7 @@ class AFPRenderer(VerboseOutput):
         parent_transform: Matrix,
         parent_mult_color: Color,
         parent_add_color: Color,
+        parent_blend: int,
         only_depths: Optional[List[int]] = None,
         prefix: str="",
     ) -> Image.Image:
@@ -453,6 +454,8 @@ class AFPRenderer(VerboseOutput):
         mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(parent_mult_color)
         add_color = (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)).multiply(parent_mult_color).add(parent_add_color)
         blend = renderable.blend or 0
+        if parent_blend not in {0, 1, 2} and blend in {0, 1, 2}:
+            blend = parent_blend
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -467,9 +470,6 @@ class AFPRenderer(VerboseOutput):
             else:
                 new_only_depths = None
 
-            if blend not in {0, 1, 2}:
-                print(f"WARNING: Unsupported sprite blend {blend}!")
-
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
             depths = set(obj.depth for obj in renderable.placed_objects)
@@ -477,7 +477,7 @@ class AFPRenderer(VerboseOutput):
                 for obj in renderable.placed_objects:
                     if obj.depth != depth:
                         continue
-                    img = self.__render_object(img, obj, transform, mult_color, add_color, only_depths=new_only_depths, prefix=prefix + " ")
+                    img = self.__render_object(img, obj, transform, mult_color, add_color, blend, only_depths=new_only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -697,6 +697,7 @@ class AFPRenderer(VerboseOutput):
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
         actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
+        actual_blend = 0
 
         # Now play the frames of the root clip.
         try:
@@ -712,7 +713,7 @@ class AFPRenderer(VerboseOutput):
                 if changed or frameno == 0:
                     # Now, render out the placed objects.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
-                    curimage = self.__render_object(curimage, root_clip, movie_transform, actual_mult_color, actual_add_color, only_depths=only_depths)
+                    curimage = self.__render_object(curimage, root_clip, movie_transform, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
