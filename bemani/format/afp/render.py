@@ -444,13 +444,14 @@ class AFPRenderer(VerboseOutput):
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
-            # This is a sprite placement reference.
-            objs = sorted(
-                renderable.placed_objects,
-                key=lambda obj: obj.depth,
-            )
-            for obj in objs:
-                img = self.__render_object(img, obj, transform, only_depths=only_depths, prefix=prefix + " ")
+            # This is a sprite placement reference. Make sure that we render lower depths
+            # first, but preserved placed order as well.
+            depths = set(obj.depth for obj in renderable.placed_objects)
+            for depth in sorted(depths):
+                for obj in renderable.placed_objects:
+                    if obj.depth != depth:
+                        continue
+                    img = self.__render_object(img, obj, transform, only_depths=only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             # This is a shape draw reference.
             shape = renderable.source
@@ -693,9 +694,7 @@ class AFPRenderer(VerboseOutput):
                 changed = self.__process_tags(root_clip)
 
                 if changed or frameno == 0:
-                    # Now, render out the placed objects. We sort by depth so that we can
-                    # get the layering correct, but its important to preserve the original
-                    # insertion order for delete requests.
+                    # Now, render out the placed objects.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
                     curimage = self.__render_object(curimage, root_clip, movie_transform, only_depths=only_depths)
                 else:
