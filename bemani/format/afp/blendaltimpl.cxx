@@ -60,7 +60,7 @@ extern "C"
         unsigned int texwidth;
         unsigned int texheight;
         matrix_t inverse;
-        intcolor_t add_color;
+        floatcolor_t add_color;
         floatcolor_t mult_color;
         int blendfunc;
         pthread_t *thread;
@@ -167,7 +167,7 @@ extern "C"
     }
 
     intcolor_t blend_point(
-        intcolor_t add_color,
+        floatcolor_t add_color,
         floatcolor_t mult_color,
         intcolor_t src_color,
         intcolor_t dest_color,
@@ -175,10 +175,10 @@ extern "C"
     ) {
         // Calculate multiplicative and additive colors against the source.
         src_color = (intcolor_t){
-            clamp((src_color.r * mult_color.r) + add_color.r),
-            clamp((src_color.g * mult_color.g) + add_color.g),
-            clamp((src_color.b * mult_color.b) + add_color.b),
-            clamp((src_color.a * mult_color.a) + add_color.a),
+            clamp((src_color.r * mult_color.r) + (255 * add_color.r)),
+            clamp((src_color.g * mult_color.g) + (255 * add_color.g)),
+            clamp((src_color.b * mult_color.b) + (255 * add_color.b)),
+            clamp((src_color.a * mult_color.a) + (255 * add_color.a)),
         };
 
         if (blendfunc == 3) {
@@ -242,7 +242,7 @@ extern "C"
         unsigned int maxx,
         unsigned int miny,
         unsigned int maxy,
-        intcolor_t add_color,
+        floatcolor_t add_color,
         floatcolor_t mult_color,
         matrix_t inverse,
         int blendfunc,

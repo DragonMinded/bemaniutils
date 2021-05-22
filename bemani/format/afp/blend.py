@@ -1,7 +1,7 @@
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
-from typing import Any, List, Sequence, Tuple
+from typing import Any, List, Sequence
 
 from .types.generic import Color, Matrix, Point
 
@@ -111,7 +111,7 @@ except ImportError:
 
     def affine_composite(
         img: Image.Image,
-        add_color: Tuple[int, int, int, int],
+        add_color: Color,
         mult_color: Color,
         transform: Matrix,
         blendfunc: int,
@@ -257,7 +257,7 @@ except ImportError:
         texwidth: int,
         texheight: int,
         inverse: Matrix,
-        add_color: Tuple[int, int, int, int],
+        add_color: Color,
         mult_color: Color,
         blendfunc: int,
         imgbytes: bytes,
@@ -293,7 +293,7 @@ except ImportError:
             results.put((imgy, linebytes))
 
     def blend_point(
-        add_color: Tuple[int, int, int, int],
+        add_color: Color,
         mult_color: Color,
         # This should be a sequence of exactly 4 values, either bytes or a tuple.
         src_color: Sequence[int],
@@ -303,10 +303,10 @@ except ImportError:
     ) -> Sequence[int]:
         # Calculate multiplicative and additive colors against the source.
         src_color = (
-            clamp((src_color[0] * mult_color.r) + add_color[0]),
-            clamp((src_color[1] * mult_color.g) + add_color[1]),
-            clamp((src_color[2] * mult_color.b) + add_color[2]),
-            clamp((src_color[3] * mult_color.a) + add_color[3]),
+            clamp((src_color[0] * mult_color.r) + (255 * add_color.r)),
+            clamp((src_color[1] * mult_color.g) + (255 * add_color.g)),
+            clamp((src_color[2] * mult_color.b) + (255 * add_color.b)),
+            clamp((src_color[3] * mult_color.a) + (255 * add_color.a)),
         )
 
         if blendfunc == 3:

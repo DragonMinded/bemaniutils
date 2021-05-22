@@ -5,7 +5,7 @@ from .types.generic import Color, Matrix, Point
 
 def affine_composite(
     img: Image.Image,
-    add_color: Tuple[int, int, int, int],
+    add_color: Color,
     mult_color: Color,
     transform: Matrix,
     blendfunc: int,

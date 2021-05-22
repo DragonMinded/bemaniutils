@@ -4,12 +4,6 @@ from typing import Tuple
 
 from .types.generic import Color, Matrix, Point
 
-cdef extern struct intcolor_t:
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-    unsigned char a;
-
 cdef extern struct floatcolor_t:
     float r;
     float g;
@@ -36,7 +30,7 @@ cdef extern int affine_composite_fast(
     unsigned int maxx,
     unsigned int miny,
     unsigned int maxy,
-    intcolor_t add_color,
+    floatcolor_t add_color,
     floatcolor_t mult_color,
     matrix_t inverse,
     int blendfunc,
@@ -48,7 +42,7 @@ cdef extern int affine_composite_fast(
 
 def affine_composite(
     img: Image.Image,
-    add_color: Tuple[int, int, int, int],
+    add_color: Color,
     mult_color: Color,
     transform: Matrix,
     blendfunc: int,
@@ -96,7 +90,7 @@ def affine_composite(
     texbytes = texture.tobytes('raw', 'RGBA')
 
     # Convert classes to C structs.
-    cdef intcolor_t c_addcolor = intcolor_t(r=add_color[0], g=add_color[1], b=add_color[2], a=add_color[3])
+    cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
     cdef matrix_t c_inverse = matrix_t(a=inverse.a, b=inverse.b, c=inverse.c, d=inverse.d, tx=inverse.tx, ty=inverse.ty)
     cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()

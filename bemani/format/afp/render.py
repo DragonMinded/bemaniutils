@@ -460,6 +460,24 @@ class AFPRenderer(VerboseOutput):
             else:
                 new_only_depths = None
 
+            # We don't support mixing colors on sub-objects yet.
+            add_color = renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)
+            mult_color = renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)
+            if not (
+                add_color.r == 0.0 and
+                add_color.g == 0.0 and
+                add_color.b == 0.0 and
+                add_color.a == 0.0
+            ):
+                print(f"WARNING: Unhandled sprite additive color {add_color}!")
+            if not (
+                mult_color.r == 1.0 and
+                mult_color.g == 1.0 and
+                mult_color.b == 1.0 and
+                mult_color.a == 1.0
+            ):
+                print(f"WARNING: Unhandled sprite multiplicative color {mult_color}!")
+
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
             depths = set(obj.depth for obj in renderable.placed_objects)
@@ -477,7 +495,7 @@ class AFPRenderer(VerboseOutput):
             shape = renderable.source
 
             # Calculate add color if it is present.
-            add_color = (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)).as_tuple()
+            add_color = renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)
             mult_color = renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)
             blend = renderable.blend or 0
 
@@ -519,14 +537,17 @@ class AFPRenderer(VerboseOutput):
                 if texture is not None:
                     # See if we can cheat and use the faster blitting method.
                     if (
-                        add_color == (0, 0, 0, 0) and
+                        add_color.r == 0.0 and
+                        add_color.g == 0.0 and
+                        add_color.b == 0.0 and
+                        add_color.a == 0.0 and
                         mult_color.r == 1.0 and
                         mult_color.g == 1.0 and
                         mult_color.b == 1.0 and
                         mult_color.a == 1.0 and
+                        transform.a == 1.0 and
                         transform.b == 0.0 and
                         transform.c == 0.0 and
-                        transform.a == 1.0 and
                         transform.d == 1.0 and
                         (blend == 0 or blend == 2)
                     ):
