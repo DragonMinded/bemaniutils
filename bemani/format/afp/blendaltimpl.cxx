@@ -212,9 +212,9 @@ extern "C"
                 unsigned int imgoff = imgx + (imgy * work->imgwidth);
 
                 // Calculate what texture pixel data goes here.
-                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx, (float)imgy});
-                int texx = roundf(texloc.x);
-                int texy = roundf(texloc.y);
+                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
+                int texx = texloc.x;
+                int texy = texloc.y;
 
                 // If we're out of bounds, don't update.
                 if (texx < 0 or texy < 0 or texx >= (int)work->texwidth or texy >= (int)work->texheight) {

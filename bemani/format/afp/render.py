@@ -519,36 +519,7 @@ class AFPRenderer(VerboseOutput):
                     texture = shape.rectangle
 
                 if texture is not None:
-                    # See if we can cheat and use the faster blitting method.
-                    if (
-                        add_color.r == 0.0 and
-                        add_color.g == 0.0 and
-                        add_color.b == 0.0 and
-                        add_color.a == 0.0 and
-                        mult_color.r == 1.0 and
-                        mult_color.g == 1.0 and
-                        mult_color.b == 1.0 and
-                        mult_color.a == 1.0 and
-                        transform.a == 1.0 and
-                        transform.b == 0.0 and
-                        transform.c == 0.0 and
-                        transform.d == 1.0 and
-                        (blend == 0 or blend == 2)
-                    ):
-                        # We can!
-                        cutin = transform.multiply_point(Point.identity())
-                        cutoff = Point.identity()
-                        if cutin.x < 0:
-                            cutoff.x = -cutin.x
-                            cutin.x = 0
-                        if cutin.y < 0:
-                            cutoff.y = -cutin.y
-                            cutin.y = 0
-
-                        img.alpha_composite(texture, cutin.as_tuple(), cutoff.as_tuple())
-                    else:
-                        # We can't, so do the slow render that's correct.
-                        img = affine_composite(img, add_color, mult_color, transform, blend, texture, single_threaded=self.__single_threaded)
+                    img = affine_composite(img, add_color, mult_color, transform, blend, texture, single_threaded=self.__single_threaded)
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass

@@ -168,7 +168,7 @@ except ImportError:
                     imgoff = imgx + (imgy * imgwidth)
 
                     # Calculate what texture pixel data goes here.
-                    texloc = inverse.multiply_point(Point(float(imgx), float(imgy)))
+                    texloc = inverse.multiply_point(Point(float(imgx + 0.5), float(imgy + 0.5)))
                     texx, texy = texloc.as_tuple()
 
                     # If we're out of bounds, don't update.
@@ -277,7 +277,7 @@ except ImportError:
                     continue
 
                 # Calculate what texture pixel data goes here.
-                texloc = inverse.multiply_point(Point(float(imgx), float(imgy)))
+                texloc = inverse.multiply_point(Point(float(imgx + 0.5), float(imgy + 0.5)))
                 texx, texy = texloc.as_tuple()
 
                 # If we're out of bounds, don't update.
