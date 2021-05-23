@@ -1053,7 +1053,7 @@ class AFPRenderer(VerboseOutput):
                 # Create a new image to render into.
                 time = spf * frameno
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-                self.vprint(f"Rendering frame {frameno}/{len(root_clip.source.frames)} ({round(time, 2)}s)")
+                self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)} ({round(time, 2)}s)")
 
                 # Go through all registered clips, place all needed tags.
                 changed = self.__process_tags(root_clip)
@@ -1072,7 +1072,7 @@ class AFPRenderer(VerboseOutput):
                 frameno += 1
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
-            print(f"WARNING: Interrupted early, will render only {len(frames)}/{len(root_clip.source.frames)} frames of animation!")
+            print(f"WARNING: Interrupted early, will render only {len(frames) + 1}/{len(root_clip.source.frames)} frames of animation!")
 
         # Clean up
         self.movie = None
