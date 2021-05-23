@@ -312,11 +312,6 @@ def main() -> int:
         action="store_true",
         help="Display verbuse debugging output",
     )
-    list_parser.add_argument(
-        "--disable-threads",
-        action="store_true",
-        help="Disable multi-threaded rendering.",
-    )
 
     args = parser.parse_args()
 
@@ -595,7 +590,10 @@ def main() -> int:
     if args.action in ["render", "list"]:
         # This is a complicated one, as we need to be able to specify multiple
         # directories of files as well as support IFS files and TXP2 files.
-        renderer = AFPRenderer(single_threaded=args.disable_threads)
+        if args.action == 'render':
+            renderer = AFPRenderer(single_threaded=args.disable_threads)
+        else:
+            renderer = AFPRenderer()
 
         # TODO: Allow specifying individual folders and such.
         for container in args.container:
