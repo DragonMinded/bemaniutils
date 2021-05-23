@@ -2935,3 +2935,20 @@ class AP2Pointer:
     display_P = 0xb4
     geom_P = 0xb5
     filtesr_P = 0xb6
+
+
+class AP2Trigger:
+    ON_LOAD = 0x1
+    ON_ENTER_FRAME = 0x2
+    ON_UNLOAD = 0x4
+    ON_MOUSE_MOVE = 0x8
+    ON_MOUSE_DOWN = 0x10
+    ON_MOUSE_UP = 0x20
+    ON_KEY_DOWN = 0x40
+    ON_KEY_UP = 0x80
+    ON_DATA = 0x100
+    ON_PRESS = 0x400
+    ON_RELEASE = 0x800
+    ON_RELEASE_OUTSIDE = 0x1000
+    ON_ROLL_OVER = 0x2000
+    ON_ROLL_OUT = 0x4000

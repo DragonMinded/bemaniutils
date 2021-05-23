@@ -1,9 +1,10 @@
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, List, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
 from .blend import affine_composite
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag, AP2PlaceCameraTag
-from .types import Color, Matrix, Point, Rectangle
+from .decompile import ByteCode
+from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, THIS, UNDEFINED
 from .geo import Shape, DrawParams
 from .util import VerboseOutput
 
@@ -47,7 +48,7 @@ class RegisteredDummy:
 
 class PlacedObject:
     # An object that occupies the screen at some depth.
-    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int) -> None:
+    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, mask: Optional[Rectangle]) -> None:
         self.__object_id = object_id
         self.__depth = depth
         self.rotation_offset = rotation_offset
@@ -55,6 +56,7 @@ class PlacedObject:
         self.mult_color = mult_color
         self.add_color = add_color
         self.blend = blend
+        self.mask = mask
 
     @property
     def source(self) -> Union[RegisteredClip, RegisteredShape, RegisteredDummy]:
@@ -75,8 +77,19 @@ class PlacedObject:
 class PlacedShape(PlacedObject):
     # A shape that occupies its parent clip at some depth. Placed by an AP2PlaceObjectTag
     # referencing an AP2ShapeTag.
-    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, source: RegisteredShape) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend)
+    def __init__(
+        self,
+        object_id: int,
+        depth: int,
+        rotation_offset: Point,
+        transform: Matrix,
+        mult_color: Color,
+        add_color: Color,
+        blend: int,
+        mask: Optional[Rectangle],
+        source: RegisteredShape,
+    ) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -90,11 +103,24 @@ class PlacedShape(PlacedObject):
 class PlacedClip(PlacedObject):
     # A movieclip that occupies its parent clip at some depth. Placed by an AP2PlaceObjectTag
     # referencing an AP2DefineSpriteTag. Essentially an embedded movie clip.
-    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, source: RegisteredClip) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend)
+    def __init__(
+        self,
+        object_id: int,
+        depth: int,
+        rotation_offset: Point,
+        transform: Matrix,
+        mult_color: Color,
+        add_color: Color,
+        blend: int,
+        mask: Optional[Rectangle],
+        source: RegisteredClip,
+    ) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
         self.placed_objects: List[PlacedObject] = []
         self.frame: int = 0
         self.__source = source
+        self.playing: bool = True
+        self.requested_frame: Optional[int] = None
 
     @property
     def source(self) -> RegisteredClip:
@@ -111,16 +137,98 @@ class PlacedClip(PlacedObject):
     def __repr__(self) -> str:
         return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, finished={self.finished})"
 
+    # The following are attributes and functions necessary to support some simple bytecode.
+    def gotoAndPlay(self, frame: Any) -> None:
+        if not isinstance(frame, int):
+            # TODO: Technically this should also allow string labels to frames as identified in the
+            # SWF specification, but we don't support that here.
+            print(f"WARNING: Non-integer frame {frame} to gotoAndPlay function!")
+            return
+        if frame <= 0 or frame > len(self.source.frames):
+            return
+        self.requested_frame = frame
+        self.playing = True
+
+    @property
+    def frameOffset(self) -> int:
+        return self.requested_frame or self.frame
+
+    @frameOffset.setter
+    def frameOffset(self, val: Any) -> None:
+        if not isinstance(val, int):
+            # TODO: Technically this should also allow string labels to frames as identified in the
+            # SWF specification, but we don't support that here.
+            print(f"WARNING: Non-integer frameOffset {val} to frameOffset attribute!")
+            return
+        if val < 0 or val >= len(self.source.frames):
+            return
+        self.requested_frame = val + 1
+
 
 class PlacedDummy(PlacedObject):
     # A reference to an object we can't find because we're missing the import.
-    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, source: RegisteredDummy) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend)
+    def __init__(
+        self,
+        object_id: int,
+        depth: int,
+        rotation_offset: Point,
+        transform: Matrix,
+        mult_color: Color,
+        add_color: Color,
+        blend: int,
+        mask: Optional[Rectangle],
+        source: RegisteredDummy,
+    ) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
     def source(self) -> RegisteredDummy:
         return self.__source
+
+
+class Movie:
+    def __init__(self, root: PlacedClip) -> None:
+        self.__root = root
+
+    def getInstanceAtDepth(self, depth: Any) -> Any:
+        if not isinstance(depth, int):
+            return UNDEFINED
+
+        # For some reason, it looks like internally the depth of all objects is
+        # stored added to -0x4000, so let's reverse that.
+        depth = depth + 0x4000
+
+        for obj in self.__root.placed_objects:
+            if obj.depth == depth:
+                return obj
+
+        print(f"WARNING: Could not find object at depth {depth}!")
+        return UNDEFINED
+
+
+class AEPLib:
+    def __init__(self, this: PlacedObject, movie: Movie) -> None:
+        self.__this = this
+        self.__movie = movie
+
+    def aep_set_rect_mask(self, thisptr: Any, left: Any, right: Any, top: Any, bottom: Any) -> None:
+        if not isinstance(left, (int, float)) or not isinstance(right, (int, float)) or not isinstance(top, (int, float)) or not isinstance(bottom, (int, float)):
+            print("WARNING: Ignoring aeplib.aep_set_rect_mask call with invalid parameters!")
+            return
+        if thisptr is THIS:
+            self.__this.mask = Rectangle(
+                left=float(left),
+                right=float(right),
+                top=float(top),
+                bottom=float(bottom),
+            )
+        else:
+            print("WARNING: Ignoring aeplib.aep_set_rect_mask call with unrecognized target!")
+
+    def aep_set_set_frame(self, thisptr: Any, frame: Any) -> None:
+        # I have no idea what this should do, so let's ignore it.
+        pass
 
 
 class AFPRenderer(VerboseOutput):
@@ -137,6 +245,7 @@ class AFPRenderer(VerboseOutput):
 
         # Internal render parameters.
         self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
+        self.__movie: Optional[Movie] = None
 
     def add_shape(self, name: str, data: Shape) -> None:
         # Register a named shape with the renderer.
@@ -192,6 +301,119 @@ class AFPRenderer(VerboseOutput):
             paths.append(swf.exported_name)
 
         return paths
+
+    def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip) -> None:
+        if self.__movie is None:
+            raise Exception("Logic error, executing bytecode outside of a rendering movie clip!")
+
+        location: int = 0
+        stack: List[Any] = []
+        variables: Dict[str, Any] = {
+            'aeplib': AEPLib(clip, self.__movie),
+            'GLOBAL': self.__movie,
+        }
+        registers: List[Any] = [UNDEFINED] * 256
+
+        while location < len(bytecode.actions):
+            action = bytecode.actions[location]
+
+            if action.opcode == AP2Action.END:
+                # End the execution.
+                self.vprint("Ending bytecode execution.")
+                break
+            elif action.opcode == AP2Action.GET_VARIABLE:
+                varname = stack.pop()
+
+                # Look up the variable, put it on the stack.
+                if varname in variables:
+                    stack.append(variables[varname])
+                else:
+                    stack.append(UNDEFINED)
+            elif action.opcode == AP2Action.SET_MEMBER:
+                # Grab what we're about to do.
+                set_value = stack.pop()
+                attribute = stack.pop()
+                obj = stack.pop()
+
+                if not hasattr(obj, attribute):
+                    print(f"WARNING: Tried to set attribute {attribute} on {obj} but that attribute doesn't exist!")
+                else:
+                    setattr(obj, attribute, set_value)
+            elif action.opcode == AP2Action.CALL_METHOD:
+                # Grab the method name.
+                methname = stack.pop()
+
+                # Grab the object to perform the call on.
+                obj = stack.pop()
+
+                # Grab the parameters to pass to the function.
+                num_params = stack.pop()
+                if not isinstance(num_params, int):
+                    raise Exception("Logic error, cannot get number of parameters to method call!")
+                params = []
+                for _ in range(num_params):
+                    params.append(stack.pop())
+
+                # Look up the python function we're calling.
+                try:
+                    meth = getattr(obj, methname)
+
+                    # Call it, set the return on the stack.
+                    stack.append(meth(*params))
+                except AttributeError:
+                    # Function does not exist!
+                    print(f"WARNING: Tried to call {methname}({', '.join(repr(s) for s in params)}) on {obj} but that method doesn't exist!")
+                    stack.append(UNDEFINED)
+            elif action.opcode == AP2Action.CALL_FUNCTION:
+                # Grab the method name.
+                funcname = stack.pop()
+
+                # Grab the object to perform the call on.
+                obj = variables['GLOBAL']
+
+                # Grab the parameters to pass to the function.
+                num_params = stack.pop()
+                if not isinstance(num_params, int):
+                    raise Exception("Logic error, cannot get number of parameters to function call!")
+                params = []
+                for _ in range(num_params):
+                    params.append(stack.pop())
+
+                # Look up the python function we're calling.
+                try:
+                    func = getattr(obj, funcname)
+
+                    # Call it, set the return on the stack.
+                    stack.append(func(*params))
+                except AttributeError:
+                    # Function does not exist!
+                    print(f"WARNING: Tried to call {funcname}({', '.join(repr(s) for s in params)}) on {obj} but that function doesn't exist!")
+                    stack.append(UNDEFINED)
+            elif isinstance(action, PushAction):
+                for obj in action.objects:
+                    if isinstance(obj, Register):
+                        stack.append(registers[obj.no])
+                    elif isinstance(obj, StringConstant):
+                        if obj.alias:
+                            stack.append(obj.alias)
+                        else:
+                            stack.append(StringConstant.property_to_name(obj.const))
+                    else:
+                        stack.append(obj)
+            elif isinstance(action, StoreRegisterAction):
+                set_value = stack.pop()
+                if action.preserve_stack:
+                    stack.append(set_value)
+
+                for reg in action.registers:
+                    registers[reg.no] = set_value
+            elif action.opcode == AP2Action.POP:
+                stack.pop()
+            else:
+                print(f"WARNING: Unhandled opcode {action} with stack {stack}")
+
+            # Next opcode!
+            location += 1
 
     def __place(self, tag: Tag, operating_clip: PlacedClip, prefix: str = "") -> Tuple[Optional[PlacedClip], bool]:
         # "Place" a tag on the screen. Most of the time, this means performing the action of the tag,
@@ -253,6 +475,7 @@ class AFPRenderer(VerboseOutput):
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
+                                    obj.mask,
                                     newobj,
                                 )
 
@@ -267,6 +490,7 @@ class AFPRenderer(VerboseOutput):
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
+                                    obj.mask,
                                     newobj,
                                 )
                                 operating_clip.placed_objects[i] = new_clip
@@ -282,6 +506,7 @@ class AFPRenderer(VerboseOutput):
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
+                                    obj.mask,
                                     newobj,
                                 )
 
@@ -320,6 +545,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                                 tag.blend or 0,
+                                None,
                                 newobj,
                             )
                         )
@@ -327,14 +553,6 @@ class AFPRenderer(VerboseOutput):
                         # Didn't place a new clip, changed the parent clip.
                         return None, True
                     elif isinstance(newobj, RegisteredClip):
-                        # TODO: Handle ON_LOAD triggers for this object. Many of these are just calls into
-                        # the game to set the current frame that we're on, but sometimes its important.
-                        for flags, code in tag.triggers.items():
-                            for bytecode in code:
-                                print("WARNING: Unhandled PLACE_OBJECT trigger!")
-                                if self.verbose:
-                                    print(bytecode.decompile())
-
                         placed_clip = PlacedClip(
                             tag.object_id,
                             tag.depth,
@@ -343,9 +561,17 @@ class AFPRenderer(VerboseOutput):
                             tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                             tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                             tag.blend or 0,
+                            None,
                             newobj,
                         )
                         operating_clip.placed_objects.append(placed_clip)
+
+                        for flags, code in tag.triggers.items():
+                            if flags & AP2Trigger.ON_LOAD:
+                                for bytecode in code:
+                                    self.__execute_bytecode(bytecode, placed_clip)
+                            else:
+                                print("WARNING: Unhandled PLACE_OBJECT trigger with flags {flags}!")
 
                         # Placed a new clip, changed the parent.
                         return placed_clip, True
@@ -359,6 +585,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                                 tag.blend or 0,
+                                None,
                                 newobj,
                             )
                         )
@@ -402,13 +629,14 @@ class AFPRenderer(VerboseOutput):
             if not removed_objects:
                 print(f"WARNING: Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
 
+            # TODO: Handle ON_UNLOAD triggers for this object. I don't think I've ever seen one
+            # on any object so this might be a pedantic request.
+
             # Didn't place a new clip, changed parent clip.
             return None, True
 
         elif isinstance(tag, AP2DoActionTag):
-            print("WARNING: Unhandled DO_ACTION tag!")
-            if self.verbose:
-                print(tag.bytecode.decompile())
+            self.__execute_bytecode(tag.bytecode, operating_clip)
 
             # Didn't place a new clip.
             return None, False
@@ -456,6 +684,9 @@ class AFPRenderer(VerboseOutput):
         blend = renderable.blend or 0
         if parent_blend not in {0, 1, 2} and blend in {0, 1, 2}:
             blend = parent_blend
+
+        if renderable.mask:
+            print(f"WARNING: Unsupported mask Rectangle({renderable.mask})!")
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -553,30 +784,50 @@ class AFPRenderer(VerboseOutput):
         # Track whether anything in ourselves or our children changes during this processing.
         changed = False
 
-        # Clips that are part of our own placed objects which we should handle.
-        child_clips = [c for c in clip.placed_objects if isinstance(c, PlacedClip)]
+        while True:
+            # See if this clip should actually be played.
+            if clip.requested_frame is None and not clip.playing:
+                break
 
-        # Execute each tag in the frame.
-        if not clip.finished:
-            frame = clip.source.frames[clip.frame]
-            tags = clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
+            # See if we need to fast forward to a frame.
+            if clip.requested_frame is not None:
+                if clip.frame > clip.requested_frame:
+                    # Rewind this clip to the beginning so we can replay until the requested frame.
+                    clip.placed_objects = []
+                    clip.frame = 0
+                elif clip.frame == clip.requested_frame:
+                    # We played up through the requested frame, we're done!
+                    clip.requested_frame = None
+                    break
 
-            for tagno, tag in enumerate(tags):
-                # Perform the action of this tag.
-                self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}")
-                new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
-                changed = changed or clip_changed
+            # Clips that are part of our own placed objects which we should handle.
+            child_clips = [c for c in clip.placed_objects if isinstance(c, PlacedClip)]
 
-                # If we create a new movie clip, process it as well for this frame.
-                if new_clip:
-                    changed = self.__process_tags(new_clip, prefix=prefix + "  ") or changed
+            # Execute each tag in the frame.
+            if not clip.finished:
+                frame = clip.source.frames[clip.frame]
+                tags = clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
 
-        # Now, handle each of the existing clips.
-        for child in child_clips:
-            changed = self.__process_tags(child, prefix=prefix + "  ") or changed
+                for tagno, tag in enumerate(tags):
+                    # Perform the action of this tag.
+                    self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}")
+                    new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
+                    changed = changed or clip_changed
 
-        # Now, advance the frame for this clip.
-        clip.advance()
+                    # If we create a new movie clip, process it as well for this frame.
+                    if new_clip:
+                        changed = self.__process_tags(new_clip, prefix=prefix + "  ") or changed
+
+            # Now, handle each of the existing clips.
+            for child in child_clips:
+                changed = self.__process_tags(child, prefix=prefix + "  ") or changed
+
+            # Now, advance the frame for this clip.
+            clip.advance()
+
+            # See if we should bail.
+            if clip.requested_frame is None:
+                break
 
         self.vprint(f"{prefix}Finished handling placed clip {clip.object_id} at depth {clip.depth}")
 
@@ -687,12 +938,14 @@ class AFPRenderer(VerboseOutput):
             Color(1.0, 1.0, 1.0, 1.0),
             Color(0.0, 0.0, 0.0, 0.0),
             0,
+            None,
             RegisteredClip(
                 None,
                 swf.frames,
                 swf.tags,
             ),
         )
+        self.__movie = Movie(root_clip)
 
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
@@ -725,5 +978,8 @@ class AFPRenderer(VerboseOutput):
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
             print(f"WARNING: Interrupted early, will render only {len(frames)}/{len(root_clip.source.frames)} frames of animation!")
+
+        # Clean up
+        self.movie = None
 
         return int(spf * 1000.0), frames

@@ -8,6 +8,7 @@ from .types import Matrix, Color, Point, Rectangle
 from .types import (
     AP2Action,
     AP2Tag,
+    AP2Trigger,
     DefineFunction2Action,
     InitRegisterAction,
     StoreRegisterAction,
@@ -1235,33 +1236,33 @@ class SWF(TrackedCoverage, VerboseOutput):
                         self.add_coverage(dataoffset + evt_offset, 8)
 
                         events: List[str] = []
-                        if evt_flags & 0x1:
+                        if evt_flags & AP2Trigger.ON_LOAD:
                             events.append("ON_LOAD")
-                        if evt_flags & 0x2:
+                        if evt_flags & AP2Trigger.ON_ENTER_FRAME:
                             events.append("ON_ENTER_FRAME")
-                        if evt_flags & 0x4:
+                        if evt_flags & AP2Trigger.ON_UNLOAD:
                             events.append("ON_UNLOAD")
-                        if evt_flags & 0x8:
+                        if evt_flags & AP2Trigger.ON_MOUSE_MOVE:
                             events.append("ON_MOUSE_MOVE")
-                        if evt_flags & 0x10:
+                        if evt_flags & AP2Trigger.ON_MOUSE_DOWN:
                             events.append("ON_MOUSE_DOWN")
-                        if evt_flags & 0x20:
+                        if evt_flags & AP2Trigger.ON_MOUSE_UP:
                             events.append("ON_MOUSE_UP")
-                        if evt_flags & 0x40:
+                        if evt_flags & AP2Trigger.ON_KEY_DOWN:
                             events.append("ON_KEY_DOWN")
-                        if evt_flags & 0x80:
+                        if evt_flags & AP2Trigger.ON_KEY_UP:
                             events.append("ON_KEY_UP")
-                        if evt_flags & 0x100:
+                        if evt_flags & AP2Trigger.ON_DATA:
                             events.append("ON_DATA")
-                        if evt_flags & 0x400:
+                        if evt_flags & AP2Trigger.ON_PRESS:
                             events.append("ON_PRESS")
-                        if evt_flags & 0x800:
+                        if evt_flags & AP2Trigger.ON_RELEASE:
                             events.append("ON_RELEASE")
-                        if evt_flags & 0x1000:
+                        if evt_flags & AP2Trigger.ON_RELEASE_OUTSIDE:
                             events.append("ON_RELEASE_OUTSIDE")
-                        if evt_flags & 0x2000:
+                        if evt_flags & AP2Trigger.ON_ROLL_OVER:
                             events.append("ON_ROLL_OVER")
-                        if evt_flags & 0x4000:
+                        if evt_flags & AP2Trigger.ON_ROLL_OUT:
                             events.append("ON_ROLL_OUT")
 
                         bytecode_offset += evt_offset
