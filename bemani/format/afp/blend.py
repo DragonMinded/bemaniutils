@@ -64,6 +64,14 @@ except ImportError:
             clamp(dest[0] + (src[0] * srcpercent)),
             clamp(dest[1] + (src[1] * srcpercent)),
             clamp(dest[2] + (src[2] * srcpercent)),
+            # Additive blending doesn't actually make sense on semi-transparent destinations,
+            # as that implies that the semi-transparent pixel will be later displayed on top
+            # of something else. That doesn't work since additive blending needs to non-linearly
+            # mix with the destination. So, in reality, we should be doing what subtractive
+            # blending does and keeping the destination alpha (which should always be 255),
+            # but if somebody renders an animation with additive blending meant to go over a
+            # background onto a transparent or semi-transparent background this will make the
+            # resulting graphic look more correct.
             clamp(dest[3] + (255 * srcpercent)),
         )
 

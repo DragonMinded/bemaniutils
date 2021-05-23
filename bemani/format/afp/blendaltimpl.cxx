@@ -121,6 +121,14 @@ extern "C"
             clamp(dest.r + (src.r * srcpercent)),
             clamp(dest.g + (src.g * srcpercent)),
             clamp(dest.b + (src.b * srcpercent)),
+            // Additive blending doesn't actually make sense on semi-transparent destinations,
+            // as that implies that the semi-transparent pixel will be later displayed on top
+            // of something else. That doesn't work since additive blending needs to non-linearly
+            // mix with the destination. So, in reality, we should be doing what subtractive
+            // blending does and keeping the destination alpha (which should always be 255),
+            // but if somebody renders an animation with additive blending meant to go over a
+            // background onto a transparent or semi-transparent background this will make the
+            // resulting graphic look more correct.
             clamp(dest.a + (255 * srcpercent)),
         };
     }
