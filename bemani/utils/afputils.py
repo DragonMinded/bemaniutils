@@ -257,12 +257,6 @@ def main() -> int:
         help='The output file (ending either in .gif, .webp or .png) where the render should be saved.',
     )
     render_parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Display verbuse debugging output",
-    )
-    render_parser.add_argument(
         "--background-color",
         type=str,
         default=None,
@@ -284,18 +278,24 @@ def main() -> int:
         "--scale-width",
         type=float,
         default=1.0,
-        help="Scale the width of the animation by some factor.",
+        help="Scale the width of the animation by some factor, such as 2.0 or 0.5.",
     )
     render_parser.add_argument(
         "--scale-height",
         type=float,
         default=1.0,
-        help="Scale the height of the animation by some factor.",
+        help="Scale the height of the animation by some factor, such as 2.0 or 0.5.",
     )
     render_parser.add_argument(
         "--disable-threads",
         action="store_true",
         help="Disable multi-threaded rendering.",
+    )
+    render_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbuse debugging output",
     )
 
     list_parser = subparsers.add_parser('list', help='List out the possible paths to render from a series of SWFs')
