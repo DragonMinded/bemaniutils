@@ -51,6 +51,7 @@ extern "C"
 
     typedef struct work {
         intcolor_t *imgdata;
+        unsigned char *maskdata;
         unsigned int imgwidth;
         unsigned int minx;
         unsigned int maxx;
@@ -174,6 +175,33 @@ extern "C"
         };
     }
 
+    intcolor_t blend_mask_create(
+        intcolor_t dest,
+        intcolor_t src
+    ) {
+        // Mask creating just allows a pixel to be drawn if the source image has a nonzero
+        // alpha, according to the SWF spec.
+        if (src.a != 0) {
+            return (intcolor_t){255, 0, 0, 255};
+        } else {
+            return (intcolor_t){0, 0, 0, 0};
+        }
+    }
+
+    intcolor_t blend_mask_combine(
+        intcolor_t dest,
+        intcolor_t src
+    ) {
+        // Mask blending just takes the source and destination and ands them together, making
+        // a final mask that is the intersection of the original mask and the new mask. The
+        // reason we even have a color component to this is for debugging visibility.
+        if (dest.a != 0 && src.a != 0) {
+            return (intcolor_t){255, 0, 0, 255};
+        } else {
+            return (intcolor_t){0, 0, 0, 0};
+        }
+    }
+
     intcolor_t blend_point(
         floatcolor_t add_color,
         floatcolor_t mult_color,
@@ -208,6 +236,12 @@ extern "C"
         if (blendfunc == 9 || blendfunc == 70) {
             return blend_subtraction(dest_color, src_color);
         }
+        if (blendfunc == 256) {
+            return blend_mask_combine(dest_color, src_color);
+        }
+        if (blendfunc == 257) {
+            return blend_mask_create(dest_color, src_color);
+        }
         // TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
         // Src * (1 - Dst) + Dst * (1 - Src).
         return blend_normal(dest_color, src_color);
@@ -231,6 +265,10 @@ extern "C"
 
                 // Blend it.
                 unsigned int texoff = texx + (texy * work->texwidth);
+                if (work->maskdata != NULL && work->maskdata[imgoff] == 0) {
+                    // This pixel is masked off!
+                    continue;
+                }
                 work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->texdata[texoff], work->imgdata[imgoff], work->blendfunc);
             }
         }
@@ -244,6 +282,7 @@ extern "C"
 
     int affine_composite_fast(
         unsigned char *imgbytes,
+        unsigned char *maskbytes,
         unsigned int imgwidth,
         unsigned int imgheight,
         unsigned int minx,
@@ -267,6 +306,7 @@ extern "C"
             // Just create a local work structure so we can call the common function.
             work_t work;
             work.imgdata = imgdata;
+            work.maskdata = maskbytes;
             work.imgwidth = imgwidth;
             work.minx = minx;
             work.maxx = maxx;
@@ -308,6 +348,7 @@ extern "C"
 
                 // Pass to it all of the params it needs.
                 work->imgdata = imgdata;
+                work->maskdata = maskbytes;
                 work->imgwidth = imgwidth;
                 work->minx = minx;
                 work->maxx = maxx;

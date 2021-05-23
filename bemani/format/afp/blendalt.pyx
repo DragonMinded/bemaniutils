@@ -1,6 +1,6 @@
 import multiprocessing
 from PIL import Image  # type: ignore
-from typing import Tuple
+from typing import Optional, Tuple
 
 from .types.generic import Color, Matrix, Point
 
@@ -24,6 +24,7 @@ cdef extern struct point_t:
 
 cdef extern int affine_composite_fast(
     unsigned char *imgdata,
+    unsigned char *maskdata,
     unsigned int imgwidth,
     unsigned int imgheight,
     unsigned int minx,
@@ -45,6 +46,7 @@ def affine_composite(
     add_color: Color,
     mult_color: Color,
     transform: Matrix,
+    mask: Optional[Image.Image],
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
@@ -58,7 +60,7 @@ def affine_composite(
         # be drawn.
         return img
 
-    if blendfunc not in {0, 1, 2, 3, 8, 9, 70}:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
         print(f"WARNING: Unsupported blend {blendfunc}")
         return img
 
@@ -89,6 +91,16 @@ def affine_composite(
     imgbytes = img.tobytes('raw', 'RGBA')
     texbytes = texture.tobytes('raw', 'RGBA')
 
+    # Grab the mask data.
+    if mask is not None:
+        alpha = mask.split()[-1]
+        maskdata = alpha.tobytes('raw', 'L')
+    else:
+        maskdata = None
+    cdef unsigned char *maskbytes = NULL
+    if maskdata is not None:
+        maskbytes = maskdata
+
     # Convert classes to C structs.
     cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
@@ -98,6 +110,7 @@ def affine_composite(
     # Call the C++ function.
     errors = affine_composite_fast(
         imgbytes,
+        maskbytes,
         imgwidth,
         imgheight,
         minx,

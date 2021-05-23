@@ -1,7 +1,7 @@
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
-from typing import Any, List, Sequence
+from typing import Any, List, Optional, Sequence
 
 from .types.generic import Color, Matrix, Point
 
@@ -122,6 +122,7 @@ except ImportError:
         add_color: Color,
         mult_color: Color,
         transform: Matrix,
+        mask: Optional[Image.Image],
         blendfunc: int,
         texture: Image.Image,
         single_threaded: bool = False,
@@ -136,7 +137,7 @@ except ImportError:
             return img
 
         # Warn if we have an unsupported blend.
-        if blendfunc not in {0, 1, 2, 3, 8, 9, 70}:
+        if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
             print(f"WARNING: Unsupported blend {blendfunc}")
             return img
 
@@ -168,6 +169,11 @@ except ImportError:
             # Get the data in an easier to manipulate and faster to update fashion.
             imgmap = list(img.getdata())
             texmap = list(texture.getdata())
+            if mask:
+                alpha = mask.split()[-1]
+                maskmap = alpha.tobytes('raw', 'L')
+            else:
+                maskmap = None
 
             # We don't have enough CPU cores to bother multiprocessing.
             for imgy in range(miny, maxy):
@@ -185,12 +191,20 @@ except ImportError:
 
                     # Blend it.
                     texoff = texx + (texy * texwidth)
+                    if maskmap is not None and maskmap[imgoff] == 0:
+                        # This pixel is masked off!
+                        continue
                     imgmap[imgoff] = blend_point(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc)
 
             img.putdata(imgmap)
         else:
             imgbytes = img.tobytes('raw', 'RGBA')
             texbytes = texture.tobytes('raw', 'RGBA')
+            if mask:
+                alpha = mask.split()[-1]
+                maskbytes = alpha.tobytes('raw', 'L')
+            else:
+                maskbytes = None
 
             # Let's spread the load across multiple processors.
             procs: List[multiprocessing.Process] = []
@@ -223,6 +237,7 @@ except ImportError:
                         blendfunc,
                         imgbytes,
                         texbytes,
+                        maskbytes,
                     ),
                 )
                 procs.append(proc)
@@ -256,6 +271,33 @@ except ImportError:
             img = Image.frombytes('RGBA', (imgwidth, imgheight), b''.join(lines))
         return img
 
+    def blend_mask_create(
+        # RGBA color tuple representing what's already at the dest.
+        dest: Sequence[int],
+        # RGBA color tuple representing the source we want to blend to the dest.
+        src: Sequence[int],
+    ) -> Sequence[int]:
+        # Mask creating just allows a pixel to be drawn if the source image has a nonzero
+        # alpha, according to the SWF spec.
+        if src[3] != 0:
+            return (255, 0, 0, 255)
+        else:
+            return (0, 0, 0, 0)
+
+    def blend_mask_combine(
+        # RGBA color tuple representing what's already at the dest.
+        dest: Sequence[int],
+        # RGBA color tuple representing the source we want to blend to the dest.
+        src: Sequence[int],
+    ) -> Sequence[int]:
+        # Mask blending just takes the source and destination and ands them together, making
+        # a final mask that is the intersection of the original mask and the new mask. The
+        # reason we even have a color component to this is for debugging visibility.
+        if dest[3] != 0 and src[3] != 0:
+            return (255, 0, 0, 255)
+        else:
+            return (0, 0, 0, 0)
+
     def pixel_renderer(
         work: multiprocessing.Queue,
         results: multiprocessing.Queue,
@@ -270,6 +312,7 @@ except ImportError:
         blendfunc: int,
         imgbytes: bytes,
         texbytes: bytes,
+        maskbytes: Optional[bytes],
     ) -> None:
         while True:
             imgy = work.get()
@@ -295,6 +338,10 @@ except ImportError:
 
                 # Blend it.
                 texoff = texx + (texy * texwidth)
+                if maskbytes is not None and maskbytes[imgoff] == 0:
+                    # This pixel is masked off!
+                    result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
+                    continue
                 result.append(blend_point(add_color, mult_color, texbytes[(texoff * 4):((texoff + 1) * 4)], imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
 
             linebytes = bytes([channel for pixel in result for channel in pixel])
@@ -335,5 +382,11 @@ except ImportError:
             return blend_subtraction(dest_color, src_color)
         # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
         # Src * (1 - Dst) + Dst * (1 - Src).
+        elif blendfunc == 256:
+            # Dummy blend function for calculating masks.
+            return blend_mask_combine(dest_color, src_color)
+        elif blendfunc == 257:
+            # Dummy blend function for calculating masks.
+            return blend_mask_create(dest_color, src_color)
         else:
             return blend_normal(dest_color, src_color)

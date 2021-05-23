@@ -4,7 +4,7 @@ from PIL import Image  # type: ignore
 from .blend import affine_composite
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag, AP2PlaceCameraTag
 from .decompile import ByteCode
-from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, THIS, UNDEFINED, GLOBAL
+from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, NULL, UNDEFINED, GLOBAL, ROOT, PARENT, THIS, CLIP
 from .geo import Shape, DrawParams
 from .util import VerboseOutput
 
@@ -46,9 +46,15 @@ class RegisteredDummy:
         return f"RegisteredDummy(tag_id={self.tag_id})"
 
 
+class Mask:
+    def __init__(self, bounds: Rectangle) -> None:
+        self.bounds = bounds
+        self.rectangle: Optional[Image.Image] = None
+
+
 class PlacedObject:
     # An object that occupies the screen at some depth.
-    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, mask: Optional[Rectangle]) -> None:
+    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, mask: Optional[Mask]) -> None:
         self.__object_id = object_id
         self.__depth = depth
         self.rotation_offset = rotation_offset
@@ -86,7 +92,7 @@ class PlacedShape(PlacedObject):
         mult_color: Color,
         add_color: Color,
         blend: int,
-        mask: Optional[Rectangle],
+        mask: Optional[Mask],
         source: RegisteredShape,
     ) -> None:
         super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
@@ -112,7 +118,7 @@ class PlacedClip(PlacedObject):
         mult_color: Color,
         add_color: Color,
         blend: int,
-        mask: Optional[Rectangle],
+        mask: Optional[Mask],
         source: RegisteredClip,
     ) -> None:
         super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
@@ -193,7 +199,7 @@ class PlacedDummy(PlacedObject):
         mult_color: Color,
         add_color: Color,
         blend: int,
-        mask: Optional[Rectangle],
+        mask: Optional[Mask],
         source: RegisteredDummy,
     ) -> None:
         super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
@@ -206,7 +212,7 @@ class PlacedDummy(PlacedObject):
 
 class Movie:
     def __init__(self, root: PlacedClip) -> None:
-        self.__root = root
+        self.root = root
 
     def getInstanceAtDepth(self, depth: Any) -> Any:
         if not isinstance(depth, int):
@@ -216,7 +222,7 @@ class Movie:
         # stored added to -0x4000, so let's reverse that.
         depth = depth + 0x4000
 
-        for obj in self.__root.placed_objects:
+        for obj in self.root.placed_objects:
             if obj.depth == depth:
                 return obj
 
@@ -225,27 +231,28 @@ class Movie:
 
 
 class AEPLib:
-    def __init__(self, this: PlacedObject, movie: Movie) -> None:
-        self.__this = this
-        self.__movie = movie
-
     def aep_set_rect_mask(self, thisptr: Any, left: Any, right: Any, top: Any, bottom: Any) -> None:
         if not isinstance(left, (int, float)) or not isinstance(right, (int, float)) or not isinstance(top, (int, float)) or not isinstance(bottom, (int, float)):
-            print("WARNING: Ignoring aeplib.aep_set_rect_mask call with invalid parameters!")
+            print(f"WARNING: Ignoring aeplib.aep_set_rect_mask call with invalid parameters {left}, {right}, {top}, {bottom}!")
             return
-        if thisptr is THIS:
-            self.__this.mask = Rectangle(
-                left=float(left),
-                right=float(right),
-                top=float(top),
-                bottom=float(bottom),
+        if isinstance(thisptr, PlacedObject):
+            thisptr.mask = Mask(
+                Rectangle(
+                    left=float(left),
+                    right=float(right),
+                    top=float(top),
+                    bottom=float(bottom),
+                ),
             )
         else:
-            print("WARNING: Ignoring aeplib.aep_set_rect_mask call with unrecognized target!")
+            print(f"WARNING: Ignoring aeplib.aep_set_rect_mask call with unrecognized target {thisptr}!")
 
     def aep_set_set_frame(self, thisptr: Any, frame: Any) -> None:
         # I have no idea what this should do, so let's ignore it.
         pass
+
+
+MissingThis = object()
 
 
 class AFPRenderer(VerboseOutput):
@@ -319,15 +326,15 @@ class AFPRenderer(VerboseOutput):
 
         return paths
 
-    def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip) -> None:
+    def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis) -> None:
         if self.__movie is None:
             raise Exception("Logic error, executing bytecode outside of a rendering movie clip!")
 
+        this = clip if (thisptr is MissingThis) else thisptr
         location: int = 0
         stack: List[Any] = []
         variables: Dict[str, Any] = {
-            'aeplib': AEPLib(clip, self.__movie),
-            'GLOBAL': self.__movie,
+            'aeplib': AEPLib(),
         }
         registers: List[Any] = [UNDEFINED] * 256
 
@@ -386,7 +393,7 @@ class AFPRenderer(VerboseOutput):
                 funcname = stack.pop()
 
                 # Grab the object to perform the call on.
-                obj = variables['GLOBAL']
+                obj = self.__movie
 
                 # Grab the parameters to pass to the function.
                 num_params = stack.pop()
@@ -415,10 +422,34 @@ class AFPRenderer(VerboseOutput):
                             stack.append(obj.alias)
                         else:
                             stack.append(StringConstant.property_to_name(obj.const))
+                    elif obj is NULL:
+                        stack.append(None)
                     elif obj is THIS:
-                        stack.append(clip)
+                        stack.append(this)
                     elif obj is GLOBAL:
                         stack.append(self.__movie)
+                    elif obj is ROOT:
+                        stack.append(self.__movie.root)
+                    elif obj is CLIP:
+                        # I am not sure this is correct? Maybe it works out
+                        # in circumstances where "THIS" is pointed at something
+                        # else, such as defined function calls maybe?
+                        stack.append(clip)
+                    elif obj is PARENT:
+                        # Find the parent of this clip.
+                        def find_parent(parent: PlacedClip, child: PlacedClip) -> Any:
+                            for obj in parent.placed_objects:
+                                if obj is child:
+                                    # This is us, so the parent is our parent.
+                                    return parent
+                                if isinstance(obj, PlacedClip):
+                                    maybe_parent = find_parent(obj, child)
+                                    if maybe_parent is not None:
+                                        return maybe_parent
+
+                            return None
+
+                        stack.append(find_parent(self.__movie.root, clip) or UNDEFINED)
                     else:
                         stack.append(obj)
             elif isinstance(action, StoreRegisterAction):
@@ -683,11 +714,49 @@ class AFPRenderer(VerboseOutput):
         else:
             raise Exception(f"Failed to process tag: {tag}")
 
+    def __apply_mask(
+        self,
+        parent_mask: Image.Image,
+        transform: Matrix,
+        mask: Mask,
+    ) -> Image.Image:
+        if mask.rectangle is None:
+            # Calculate the new mask rectangle.
+            mask.rectangle = Image.new('RGBA', (int(mask.bounds.width), int(mask.bounds.height)), (255, 0, 0, 255))
+
+        # Offset it by its top/left.
+        transform = transform.translate(Point(mask.bounds.left, mask.bounds.top))
+
+        # Draw the mask onto a new image.
+        calculated_mask = affine_composite(
+            Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+            Color(0.0, 0.0, 0.0, 0.0),
+            Color(1.0, 1.0, 1.0, 1.0),
+            transform,
+            None,
+            257,
+            mask.rectangle,
+            single_threaded=self.__single_threaded,
+        )
+
+        # Composite it onto the current mask.
+        return affine_composite(
+            parent_mask.copy(),
+            Color(0.0, 0.0, 0.0, 0.0),
+            Color(1.0, 1.0, 1.0, 1.0),
+            Matrix.identity(),
+            None,
+            256,
+            calculated_mask,
+            single_threaded=self.__single_threaded,
+        )
+
     def __render_object(
         self,
         img: Image.Image,
         renderable: PlacedObject,
         parent_transform: Matrix,
+        parent_mask: Image.Image,
         parent_mult_color: Color,
         parent_add_color: Color,
         parent_blend: int,
@@ -707,7 +776,9 @@ class AFPRenderer(VerboseOutput):
             blend = parent_blend
 
         if renderable.mask:
-            print(f"WARNING: Unsupported mask Rectangle({renderable.mask})!")
+            mask = self.__apply_mask(parent_mask, transform, renderable.mask)
+        else:
+            mask = parent_mask
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
@@ -729,7 +800,7 @@ class AFPRenderer(VerboseOutput):
                 for obj in renderable.placed_objects:
                     if obj.depth != depth:
                         continue
-                    img = self.__render_object(img, obj, transform, mult_color, add_color, blend, only_depths=new_only_depths, prefix=prefix + " ")
+                    img = self.__render_object(img, obj, transform, mask, mult_color, add_color, blend, only_depths=new_only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -790,7 +861,7 @@ class AFPRenderer(VerboseOutput):
                     texture = shape.rectangle
 
                 if texture is not None:
-                    img = affine_composite(img, add_color, mult_color, transform, blend, texture, single_threaded=self.__single_threaded)
+                    img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded)
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass
@@ -968,6 +1039,9 @@ class AFPRenderer(VerboseOutput):
         )
         self.__movie = Movie(root_clip)
 
+        # Create the root mask for where to draw the root clip.
+        movie_mask = Image.new("RGBA", actual_size, color=(255, 0, 0, 255))
+
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
         actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
@@ -987,7 +1061,7 @@ class AFPRenderer(VerboseOutput):
                 if changed or frameno == 0:
                     # Now, render out the placed objects.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
-                    curimage = self.__render_object(curimage, root_clip, movie_transform, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
+                    curimage = self.__render_object(curimage, root_clip, movie_transform, movie_mask, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
