@@ -263,6 +263,12 @@ def main() -> int:
         help="Set the background color of the animation as a comma-separated RGB or RGBA color, overriding a default if present in the SWF.",
     )
     render_parser.add_argument(
+        "--background-image",
+        type=str,
+        default=None,
+        help="Set a background image to be placed behind the animation. Note that it will be stretched to fit the animation.",
+    )
+    render_parser.add_argument(
         "--only-depths",
         type=str,
         default=None,
@@ -731,6 +737,12 @@ def main() -> int:
             else:
                 color = None
 
+            # Allow inserting a background image.
+            if args.background_image:
+                background = Image.open(args.background_image)
+            else:
+                background = None
+
             # Calculate the size of the SWF so we can apply scaling options.
             swf_location = renderer.compute_path_location(args.path)
             requested_width = swf_location.width
@@ -783,7 +795,7 @@ def main() -> int:
                 depths = [int(d.strip()) for d in args.only_depths.split(",")]
             else:
                 depths = None
-            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color, only_depths=depths, movie_transform=transform)
+            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color, background_image=background, only_depths=depths, movie_transform=transform)
 
             if len(images) == 0:
                 raise Exception("Did not render any frames!")

@@ -291,6 +291,7 @@ class AFPRenderer(VerboseOutput):
         self,
         path: str,
         background_color: Optional[Color] = None,
+        background_image: Optional[Image.Image] = None,
         only_depths: Optional[List[int]] = None,
         movie_transform: Matrix = Matrix.identity(),
         verbose: bool = False,
@@ -301,7 +302,7 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    return self.__render(swf, only_depths, movie_transform)
+                    return self.__render(swf, only_depths, movie_transform, background_image)
 
         raise Exception(f'{path} not found in registered SWFs!')
 
@@ -1009,7 +1010,13 @@ class AFPRenderer(VerboseOutput):
         # We didn't find the tag we were after.
         return None
 
-    def __render(self, swf: SWF, only_depths: Optional[List[int]], movie_transform: Matrix) -> Tuple[int, List[Image.Image]]:
+    def __render(
+        self,
+        swf: SWF,
+        only_depths: Optional[List[int]],
+        movie_transform: Matrix,
+        background_image: Optional[Image.Image],
+    ) -> Tuple[int, List[Image.Image]]:
         # First, let's attempt to resolve imports.
         self.__registered_objects = self.__handle_imports(swf)
 
@@ -1038,6 +1045,69 @@ class AFPRenderer(VerboseOutput):
             ),
         )
         self.__movie = Movie(root_clip)
+
+        # If we have a background image, add it to the root clip.
+        if background_image:
+            # Stretch the image to make sure it fits the entire frame.
+            imgwidth = float(background_image.width)
+            imgheight = float(background_image.height)
+            background_matrix = Matrix(
+                a=swf.location.width / imgwidth,
+                b=0,
+                c=0,
+                d=swf.location.height / imgheight,
+                tx=0,
+                ty=0,
+            )
+
+            # Register the background image with the texture library.
+            name = f"{swf.exported_name}_inserted_background"
+            self.textures[name] = background_image.convert("RGBA")
+
+            # Place an instance of this background on the root clip.
+            root_clip.placed_objects.append(
+                PlacedShape(
+                    -1,
+                    -1,
+                    Point.identity(),
+                    background_matrix,
+                    Color(1.0, 1.0, 1.0, 1.0),
+                    Color(0.0, 0.0, 0.0, 0.0),
+                    0,
+                    None,
+                    RegisteredShape(
+                        -1,
+                        # The coordinates of the rectangle of the shape in screen space.
+                        [
+                            Point(0.0, 0.0),
+                            Point(imgwidth, 0.0),
+                            Point(imgwidth, imgheight),
+                            Point(0.0, imgheight),
+                        ],
+                        # The coordinates of the original texture in UV space (we don't use this).
+                        [
+                            Point(0.0, 0.0),
+                            Point(1.0, 0.0),
+                            Point(1.0, 1.0),
+                            Point(0.0, 1.0),
+                        ],
+                        # No texture colors.
+                        [],
+                        [
+                            DrawParams(
+                                # Instantiable, includes texture.
+                                0x3,
+                                # The texture this should use for drawing.
+                                name,
+                                # The coordinates of the triangles that get drawn (we don't use this).
+                                [0, 1, 2, 2, 1, 3],
+                                # The blend color.
+                                None,
+                            ),
+                        ],
+                    ),
+                ),
+            )
 
         # Create the root mask for where to draw the root clip.
         movie_mask = Image.new("RGBA", actual_size, color=(255, 0, 0, 255))
