@@ -4,7 +4,7 @@ from PIL import Image  # type: ignore
 from .blend import affine_composite
 from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag, AP2PlaceCameraTag
 from .decompile import ByteCode
-from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, THIS, UNDEFINED
+from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, THIS, UNDEFINED, GLOBAL
 from .geo import Shape, DrawParams
 from .util import VerboseOutput
 
@@ -138,6 +138,17 @@ class PlacedClip(PlacedObject):
         return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, finished={self.finished})"
 
     # The following are attributes and functions necessary to support some simple bytecode.
+    def gotoAndStop(self, frame: Any) -> None:
+        if not isinstance(frame, int):
+            # TODO: Technically this should also allow string labels to frames as identified in the
+            # SWF specification, but we don't support that here.
+            print(f"WARNING: Non-integer frame {frame} to gotoAndStop function!")
+            return
+        if frame <= 0 or frame > len(self.source.frames):
+            return
+        self.requested_frame = frame
+        self.playing = False
+
     def gotoAndPlay(self, frame: Any) -> None:
         if not isinstance(frame, int):
             # TODO: Technically this should also allow string labels to frames as identified in the
@@ -147,6 +158,12 @@ class PlacedClip(PlacedObject):
         if frame <= 0 or frame > len(self.source.frames):
             return
         self.requested_frame = frame
+        self.playing = True
+
+    def stop(self) -> None:
+        self.playing = False
+
+    def play(self) -> None:
         self.playing = True
 
     @property
@@ -398,6 +415,10 @@ class AFPRenderer(VerboseOutput):
                             stack.append(obj.alias)
                         else:
                             stack.append(StringConstant.property_to_name(obj.const))
+                    elif obj is THIS:
+                        stack.append(clip)
+                    elif obj is GLOBAL:
+                        stack.append(self.__movie)
                     else:
                         stack.append(obj)
             elif isinstance(action, StoreRegisterAction):
@@ -954,7 +975,7 @@ class AFPRenderer(VerboseOutput):
 
         # Now play the frames of the root clip.
         try:
-            while not root_clip.finished:
+            while root_clip.playing and not root_clip.finished:
                 # Create a new image to render into.
                 time = spf * frameno
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
