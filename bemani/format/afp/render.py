@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, List, Tuple, Optional, Union
+from typing import Any, Dict, Generator, List, Set, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
 from .blend import affine_composite
@@ -295,6 +295,12 @@ class AFPRenderer(VerboseOutput):
         # Internal render parameters.
         self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
         self.__root: Optional[PlacedClip] = None
+
+        # List of imports that we provide stub implementations for.
+        self.__stubbed_swfs: Set[str] = {
+            'aeplib.aeplib',
+            'aeplib.__Packages.aeplib',
+        }
 
     def add_shape(self, name: str, data: Shape) -> None:
         # Register a named shape with the renderer.
@@ -1005,7 +1011,9 @@ class AFPRenderer(VerboseOutput):
                         external_objects[tag_id] = self.__find_import(other, other.exported_tags[imp.tag])
                         break
             else:
-                print(f"WARNING: {swf.exported_name} imports {imp} but that SWF is not in our library!")
+                # Only display a warning if we don't have our own stub implementation of this SWF.
+                if repr(imp) not in self.__stubbed_swfs:
+                    print(f"WARNING: {swf.exported_name} imports {imp} but that SWF is not in our library!")
                 external_objects[tag_id] = RegisteredDummy(tag_id)
 
         # Fix up tag IDs to point at our local definition of them.
