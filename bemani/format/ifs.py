@@ -5,6 +5,7 @@ import struct
 from PIL import Image  # type: ignore
 from typing import Callable, Dict, List, Optional, Tuple
 
+from bemani.format.dxt import DXTBuffer
 from bemani.protocol.binary import BinaryEncoding
 from bemani.protocol.xml import XmlEncoding
 from bemani.protocol.lz77 import Lz77
@@ -190,7 +191,7 @@ class IFS:
                         if oldname in self.__files:
                             supported = False
                             if self.__decode_textures:
-                                if textfmt in ["argb8888rev"]:
+                                if textfmt in ["argb8888rev", "dxt5"]:
                                     # This is a supported file to decode
                                     newname += ".png"
                                     supported = True
@@ -309,13 +310,34 @@ class IFS:
             crop = self.__uvsize[filename]
 
             # Decode the image data itself.
+            width = img[1] - img[0]
+            height = img[3] - img[2]
+
             if fmt == "argb8888rev":
-                width = img[1] - img[0]
-                height = img[3] - img[2]
                 if len(filedata) < (width * height * 4):
                     left = (width * height * 4) - len(filedata)
                     filedata = filedata + b'\x00' * left
                 png = Image.frombytes('RGBA', (width, height), filedata, 'raw', 'BGRA')
+                png = png.crop((
+                    crop[0] - img[0],
+                    crop[2] - img[2],
+                    crop[1] - img[0],
+                    crop[3] - img[2],
+                ))
+                b = io.BytesIO()
+                png.save(b, format='PNG')
+                filedata = b.getvalue()
+            elif fmt == "dxt5":
+                dxt = DXTBuffer(width, height)
+                png = Image.frombuffer(
+                    'RGBA',
+                    (width, height),
+                    dxt.DXT5Decompress(filedata, swap=True),
+                    'raw',
+                    'RGBA',
+                    0,
+                    1,
+                )
                 png = png.crop((
                     crop[0] - img[0],
                     crop[2] - img[2],
