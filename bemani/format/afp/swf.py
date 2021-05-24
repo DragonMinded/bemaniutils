@@ -956,7 +956,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         size: int,
         dataoffset: int,
         tag_parent_sprite: Optional[int],
-        tag_frame: int,
+        tag_frame: str,
         prefix: str = "",
     ) -> Tag:
         if tagid == AP2Tag.AP2_SHAPE:
@@ -1021,7 +1021,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             return AP2DefineFontTag(font_id, fontname, xml_prefix, heights, text_indexes)
         elif tagid == AP2Tag.AP2_DO_ACTION:
             datachunk = ap2data[dataoffset:(dataoffset + size)]
-            bytecode = self.__parse_bytecode(f"on_enter_{f'sprite_{tag_parent_sprite}' if tag_parent_sprite is not None else 'main'}_frame_{tag_frame}", datachunk, prefix=prefix)
+            bytecode = self.__parse_bytecode(f"on_enter_{f'sprite_{tag_parent_sprite}' if tag_parent_sprite is not None else 'main'}_{tag_frame}", datachunk, prefix=prefix)
             self.add_coverage(dataoffset, size)
 
             return AP2DoActionTag(bytecode)
@@ -1941,7 +1941,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # First, parse frames.
         frames: List[Frame] = []
-        tag_to_frame: Dict[int, int] = {}
+        tag_to_frame: Dict[int, str] = {}
         self.vprint(f"{prefix}Number of Frames: {frame_count}")
         for i in range(frame_count):
             frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
@@ -1955,7 +1955,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             for j in range(num_tags_to_play):
                 if start_tag_offset + j in tag_to_frame:
                     raise Exception("Logic error!")
-                tag_to_frame[start_tag_offset + j] = i
+                tag_to_frame[start_tag_offset + j] = f"frame_{i}"
             frame_offset += 4
 
         # Now, parse regular tags.
@@ -1972,7 +1972,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
             self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
-            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, sprite, tag_to_frame[i], prefix=prefix))
+            tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, sprite, tag_to_frame.get(i, 'orphan'), prefix=prefix))
             tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
 
         # Finally, parse frame labels

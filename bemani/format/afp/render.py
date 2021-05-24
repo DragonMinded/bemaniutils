@@ -124,6 +124,7 @@ class PlacedClip(PlacedObject):
         super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
         self.placed_objects: List[PlacedObject] = []
         self.frame: int = 0
+        self.unplayed_tags: List[int] = [i for i in range(len(source.tags))]
         self.__source = source
 
         # Dynamic properties that are adjustable by SWF bytecode.
@@ -137,6 +138,11 @@ class PlacedClip(PlacedObject):
     def advance(self) -> None:
         if self.frame < len(self.source.frames):
             self.frame += 1
+
+    def rewind(self) -> None:
+        self.frame = 0
+        self.unplayed_tags = [i for i in range(len(self.__source.tags))]
+        self.placed_objects = []
 
     @property
     def finished(self) -> bool:
@@ -954,8 +960,7 @@ class AFPRenderer(VerboseOutput):
             # during some bytecode update in this loop.
             if clip.frame > clip.requested_frame:
                 # Rewind this clip to the beginning so we can replay until the requested frame.
-                clip.placed_objects = []
-                clip.frame = 0
+                clip.rewind()
 
             self.vprint(f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}")
 
@@ -965,8 +970,24 @@ class AFPRenderer(VerboseOutput):
             # Execute each tag in the frame if we need to move forward to a new frame.
             if clip.frame != clip.requested_frame:
                 frame = clip.source.frames[clip.frame]
-                tags = clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
+                orphans: List[Tag] = []
+                played_tags: Set[int] = set()
 
+                # See if we have any orphans that need to be placed before this frame will work.
+                for unplayed_tag in clip.unplayed_tags:
+                    if unplayed_tag < frame.start_tag_offset:
+                        self.vprint(f"{prefix}  Including orphaned tag {unplayed_tag} in frame evaluation")
+                        played_tags.add(unplayed_tag)
+                        orphans.append(clip.source.tags[unplayed_tag])
+
+                for tagno in range(frame.start_tag_offset, frame.start_tag_offset + frame.num_tags):
+                    played_tags.add(tagno)
+
+                # Check these off our future todo list.
+                clip.unplayed_tags = [t for t in clip.unplayed_tags if t not in played_tags]
+
+                # Grab the normal list of tags, add to the orphans.
+                tags = orphans + clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
                 for tagno, tag in enumerate(tags):
                     # Perform the action of this tag.
                     self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}")
