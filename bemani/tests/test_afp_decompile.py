@@ -1,10 +1,15 @@
 # vim: set fileencoding=utf-8
+import os
 import unittest
 from typing import Dict, List, Sequence, Tuple, Union
 
 from bemani.tests.helpers import ExtendedTestCase
 from bemani.format.afp.types.ap2 import AP2Action, IfAction, JumpAction, PushAction, AddNumVariableAction, Register
 from bemani.format.afp.decompile import BitVector, ByteCode, ByteCodeChunk, ControlFlow, ByteCodeDecompiler, Statement
+
+
+OPEN_BRACKET = "{"
+CLOSE_BRACKET = "}"
 
 
 class TestAFPBitVector(unittest.TestCase):
@@ -271,7 +276,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[1].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  'exception'\nEND_PUSH", "101: THROW"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  'exception'{os.linesep}END_PUSH", "101: THROW"])
         self.assertEqual(self.__equiv(chunks_by_id[1]), [])
 
     def test_if_handling_basic(self) -> None:
@@ -298,7 +303,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[3].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS FALSE, Offset To Jump To If True: 103"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  True{os.linesep}END_PUSH", "101: IF, Comparison: IS FALSE, Offset To Jump To If True: 103"])
         self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: PLAY"])
         self.assertEqual(self.__equiv(chunks_by_id[2]), ["103: END"])
         self.assertEqual(self.__equiv(chunks_by_id[3]), [])
@@ -325,7 +330,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[2].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS FALSE, Offset To Jump To If True: 103"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  True{os.linesep}END_PUSH", "101: IF, Comparison: IS FALSE, Offset To Jump To If True: 103"])
         self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: PLAY"])
         self.assertEqual(self.__equiv(chunks_by_id[2]), [])
 
@@ -358,7 +363,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[4].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  True{os.linesep}END_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
         self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: STOP", "103: JUMP, Offset To Jump To: 105"])
         self.assertEqual(self.__equiv(chunks_by_id[2]), ["104: PLAY"])
         self.assertEqual(self.__equiv(chunks_by_id[3]), ["105: END"])
@@ -389,7 +394,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[3].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  True{os.linesep}END_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
         self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: STOP", "103: JUMP, Offset To Jump To: 105"])
         self.assertEqual(self.__equiv(chunks_by_id[2]), ["104: PLAY"])
         self.assertEqual(self.__equiv(chunks_by_id[3]), [])
@@ -420,9 +425,9 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[3].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
-        self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: PUSH\n  'b'\nEND_PUSH", "103: RETURN"])
-        self.assertEqual(self.__equiv(chunks_by_id[2]), ["104: PUSH\n  'a'\nEND_PUSH", "105: RETURN"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  True{os.linesep}END_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[1]), [f"102: PUSH{os.linesep}  'b'{os.linesep}END_PUSH", "103: RETURN"])
+        self.assertEqual(self.__equiv(chunks_by_id[2]), [f"104: PUSH{os.linesep}  'a'{os.linesep}END_PUSH", "105: RETURN"])
         self.assertEqual(self.__equiv(chunks_by_id[3]), [])
 
     def test_if_handling_switch(self) -> None:
@@ -478,13 +483,13 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[8].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  Register(0)\n  1\nEND_PUSH", "101: IF, Comparison: !=, Offset To Jump To If True: 104"])
-        self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: PUSH\n  'a'\nEND_PUSH", "103: JUMP, Offset To Jump To: 113"])
-        self.assertEqual(self.__equiv(chunks_by_id[2]), ["104: PUSH\n  Register(0)\n  2\nEND_PUSH", "105: IF, Comparison: !=, Offset To Jump To If True: 108"])
-        self.assertEqual(self.__equiv(chunks_by_id[3]), ["106: PUSH\n  'b'\nEND_PUSH", "107: JUMP, Offset To Jump To: 113"])
-        self.assertEqual(self.__equiv(chunks_by_id[4]), ["108: PUSH\n  Register(0)\n  3\nEND_PUSH", "109: IF, Comparison: !=, Offset To Jump To If True: 112"])
-        self.assertEqual(self.__equiv(chunks_by_id[5]), ["110: PUSH\n  'c'\nEND_PUSH", "111: JUMP, Offset To Jump To: 113"])
-        self.assertEqual(self.__equiv(chunks_by_id[6]), ["112: PUSH\n  'd'\nEND_PUSH"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  Register(0){os.linesep}  1{os.linesep}END_PUSH", "101: IF, Comparison: !=, Offset To Jump To If True: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[1]), [f"102: PUSH{os.linesep}  'a'{os.linesep}END_PUSH", "103: JUMP, Offset To Jump To: 113"])
+        self.assertEqual(self.__equiv(chunks_by_id[2]), [f"104: PUSH{os.linesep}  Register(0){os.linesep}  2{os.linesep}END_PUSH", "105: IF, Comparison: !=, Offset To Jump To If True: 108"])
+        self.assertEqual(self.__equiv(chunks_by_id[3]), [f"106: PUSH{os.linesep}  'b'{os.linesep}END_PUSH", "107: JUMP, Offset To Jump To: 113"])
+        self.assertEqual(self.__equiv(chunks_by_id[4]), [f"108: PUSH{os.linesep}  Register(0){os.linesep}  3{os.linesep}END_PUSH", "109: IF, Comparison: !=, Offset To Jump To If True: 112"])
+        self.assertEqual(self.__equiv(chunks_by_id[5]), [f"110: PUSH{os.linesep}  'c'{os.linesep}END_PUSH", "111: JUMP, Offset To Jump To: 113"])
+        self.assertEqual(self.__equiv(chunks_by_id[6]), [f"112: PUSH{os.linesep}  'd'{os.linesep}END_PUSH"])
         self.assertEqual(self.__equiv(chunks_by_id[7]), ["113: END"])
         self.assertEqual(self.__equiv(chunks_by_id[8]), [])
 
@@ -514,9 +519,9 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[3].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: PUSH\n  True\nEND_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
-        self.assertEqual(self.__equiv(chunks_by_id[1]), ["102: PUSH\n  'b'\nEND_PUSH", "103: END"])
-        self.assertEqual(self.__equiv(chunks_by_id[2]), ["104: PUSH\n  'a'\nEND_PUSH", "105: END"])
+        self.assertEqual(self.__equiv(chunks_by_id[0]), [f"100: PUSH{os.linesep}  True{os.linesep}END_PUSH", "101: IF, Comparison: IS TRUE, Offset To Jump To If True: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[1]), [f"102: PUSH{os.linesep}  'b'{os.linesep}END_PUSH", "103: END"])
+        self.assertEqual(self.__equiv(chunks_by_id[2]), [f"104: PUSH{os.linesep}  'a'{os.linesep}END_PUSH", "105: END"])
         self.assertEqual(self.__equiv(chunks_by_id[3]), [])
 
 
@@ -616,7 +621,7 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(103, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n}"])
+        self.assertEqual(self.__equiv(statements), [f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET}"])
 
     def test_if_handling_basic_jump_to_end(self) -> None:
         # If by itself case.
@@ -630,7 +635,7 @@ class TestAFPDecompile(ExtendedTestCase):
             # "returning" early from a function.
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), ["if (not True) {\n  return\n}", "builtin_StartPlaying()"])
+        self.assertEqual(self.__equiv(statements), [f"if (not True) {OPEN_BRACKET}{os.linesep}  return{os.linesep}{CLOSE_BRACKET}", "builtin_StartPlaying()"])
 
     def test_if_handling_diamond(self) -> None:
         # If true-false diamond case.
@@ -647,7 +652,9 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(105, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n} else {\n  builtin_StopPlaying()\n}"])
+        self.assertEqual(self.__equiv(statements), [
+            f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}  builtin_StopPlaying(){os.linesep}{CLOSE_BRACKET}"
+        ])
 
     def test_if_handling_diamond_jump_to_end(self) -> None:
         # If true-false diamond case.
@@ -662,7 +669,9 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(104, AP2Action.PLAY),
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n} else {\n  builtin_StopPlaying()\n}"])
+        self.assertEqual(self.__equiv(statements), [
+            f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}  builtin_StopPlaying(){os.linesep}{CLOSE_BRACKET}"
+        ])
 
     def test_if_handling_diamond_return_to_end(self) -> None:
         # If true-false diamond case but the cases never converge.
@@ -678,7 +687,9 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(105, AP2Action.RETURN),
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  return 'a'\n} else {\n  return 'b'\n}"])
+        self.assertEqual(self.__equiv(statements), [
+            f"if (True) {OPEN_BRACKET}{os.linesep}  return 'a'{os.linesep}{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}  return 'b'{os.linesep}{CLOSE_BRACKET}"
+        ])
 
     def test_if_handling_switch(self) -> None:
         # Series of ifs (basically a switch statement).
@@ -714,18 +725,18 @@ class TestAFPDecompile(ExtendedTestCase):
 
         # TODO: This should be optimized as an if/elseif/else chunk without so much indentation.
         self.assertEqual(self.__equiv(statements), [
-            "if (registers[0] != 1) {\n"
-            "  if (registers[0] != 2) {\n"
-            "    if (registers[0] != 3) {\n"
-            "      tempvar_0 = 'd'\n"
-            "    } else {\n"
-            "      tempvar_0 = 'c'\n"
-            "    }\n"
-            "  } else {\n"
-            "    tempvar_0 = 'b'\n"
-            "  }\n"
-            "} else {\n"
-            "  tempvar_0 = 'a'\n"
+            f"if (registers[0] != 1) {OPEN_BRACKET}{os.linesep}"
+            f"  if (registers[0] != 2) {OPEN_BRACKET}{os.linesep}"
+            f"    if (registers[0] != 3) {OPEN_BRACKET}{os.linesep}"
+            f"      tempvar_0 = 'd'{os.linesep}"
+            f"    {CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
+            f"      tempvar_0 = 'c'{os.linesep}"
+            f"    {CLOSE_BRACKET}{os.linesep}"
+            f"  {CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
+            f"    tempvar_0 = 'b'{os.linesep}"
+            f"  {CLOSE_BRACKET}{os.linesep}"
+            f"{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
+            f"  tempvar_0 = 'a'{os.linesep}"
             "}",
             "return tempvar_0"
         ])
@@ -744,7 +755,9 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(105, AP2Action.END),
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), ["if (True) {\n  builtin_StartPlaying()\n} else {\n  builtin_StopPlaying()\n}"])
+        self.assertEqual(self.__equiv(statements), [
+            f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}  builtin_StopPlaying(){os.linesep}{CLOSE_BRACKET}"
+        ])
 
     def test_if_handling_or(self) -> None:
         # Two ifs that together make an or (if register == 1 or register == 3)
@@ -768,12 +781,12 @@ class TestAFPDecompile(ExtendedTestCase):
 
         # TODO: This should be optimized as a compound if statement.
         self.assertEqual(self.__equiv(statements), [
-            "if (registers[0] != 1) {\n"
-            "  if (registers[0] != 2) {\n"
-            "    builtin_StopPlaying()\n"
-            "    label_4:\n"
-            "    return 'strval'\n"
-            "  }\n"
+            f"if (registers[0] != 1) {OPEN_BRACKET}{os.linesep}"
+            f"  if (registers[0] != 2) {OPEN_BRACKET}{os.linesep}"
+            f"    builtin_StopPlaying(){os.linesep}"
+            f"    label_4:{os.linesep}"
+            f"    return 'strval'{os.linesep}"
+            f"  {CLOSE_BRACKET}{os.linesep}"
             "}",
             "builtin_StartPlaying()",
             "goto label_4",
@@ -799,8 +812,8 @@ class TestAFPDecompile(ExtendedTestCase):
         statements = self.__call_decompile(bytecode)
         self.assertEqual(self.__equiv(statements), [
             "local finished = False",
-            "while (not finished) {\n"
-            "  builtin_GotoNextFrame()\n"
+            f"while (not finished) {OPEN_BRACKET}{os.linesep}"
+            f"  builtin_GotoNextFrame(){os.linesep}"
             "}"
         ])
 
@@ -831,12 +844,12 @@ class TestAFPDecompile(ExtendedTestCase):
         statements = self.__call_decompile(bytecode)
         self.assertEqual(self.__equiv(statements), [
             "local finished = False",
-            "while (not finished) {\n"
-            "  if (not some_condition) {\n"
-            "    builtin_StopPlaying()\n"
-            "    break\n"
-            "  }\n"
-            "  builtin_GotoNextFrame()\n"
+            f"while (not finished) {OPEN_BRACKET}{os.linesep}"
+            f"  if (not some_condition) {OPEN_BRACKET}{os.linesep}"
+            f"    builtin_StopPlaying(){os.linesep}"
+            f"    break{os.linesep}"
+            f"  {CLOSE_BRACKET}{os.linesep}"
+            f"  builtin_GotoNextFrame(){os.linesep}"
             "}"
         ])
 
@@ -862,8 +875,8 @@ class TestAFPDecompile(ExtendedTestCase):
         ])
         statements = self.__call_decompile(bytecode)
         self.assertEqual(self.__equiv(statements), [
-            "for (local i = 0; i < 10; i = i + 1) {\n"
-            "  builtin_GotoNextFrame()\n"
+            f"for (local i = 0; i < 10; i = i + 1) {OPEN_BRACKET}{os.linesep}"
+            f"  builtin_GotoNextFrame(){os.linesep}"
             "}"
         ])
 
@@ -898,11 +911,11 @@ class TestAFPDecompile(ExtendedTestCase):
         ])
         statements = self.__call_decompile(bytecode)
         self.assertEqual(self.__equiv(statements), [
-            "for (local i = 0; i < 10; i = i + 1) {\n"
-            "  if (not some_condition) {\n"
-            "    builtin_StopPlaying()\n"
-            "    break\n"
-            "  }\n"
-            "  builtin_GotoNextFrame()\n"
+            f"for (local i = 0; i < 10; i = i + 1) {OPEN_BRACKET}{os.linesep}"
+            f"  if (not some_condition) {OPEN_BRACKET}{os.linesep}"
+            f"    builtin_StopPlaying(){os.linesep}"
+            f"    break{os.linesep}"
+            f"  {CLOSE_BRACKET}{os.linesep}"
+            f"  builtin_GotoNextFrame(){os.linesep}"
             "}"
         ])
