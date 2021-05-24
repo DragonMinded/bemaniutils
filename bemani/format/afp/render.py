@@ -125,6 +125,8 @@ class PlacedClip(PlacedObject):
         self.placed_objects: List[PlacedObject] = []
         self.frame: int = 0
         self.__source = source
+
+        # Dynamic properties that are adjustable by SWF bytecode.
         self.playing: bool = True
         self.requested_frame: Optional[int] = None
 
@@ -327,7 +329,7 @@ class AFPRenderer(VerboseOutput):
 
         return paths
 
-    def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis) -> None:
+    def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis, prefix: str="") -> None:
         if self.__movie is None:
             raise Exception("Logic error, executing bytecode outside of a rendering movie clip!")
 
@@ -339,12 +341,14 @@ class AFPRenderer(VerboseOutput):
         }
         registers: List[Any] = [UNDEFINED] * 256
 
+        self.vprint(f"{prefix}Bytecode engine starting.")
+
         while location < len(bytecode.actions):
             action = bytecode.actions[location]
 
             if action.opcode == AP2Action.END:
                 # End the execution.
-                self.vprint("Ending bytecode execution.")
+                self.vprint(f"{prefix}  Ending bytecode execution.")
                 break
             elif action.opcode == AP2Action.GET_VARIABLE:
                 varname = stack.pop()
@@ -467,6 +471,8 @@ class AFPRenderer(VerboseOutput):
 
             # Next opcode!
             location += 1
+
+        self.vprint(f"{prefix}Bytecode engine finished.")
 
     def __place(self, tag: Tag, operating_clip: PlacedClip, prefix: str = "") -> Tuple[Optional[PlacedClip], bool]:
         # "Place" a tag on the screen. Most of the time, this means performing the action of the tag,
@@ -622,7 +628,7 @@ class AFPRenderer(VerboseOutput):
                         for flags, code in tag.triggers.items():
                             if flags & AP2Trigger.ON_LOAD:
                                 for bytecode in code:
-                                    self.__execute_bytecode(bytecode, placed_clip)
+                                    self.__execute_bytecode(bytecode, placed_clip, prefix=prefix + "      ")
                             else:
                                 print("WARNING: Unhandled PLACE_OBJECT trigger with flags {flags}!")
 
@@ -689,7 +695,8 @@ class AFPRenderer(VerboseOutput):
             return None, True
 
         elif isinstance(tag, AP2DoActionTag):
-            self.__execute_bytecode(tag.bytecode, operating_clip)
+            self.vprint(f"{prefix}    Execution action tag.")
+            self.__execute_bytecode(tag.bytecode, operating_clip, prefix=prefix + "      ")
 
             # Didn't place a new clip.
             return None, False
@@ -871,33 +878,52 @@ class AFPRenderer(VerboseOutput):
 
         return img
 
-    def __process_tags(self, clip: PlacedClip, prefix: str = "  ") -> bool:
-        self.vprint(f"{prefix}Handling placed clip {clip.object_id} at depth {clip.depth}")
+    def __is_dirty(self, clip: PlacedClip) -> bool:
+        # If we are dirty ourselves, then the clip is definitely dirty.
+        if clip.requested_frame is not None:
+            return True
+
+        # If one of our children is dirty, then we are dirty.
+        for child in clip.placed_objects:
+            if isinstance(child, PlacedClip):
+                if self.__is_dirty(child):
+                    return True
+
+        # None of our children (or their children, etc...) or ourselves is dirty.
+        return False
+
+    def __process_tags(self, clip: PlacedClip, only_dirty: bool, prefix: str = "  ") -> bool:
+        self.vprint(f"{prefix}Handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}")
 
         # Track whether anything in ourselves or our children changes during this processing.
         changed = False
 
-        while True:
-            # See if this clip should actually be played.
-            if clip.requested_frame is None and not clip.playing:
-                break
+        # Make sure to set the requested frame if it isn't set by an external force.
+        if clip.requested_frame is None:
+            if not clip.playing or clip.finished or only_dirty:
+                # We aren't playing this clip because its either paused or finished,
+                # or it isn't dirty and we're doing dirty updates only. So, we don't
+                # need to advance to any frame.
+                clip.requested_frame = clip.frame
+            else:
+                # We need to do as many things as we need to get to the next frame.
+                clip.requested_frame = clip.frame + 1
 
-            # See if we need to fast forward to a frame.
-            if clip.requested_frame is not None:
-                if clip.frame > clip.requested_frame:
-                    # Rewind this clip to the beginning so we can replay until the requested frame.
-                    clip.placed_objects = []
-                    clip.frame = 0
-                elif clip.frame == clip.requested_frame:
-                    # We played up through the requested frame, we're done!
-                    clip.requested_frame = None
-                    break
+        while True:
+            # First, see if we need to rewind the clip if we were requested to go backwards
+            # during some bytecode update in this loop.
+            if clip.frame > clip.requested_frame:
+                # Rewind this clip to the beginning so we can replay until the requested frame.
+                clip.placed_objects = []
+                clip.frame = 0
+
+            self.vprint(f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}")
 
             # Clips that are part of our own placed objects which we should handle.
             child_clips = [c for c in clip.placed_objects if isinstance(c, PlacedClip)]
 
-            # Execute each tag in the frame.
-            if not clip.finished:
+            # Execute each tag in the frame if we need to move forward to a new frame.
+            if clip.frame != clip.requested_frame:
                 frame = clip.source.frames[clip.frame]
                 tags = clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
 
@@ -909,20 +935,22 @@ class AFPRenderer(VerboseOutput):
 
                     # If we create a new movie clip, process it as well for this frame.
                     if new_clip:
-                        changed = self.__process_tags(new_clip, prefix=prefix + "  ") or changed
+                        # These are never dirty-only updates as they're fresh-placed.
+                        changed = self.__process_tags(new_clip, False, prefix=prefix + "  ") or changed
+
+                # Now, advance the frame for this clip since we processed the frame.
+                clip.advance()
 
             # Now, handle each of the existing clips.
             for child in child_clips:
-                changed = self.__process_tags(child, prefix=prefix + "  ") or changed
+                changed = self.__process_tags(child, only_dirty, prefix=prefix + "  ") or changed
 
-            # Now, advance the frame for this clip.
-            clip.advance()
-
-            # See if we should bail.
-            if clip.requested_frame is None:
+            # See if we're done with this clip.
+            if clip.frame == clip.requested_frame:
+                clip.requested_frame = None
                 break
 
-        self.vprint(f"{prefix}Finished handling placed clip {clip.object_id} at depth {clip.depth}")
+        self.vprint(f"{prefix}Finished handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}")
 
         # Return if anything was modified.
         return changed
@@ -1126,7 +1154,9 @@ class AFPRenderer(VerboseOutput):
                 self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)} ({round(time, 2)}s)")
 
                 # Go through all registered clips, place all needed tags.
-                changed = self.__process_tags(root_clip)
+                changed = self.__process_tags(root_clip, False)
+                while self.__is_dirty(root_clip):
+                    changed = self.__process_tags(root_clip, True) or changed
 
                 if changed or frameno == 0:
                     # Now, render out the placed objects.
