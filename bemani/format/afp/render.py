@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, Generator, List, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
 from .blend import affine_composite
@@ -297,14 +297,15 @@ class AFPRenderer(VerboseOutput):
         only_depths: Optional[List[int]] = None,
         movie_transform: Matrix = Matrix.identity(),
         verbose: bool = False,
-    ) -> Tuple[int, List[Image.Image]]:
+    ) -> Generator[Image.Image, None, None]:
         # Given a path to a SWF root animation, attempt to render it to a list of frames.
         for name, swf in self.swfs.items():
             if swf.exported_name == path:
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    return self.__render(swf, only_depths, movie_transform, background_image)
+                    yield from self.__render(swf, only_depths, movie_transform, background_image)
+                    return
 
         raise Exception(f'{path} not found in registered SWFs!')
 
@@ -320,14 +321,37 @@ class AFPRenderer(VerboseOutput):
 
         raise Exception(f'{path} not found in registered SWFs!')
 
-    def list_paths(self, verbose: bool = False) -> List[str]:
-        # Given the loaded animations, return a list of possible paths to render.
-        paths: List[str] = []
-
+    def compute_path_frames(
+        self,
+        path: str,
+    ) -> int:
+        # Given a path to a SWF root animation, figure out how many frames are
+        # in that root path with no regard to bytecode 'stop()' commands.
         for name, swf in self.swfs.items():
-            paths.append(swf.exported_name)
+            if swf.exported_name == path:
+                # This is the SWF we care about.
+                return len(swf.frames)
 
-        return paths
+        raise Exception(f'{path} not found in registered SWFs!')
+
+    def compute_path_frame_duration(
+        self,
+        path: str,
+    ) -> int:
+        # Given a path to a SWF root animation, figure out how many milliseconds are
+        # occupied by each frame.
+        for name, swf in self.swfs.items():
+            if swf.exported_name == path:
+                # This is the SWF we care about.
+                spf = 1.0 / swf.fps
+                return int(spf * 1000.0)
+
+        raise Exception(f'{path} not found in registered SWFs!')
+
+    def list_paths(self, verbose: bool = False) -> Generator[str, None, None]:
+        # Given the loaded animations, return a list of possible paths to render.
+        for name, swf in self.swfs.items():
+            yield swf.exported_name
 
     def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis, prefix: str="") -> None:
         if self.__movie is None:
@@ -1044,13 +1068,12 @@ class AFPRenderer(VerboseOutput):
         only_depths: Optional[List[int]],
         movie_transform: Matrix,
         background_image: Optional[Image.Image],
-    ) -> Tuple[int, List[Image.Image]]:
+    ) -> Generator[Image.Image, None, None]:
         # First, let's attempt to resolve imports.
         self.__registered_objects = self.__handle_imports(swf)
 
         # Initialize overall frame advancement stuff.
-        spf = 1.0 / swf.fps
-        frames: List[Image.Image] = []
+        last_rendered_frame: Optional[Image.Image] = None
         frameno: int = 0
 
         # Calculate actual size based on given movie transform.
@@ -1149,32 +1172,30 @@ class AFPRenderer(VerboseOutput):
         try:
             while root_clip.playing and not root_clip.finished:
                 # Create a new image to render into.
-                time = spf * frameno
                 color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-                self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)} ({round(time, 2)}s)")
+                self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
 
                 # Go through all registered clips, place all needed tags.
                 changed = self.__process_tags(root_clip, False)
                 while self.__is_dirty(root_clip):
                     changed = self.__process_tags(root_clip, True) or changed
 
-                if changed or frameno == 0:
+                if changed or last_rendered_frame is None:
                     # Now, render out the placed objects.
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
                     curimage = self.__render_object(curimage, root_clip, movie_transform, movie_mask, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")
-                    curimage = frames[-1].copy()
+                    curimage = last_rendered_frame.copy()
 
-                # Advance our bookkeeping.
-                frames.append(curimage)
+                # Return that frame, advance our bookkeeping.
+                last_rendered_frame = curimage
                 frameno += 1
+                yield curimage
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
-            print(f"WARNING: Interrupted early, will render only {len(frames) + 1}/{len(root_clip.source.frames)} frames of animation!")
+            print(f"WARNING: Interrupted early, will render only {frameno}/{len(root_clip.source.frames)} frames of animation!")
 
         # Clean up
         self.movie = None
-
-        return int(spf * 1000.0), frames

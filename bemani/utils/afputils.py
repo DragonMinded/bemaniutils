@@ -790,18 +790,19 @@ def main() -> int:
                 ty=0.0,
             )
 
-            # Render the gif/webp frames.
+            # Support rendering only certain depth planes.
             if args.only_depths is not None:
                 depths = [int(d.strip()) for d in args.only_depths.split(",")]
             else:
                 depths = None
-            duration, images = renderer.render_path(args.path, verbose=args.verbose, background_color=color, background_image=background, only_depths=depths, movie_transform=transform)
-
-            if len(images) == 0:
-                raise Exception("Did not render any frames!")
 
             if fmt in ["GIF", "WEBP"]:
                 # Write all the frames out in one file.
+                duration = renderer.compute_path_frame_duration(args.path)
+                images = list(renderer.render_path(args.path, verbose=args.verbose, background_color=color, background_image=background, only_depths=depths, movie_transform=transform))
+                if len(images) == 0:
+                    raise Exception("Did not render any frames!")
+
                 with open(args.output, "wb") as bfp:
                     images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
 
@@ -812,11 +813,13 @@ def main() -> int:
                 ext = args.output[-4:]
 
                 # Figure out padding for the images.
-                frames = len(images)
+                frames = renderer.compute_path_frames(args.path)
                 if frames > 0:
                     digits = f"0{int(math.log10(frames)) + 1}"
 
-                    for i, img in enumerate(images):
+                    for i, img in enumerate(
+                        renderer.render_path(args.path, verbose=args.verbose, background_color=color, background_image=background, only_depths=depths, movie_transform=transform)
+                    ):
                         fullname = f"{filename}-{i:{digits}}{ext}"
 
                         with open(fullname, "wb") as bfp:
@@ -825,8 +828,7 @@ def main() -> int:
                         print(f"Wrote animation frame to {fullname}")
 
         elif args.action == "list":
-            paths = renderer.list_paths(verbose=args.verbose)
-            for path in paths:
+            for path in renderer.list_paths(verbose=args.verbose):
                 print(path)
 
     return 0
