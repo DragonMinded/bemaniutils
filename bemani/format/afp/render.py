@@ -212,9 +212,10 @@ class PlacedDummy(PlacedObject):
         return self.__source
 
 
-class Movie:
-    def __init__(self, root: PlacedClip) -> None:
+class Global:
+    def __init__(self, root: PlacedClip, clip: PlacedClip) -> None:
         self.root = root
+        self.clip = clip
 
     def getInstanceAtDepth(self, depth: Any) -> Any:
         if not isinstance(depth, int):
@@ -224,12 +225,27 @@ class Movie:
         # stored added to -0x4000, so let's reverse that.
         depth = depth + 0x4000
 
-        for obj in self.root.placed_objects:
+        for obj in self.clip.placed_objects:
             if obj.depth == depth:
                 return obj
 
         print(f"WARNING: Could not find object at depth {depth}!")
         return UNDEFINED
+
+    def __find_parent(self, parent: PlacedClip, child: PlacedClip) -> Optional[PlacedClip]:
+        for obj in parent.placed_objects:
+            if obj is child:
+                # This is us, so the parent is our parent.
+                return parent
+            if isinstance(obj, PlacedClip):
+                maybe_parent = self.__find_parent(obj, child)
+                if maybe_parent is not None:
+                    return maybe_parent
+
+        return None
+
+    def find_parent(self, child: PlacedClip) -> Optional[PlacedClip]:
+        return self.__find_parent(self.root, child)
 
 
 class AEPLib:
@@ -271,7 +287,7 @@ class AFPRenderer(VerboseOutput):
 
         # Internal render parameters.
         self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
-        self.__movie: Optional[Movie] = None
+        self.__root: Optional[PlacedClip] = None
 
     def add_shape(self, name: str, data: Shape) -> None:
         # Register a named shape with the renderer.
@@ -354,10 +370,11 @@ class AFPRenderer(VerboseOutput):
             yield swf.exported_name
 
     def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis, prefix: str="") -> None:
-        if self.__movie is None:
+        if self.__root is None:
             raise Exception("Logic error, executing bytecode outside of a rendering movie clip!")
 
-        this = clip if (thisptr is MissingThis) else thisptr
+        thisobj = clip if (thisptr is MissingThis) else thisptr
+        globalobj = Global(self.__root, clip)
         location: int = 0
         stack: List[Any] = []
         variables: Dict[str, Any] = {
@@ -421,9 +438,6 @@ class AFPRenderer(VerboseOutput):
                 # Grab the method name.
                 funcname = stack.pop()
 
-                # Grab the object to perform the call on.
-                obj = self.__movie
-
                 # Grab the parameters to pass to the function.
                 num_params = stack.pop()
                 if not isinstance(num_params, int):
@@ -434,13 +448,13 @@ class AFPRenderer(VerboseOutput):
 
                 # Look up the python function we're calling.
                 try:
-                    func = getattr(obj, funcname)
+                    func = getattr(globalobj, funcname)
 
                     # Call it, set the return on the stack.
                     stack.append(func(*params))
                 except AttributeError:
                     # Function does not exist!
-                    print(f"WARNING: Tried to call {funcname}({', '.join(repr(s) for s in params)}) on {obj} but that function doesn't exist!")
+                    print(f"WARNING: Tried to call {funcname}({', '.join(repr(s) for s in params)}) on {globalobj} but that function doesn't exist!")
                     stack.append(UNDEFINED)
             elif isinstance(action, PushAction):
                 for obj in action.objects:
@@ -454,11 +468,11 @@ class AFPRenderer(VerboseOutput):
                     elif obj is NULL:
                         stack.append(None)
                     elif obj is THIS:
-                        stack.append(this)
+                        stack.append(thisobj)
                     elif obj is GLOBAL:
-                        stack.append(self.__movie)
+                        stack.append(globalobj)
                     elif obj is ROOT:
-                        stack.append(self.__movie.root)
+                        stack.append(self.__root)
                     elif obj is CLIP:
                         # I am not sure this is correct? Maybe it works out
                         # in circumstances where "THIS" is pointed at something
@@ -466,19 +480,7 @@ class AFPRenderer(VerboseOutput):
                         stack.append(clip)
                     elif obj is PARENT:
                         # Find the parent of this clip.
-                        def find_parent(parent: PlacedClip, child: PlacedClip) -> Any:
-                            for obj in parent.placed_objects:
-                                if obj is child:
-                                    # This is us, so the parent is our parent.
-                                    return parent
-                                if isinstance(obj, PlacedClip):
-                                    maybe_parent = find_parent(obj, child)
-                                    if maybe_parent is not None:
-                                        return maybe_parent
-
-                            return None
-
-                        stack.append(find_parent(self.__movie.root, clip) or UNDEFINED)
+                        stack.append(globalobj.find_parent(clip) or UNDEFINED)
                     else:
                         stack.append(obj)
             elif isinstance(action, StoreRegisterAction):
@@ -1095,7 +1097,7 @@ class AFPRenderer(VerboseOutput):
                 swf.tags,
             ),
         )
-        self.__movie = Movie(root_clip)
+        self.__root = root_clip
 
         # If we have a background image, add it to the root clip.
         if background_image:
