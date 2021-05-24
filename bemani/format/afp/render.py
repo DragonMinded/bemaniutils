@@ -270,6 +270,13 @@ class AEPLib:
         pass
 
 
+class ASDLib:
+    def sound_play(self, sound: Any) -> None:
+        if not isinstance(sound, str):
+            print(f"WARNING: Ignoring asdlib.sound_play call with invalid parameters {sound}!")
+        print(f"WARNING: Requested sound {sound} be played but we don't support sound yet!")
+
+
 MissingThis = object()
 
 
@@ -379,6 +386,7 @@ class AFPRenderer(VerboseOutput):
         stack: List[Any] = []
         variables: Dict[str, Any] = {
             'aeplib': AEPLib(),
+            'asdlib': ASDLib(),
         }
         registers: List[Any] = [UNDEFINED] * 256
 
