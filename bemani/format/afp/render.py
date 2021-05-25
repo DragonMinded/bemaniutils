@@ -2,7 +2,20 @@ from typing import Any, Dict, Generator, List, Set, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
 from .blend import affine_composite
-from .swf import SWF, Frame, Tag, AP2ShapeTag, AP2DefineSpriteTag, AP2PlaceObjectTag, AP2RemoveObjectTag, AP2DoActionTag, AP2DefineFontTag, AP2DefineEditTextTag, AP2PlaceCameraTag
+from .swf import (
+    SWF,
+    Frame,
+    Tag,
+    AP2ShapeTag,
+    AP2DefineSpriteTag,
+    AP2PlaceObjectTag,
+    AP2RemoveObjectTag,
+    AP2DoActionTag,
+    AP2DefineFontTag,
+    AP2DefineEditTextTag,
+    AP2PlaceCameraTag,
+    AP2ImageTag,
+)
 from .decompile import ByteCode
 from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, NULL, UNDEFINED, GLOBAL, ROOT, PARENT, THIS, CLIP
 from .geo import Shape, DrawParams
@@ -14,10 +27,11 @@ class RegisteredClip:
     # SWF as well as AP2DefineSpriteTags which are essentially embedded movie clips. The
     # tag_id is the AP2DefineSpriteTag that created us, or None if this is the clip for
     # the root of the movie.
-    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag]) -> None:
+    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag], labels: Dict[str, int]) -> None:
         self.tag_id = tag_id
         self.frames = frames
         self.tags = tags
+        self.labels = labels
 
     def __repr__(self) -> str:
         return f"RegisteredClip(tag_id={self.tag_id})"
@@ -35,6 +49,16 @@ class RegisteredShape:
 
     def __repr__(self) -> str:
         return f"RegisteredShape(tag_id={self.tag_id}, vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
+
+
+class RegisteredImage:
+    # An image that we should draw directly.
+    def __init__(self, tag_id: int, reference: str) -> None:
+        self.tag_id = tag_id
+        self.reference = reference
+
+    def __repr__(self) -> str:
+        return f"RegisteredImage(tag_id={self.tag_id}, reference={self.reference})"
 
 
 class RegisteredDummy:
@@ -65,7 +89,7 @@ class PlacedObject:
         self.mask = mask
 
     @property
-    def source(self) -> Union[RegisteredClip, RegisteredShape, RegisteredDummy]:
+    def source(self) -> Union[RegisteredClip, RegisteredShape, RegisteredImage, RegisteredDummy]:
         raise NotImplementedError("Only implemented in subclass!")
 
     @property
@@ -151,27 +175,33 @@ class PlacedClip(PlacedObject):
     def __repr__(self) -> str:
         return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, finished={self.finished})"
 
+    def __resolve_frame(self, frame: Any) -> Optional[int]:
+        if isinstance(frame, int):
+            return frame
+        if isinstance(frame, str):
+            if frame in self.__source.labels:
+                return self.__source.labels[frame]
+        return None
+
     # The following are attributes and functions necessary to support some simple bytecode.
     def gotoAndStop(self, frame: Any) -> None:
-        if not isinstance(frame, int):
-            # TODO: Technically this should also allow string labels to frames as identified in the
-            # SWF specification, but we don't support that here.
-            print(f"WARNING: Non-integer frame {frame} to gotoAndStop function!")
+        actual_frame = self.__resolve_frame(frame)
+        if actual_frame is None:
+            print(f"WARNING: Unrecognized frame {frame} to gotoAndStop function!")
             return
-        if frame <= 0 or frame > len(self.source.frames):
+        if actual_frame <= 0 or actual_frame > len(self.source.frames):
             return
-        self.requested_frame = frame
+        self.requested_frame = actual_frame
         self.playing = False
 
     def gotoAndPlay(self, frame: Any) -> None:
-        if not isinstance(frame, int):
-            # TODO: Technically this should also allow string labels to frames as identified in the
-            # SWF specification, but we don't support that here.
+        actual_frame = self.__resolve_frame(frame)
+        if actual_frame is None:
             print(f"WARNING: Non-integer frame {frame} to gotoAndPlay function!")
             return
-        if frame <= 0 or frame > len(self.source.frames):
+        if actual_frame <= 0 or actual_frame > len(self.source.frames):
             return
-        self.requested_frame = frame
+        self.requested_frame = actual_frame
         self.playing = True
 
     def stop(self) -> None:
@@ -194,6 +224,32 @@ class PlacedClip(PlacedObject):
         if val < 0 or val >= len(self.source.frames):
             return
         self.requested_frame = val + 1
+
+
+class PlacedImage(PlacedObject):
+    # An image that occupies its parent clip at some depth. Placed by an AP2PlaceObjectTag
+    # referencing an AP2ImageTag.
+    def __init__(
+        self,
+        object_id: int,
+        depth: int,
+        rotation_offset: Point,
+        transform: Matrix,
+        mult_color: Color,
+        add_color: Color,
+        blend: int,
+        mask: Optional[Mask],
+        source: RegisteredImage,
+    ) -> None:
+        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
+        self.__source = source
+
+    @property
+    def source(self) -> RegisteredImage:
+        return self.__source
+
+    def __repr__(self) -> str:
+        return f"PlacedImage(object_id={self.object_id}, depth={self.depth}, source={self.source})"
 
 
 class PlacedDummy(PlacedObject):
@@ -275,6 +331,18 @@ class AEPLib:
         # I have no idea what this should do, so let's ignore it.
         pass
 
+    def gotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
+        # This appears to be a wrapper to allow calling gotoAndPlay on clips.
+        try:
+            meth = getattr(thisptr, 'gotoAndPlay')
+
+            # Call it, set the return on the stack.
+            return meth(frame)
+        except AttributeError:
+            # Function does not exist!
+            print(f"WARNING: Tried to call {'gotoAndPlay'}({frame}) on {thisptr} but that method doesn't exist!")
+            return UNDEFINED
+
 
 class ASDLib:
     def sound_play(self, sound: Any) -> None:
@@ -299,7 +367,7 @@ class AFPRenderer(VerboseOutput):
         self.swfs: Dict[str, SWF] = swfs
 
         # Internal render parameters.
-        self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
+        self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]] = {}
         self.__root: Optional[PlacedClip] = None
 
         # List of imports that we provide stub implementations for.
@@ -528,8 +596,6 @@ class AFPRenderer(VerboseOutput):
 
             if tag.reference not in self.shapes:
                 raise Exception(f"Cannot find shape reference {tag.reference}!")
-            if tag.id in self.__registered_objects:
-                raise Exception(f"Cannot register {tag.reference} as object slot {tag.id} is already taken!")
 
             self.__registered_objects[tag.id] = RegisteredShape(
                 tag.id,
@@ -542,14 +608,25 @@ class AFPRenderer(VerboseOutput):
             # Didn't place a new clip, didn't change anything.
             return None, False
 
+        elif isinstance(tag, AP2ImageTag):
+            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}")
+
+            if tag.reference not in self.textures:
+                raise Exception(f"Cannot find texture reference {tag.reference}!")
+
+            self.__registered_objects[tag.id] = RegisteredImage(
+                tag.id,
+                tag.reference,
+            )
+
+            # Didn't place a new clip, didn't change anything.
+            return None, False
+
         elif isinstance(tag, AP2DefineSpriteTag):
             self.vprint(f"{prefix}    Loading Sprite into object slot {tag.id}")
 
-            if tag.id in self.__registered_objects:
-                raise Exception(f"Cannot register sprite as object slot {tag.id} is already taken!")
-
             # Register a new clip that we might reference to execute.
-            self.__registered_objects[tag.id] = RegisteredClip(tag.id, tag.frames, tag.tags)
+            self.__registered_objects[tag.id] = RegisteredClip(tag.id, tag.frames, tag.tags, tag.labels)
 
             # Didn't place a new clip, didn't change anything.
             return None, False
@@ -573,6 +650,21 @@ class AFPRenderer(VerboseOutput):
                             newobj = self.__registered_objects[tag.source_tag_id]
                             if isinstance(newobj, RegisteredShape):
                                 operating_clip.placed_objects[i] = PlacedShape(
+                                    obj.object_id,
+                                    obj.depth,
+                                    new_rotation_offset,
+                                    new_transform,
+                                    new_mult_color,
+                                    new_add_color,
+                                    new_blend,
+                                    obj.mask,
+                                    newobj,
+                                )
+
+                                # Didn't place a new clip, changed the parent clip.
+                                return None, True
+                            elif isinstance(newobj, RegisteredImage):
+                                operating_clip.placed_objects[i] = PlacedImage(
                                     obj.object_id,
                                     obj.depth,
                                     new_rotation_offset,
@@ -643,6 +735,23 @@ class AFPRenderer(VerboseOutput):
                     if isinstance(newobj, RegisteredShape):
                         operating_clip.placed_objects.append(
                             PlacedShape(
+                                tag.object_id,
+                                tag.depth,
+                                tag.rotation_offset or Point.identity(),
+                                tag.transform or Matrix.identity(),
+                                tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
+                                tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.blend or 0,
+                                None,
+                                newobj,
+                            )
+                        )
+
+                        # Didn't place a new clip, changed the parent clip.
+                        return None, True
+                    elif isinstance(newobj, RegisteredImage):
+                        operating_clip.placed_objects.append(
+                            PlacedImage(
                                 tag.object_id,
                                 tag.depth,
                                 tag.rotation_offset or Point.identity(),
@@ -916,6 +1025,14 @@ class AFPRenderer(VerboseOutput):
 
                 if texture is not None:
                     img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded)
+        elif isinstance(renderable, PlacedImage):
+            if only_depths is not None and renderable.depth not in only_depths:
+                # Not on the correct depth plane.
+                return img
+
+            # This is a shape draw reference.
+            texture = self.textures[renderable.source.reference]
+            img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded)
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass
@@ -1016,8 +1133,8 @@ class AFPRenderer(VerboseOutput):
         # Return if anything was modified.
         return changed
 
-    def __handle_imports(self, swf: SWF) -> Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]]:
-        external_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredDummy]] = {}
+    def __handle_imports(self, swf: SWF) -> Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]]:
+        external_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]] = {}
 
         # Go through, recursively resolve imports for all SWF files.
         for tag_id, imp in swf.imported_tags.items():
@@ -1044,7 +1161,7 @@ class AFPRenderer(VerboseOutput):
         # Return our newly populated registered object table containing all imports!
         return external_objects
 
-    def __find_import(self, swf: SWF, tag_id: int) -> Union[RegisteredShape, RegisteredClip, RegisteredDummy]:
+    def __find_import(self, swf: SWF, tag_id: int) -> Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]:
         if tag_id in swf.imported_tags:
             external_objects = self.__handle_imports(swf)
             if tag_id not in external_objects:
@@ -1056,6 +1173,7 @@ class AFPRenderer(VerboseOutput):
             None,
             swf.frames,
             swf.tags,
+            swf.labels,
         )
 
         tag = self.__find_tag(root_clip, tag_id)
@@ -1064,7 +1182,7 @@ class AFPRenderer(VerboseOutput):
             return RegisteredDummy(tag_id)
         return tag
 
-    def __find_tag(self, clip: RegisteredClip, tag_id: int) -> Optional[Union[RegisteredShape, RegisteredClip, RegisteredDummy]]:
+    def __find_tag(self, clip: RegisteredClip, tag_id: int) -> Optional[Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]]:
         # Fake-execute this clip to find the tag we need to manifest.
         for frame in clip.frames:
             tags = clip.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
@@ -1086,8 +1204,20 @@ class AFPRenderer(VerboseOutput):
                             self.shapes[tag.reference].draw_params,
                         )
 
+                elif isinstance(tag, AP2ImageTag):
+                    if tag.id == tag_id:
+                        # We need to be able to see this shape to place it.
+                        if tag.reference not in self.textures:
+                            raise Exception(f"Cannot find texture reference {tag.reference}!")
+
+                        # This matched, so this is the import.
+                        return RegisteredImage(
+                            tag.id,
+                            tag.reference,
+                        )
+
                 elif isinstance(tag, AP2DefineSpriteTag):
-                    new_clip = RegisteredClip(tag.id, tag.frames, tag.tags)
+                    new_clip = RegisteredClip(tag.id, tag.frames, tag.tags, tag.labels)
 
                     if tag.id == tag_id:
                         # This matched, so it is the clip that we want to export.
@@ -1132,6 +1262,7 @@ class AFPRenderer(VerboseOutput):
                 None,
                 swf.frames,
                 swf.tags,
+                swf.labels,
             ),
         )
         self.__root = root_clip
