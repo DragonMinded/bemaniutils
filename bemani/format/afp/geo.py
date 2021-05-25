@@ -2,7 +2,7 @@ import os
 import struct
 from typing import Any, Dict, List, Optional
 
-from .types import Color, Point
+from .types import Color, Point, Rectangle
 from .util import descramble_text
 
 
@@ -31,6 +31,9 @@ class Shape:
         # Actual shape drawing parameters.
         self.draw_params: List[DrawParams] = []
 
+        # Bounds of the shape.
+        self.bounds: Rectangle = Rectangle.Empty()
+
         # Whether this is parsed.
         self.parsed = False
 
@@ -41,6 +44,7 @@ class Shape:
             'tex_points': [p.as_dict(*args, **kwargs) for p in self.tex_points],
             'tex_colors': [c.as_dict(*args, **kwargs) for c in self.tex_colors],
             'draw_params': [d.as_dict(*args, **kwargs) for d in self.draw_params],
+            'bounds': self.bounds.as_dict(args, kwargs),
         }
 
     def __repr__(self) -> str:
@@ -49,6 +53,7 @@ class Shape:
             *[f"tex point: {tex}" for tex in self.tex_points],
             *[f"tex color: {color}" for color in self.tex_colors],
             *[f"draw params: {params}" for params in self.draw_params],
+            *[f"bounds: {self.bounds}"],
         ])
 
     def get_until_null(self, offset: int) -> bytes:
@@ -71,14 +76,14 @@ class Shape:
 
         # There are two integers at 0x4 and 0x8 which are basically file versions.
 
-        filesize = struct.unpack(f"{endian}I", self.data[12:16])[0]
+        filesize, fileflags = struct.unpack(f"{endian}II", self.data[12:20])
         if filesize != len(self.data):
             raise Exception("Unexpected file size for GE2D structure!")
 
-        # There is an integer at 0x16 which always appears to be zero. It should be
-        # file flags, but I don't know what it does since no code I've found cares.
-        if self.data[16:20] != b"\0\0\0\0":
-            raise Exception("Unhandled flag data bytes in GE2D structure!")
+        geo_has_bounds_floats = bool(fileflags & 0x4)
+        vertex_well_formed_rectangle = bool(fileflags & 0x8)
+        if fileflags & ~0xC:
+            raise Exception(f"Unexpected file flags {fileflags} in GE2D structure!")
 
         vertex_count, tex_count, color_count, label_count, render_params_count, _ = struct.unpack(
             f"{endian}HHHHHH",
@@ -92,6 +97,8 @@ class Shape:
 
         vertex_points: List[Point] = []
         if vertex_offset != 0:
+            # If fileflags & 0x8 is set, these go in clockwise order starting at the top left
+            # point and there are only 8 of them, making a rectangle.
             for vertexno in range(vertex_count):
                 vertexno_offset = vertex_offset + (8 * vertexno)
                 x, y = struct.unpack(f"{endian}ff", self.data[vertexno_offset:vertexno_offset + 8])
@@ -129,6 +136,39 @@ class Shape:
                 bytedata = self.get_until_null(labelptr)
                 labels.append(descramble_text(bytedata, text_obfuscated))
 
+        # Parse rectangle bounds.
+        if geo_has_bounds_floats:
+            left, right, top, bottom = struct.unpack(f"{endian}ffff", self.data[52:68])
+            self.bounds = Rectangle(
+                left=left,
+                right=right,
+                top=top,
+                bottom=bottom,
+            )
+        elif vertex_well_formed_rectangle:
+            self.bounds = Rectangle(
+                left=vertex_points[0].x,
+                right=vertex_points[1].x,
+                top=vertex_points[0].y,
+                bottom=vertex_points[2].y,
+            )
+        else:
+            if vertex_points:
+                self.bounds.left = vertex_points[0].x
+                self.bounds.right = vertex_points[0].x
+                self.bounds.top = vertex_points[0].y
+                self.bounds.bottom = vertex_points[0].y
+
+            for pt in vertex_points:
+                if pt.x < self.bounds.left:
+                    self.bounds.left = pt.x
+                if pt.x > self.bounds.right:
+                    self.bounds.right = pt.x
+                if pt.y < self.bounds.top:
+                    self.bounds.top = pt.y
+                if pt.y > self.bounds.bottom:
+                    self.bounds.bottom = pt.y
+
         draw_params: List[DrawParams] = []
         if render_params_offset != 0:
             # The actual render parameters for the shape. This dictates how the texture values
@@ -149,7 +189,7 @@ class Shape:
                 if tex2 != 0xFF:
                     raise Exception("GE2D structure requests a second texture, but we don't support this!")
                 if unk != 0x0:
-                    raise Exception("Unhandled unknown dadta in GE2D structure!")
+                    raise Exception("Unhandled unknown data in GE2D structure!")
 
                 color = Color(
                     a=(rgba & 0xFF) / 255.0,
