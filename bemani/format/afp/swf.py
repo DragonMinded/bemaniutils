@@ -111,6 +111,20 @@ class AP2ShapeTag(Tag):
         }
 
 
+class AP2ImageTag(Tag):
+    def __init__(self, id: int, reference: str) -> None:
+        super().__init__(id)
+
+        # The reference is the name of a texture that will be displayed directly.
+        self.reference = reference
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **super().as_dict(*args, **kwargs),
+            'reference': self.reference,
+        }
+
+
 class AP2DefineFontTag(Tag):
     def __init__(self, id: int, fontname: str, xml_prefix: str, heights: List[int], text_indexes: List[int]) -> None:
         super().__init__(id)
@@ -1400,11 +1414,75 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x20000000:
                 # TODO: Again, absolutely no idea, gets passed into a function and I
                 # don't see how its used.
+                unhandled_flags &= ~0x20000000
                 unk_a, unk_b, unk_c = struct.unpack("<hbb", datachunk[running_pointer:(running_pointer + 4)])
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
                 self.vprint(f"{prefix}    Unknown Data: {unk_a}, {unk_b}, {unk_c}")
+
+            if flags & 0x400000000:
+                # There's some serious hanky-panky going on here. The first 4 bytes are a bitmask,
+                # and we advance past data based on some calculation of the number of bits set.
+                # I'll need to run into some data using this to figure out what the heck is going on.
+                raise Exception("TODO")
+
+            if flags & 0x800000000:
+                unhandled_flags &= ~0x800000000
+                bitmask = struct.unpack("<I", datachunk[running_pointer:(running_pointer + 4)])[0]
+                self.add_coverage(dataoffset + running_pointer, 4)
+                running_pointer += 4
+
+                self.vprint(f"{prefix}    Unknown Data Flags: {hex(bitmask)}")
+
+                # I have no idea what any of this is either, so I am duplicating game logic in the
+                # hopes that someday it makes sense.
+                cur_size = 0
+
+                for bit in range(32):
+                    if bool(bitmask & (1 << bit)):
+                        unk_flags, unk_size = struct.unpack("<HH", datachunk[(running_pointer + (cur_size * 2)):(running_pointer + (cur_size * 2) + 4)])
+
+                        cur_size = cur_size + 2 + (
+                            (((unk_flags & 0x10) | 0x8) >> 2) *
+                            ((unk_flags & 1) + 1) *
+                            unk_size
+                        )
+
+                        self.vprint(f"{prefix}      WTF: {hex(unk_flags)}, {unk_size}, {cur_size}")
+
+                self.add_coverage(dataoffset + running_pointer, cur_size * 2)
+                running_pointer += cur_size * 2
+
+            if flags & 0x1000000000:
+                # I have no idea what this is, but the two shorts that it pulls out are assigned
+                # to the same variables as those in 0x2000000000, so they're obviously linked.
+                unhandled_flags &= ~0x1000000000
+                unk1, unk2, unk3 = struct.unpack("<Ihh", datachunk[running_pointer:(running_pointer + 8)])
+                self.add_coverage(dataoffset + running_pointer, 8)
+                running_pointer += 8
+
+                self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}")
+
+            if flags & 0x2000000000:
+                # I have no idea what this is, but the two shorts that it pulls out are assigned
+                # to the same variables as those in 0x1000000000, so they're obviously linked.
+                unhandled_flags &= ~0x2000000000
+                unk1, unk2, unk3 = struct.unpack("<Hhh", datachunk[running_pointer:(running_pointer + 6)])
+                self.add_coverage(dataoffset + running_pointer, 6)
+                running_pointer += 6
+
+                self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}")
+
+            # Due to possible misalignment, we need to realign.
+            misalignment = running_pointer & 3
+            if misalignment > 0:
+                catchup = 4 - misalignment
+                self.add_coverage(dataoffset + running_pointer, catchup)
+                running_pointer += catchup
+
+            if flags & 0x4000000000:
+                raise Exception("TODO")
 
             # This flag states whether we are creating a new object on this depth, or updating one.
             unhandled_flags &= ~0x400000D
@@ -1915,6 +1993,20 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Failed to parse {dataoffset + size - running_data_ptr} bytes of data!")
 
             return AP2PlaceCameraTag()
+        elif tagid == AP2Tag.AP2_IMAGE:
+            if size != 8:
+                raise Exception(f"Invalid size {size} to get data from AP2_IMAGE!")
+            flags, image_id, image_str_ptr = struct.unpack("<IHH", ap2data[dataoffset:(dataoffset + 8)])
+            image_str = self.__get_string(image_str_ptr)
+            self.add_coverage(dataoffset, 8)
+
+            if flags & 0x2:
+                # This looks like we prepend "SWFA-" to the file name.
+                image_str = f"SWFA-{image_str}"
+
+            self.vprint(f"{prefix}    Tag ID: {image_id}, Flags: {hex(flags)}, String: {image_str}")
+
+            return AP2ImageTag(image_id, image_str)
         else:
             self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
