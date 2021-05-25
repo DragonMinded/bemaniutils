@@ -64,6 +64,22 @@ def write_bytecode(swf: SWF, directory: str, verbose: bool=False) -> None:
         bfp.write(f"{os.linesep}{os.linesep}".join(buff).encode('utf-8'))
 
 
+def parse_intlist(data: str) -> List[int]:
+    ints: List[int] = []
+
+    for chunk in data.split(","):
+        chunk = chunk.strip()
+        if '-' in chunk:
+            start, end = chunk.split('-', 1)
+            start_int = int(start.strip())
+            end_int = int(end.strip())
+            ints.extend(range(start_int, end_int + 1))
+        else:
+            ints.append(int(chunk))
+
+    return sorted(set(ints))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker")
     subparsers = parser.add_subparsers(help='Action to take', dest='action')
@@ -272,7 +288,13 @@ def main() -> int:
         "--only-depths",
         type=str,
         default=None,
-        help="Only render objects on these depth planes. Can provide either a number or a comma-separated list of numbers.",
+        help="Only render objects on these depth planes. Can provide either a number or a comma-separated list of numbers, or a range such as 3-5.",
+    )
+    render_parser.add_argument(
+        "--only-frames",
+        type=str,
+        default=None,
+        help="Only render these frames. Can provide either a number or a comma-separated list of numbers, or a range such as 10-20.",
     )
     render_parser.add_argument(
         "--force-aspect-ratio",
@@ -792,14 +814,30 @@ def main() -> int:
 
             # Support rendering only certain depth planes.
             if args.only_depths is not None:
-                depths = [int(d.strip()) for d in args.only_depths.split(",")]
+                requested_depths = parse_intlist(args.only_depths)
             else:
-                depths = None
+                requested_depths = None
+
+            # Support rendering only certain frames.
+            if args.only_frames is not None:
+                requested_frames = parse_intlist(args.only_frames)
+            else:
+                requested_frames = None
 
             if fmt in ["GIF", "WEBP"]:
                 # Write all the frames out in one file.
                 duration = renderer.compute_path_frame_duration(args.path)
-                images = list(renderer.render_path(args.path, verbose=args.verbose, background_color=color, background_image=background, only_depths=depths, movie_transform=transform))
+                images = list(
+                    renderer.render_path(
+                        args.path,
+                        verbose=args.verbose,
+                        background_color=color,
+                        background_image=background,
+                        only_depths=requested_depths,
+                        only_frames=requested_frames,
+                        movie_transform=transform,
+                    )
+                )
                 if len(images) == 0:
                     raise Exception("Did not render any frames!")
 
@@ -818,7 +856,15 @@ def main() -> int:
                     digits = f"0{int(math.log10(frames)) + 1}"
 
                     for i, img in enumerate(
-                        renderer.render_path(args.path, verbose=args.verbose, background_color=color, background_image=background, only_depths=depths, movie_transform=transform)
+                        renderer.render_path(
+                            args.path,
+                            verbose=args.verbose,
+                            background_color=color,
+                            background_image=background,
+                            only_depths=requested_depths,
+                            only_frames=requested_frames,
+                            movie_transform=transform,
+                        )
                     ):
                         fullname = f"{filename}-{i:{digits}}{ext}"
 

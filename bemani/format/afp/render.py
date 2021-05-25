@@ -398,6 +398,7 @@ class AFPRenderer(VerboseOutput):
         background_color: Optional[Color] = None,
         background_image: Optional[Image.Image] = None,
         only_depths: Optional[List[int]] = None,
+        only_frames: Optional[List[int]] = None,
         movie_transform: Matrix = Matrix.identity(),
         verbose: bool = False,
     ) -> Generator[Image.Image, None, None]:
@@ -407,7 +408,7 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    yield from self.__render(swf, only_depths, movie_transform, background_image)
+                    yield from self.__render(swf, only_depths, only_frames, movie_transform, background_image)
                     return
 
         raise Exception(f'{path} not found in registered SWFs!')
@@ -1077,6 +1078,8 @@ class AFPRenderer(VerboseOutput):
             # during some bytecode update in this loop.
             if clip.frame > clip.requested_frame:
                 # Rewind this clip to the beginning so we can replay until the requested frame.
+                if clip is self.__root:
+                    print("WARNING: Root clip was rewound, its possible this animation plays forever!")
                 clip.rewind()
 
             self.vprint(f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}")
@@ -1235,6 +1238,7 @@ class AFPRenderer(VerboseOutput):
         self,
         swf: SWF,
         only_depths: Optional[List[int]],
+        only_frames: Optional[List[int]],
         movie_transform: Matrix,
         background_image: Optional[Image.Image],
     ) -> Generator[Image.Image, None, None]:
@@ -1338,11 +1342,15 @@ class AFPRenderer(VerboseOutput):
         actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
         actual_blend = 0
 
+        if only_frames:
+            max_frame = max(only_frames)
+        else:
+            max_frame = None
+
         # Now play the frames of the root clip.
         try:
             while root_clip.playing and not root_clip.finished:
                 # Create a new image to render into.
-                color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
                 self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
 
                 # Go through all registered clips, place all needed tags.
@@ -1350,8 +1358,17 @@ class AFPRenderer(VerboseOutput):
                 while self.__is_dirty(root_clip):
                     changed = self.__process_tags(root_clip, True) or changed
 
+                # If we're only rendering some frames, don't bother to do the draw operations
+                # if we aren't going to return the frame.
+                if only_frames and (frameno + 1) not in only_frames:
+                    self.vprint(f"Skipped rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
+                    last_rendered_frame = None
+                    frameno += 1
+                    continue
+
                 if changed or last_rendered_frame is None:
                     # Now, render out the placed objects.
+                    color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
                     curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
                     curimage = self.__render_object(curimage, root_clip, movie_transform, movie_mask, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
                 else:
@@ -1360,12 +1377,17 @@ class AFPRenderer(VerboseOutput):
                     curimage = last_rendered_frame.copy()
 
                 # Return that frame, advance our bookkeeping.
+                self.vprint(f"Finished rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
                 last_rendered_frame = curimage
                 frameno += 1
                 yield curimage
+
+                # See if we should bail because we passed the last requested frame.
+                if max_frame is not None and frameno == max_frame:
+                    break
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
             print(f"WARNING: Interrupted early, will render only {frameno}/{len(root_clip.source.frames)} frames of animation!")
 
         # Clean up
-        self.movie = None
+        self.__root = None
