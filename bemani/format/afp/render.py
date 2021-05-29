@@ -340,7 +340,31 @@ class AEPLib:
             return meth(frame)
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call {'gotoAndPlay'}({frame}) on {thisptr} but that method doesn't exist!")
+            print(f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!")
+            return UNDEFINED
+
+    def deepGotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
+        # I don't know how this differs from regular gotoAndPlay.
+        try:
+            meth = getattr(thisptr, 'gotoAndPlay')
+
+            # Call it, set the return on the stack.
+            return meth(frame)
+        except AttributeError:
+            # Function does not exist!
+            print(f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!")
+            return UNDEFINED
+
+    def stop(self, thisptr: Any) -> Any:
+        # This appears to be a wrapper to allow calling stop on clips.
+        try:
+            meth = getattr(thisptr, 'stop')
+
+            # Call it, set the return on the stack.
+            return meth()
+        except AttributeError:
+            # Function does not exist!
+            print(f"WARNING: Tried to call stop() on {thisptr} but that method doesn't exist!")
             return UNDEFINED
 
 
