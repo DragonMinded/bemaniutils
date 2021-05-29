@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class Expression:
     # Any thing that can be evaluated for a result, such as a variable
     # reference, function call, or mathematical operation.
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
@@ -23,7 +23,7 @@ class GenericObject(Expression):
     def __repr__(self) -> str:
         return self.name
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         return self.name
 
 
@@ -43,7 +43,7 @@ class Register(Expression):
     def __repr__(self) -> str:
         return f"Register({self.no})"
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         return f"registers[{self.no}]"
 
 
@@ -1995,7 +1995,7 @@ class StringConstant(Expression):
         else:
             return f"StringConstant({hex(self.const)}: {StringConstant.property_to_name(self.const)})"
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         if self.alias:
             return self.alias
         else:
@@ -2013,9 +2013,9 @@ class ArithmeticExpression(Expression):
         right = value_ref(self.right, "", parens=True)
         return f"{left} {self.op} {right}"
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        left = value_ref(self.left, parent_prefix, parens=True, verbose=verbose)
-        right = value_ref(self.right, parent_prefix, parens=True, verbose=verbose)
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        left = value_ref(self.left, parent_prefix, parens=True)
+        right = value_ref(self.right, parent_prefix, parens=True)
 
         if nested and self.op == '-':
             return f"({left} {self.op} {right})"
@@ -2031,8 +2031,8 @@ class NotExpression(Expression):
         obj = value_ref(self.obj, "", parens=True)
         return f"not {obj}"
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        obj = value_ref(self.obj, parent_prefix, parens=True, verbose=verbose)
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        obj = value_ref(self.obj, parent_prefix, parens=True)
         return f"not {obj}"
 
 
@@ -2044,8 +2044,8 @@ class Array(Expression):
     def __repr__(self) -> str:
         return self.render("")
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        params = [value_ref(param, parent_prefix, verbose=verbose) for param in self.params]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        params = [value_ref(param, parent_prefix) for param in self.params]
         return f"[{', '.join(params)}]"
 
 
@@ -2057,8 +2057,8 @@ class Object(Expression):
     def __repr__(self) -> str:
         return self.render("")
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        params = [f"{value_ref(key, parent_prefix, verbose=verbose)}: {value_ref(val, parent_prefix, verbose=verbose)}" for (key, val) in self.params.items()]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        params = [f"{value_ref(key, parent_prefix)}: {value_ref(val, parent_prefix)}" for (key, val) in self.params.items()]
         lpar = "{"
         rpar = "}"
 
@@ -2075,9 +2075,9 @@ class FunctionCall(Expression):
     def __repr__(self) -> str:
         return self.render("")
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        name = name_ref(self.name, parent_prefix, verbose=verbose)
-        params = [value_ref(param, parent_prefix, verbose=verbose) for param in self.params]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        name = name_ref(self.name, parent_prefix)
+        params = [value_ref(param, parent_prefix) for param in self.params]
         return f"{name}({', '.join(params)})"
 
 
@@ -2104,16 +2104,16 @@ class MethodCall(Expression):
     def __repr__(self) -> str:
         return self.render("")
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         try:
-            obj = object_ref(self.objectref, parent_prefix, verbose=verbose)
-            name = name_ref(self.name, parent_prefix, verbose=verbose)
-            params = [value_ref(param, parent_prefix, verbose=verbose) for param in self.params]
+            obj = object_ref(self.objectref, parent_prefix)
+            name = name_ref(self.name, parent_prefix)
+            params = [value_ref(param, parent_prefix) for param in self.params]
             return f"{obj}.{name}({', '.join(params)})"
         except Exception:
-            obj = object_ref(self.objectref, parent_prefix, verbose=verbose)
-            name = value_ref(self.name, parent_prefix, verbose=verbose)
-            params = [value_ref(param, parent_prefix, verbose=verbose) for param in self.params]
+            obj = object_ref(self.objectref, parent_prefix)
+            name = value_ref(self.name, parent_prefix)
+            params = [value_ref(param, parent_prefix) for param in self.params]
             return f"{obj}[{name}]({', '.join(params)})"
 
 
@@ -2126,7 +2126,7 @@ class NewFunction(Expression):
     def __repr__(self) -> str:
         return self.render("")
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         code = self.body.as_string(prefix=parent_prefix + "    ")
         opar = '{'
         cpar = '}'
@@ -2146,9 +2146,9 @@ class NewObject(Expression):
     def __repr__(self) -> str:
         return self.render('')
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        objname = name_ref(self.objname, parent_prefix, verbose=verbose)
-        params = [value_ref(param, parent_prefix, verbose=verbose) for param in self.params]
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        objname = name_ref(self.objname, parent_prefix)
+        params = [value_ref(param, parent_prefix) for param in self.params]
         val = f"new {objname}({', '.join(params)})"
         if nested:
             return f"({val})"
@@ -2163,8 +2163,8 @@ class Variable(Expression):
     def __repr__(self) -> str:
         return f"Variable({name_ref(self.name, '')})"
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
-        return name_ref(self.name, parent_prefix, verbose=verbose)
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
+        return name_ref(self.name, parent_prefix)
 
 
 class Member(Expression):
@@ -2177,43 +2177,43 @@ class Member(Expression):
     def __repr__(self) -> str:
         return self.render("")
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         try:
-            member = name_ref(self.member, parent_prefix, verbose=verbose)
-            ref = object_ref(self.objectref, parent_prefix, verbose=verbose)
+            member = name_ref(self.member, parent_prefix)
+            ref = object_ref(self.objectref, parent_prefix)
             return f"{ref}.{member}"
         except Exception:
             # This is not a simple string object reference.
-            member = value_ref(self.member, parent_prefix, verbose=verbose)
-            ref = object_ref(self.objectref, parent_prefix, verbose=verbose)
+            member = value_ref(self.member, parent_prefix)
+            ref = object_ref(self.objectref, parent_prefix)
             return f"{ref}[{member}]"
 
 
 # The following are helpers which facilitate rendering out various parts of expressions.
-def object_ref(obj: Any, parent_prefix: str, verbose: bool=False) -> str:
+def object_ref(obj: Any, parent_prefix: str) -> str:
     if isinstance(obj, (GenericObject, Variable, Member, MethodCall, FunctionCall, Register)):
-        return obj.render(parent_prefix, verbose=verbose, nested=True)
+        return obj.render(parent_prefix, nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")
 
 
-def value_ref(param: Any, parent_prefix: str, verbose: bool=False, parens: bool = False) -> str:
+def value_ref(param: Any, parent_prefix: str, parens: bool = False) -> str:
     if isinstance(param, StringConstant):
         # Treat this as a string constant.
-        return repr(param.render(parent_prefix, verbose=verbose))
+        return repr(param.render(parent_prefix))
     elif isinstance(param, Expression):
-        return param.render(parent_prefix, verbose=verbose, nested=parens)
+        return param.render(parent_prefix, nested=parens)
     elif isinstance(param, (str, int, float)):
         return repr(param)
     else:
         raise Exception(f"Unsupported valueref {param} ({type(param)})")
 
 
-def name_ref(param: Any, parent_prefix: str, verbose: bool=False) -> str:
+def name_ref(param: Any, parent_prefix: str) -> str:
     # Reference a name, so strings should not be quoted.
     if isinstance(param, str):
         return param
     elif isinstance(param, StringConstant):
-        return param.render(parent_prefix, verbose=verbose)
+        return param.render(parent_prefix)
     else:
         raise Exception(f"Unsupported nameref {param} ({type(param)})")

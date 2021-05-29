@@ -187,7 +187,7 @@ class MaybeStackEntry(Expression):
     def __repr__(self) -> str:
         return f"MaybeStackEntry({self.parent_stack_id})"
 
-    def render(self, parent_prefix: str, verbose: bool = False, nested: bool = False) -> str:
+    def render(self, parent_prefix: str, nested: bool = False) -> str:
         raise Exception("Logic error, a MaybeStackEntry should never make it to the render stage!")
 
 
@@ -3222,7 +3222,7 @@ class ByteCodeDecompiler(VerboseOutput):
         output: List[str] = []
 
         for statement in statements:
-            output.extend(statement.render(prefix, verbose=self.verbose))
+            output.extend(statement.render(prefix))
 
         return os.linesep.join(output)
 

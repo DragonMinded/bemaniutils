@@ -20,7 +20,7 @@ class ConvertedAction:
 
 class Statement(ConvertedAction):
     # This is just a type class for finished statements.
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
@@ -31,7 +31,7 @@ class DefineLabelStatement(Statement):
     def __repr__(self) -> str:
         return f"label_{self.location}:"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"label_{self.location}:"]
 
 
@@ -40,7 +40,7 @@ class BreakStatement(Statement):
     def __repr__(self) -> str:
         return "break"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}break;"]
 
 
@@ -49,7 +49,7 @@ class ContinueStatement(Statement):
     def __repr__(self) -> str:
         return "continue"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}continue;"]
 
 
@@ -64,7 +64,7 @@ class GotoStatement(Statement):
     def __repr__(self) -> str:
         return f"goto label_{self.location}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}goto label_{self.location};"]
 
 
@@ -74,7 +74,7 @@ class NullReturnStatement(Statement):
     def __repr__(self) -> str:
         return "return"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}return;"]
 
 
@@ -88,8 +88,8 @@ class ReturnStatement(Statement):
         ret = value_ref(self.ret, "")
         return f"return {ret}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        ret = value_ref(self.ret, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        ret = value_ref(self.ret, prefix)
         return [f"{prefix}return {ret};"]
 
 
@@ -104,8 +104,8 @@ class ThrowStatement(Statement):
         exc = value_ref(self.exc, "")
         return f"throw {exc}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        exc = value_ref(self.exc, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        exc = value_ref(self.exc, prefix)
         return [f"{prefix}throw {exc};"]
 
 
@@ -114,7 +114,7 @@ class NopStatement(Statement):
     def __repr__(self) -> str:
         return "nop"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         # We should never render this!
         raise Exception("Logic error, a NopStatement should never make it to the render stage!")
 
@@ -127,8 +127,8 @@ class ExpressionStatement(Statement):
     def __repr__(self) -> str:
         return f"{self.expr.render('')}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        return [f"{prefix}{self.expr.render(prefix, verbose=verbose)};"]
+    def render(self, prefix: str) -> List[str]:
+        return [f"{prefix}{self.expr.render(prefix)};"]
 
 
 class StopSoundStatement(Statement):
@@ -136,7 +136,7 @@ class StopSoundStatement(Statement):
     def __repr__(self) -> str:
         return "builtin_StopAllSounds()"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}builtin_StopAllSounds();"]
 
 
@@ -145,7 +145,7 @@ class StopMovieStatement(Statement):
     def __repr__(self) -> str:
         return "builtin_StopPlaying()"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}builtin_StopPlaying();"]
 
 
@@ -154,7 +154,7 @@ class PlayMovieStatement(Statement):
     def __repr__(self) -> str:
         return "builtin_StartPlaying()"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}builtin_StartPlaying();"]
 
 
@@ -163,7 +163,7 @@ class NextFrameStatement(Statement):
     def __repr__(self) -> str:
         return "builtin_GotoNextFrame()"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}builtin_GotoNextFrame();"]
 
 
@@ -172,7 +172,7 @@ class PreviousFrameStatement(Statement):
     def __repr__(self) -> str:
         return "builtin_GotoPreviousFrame()"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         return [f"{prefix}builtin_GotoPreviousFrame();"]
 
 
@@ -185,8 +185,8 @@ class DebugTraceStatement(Statement):
         trace = value_ref(self.trace, "")
         return f"builtin_DebugTrace({trace})"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        trace = value_ref(self.trace, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        trace = value_ref(self.trace, prefix)
         return [f"{prefix}builtin_DebugTrace({trace});"]
 
 
@@ -199,8 +199,8 @@ class GotoFrameStatement(Statement):
         frame = value_ref(self.frame, "")
         return f"builtin_GotoFrame({frame})"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        frame = value_ref(self.frame, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        frame = value_ref(self.frame, prefix)
         return [f"{prefix}builtin_GotoFrame({frame});"]
 
 
@@ -217,10 +217,10 @@ class CloneSpriteStatement(Statement):
         depth = value_ref(self.depth, "")
         return f"builtin_CloneSprite({obj}, {name}, {depth})"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        obj = object_ref(self.obj_to_clone, prefix, verbose=verbose)
-        name = value_ref(self.name, prefix, verbose=verbose)
-        depth = value_ref(self.depth, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        obj = object_ref(self.obj_to_clone, prefix)
+        name = value_ref(self.name, prefix)
+        depth = value_ref(self.depth, prefix)
         return [f"{prefix}builtin_CloneSprite({obj}, {name}, {depth});"]
 
 
@@ -233,8 +233,8 @@ class RemoveSpriteStatement(Statement):
         obj = object_ref(self.obj_to_remove, "")
         return f"builtin_RemoveSprite({obj})"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        obj = object_ref(self.obj_to_remove, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        obj = object_ref(self.obj_to_remove, prefix)
         return [f"{prefix}builtin_RemoveSprite({obj});"]
 
 
@@ -250,9 +250,9 @@ class GetURL2Statement(Statement):
         target = value_ref(self.target, "")
         return f"builtin_GetURL2({self.action}, {url}, {target})"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        url = value_ref(self.url, prefix, verbose=verbose)
-        target = value_ref(self.target, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        url = value_ref(self.url, prefix)
+        target = value_ref(self.target, prefix)
         return [f"{prefix}builtin_GetURL2({self.action}, {url}, {target});"]
 
 
@@ -287,17 +287,17 @@ class SetMemberStatement(Statement):
             val = value_ref(self.valueref, "")
             return f"{ref}[{name}] = {val}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         try:
-            ref = object_ref(self.objectref, prefix, verbose=verbose)
-            name = name_ref(self.name, prefix, verbose=verbose)
-            val = value_ref(self.valueref, prefix, verbose=verbose)
+            ref = object_ref(self.objectref, prefix)
+            name = name_ref(self.name, prefix)
+            val = value_ref(self.valueref, prefix)
             return [f"{prefix}{ref}.{name} = {val};"]
         except Exception:
             # This is not a simple string object reference.
-            ref = object_ref(self.objectref, prefix, verbose=verbose)
-            name = value_ref(self.name, prefix, verbose=verbose)
-            val = value_ref(self.valueref, prefix, verbose=verbose)
+            ref = object_ref(self.objectref, prefix)
+            name = value_ref(self.name, prefix)
+            val = value_ref(self.valueref, prefix)
             return [f"{prefix}{ref}[{name}] = {val};"]
 
 
@@ -310,8 +310,8 @@ class DeleteVariableStatement(Statement):
         name = name_ref(self.name, "")
         return f"del {name}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        name = name_ref(self.name, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        name = name_ref(self.name, prefix)
         return [f"{prefix}del {name};"]
 
 
@@ -332,15 +332,15 @@ class DeleteMemberStatement(Statement):
             name = value_ref(self.name, "")
             return f"del {ref}[{name}]"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         try:
-            ref = object_ref(self.objectref, prefix, verbose=verbose)
-            name = name_ref(self.name, prefix, verbose=verbose)
+            ref = object_ref(self.objectref, prefix)
+            name = name_ref(self.name, prefix)
             return [f"{prefix}del {ref}.{name};"]
         except Exception:
             # This is not a simple string object reference.
-            ref = object_ref(self.objectref, prefix, verbose=verbose)
-            name = value_ref(self.name, prefix, verbose=verbose)
+            ref = object_ref(self.objectref, prefix)
+            name = value_ref(self.name, prefix)
             return [f"{prefix}del {ref}[{name}];"]
 
 
@@ -357,9 +357,9 @@ class StoreRegisterStatement(Statement):
         val = value_ref(self.valueref, "")
         return f"{self.register.render('')} = {val}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        val = value_ref(self.valueref, prefix, verbose=verbose)
-        return [f"{prefix}{self.register.render(prefix, verbose=verbose)} = {val};"]
+    def render(self, prefix: str) -> List[str]:
+        val = value_ref(self.valueref, prefix)
+        return [f"{prefix}{self.register.render(prefix)} = {val};"]
 
 
 class SetVariableStatement(Statement):
@@ -376,9 +376,9 @@ class SetVariableStatement(Statement):
         val = value_ref(self.valueref, "")
         return f"{name} = {val}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        name = name_ref(self.name, prefix, verbose=verbose)
-        val = value_ref(self.valueref, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        name = name_ref(self.name, prefix)
+        val = value_ref(self.valueref, prefix)
         return [f"{prefix}{name} = {val};"]
 
 
@@ -396,9 +396,9 @@ class SetLocalStatement(Statement):
         val = value_ref(self.valueref, "")
         return f"local {name} = {val}"
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        name = name_ref(self.name, prefix, verbose=verbose)
-        val = value_ref(self.valueref, prefix, verbose=verbose)
+    def render(self, prefix: str) -> List[str]:
+        name = name_ref(self.name, prefix)
+        val = value_ref(self.valueref, prefix)
         return [f"{prefix}local {name} = {val};"]
 
 
@@ -550,14 +550,14 @@ class IfStatement(Statement):
                 "}"
             ])
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         true_entries: List[str] = []
         for statement in self.true_statements:
-            true_entries.extend(statement.render(prefix=prefix + "    ", verbose=verbose))
+            true_entries.extend(statement.render(prefix=prefix + "    "))
 
         false_entries: List[str] = []
         for statement in self.false_statements:
-            false_entries.extend(statement.render(prefix=prefix + "    ", verbose=verbose))
+            false_entries.extend(statement.render(prefix=prefix + "    "))
 
         if false_entries:
             return [
@@ -594,10 +594,10 @@ class DoWhileStatement(Statement):
             "} while (True)"
         ])
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
         for statement in self.body:
-            entries.extend(statement.render(prefix=prefix + "    ", verbose=verbose))
+            entries.extend(statement.render(prefix=prefix + "    "))
 
         return [
             f"{prefix}do",
@@ -636,13 +636,13 @@ class ForStatement(DoWhileStatement):
             "}"
         ])
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
         for statement in self.body:
-            entries.extend(statement.render(prefix=prefix + "    ", verbose=verbose))
+            entries.extend(statement.render(prefix=prefix + "    "))
 
-        inc_init = value_ref(self.inc_init, prefix, verbose=verbose)
-        inc_assign = value_ref(self.inc_assign, prefix, verbose=verbose)
+        inc_init = value_ref(self.inc_init, prefix)
+        inc_assign = value_ref(self.inc_assign, prefix)
         if self.local:
             local = "local "
         else:
@@ -673,10 +673,10 @@ class WhileStatement(DoWhileStatement):
             "}"
         ])
 
-    def render(self, prefix: str, verbose: bool = False) -> List[str]:
+    def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
         for statement in self.body:
-            entries.extend(statement.render(prefix=prefix + "    ", verbose=verbose))
+            entries.extend(statement.render(prefix=prefix + "    "))
 
         return [
             f"{prefix}while ({self.cond}) {{",
