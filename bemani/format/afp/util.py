@@ -23,7 +23,7 @@ def pad(data: bytes, length: int) -> bytes:
 
 
 def descramble_text(text: bytes, obfuscated: bool) -> str:
-    if len(text):
+    if text:
         if obfuscated and (text[0] - 0x20) > 0x7F:
             # Gotta do a weird demangling where we swap the
             # top bit.

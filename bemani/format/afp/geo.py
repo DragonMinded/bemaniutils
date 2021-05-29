@@ -182,7 +182,7 @@ class Shape:
 
                 if mode != 4:
                     raise Exception("Unexpected mode in GE2D structure!")
-                if (flags & 0x2) and len(labels) == 0:
+                if (flags & 0x2) and not labels:
                     raise Exception("GE2D structure has a texture, but no region labels present!")
                 if (flags & 0x2) and (tex1 == 0xFF):
                     raise Exception("GE2D structure requests a texture, but no texture pointer present!")
