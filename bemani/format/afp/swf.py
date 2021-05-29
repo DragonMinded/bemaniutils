@@ -2243,7 +2243,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         if flags & 0x1:
             self.vprint(f"  0x1: Movie background color: {self.color}")
         else:
-            self.vprint("  0x2: No movie background color")
+            self.vprint("  0x1: No movie background color")
         if flags & 0x2:
             self.vprint("  0x2: FPS is an integer")
         else:
