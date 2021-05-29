@@ -497,6 +497,7 @@ class AFPRenderer(VerboseOutput):
                 if not hasattr(obj, attribute):
                     print(f"WARNING: Tried to set attribute {attribute} on {obj} but that attribute doesn't exist!")
                 else:
+                    self.vprint(f"{prefix}  Setting attribute {attribute} on {obj} to {set_value}")
                     setattr(obj, attribute, set_value)
             elif action.opcode == AP2Action.CALL_METHOD:
                 # Grab the method name.
@@ -515,6 +516,7 @@ class AFPRenderer(VerboseOutput):
 
                 # Look up the python function we're calling.
                 try:
+                    self.vprint(f"{prefix}  Calling method {methname}({', '.join(repr(s) for s in params)}) on {obj}")
                     meth = getattr(obj, methname)
 
                     # Call it, set the return on the stack.
@@ -537,6 +539,7 @@ class AFPRenderer(VerboseOutput):
 
                 # Look up the python function we're calling.
                 try:
+                    self.vprint(f"{prefix}  Calling global function {funcname}({', '.join(repr(s) for s in params)})")
                     func = getattr(globalobj, funcname)
 
                     # Call it, set the return on the stack.

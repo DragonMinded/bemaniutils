@@ -1437,22 +1437,28 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 # I have no idea what any of this is either, so I am duplicating game logic in the
                 # hopes that someday it makes sense.
-                cur_size = 0
-
                 for bit in range(32):
                     if bool(bitmask & (1 << bit)):
-                        unk_flags, unk_size = struct.unpack("<HH", datachunk[(running_pointer + (cur_size * 2)):(running_pointer + (cur_size * 2) + 4)])
+                        unk_flags, unk_size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
+                        self.add_coverage(dataoffset + running_pointer, 4)
+                        running_pointer += 4
 
-                        cur_size = cur_size + 2 + (
+                        chunk_size = (
+                            # Either 2 or 6, depending on unk_flags & 0x10 set.
                             (((unk_flags & 0x10) | 0x8) >> 2) *
+                            # Either 1 or 2, depending on unk_flags & 0x1 set.
                             ((unk_flags & 1) + 1) *
-                            unk_size
+                            # Raw size as read from the header above.
+                            unk_size *
+                            # I assume this is some number of shorts, much like many other
+                            # file formats, so this is why all of these counts are doubled.
+                            2
                         )
 
-                        self.vprint(f"{prefix}      WTF: {hex(unk_flags)}, {unk_size}, {cur_size}")
+                        self.vprint(f"{prefix}      WTF: {hex(unk_flags)}, {unk_size}, {chunk_size}")
 
-                self.add_coverage(dataoffset + running_pointer, cur_size * 2)
-                running_pointer += cur_size * 2
+                        # Skip past data.
+                        running_pointer += chunk_size
 
             if flags & 0x1000000000:
                 # I have no idea what this is, but the two shorts that it pulls out are assigned
