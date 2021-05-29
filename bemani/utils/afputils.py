@@ -8,13 +8,13 @@ import os.path
 import sys
 import textwrap
 from PIL import Image, ImageDraw  # type: ignore
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color, Matrix
 from bemani.format import IFS
 
 
-def write_bytecode(swf: SWF, directory: str, verbose: bool=False) -> None:
+def write_bytecode(swf: SWF, directory: str, *, verbose: bool) -> None:
     # Actually place the files down.
     os.makedirs(directory, exist_ok=True)
 
@@ -78,6 +78,591 @@ def parse_intlist(data: str) -> List[int]:
             ints.append(int(chunk))
 
     return sorted(set(ints))
+
+
+def extract_txp2(
+    fname: str,
+    output_dir: str,
+    *,
+    split_textures: bool=False,
+    generate_mapping_overlays: bool=False,
+    write_mappings: bool=False,
+    write_raw: bool=False,
+    write_binaries: bool=False,
+    pretend: bool=False,
+    verbose: bool=False,
+) -> int:
+    if split_textures:
+        if write_raw:
+            raise Exception("Cannot write raw textures when splitting sprites!")
+        if generate_mapping_overlays:
+            raise Exception("Cannot generate mapping overlays when splitting sprites!")
+
+    with open(fname, "rb") as bfp:
+        afpfile = TXP2File(bfp.read(), verbose=verbose)
+
+    # Actually place the files down.
+    os.makedirs(output_dir, exist_ok=True)
+
+    if not split_textures:
+        for texture in afpfile.textures:
+            filename = os.path.join(output_dir, texture.name)
+
+            if texture.img:
+                if pretend:
+                    print(f"Would write {filename}.png texture...")
+                else:
+                    print(f"Writing {filename}.png texture...")
+                    with open(f"{filename}.png", "wb") as bfp:
+                        texture.img.save(bfp, format='PNG')
+
+            if not texture.img or write_raw:
+                if pretend:
+                    print(f"Would write {filename}.raw texture...")
+                else:
+                    print(f"Writing {filename}.raw texture...")
+                    with open(f"{filename}.raw", "wb") as bfp:
+                        bfp.write(texture.raw)
+
+                if pretend:
+                    print(f"Would write {filename}.xml texture info...")
+                else:
+                    print(f"Writing {filename}.xml texture info...")
+                    with open(f"{filename}.xml", "w") as sfp:
+                        sfp.write(textwrap.dedent(f"""
+                            <info>
+                                <width>{texture.width}</width>
+                                <height>{texture.height}</height>
+                                <type>{hex(texture.fmt)}</type>
+                                <raw>{filename}.raw</raw>
+                            </info>
+                        """).strip())
+
+    if write_mappings:
+        if not split_textures:
+            for i, name in enumerate(afpfile.regionmap.entries):
+                if i < 0 or i >= len(afpfile.texture_to_region):
+                    raise Exception(f"Out of bounds region {i}")
+                region = afpfile.texture_to_region[i]
+                texturename = afpfile.texturemap.entries[region.textureno]
+                filename = os.path.join(output_dir, name)
+
+                if pretend:
+                    print(f"Would write {filename}.xml region information...")
+                else:
+                    print(f"Writing {filename}.xml region information...")
+                    with open(f"{filename}.xml", "w") as sfp:
+                        sfp.write(textwrap.dedent(f"""
+                            <info>
+                                <left>{region.left}</left>
+                                <top>{region.top}</top>
+                                <right>{region.right}</right>
+                                <bottom>{region.bottom}</bottom>
+                                <texture>{texturename}</texture>
+                            </info>
+                        """).strip())
+
+        if afpfile.fontdata is not None:
+            filename = os.path.join(output_dir, "fontinfo.xml")
+
+            if pretend:
+                print(f"Would write {filename} font information...")
+            else:
+                print(f"Writing {filename} font information...")
+                with open(filename, "w") as sfp:
+                    sfp.write(str(afpfile.fontdata))
+
+    if write_binaries:
+        for i, name in enumerate(afpfile.swfmap.entries):
+            swf = afpfile.swfdata[i]
+            filename = os.path.join(output_dir, name)
+
+            if pretend:
+                print(f"Would write {filename}.afp SWF data...")
+                print(f"Would write {filename}.bsi SWF descramble data...")
+            else:
+                print(f"Writing {filename}.afp SWF data...")
+                with open(f"{filename}.afp", "wb") as bfp:
+                    bfp.write(swf.data)
+                print(f"Writing {filename}.bsi SWF descramble data...")
+                with open(f"{filename}.bsi", "wb") as bfp:
+                    bfp.write(swf.descramble_info)
+
+        for i, name in enumerate(afpfile.shapemap.entries):
+            shape = afpfile.shapes[i]
+            filename = os.path.join(output_dir, f"{name}.geo")
+
+            if pretend:
+                print(f"Would write {filename} shape data...")
+            else:
+                print(f"Writing {filename} shape data...")
+                with open(filename, "wb") as bfp:
+                    bfp.write(shape.data)
+
+    if generate_mapping_overlays:
+        overlays: Dict[str, Any] = {}
+
+        for i, name in enumerate(afpfile.regionmap.entries):
+            if i < 0 or i >= len(afpfile.texture_to_region):
+                raise Exception(f"Out of bounds region {i}")
+            region = afpfile.texture_to_region[i]
+            texturename = afpfile.texturemap.entries[region.textureno]
+
+            if texturename not in overlays:
+                for texture in afpfile.textures:
+                    if texture.name == texturename:
+                        overlays[texturename] = Image.new(
+                            'RGBA',
+                            (texture.width, texture.height),
+                            (0, 0, 0, 0),
+                        )
+                        break
+                else:
+                    raise Exception(f"Couldn't find texture {texturename}")
+
+            draw = ImageDraw.Draw(overlays[texturename])
+            draw.rectangle(
+                ((region.left // 2, region.top // 2), (region.right // 2, region.bottom // 2)),
+                fill=(0, 0, 0, 0),
+                outline=(255, 0, 0, 255),
+                width=1,
+            )
+            draw.text(
+                (region.left // 2, region.top // 2),
+                name,
+                fill=(255, 0, 255, 255),
+            )
+
+        for name, img in overlays.items():
+            filename = os.path.join(output_dir, name) + "_overlay.png"
+            if pretend:
+                print(f"Would write {filename} overlay...")
+            else:
+                print(f"Writing {filename} overlay...")
+                with open(filename, "wb") as bfp:
+                    img.save(bfp, format='PNG')
+
+    if split_textures:
+        textures: Dict[str, Any] = {}
+        announced: Dict[str, bool] = {}
+
+        for i, name in enumerate(afpfile.regionmap.entries):
+            if i < 0 or i >= len(afpfile.texture_to_region):
+                raise Exception(f"Out of bounds region {i}")
+            region = afpfile.texture_to_region[i]
+            texturename = afpfile.texturemap.entries[region.textureno]
+
+            if texturename not in textures:
+                for tex in afpfile.textures:
+                    if tex.name == texturename:
+                        textures[texturename] = tex
+                        break
+                else:
+                    raise Exception("Could not find texture {texturename} to split!")
+
+            if textures[texturename].img:
+                # Grab the location in the image, save it out to a new file.
+                filename = f"{texturename}_{name}.png"
+                filename = os.path.join(output_dir, filename)
+
+                if pretend:
+                    print(f"Would write {filename} sprite...")
+                else:
+                    print(f"Writing {filename} sprite...")
+                    sprite = textures[texturename].img.crop(
+                        (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                    )
+                    with open(filename, "wb") as bfp:
+                        sprite.save(bfp, format='PNG')
+            else:
+                if not announced.get(texturename, False):
+                    print(f"Cannot extract sprites from {texturename} because it is not a supported format!")
+                    announced[texturename] = True
+    if write_bytecode:
+        for swf in afpfile.swfdata:
+            write_bytecode(swf, output_dir, verbose=verbose)
+
+    return 0
+
+
+def update_txp2(fname: str, update_dir: str, *, pretend: bool=False, verbose: bool=False) -> int:
+    # First, parse the file out
+    with open(fname, "rb") as bfp:
+        afpfile = TXP2File(bfp.read(), verbose=verbose)
+
+    # Now, find any PNG files that match texture names.
+    for texture in afpfile.textures:
+        filename = os.path.join(update_dir, texture.name) + ".png"
+
+        if os.path.isfile(filename):
+            print(f"Updating {texture.name} from {filename}...")
+
+            with open(filename, "rb") as bfp:
+                afpfile.update_texture(texture.name, bfp.read())
+
+    # Now, find any PNG files that match a specific sprite.
+    for i, spritename in enumerate(afpfile.regionmap.entries):
+        if i < 0 or i >= len(afpfile.texture_to_region):
+            raise Exception(f"Out of bounds region {i}")
+        region = afpfile.texture_to_region[i]
+        texturename = afpfile.texturemap.entries[region.textureno]
+
+        # Grab the location in the image to see if it exists.
+        filename = f"{texturename}_{spritename}.png"
+        filename = os.path.join(update_dir, filename)
+
+        if os.path.isfile(filename):
+            print(f"Updating {texturename} sprite piece {spritename} from {filename}...")
+
+            with open(filename, "rb") as bfp:
+                afpfile.update_sprite(texturename, spritename, bfp.read())
+
+    # Now, write out the updated file
+    if pretend:
+        print(f"Would write {fname}...")
+        afpfile.unparse()
+    else:
+        print(f"Writing {fname}...")
+        data = afpfile.unparse()
+        with open(fname, "wb") as bfp:
+            bfp.write(data)
+
+    return 0
+
+
+def print_txp2(fname: str, *, decompile_bytecode: bool=False, verbose: bool=False) -> int:
+    # First, parse the file out
+    with open(fname, "rb") as bfp:
+        afpfile = TXP2File(bfp.read(), verbose=verbose)
+
+    # Now, print it
+    print(json.dumps(afpfile.as_dict(decompile_bytecode=decompile_bytecode, verbose=verbose), sort_keys=True, indent=4))
+
+    return 0
+
+
+def parse_afp(afp: str, bsi: str, *, decompile_bytecode: bool=False, verbose: bool=False) -> int:
+    # First, load the AFP and BSI files
+    with open(afp, "rb") as bafp:
+        with open(bsi, "rb") as bbsi:
+            swf = SWF("<unnamed>", bafp.read(), bbsi.read())
+
+    # Now, print it
+    swf.parse(verbose=verbose)
+    print(json.dumps(swf.as_dict(decompile_bytecode=decompile_bytecode, verbose=verbose), sort_keys=True, indent=4))
+
+    return 0
+
+
+def decompile_afp(afp: str, bsi: str, output_dir: str, *, decompile_bytecode: bool=False, verbose: bool=False) -> int:
+    # First, load the AFP and BSI files
+    with open(afp, "rb") as bafp:
+        with open(bsi, "rb") as bbsi:
+            swf = SWF("<unnamed>", bafp.read(), bbsi.read())
+
+    # Now, decompile it
+    swf.parse(verbose=verbose)
+    write_bytecode(swf, output_dir, verbose=verbose)
+
+    return 0
+
+
+def parse_geo(geo: str, *, verbose: bool=False) -> int:
+    # First, load the AFP and BSI files
+    with open(geo, "rb") as bfp:
+        shape = Shape("<unnamed>", bfp.read())
+
+    # Now, print it
+    shape.parse()
+    if verbose:
+        print(shape, file=sys.stderr)
+    print(json.dumps(shape.as_dict(), sort_keys=True, indent=4))
+
+    return 0
+
+
+def load_containers(renderer: AFPRenderer, containers: List[str], verbose: bool) -> None:
+    # This is a complicated one, as we need to be able to specify multiple
+    # directories of files as well as support IFS files and TXP2 files.
+    for container in containers:
+        # TODO: Allow specifying individual folders and such.
+        with open(container, "rb") as bfp:
+            data = bfp.read()
+
+        afpfile = None
+        try:
+            afpfile = TXP2File(data, verbose=verbose)
+        except Exception:
+            pass
+
+        if afpfile is not None:
+            if verbose:
+                print(f"Loading files out of TXP2 container {container}...", file=sys.stderr)
+
+            # First, load GE2D structures into the renderer.
+            for i, name in enumerate(afpfile.shapemap.entries):
+                shape = afpfile.shapes[i]
+                renderer.add_shape(name, shape)
+
+                if verbose:
+                    print(f"Added {name} to SWF shape library.", file=sys.stderr)
+
+            # Now, split and load textures into the renderer.
+            sheets: Dict[str, Any] = {}
+
+            for i, name in enumerate(afpfile.regionmap.entries):
+                if i < 0 or i >= len(afpfile.texture_to_region):
+                    raise Exception(f"Out of bounds region {i}")
+                region = afpfile.texture_to_region[i]
+                texturename = afpfile.texturemap.entries[region.textureno]
+
+                if texturename not in sheets:
+                    for tex in afpfile.textures:
+                        if tex.name == texturename:
+                            sheets[texturename] = tex
+                            break
+                    else:
+                        raise Exception("Could not find texture {texturename} to split!")
+
+                if sheets[texturename].img:
+                    sprite = sheets[texturename].img.crop(
+                        (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                    )
+                    renderer.add_texture(name, sprite)
+
+                    if verbose:
+                        print(f"Added {name} to SWF texture library.", file=sys.stderr)
+                else:
+                    print(f"Cannot load {name} from {texturename} because it is not a supported format!")
+
+            # Finally, load the SWF data itself into the renderer.
+            for i, name in enumerate(afpfile.swfmap.entries):
+                swf = afpfile.swfdata[i]
+                renderer.add_swf(name, swf)
+
+                if verbose:
+                    print(f"Added {name} to SWF library.", file=sys.stderr)
+
+            continue
+
+        ifsfile = None
+        try:
+            ifsfile = IFS(data, decode_textures=True)
+        except Exception:
+            pass
+
+        if ifsfile is not None:
+            if verbose:
+                print(f"Loading files out of IFS container {container}...", file=sys.stderr)
+            for fname in ifsfile.filenames:
+                if fname.startswith(f"geo{os.sep}"):
+                    # Trim off directory.
+                    shapename = fname[(3 + len(os.sep)):]
+
+                    # Load file, register it.
+                    fdata = ifsfile.read_file(fname)
+                    shape = Shape(shapename, fdata)
+                    renderer.add_shape(shapename, shape)
+
+                    if verbose:
+                        print(f"Added {shapename} to SWF shape library.", file=sys.stderr)
+                elif fname.startswith(f"tex{os.sep}") and fname.endswith(".png"):
+                    # Trim off directory, png extension.
+                    texname = fname[(3 + len(os.sep)):][:-4]
+
+                    # Load file, register it.
+                    fdata = ifsfile.read_file(fname)
+                    tex = Image.open(io.BytesIO(fdata))
+                    renderer.add_texture(texname, tex)
+
+                    if verbose:
+                        print(f"Added {texname} to SWF texture library.", file=sys.stderr)
+                elif fname.startswith(f"afp{os.sep}"):
+                    # Trim off directory, see if it has a corresponding bsi.
+                    afpname = fname[(3 + len(os.sep)):]
+                    bsipath = f"afp{os.sep}bsi{os.sep}{afpname}"
+
+                    if bsipath in ifsfile.filenames:
+                        afpdata = ifsfile.read_file(fname)
+                        bsidata = ifsfile.read_file(bsipath)
+                        flash = SWF(afpname, afpdata, bsidata)
+                        renderer.add_swf(afpname, flash)
+
+                        if verbose:
+                            print(f"Added {afpname} to SWF library.", file=sys.stderr)
+            continue
+
+
+def list_paths(containers: List[str], *, verbose: bool=False) -> int:
+    renderer = AFPRenderer()
+    load_containers(renderer, containers, verbose=verbose)
+
+    for path in renderer.list_paths(verbose=verbose):
+        print(path)
+
+    return 0
+
+
+def render_path(
+    containers: List[str],
+    path: str,
+    output: str,
+    *,
+    disable_threads: bool = False,
+    background_color: Optional[str] = None,
+    background_image: Optional[str] = None,
+    force_aspect_ratio: Optional[str] = None,
+    scale_width: float = 1.0,
+    scale_height: float = 1.0,
+    only_depths: Optional[str] = None,
+    only_frames: Optional[str] = None,
+    verbose: bool = False,
+) -> int:
+    renderer = AFPRenderer(single_threaded=disable_threads)
+    load_containers(renderer, containers, verbose=verbose)
+
+    # Verify the correct params.
+    if output.lower().endswith(".gif"):
+        fmt = "GIF"
+    elif output.lower().endswith(".webp"):
+        fmt = "WEBP"
+    elif output.lower().endswith(".png"):
+        fmt = "PNG"
+    else:
+        raise Exception("Unrecognized file extension for output!")
+
+    # Allow overriding background color.
+    if background_color:
+        colorvals = background_color.split(",")
+        if len(colorvals) not in [3, 4]:
+            raise Exception("Invalid color, specify a color as a comma-separated RGB or RGBA value!")
+
+        if len(colorvals) == 3:
+            colorvals.append("255")
+        colorints = [int(c.strip()) for c in colorvals]
+        for c in colorints:
+            if c < 0 or c > 255:
+                raise Exception("Color values should be between 0 and 255!")
+
+        color = Color(*[c / 255.0 for c in colorints])
+    else:
+        color = None
+
+    # Allow inserting a background image.
+    if background_image:
+        background = Image.open(background_image)
+    else:
+        background = None
+
+    # Calculate the size of the SWF so we can apply scaling options.
+    swf_location = renderer.compute_path_location(path)
+    requested_width = swf_location.width
+    requested_height = swf_location.height
+
+    # Allow overriding the aspect ratio.
+    if force_aspect_ratio:
+        ratio = force_aspect_ratio.split(":")
+        if len(ratio) != 2:
+            raise Exception("Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!")
+
+        rx, ry = [float(r.strip()) for r in ratio]
+        if rx <= 0 or ry <= 0:
+            raise Exception("Ratio must only include positive numbers!")
+
+        actual_ratio = rx / ry
+        swf_ratio = swf_location.width / swf_location.height
+
+        if abs(swf_ratio - actual_ratio) > 0.0001:
+            new_width = actual_ratio * swf_location.height
+            new_height = swf_location.width / actual_ratio
+
+            if new_width < swf_location.width and new_height < swf_location.height:
+                raise Exception("Impossible aspect ratio!")
+            if new_width > swf_location.width and new_height > swf_location.height:
+                raise Exception("Impossible aspect ratio!")
+
+            # We know that one is larger and one is smaller, pick the larger.
+            # This way we always stretch instead of shrinking.
+            if new_width > swf_location.width:
+                requested_width = new_width
+            else:
+                requested_height = new_height
+
+    requested_width *= scale_width
+    requested_height *= scale_height
+
+    # Calculate the overall view matrix based on the requested width/height.
+    transform = Matrix(
+        a=requested_width / swf_location.width,
+        b=0.0,
+        c=0.0,
+        d=requested_height / swf_location.height,
+        tx=0.0,
+        ty=0.0,
+    )
+
+    # Support rendering only certain depth planes.
+    if only_depths is not None:
+        requested_depths = parse_intlist(only_depths)
+    else:
+        requested_depths = None
+
+    # Support rendering only certain frames.
+    if only_frames is not None:
+        requested_frames = parse_intlist(only_frames)
+    else:
+        requested_frames = None
+
+    if fmt in ["GIF", "WEBP"]:
+        # Write all the frames out in one file.
+        duration = renderer.compute_path_frame_duration(path)
+        images = list(
+            renderer.render_path(
+                path,
+                verbose=verbose,
+                background_color=color,
+                background_image=background,
+                only_depths=requested_depths,
+                only_frames=requested_frames,
+                movie_transform=transform,
+            )
+        )
+        if len(images) == 0:
+            raise Exception("Did not render any frames!")
+
+        with open(output, "wb") as bfp:
+            images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
+
+        print(f"Wrote animation to {output}")
+    else:
+        # Write all the frames out in individual_files.
+        filename = output[:-4]
+        ext = output[-4:]
+
+        # Figure out padding for the images.
+        frames = renderer.compute_path_frames(path)
+        if frames > 0:
+            digits = f"0{int(math.log10(frames)) + 1}"
+
+            for i, img in enumerate(
+                renderer.render_path(
+                    path,
+                    verbose=verbose,
+                    background_color=color,
+                    background_image=background,
+                    only_depths=requested_depths,
+                    only_frames=requested_frames,
+                    movie_transform=transform,
+                )
+            ):
+                fullname = f"{filename}-{i:{digits}}{ext}"
+
+                with open(fullname, "wb") as bfp:
+                    img.save(bfp, format=fmt)
+
+                print(f"Wrote animation frame to {fullname}")
+
+    return 0
 
 
 def main() -> int:
@@ -344,540 +929,46 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.action == "extract":
-        if args.split_textures:
-            if args.write_raw:
-                raise Exception("Cannot write raw textures when splitting sprites!")
-            if args.generate_mapping_overlays:
-                raise Exception("Cannot generate mapping overlays when splitting sprites!")
-
-        with open(args.file, "rb") as bfp:
-            afpfile = TXP2File(bfp.read(), verbose=args.verbose)
-
-        # Actually place the files down.
-        os.makedirs(args.dir, exist_ok=True)
-
-        if not args.split_textures:
-            for texture in afpfile.textures:
-                filename = os.path.join(args.dir, texture.name)
-
-                if texture.img:
-                    if args.pretend:
-                        print(f"Would write {filename}.png texture...")
-                    else:
-                        print(f"Writing {filename}.png texture...")
-                        with open(f"{filename}.png", "wb") as bfp:
-                            texture.img.save(bfp, format='PNG')
-
-                if not texture.img or args.write_raw:
-                    if args.pretend:
-                        print(f"Would write {filename}.raw texture...")
-                    else:
-                        print(f"Writing {filename}.raw texture...")
-                        with open(f"{filename}.raw", "wb") as bfp:
-                            bfp.write(texture.raw)
-
-                    if args.pretend:
-                        print(f"Would write {filename}.xml texture info...")
-                    else:
-                        print(f"Writing {filename}.xml texture info...")
-                        with open(f"{filename}.xml", "w") as sfp:
-                            sfp.write(textwrap.dedent(f"""
-                                <info>
-                                    <width>{texture.width}</width>
-                                    <height>{texture.height}</height>
-                                    <type>{hex(texture.fmt)}</type>
-                                    <raw>{filename}.raw</raw>
-                                </info>
-                            """).strip())
-
-        if args.write_mappings:
-            if not args.split_textures:
-                for i, name in enumerate(afpfile.regionmap.entries):
-                    if i < 0 or i >= len(afpfile.texture_to_region):
-                        raise Exception(f"Out of bounds region {i}")
-                    region = afpfile.texture_to_region[i]
-                    texturename = afpfile.texturemap.entries[region.textureno]
-                    filename = os.path.join(args.dir, name)
-
-                    if args.pretend:
-                        print(f"Would write {filename}.xml region information...")
-                    else:
-                        print(f"Writing {filename}.xml region information...")
-                        with open(f"{filename}.xml", "w") as sfp:
-                            sfp.write(textwrap.dedent(f"""
-                                <info>
-                                    <left>{region.left}</left>
-                                    <top>{region.top}</top>
-                                    <right>{region.right}</right>
-                                    <bottom>{region.bottom}</bottom>
-                                    <texture>{texturename}</texture>
-                                </info>
-                            """).strip())
-
-            if afpfile.fontdata is not None:
-                filename = os.path.join(args.dir, "fontinfo.xml")
-
-                if args.pretend:
-                    print(f"Would write {filename} font information...")
-                else:
-                    print(f"Writing {filename} font information...")
-                    with open(filename, "w") as sfp:
-                        sfp.write(str(afpfile.fontdata))
-
-        if args.write_binaries:
-            for i, name in enumerate(afpfile.swfmap.entries):
-                swf = afpfile.swfdata[i]
-                filename = os.path.join(args.dir, name)
-
-                if args.pretend:
-                    print(f"Would write {filename}.afp SWF data...")
-                    print(f"Would write {filename}.bsi SWF descramble data...")
-                else:
-                    print(f"Writing {filename}.afp SWF data...")
-                    with open(f"{filename}.afp", "wb") as bfp:
-                        bfp.write(swf.data)
-                    print(f"Writing {filename}.bsi SWF descramble data...")
-                    with open(f"{filename}.bsi", "wb") as bfp:
-                        bfp.write(swf.descramble_info)
-
-            for i, name in enumerate(afpfile.shapemap.entries):
-                shape = afpfile.shapes[i]
-                filename = os.path.join(args.dir, f"{name}.geo")
-
-                if args.pretend:
-                    print(f"Would write {filename} shape data...")
-                else:
-                    print(f"Writing {filename} shape data...")
-                    with open(filename, "wb") as bfp:
-                        bfp.write(shape.data)
-
-        if args.generate_mapping_overlays:
-            overlays: Dict[str, Any] = {}
-
-            for i, name in enumerate(afpfile.regionmap.entries):
-                if i < 0 or i >= len(afpfile.texture_to_region):
-                    raise Exception(f"Out of bounds region {i}")
-                region = afpfile.texture_to_region[i]
-                texturename = afpfile.texturemap.entries[region.textureno]
-
-                if texturename not in overlays:
-                    for texture in afpfile.textures:
-                        if texture.name == texturename:
-                            overlays[texturename] = Image.new(
-                                'RGBA',
-                                (texture.width, texture.height),
-                                (0, 0, 0, 0),
-                            )
-                            break
-                    else:
-                        raise Exception(f"Couldn't find texture {texturename}")
-
-                draw = ImageDraw.Draw(overlays[texturename])
-                draw.rectangle(
-                    ((region.left // 2, region.top // 2), (region.right // 2, region.bottom // 2)),
-                    fill=(0, 0, 0, 0),
-                    outline=(255, 0, 0, 255),
-                    width=1,
-                )
-                draw.text(
-                    (region.left // 2, region.top // 2),
-                    name,
-                    fill=(255, 0, 255, 255),
-                )
-
-            for name, img in overlays.items():
-                filename = os.path.join(args.dir, name) + "_overlay.png"
-                if args.pretend:
-                    print(f"Would write {filename} overlay...")
-                else:
-                    print(f"Writing {filename} overlay...")
-                    with open(filename, "wb") as bfp:
-                        img.save(bfp, format='PNG')
-
-        if args.split_textures:
-            textures: Dict[str, Any] = {}
-            announced: Dict[str, bool] = {}
-
-            for i, name in enumerate(afpfile.regionmap.entries):
-                if i < 0 or i >= len(afpfile.texture_to_region):
-                    raise Exception(f"Out of bounds region {i}")
-                region = afpfile.texture_to_region[i]
-                texturename = afpfile.texturemap.entries[region.textureno]
-
-                if texturename not in textures:
-                    for tex in afpfile.textures:
-                        if tex.name == texturename:
-                            textures[texturename] = tex
-                            break
-                    else:
-                        raise Exception("Could not find texture {texturename} to split!")
-
-                if textures[texturename].img:
-                    # Grab the location in the image, save it out to a new file.
-                    filename = f"{texturename}_{name}.png"
-                    filename = os.path.join(args.dir, filename)
-
-                    if args.pretend:
-                        print(f"Would write {filename} sprite...")
-                    else:
-                        print(f"Writing {filename} sprite...")
-                        sprite = textures[texturename].img.crop(
-                            (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
-                        )
-                        with open(filename, "wb") as bfp:
-                            sprite.save(bfp, format='PNG')
-                else:
-                    if not announced.get(texturename, False):
-                        print(f"Cannot extract sprites from {texturename} because it is not a supported format!")
-                        announced[texturename] = True
-        if args.write_bytecode:
-            for swf in afpfile.swfdata:
-                write_bytecode(swf, args.dir, verbose=args.verbose)
-
-    if args.action == "update":
-        # First, parse the file out
-        with open(args.file, "rb") as bfp:
-            afpfile = TXP2File(bfp.read(), verbose=args.verbose)
-
-        # Now, find any PNG files that match texture names.
-        for texture in afpfile.textures:
-            filename = os.path.join(args.dir, texture.name) + ".png"
-
-            if os.path.isfile(filename):
-                print(f"Updating {texture.name} from {filename}...")
-
-                with open(filename, "rb") as bfp:
-                    afpfile.update_texture(texture.name, bfp.read())
-
-        # Now, find any PNG files that match a specific sprite.
-        for i, spritename in enumerate(afpfile.regionmap.entries):
-            if i < 0 or i >= len(afpfile.texture_to_region):
-                raise Exception(f"Out of bounds region {i}")
-            region = afpfile.texture_to_region[i]
-            texturename = afpfile.texturemap.entries[region.textureno]
-
-            # Grab the location in the image to see if it exists.
-            filename = f"{texturename}_{spritename}.png"
-            filename = os.path.join(args.dir, filename)
-
-            if os.path.isfile(filename):
-                print(f"Updating {texturename} sprite piece {spritename} from {filename}...")
-
-                with open(filename, "rb") as bfp:
-                    afpfile.update_sprite(texturename, spritename, bfp.read())
-
-        # Now, write out the updated file
-        if args.pretend:
-            print(f"Would write {args.file}...")
-            afpfile.unparse()
-        else:
-            print(f"Writing {args.file}...")
-            data = afpfile.unparse()
-            with open(args.file, "wb") as bfp:
-                bfp.write(data)
-
-    if args.action == "print":
-        # First, parse the file out
-        with open(args.file, "rb") as bfp:
-            afpfile = TXP2File(bfp.read(), verbose=args.verbose)
-
-        # Now, print it
-        print(json.dumps(afpfile.as_dict(decompile_bytecode=args.decompile_bytecode, verbose=args.verbose), sort_keys=True, indent=4))
-
-    if args.action == "parseafp":
-        # First, load the AFP and BSI files
-        with open(args.afp, "rb") as bafp:
-            with open(args.bsi, "rb") as bbsi:
-                swf = SWF("<unnamed>", bafp.read(), bbsi.read())
-
-        # Now, print it
-        swf.parse(verbose=args.verbose)
-        print(json.dumps(swf.as_dict(decompile_bytecode=args.decompile_bytecode, verbose=args.verbose), sort_keys=True, indent=4))
-
-    if args.action == "decompile":
-        # First, load the AFP and BSI files
-        with open(args.afp, "rb") as bafp:
-            with open(args.bsi, "rb") as bbsi:
-                swf = SWF("<unnamed>", bafp.read(), bbsi.read())
-
-        # Now, decompile it
-        swf.parse(verbose=args.verbose)
-        write_bytecode(swf, args.directory, verbose=args.verbose)
-
-    if args.action == "parsegeo":
-        # First, load the AFP and BSI files
-        with open(args.geo, "rb") as bfp:
-            geo = Shape("<unnamed>", bfp.read())
-
-        # Now, print it
-        geo.parse()
-        if args.verbose:
-            print(geo, file=sys.stderr)
-        print(json.dumps(geo.as_dict(), sort_keys=True, indent=4))
-
-    if args.action in ["render", "list"]:
-        # This is a complicated one, as we need to be able to specify multiple
-        # directories of files as well as support IFS files and TXP2 files.
-        if args.action == 'render':
-            renderer = AFPRenderer(single_threaded=args.disable_threads)
-        else:
-            renderer = AFPRenderer()
-
-        # TODO: Allow specifying individual folders and such.
-        for container in args.container:
-            with open(container, "rb") as bfp:
-                data = bfp.read()
-
-            afpfile = None
-            try:
-                afpfile = TXP2File(data, verbose=args.verbose)
-            except Exception:
-                pass
-
-            if afpfile is not None:
-                if args.verbose:
-                    print(f"Loading files out of TXP2 container {container}...", file=sys.stderr)
-
-                # First, load GE2D structures into the renderer.
-                for i, name in enumerate(afpfile.shapemap.entries):
-                    shape = afpfile.shapes[i]
-                    renderer.add_shape(name, shape)
-
-                    if args.verbose:
-                        print(f"Added {name} to SWF shape library.", file=sys.stderr)
-
-                # Now, split and load textures into the renderer.
-                sheets: Dict[str, Any] = {}
-
-                for i, name in enumerate(afpfile.regionmap.entries):
-                    if i < 0 or i >= len(afpfile.texture_to_region):
-                        raise Exception(f"Out of bounds region {i}")
-                    region = afpfile.texture_to_region[i]
-                    texturename = afpfile.texturemap.entries[region.textureno]
-
-                    if texturename not in sheets:
-                        for tex in afpfile.textures:
-                            if tex.name == texturename:
-                                sheets[texturename] = tex
-                                break
-                        else:
-                            raise Exception("Could not find texture {texturename} to split!")
-
-                    if sheets[texturename].img:
-                        sprite = sheets[texturename].img.crop(
-                            (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
-                        )
-                        renderer.add_texture(name, sprite)
-
-                        if args.verbose:
-                            print(f"Added {name} to SWF texture library.", file=sys.stderr)
-                    else:
-                        print(f"Cannot load {name} from {texturename} because it is not a supported format!")
-
-                # Finally, load the SWF data itself into the renderer.
-                for i, name in enumerate(afpfile.swfmap.entries):
-                    swf = afpfile.swfdata[i]
-                    renderer.add_swf(name, swf)
-
-                    if args.verbose:
-                        print(f"Added {name} to SWF library.", file=sys.stderr)
-
-                continue
-
-            ifsfile = None
-            try:
-                ifsfile = IFS(data, decode_textures=True)
-            except Exception:
-                pass
-
-            if ifsfile is not None:
-                if args.verbose:
-                    print(f"Loading files out of IFS container {container}...", file=sys.stderr)
-                for fname in ifsfile.filenames:
-                    if fname.startswith(f"geo{os.sep}"):
-                        # Trim off directory.
-                        shapename = fname[(3 + len(os.sep)):]
-
-                        # Load file, register it.
-                        fdata = ifsfile.read_file(fname)
-                        shape = Shape(shapename, fdata)
-                        renderer.add_shape(shapename, shape)
-
-                        if args.verbose:
-                            print(f"Added {shapename} to SWF shape library.", file=sys.stderr)
-                    elif fname.startswith(f"tex{os.sep}") and fname.endswith(".png"):
-                        # Trim off directory, png extension.
-                        texname = fname[(3 + len(os.sep)):][:-4]
-
-                        # Load file, register it.
-                        fdata = ifsfile.read_file(fname)
-                        tex = Image.open(io.BytesIO(fdata))
-                        renderer.add_texture(texname, tex)
-
-                        if args.verbose:
-                            print(f"Added {texname} to SWF texture library.", file=sys.stderr)
-                    elif fname.startswith(f"afp{os.sep}"):
-                        # Trim off directory, see if it has a corresponding bsi.
-                        afpname = fname[(3 + len(os.sep)):]
-                        bsipath = f"afp{os.sep}bsi{os.sep}{afpname}"
-
-                        if bsipath in ifsfile.filenames:
-                            afpdata = ifsfile.read_file(fname)
-                            bsidata = ifsfile.read_file(bsipath)
-                            flash = SWF(afpname, afpdata, bsidata)
-                            renderer.add_swf(afpname, flash)
-
-                            if args.verbose:
-                                print(f"Added {afpname} to SWF library.", file=sys.stderr)
-                continue
-
-        if args.action == "render":
-            # Verify the correct params.
-            if args.output.lower().endswith(".gif"):
-                fmt = "GIF"
-            elif args.output.lower().endswith(".webp"):
-                fmt = "WEBP"
-            elif args.output.lower().endswith(".png"):
-                fmt = "PNG"
-            else:
-                raise Exception("Unrecognized file extension for output!")
-
-            # Allow overriding background color.
-            if args.background_color:
-                colorvals = args.background_color.split(",")
-                if len(colorvals) not in [3, 4]:
-                    raise Exception("Invalid color, specify a color as a comma-separated RGB or RGBA value!")
-
-                if len(colorvals) == 3:
-                    colorvals.append("255")
-                colorints = [int(c.strip()) for c in colorvals]
-                for c in colorints:
-                    if c < 0 or c > 255:
-                        raise Exception("Color values should be between 0 and 255!")
-
-                color = Color(*[c / 255.0 for c in colorints])
-            else:
-                color = None
-
-            # Allow inserting a background image.
-            if args.background_image:
-                background = Image.open(args.background_image)
-            else:
-                background = None
-
-            # Calculate the size of the SWF so we can apply scaling options.
-            swf_location = renderer.compute_path_location(args.path)
-            requested_width = swf_location.width
-            requested_height = swf_location.height
-
-            # Allow overriding the aspect ratio.
-            if args.force_aspect_ratio:
-                ratio = args.force_aspect_ratio.split(":")
-                if len(ratio) != 2:
-                    raise Exception("Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!")
-
-                rx, ry = [float(r.strip()) for r in ratio]
-                if rx <= 0 or ry <= 0:
-                    raise Exception("Ratio must only include positive numbers!")
-
-                actual_ratio = rx / ry
-                swf_ratio = swf_location.width / swf_location.height
-
-                if abs(swf_ratio - actual_ratio) > 0.0001:
-                    new_width = actual_ratio * swf_location.height
-                    new_height = swf_location.width / actual_ratio
-
-                    if new_width < swf_location.width and new_height < swf_location.height:
-                        raise Exception("Impossible aspect ratio!")
-                    if new_width > swf_location.width and new_height > swf_location.height:
-                        raise Exception("Impossible aspect ratio!")
-
-                    # We know that one is larger and one is smaller, pick the larger.
-                    # This way we always stretch instead of shrinking.
-                    if new_width > swf_location.width:
-                        requested_width = new_width
-                    else:
-                        requested_height = new_height
-
-            requested_width *= args.scale_width
-            requested_height *= args.scale_height
-
-            # Calculate the overall view matrix based on the requested width/height.
-            transform = Matrix(
-                a=requested_width / swf_location.width,
-                b=0.0,
-                c=0.0,
-                d=requested_height / swf_location.height,
-                tx=0.0,
-                ty=0.0,
-            )
-
-            # Support rendering only certain depth planes.
-            if args.only_depths is not None:
-                requested_depths = parse_intlist(args.only_depths)
-            else:
-                requested_depths = None
-
-            # Support rendering only certain frames.
-            if args.only_frames is not None:
-                requested_frames = parse_intlist(args.only_frames)
-            else:
-                requested_frames = None
-
-            if fmt in ["GIF", "WEBP"]:
-                # Write all the frames out in one file.
-                duration = renderer.compute_path_frame_duration(args.path)
-                images = list(
-                    renderer.render_path(
-                        args.path,
-                        verbose=args.verbose,
-                        background_color=color,
-                        background_image=background,
-                        only_depths=requested_depths,
-                        only_frames=requested_frames,
-                        movie_transform=transform,
-                    )
-                )
-                if len(images) == 0:
-                    raise Exception("Did not render any frames!")
-
-                with open(args.output, "wb") as bfp:
-                    images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
-
-                print(f"Wrote animation to {args.output}")
-            else:
-                # Write all the frames out in individual_files.
-                filename = args.output[:-4]
-                ext = args.output[-4:]
-
-                # Figure out padding for the images.
-                frames = renderer.compute_path_frames(args.path)
-                if frames > 0:
-                    digits = f"0{int(math.log10(frames)) + 1}"
-
-                    for i, img in enumerate(
-                        renderer.render_path(
-                            args.path,
-                            verbose=args.verbose,
-                            background_color=color,
-                            background_image=background,
-                            only_depths=requested_depths,
-                            only_frames=requested_frames,
-                            movie_transform=transform,
-                        )
-                    ):
-                        fullname = f"{filename}-{i:{digits}}{ext}"
-
-                        with open(fullname, "wb") as bfp:
-                            img.save(bfp, format=fmt)
-
-                        print(f"Wrote animation frame to {fullname}")
-
-        elif args.action == "list":
-            for path in renderer.list_paths(verbose=args.verbose):
-                print(path)
-
-    return 0
+        return extract_txp2(
+            args.file,
+            args.dir,
+            split_textures=args.split_textures,
+            generate_mapping_overlays=args.generate_mapping_overlays,
+            write_mappings=args.write_mappings,
+            write_raw=args.write_raw,
+            write_binaries=args.write_binaries,
+            pretend=args.pretend,
+            verbose=args.verbose,
+        )
+    elif args.action == "update":
+        return update_txp2(args.file, args.dir, pretend=args.pretend, verbose=args.verbose)
+    elif args.action == "print":
+        return print_txp2(args.file, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
+    elif args.action == "parseafp":
+        return parse_afp(args.afp, args.bsi, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
+    elif args.action == "decompile":
+        return decompile_afp(args.afp, args.bsi, args.directory, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
+    elif args.action == "parsegeo":
+        return parse_geo(args.geo, verbose=args.verbose)
+    elif args.action == "list":
+        return list_paths(args.container, verbose=args.verbose)
+    elif args.action == "render":
+        return render_path(
+            args.container,
+            args.path,
+            args.output,
+            disable_threads=args.disable_threads,
+            background_color=args.background_color,
+            background_image=args.background_image,
+            force_aspect_ratio=args.force_aspect_ratio,
+            scale_width=args.scale_width,
+            scale_height=args.scale_height,
+            only_depths=args.only_depths,
+            only_frames=args.only_frames,
+            verbose=args.verbose,
+        )
+    else:
+        raise Exception(f"Invalid action {args.action}!")
 
 
 if __name__ == "__main__":
