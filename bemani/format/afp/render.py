@@ -476,6 +476,18 @@ class AFPRenderer(VerboseOutput):
 
         raise Exception(f'{path} not found in registered SWFs!')
 
+    def compute_path_size(
+        self,
+        path: str,
+    ) -> Rectangle:
+        # Given a path to a SWF root animation, figure out what the dimensions
+        # of the SWF are.
+        for name, swf in self.swfs.items():
+            if swf.exported_name == path:
+                return swf.location
+
+        raise Exception(f'{path} not found in registered SWFs!')
+
     def list_paths(self, verbose: bool = False) -> Generator[str, None, None]:
         # Given the loaded animations, return a list of possible paths to render.
         for name, swf in self.swfs.items():
@@ -1278,6 +1290,9 @@ class AFPRenderer(VerboseOutput):
 
         # Calculate actual size based on given movie transform.
         actual_size = movie_transform.multiply_point(Point(swf.location.width, swf.location.height)).as_tuple()
+
+        # TODO: If the location top/left is nonzero, we need move the root transform
+        # so that the correct viewport is rendered.
 
         # Create a root clip for the movie to play.
         root_clip = PlacedClip(

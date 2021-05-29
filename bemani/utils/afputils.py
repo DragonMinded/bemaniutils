@@ -381,7 +381,7 @@ def parse_geo(geo: str, *, verbose: bool=False) -> int:
     return 0
 
 
-def load_containers(renderer: AFPRenderer, containers: List[str], verbose: bool) -> None:
+def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras: bool, verbose: bool) -> None:
     # This is a complicated one, as we need to be able to specify multiple
     # directories of files as well as support IFS files and TXP2 files.
     for container in containers:
@@ -399,41 +399,42 @@ def load_containers(renderer: AFPRenderer, containers: List[str], verbose: bool)
             if verbose:
                 print(f"Loading files out of TXP2 container {container}...", file=sys.stderr)
 
-            # First, load GE2D structures into the renderer.
-            for i, name in enumerate(afpfile.shapemap.entries):
-                shape = afpfile.shapes[i]
-                renderer.add_shape(name, shape)
-
-                if verbose:
-                    print(f"Added {name} to SWF shape library.", file=sys.stderr)
-
-            # Now, split and load textures into the renderer.
-            sheets: Dict[str, Any] = {}
-
-            for i, name in enumerate(afpfile.regionmap.entries):
-                if i < 0 or i >= len(afpfile.texture_to_region):
-                    raise Exception(f"Out of bounds region {i}")
-                region = afpfile.texture_to_region[i]
-                texturename = afpfile.texturemap.entries[region.textureno]
-
-                if texturename not in sheets:
-                    for tex in afpfile.textures:
-                        if tex.name == texturename:
-                            sheets[texturename] = tex
-                            break
-                    else:
-                        raise Exception("Could not find texture {texturename} to split!")
-
-                if sheets[texturename].img:
-                    sprite = sheets[texturename].img.crop(
-                        (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
-                    )
-                    renderer.add_texture(name, sprite)
+            if need_extras:
+                # First, load GE2D structures into the renderer.
+                for i, name in enumerate(afpfile.shapemap.entries):
+                    shape = afpfile.shapes[i]
+                    renderer.add_shape(name, shape)
 
                     if verbose:
-                        print(f"Added {name} to SWF texture library.", file=sys.stderr)
-                else:
-                    print(f"Cannot load {name} from {texturename} because it is not a supported format!")
+                        print(f"Added {name} to SWF shape library.", file=sys.stderr)
+
+                # Now, split and load textures into the renderer.
+                sheets: Dict[str, Any] = {}
+
+                for i, name in enumerate(afpfile.regionmap.entries):
+                    if i < 0 or i >= len(afpfile.texture_to_region):
+                        raise Exception(f"Out of bounds region {i}")
+                    region = afpfile.texture_to_region[i]
+                    texturename = afpfile.texturemap.entries[region.textureno]
+
+                    if texturename not in sheets:
+                        for tex in afpfile.textures:
+                            if tex.name == texturename:
+                                sheets[texturename] = tex
+                                break
+                        else:
+                            raise Exception("Could not find texture {texturename} to split!")
+
+                    if sheets[texturename].img:
+                        sprite = sheets[texturename].img.crop(
+                            (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                        )
+                        renderer.add_texture(name, sprite)
+
+                        if verbose:
+                            print(f"Added {name} to SWF texture library.", file=sys.stderr)
+                    else:
+                        print(f"Cannot load {name} from {texturename} because it is not a supported format!")
 
             # Finally, load the SWF data itself into the renderer.
             for i, name in enumerate(afpfile.swfmap.entries):
@@ -456,6 +457,9 @@ def load_containers(renderer: AFPRenderer, containers: List[str], verbose: bool)
                 print(f"Loading files out of IFS container {container}...", file=sys.stderr)
             for fname in ifsfile.filenames:
                 if fname.startswith(f"geo{os.sep}"):
+                    if not need_extras:
+                        continue
+
                     # Trim off directory.
                     shapename = fname[(3 + len(os.sep)):]
 
@@ -467,6 +471,9 @@ def load_containers(renderer: AFPRenderer, containers: List[str], verbose: bool)
                     if verbose:
                         print(f"Added {shapename} to SWF shape library.", file=sys.stderr)
                 elif fname.startswith(f"tex{os.sep}") and fname.endswith(".png"):
+                    if not need_extras:
+                        continue
+
                     # Trim off directory, png extension.
                     texname = fname[(3 + len(os.sep)):][:-4]
 
@@ -493,12 +500,19 @@ def load_containers(renderer: AFPRenderer, containers: List[str], verbose: bool)
             continue
 
 
-def list_paths(containers: List[str], *, verbose: bool=False) -> int:
+def list_paths(containers: List[str], *, include_frames: bool=False, include_size: bool=False, verbose: bool=False) -> int:
     renderer = AFPRenderer()
-    load_containers(renderer, containers, verbose=verbose)
+    load_containers(renderer, containers, need_extras=False, verbose=verbose)
 
     for path in renderer.list_paths(verbose=verbose):
-        print(path)
+        display = path
+        if include_size:
+            location = renderer.compute_path_size(path)
+            display = f"{display} - {int(location.width)}x{int(location.height)}"
+        if include_frames:
+            frames = renderer.compute_path_frames(path)
+            display = f"{display} - {frames} frames"
+        print(display)
 
     return 0
 
@@ -519,7 +533,7 @@ def render_path(
     verbose: bool = False,
 ) -> int:
     renderer = AFPRenderer(single_threaded=disable_threads)
-    load_containers(renderer, containers, verbose=verbose)
+    load_containers(renderer, containers, need_extras=True, verbose=verbose)
 
     # Verify the correct params.
     if output.lower().endswith(".gif"):
@@ -920,6 +934,16 @@ def main() -> int:
         help="A container file to use for loading SWF data. Can be either a TXP2 or IFS container.",
     )
     list_parser.add_argument(
+        "--include-frames",
+        action="store_true",
+        help="Include number of frames per path in the output list.",
+    )
+    list_parser.add_argument(
+        "--include-size",
+        action="store_true",
+        help="Include width/height of the path in the output list.",
+    )
+    list_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -951,7 +975,7 @@ def main() -> int:
     elif args.action == "parsegeo":
         return parse_geo(args.geo, verbose=args.verbose)
     elif args.action == "list":
-        return list_paths(args.container, verbose=args.verbose)
+        return list_paths(args.container, include_size=args.include_size, include_frames=args.include_frames, verbose=args.verbose)
     elif args.action == "render":
         return render_path(
             args.container,
