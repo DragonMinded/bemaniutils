@@ -1,7 +1,7 @@
 from PIL import Image  # type: ignore
 from typing import Optional, Tuple
 
-from .types.generic import Color, Matrix, Point
+from ..types import Color, Matrix, Point
 
 def affine_composite(
     img: Image.Image,

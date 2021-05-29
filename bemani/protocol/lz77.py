@@ -8,7 +8,7 @@ from typing import Generator, List, MutableMapping, Optional, Set, Tuple
 try:
     clib = None
     clib_path = os.path.dirname(os.path.abspath(__file__))
-    files = [f for f in os.listdir(clib_path) if f.startswith("lz77alt") and f.endswith(".so")]
+    files = [f for f in os.listdir(clib_path) if f.startswith("lz77cpp") and f.endswith(".so")]
     if len(files) > 0:
         clib = ctypes.cdll.LoadLibrary(os.path.join(clib_path, files[0]))
         clib.decompress.argtypes = (ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)

@@ -4,8 +4,11 @@ import sys
 from typing import Any, Dict, List, Optional, Tuple
 
 from .decompile import ByteCode
-from .types import Matrix, Color, Point, Rectangle
 from .types import (
+    Matrix,
+    Color,
+    Point,
+    Rectangle,
     AP2Action,
     AP2Tag,
     AP2Trigger,

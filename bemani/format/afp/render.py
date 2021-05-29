@@ -17,7 +17,25 @@ from .swf import (
     AP2ImageTag,
 )
 from .decompile import ByteCode
-from .types import Color, Matrix, Point, Rectangle, AP2Trigger, AP2Action, PushAction, StoreRegisterAction, StringConstant, Register, NULL, UNDEFINED, GLOBAL, ROOT, PARENT, THIS, CLIP
+from .types import (
+    Color,
+    Matrix,
+    Point,
+    Rectangle,
+    AP2Trigger,
+    AP2Action,
+    PushAction,
+    StoreRegisterAction,
+    StringConstant,
+    Register,
+    NULL,
+    UNDEFINED,
+    GLOBAL,
+    ROOT,
+    PARENT,
+    THIS,
+    CLIP,
+)
 from .geo import Shape, DrawParams
 from .util import VerboseOutput
 
