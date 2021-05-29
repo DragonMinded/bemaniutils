@@ -2,6 +2,9 @@ from typing import Any, Dict, Tuple
 
 
 class Color:
+    # An RGBA color, represented as a series of floats between 0.0 and 1.0.
+    # These can be multiplied or added against other colors to perform various
+    # blending operations.
     def __init__(self, r: float, g: float, b: float, a: float) -> None:
         self.r = r
         self.g = g
@@ -45,6 +48,7 @@ class Color:
 
 
 class Point:
+    # A simple 2D point.
     def __init__(self, x: float, y: float) -> None:
         self.x = x
         self.y = y
@@ -77,6 +81,7 @@ class Point:
 
 
 class Rectangle:
+    # A 2D rectangle, represented by its left/right/top/bottom bounds.
     def __init__(self, left: float, top: float, bottom: float, right: float) -> None:
         self.left = left
         self.top = top
@@ -108,6 +113,17 @@ class Rectangle:
 
 
 class Matrix:
+    # The classic SWF matrix. Technically it is missing the third column, but that
+    # column never changes and thus can be omitted. Includes operations for multiplying
+    # 2D points as well as other matrixes and inverting itself. This is how SWF (and
+    # as a result, AFP) performs its affine transformations on objects that are placed.
+    #
+    # The matrix, if laid out, looks as follows:
+    #
+    # | a  b  0 |
+    # | c  d  0 |
+    # | tx ty 1 |
+
     def __init__(self, a: float, b: float, c: float, d: float, tx: float, ty: float) -> None:
         self.a = a
         self.b = b
@@ -118,7 +134,7 @@ class Matrix:
 
     @staticmethod
     def identity() -> "Matrix":
-        return Matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+        return Matrix(a=1.0, b=0.0, c=0.0, d=1.0, tx=0.0, ty=0.0)
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
@@ -172,6 +188,7 @@ class Matrix:
         except ZeroDivisionError:
             pass
 
+        # This happens if one of the scaling factors is zero.
         raise ZeroDivisionError(f"Matrix({self}) cannot be inverted!")
 
     def __repr__(self) -> str:
