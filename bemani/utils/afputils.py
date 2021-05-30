@@ -523,6 +523,7 @@ def render_path(
     output: str,
     *,
     disable_threads: bool = False,
+    disable_anti_aliasing: bool = False,
     background_color: Optional[str] = None,
     background_image: Optional[str] = None,
     force_aspect_ratio: Optional[str] = None,
@@ -532,7 +533,7 @@ def render_path(
     only_frames: Optional[str] = None,
     verbose: bool = False,
 ) -> int:
-    renderer = AFPRenderer(single_threaded=disable_threads)
+    renderer = AFPRenderer(single_threaded=disable_threads, enable_aa=not disable_anti_aliasing)
     load_containers(renderer, containers, need_extras=True, verbose=verbose)
 
     # Verify the correct params.
@@ -919,6 +920,11 @@ def main() -> int:
         help="Disable multi-threaded rendering.",
     )
     render_parser.add_argument(
+        "--disable-anti-aliasing",
+        action="store_true",
+        help="Disable anti-aliased rendering.",
+    )
+    render_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -982,6 +988,7 @@ def main() -> int:
             args.path,
             args.output,
             disable_threads=args.disable_threads,
+            disable_anti_aliasing=args.disable_anti_aliasing,
             background_color=args.background_color,
             background_image=args.background_image,
             force_aspect_ratio=args.force_aspect_ratio,

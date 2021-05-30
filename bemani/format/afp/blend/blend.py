@@ -127,6 +127,7 @@ def affine_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
+    enable_aa: bool = True,
 ) -> Image.Image:
     # Calculate the inverse so we can map canvas space back to texture space.
     try:
@@ -181,21 +182,59 @@ def affine_composite(
             for imgx in range(minx, maxx):
                 # Determine offset
                 imgoff = imgx + (imgy * imgwidth)
-
-                # Calculate what texture pixel data goes here.
-                texloc = inverse.multiply_point(Point(float(imgx + 0.5), float(imgy + 0.5)))
-                texx, texy = texloc.as_tuple()
-
-                # If we're out of bounds, don't update.
-                if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-                    continue
-
-                # Blend it.
-                texoff = texx + (texy * texwidth)
                 if maskmap is not None and maskmap[imgoff] == 0:
                     # This pixel is masked off!
                     continue
-                imgmap[imgoff] = blend_point(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc)
+
+                if enable_aa:
+                    r = 0
+                    g = 0
+                    b = 0
+                    a = 0
+                    count = 0
+
+                    xswing = abs(0.5 / inverse.a)
+                    yswing = abs(0.5 / inverse.d)
+
+                    xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
+                    ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
+
+                    for addy in ypoints:
+                        for addx in xpoints:
+                            texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
+                            aax, aay = texloc.as_tuple()
+
+                            # If we're out of bounds, don't update.
+                            if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
+                                continue
+
+                            # Grab the values to average, for SSAA.
+                            texoff = aax + (aay * texwidth)
+                            r += texmap[texoff][0]
+                            g += texmap[texoff][1]
+                            b += texmap[texoff][2]
+                            a += texmap[texoff][3]
+                            count += 1
+
+                    if count == 0:
+                        # None of the samples existed in-bounds.
+                        continue
+
+                    # Average the pixels.
+                    average = [r // count, g // count, b // count, a // count]
+                    imgmap[imgoff] = blend_point(add_color, mult_color, average, imgmap[imgoff], blendfunc)
+                else:
+                    # Calculate what texture pixel data goes here.
+                    texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
+                    texx, texy = texloc.as_tuple()
+
+                    # If we're out of bounds, don't update.
+                    if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
+                        continue
+
+                    # Blend it.
+                    texoff = texx + (texy * texwidth)
+                    imgmap[imgoff] = blend_point(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc)
 
         img.putdata(imgmap)
     else:
@@ -239,6 +278,7 @@ def affine_composite(
                     imgbytes,
                     texbytes,
                     maskbytes,
+                    enable_aa,
                 ),
             )
             procs.append(proc)
@@ -317,6 +357,7 @@ def pixel_renderer(
     imgbytes: bytes,
     texbytes: bytes,
     maskbytes: Optional[bytes],
+    enable_aa: bool,
 ) -> None:
     while True:
         imgy = work.get()
@@ -330,23 +371,62 @@ def pixel_renderer(
             if imgx < minx or imgx >= maxx:
                 result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
                 continue
-
-            # Calculate what texture pixel data goes here.
-            texloc = inverse.multiply_point(Point(float(imgx + 0.5), float(imgy + 0.5)))
-            texx, texy = texloc.as_tuple()
-
-            # If we're out of bounds, don't update.
-            if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-                result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
-                continue
-
-            # Blend it.
-            texoff = texx + (texy * texwidth)
             if maskbytes is not None and maskbytes[imgoff] == 0:
                 # This pixel is masked off!
                 result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
                 continue
-            result.append(blend_point(add_color, mult_color, texbytes[(texoff * 4):((texoff + 1) * 4)], imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
+
+            if enable_aa:
+                r = 0
+                g = 0
+                b = 0
+                a = 0
+                count = 0
+
+                xswing = abs(0.5 / inverse.a)
+                yswing = abs(0.5 / inverse.d)
+
+                xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
+                ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
+
+                for addy in ypoints:
+                    for addx in xpoints:
+                        texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
+                        aax, aay = texloc.as_tuple()
+
+                        # If we're out of bounds, don't update.
+                        if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
+                            continue
+
+                        # Grab the values to average, for SSAA.
+                        texoff = (aax + (aay * texwidth)) * 4
+                        r += texbytes[texoff]
+                        g += texbytes[texoff + 1]
+                        b += texbytes[texoff + 2]
+                        a += texbytes[texoff + 3]
+                        count += 1
+
+                if count == 0:
+                    # None of the samples existed in-bounds.
+                    result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
+                    continue
+
+                # Average the pixels.
+                average = [r // count, g // count, b // count, a // count]
+                result.append(blend_point(add_color, mult_color, average, imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
+            else:
+                # Calculate what texture pixel data goes here.
+                texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
+                texx, texy = texloc.as_tuple()
+
+                # If we're out of bounds, don't update.
+                if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
+                    result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
+                    continue
+
+                # Blend it.
+                texoff = texx + (texy * texwidth)
+                result.append(blend_point(add_color, mult_color, texbytes[(texoff * 4):((texoff + 1) * 4)], imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
 
         linebytes = bytes([channel for pixel in result for channel in pixel])
         results.put((imgy, linebytes))

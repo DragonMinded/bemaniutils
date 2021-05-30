@@ -12,5 +12,6 @@ def affine_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
+    enable_aa: bool = True,
 ) -> Image.Image:
     ...

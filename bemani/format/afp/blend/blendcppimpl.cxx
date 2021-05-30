@@ -65,6 +65,7 @@ extern "C"
         floatcolor_t mult_color;
         int blendfunc;
         pthread_t *thread;
+        int enable_aa;
     } work_t;
 
     inline unsigned char clamp(float color) {
@@ -253,23 +254,75 @@ extern "C"
                 // Determine offset.
                 unsigned int imgoff = imgx + (imgy * work->imgwidth);
 
-                // Calculate what texture pixel data goes here.
-                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
-                int texx = texloc.x;
-                int texy = texloc.y;
-
-                // If we're out of bounds, don't update.
-                if (texx < 0 or texy < 0 or texx >= (int)work->texwidth or texy >= (int)work->texheight) {
-                    continue;
-                }
-
-                // Blend it.
-                unsigned int texoff = texx + (texy * work->texwidth);
+                // If we are masked off, don't do any other calculations.
                 if (work->maskdata != NULL && work->maskdata[imgoff] == 0) {
                     // This pixel is masked off!
                     continue;
                 }
-                work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->texdata[texoff], work->imgdata[imgoff], work->blendfunc);
+
+                // Blend for simple anti-aliasing.
+                if (work->enable_aa) {
+                    // Calculate what texture pixel data goes here.
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    int a = 0;
+                    int count = 0;
+
+                    float xswing = fabs(0.5 / work->inverse.a);
+                    float yswing = fabs(0.5 / work->inverse.d);
+
+                    for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
+                        for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
+                            point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
+                            int aax = texloc.x;
+                            int aay = texloc.y;
+
+                            // If we're out of bounds, don't update.
+                            if (aax < 0 or aay < 0 or aax >= (int)work->texwidth or aay >= (int)work->texheight) {
+                                continue;
+                            }
+
+                            // Grab the values to average, for SSAA.
+                            unsigned int texoff = aax + (aay * work->texwidth);
+                            r += work->texdata[texoff].r;
+                            g += work->texdata[texoff].g;
+                            b += work->texdata[texoff].b;
+                            a += work->texdata[texoff].a;
+                            count ++;
+                        }
+                    }
+
+                    if (count == 0) {
+                        // None of the samples existed in-bounds.
+                        continue;
+                    }
+
+                    // Average the pixels.
+                    intcolor_t average = (intcolor_t){
+                        (unsigned char)(r / count),
+                        (unsigned char)(g / count),
+                        (unsigned char)(b / count),
+                        (unsigned char)(a / count),
+                    };
+
+                    // Blend it.
+                    work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, average, work->imgdata[imgoff], work->blendfunc);
+                } else {
+                    // Grab the center of the pixel to get the color.
+                    point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
+                    int texx = texloc.x;
+                    int texy = texloc.y;
+
+                    // If we're out of bounds, don't update.
+                    if (texx < 0 or texy < 0 or texx >= (int)work->texwidth or texy >= (int)work->texheight) {
+                        continue;
+                    }
+
+                    // Blend it.
+                    unsigned int texoff = texx + (texy * work->texwidth);
+                    work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->texdata[texoff], work->imgdata[imgoff], work->blendfunc);
+                }
             }
         }
     }
@@ -296,7 +349,8 @@ extern "C"
         unsigned char *texbytes,
         unsigned int texwidth,
         unsigned int texheight,
-        unsigned int threads
+        unsigned int threads,
+        unsigned int enable_aa
     ) {
         // Cast to a usable type.
         intcolor_t *imgdata = (intcolor_t *)imgbytes;
@@ -319,6 +373,7 @@ extern "C"
             work.add_color = add_color;
             work.mult_color = mult_color;
             work.blendfunc = blendfunc;
+            work.enable_aa = enable_aa;
 
             chunk_composite_fast(&work);
         } else {
@@ -362,6 +417,7 @@ extern "C"
                 work->mult_color = mult_color;
                 work->blendfunc = blendfunc;
                 work->thread = thread;
+                work->enable_aa = enable_aa;
 
                 if (me)
                 {

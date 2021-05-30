@@ -397,11 +397,12 @@ MissingThis = object()
 
 
 class AFPRenderer(VerboseOutput):
-    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False) -> None:
+    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False, enable_aa: bool = True) -> None:
         super().__init__()
 
         # Options for rendering
         self.__single_threaded = single_threaded
+        self.__enable_aa = enable_aa
 
         # Library of shapes (draw instructions), textures (actual images) and swfs (us and other files for imports).
         self.shapes: Dict[str, Shape] = shapes
@@ -958,6 +959,7 @@ class AFPRenderer(VerboseOutput):
             257,
             mask.rectangle,
             single_threaded=self.__single_threaded,
+            enable_aa=False,
         )
 
         # Composite it onto the current mask.
@@ -970,6 +972,7 @@ class AFPRenderer(VerboseOutput):
             256,
             calculated_mask,
             single_threaded=self.__single_threaded,
+            enable_aa=False,
         )
 
     def __render_object(
@@ -1041,11 +1044,13 @@ class AFPRenderer(VerboseOutput):
                     print("WARNING: Unhandled UV coordinate color!")
 
                 texture = None
+                enable_aa = False
                 if params.flags & 0x2:
                     # We need to look up the texture for this.
                     if params.region not in self.textures:
                         raise Exception(f"Cannot find texture reference {params.region}!")
                     texture = self.textures[params.region]
+                    enable_aa = self.__enable_aa
 
                     if params.flags & 0x8:
                         # TODO: This texture gets further blended somehow? Not sure this is ever used.
@@ -1082,7 +1087,7 @@ class AFPRenderer(VerboseOutput):
                     texture = shape.rectangle
 
                 if texture is not None:
-                    img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded)
+                    img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded, enable_aa=enable_aa)
         elif isinstance(renderable, PlacedImage):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -1090,7 +1095,7 @@ class AFPRenderer(VerboseOutput):
 
             # This is a shape draw reference.
             texture = self.textures[renderable.source.reference]
-            img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded)
+            img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded, enable_aa=self.__enable_aa)
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass
