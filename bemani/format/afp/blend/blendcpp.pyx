@@ -2,7 +2,7 @@ import multiprocessing
 from PIL import Image  # type: ignore
 from typing import Optional, Tuple
 
-from ..types.generic import Color, Matrix, Point
+from ..types import Color, Matrix, Point
 
 cdef extern struct floatcolor_t:
     float r;

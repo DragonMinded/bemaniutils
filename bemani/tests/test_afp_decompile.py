@@ -4,8 +4,8 @@ import unittest
 from typing import Dict, List, Sequence, Tuple, Union
 
 from bemani.tests.helpers import ExtendedTestCase
-from bemani.format.afp.types.ap2 import AP2Action, IfAction, JumpAction, PushAction, AddNumVariableAction, Register
-from bemani.format.afp.decompile import BitVector, ByteCode, ByteCodeChunk, ControlFlow, ByteCodeDecompiler, Statement
+from bemani.format.afp.decompile import ByteCodeDecompiler, ByteCode, BitVector, ByteCodeChunk, ControlFlow
+from bemani.format.afp.types import AP2Action, IfAction, JumpAction, PushAction, AddNumVariableAction, Register, Statement
 
 
 OPEN_BRACKET = "{"

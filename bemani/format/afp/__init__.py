@@ -21,6 +21,7 @@ from .swf import (
 from .container import TXP2File, PMAN, Texture, TextureRegion, Unknown1, Unknown2
 from .render import AFPRenderer
 from .types import Matrix, Color, Point, Rectangle, AP2Tag, AP2Action, AP2Object, AP2Pointer
+from .decompile import ByteCode, ByteCodeDecompiler
 
 
 __all__ = [
@@ -58,4 +59,6 @@ __all__ = [
     'AP2Action',
     'AP2Object',
     'AP2Pointer',
+    'ByteCode',
+    'ByteCodeDecompiler',
 ]
