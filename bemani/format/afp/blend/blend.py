@@ -1,7 +1,7 @@
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Union
 
 from ..types import Color, Matrix, Point
 
@@ -118,6 +118,80 @@ def blend_multiply(
     )
 
 
+def blend_mask_create(
+    # RGBA color tuple representing what's already at the dest.
+    dest: Sequence[int],
+    # RGBA color tuple representing the source we want to blend to the dest.
+    src: Sequence[int],
+) -> Sequence[int]:
+    # Mask creating just allows a pixel to be drawn if the source image has a nonzero
+    # alpha, according to the SWF spec.
+    if src[3] != 0:
+        return (255, 0, 0, 255)
+    else:
+        return (0, 0, 0, 0)
+
+
+def blend_mask_combine(
+    # RGBA color tuple representing what's already at the dest.
+    dest: Sequence[int],
+    # RGBA color tuple representing the source we want to blend to the dest.
+    src: Sequence[int],
+) -> Sequence[int]:
+    # Mask blending just takes the source and destination and ands them together, making
+    # a final mask that is the intersection of the original mask and the new mask. The
+    # reason we even have a color component to this is for debugging visibility.
+    if dest[3] != 0 and src[3] != 0:
+        return (255, 0, 0, 255)
+    else:
+        return (0, 0, 0, 0)
+
+
+def blend_point(
+    add_color: Color,
+    mult_color: Color,
+    # This should be a sequence of exactly 4 values, either bytes or a tuple.
+    src_color: Sequence[int],
+    # This should be a sequence of exactly 4 values, either bytes or a tuple.
+    dest_color: Sequence[int],
+    blendfunc: int,
+) -> Sequence[int]:
+    # Calculate multiplicative and additive colors against the source.
+    src_color = (
+        clamp((src_color[0] * mult_color.r) + (255 * add_color.r)),
+        clamp((src_color[1] * mult_color.g) + (255 * add_color.g)),
+        clamp((src_color[2] * mult_color.b) + (255 * add_color.b)),
+        clamp((src_color[3] * mult_color.a) + (255 * add_color.a)),
+    )
+
+    if blendfunc == 3:
+        return blend_multiply(dest_color, src_color)
+    # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this
+    # in Jubeat and it implements it using OpenGL equation Src * (1 - Dst) + Dst * 1.
+    # TODO: blend mode 5, which is "lighten" blending according to SWF references. Jubeat does not
+    # premultiply by alpha, but the GL/DX equation is max(Src * As, Dst * 1).
+    # TODO: blend mode 6, which is "darken" blending according to SWF references. Jubeat does not
+    # premultiply by alpha, but the GL/DX equation is min(Src * As, Dst * 1).
+    # TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
+    # that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
+    # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
+    # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
+    elif blendfunc == 8:
+        return blend_addition(dest_color, src_color)
+    elif blendfunc == 9 or blendfunc == 70:
+        return blend_subtraction(dest_color, src_color)
+    # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
+    # Src * (1 - Dst) + Dst * (1 - Src).
+    elif blendfunc == 256:
+        # Dummy blend function for calculating masks.
+        return blend_mask_combine(dest_color, src_color)
+    elif blendfunc == 257:
+        # Dummy blend function for calculating masks.
+        return blend_mask_create(dest_color, src_color)
+    else:
+        return blend_normal(dest_color, src_color)
+
+
 def affine_composite(
     img: Image.Image,
     add_color: Color,
@@ -169,74 +243,36 @@ def affine_composite(
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:
         # Get the data in an easier to manipulate and faster to update fashion.
-        imgmap = list(img.getdata())
-        texmap = list(texture.getdata())
+        imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
+        texbytes = texture.tobytes('raw', 'RGBA')
         if mask:
             alpha = mask.split()[-1]
-            maskmap = alpha.tobytes('raw', 'L')
+            maskbytes = alpha.tobytes('raw', 'L')
         else:
-            maskmap = None
+            maskbytes = None
 
         # We don't have enough CPU cores to bother multiprocessing.
         for imgy in range(miny, maxy):
             for imgx in range(minx, maxx):
                 # Determine offset
-                imgoff = imgx + (imgy * imgwidth)
-                if maskmap is not None and maskmap[imgoff] == 0:
-                    # This pixel is masked off!
-                    continue
+                imgoff = (imgx + (imgy * imgwidth)) * 4
+                imgbytes[imgoff:(imgoff + 4)] = pixel_renderer(
+                    imgx,
+                    imgy,
+                    imgwidth,
+                    texwidth,
+                    texheight,
+                    inverse,
+                    add_color,
+                    mult_color,
+                    blendfunc,
+                    imgbytes,
+                    texbytes,
+                    maskbytes,
+                    enable_aa,
+                )
 
-                if enable_aa:
-                    r = 0
-                    g = 0
-                    b = 0
-                    a = 0
-                    count = 0
-
-                    xswing = abs(0.5 / inverse.a)
-                    yswing = abs(0.5 / inverse.d)
-
-                    xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
-                    ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
-
-                    for addy in ypoints:
-                        for addx in xpoints:
-                            texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
-                            aax, aay = texloc.as_tuple()
-
-                            # If we're out of bounds, don't update.
-                            if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
-                                continue
-
-                            # Grab the values to average, for SSAA.
-                            texoff = aax + (aay * texwidth)
-                            r += texmap[texoff][0]
-                            g += texmap[texoff][1]
-                            b += texmap[texoff][2]
-                            a += texmap[texoff][3]
-                            count += 1
-
-                    if count == 0:
-                        # None of the samples existed in-bounds.
-                        continue
-
-                    # Average the pixels.
-                    average = [r // count, g // count, b // count, a // count]
-                    imgmap[imgoff] = blend_point(add_color, mult_color, average, imgmap[imgoff], blendfunc)
-                else:
-                    # Calculate what texture pixel data goes here.
-                    texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-                    texx, texy = texloc.as_tuple()
-
-                    # If we're out of bounds, don't update.
-                    if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-                        continue
-
-                    # Blend it.
-                    texoff = texx + (texy * texwidth)
-                    imgmap[imgoff] = blend_point(add_color, mult_color, texmap[texoff], imgmap[imgoff], blendfunc)
-
-        img.putdata(imgmap)
+        img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
     else:
         imgbytes = img.tobytes('raw', 'RGBA')
         texbytes = texture.tobytes('raw', 'RGBA')
@@ -262,7 +298,7 @@ def affine_composite(
 
         for _ in range(cores):
             proc = multiprocessing.Process(
-                target=pixel_renderer,
+                target=line_renderer,
                 args=(
                     work,
                     results,
@@ -313,36 +349,7 @@ def affine_composite(
     return img
 
 
-def blend_mask_create(
-    # RGBA color tuple representing what's already at the dest.
-    dest: Sequence[int],
-    # RGBA color tuple representing the source we want to blend to the dest.
-    src: Sequence[int],
-) -> Sequence[int]:
-    # Mask creating just allows a pixel to be drawn if the source image has a nonzero
-    # alpha, according to the SWF spec.
-    if src[3] != 0:
-        return (255, 0, 0, 255)
-    else:
-        return (0, 0, 0, 0)
-
-
-def blend_mask_combine(
-    # RGBA color tuple representing what's already at the dest.
-    dest: Sequence[int],
-    # RGBA color tuple representing the source we want to blend to the dest.
-    src: Sequence[int],
-) -> Sequence[int]:
-    # Mask blending just takes the source and destination and ands them together, making
-    # a final mask that is the intersection of the original mask and the new mask. The
-    # reason we even have a color component to this is for debugging visibility.
-    if dest[3] != 0 and src[3] != 0:
-        return (255, 0, 0, 255)
-    else:
-        return (0, 0, 0, 0)
-
-
-def pixel_renderer(
+def line_renderer(
     work: multiprocessing.Queue,
     results: multiprocessing.Queue,
     minx: int,
@@ -354,9 +361,9 @@ def pixel_renderer(
     add_color: Color,
     mult_color: Color,
     blendfunc: int,
-    imgbytes: bytes,
-    texbytes: bytes,
-    maskbytes: Optional[bytes],
+    imgbytes: Union[bytes, bytearray],
+    texbytes: Union[bytes, bytearray],
+    maskbytes: Optional[Union[bytes, bytearray]],
     enable_aa: bool,
 ) -> None:
     while True:
@@ -364,114 +371,101 @@ def pixel_renderer(
         if imgy is None:
             return
 
-        result: List[Sequence[int]] = []
+        rowbytes = bytearray(imgbytes[(imgy * imgwidth * 4):((imgy + 1) * imgwidth * 4)])
         for imgx in range(imgwidth):
-            # Determine offset
-            imgoff = imgx + (imgy * imgwidth)
             if imgx < minx or imgx >= maxx:
-                result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
+                # No need to even consider this pixel.
                 continue
-            if maskbytes is not None and maskbytes[imgoff] == 0:
-                # This pixel is masked off!
-                result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
-                continue
-
-            if enable_aa:
-                r = 0
-                g = 0
-                b = 0
-                a = 0
-                count = 0
-
-                xswing = abs(0.5 / inverse.a)
-                yswing = abs(0.5 / inverse.d)
-
-                xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
-                ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
-
-                for addy in ypoints:
-                    for addx in xpoints:
-                        texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
-                        aax, aay = texloc.as_tuple()
-
-                        # If we're out of bounds, don't update.
-                        if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
-                            continue
-
-                        # Grab the values to average, for SSAA.
-                        texoff = (aax + (aay * texwidth)) * 4
-                        r += texbytes[texoff]
-                        g += texbytes[texoff + 1]
-                        b += texbytes[texoff + 2]
-                        a += texbytes[texoff + 3]
-                        count += 1
-
-                if count == 0:
-                    # None of the samples existed in-bounds.
-                    result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
-                    continue
-
-                # Average the pixels.
-                average = [r // count, g // count, b // count, a // count]
-                result.append(blend_point(add_color, mult_color, average, imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
             else:
-                # Calculate what texture pixel data goes here.
-                texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-                texx, texy = texloc.as_tuple()
+                # Blit new pixel into the correct range.
+                rowbytes[(imgx * 4):((imgx + 1) * 4)] = pixel_renderer(
+                    imgx,
+                    imgy,
+                    imgwidth,
+                    texwidth,
+                    texheight,
+                    inverse,
+                    add_color,
+                    mult_color,
+                    blendfunc,
+                    imgbytes,
+                    texbytes,
+                    maskbytes,
+                    enable_aa,
+                )
 
-                # If we're out of bounds, don't update.
-                if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-                    result.append(imgbytes[(imgoff * 4):((imgoff + 1) * 4)])
-                    continue
-
-                # Blend it.
-                texoff = texx + (texy * texwidth)
-                result.append(blend_point(add_color, mult_color, texbytes[(texoff * 4):((texoff + 1) * 4)], imgbytes[(imgoff * 4):((imgoff + 1) * 4)], blendfunc))
-
-        linebytes = bytes([channel for pixel in result for channel in pixel])
-        results.put((imgy, linebytes))
+        results.put((imgy, bytes(rowbytes)))
 
 
-def blend_point(
+def pixel_renderer(
+    imgx: int,
+    imgy: int,
+    imgwidth: int,
+    texwidth: int,
+    texheight: int,
+    inverse: Matrix,
     add_color: Color,
     mult_color: Color,
-    # This should be a sequence of exactly 4 values, either bytes or a tuple.
-    src_color: Sequence[int],
-    # This should be a sequence of exactly 4 values, either bytes or a tuple.
-    dest_color: Sequence[int],
     blendfunc: int,
+    imgbytes: Union[bytes, bytearray],
+    texbytes: Union[bytes, bytearray],
+    maskbytes: Optional[Union[bytes, bytearray]],
+    enable_aa: bool,
 ) -> Sequence[int]:
-    # Calculate multiplicative and additive colors against the source.
-    src_color = (
-        clamp((src_color[0] * mult_color.r) + (255 * add_color.r)),
-        clamp((src_color[1] * mult_color.g) + (255 * add_color.g)),
-        clamp((src_color[2] * mult_color.b) + (255 * add_color.b)),
-        clamp((src_color[3] * mult_color.a) + (255 * add_color.a)),
-    )
+    # Determine offset
+    maskoff = imgx + (imgy * imgwidth)
+    imgoff = maskoff * 4
 
-    if blendfunc == 3:
-        return blend_multiply(dest_color, src_color)
-    # TODO: blend mode 4, which is "screen" blending according to SWF references. I've only seen this
-    # in Jubeat and it implements it using OpenGL equation Src * (1 - Dst) + Dst * 1.
-    # TODO: blend mode 5, which is "lighten" blending according to SWF references. Jubeat does not
-    # premultiply by alpha, but the GL/DX equation is max(Src * As, Dst * 1).
-    # TODO: blend mode 6, which is "darken" blending according to SWF references. Jubeat does not
-    # premultiply by alpha, but the GL/DX equation is min(Src * As, Dst * 1).
-    # TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
-    # that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
-    # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
-    # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
-    elif blendfunc == 8:
-        return blend_addition(dest_color, src_color)
-    elif blendfunc == 9 or blendfunc == 70:
-        return blend_subtraction(dest_color, src_color)
-    # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
-    # Src * (1 - Dst) + Dst * (1 - Src).
-    elif blendfunc == 256:
-        # Dummy blend function for calculating masks.
-        return blend_mask_combine(dest_color, src_color)
-    elif blendfunc == 257:
-        # Dummy blend function for calculating masks.
-        return blend_mask_create(dest_color, src_color)
+    if maskbytes is not None and maskbytes[maskoff] == 0:
+        # This pixel is masked off!
+        return imgbytes[imgoff:(imgoff + 4)]
+
+    if enable_aa:
+        r = 0
+        g = 0
+        b = 0
+        a = 0
+        count = 0
+
+        xswing = abs(0.5 / inverse.a)
+        yswing = abs(0.5 / inverse.d)
+
+        xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
+        ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
+
+        for addy in ypoints:
+            for addx in xpoints:
+                texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
+                aax, aay = texloc.as_tuple()
+
+                # If we're out of bounds, don't update.
+                if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
+                    continue
+
+                # Grab the values to average, for SSAA.
+                texoff = (aax + (aay * texwidth)) * 4
+                r += texbytes[texoff]
+                g += texbytes[texoff + 1]
+                b += texbytes[texoff + 2]
+                a += texbytes[texoff + 3]
+                count += 1
+
+        if count == 0:
+            # None of the samples existed in-bounds.
+            return imgbytes[imgoff:(imgoff + 4)]
+
+        # Average the pixels.
+        average = [r // count, g // count, b // count, a // count]
+        return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
     else:
-        return blend_normal(dest_color, src_color)
+        # Calculate what texture pixel data goes here.
+        texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
+        texx, texy = texloc.as_tuple()
+
+        # If we're out of bounds, don't update.
+        if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
+            return imgbytes[imgoff:(imgoff + 4)]
+
+        # Blend it.
+        texoff = (texx + (texy * texwidth)) * 4
+        return blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
