@@ -397,7 +397,7 @@ MissingThis = object()
 
 
 class AFPRenderer(VerboseOutput):
-    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False, enable_aa: bool = True) -> None:
+    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False, enable_aa: bool = False) -> None:
         super().__init__()
 
         # Options for rendering
