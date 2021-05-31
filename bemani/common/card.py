@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, Final, List
 
 
 class CardCipherException(Exception):
@@ -13,7 +13,7 @@ class CardCipher:
     Tau and converted ham-fistedly to Python.
     """
 
-    KEY = [
+    KEY: Final[List[int]] = [
         0x20d0d03c, 0x868ecb41, 0xbcd89c84, 0x4c0e0d0d,
         0x84fc30ac, 0x4cc1890e, 0xfc5418a4, 0x02c50f44,
         0x68acb4e0, 0x06cd4a4e, 0xcc28906c, 0x4f0c8ac0,
@@ -40,7 +40,7 @@ class CardCipher:
         0x60443ce4, 0x4c0b8b8d, 0xe054e8bc, 0x02008e89,
     ]
 
-    LUT_A0 = [
+    LUT_A0: Final[List[int]] = [
         0x02080008, 0x02082000, 0x00002008, 0x00000000,
         0x02002000, 0x00080008, 0x02080000, 0x02082008,
         0x00000008, 0x02000000, 0x00082000, 0x00002008,
@@ -59,7 +59,7 @@ class CardCipher:
         0x02000000, 0x02080008, 0x00002000, 0x00082008,
     ]
 
-    LUT_A1 = [
+    LUT_A1: Final[List[int]] = [
         0x08000004, 0x00020004, 0x00000000, 0x08020200,
         0x00020004, 0x00000200, 0x08000204, 0x00020000,
         0x00000204, 0x08020204, 0x00020200, 0x08000000,
@@ -78,7 +78,7 @@ class CardCipher:
         0x08020000, 0x00000204, 0x00000004, 0x08020004,
     ]
 
-    LUT_A2 = [
+    LUT_A2: Final[List[int]] = [
         0x80040100, 0x01000100, 0x80000000, 0x81040100,
         0x00000000, 0x01040000, 0x81000100, 0x80040000,
         0x01040100, 0x81000000, 0x01000000, 0x80000100,
@@ -97,7 +97,7 @@ class CardCipher:
         0x80000100, 0x01000000, 0x81000000, 0x01040100,
     ]
 
-    LUT_A3 = [
+    LUT_A3: Final[List[int]] = [
         0x04010801, 0x00000000, 0x00010800, 0x04010000,
         0x04000001, 0x00000801, 0x04000800, 0x00010800,
         0x00000800, 0x04010001, 0x00000001, 0x04000800,
@@ -116,7 +116,7 @@ class CardCipher:
         0x04000801, 0x00000001, 0x04010000, 0x00010800,
     ]
 
-    LUT_B0 = [
+    LUT_B0: Final[List[int]] = [
         0x00000400, 0x00000020, 0x00100020, 0x40100000,
         0x40100420, 0x40000400, 0x00000420, 0x00000000,
         0x00100000, 0x40100020, 0x40000020, 0x00100400,
@@ -135,7 +135,7 @@ class CardCipher:
         0x40100000, 0x00100420, 0x00100400, 0x40000400,
     ]
 
-    LUT_B1 = [
+    LUT_B1: Final[List[int]] = [
         0x00800000, 0x00001000, 0x00000040, 0x00801042,
         0x00801002, 0x00800040, 0x00001042, 0x00801000,
         0x00001000, 0x00000002, 0x00800002, 0x00001040,
@@ -154,7 +154,7 @@ class CardCipher:
         0x00000002, 0x00001042, 0x00801000, 0x00800002,
     ]
 
-    LUT_B2 = [
+    LUT_B2: Final[List[int]] = [
         0x10400000, 0x00404010, 0x00000010, 0x10400010,
         0x10004000, 0x00400000, 0x10400010, 0x00004010,
         0x00400010, 0x00004000, 0x00404000, 0x10000000,
@@ -173,7 +173,7 @@ class CardCipher:
         0x10400000, 0x10004010, 0x00000010, 0x00404000,
     ]
 
-    LUT_B3 = [
+    LUT_B3: Final[List[int]] = [
         0x00208080, 0x00008000, 0x20200000, 0x20208080,
         0x00200000, 0x20008080, 0x20008000, 0x20200000,
         0x20008080, 0x00208080, 0x00208000, 0x20000080,
@@ -192,8 +192,8 @@ class CardCipher:
         0x20000000, 0x20208000, 0x00000080, 0x20008080,
     ]
 
-    VALID_CHARS = "0123456789ABCDEFGHJKLMNPRSTUWXYZ"
-    CONV_CHARS = {
+    VALID_CHARS: Final[str] = "0123456789ABCDEFGHJKLMNPRSTUWXYZ"
+    CONV_CHARS: Final[Dict[str, str]] = {
         "I": "1",
         "O": "0",
     }
@@ -231,7 +231,7 @@ class CardCipher:
             reverse[7 - i] = cardint[i]
 
         # Encipher
-        ciphered = CardCipher.__encode(bytes(reverse))
+        ciphered = CardCipher._encode(bytes(reverse))
 
         # Convert 8 x 8 bit bytes into 13 x 5 bit groups (sort of)
         bits = [0] * 65
@@ -330,7 +330,7 @@ class CardCipher:
             ciphered[int(i / 8)] |= bits[i] << (~i & 7)
 
         # Decipher and reverse
-        deciphered = CardCipher.__decode(bytes(ciphered))
+        deciphered = CardCipher._decode(bytes(ciphered))
         reverse = [0] * 8
         for i in range(0, 8):
             reverse[i] = deciphered[7 - i]
@@ -362,7 +362,7 @@ class CardCipher:
         return checksum
 
     @staticmethod
-    def __encode(inbytes: bytes) -> bytes:
+    def _encode(inbytes: bytes) -> bytes:
         if len(inbytes) != 8:
             raise CardCipherException(
                 f'Expected 8-byte input, got {len(inbytes)}',
@@ -378,7 +378,7 @@ class CardCipher:
         return bytes(out)
 
     @staticmethod
-    def __decode(inbytes: bytes) -> bytes:
+    def _decode(inbytes: bytes) -> bytes:
         if len(inbytes) != 8:
             raise CardCipherException(
                 f'Expected 8-byte input, got {len(inbytes)}',

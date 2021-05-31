@@ -1,6 +1,11 @@
 import copy
 import struct
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Final, List, Optional, Union
+
+
+# Hack to get around mypy's lack of scoping on types.
+_renamed_float = float
+_renamed_bool = bool
 
 
 class NodeException(Exception):
@@ -16,60 +21,60 @@ class Node:
     supported for a node to not have a value or children. This also includes a decent amount of
     constructor helper classmethods to make constructing a tree from source code easier.
     """
-    NODE_NAME_CHARS = "0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+    NODE_NAME_CHARS: Final[str] = "0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
-    NODE_TYPE_VOID = 1
-    NODE_TYPE_S8 = 2
-    NODE_TYPE_U8 = 3
-    NODE_TYPE_S16 = 4
-    NODE_TYPE_U16 = 5
-    NODE_TYPE_S32 = 6
-    NODE_TYPE_U32 = 7
-    NODE_TYPE_S64 = 8
-    NODE_TYPE_U64 = 9
-    NODE_TYPE_BIN = 10
-    NODE_TYPE_STR = 11
-    NODE_TYPE_IP4 = 12
-    NODE_TYPE_TIME = 13
-    NODE_TYPE_FLOAT = 14
-    NODE_TYPE_DOUBLE = 15
+    NODE_TYPE_VOID: Final[int] = 1
+    NODE_TYPE_S8: Final[int] = 2
+    NODE_TYPE_U8: Final[int] = 3
+    NODE_TYPE_S16: Final[int] = 4
+    NODE_TYPE_U16: Final[int] = 5
+    NODE_TYPE_S32: Final[int] = 6
+    NODE_TYPE_U32: Final[int] = 7
+    NODE_TYPE_S64: Final[int] = 8
+    NODE_TYPE_U64: Final[int] = 9
+    NODE_TYPE_BIN: Final[int] = 10
+    NODE_TYPE_STR: Final[int] = 11
+    NODE_TYPE_IP4: Final[int] = 12
+    NODE_TYPE_TIME: Final[int] = 13
+    NODE_TYPE_FLOAT: Final[int] = 14
+    NODE_TYPE_DOUBLE: Final[int] = 15
 
-    NODE_TYPE_2S8 = 16
-    NODE_TYPE_2U8 = 17
-    NODE_TYPE_2S16 = 18
-    NODE_TYPE_2U16 = 19
-    NODE_TYPE_2S32 = 20
-    NODE_TYPE_2U32 = 21
-    NODE_TYPE_2S64 = 22
-    NODE_TYPE_2U64 = 23
-    NODE_TYPE_2FLOAT = 24
-    NODE_TYPE_2DOUBLE = 25
+    NODE_TYPE_2S8: Final[int] = 16
+    NODE_TYPE_2U8: Final[int] = 17
+    NODE_TYPE_2S16: Final[int] = 18
+    NODE_TYPE_2U16: Final[int] = 19
+    NODE_TYPE_2S32: Final[int] = 20
+    NODE_TYPE_2U32: Final[int] = 21
+    NODE_TYPE_2S64: Final[int] = 22
+    NODE_TYPE_2U64: Final[int] = 23
+    NODE_TYPE_2FLOAT: Final[int] = 24
+    NODE_TYPE_2DOUBLE: Final[int] = 25
 
-    NODE_TYPE_3S8 = 26
-    NODE_TYPE_3U8 = 27
-    NODE_TYPE_3S16 = 28
-    NODE_TYPE_3U16 = 29
-    NODE_TYPE_3S32 = 30
-    NODE_TYPE_3U32 = 31
-    NODE_TYPE_3S64 = 32
-    NODE_TYPE_3U64 = 33
-    NODE_TYPE_3FLOAT = 34
-    NODE_TYPE_3DOUBLE = 35
+    NODE_TYPE_3S8: Final[int] = 26
+    NODE_TYPE_3U8: Final[int] = 27
+    NODE_TYPE_3S16: Final[int] = 28
+    NODE_TYPE_3U16: Final[int] = 29
+    NODE_TYPE_3S32: Final[int] = 30
+    NODE_TYPE_3U32: Final[int] = 31
+    NODE_TYPE_3S64: Final[int] = 32
+    NODE_TYPE_3U64: Final[int] = 33
+    NODE_TYPE_3FLOAT: Final[int] = 34
+    NODE_TYPE_3DOUBLE: Final[int] = 35
 
-    NODE_TYPE_4S8 = 36
-    NODE_TYPE_4U8 = 37
-    NODE_TYPE_4S16 = 38
-    NODE_TYPE_4U16 = 39
-    NODE_TYPE_4S32 = 40
-    NODE_TYPE_4U32 = 41
-    NODE_TYPE_4S64 = 42
-    NODE_TYPE_4U64 = 43
-    NODE_TYPE_4FLOAT = 44
-    NODE_TYPE_4DOUBLE = 45
+    NODE_TYPE_4S8: Final[int] = 36
+    NODE_TYPE_4U8: Final[int] = 37
+    NODE_TYPE_4S16: Final[int] = 38
+    NODE_TYPE_4U16: Final[int] = 39
+    NODE_TYPE_4S32: Final[int] = 40
+    NODE_TYPE_4U32: Final[int] = 41
+    NODE_TYPE_4S64: Final[int] = 42
+    NODE_TYPE_4U64: Final[int] = 43
+    NODE_TYPE_4FLOAT: Final[int] = 44
+    NODE_TYPE_4DOUBLE: Final[int] = 45
 
-    NODE_TYPE_BOOL = 52
+    NODE_TYPE_BOOL: Final[int] = 52
 
-    NODE_TYPES = {
+    NODE_TYPES: Final[Dict[int, Dict[str, Any]]] = {
         NODE_TYPE_VOID: {
             'name': 'void',
             'enc': '',
@@ -347,10 +352,10 @@ class Node:
             'composite': False,
         },
     }
-    ARRAY_BIT = 0x40
-    ATTR_TYPE = 0x2E
-    END_OF_NODE = 0xFE
-    END_OF_DOCUMENT = 0xFF
+    ARRAY_BIT: Final[int] = 0x40
+    ATTR_TYPE: Final[int] = 0x2E
+    END_OF_NODE: Final[int] = 0xFE
+    END_OF_DOCUMENT: Final[int] = 0xFF
 
     @staticmethod
     def void(name: str) -> 'Node':
@@ -365,11 +370,11 @@ class Node:
         return Node(name=name, type=Node.NODE_TYPE_BIN, value=value)
 
     @staticmethod
-    def __float(name: str, value: float) -> 'Node':
+    def float(name: str, value: _renamed_float) -> 'Node':
         return Node(name=name, type=Node.NODE_TYPE_FLOAT, value=value)
 
     @staticmethod
-    def __bool(name: str, value: bool) -> 'Node':
+    def bool(name: str, value: _renamed_bool) -> 'Node':
         return Node(name=name, type=Node.NODE_TYPE_BOOL, value=value)
 
     @staticmethod
@@ -425,11 +430,11 @@ class Node:
         return Node(name=name, type=Node.NODE_TYPE_TIME, array=True, value=values)
 
     @staticmethod
-    def float_array(name: str, values: List[float]) -> 'Node':
+    def float_array(name: str, values: List[_renamed_float]) -> 'Node':
         return Node(name=name, type=Node.NODE_TYPE_FLOAT, array=True, value=values)
 
     @staticmethod
-    def bool_array(name: str, values: List[bool]) -> 'Node':
+    def bool_array(name: str, values: List[_renamed_bool]) -> 'Node':
         return Node(name=name, type=Node.NODE_TYPE_BOOL, array=True, value=values)
 
     @staticmethod
@@ -532,7 +537,7 @@ class Node:
             if value < -9223372036854775808 or value > 9223372036854775807:
                 raise NodeException(f'Invalid value {value} for s32 {name}')
 
-    def __init__(self, name: Optional[str]=None, type: Optional[int]=None, array: Optional[bool]=None, value: Optional[Any]=None) -> None:
+    def __init__(self, name: Optional[str]=None, type: Optional[int]=None, array: Optional[_renamed_bool]=None, value: Optional[Any]=None) -> None:
         """
         Initialize a node, with an optional name and type.
 
@@ -589,7 +594,7 @@ class Node:
             raise Exception('Logic error, tried to fetch name before setting!')
         return self.__name
 
-    def set_type(self, type: int, array: Optional[bool]=None) -> None:
+    def set_type(self, type: int, array: Optional[_renamed_bool]=None) -> None:
         """
         Set the type of the node to a new integer type, as specified in Node.NODE_TYPES.
 
@@ -763,7 +768,7 @@ class Node:
         return self.__attrs
 
     @property
-    def is_array(self) -> bool:
+    def is_array(self) -> _renamed_bool:
         """
         Wrapper for accessing array type.
 
@@ -773,7 +778,7 @@ class Node:
         return self.__array
 
     @property
-    def is_composite(self) -> bool:
+    def is_composite(self) -> _renamed_bool:
         """
         Returns whether or not this element is a composite type (basically
         an array, but packed differently).
@@ -905,7 +910,7 @@ class Node:
             attrs_dict['__type'] = translated_type['name']
             order.insert(0, '__type')
 
-        def escape(val: Any, attr: bool=False) -> str:
+        def escape(val: Any, attr: _renamed_bool=False) -> str:
             if isinstance(val, str):
                 val = val.replace('&', '&amp;')
                 val = val.replace('<', '&lt;')
@@ -977,7 +982,7 @@ class Node:
         """
         return self.__to_xml(0)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object) -> _renamed_bool:
         """
         Convenience function for comparing two nodes.
 
@@ -1027,7 +1032,7 @@ class Node:
         except Exception:
             return False
 
-    def __ne__(self, other: object) -> bool:
+    def __ne__(self, other: object) -> _renamed_bool:
         """
         Convenience function for comparing two nodes.
 
@@ -1038,7 +1043,3 @@ class Node:
             True if this node doesn't equal the other node, False if it does equal.
         """
         return not self.__eq__(other)
-
-    # Nasty hack to get around mypy's lack of scoping
-    float = __float
-    bool = __bool

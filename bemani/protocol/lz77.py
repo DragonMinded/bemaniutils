@@ -1,13 +1,15 @@
 import ctypes
 import os
 from collections import defaultdict
-from typing import Generator, List, MutableMapping, Optional, Set, Tuple
+from typing import Generator, Final, List, MutableMapping, Optional, Set, Tuple
+
+from .. import package_root
 
 
 # Attempt to use the faster C++ libraries if they're available
 try:
     clib = None
-    clib_path = os.path.dirname(os.path.abspath(__file__))
+    clib_path = os.path.join(package_root, "protocol")
     files = [f for f in os.listdir(clib_path) if f.startswith("lz77cpp") and f.endswith(".so")]
     if len(files) > 0:
         clib = ctypes.cdll.LoadLibrary(os.path.join(clib_path, files[0]))
@@ -32,10 +34,10 @@ class Lz77Decompress:
     over-the-wire compression of XML data, as well as compression inside a decent
     amount of file formats found in various Konami games.
     """
-    RING_LENGTH = 0x1000
+    RING_LENGTH: Final[int] = 0x1000
 
-    FLAG_COPY = 1
-    FLAG_BACKREF = 0
+    FLAG_COPY: Final[int] = 1
+    FLAG_BACKREF: Final[int] = 0
 
     def __init__(self, data: bytes, backref: Optional[int] = None) -> None:
         """
@@ -56,7 +58,7 @@ class Lz77Decompress:
         self.ringlength: int = backref or self.RING_LENGTH
         self.ring: bytes = b'\x00' * self.ringlength
 
-    def __ring_read(self, copy_pos: int, copy_len: int) -> Generator[bytes, None, None]:
+    def _ring_read(self, copy_pos: int, copy_len: int) -> Generator[bytes, None, None]:
         """
         Read the next bytes from the backref ring at the current copy position.
 
@@ -72,13 +74,13 @@ class Lz77Decompress:
                 amount = copy_len
 
             ret = self.ring[copy_pos:(copy_pos + amount)]
-            self.__ring_write(ret)
+            self._ring_write(ret)
             yield ret
 
             copy_pos = (copy_pos + amount) % self.ringlength
             copy_len -= amount
 
-    def __ring_write(self, bytedata: bytes) -> None:
+    def _ring_write(self, bytedata: bytes) -> None:
         """
         Write bytes into the backref ring.
 
@@ -117,7 +119,7 @@ class Lz77Decompress:
                 # ringbuffer). So, since we read that last time and wrote it to the backbuffer
                 # we are safe to read again.
                 amount = min(self.pending_copy_amount, self.pending_copy_max)
-                yield from self.__ring_read(self.pending_copy_pos, amount)
+                yield from self._ring_read(self.pending_copy_pos, amount)
 
                 # We read this many bytes and are about to write them to the ringbuffer,
                 # so bookkeep that.
@@ -149,17 +151,17 @@ class Lz77Decompress:
 
                     # Grab chunk right out of the data source
                     b = self.data[self.read_pos:(self.read_pos + amount)]
-                    self.__ring_write(b)
+                    self._ring_write(b)
                     yield b
 
                     self.read_pos += amount
                     self.left -= amount
                 elif flag == self.FLAG_BACKREF:
-                    yield from self.__read_backref()
+                    yield from self._read_backref()
                 else:
                     raise Exception("Logic error!")
 
-    def __read_backref(self) -> Generator[bytes, None, None]:
+    def _read_backref(self) -> Generator[bytes, None, None]:
         """
         Read a backref chunk. Grab the copy length and copy position
         from the first two bytes and then read the first byte from
@@ -204,7 +206,7 @@ class Lz77Decompress:
             while copy_pos < 0:
                 copy_pos += self.ringlength
             copy_pos = copy_pos % self.ringlength
-            yield from self.__ring_read(copy_pos, copy_len)
+            yield from self._ring_read(copy_pos, copy_len)
         else:
             self.eof = True
             return
@@ -221,12 +223,12 @@ class Lz77Compress:
     once, and if we use a proxy to direct traffic, possibly a second time.
     """
 
-    RING_LENGTH = 0x1000
+    RING_LENGTH: Final[int] = 0x1000
 
-    LOOSE_COMPRESS_THRESHOLD = 1024 * 512
+    LOOSE_COMPRESS_THRESHOLD: Final[int] = 1024 * 512
 
-    FLAG_COPY = 1
-    FLAG_BACKREF = 0
+    FLAG_COPY: Final[int] = 1
+    FLAG_BACKREF: Final[int] = 0
 
     def __init__(self, data: bytes, backref: Optional[int] = None) -> None:
         """
@@ -246,11 +248,11 @@ class Lz77Compress:
         self.last_start: Tuple[int, int, int] = (0, 0, 0)
 
         if len(data) > self.LOOSE_COMPRESS_THRESHOLD:
-            self.__ring_write = self.__ring_write_starts_only
+            self._ring_write = self._ring_write_starts_only
         else:
-            self.__ring_write = self.__ring_write_both
+            self._ring_write = self._ring_write_both
 
-    def __ring_write_starts_only(self, bytedata: bytes) -> None:
+    def _ring_write_starts_only(self, bytedata: bytes) -> None:
         """
         Write bytes into the backref ring.
 
@@ -266,7 +268,7 @@ class Lz77Compress:
             # Keep track of the fact that we wrote this byte.
             self.bytes_written += 1
 
-    def __ring_write_both(self, bytedata: bytes) -> None:
+    def _ring_write_both(self, bytedata: bytes) -> None:
         """
         Write bytes into the backref ring.
 
@@ -321,7 +323,7 @@ class Lz77Compress:
 
                         chunk = self.data[self.read_pos:(self.read_pos + 1)]
                         data[flagpos] = chunk
-                        self.__ring_write(chunk)
+                        self._ring_write(chunk)
 
                         self.read_pos += 1
                         self.left -= 1
@@ -346,7 +348,7 @@ class Lz77Compress:
 
                         chunk = self.data[self.read_pos:(self.read_pos + 1)]
                         data[flagpos] = chunk
-                        self.__ring_write(chunk)
+                        self._ring_write(chunk)
 
                         self.read_pos += 1
                         self.left -= 1
@@ -356,7 +358,7 @@ class Lz77Compress:
                     # we're going to write at least these three bytes, so append it to the
                     # output buffer.
                     start_write_size = self.bytes_written
-                    self.__ring_write(index)
+                    self._ring_write(index)
                     copy_amount = 3
                     while copy_amount < backref_amount:
                         # First, let's see if we have any 3-wide chunks to consume.
@@ -369,7 +371,7 @@ class Lz77Compress:
 
                         if new_backref_locations:
                             # Mark that we're copying an extra byte from the backref.
-                            self.__ring_write(index)
+                            self._ring_write(index)
                             copy_amount += 3
                             possible_backref_locations = new_backref_locations
                         else:
@@ -388,7 +390,7 @@ class Lz77Compress:
                                     break
 
                                 # Mark that we're copying an extra byte from the backref.
-                                self.__ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
+                                self._ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
                                 copy_amount += 1
                                 possible_backref_locations = new_backref_locations
 

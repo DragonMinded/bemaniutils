@@ -1,6 +1,6 @@
 import copy
 import struct
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Final, Iterator, List, Optional, Tuple
 
 from bemani.protocol.stream import InputStream
 from bemani.protocol.node import Node
@@ -468,7 +468,7 @@ class XmlEncoding:
     # The string values should match the constants in EAmuseProtocol.
     # I have no better way to link these than to write this comment,
     # as otherwise we would have a circular dependency.
-    ACCEPTED_ENCODINGS = ['shift-jis', 'euc-jp', 'utf-8', 'ascii']
+    ACCEPTED_ENCODINGS: Final[List[str]] = ['shift-jis', 'euc-jp', 'utf-8', 'ascii']
 
     def __init__(self) -> None:
         """

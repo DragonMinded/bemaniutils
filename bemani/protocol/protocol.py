@@ -1,6 +1,6 @@
 import binascii
 import hashlib
-from typing import Optional
+from typing import Final, Optional
 
 from bemani.protocol.lz77 import Lz77
 from bemani.protocol.binary import BinaryEncoding
@@ -18,16 +18,16 @@ class EAmuseProtocol:
     """
     A wrapper object that encapsulates encoding/decoding the E-Amusement protocol by Konami.
     """
-    SHARED_SECRET = b'\x69\xD7\x46\x27\xD9\x85\xEE\x21\x87\x16\x15\x70\xD0\x8D\x93\xB1\x24\x55\x03\x5B\x6D\xF0\xD8\x20\x5D\xF5'
+    SHARED_SECRET: Final[bytes] = b'\x69\xD7\x46\x27\xD9\x85\xEE\x21\x87\x16\x15\x70\xD0\x8D\x93\xB1\x24\x55\x03\x5B\x6D\xF0\xD8\x20\x5D\xF5'
 
-    XML = 1
-    BINARY = 2
+    XML: Final[int] = 1
+    BINARY: Final[int] = 2
 
-    SHIFT_JIS_LEGACY = "shift-jis-legacy"
-    SHIFT_JIS = "shift-jis"
-    EUC_JP = "euc-jp"
-    UTF_8 = "utf-8"
-    ASCII = "ascii"
+    SHIFT_JIS_LEGACY: Final[str] = "shift-jis-legacy"
+    SHIFT_JIS: Final[str] = "shift-jis"
+    EUC_JP: Final[str] = "euc-jp"
+    UTF_8: Final[str] = "utf-8"
+    ASCII: Final[str] = "ascii"
 
     def __init__(self) -> None:
         """
@@ -36,7 +36,7 @@ class EAmuseProtocol:
         self.last_text_encoding: Optional[str] = None
         self.last_packet_encoding: Optional[int] = None
 
-    def __rc4_crypt(self, data: bytes, key: bytes) -> bytes:
+    def _rc4_crypt(self, data: bytes, key: bytes) -> bytes:
         """
         Given a data blob and a key blob, perform RC4 encryption/decryption.
 
@@ -95,7 +95,7 @@ class EAmuseProtocol:
 
         if key:
             # This is an encrypted old-style packet
-            return self.__rc4_crypt(data, key)
+            return self._rc4_crypt(data, key)
 
         # No encryption
         return data

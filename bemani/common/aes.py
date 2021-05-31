@@ -13,19 +13,19 @@ class AESCipher:
         self.__padamt = 16
         self.__key = hashlib.sha256(key.encode('utf-8')).digest()
 
-    def __pad(self, s: str) -> str:
+    def _pad(self, s: str) -> str:
         intermediate = f"{len(s)}.{s}"
         while len(intermediate) % self.__padamt != 0:
             intermediate = intermediate + '-'
         return intermediate
 
-    def __unpad(self, s: str) -> str:
+    def _unpad(self, s: str) -> str:
         length, string = s.split('.', 1)
         intlength = int(length)
         return string[:intlength]
 
     def encrypt(self, raw: str) -> str:
-        raw = self.__pad(raw)
+        raw = self._pad(raw)
         random = Random.new()
         iv = random.read(AES.block_size)
         cipher = AES.new(self.__key, AES.MODE_CBC, iv)
@@ -35,4 +35,4 @@ class AESCipher:
         enc = base64.b64decode(encoded.encode('utf-8'), altchars=b"._")
         iv = enc[:AES.block_size]
         cipher = AES.new(self.__key, AES.MODE_CBC, iv)
-        return self.__unpad(cipher.decrypt(enc[AES.block_size:]).decode('utf-8'))
+        return self._unpad(cipher.decrypt(enc[AES.block_size:]).decode('utf-8'))

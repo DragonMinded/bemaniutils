@@ -1,4 +1,5 @@
 # vim: set fileencoding=utf-8
+import os
 import sys
 import unittest
 from typing import Container, List, Dict, Any
@@ -32,3 +33,9 @@ class FakeCursor():
 
     def fetchall(self) -> List[Dict[str, Any]]:
         return self.__rows
+
+
+def get_fixture(name: str) -> bytes:
+    location = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(location, name), "rb") as fp:
+        return fp.read()

@@ -2,7 +2,7 @@ import calendar
 import datetime
 from dateutil import tz
 
-from typing import List, Optional
+from typing import List, Final, Optional
 
 
 class Time:
@@ -11,10 +11,10 @@ class Time:
     standard unix timestamps at UTC timezone given various parameters.
     """
 
-    SECONDS_IN_MINUTE = 60
-    SECONDS_IN_HOUR = 3600
-    SECONDS_IN_DAY = 86400
-    SECONDS_IN_WEEK = 604800
+    SECONDS_IN_MINUTE: Final[int] = 60
+    SECONDS_IN_HOUR: Final[int] = 3600
+    SECONDS_IN_DAY: Final[int] = 86400
+    SECONDS_IN_WEEK: Final[int] = 604800
 
     @staticmethod
     def now() -> int:

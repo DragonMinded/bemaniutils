@@ -4,6 +4,7 @@ import random
 import unittest
 
 from bemani.protocol.lz77 import Lz77, Lz77Decompress
+from bemani.tests.helpers import get_fixture
 
 
 class TestLZ77Decompressor(unittest.TestCase):
@@ -16,20 +17,14 @@ class TestLZ77Decompressor(unittest.TestCase):
 
             # Save our ring position, write a chunk of data
             readpos = dec.write_pos
-            dec._Lz77Decompress__ring_write(data)
+            dec._ring_write(data)
 
             # Read a chunk of data back from that buffer, see its the same
-            newdata = b''.join(dec._Lz77Decompress__ring_read(readpos, amount))
+            newdata = b''.join(dec._ring_read(readpos, amount))
             self.assertEqual(data, newdata)
 
             # Verify integrity of ringbuffer
             self.assertEqual(len(dec.ring), Lz77Decompress.RING_LENGTH)
-
-
-def get_fixture(name: str) -> bytes:
-    location = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(location, name), "rb") as fp:
-        return fp.read()
 
 
 class TestLz77RealCompressor(unittest.TestCase):

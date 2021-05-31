@@ -1,5 +1,5 @@
 import struct
-from typing import Optional, List, Dict, Any
+from typing import Optional, Final, List, Dict, Any
 
 from bemani.protocol.stream import InputStream, OutputStream
 from bemani.protocol.node import Node
@@ -708,17 +708,17 @@ class BinaryEncoding:
     """
     Wrapper class representing a Binary Encoding.
     """
-    MAGIC = 0xA0
+    MAGIC: Final[int] = 0xA0
 
-    COMPRESSED_WITH_DATA = 0x42
-    COMPRESSED_WITHOUT_DATA = 0x43
-    DECOMPRESSED_WITH_DATA = 0x45
-    DECOMPRESSED_WITHOUT_DATA = 0x46
+    COMPRESSED_WITH_DATA: Final[int] = 0x42
+    COMPRESSED_WITHOUT_DATA: Final[int] = 0x43
+    DECOMPRESSED_WITH_DATA: Final[int] = 0x45
+    DECOMPRESSED_WITHOUT_DATA: Final[int] = 0x46
 
     # The string values should match the constants in EAmuseProtocol.
     # I have no better way to link these than to write this comment,
     # as otherwise we would have a circular dependency.
-    ENCODINGS = {
+    ENCODINGS: Final[Dict[int, str]] = {
         0x00: "ascii",
         0x20: "shift-jis-legacy",
         0x60: "euc-jp",
