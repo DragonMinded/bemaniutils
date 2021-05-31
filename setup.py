@@ -14,18 +14,24 @@ def extensions():
     return [
         *cythonize(
             [
+                # Hot code for anything constructing or parsing a remote game packet.
                 Extension(
                     "bemani.protocol.binary",
                     [
                         "bemani/protocol/binary.py",
                     ]
                 ),
+                # Even though we have a C++ implementation of this, some of the code
+                # is still used as a wrapper to the C++ implementation and it is very
+                # hot code (almost every packet touches this).
                 Extension(
                     "bemani.protocol.lz77",
                     [
                         "bemani/protocol/lz77.py",
                     ]
                 ),
+                # Alternative, orders of magnitude faster, memory-unsafe version of
+                # LZ77 which drastically speeds up packet processing time.
                 Extension(
                     "bemani.protocol.lz77cpp",
                     [
@@ -35,36 +41,42 @@ def extensions():
                     extra_compile_args=["-std=c++14"],
                     extra_link_args=["-std=c++14"],
                 ),
+                # Every single backend service uses this class for construction and
+                # parsing, so compiling this makes sense.
                 Extension(
                     "bemani.protocol.node",
                     [
                         "bemani/protocol/node.py",
                     ]
                 ),
+                # This is the top-level protocol marshall which gets touched at least
+                # once per packet, so its worth it to squeeze more speed out of this.
                 Extension(
                     "bemani.protocol.protocol",
                     [
                         "bemani/protocol/protocol.py",
                     ]
                 ),
+                # This is used to implement a convenient way of parsing/creating binary
+                # data and it is memory-safe accessses of bytes so it is necessarily
+                # a bottleneck.
                 Extension(
                     "bemani.protocol.stream",
                     [
                         "bemani/protocol/stream.py",
                     ]
                 ),
+                # This gets used less frequently (only on the oldest games) but it is
+                # still worth it to get a bit of a speed boost by compiling.
                 Extension(
                     "bemani.protocol.xml",
                     [
                         "bemani/protocol/xml.py",
                     ]
                 ),
-                Extension(
-                    "bemani.format.afp.blend.blend",
-                    [
-                        "bemani/format/afp/blend/blend.py",
-                    ]
-                ),
+                # This is a memory-unsafe, orders of magnitude faster threaded implementation
+                # of the pure python blend code which takes rendering rough animations down
+                # from over an hour to around a minute.
                 Extension(
                     "bemani.format.afp.blend.blendcpp",
                     [
@@ -75,12 +87,16 @@ def extensions():
                     extra_compile_args=["-std=c++14"],
                     extra_link_args=["-std=c++14"],
                 ),
+                # These types include operations such as matrix math and color conversion so
+                # it is worth it to speed this up when rendering animations.
                 Extension(
                     "bemani.format.afp.types.generic",
                     [
                         "bemani/format/afp/types/generic.py",
                     ]
                 ),
+                # DXT is slow enough that it might be worth it to write a C++ implementation of
+                # this at some point, but for now we squeeze a bit of speed out of this by compiling.
                 Extension(
                     "bemani.format.dxt",
                     [
