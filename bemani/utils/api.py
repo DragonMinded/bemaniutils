@@ -1,5 +1,5 @@
 import argparse
-import yaml  # type: ignore
+import yaml
 
 from bemani.data import Data
 from bemani.api import app, config  # noqa: F401
@@ -8,7 +8,7 @@ from bemani.api import app, config  # noqa: F401
 def load_config(filename: str) -> None:
     global config
 
-    config.update(yaml.safe_load(open(filename)))  # type: ignore
+    config.update(yaml.safe_load(open(filename)))
     config['database']['engine'] = Data.create_engine(config)
 
 
@@ -23,7 +23,7 @@ def main() -> None:
     load_config(args.config)
 
     if args.profile:
-        from werkzeug.contrib.profiler import ProfilerMiddleware  # type: ignore
+        from werkzeug.contrib.profiler import ProfilerMiddleware
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir='.')  # type: ignore
 
     # Run the app

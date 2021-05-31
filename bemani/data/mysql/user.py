@@ -19,7 +19,7 @@ and password are optional as a user does not need to create a web login
 to use the network. However, an active user account is required
 before creating a web login.
 """
-user = Table(  # type: ignore
+user = Table(
     'user',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),
@@ -37,7 +37,7 @@ or more cards associated with them. When a new card is used in a game
 a new user will be created to associate with a card, but it can later
 be unlinked.
 """
-card = Table(  # type: ignore
+card = Table(
     'card',
     metadata,
     Column('id', String(16), nullable=False, unique=True),
@@ -49,7 +49,7 @@ card = Table(  # type: ignore
 Table representing an extid for a user across a game series. Each game
 series on the network gets its own extid (8 digit number) for each user.
 """
-extid = Table(  # type: ignore
+extid = Table(
     'extid',
     metadata,
     Column('game', String(32), nullable=False),
@@ -68,7 +68,7 @@ will be generated for the user.
 Note that a user might have an extid/refid for a game without a profile,
 but a user cannot have a profile without an extid/refid.
 """
-refid = Table(  # type: ignore
+refid = Table(
     'refid',
     metadata,
     Column('game', String(32), nullable=False),
@@ -82,7 +82,7 @@ refid = Table(  # type: ignore
 """
 Table for storing JSON profile blobs, indexed by refid.
 """
-profile = Table(  # type: ignore
+profile = Table(
     'profile',
     metadata,
     Column('refid', String(16), nullable=False, unique=True),
@@ -96,7 +96,7 @@ with a unique ID and type. Games are free to store a JSON blob for each
 achievement. Examples would be tran medals, event unlocks, items earned,
 etc.
 """
-achievement = Table(  # type: ignore
+achievement = Table(
     'achievement',
     metadata,
     Column('refid', String(16), nullable=False),
@@ -115,7 +115,7 @@ you earn it. Games are free to store a JSON blob for each achievement and
 the blob does not need to be equal across different instances of the same
 achievement for the same user. Examples would be calorie earnings for DDR.
 """
-time_based_achievement = Table(  # type: ignore
+time_based_achievement = Table(
     'time_based_achievement',
     metadata,
     Column('refid', String(16), nullable=False),
@@ -131,7 +131,7 @@ time_based_achievement = Table(  # type: ignore
 Table for storing a user's PASELI balance, given an arcade. There is no global
 balance on this network.
 """
-balance = Table(  # type: ignore
+balance = Table(
     'balance',
     metadata,
     Column('userid', BigInteger(unsigned=True), nullable=False),
@@ -146,7 +146,7 @@ Table for storing links between two users in a game/version, whatever that
 may be. Typically used for rivals.
 etc.
 """
-link = Table(  # type: ignore
+link = Table(
     'link',
     metadata,
     Column('game', String(32), nullable=False),

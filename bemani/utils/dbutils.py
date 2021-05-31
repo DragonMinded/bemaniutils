@@ -1,7 +1,7 @@
 import argparse
 import getpass
 import sys
-import yaml  # type: ignore
+import yaml
 from typing import Any, Dict, Optional
 
 from bemani.data import Data, DBCreateException
@@ -96,7 +96,7 @@ def main() -> None:
     parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
     args = parser.parse_args()
 
-    config = yaml.safe_load(open(args.config))  # type: ignore
+    config = yaml.safe_load(open(args.config))
     config['database']['engine'] = Data.create_engine(config)
     try:
         if args.operation == "create":

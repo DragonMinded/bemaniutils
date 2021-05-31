@@ -1,7 +1,7 @@
 import argparse
 import copy
 import traceback
-import yaml  # type: ignore
+import yaml
 from typing import Any, Dict
 from flask import Flask, request, redirect, Response, make_response
 
@@ -128,7 +128,7 @@ def receive_request(path: str) -> Response:
 def load_config(filename: str) -> None:
     global config
 
-    config.update(yaml.safe_load(open(filename)))  # type: ignore
+    config.update(yaml.safe_load(open(filename)))
     config['database']['engine'] = Data.create_engine(config)
 
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     register_games()
 
     if args.profile:
-        from werkzeug.contrib.profiler import ProfilerMiddleware  # type: ignore
+        from werkzeug.contrib.profiler import ProfilerMiddleware
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir='.')  # type: ignore
 
     # Run the app

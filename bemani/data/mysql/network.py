@@ -11,7 +11,7 @@ from bemani.data.types import News, Event, UserID, ArcadeID
 Table for storing network news, as edited by an admin. This is displayed
 on the front page of the frontend of the network.
 """
-news = Table(  # type: ignore
+news = Table(
     'news',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),
@@ -25,7 +25,7 @@ news = Table(  # type: ignore
 Table for storing scheduled work history, so that individual game code
 can determine if it should run scheduled work or not.
 """
-scheduled_work = Table(  # type: ignore
+scheduled_work = Table(
     'scheduled_work',
     metadata,
     Column('game', String(32), nullable=False),
@@ -43,7 +43,7 @@ Table for storing audit entries, such as crashes, PCBID denials, daily
 song selection, etc. Anything that could be inspected later to verify
 correct operation of the network.
 """
-audit = Table(  # type: ignore
+audit = Table(
     'audit',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),

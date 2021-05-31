@@ -12,7 +12,7 @@ from bemani.data.types import Client, Server
 Table for storing registered clients to a data exchange API, as added
 by an admin.
 """
-client = Table(  # type: ignore
+client = Table(
     'client',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),
@@ -26,7 +26,7 @@ client = Table(  # type: ignore
 Table for storing remote servers to a data exchange API, as added
 by an admin.
 """
-server = Table(  # type: ignore
+server = Table(
     'server',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),

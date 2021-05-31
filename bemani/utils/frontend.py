@@ -1,5 +1,5 @@
 import argparse
-import yaml  # type: ignore
+import yaml
 
 from bemani.backend.iidx import IIDXFactory
 from bemani.backend.popn import PopnMusicFactory
@@ -76,7 +76,7 @@ def register_games() -> None:
 def load_config(filename: str) -> None:
     global config
 
-    config.update(yaml.safe_load(open(filename)))  # type: ignore
+    config.update(yaml.safe_load(open(filename)))
     config['database']['engine'] = Data.create_engine(config)
     app.secret_key = config['secret_key']
 
@@ -98,7 +98,7 @@ def main() -> None:
     register_games()
 
     if args.profile:
-        from werkzeug.contrib.profiler import ProfilerMiddleware  # type: ignore
+        from werkzeug.contrib.profiler import ProfilerMiddleware
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir='.')  # type: ignore
 
     # Run the app

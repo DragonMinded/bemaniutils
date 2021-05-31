@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 
-import csv  # type: ignore
+import csv
 import argparse
 import copy
 import io
@@ -9,7 +9,7 @@ import json
 import os
 import pefile  # type: ignore
 import struct
-import yaml  # type: ignore
+import yaml
 import xml.etree.ElementTree as ET
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import CursorResult  # type: ignore
@@ -62,7 +62,7 @@ class ImportBase:
         self.no_combine = no_combine
         self.__config = config
         self.__url = f"mysql://{config['database']['user']}:{config['database']['password']}@{config['database']['address']}/{config['database']['database']}?charset=utf8mb4"
-        self.__engine = create_engine(self.__url)  # type: ignore
+        self.__engine = create_engine(self.__url)
         self.__sessionmanager = sessionmaker(self.__engine)
         self.__conn = self.__engine.connect()
         self.__session = self.__sessionmanager(bind=self.__conn)
@@ -1438,7 +1438,7 @@ class ImportJubeat(ImportBase):
             raise Exception("Unsupported Jubeat version, expected one of the following: all")
 
         with open(tsvfile, newline='') as tsvhandle:
-            jubeatreader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')  # type: ignore
+            jubeatreader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')
             for row in jubeatreader:
                 songid = int(row[0])
                 name = row[1]
@@ -1787,7 +1787,7 @@ class ImportIIDX(ImportBase):
             raise Exception("Unsupported IIDX version, expected one of the following: all")
 
         with open(tsvfile, newline='') as tsvhandle:
-            iidxreader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')  # type: ignore
+            iidxreader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')
             for row in iidxreader:
                 songid = int(row[0])
                 name = row[1]
@@ -2586,7 +2586,7 @@ class ImportSDVX(ImportBase):
             csvdata = csvhandle.read().decode('shift_jisx0213')
 
         csvstr = io.StringIO(csvdata)
-        appealreader = csv.reader(csvstr, delimiter=',', quotechar='"')  # type: ignore
+        appealreader = csv.reader(csvstr, delimiter=',', quotechar='"')
         for row in appealreader:
             appealids = []
             if self.version == VersionConstants.SDVX_INFINITE_INFECTION:
@@ -3436,7 +3436,7 @@ if __name__ == "__main__":
         raise Exception("Cannot specify both a remote server and a local file to read from!")
 
     # Load the config so we can talk to the server
-    config = yaml.safe_load(open(args.config))  # type: ignore
+    config = yaml.safe_load(open(args.config))
 
     if args.series == GameConstants.POPN_MUSIC:
         popn = ImportPopn(config, args.version, args.no_combine, args.update)

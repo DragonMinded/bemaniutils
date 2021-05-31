@@ -14,7 +14,7 @@ Table for storing logistical information about a player who's session is
 live. Mostly, this is used to store IP addresses and such for players that
 could potentially match.
 """
-playsession = Table(  # type: ignore
+playsession = Table(
     'playsession',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),
@@ -30,7 +30,7 @@ playsession = Table(  # type: ignore
 """
 Table for storing open lobbies for matching between games.
 """
-lobby = Table(  # type: ignore
+lobby = Table(
     'lobby',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),

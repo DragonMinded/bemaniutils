@@ -1,7 +1,7 @@
 import argparse
 import sys
 from typing import Any, Dict, Optional
-import yaml  # type: ignore
+import yaml
 
 from bemani.client import ClientProtocol, BaseClient
 from bemani.client.iidx import (
@@ -463,7 +463,7 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             print(f'Unknown game {game}')
             sys.exit(2)
 
-        config = yaml.safe_load(open(configfile))  # type: ignore
+        config = yaml.safe_load(open(configfile))
 
         print(f'Emulating {games[game]["name"]}')
         emu = get_client(

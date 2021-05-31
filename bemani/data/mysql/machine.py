@@ -13,7 +13,7 @@ with PCBID enforcement to ensure machines not authorized on the network are deni
 a connection. It is also used for settings such as port forwarding and which arcade
 a machine belongs to for the purpose of PASELI balance.
 """
-machine = Table(  # type: ignore
+machine = Table(
     'machine',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),
@@ -32,7 +32,7 @@ machine = Table(  # type: ignore
 Table for storing an arcade, to which zero or more machines may belong. This allows
 an arcade to override some global settings such as PASELI enabled and infinite.
 """
-arcade = Table(  # type: ignore
+arcade = Table(
     'arcade',
     metadata,
     Column('id', Integer, nullable=False, primary_key=True),
@@ -46,7 +46,7 @@ arcade = Table(  # type: ignore
 """
 Table for storing arcade ownership. This allows for more than one owner to own an arcade.
 """
-arcade_owner = Table(  # type: ignore
+arcade_owner = Table(
     'arcade_owner',
     metadata,
     Column('userid', BigInteger(unsigned=True), nullable=False),
@@ -60,7 +60,7 @@ Table for storing arcade settings for a particular game/version. This allows the
 owner to change settings related to a particular game, such as the events active or the
 shop ranking courses.
 """
-arcade_settings = Table(  # type: ignore
+arcade_settings = Table(
     'arcade_settings',
     metadata,
     Column('arcadeid', Integer, nullable=False),

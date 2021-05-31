@@ -12,7 +12,7 @@ Table for storing game settings that span multiple versions of the same
 game, such as play statistics. This table intentionally doesn't have a
 key on game version, just game string and userid.
 """
-game_settings = Table(  # type: ignore
+game_settings = Table(
     'game_settings',
     metadata,
     Column('game', String(32), nullable=False),
@@ -25,7 +25,7 @@ game_settings = Table(  # type: ignore
 """
 Table for storing shop items that are server-side verified.
 """
-catalog = Table(  # type: ignore
+catalog = Table(
     'catalog',
     metadata,
     Column('game', String(32), nullable=False),
@@ -42,7 +42,7 @@ Table for storing series achievements that span multiple versions of the same
 game, such as course scores. This table intentionally doesn't have a
 key on game version, just game string and userid.
 """
-series_achievement = Table(  # type: ignore
+series_achievement = Table(
     'series_achievement',
     metadata,
     Column('game', String(32), nullable=False),
@@ -58,7 +58,7 @@ series_achievement = Table(  # type: ignore
 Table for storing time-based game settings that aren't tied to a user
 account, such as dailies, weeklies, etc.
 """
-time_sensitive_settings = Table(  # type: ignore
+time_sensitive_settings = Table(
     'time_sensitive_settings',
     metadata,
     Column('game', String(32), nullable=False),

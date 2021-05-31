@@ -10,13 +10,13 @@ from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.types import String, Integer  # type: ignore
 from sqlalchemy import Table, Column, MetaData  # type: ignore
 
-metadata = MetaData()  # type: ignore
+metadata = MetaData()
 
 """
 Table for storing session IDs, so a session ID can be used to look up an arbitrary ID.
 This is currently used for user logins, user and arcade PASELI sessions.
 """
-session = Table(  # type: ignore
+session = Table(
     'session',
     metadata,
     Column('id', Integer, nullable=False),
@@ -74,7 +74,7 @@ class BaseData:
             ]:
                 if write_statement in sql.lower() and not safe_write_operation:
                     raise Exception('Read-only mode is active!')
-        return self.__conn.execute(  # type: ignore
+        return self.__conn.execute(
             text(sql),
             params if params is not None else {},
         )

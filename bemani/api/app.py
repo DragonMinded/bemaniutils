@@ -2,7 +2,7 @@ import copy
 import json
 import traceback
 from typing import Any, Callable, Dict
-from flask import Flask, abort, request, Response  # type: ignore
+from flask import Flask, abort, request, Response
 from functools import wraps
 
 from bemani.api.exceptions import APIException

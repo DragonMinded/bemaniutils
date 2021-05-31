@@ -6,7 +6,7 @@ from alembic.migration import MigrationContext  # type: ignore
 from alembic.autogenerate import compare_metadata  # type: ignore
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import scoped_session  # type: ignore
-from sqlalchemy.orm import sessionmaker  # type: ignore
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.exc import ProgrammingError  # type: ignore
@@ -125,7 +125,7 @@ class Data:
 
     @classmethod
     def create_engine(cls, config: Dict[str, Any]) -> Engine:
-        return create_engine(  # type: ignore
+        return create_engine(
             Data.sqlalchemy_url(config),
             pool_recycle=3600,
         )
@@ -161,7 +161,7 @@ class Data:
             # Cowardly refused to do anything, we should be using the upgrade path instead.
             raise DBCreateException('Tables already created, use upgrade to upgrade schema!')
 
-        metadata.create_all(  # type: ignore
+        metadata.create_all(
             self.__config['database']['engine'].connect(),
             checkfirst=True,
         )

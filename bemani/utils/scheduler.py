@@ -1,5 +1,5 @@
 import argparse
-import yaml  # type: ignore
+import yaml
 from typing import Any, Dict, List
 
 from bemani.backend.popn import PopnMusicFactory
@@ -55,11 +55,11 @@ def run_scheduled_work(config: Dict[str, Any]) -> None:
 
     # First, run any backend scheduled work
     for factory in enabled_factories:
-        factory.run_scheduled_work(data, config)  # type: ignore
+        factory.run_scheduled_work(data, config)
 
     # Now, warm the caches for the frontend
     for cache in enabled_caches:
-        cache.preload(data, config)  # type: ignore
+        cache.preload(data, config)
 
     # Now, possibly delete old log entries
     keep_duration = config.get('event_log_duration', 0)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Set up global configuration
-    config = yaml.safe_load(open(args.config))  # type: ignore
+    config = yaml.safe_load(open(args.config))
     config['database']['engine'] = Data.create_engine(config)
 
     # Run out of band work

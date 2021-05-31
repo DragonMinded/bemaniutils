@@ -34,6 +34,10 @@ done
 MYPYPATH=$(python -c "import os; print(os.path.realpath('.'))") mypy \
     "${cmdline[@]}" \
     --warn-redundant-casts \
+    --warn-unused-ignores \
     --disallow-untyped-calls \
     --disallow-untyped-defs \
+    --disallow-subclassing-any \
+    --disallow-incomplete-defs \
+    --no-implicit-optional \
     --no-strict-optional

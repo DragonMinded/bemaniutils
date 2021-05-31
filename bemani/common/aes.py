@@ -26,7 +26,7 @@ class AESCipher:
 
     def encrypt(self, raw: str) -> str:
         raw = self.__pad(raw)
-        random = Random.new()  # type: ignore
+        random = Random.new()
         iv = random.read(AES.block_size)
         cipher = AES.new(self.__key, AES.MODE_CBC, iv)
         return base64.b64encode(iv + cipher.encrypt(raw.encode('utf-8')), altchars=b"._").decode('utf-8')

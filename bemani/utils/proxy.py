@@ -1,7 +1,7 @@
 import argparse
 import requests
 import socket
-import yaml  # type: ignore
+import yaml
 from flask import Flask, Response, request
 from typing import Any, Dict, Optional
 import urllib.parse as urlparse
@@ -180,7 +180,7 @@ def receive_request(path: str) -> Response:
         data=req_binary,
     ).prepare()
     sess = requests.Session()
-    r = sess.send(prep_req, timeout=config['timeout'])  # type: ignore
+    r = sess.send(prep_req, timeout=config['timeout'])
 
     if r.status_code != 200:
         # Failed on remote side
@@ -233,7 +233,7 @@ def receive_request(path: str) -> Response:
 def load_proxy_config(filename: str) -> None:
     global config
 
-    config_data = yaml.safe_load(open(filename))  # type: ignore
+    config_data = yaml.safe_load(open(filename))
     if 'pcbid' in config_data and config_data['pcbid'] is not None:
         for pcbid in config_data['pcbid']:
             remote_name = config_data['pcbid'][pcbid]
@@ -244,7 +244,7 @@ def load_proxy_config(filename: str) -> None:
 def load_config(filename: str) -> None:
     global config
 
-    config_data = yaml.safe_load(open(filename))  # type: ignore
+    config_data = yaml.safe_load(open(filename))
     config.update({
         'local_host': config_data['local']['host'],
         'local_port': config_data['local']['port'],
