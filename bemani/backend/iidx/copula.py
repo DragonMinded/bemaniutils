@@ -1959,16 +1959,17 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                     })
 
             # Filter out empty charts
-            singles = [single for single in singles if single['id'] != 0]
-            doubles = [double for double in doubles if double['id'] != 0]
+            if name is not None:
+                singles = [single for single in singles if single['id'] != 0]
+                doubles = [double for double in doubles if double['id'] != 0]
 
-            newprofile.replace_dict(
-                name,
-                {
-                    'single': singles,
-                    'double': doubles,
-                },
-            )
+                newprofile.replace_dict(
+                    name,
+                    {
+                        'single': singles,
+                        'double': doubles,
+                    },
+                )
 
         # Step-up mode
         step = request.child('step')
