@@ -788,7 +788,7 @@ class BinaryEncoding:
         else:
             return None
 
-    def encode(self, tree: Node, encoding: str=None) -> bytes:
+    def encode(self, tree: Node, encoding: Optional[str]=None) -> bytes:
         """
         Given a tree of Node objects, encode the data with the current encoding.
 

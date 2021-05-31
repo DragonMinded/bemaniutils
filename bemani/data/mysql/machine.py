@@ -313,7 +313,10 @@ class MachineData(BaseData):
         for owner in owners:
             sql = "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
             self.execute(sql, {'userid': owner, 'arcadeid': arcadeid})
-        return self.get_arcade(arcadeid)
+        new_arcade = self.get_arcade(arcadeid)
+        if new_arcade is None:
+            raise Exception("Failed to create an arcade!")
+        return new_arcade
 
     def get_arcade(self, arcadeid: ArcadeID) -> Optional[Arcade]:
         """

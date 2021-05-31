@@ -447,12 +447,11 @@ class MusicData(BaseData):
             "SELECT music.songid AS songid, COUNT(score_history.timestamp) AS plays FROM score_history, music " +
             "WHERE score_history.musicid = music.id AND music.game = :game AND music.version = :version "
         )
+        timestamp: Optional[int] = None
         if days is not None:
             # Only select the last X days of hit chart
             sql = sql + "AND score_history.timestamp > :timestamp "
             timestamp = Time.now() - (Time.SECONDS_IN_DAY * days)
-        else:
-            timestamp = None
 
         sql = sql + "GROUP BY songid ORDER BY plays DESC LIMIT :count"
         cursor = self.execute(sql, {'game': game, 'version': version, 'count': count, 'timestamp': timestamp})
