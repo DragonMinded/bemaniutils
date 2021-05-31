@@ -48,7 +48,7 @@ class InputStream:
             return bytedata
         return None
 
-    def read_byte(self) -> bytes:
+    def read_byte(self) -> Optional[bytes]:
         """
         Grab the next byte at the current position. If no byte is available,
         return None.
@@ -58,7 +58,7 @@ class InputStream:
         """
         return self.read_blob(1)
 
-    def read_int(self, size: int=1, is_unsigned: bool=True) -> int:
+    def read_int(self, size: int=1, is_unsigned: bool=True) -> Optional[int]:
         """
         Grab the next integer of size 'size' at the current position. If not enough
         bytes are available to decode this integer, return None.

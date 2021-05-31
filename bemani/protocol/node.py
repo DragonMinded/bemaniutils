@@ -634,7 +634,7 @@ class Node:
         Returns:
             A string data type name. This string can be fed to typename_to_type to get the original type back.
         """
-        if self.__type is None:
+        if self.__translated_type is None:
             raise Exception('Logic error, tried to fetch data type before setting type!')
         return self.__translated_type['name']
 
@@ -647,7 +647,7 @@ class Node:
         Returns:
             An integer data length, or None if this node's element has variable length.
         """
-        if self.__type is None:
+        if self.__translated_type is None:
             raise Exception('Logic error, tried to fetch data length before setting type!')
         if self.__translated_type['name'] in {'bin', 'str'}:
             return None
@@ -661,7 +661,7 @@ class Node:
         Returns:
             A character that can be passed to struct.pack or struct.unpack.
         """
-        if self.__type is None:
+        if self.__translated_type is None:
             raise Exception('Logic error, tried to fetch data encoding before setting type!')
         return self.__translated_type['enc']
 
@@ -781,6 +781,8 @@ class Node:
         Returns:
             True if this Node is a composite type, False otherwise.
         """
+        if self.__translated_type is None:
+            raise Exception('Logic error, tried to fetch composite determination before setting type!')
         return self.__translated_type['composite']
 
     def set_value(self, val: Any) -> None:
@@ -793,18 +795,22 @@ class Node:
         """
         is_array = isinstance(val, (list, tuple))
 
+        if self.__translated_type is None:
+            raise Exception('Logic error, tried to set value before setting type!')
+        translated_type: Dict[str, Any] = self.__translated_type
+
         # Handle composite types
-        if self.__translated_type['composite']:
+        if translated_type['composite']:
             if not is_array:
                 raise NodeException('Input is not array, expected array')
-            if len(val) != len(self.__translated_type['enc']):
-                raise NodeException(f'Input array for {self.__translated_type["name"]} expected to be {len(self.__translated_type["enc"])} elements!')
+            if len(val) != len(translated_type['enc']):
+                raise NodeException(f'Input array for {translated_type["name"]} expected to be {len(translated_type["enc"])} elements!')
             is_array = False
         if is_array != self.__array:
             raise NodeException(f'Input {"is" if is_array else "is not"} array, expected {"array" if self.__array else "scalar"}')
 
         def val_to_str(val: Any) -> Union[str, bytes]:
-            if self.__translated_type['name'] == 'bool':
+            if translated_type['name'] == 'bool':
                 # Support user-built boolean types
                 if val is True:
                     return 'true'
@@ -813,9 +819,9 @@ class Node:
 
                 # Support construction from binary
                 return 'true' if val != 0 else 'false'
-            elif self.__translated_type['name'] == 'float':
+            elif translated_type['name'] == 'float':
                 return str(val)
-            elif self.__translated_type['name'] == 'ip4':
+            elif translated_type['name'] == 'ip4':
                 try:
                     # Support construction from binary
                     ip = struct.unpack('BBBB', val)
@@ -827,13 +833,13 @@ class Node:
                             return val
 
                     raise NodeException(f'Invalid value {val} for IP4 type')
-            elif self.__translated_type['int']:
+            elif translated_type['int']:
                 return str(val)
             else:
                 # This could return either a string or bytes.
                 return val
 
-        if is_array or self.__translated_type['composite']:
+        if is_array or translated_type['composite']:
             self.__value = [val_to_str(v) for v in val]
         else:
             self.__value = val_to_str(val)
@@ -846,23 +852,27 @@ class Node:
         Returns:
             A mixed value corresponding to this node's value. The returned value will be of the correct data type.
         """
+        if self.__translated_type is None:
+            raise Exception('Logic error, tried to get value before setting type!')
+        translated_type: Dict[str, Any] = self.__translated_type
+
         def str_to_val(string: Union[str, bytes]) -> Any:
-            if self.__translated_type['name'] == 'bool':
+            if translated_type['name'] == 'bool':
                 return True if string == 'true' else False
-            elif self.__translated_type['name'] == 'float':
+            elif translated_type['name'] == 'float':
                 return float(string)
-            elif self.__translated_type['name'] == 'ip4':
+            elif translated_type['name'] == 'ip4':
                 if not isinstance(string, str):
                     raise Exception('Logic error, expected a string!')
                 ip = [int(tup) for tup in string.split('.')]
                 return struct.pack('BBBB', ip[0], ip[1], ip[2], ip[3])
-            elif self.__translated_type['int']:
+            elif translated_type['int']:
                 return int(string)
             else:
                 # At this point, we could be a string or bytes.
                 return string
 
-        if self.__array or self.__translated_type['composite']:
+        if self.__array or translated_type['composite']:
             return [str_to_val(v) for v in self.__value]
         else:
             return str_to_val(self.__value)
@@ -878,6 +888,10 @@ class Node:
         Returns:
             A string representing the XML-like data for this node and all children.
         """
+        if self.__translated_type is None:
+            raise Exception('Logic error, tried to get XML representation before setting type!')
+        translated_type: Dict[str, Any] = self.__translated_type
+
         attrs_dict = copy.deepcopy(self.__attrs)
         order = sorted(attrs_dict.keys())
         if self.data_length != 0:
@@ -888,7 +902,7 @@ class Node:
                 else:
                     attrs_dict['__count'] = str(len(self.__value))
                 order.insert(0, '__count')
-            attrs_dict['__type'] = self.__translated_type['name']
+            attrs_dict['__type'] = translated_type['name']
             order.insert(0, '__type')
 
         def escape(val: Any, attr: bool=False) -> str:
@@ -912,14 +926,14 @@ class Node:
             attrs = ''
 
         def get_val() -> str:
-            if self.__array or self.__translated_type['composite']:
+            if self.__array or translated_type['composite']:
                 if self.__value is None:
                     vals = ''
                 else:
                     vals = ' '.join([val for val in self.__value])
-            elif self.__translated_type['name'] == 'str':
+            elif translated_type['name'] == 'str':
                 vals = escape(self.__value)
-            elif self.__translated_type['name'] == 'bin':
+            elif translated_type['name'] == 'bin':
                 # Convert to a hex string
                 def bin_to_hex(binary: int) -> str:
                     val = hex(binary)[2:]

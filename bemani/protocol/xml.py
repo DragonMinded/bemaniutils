@@ -69,7 +69,7 @@ class XmlDecoder:
                 # Skip these, handled
                 continue
             else:
-                node.set_attribute(attr, attributes.get(attr))
+                node.set_attribute(attr, attributes[attr])
 
         self.current.append(node)
 
@@ -298,7 +298,7 @@ class XmlDecoder:
             if empty:
                 self.__end_element(tag)
 
-    def get_tree(self) -> Node:
+    def get_tree(self) -> Optional[Node]:
         """
         Walk the XML document and parse into nodes.
 

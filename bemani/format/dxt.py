@@ -126,7 +126,7 @@ class DXTBuffer:
                 pixel_color = (0, 0, 0, alpha)
 
         # While not surpassing the image dimensions, assign pixels the colors.
-        if (x + i) < self.width and (y + j) < self.height:
+        if pixel_color is not None and (x + i) < self.width and (y + j) < self.height:
             self.decompressed_buffer[(y + j) * self.width + (x + i)] = (
                 struct.pack('<BBBB', *pixel_color)
             )

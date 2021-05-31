@@ -66,7 +66,7 @@ class EAmuseProtocol:
 
         return bytes(out)
 
-    def __decrypt(self, encryption_key: str, data: bytes) -> bytes:
+    def __decrypt(self, encryption_key: Optional[str], data: bytes) -> bytes:
         """
         Given data and an optional encryption key, decrypt the data.
 
@@ -82,6 +82,7 @@ class EAmuseProtocol:
         if data is None:
             return None
 
+        key: Optional[bytes] = None
         if encryption_key:
             # Key is concatenated with the shared secret above
             version, first, second = encryption_key.split('-')
@@ -91,8 +92,6 @@ class EAmuseProtocol:
             m = hashlib.md5()
             m.update(key)
             key = m.digest()
-        else:
-            key = None
 
         if key:
             # This is an encrypted old-style packet
@@ -101,7 +100,7 @@ class EAmuseProtocol:
         # No encryption
         return data
 
-    def __encrypt(self, encryption_key: str, data: bytes) -> bytes:
+    def __encrypt(self, encryption_key: Optional[str], data: bytes) -> bytes:
         """
         Given data and an optional encryption key, encrypt the data.
 
@@ -117,7 +116,7 @@ class EAmuseProtocol:
         # RC4 is symmetric
         return self.__decrypt(encryption_key, data)
 
-    def __decompress(self, compression: str, data: bytes) -> bytes:
+    def __decompress(self, compression: Optional[str], data: bytes) -> bytes:
         """
         Given data and an optional compression scheme, decompress the data.
 
@@ -133,21 +132,17 @@ class EAmuseProtocol:
         if data is None:
             return None
 
-        if compression:
-            if compression is None or compression == 'none':
-                # This isn't compressed
-                return data
-            elif compression == 'lz77':
-                # This is a compressed new-style packet
-                lz = Lz77()
-                return lz.decompress(data)
-            else:
-                raise EAmuseException(f'Unknown compression {compression}')
+        if compression is None or compression == 'none':
+            # This isn't compressed
+            return data
+        elif compression == 'lz77':
+            # This is a compressed new-style packet
+            lz = Lz77()
+            return lz.decompress(data)
+        else:
+            raise EAmuseException(f'Unknown compression {compression}')
 
-        # No compression
-        return data
-
-    def __compress(self, compression: str, data: bytes) -> bytes:
+    def __compress(self, compression: Optional[str], data: bytes) -> bytes:
         """
         Given data and an optional compression scheme, compress the data.
 
@@ -163,19 +158,15 @@ class EAmuseProtocol:
         if data is None:
             return None
 
-        if compression:
-            if compression is None or compression == 'none':
-                # This isn't compressed
-                return data
-            elif compression == 'lz77':
-                # This is a compressed new-style packet
-                lz = Lz77()
-                return lz.compress(data)
-            else:
-                raise EAmuseException(f'Unknown compression {compression}')
-
-        # No compression
-        return data
+        if compression is None or compression == 'none':
+            # This isn't compressed
+            return data
+        elif compression == 'lz77':
+            # This is a compressed new-style packet
+            lz = Lz77()
+            return lz.compress(data)
+        else:
+            raise EAmuseException(f'Unknown compression {compression}')
 
     def __decode(self, data: bytes) -> Node:
         """
