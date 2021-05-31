@@ -42,7 +42,7 @@ class APIClient:
         self.allow_stats = allow_stats
         self.allow_scores = allow_scores
 
-    def __content_type_valid(self, content_type: str) -> bool:
+    def _content_type_valid(self, content_type: str) -> bool:
         if ';' in content_type:
             left, right = content_type.split(';', 1)
             left = left.strip().lower()
@@ -83,7 +83,7 @@ class APIClient:
             raise APIException('Failed to query remote server!')
 
         # Verify that content type is in the form of "application/json; charset=utf-8".
-        if not self.__content_type_valid(r.headers['content-type']):
+        if not self._content_type_valid(r.headers['content-type']):
             raise APIException(f'API returned invalid content type \'{r.headers["content-type"]}\'!')
 
         jsondata = r.json()

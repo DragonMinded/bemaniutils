@@ -11,40 +11,40 @@ class TestJubeatProp(unittest.TestCase):
 
     def test_increment_class(self) -> None:
         # Verify normal increase
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(1, 5), (1, 4))
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(1, 4), (1, 3))
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(3, 3), (3, 2))
+        self.assertEqual(JubeatProp._increment_class(1, 5), (1, 4))
+        self.assertEqual(JubeatProp._increment_class(1, 4), (1, 3))
+        self.assertEqual(JubeatProp._increment_class(3, 3), (3, 2))
 
         # Verify bumping class when minor class is at max
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(1, 1), (2, 5))
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(2, 1), (3, 5))
+        self.assertEqual(JubeatProp._increment_class(1, 1), (2, 5))
+        self.assertEqual(JubeatProp._increment_class(2, 1), (3, 5))
 
         # Verify bumping class to legend which only has one subclass
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(3, 1), (4, 1))
+        self.assertEqual(JubeatProp._increment_class(3, 1), (4, 1))
 
         # Verify bumping when already at max
-        self.assertEqual(JubeatProp._JubeatProp__increment_class(4, 1), (4, 1))
+        self.assertEqual(JubeatProp._increment_class(4, 1), (4, 1))
 
     def test_decrement_class(self) -> None:
         # Verify normal decrease
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(1, 3), (1, 4))
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(1, 4), (1, 5))
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(3, 2), (3, 3))
+        self.assertEqual(JubeatProp._decrement_class(1, 3), (1, 4))
+        self.assertEqual(JubeatProp._decrement_class(1, 4), (1, 5))
+        self.assertEqual(JubeatProp._decrement_class(3, 2), (3, 3))
 
         # Verify demoting class when minor class is at min
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(2, 5), (1, 1))
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(3, 5), (2, 1))
+        self.assertEqual(JubeatProp._decrement_class(2, 5), (1, 1))
+        self.assertEqual(JubeatProp._decrement_class(3, 5), (2, 1))
 
         # Verify demoting class when starting at legend
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(4, 1), (3, 1))
+        self.assertEqual(JubeatProp._decrement_class(4, 1), (3, 1))
 
         # Verify decrease when already at min
-        self.assertEqual(JubeatProp._JubeatProp__decrement_class(1, 5), (1, 5))
+        self.assertEqual(JubeatProp._decrement_class(1, 5), (1, 5))
 
     def test_get_league_buckets(self) -> None:
         # Verify correct behavior with empty input
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_buckets(
+            JubeatProp._get_league_buckets(
                 [],
             ),
             (
@@ -56,7 +56,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Verify correct behavior with only one entrant (should be promoted)
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_buckets(
+            JubeatProp._get_league_buckets(
                 [
                     (5, 12345),
                 ],
@@ -72,7 +72,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Verify correct behavior with two entrants (should be one promotion, one demotion)
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_buckets(
+            JubeatProp._get_league_buckets(
                 [
                     (5, 12345),
                     (7, 54321),
@@ -91,7 +91,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Verify correct behavior with three entrants (should be one promotion, one demotion, one same)
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_buckets(
+            JubeatProp._get_league_buckets(
                 [
                     (5, 12345),
                     (7, 54321),
@@ -113,7 +113,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Verify correct behavior with ten entrants (should be 3 promotions, 3 demotions, 4 same)
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_buckets(
+            JubeatProp._get_league_buckets(
                 [
                     (5, 55555),
                     (7, 77777),
@@ -154,7 +154,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Test correct behavior on empty input
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_scores(
+            JubeatProp._get_league_scores(
                 None,
                 999,
                 []
@@ -168,7 +168,7 @@ class TestJubeatProp(unittest.TestCase):
         # Test that we can load last week's score if it exists for a user
         data.local.user.get_achievement = Mock(return_value={'score': [123, 456, 789]})
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_scores(
+            JubeatProp._get_league_scores(
                 data,
                 999,
                 [(UserID(1337), {})],
@@ -190,7 +190,7 @@ class TestJubeatProp(unittest.TestCase):
         # Test that if it doesn't exist last week they get marked as absent
         data.local.user.get_achievement = Mock(return_value=None)
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_scores(
+            JubeatProp._get_league_scores(
                 data,
                 999,
                 [(UserID(1337), {})],
@@ -216,7 +216,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Test that we do the right thing with empty input
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_absentees(
+            JubeatProp._get_league_absentees(
                 None,
                 999,
                 [],
@@ -227,7 +227,7 @@ class TestJubeatProp(unittest.TestCase):
         # Test that a user who never played doesn't get flagged absentee
         data.local.user.get_achievements = Mock(return_value=[])
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_absentees(
+            JubeatProp._get_league_absentees(
                 data,
                 999,
                 [1337],
@@ -246,7 +246,7 @@ class TestJubeatProp(unittest.TestCase):
             Achievement(997, 'league', None, {}),
         ])
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_absentees(
+            JubeatProp._get_league_absentees(
                 data,
                 999,
                 [1337],
@@ -265,7 +265,7 @@ class TestJubeatProp(unittest.TestCase):
             Achievement(996, 'league', None, {}),
         ])
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_absentees(
+            JubeatProp._get_league_absentees(
                 data,
                 999,
                 [1337],
@@ -285,7 +285,7 @@ class TestJubeatProp(unittest.TestCase):
             Achievement(995, 'league', None, {}),
         ])
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_absentees(
+            JubeatProp._get_league_absentees(
                 data,
                 999,
                 [1337],
@@ -304,7 +304,7 @@ class TestJubeatProp(unittest.TestCase):
             Achievement(994, 'league', None, {}),
         ])
         self.assertEqual(
-            JubeatProp._JubeatProp__get_league_absentees(
+            JubeatProp._get_league_absentees(
                 data,
                 999,
                 [1337],
@@ -328,7 +328,7 @@ class TestJubeatProp(unittest.TestCase):
             'league_class': 1,
             'league_subclass': 5,
         }))
-        JubeatProp._JubeatProp__modify_profile(
+        JubeatProp._modify_profile(
             data,
             1337,
             'demote',
@@ -340,7 +340,7 @@ class TestJubeatProp(unittest.TestCase):
             'league_class': 4,
             'league_subclass': 1,
         }))
-        JubeatProp._JubeatProp__modify_profile(
+        JubeatProp._modify_profile(
             data,
             1337,
             'promote',
@@ -353,7 +353,7 @@ class TestJubeatProp(unittest.TestCase):
             'league_subclass': 5,
             'league_is_checked': True,
         }))
-        JubeatProp._JubeatProp__modify_profile(
+        JubeatProp._modify_profile(
             data,
             1337,
             'promote',
@@ -380,7 +380,7 @@ class TestJubeatProp(unittest.TestCase):
             'league_subclass': 3,
             'league_is_checked': True,
         }))
-        JubeatProp._JubeatProp__modify_profile(
+        JubeatProp._modify_profile(
             data,
             1337,
             'demote',
@@ -411,7 +411,7 @@ class TestJubeatProp(unittest.TestCase):
                 'league_subclass': 3,
             },
         }))
-        JubeatProp._JubeatProp__modify_profile(
+        JubeatProp._modify_profile(
             data,
             1337,
             'demote',

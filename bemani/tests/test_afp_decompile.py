@@ -130,7 +130,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bcd = ByteCodeDecompiler(bytecode, optimize=True)
 
         # Call it, return the data in an easier to test fashion.
-        chunks, offset_map = bcd._ByteCodeDecompiler__graph_control_flow(bytecode)
+        chunks, offset_map = bcd._graph_control_flow(bytecode)
         return {chunk.id: chunk for chunk in chunks}, offset_map
 
     def __equiv(self, bytecode: Union[ByteCode, ByteCodeChunk, List[AP2Action]]) -> List[str]:

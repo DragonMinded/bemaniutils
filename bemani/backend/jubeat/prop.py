@@ -168,7 +168,7 @@ class JubeatProp(
         return lut[rank]
 
     @classmethod
-    def __increment_class(cls, cur_class: int, cur_subclass: int) -> Tuple[int, int]:
+    def _increment_class(cls, cur_class: int, cur_subclass: int) -> Tuple[int, int]:
         """
         Given a class and subclass, return a tuple representing the next
         class/subclass if we were to be promoted.
@@ -176,7 +176,7 @@ class JubeatProp(
         return cls.__rank_to_class(cls.__class_to_rank(cur_class, cur_subclass) + 1)
 
     @classmethod
-    def __decrement_class(cls, cur_class: int, cur_subclass: int) -> Tuple[int, int]:
+    def _decrement_class(cls, cur_class: int, cur_subclass: int) -> Tuple[int, int]:
         """
         Given a class and subclass, return a tuple representing the previous
         class/subclass if we were to be demoted.
@@ -184,7 +184,7 @@ class JubeatProp(
         return cls.__rank_to_class(cls.__class_to_rank(cur_class, cur_subclass) - 1)
 
     @classmethod
-    def __get_league_buckets(cls, scores: List[Tuple[UserID, int]]) -> Tuple[List[UserID], List[UserID], List[UserID]]:
+    def _get_league_buckets(cls, scores: List[Tuple[UserID, int]]) -> Tuple[List[UserID], List[UserID], List[UserID]]:
         """
         Given a list of userid, score tuples, return a tuple containing three lists.
         The first list is the top 30% scorer IDs, the next list is the middle 40%
@@ -205,7 +205,7 @@ class JubeatProp(
         return (promotions, neutrals, demotions)
 
     @classmethod
-    def __get_league_scores(cls, data: Data, current_id: int, profiles: List[Tuple[UserID, ValidatedDict]]) -> Tuple[List[Tuple[UserID, int]], List[UserID]]:
+    def _get_league_scores(cls, data: Data, current_id: int, profiles: List[Tuple[UserID, ValidatedDict]]) -> Tuple[List[Tuple[UserID, int]], List[UserID]]:
         """
         Given the current League ID (calculated based on the date range) and a list of
         all user profiles for this game/version, return a uple containing two lists.
@@ -243,7 +243,7 @@ class JubeatProp(
         return scores, absentees
 
     @classmethod
-    def __get_league_absentees(cls, data: Data, current_id: int, absentees: List[UserID]) -> List[UserID]:
+    def _get_league_absentees(cls, data: Data, current_id: int, absentees: List[UserID]) -> List[UserID]:
         """
         Given a list of user IDs that didn't play for some number of weeks, return
         a subset of those IDs that have been absent enough weeks to get a demotion.
@@ -277,7 +277,7 @@ class JubeatProp(
         return delinquents
 
     @classmethod
-    def __modify_profile(cls, data: Data, userid: UserID, direction: str) -> None:
+    def _modify_profile(cls, data: Data, userid: UserID, direction: str) -> None:
         """
         Given a user ID and a direction (promote or demote), load the user's profile,
         make the necessary promotion/demotion, and set the profile to notify the user
@@ -290,9 +290,9 @@ class JubeatProp(
         cur_subclass = profile.get_int('league_subclass', 5)
 
         if direction == 'promote':
-            new_class, new_subclass = cls.__increment_class(cur_class, cur_subclass)
+            new_class, new_subclass = cls._increment_class(cur_class, cur_subclass)
         elif direction == 'demote':
-            new_class, new_subclass = cls.__decrement_class(cur_class, cur_subclass)
+            new_class, new_subclass = cls._decrement_class(cur_class, cur_subclass)
         else:
             raise Exception(f'Logic error, unknown direction {direction}!')
 
@@ -344,17 +344,17 @@ class JubeatProp(
             # Evaluate player scores on previous courses and find players
             # that didn't play last week.
             all_profiles = data.local.user.get_all_profiles(cls.game, cls.version)
-            scores, absentees = cls.__get_league_scores(data, leagueid, all_profiles)
+            scores, absentees = cls._get_league_scores(data, leagueid, all_profiles)
 
             # Get user IDs to promote, demote and ignore based on scores.
-            promote, ignore, demote = cls.__get_league_buckets(scores)
-            demote.extend(cls.__get_league_absentees(data, leagueid, absentees))
+            promote, ignore, demote = cls._get_league_buckets(scores)
+            demote.extend(cls._get_league_absentees(data, leagueid, absentees))
 
             # Actually modify the profiles so the game knows to tell the user.
             for userid in promote:
-                cls.__modify_profile(data, userid, 'promote')
+                cls._modify_profile(data, userid, 'promote')
             for userid in demote:
-                cls.__modify_profile(data, userid, 'demote')
+                cls._modify_profile(data, userid, 'demote')
 
             # Mark that we did some actual work here.
             data.local.network.mark_scheduled(cls.game, cls.version, 'league_course', 'weekly')

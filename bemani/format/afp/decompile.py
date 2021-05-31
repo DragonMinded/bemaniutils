@@ -434,7 +434,7 @@ class ByteCodeDecompiler(VerboseOutput):
             raise Exception("Call decompile() first before retrieving statements!")
         return self.__statements
 
-    def __graph_control_flow(self, bytecode: ByteCode) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
+    def _graph_control_flow(self, bytecode: ByteCode) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
         # Start by assuming that the whole bytecode never directs flow. This is, confusingly,
         # indexed by AP2Action offset, not by actual bytecode offset, so we can avoid the
         # prickly problem of opcodes that take more than one byte in the data.
@@ -3239,7 +3239,7 @@ class ByteCodeDecompiler(VerboseOutput):
     def __decompile(self) -> None:
         # First, we need to construct a control flow graph.
         self.vprint("Generating control flow graph...")
-        chunks, offset_map = self.__graph_control_flow(self.bytecode)
+        chunks, offset_map = self._graph_control_flow(self.bytecode)
         if self.bytecode.start_offset is None:
             raise Exception("Logic error, we should not be decompiling empty bytecode!")
         start_id = offset_map[self.bytecode.start_offset]
