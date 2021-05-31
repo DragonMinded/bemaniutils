@@ -107,8 +107,13 @@ setup(
         'bemani.data.mysql',
         'bemani.protocol',
 
-        # Wrapper scripts and WSGI imports
+        # Wrapper scripts, utilities and associated code.
         'bemani.utils',
+        'bemani.sniff',
+        'bemani.format',
+        'bemani.format.afp',
+        'bemani.format.afp.blend',
+        'bemani.format.afp.types',
 
         # Frontend packages
         'bemani.frontend',
