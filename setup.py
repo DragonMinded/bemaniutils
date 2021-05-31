@@ -1,5 +1,96 @@
-from setuptools import Extension, setup
-from Cython.Build import cythonize
+import os
+from setuptools import setup
+
+
+def extensions():
+    if 'PURE_PYTHON' in os.environ:
+        # We've been asked not to compile extensions.
+        return []
+
+    from setuptools import Extension
+    from Cython.Build import cythonize
+
+    return [
+        *cythonize(
+            [
+                Extension(
+                    "bemani.protocol.binary",
+                    [
+                        "bemani/protocol/binary.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.protocol.lz77",
+                    [
+                        "bemani/protocol/lz77.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.protocol.lz77cpp",
+                    [
+                        "bemani/protocol/lz77cpp.cxx",
+                    ],
+                    language="c++",
+                    extra_compile_args=["-std=c++14"],
+                    extra_link_args=["-std=c++14"],
+                ),
+                Extension(
+                    "bemani.protocol.node",
+                    [
+                        "bemani/protocol/node.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.protocol.protocol",
+                    [
+                        "bemani/protocol/protocol.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.protocol.stream",
+                    [
+                        "bemani/protocol/stream.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.protocol.xml",
+                    [
+                        "bemani/protocol/xml.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.format.afp.blend.blend",
+                    [
+                        "bemani/format/afp/blend/blend.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.format.afp.blend.blendcpp",
+                    [
+                        "bemani/format/afp/blend/blendcpp.pyx",
+                        "bemani/format/afp/blend/blendcppimpl.cxx",
+                    ],
+                    language="c++",
+                    extra_compile_args=["-std=c++14"],
+                    extra_link_args=["-std=c++14"],
+                ),
+                Extension(
+                    "bemani.format.afp.types.generic",
+                    [
+                        "bemani/format/afp/types/generic.py",
+                    ]
+                ),
+                Extension(
+                    "bemani.format.dxt",
+                    [
+                        "bemani/format/dxt.py",
+                    ]
+                ),
+            ],
+            language_level=3,
+        ),
+    ]
+
 
 setup(
     name='bemani',
@@ -73,84 +164,7 @@ setup(
     # They are all present for speed. If you cannot compile arbitrary code or cython,
     # remove the ext_modules line and run setuptools again. Everything should work, but
     # it will run slower.
-    ext_modules=cythonize(
-        [
-            Extension(
-                "bemani.protocol.binary",
-                [
-                    "bemani/protocol/binary.py",
-                ]
-            ),
-            Extension(
-                "bemani.protocol.lz77",
-                [
-                    "bemani/protocol/lz77.py",
-                ]
-            ),
-            Extension(
-                "bemani.protocol.lz77cpp",
-                [
-                    "bemani/protocol/lz77cpp.cxx",
-                ],
-                language="c++",
-                extra_compile_args=["-std=c++14"],
-                extra_link_args=["-std=c++14"],
-            ),
-            Extension(
-                "bemani.protocol.node",
-                [
-                    "bemani/protocol/node.py",
-                ]
-            ),
-            Extension(
-                "bemani.protocol.protocol",
-                [
-                    "bemani/protocol/protocol.py",
-                ]
-            ),
-            Extension(
-                "bemani.protocol.stream",
-                [
-                    "bemani/protocol/stream.py",
-                ]
-            ),
-            Extension(
-                "bemani.protocol.xml",
-                [
-                    "bemani/protocol/xml.py",
-                ]
-            ),
-            Extension(
-                "bemani.format.afp.blend.blend",
-                [
-                    "bemani/format/afp/blend/blend.py",
-                ]
-            ),
-            Extension(
-                "bemani.format.afp.blend.blendcpp",
-                [
-                    "bemani/format/afp/blend/blendcpp.pyx",
-                    "bemani/format/afp/blend/blendcppimpl.cxx",
-                ],
-                language="c++",
-                extra_compile_args=["-std=c++14"],
-                extra_link_args=["-std=c++14"],
-            ),
-            Extension(
-                "bemani.format.afp.types.generic",
-                [
-                    "bemani/format/afp/types/generic.py",
-                ]
-            ),
-            Extension(
-                "bemani.format.dxt",
-                [
-                    "bemani/format/dxt.py",
-                ]
-            ),
-        ],
-        language_level=3,
-    ),
+    ext_modules=extensions(),
     include_package_data=True,
     zip_safe=False,
 )
