@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Sequence, Union
+from typing import Any, Final, List, Sequence, Union
 
 from .expression import (
     Expression,
@@ -450,14 +450,14 @@ class IsBooleanIf(IfExpr):
 
 
 class TwoParameterIf(IfExpr):
-    EQUALS = "=="
-    NOT_EQUALS = "!="
-    LT = "<"
-    GT = ">"
-    LT_EQUALS = "<="
-    GT_EQUALS = ">="
-    STRICT_EQUALS = "==="
-    STRICT_NOT_EQUALS = "!=="
+    EQUALS: Final[str] = "=="
+    NOT_EQUALS: Final[str] = "!="
+    LT: Final[str] = "<"
+    GT: Final[str] = ">"
+    LT_EQUALS: Final[str] = "<="
+    GT_EQUALS: Final[str] = ">="
+    STRICT_EQUALS: Final[str] = "==="
+    STRICT_NOT_EQUALS: Final[str] = "!=="
 
     def __init__(self, conditional1: Any, comp: str, conditional2: Any) -> None:
         if comp not in {

@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Set, Optional
+from typing import TYPE_CHECKING, Any, Dict, Final, List, Set, Optional
 
 from .expression import Register
 
@@ -11,200 +11,200 @@ if TYPE_CHECKING:
 class AP2Object:
     # These are internal object types, useful to have them for understanding
     # what the original games are doing with data types.
-    UNDEFINED = 0x0
-    NAN = 0x1
-    BOOLEAN = 0x2
-    INTEGER = 0x3
-    S64 = 0x4
-    FLOAT = 0x5
-    DOUBLE = 0x6
-    STRING = 0x7
-    POINTER = 0x8
-    OBJECT = 0x9
-    INFINITY = 0xa
-    CONST_STRING = 0xb
-    BUILT_IN_FUNCTION = 0xc
+    UNDEFINED: Final[int] = 0x0
+    NAN: Final[int] = 0x1
+    BOOLEAN: Final[int] = 0x2
+    INTEGER: Final[int] = 0x3
+    S64: Final[int] = 0x4
+    FLOAT: Final[int] = 0x5
+    DOUBLE: Final[int] = 0x6
+    STRING: Final[int] = 0x7
+    POINTER: Final[int] = 0x8
+    OBJECT: Final[int] = 0x9
+    INFINITY: Final[int] = 0xa
+    CONST_STRING: Final[int] = 0xb
+    BUILT_IN_FUNCTION: Final[int] = 0xc
 
 
 class AP2Pointer:
     # The type of the object if it is an AP2Object.POINTER or AP2Object.OBJECT.
     # These are internal object types as well, and are only useful to have these
     # around for understanding what games are doing with data types.
-    UNDEFINED = 0x0
-    AFP_TEXT = 0x1
-    AFP_RECT = 0x2
-    AFP_SHAPE = 0x3
-    DRAG = 0x4
-    MATRIX = 0x5
-    POINT = 0x6
-    GETTER_SETTER_PROPERTY = 0x7
-    FUNCTION_WITH_PROTOTYPE = 0x8
-    ROW_DATA = 0x20
+    UNDEFINED: Final[int] = 0x0
+    AFP_TEXT: Final[int] = 0x1
+    AFP_RECT: Final[int] = 0x2
+    AFP_SHAPE: Final[int] = 0x3
+    DRAG: Final[int] = 0x4
+    MATRIX: Final[int] = 0x5
+    POINT: Final[int] = 0x6
+    GETTER_SETTER_PROPERTY: Final[int] = 0x7
+    FUNCTION_WITH_PROTOTYPE: Final[int] = 0x8
+    ROW_DATA: Final[int] = 0x20
 
-    object_W = 0x50
-    movieClip_W = 0x51
-    sound_W = 0x52
-    color_W = 0x53
-    date_W = 0x54
-    array_W = 0x55
-    xml_W = 0x56
-    xmlNode_W = 0x57
-    textFormat_W = 0x58
-    sharedObject_W = 0x59
-    sharedObjectData_W = 0x5a
-    textField_W = 0x5b
-    xmlAttrib_W = 0x5c
-    bitmapdata_W = 0x5d
-    matrix_W = 0x5e
-    point_W = 0x5f
-    ColorMatrixFilter_W = 0x60
-    String_W = 0x61
-    Boolean_W = 0x62
-    Number_W = 0x63
-    function_W = 0x64
-    prototype_W = 0x65
-    super_W = 0x66
-    transform_W = 0x68
-    colorTransform_W = 0x69
-    rectangle_W = 0x6a
+    object_W: Final[int] = 0x50
+    movieClip_W: Final[int] = 0x51
+    sound_W: Final[int] = 0x52
+    color_W: Final[int] = 0x53
+    date_W: Final[int] = 0x54
+    array_W: Final[int] = 0x55
+    xml_W: Final[int] = 0x56
+    xmlNode_W: Final[int] = 0x57
+    textFormat_W: Final[int] = 0x58
+    sharedObject_W: Final[int] = 0x59
+    sharedObjectData_W: Final[int] = 0x5a
+    textField_W: Final[int] = 0x5b
+    xmlAttrib_W: Final[int] = 0x5c
+    bitmapdata_W: Final[int] = 0x5d
+    matrix_W: Final[int] = 0x5e
+    point_W: Final[int] = 0x5f
+    ColorMatrixFilter_W: Final[int] = 0x60
+    String_W: Final[int] = 0x61
+    Boolean_W: Final[int] = 0x62
+    Number_W: Final[int] = 0x63
+    function_W: Final[int] = 0x64
+    prototype_W: Final[int] = 0x65
+    super_W: Final[int] = 0x66
+    transform_W: Final[int] = 0x68
+    colorTransform_W: Final[int] = 0x69
+    rectangle_W: Final[int] = 0x6a
 
     # All of these can have prototypes, not sure what the "C" stands for.
-    Object_C = 0x78
-    MovieClip_C = 0x79
-    Sound_C = 0x7a
-    Color_C = 0x7b
-    Date_C = 0x7c
-    Array_C = 0x7d
-    XML_C = 0x7e
-    XMLNode_C = 0x7f
-    TextFormat_C = 0x80
-    TextField_C = 0x83
-    BitmapData_C = 0x85
-    matrix_C = 0x86
-    point_C = 0x87
-    String_C = 0x89
-    Boolean_C = 0x8a
-    Number_C = 0x8b
-    Function_C = 0x8c
-    aplib_C = 0x8f
-    transform_C = 0x90
-    colorTransform_C = 0x91
-    rectangle_C = 0x92
-    asdlib_C = 0x93
-    XMLController_C = 0x94
-    eManager_C = 0x95
+    Object_C: Final[int] = 0x78
+    MovieClip_C: Final[int] = 0x79
+    Sound_C: Final[int] = 0x7a
+    Color_C: Final[int] = 0x7b
+    Date_C: Final[int] = 0x7c
+    Array_C: Final[int] = 0x7d
+    XML_C: Final[int] = 0x7e
+    XMLNode_C: Final[int] = 0x7f
+    TextFormat_C: Final[int] = 0x80
+    TextField_C: Final[int] = 0x83
+    BitmapData_C: Final[int] = 0x85
+    matrix_C: Final[int] = 0x86
+    point_C: Final[int] = 0x87
+    String_C: Final[int] = 0x89
+    Boolean_C: Final[int] = 0x8a
+    Number_C: Final[int] = 0x8b
+    Function_C: Final[int] = 0x8c
+    aplib_C: Final[int] = 0x8f
+    transform_C: Final[int] = 0x90
+    colorTransform_C: Final[int] = 0x91
+    rectangle_C: Final[int] = 0x92
+    asdlib_C: Final[int] = 0x93
+    XMLController_C: Final[int] = 0x94
+    eManager_C: Final[int] = 0x95
 
-    stage_O = 0xa0
-    math_O = 0xa1
-    key_O = 0xa2
-    mouse_O = 0xa3
-    system_O = 0xa4
-    sharedObject_O = 0xa5
-    flash_O = 0xa6
-    global_O = 0xa7
+    stage_O: Final[int] = 0xa0
+    math_O: Final[int] = 0xa1
+    key_O: Final[int] = 0xa2
+    mouse_O: Final[int] = 0xa3
+    system_O: Final[int] = 0xa4
+    sharedObject_O: Final[int] = 0xa5
+    flash_O: Final[int] = 0xa6
+    global_O: Final[int] = 0xa7
 
-    display_P = 0xb4
-    geom_P = 0xb5
-    filtesr_P = 0xb6
+    display_P: Final[int] = 0xb4
+    geom_P: Final[int] = 0xb5
+    filtesr_P: Final[int] = 0xb6
 
 
 class AP2Trigger:
     # Possible triggers for ByteCode to be attached to on object place tags.
-    ON_LOAD = 0x1
-    ON_ENTER_FRAME = 0x2
-    ON_UNLOAD = 0x4
-    ON_MOUSE_MOVE = 0x8
-    ON_MOUSE_DOWN = 0x10
-    ON_MOUSE_UP = 0x20
-    ON_KEY_DOWN = 0x40
-    ON_KEY_UP = 0x80
-    ON_DATA = 0x100
-    ON_PRESS = 0x400
-    ON_RELEASE = 0x800
-    ON_RELEASE_OUTSIDE = 0x1000
-    ON_ROLL_OVER = 0x2000
-    ON_ROLL_OUT = 0x4000
+    ON_LOAD: Final[int] = 0x1
+    ON_ENTER_FRAME: Final[int] = 0x2
+    ON_UNLOAD: Final[int] = 0x4
+    ON_MOUSE_MOVE: Final[int] = 0x8
+    ON_MOUSE_DOWN: Final[int] = 0x10
+    ON_MOUSE_UP: Final[int] = 0x20
+    ON_KEY_DOWN: Final[int] = 0x40
+    ON_KEY_UP: Final[int] = 0x80
+    ON_DATA: Final[int] = 0x100
+    ON_PRESS: Final[int] = 0x400
+    ON_RELEASE: Final[int] = 0x800
+    ON_RELEASE_OUTSIDE: Final[int] = 0x1000
+    ON_ROLL_OVER: Final[int] = 0x2000
+    ON_ROLL_OUT: Final[int] = 0x4000
 
 
 class AP2Tag:
     # Every tag found in an AFP file. The majority of these are identical to tags
     # in the SWF file specification but are not seen in practice.
-    END = 0x0
-    SHOW_FRAME = 0x1
-    DEFINE_SHAPE = 0x2
-    PLACE_OBJECT = 0x4
-    REMOVE_OBJECT = 0x5
-    DEFINE_BITS = 0x6
-    DEFINE_BUTTON = 0x7
-    JPEG_TABLES = 0x8
-    BACKGROUND_COLOR = 0x9
-    DEFINE_FONT = 0xa
-    DEFINE_TEXT = 0xb
-    DO_ACTION = 0xc
-    DEFINE_FONT_INFO = 0xd
-    DEFINE_SOUND = 0xe
-    START_SOUND = 0xf
-    DEFINE_BUTTON_SOUND = 0x11
-    SOUND_STREAM_HEAD = 0x12
-    SOUND_STREAM_BLOCK = 0x13
-    DEFINE_BITS_LOSSLESS = 0x14
-    DEFINE_BITS_JPEG2 = 0x15
-    DEFINE_SHAPE2 = 0x16
-    DEFINE_BUTTON_CXFORM = 0x17
-    PROTECT = 0x18
-    PLACE_OBJECT2 = 0x1a
-    REMOVE_OBJECT2 = 0x1c
-    DEFINE_SHAPE3 = 0x20
-    DEFINE_TEXT2 = 0x21
-    DEFINE_BUTTON2 = 0x22
-    DEFINE_BITS_JPEG3 = 0x23
-    DEFINE_BITS_LOSSLESS2 = 0x24
-    DEFINE_EDIT_TEXT = 0x25
-    DEFINE_SPRITE = 0x27
-    FRAME_LABEL = 0x2b
-    SOUND_STREAM_HEAD2 = 0x2d
-    DEFINE_MORPH_SHAPE = 0x2e
-    DEFINE_FONT2 = 0x30
-    EXPORT_ASSETS = 0x38
-    IMPORT_ASSETS = 0x39
-    DO_INIT_ACTION = 0x3b
-    DEFINE_VIDEO_STREAM = 0x3c
-    VIDEO_FRAME = 0x3d
-    DEFINE_FONT_INFO2 = 0x3e
-    ENABLE_DEBUGGER2 = 0x40
-    SCRIPT_LIMITS = 0x41
-    SET_TAB_INDEX = 0x42
-    PLACE_OBJECT3 = 0x46
-    IMPORT_ASSETS2 = 0x47
-    DEFINE_FONT3 = 0x4b
-    METADATA = 0x4d
-    DEFINE_SCALING_GRID = 0x4e
-    DEFINE_SHAPE4 = 0x53
-    DEFINE_MORPH_SHAPE2 = 0x54
-    SCENE_LABEL = 0x56
-    AFP_IMAGE = 0x64
-    AFP_DEFINE_SOUND = 0x65
-    AFP_SOUND_STREAM_BLOCK = 0x66
-    AFP_DEFINE_FONT = 0x67
-    AFP_DEFINE_SHAPE = 0x68
-    AEP_PLACE_OBJECT = 0x6e
-    AP2_DEFINE_FONT = 0x78
-    AP2_DEFINE_SPRITE = 0x79
-    AP2_DO_ACTION = 0x7a
-    AP2_DEFINE_BUTTON = 0x7b
-    AP2_DEFINE_BUTTON_SOUND = 0x7c
-    AP2_DEFINE_TEXT = 0x7d
-    AP2_DEFINE_EDIT_TEXT = 0x7e
-    AP2_PLACE_OBJECT = 0x7f
-    AP2_REMOVE_OBJECT = 0x80
-    AP2_START_SOUND = 0x81
-    AP2_DEFINE_MORPH_SHAPE = 0x82
-    AP2_IMAGE = 0x83
-    AP2_SHAPE = 0x84
-    AP2_SOUND = 0x85
-    AP2_VIDEO = 0x86
-    AP2_PLACE_CAMERA = 0x88
-    AP2_SCALING_GRID = 0x89
+    END: Final[int] = 0x0
+    SHOW_FRAME: Final[int] = 0x1
+    DEFINE_SHAPE: Final[int] = 0x2
+    PLACE_OBJECT: Final[int] = 0x4
+    REMOVE_OBJECT: Final[int] = 0x5
+    DEFINE_BITS: Final[int] = 0x6
+    DEFINE_BUTTON: Final[int] = 0x7
+    JPEG_TABLES: Final[int] = 0x8
+    BACKGROUND_COLOR: Final[int] = 0x9
+    DEFINE_FONT: Final[int] = 0xa
+    DEFINE_TEXT: Final[int] = 0xb
+    DO_ACTION: Final[int] = 0xc
+    DEFINE_FONT_INFO: Final[int] = 0xd
+    DEFINE_SOUND: Final[int] = 0xe
+    START_SOUND: Final[int] = 0xf
+    DEFINE_BUTTON_SOUND: Final[int] = 0x11
+    SOUND_STREAM_HEAD: Final[int] = 0x12
+    SOUND_STREAM_BLOCK: Final[int] = 0x13
+    DEFINE_BITS_LOSSLESS: Final[int] = 0x14
+    DEFINE_BITS_JPEG2: Final[int] = 0x15
+    DEFINE_SHAPE2: Final[int] = 0x16
+    DEFINE_BUTTON_CXFORM: Final[int] = 0x17
+    PROTECT: Final[int] = 0x18
+    PLACE_OBJECT2: Final[int] = 0x1a
+    REMOVE_OBJECT2: Final[int] = 0x1c
+    DEFINE_SHAPE3: Final[int] = 0x20
+    DEFINE_TEXT2: Final[int] = 0x21
+    DEFINE_BUTTON2: Final[int] = 0x22
+    DEFINE_BITS_JPEG3: Final[int] = 0x23
+    DEFINE_BITS_LOSSLESS2: Final[int] = 0x24
+    DEFINE_EDIT_TEXT: Final[int] = 0x25
+    DEFINE_SPRITE: Final[int] = 0x27
+    FRAME_LABEL: Final[int] = 0x2b
+    SOUND_STREAM_HEAD2: Final[int] = 0x2d
+    DEFINE_MORPH_SHAPE: Final[int] = 0x2e
+    DEFINE_FONT2: Final[int] = 0x30
+    EXPORT_ASSETS: Final[int] = 0x38
+    IMPORT_ASSETS: Final[int] = 0x39
+    DO_INIT_ACTION: Final[int] = 0x3b
+    DEFINE_VIDEO_STREAM: Final[int] = 0x3c
+    VIDEO_FRAME: Final[int] = 0x3d
+    DEFINE_FONT_INFO2: Final[int] = 0x3e
+    ENABLE_DEBUGGER2: Final[int] = 0x40
+    SCRIPT_LIMITS: Final[int] = 0x41
+    SET_TAB_INDEX: Final[int] = 0x42
+    PLACE_OBJECT3: Final[int] = 0x46
+    IMPORT_ASSETS2: Final[int] = 0x47
+    DEFINE_FONT3: Final[int] = 0x4b
+    METADATA: Final[int] = 0x4d
+    DEFINE_SCALING_GRID: Final[int] = 0x4e
+    DEFINE_SHAPE4: Final[int] = 0x53
+    DEFINE_MORPH_SHAPE2: Final[int] = 0x54
+    SCENE_LABEL: Final[int] = 0x56
+    AFP_IMAGE: Final[int] = 0x64
+    AFP_DEFINE_SOUND: Final[int] = 0x65
+    AFP_SOUND_STREAM_BLOCK: Final[int] = 0x66
+    AFP_DEFINE_FONT: Final[int] = 0x67
+    AFP_DEFINE_SHAPE: Final[int] = 0x68
+    AEP_PLACE_OBJECT: Final[int] = 0x6e
+    AP2_DEFINE_FONT: Final[int] = 0x78
+    AP2_DEFINE_SPRITE: Final[int] = 0x79
+    AP2_DO_ACTION: Final[int] = 0x7a
+    AP2_DEFINE_BUTTON: Final[int] = 0x7b
+    AP2_DEFINE_BUTTON_SOUND: Final[int] = 0x7c
+    AP2_DEFINE_TEXT: Final[int] = 0x7d
+    AP2_DEFINE_EDIT_TEXT: Final[int] = 0x7e
+    AP2_PLACE_OBJECT: Final[int] = 0x7f
+    AP2_REMOVE_OBJECT: Final[int] = 0x80
+    AP2_START_SOUND: Final[int] = 0x81
+    AP2_DEFINE_MORPH_SHAPE: Final[int] = 0x82
+    AP2_IMAGE: Final[int] = 0x83
+    AP2_SHAPE: Final[int] = 0x84
+    AP2_SOUND: Final[int] = 0x85
+    AP2_VIDEO: Final[int] = 0x86
+    AP2_PLACE_CAMERA: Final[int] = 0x88
+    AP2_SCALING_GRID: Final[int] = 0x89
 
     @classmethod
     def tag_to_name(cls, tagid: int) -> str:
@@ -292,61 +292,61 @@ class AP2Tag:
 
 class AP2Action:
     # End bytecode processing
-    END = 0
+    END: Final[int] = 0
 
     # Advance movieclip to next frame.
-    NEXT_FRAME = 1
+    NEXT_FRAME: Final[int] = 1
 
     # Rewind movieclip to previous frame.
-    PREVIOUS_FRAME = 2
+    PREVIOUS_FRAME: Final[int] = 2
 
     # Play the movieclip.
-    PLAY = 3
+    PLAY: Final[int] = 3
 
     # Stop the movieclip.
-    STOP = 4
+    STOP: Final[int] = 4
 
     # Stop all sound from the movie clip.
-    STOP_SOUND = 5
+    STOP_SOUND: Final[int] = 5
 
     # Pop two objects from the stack, subtract them, push the result to the stack.
-    SUBTRACT = 7
+    SUBTRACT: Final[int] = 7
 
     # Pop two objects from the stack, multiply them, push the result to the stack.
-    MULTIPLY = 8
+    MULTIPLY: Final[int] = 8
 
     # Pop two objects from the stack, divide them, push the result to the stack.
-    DIVIDE = 9
+    DIVIDE: Final[int] = 9
 
     # Pop an object from the stack, boolean negate it, push the result to the stack.
-    NOT = 12
+    NOT: Final[int] = 12
 
     # Pop an object from the stack, discard it.
-    POP = 13
+    POP: Final[int] = 13
 
     # Pop an object off the stack, use that as a string to look up a variable, push
     # that variable's value onto the stack.
-    GET_VARIABLE = 14
+    GET_VARIABLE: Final[int] = 14
 
     # Pop two objects from the stack, if the second object is a string or const, define a
     # variable with that name equal to the first object.
-    SET_VARIABLE = 15
+    SET_VARIABLE: Final[int] = 15
 
     # Similar to GET_MEMBER, but the member value is an integer in the range 0x0-0x15 which
     # gets added to 0x100 and looked up in StringConstants.
-    GET_PROPERTY = 16
+    GET_PROPERTY: Final[int] = 16
 
     # Similar to SET_MEMBER in exactly the same way GET_PROPERTY is similar to GET_MEMBER.
-    SET_PROPERTY = 17
+    SET_PROPERTY: Final[int] = 17
 
     # Clone a sprite that's specified on the stack.
-    CLONE_SPRITE = 18
+    CLONE_SPRITE: Final[int] = 18
 
     # Remove a sprite as specified on the stack.
-    REMOVE_SPRITE = 19
+    REMOVE_SPRITE: Final[int] = 19
 
     # Print a trace of the current object on the stack, and pop it.
-    TRACE = 20
+    TRACE: Final[int] = 20
 
     # Start dragging an object. It pops a value from the stack to set as the drag target.
     # It pops a second boolean value from the stack to specify if the drag target should be
@@ -354,151 +354,151 @@ class AP2Action:
     # as a rectangle to constrain the mouse if the opcode is > 0, that we don't constrain
     # at all if the opcode is 0, or that we pop another boolean from the stack and constrain
     # if that value is true.
-    START_DRAG = 21
+    START_DRAG: Final[int] = 21
 
     # End dragging the current drag target that was started with START_DRAG.
-    END_DRAG = 22
+    END_DRAG: Final[int] = 22
 
     # Pop an object from the stack and throw it as an exception.
-    THROW = 23
+    THROW: Final[int] = 23
 
     # Pop an object from the stack, and an object representing a class. If the first
     # object is an instance of the class, push it back. Otherwise, push back a null.
-    CAST_OP = 24
+    CAST_OP: Final[int] = 24
 
     # Unclear exactly what this does on the stack, the implementation seems wrong.
-    IMPLEMENTS_OP = 25
+    IMPLEMENTS_OP: Final[int] = 25
 
     # Get the current playback position as an integer number of milliseconds, pushed to the stack.
-    GET_TIME = 26
+    GET_TIME: Final[int] = 26
 
     # Pops two values from the stack to look up what to delete.
-    DELETE = 27
+    DELETE: Final[int] = 27
 
     # Delete a variable as defined on the stack. Pops that variable name.
-    DELETE2 = 28
+    DELETE2: Final[int] = 28
 
     # Pop two objects from the stack, and then define a local variable just like "SET_VARIABLE"
     # but in the scope of the current movieclip or function.
-    DEFINE_LOCAL = 29
+    DEFINE_LOCAL: Final[int] = 29
 
     # Call a function. Similar to CALL_METHOD but with only one pop for the function name.
-    CALL_FUNCTION = 30
+    CALL_FUNCTION: Final[int] = 30
 
     # Return the top of the stack as the return value of the function.
-    RETURN = 31
+    RETURN: Final[int] = 31
 
     # Pop two numbers, modulo them, push them back to the stack.
-    MODULO = 32
+    MODULO: Final[int] = 32
 
     # Create a new object, I haven't figured out what it pushes and pops from the stack yet.
-    NEW_OBJECT = 33
+    NEW_OBJECT: Final[int] = 33
 
     # Define a variable in the local movieclip or function, without a value.
-    DEFINE_LOCAL2 = 34
+    DEFINE_LOCAL2: Final[int] = 34
 
     # Init an array from the stack. Pops the array's number of items, and then an item each
     # to add to the array. Then it adds the array to the stack.
-    INIT_ARRAY = 35
+    INIT_ARRAY: Final[int] = 35
 
     # Init an object from the stack.
-    INIT_OBJECT = 36
+    INIT_OBJECT: Final[int] = 36
 
     # Pop an object off the stack, push the type of the object as a string.
-    TYPEOF = 37
+    TYPEOF: Final[int] = 37
 
     # Pop an item off the stack, and if it is a movieclip, push the string path. If it isn't
     # a movieclip, push an undefined object onto the stack.
-    TARGET_PATH = 38
+    TARGET_PATH: Final[int] = 38
 
     # Add two values on the stack, popping them and pushing the result.
-    ADD2 = 39
+    ADD2: Final[int] = 39
 
     # Pops two values from the stack, and pushes a boolean representing whether one is less than
     # the other. If they cannot be compared, pushes an "Undefined" object onto the stack instead.
-    LESS2 = 40
+    LESS2: Final[int] = 40
 
     # Pop two objects from the stack, get their string equivalent, and push a boolean onto the
     # stack if those strings match.
-    EQUALS2 = 41
+    EQUALS2: Final[int] = 41
 
     # Pops the top of the stack, converts it to an integer object, and pushes it. If it can't
     # convert, instead pushes a "NaN" object.
-    TO_NUMBER = 42
+    TO_NUMBER: Final[int] = 42
 
     # Pops the top of the stack, converts the object to its string equivalent, and pushes it.
-    TO_STRING = 43
+    TO_STRING: Final[int] = 43
 
     # Takes the top of the stack and duplicates the object before pushing that object to the stack.
-    PUSH_DUPLICATE = 44
+    PUSH_DUPLICATE: Final[int] = 44
 
     # Swaps the position of the two two objects on the stack. If there isn't enough to swap, does
     # nothing.
-    STACK_SWAP = 45
+    STACK_SWAP: Final[int] = 45
 
     # Get a member value and place it on the stack.
-    GET_MEMBER = 46
+    GET_MEMBER: Final[int] = 46
 
     # Set member, popping three values from the stack.
-    SET_MEMBER = 47
+    SET_MEMBER: Final[int] = 47
 
     # Increment value on stack.
-    INCREMENT = 48
+    INCREMENT: Final[int] = 48
 
     # Decrement value on stack.
-    DECREMENT = 49
+    DECREMENT: Final[int] = 49
 
     # Call method. Pops two values from the stack to lookup an object method, another value from the
     # stack for the number of params, and then that many values from the stack as function parameters.
-    CALL_METHOD = 50
+    CALL_METHOD: Final[int] = 50
 
     # Takes at least 3 objects on the stack, the third being the number of parameters, the second being
     # the object to add a method to and the first being the member name.
-    NEW_METHOD = 51
+    NEW_METHOD: Final[int] = 51
 
     # Takes two objects, pops them off the stack and adds a boolean object to the stack set to true
     # if one is an instance of the other or false otherwise.
-    INSTANCEOF = 52
+    INSTANCEOF: Final[int] = 52
 
     # Enumerates some sort of object into a variable on the top of the stack.
-    ENUMERATE2 = 53
+    ENUMERATE2: Final[int] = 53
 
     # Pop two values from the stack, bitwise and them, push the result.
-    BIT_AND = 54
+    BIT_AND: Final[int] = 54
 
     # Pop two values from the stack, bitwise or them, push the result.
-    BIT_OR = 55
+    BIT_OR: Final[int] = 55
 
     # Pop two values from the stack, bitwise xor them, push the result.
-    BIT_XOR = 56
+    BIT_XOR: Final[int] = 56
 
     # Pop the amount to left shift, and an integer from the stack, push the result.
-    BIT_L_SHIFT = 57
+    BIT_L_SHIFT: Final[int] = 57
 
     # Pop the amount to right shift, and an integer from the stack, push the result.
-    BIT_R_SHIFT = 58
+    BIT_R_SHIFT: Final[int] = 58
 
     # Same as above but unsigned. It appears that games implement this identically to BIT_U_R_SHIFT.
-    BIT_U_R_SHIFT = 59
+    BIT_U_R_SHIFT: Final[int] = 59
 
     # Pop two values from the stack, push a boolean set to true if the values are strictly equal.
-    STRICT_EQUALS = 60
+    STRICT_EQUALS: Final[int] = 60
 
     # Pop two objects off the stack, push a boolean object for whether the first object is greater tha
     # the second or not.
-    GREATER = 61
+    GREATER: Final[int] = 61
 
     # Pops two objects off the stack and does some sort of OOP with them, the first being the superclass
     # and the second being the subclass.
-    EXTENDS = 62
+    EXTENDS: Final[int] = 62
 
     # Pop a value from the stack and store it in a register specified by the opcode param. Also push
     # it back onto the stack.
-    STORE_REGISTER = 63
+    STORE_REGISTER: Final[int] = 63
 
     # Define a function based on parameters on the stack. This reads the next 9 bytes of the bytecode
     # as parameters, and uses that to read the next N bytes of bytecode as the function definition.
-    DEFINE_FUNCTION2 = 64
+    DEFINE_FUNCTION2: Final[int] = 64
 
     # Grabs a 16 bit offset pointer as the opcode param, then skips bytecode processing forward
     # that many bytes, passing the skipped bytes as pointer data to a function that adds it to the
@@ -506,52 +506,52 @@ class AP2Action:
     # second new stack entry. Strangely enough, if the object on the top of the stack doesn't meet
     # some criteria, the skipped bytes are processed as bytecode. I am not sure what the hell is going
     # on here.
-    WITH = 66
+    WITH: Final[int] = 66
 
     # Push an object onto the stack. Creates objects based on the bytecode parameters and pushes
     # them onto the stack.
-    PUSH = 67
+    PUSH: Final[int] = 67
 
     # Unconditional jump based on bytecode value.
-    JUMP = 68
+    JUMP: Final[int] = 68
 
     # Gets a single 8-bit integer as an opcode param, take the top two bits of that param as the
     # action to take. Looks like it is similar to SWF GET_URL2 action. Supported actions are 0,
     # 1 and 3. It pops two objects from the stack to perform against.
-    GET_URL2 = 69
+    GET_URL2: Final[int] = 69
 
     # Pops a value from the stack, jumps to offset from opcode params if value is truthy.
-    IF = 70
+    IF: Final[int] = 70
 
     # Go to frame specified by top of stack, popping that value from the stack. Also specifies
     # flags for whether to play or stop when going to that frame, and additional frames to advance
     # in opcode params.
-    GOTO_FRAME2 = 71
+    GOTO_FRAME2: Final[int] = 71
 
     # Pops the top of the stack, uses that to get a target, pushes a pointer to that target on
     # the stack.
-    GET_TARGET = 72
+    GET_TARGET: Final[int] = 72
 
     # Given a subtype of check and a positive offset to jump to on true, perform a conditional check.
     # Pops two values from the stack for all equality checks except for undefined checks, which pop
     # one value.
-    IF2 = 73
+    IF2: Final[int] = 73
 
     # Similar to STORE_REGISTER but does not preserve the value on the stack afterwards.
-    STORE_REGISTER2 = 74
+    STORE_REGISTER2: Final[int] = 74
 
     # Take one opcode parameter for the number of registers to init, and then one opcode parameter
     # per the number of registers param as the register number to init, initializing that register
     # as an "Undefined" object.
-    INIT_REGISTER = 75
+    INIT_REGISTER: Final[int] = 75
 
     # Similar to ADD_NUM_VARIABLE, but operating on a register number instead of the stack. Takes
     # two params from opcodes, one for the register number and one for the addition value.
-    ADD_NUM_REGISTER = 76
+    ADD_NUM_REGISTER: Final[int] = 76
 
     # Add a number dictated by an opcode param to the variable on the stack, popping the variable
     # name.
-    ADD_NUM_VARIABLE = 77
+    ADD_NUM_VARIABLE: Final[int] = 77
 
     @classmethod
     def action_to_name(cls, actionid: int) -> str:
@@ -805,20 +805,20 @@ class StoreRegisterAction(AP2Action):
 
 
 class IfAction(AP2Action):
-    EQUALS = 0
-    NOT_EQUALS = 1
-    LT = 2
-    GT = 3
-    LT_EQUALS = 4
-    GT_EQUALS = 5
-    IS_FALSE = 6
-    BITAND = 7
-    NOT_BITAND = 8
-    STRICT_EQUALS = 9
-    STRICT_NOT_EQUALS = 10
-    IS_UNDEFINED = 11
-    IS_NOT_UNDEFINED = 12
-    IS_TRUE = 1000
+    COMP_EQUALS: Final[int] = 0
+    COMP_NOT_EQUALS: Final[int] = 1
+    COMP_LT: Final[int] = 2
+    COMP_GT: Final[int] = 3
+    COMP_LT_EQUALS: Final[int] = 4
+    COMP_GT_EQUALS: Final[int] = 5
+    COMP_IS_FALSE: Final[int] = 6
+    COMP_BITAND: Final[int] = 7
+    COMP_NOT_BITAND: Final[int] = 8
+    COMP_STRICT_EQUALS: Final[int] = 9
+    COMP_STRICT_NOT_EQUALS: Final[int] = 10
+    COMP_IS_UNDEFINED: Final[int] = 11
+    COMP_IS_NOT_UNDEFINED: Final[int] = 12
+    COMP_IS_TRUE: Final[int] = 1000
 
     def __init__(self, offset: int, comparison: int, jump_if_true_offset: int) -> None:
         super().__init__(offset, AP2Action.IF)
@@ -828,20 +828,20 @@ class IfAction(AP2Action):
     @classmethod
     def comparison_to_str(cls, comparison: int) -> str:
         return {
-            cls.EQUALS: "==",
-            cls.NOT_EQUALS: "!=",
-            cls.LT: "<",
-            cls.GT: ">",
-            cls.LT_EQUALS: "<=",
-            cls.GT_EQUALS: ">=",
-            cls.IS_FALSE: "IS FALSE",
-            cls.BITAND: "BITAND",
-            cls.NOT_BITAND: "BITNOTAND",
-            cls.STRICT_EQUALS: "STRICT ==",
-            cls.STRICT_NOT_EQUALS: "STRICT !=",
-            cls.IS_UNDEFINED: "IS UNDEFINED",
-            cls.IS_NOT_UNDEFINED: "IS NOT UNDEFINED",
-            cls.IS_TRUE: "IS TRUE",
+            cls.COMP_EQUALS: "==",
+            cls.COMP_NOT_EQUALS: "!=",
+            cls.COMP_LT: "<",
+            cls.COMP_GT: ">",
+            cls.COMP_LT_EQUALS: "<=",
+            cls.COMP_GT_EQUALS: ">=",
+            cls.COMP_IS_FALSE: "IS FALSE",
+            cls.COMP_BITAND: "BITAND",
+            cls.COMP_NOT_BITAND: "BITNOTAND",
+            cls.COMP_STRICT_EQUALS: "STRICT ==",
+            cls.COMP_STRICT_NOT_EQUALS: "STRICT !=",
+            cls.COMP_IS_UNDEFINED: "IS UNDEFINED",
+            cls.COMP_IS_NOT_UNDEFINED: "IS NOT UNDEFINED",
+            cls.COMP_IS_TRUE: "IS TRUE",
         }[comparison]
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:

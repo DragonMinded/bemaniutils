@@ -284,7 +284,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_FALSE, 103),
+            IfAction(101, IfAction.COMP_IS_FALSE, 103),
             # False case (fall through from if).
             AP2Action(102, AP2Action.PLAY),
             # Line after the if statement.
@@ -313,7 +313,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_FALSE, 103),
+            IfAction(101, IfAction.COMP_IS_FALSE, 103),
             # False case (fall through from if).
             AP2Action(102, AP2Action.PLAY),
             # Some code will jump to the end offset as a way of
@@ -339,7 +339,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             AP2Action(102, AP2Action.STOP),
             JumpAction(103, 105),
@@ -374,7 +374,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             AP2Action(102, AP2Action.STOP),
             JumpAction(103, 105),
@@ -404,7 +404,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             PushAction(102, ['b']),
             AP2Action(103, AP2Action.RETURN),
@@ -435,21 +435,21 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the first if statement.
             PushAction(100, [Register(0), 1]),
-            IfAction(101, IfAction.NOT_EQUALS, 104),
+            IfAction(101, IfAction.COMP_NOT_EQUALS, 104),
             # False case (fall through from if).
             PushAction(102, ['a']),
             JumpAction(103, 113),
 
             # Beginning of the second if statement.
             PushAction(104, [Register(0), 2]),
-            IfAction(105, IfAction.NOT_EQUALS, 108),
+            IfAction(105, IfAction.COMP_NOT_EQUALS, 108),
             # False case (fall through from if).
             PushAction(106, ['b']),
             JumpAction(107, 113),
 
             # Beginning of the third if statement.
             PushAction(108, [Register(0), 3]),
-            IfAction(109, IfAction.NOT_EQUALS, 112),
+            IfAction(109, IfAction.COMP_NOT_EQUALS, 112),
             # False case (fall through from if).
             PushAction(110, ['c']),
             JumpAction(111, 113),
@@ -498,7 +498,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             PushAction(102, ['b']),
             AP2Action(103, AP2Action.END),
@@ -614,7 +614,7 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_FALSE, 103),
+            IfAction(101, IfAction.COMP_IS_FALSE, 103),
             # False case (fall through from if).
             AP2Action(102, AP2Action.PLAY),
             # Line after the if statement.
@@ -628,7 +628,7 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_FALSE, 103),
+            IfAction(101, IfAction.COMP_IS_FALSE, 103),
             # False case (fall through from if).
             AP2Action(102, AP2Action.PLAY),
             # Some code will jump to the end offset as a way of
@@ -642,7 +642,7 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             AP2Action(102, AP2Action.STOP),
             JumpAction(103, 105),
@@ -661,7 +661,7 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             AP2Action(102, AP2Action.STOP),
             JumpAction(103, 105),
@@ -678,7 +678,7 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             PushAction(102, ['b']),
             AP2Action(103, AP2Action.RETURN),
@@ -696,21 +696,21 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the first if statement.
             PushAction(100, [Register(0), 1]),
-            IfAction(101, IfAction.NOT_EQUALS, 104),
+            IfAction(101, IfAction.COMP_NOT_EQUALS, 104),
             # False case (fall through from if).
             PushAction(102, ['a']),
             JumpAction(103, 113),
 
             # Beginning of the second if statement.
             PushAction(104, [Register(0), 2]),
-            IfAction(105, IfAction.NOT_EQUALS, 108),
+            IfAction(105, IfAction.COMP_NOT_EQUALS, 108),
             # False case (fall through from if).
             PushAction(106, ['b']),
             JumpAction(107, 113),
 
             # Beginning of the third if statement.
             PushAction(108, [Register(0), 3]),
-            IfAction(109, IfAction.NOT_EQUALS, 112),
+            IfAction(109, IfAction.COMP_NOT_EQUALS, 112),
             # False case (fall through from if).
             PushAction(110, ['c']),
             JumpAction(111, 113),
@@ -746,7 +746,7 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the if statement.
             PushAction(100, [True]),
-            IfAction(101, IfAction.IS_TRUE, 104),
+            IfAction(101, IfAction.COMP_IS_TRUE, 104),
             # False case (fall through from if).
             AP2Action(102, AP2Action.STOP),
             AP2Action(103, AP2Action.END),
@@ -764,10 +764,10 @@ class TestAFPDecompile(ExtendedTestCase):
         bytecode = self.__make_bytecode([
             # Beginning of the first if statement.
             PushAction(100, [Register(0), 1]),
-            IfAction(101, IfAction.EQUALS, 104),
+            IfAction(101, IfAction.COMP_EQUALS, 104),
             # False case (circuit not broken, register is not equal to 1)
             PushAction(102, [Register(0), 2]),
-            IfAction(103, IfAction.NOT_EQUALS, 106),
+            IfAction(103, IfAction.COMP_NOT_EQUALS, 106),
             # This is the true case
             AP2Action(104, AP2Action.PLAY),
             JumpAction(105, 107),
@@ -801,7 +801,7 @@ class TestAFPDecompile(ExtendedTestCase):
             # Check exit condition.
             PushAction(102, ["finished"]),
             AP2Action(103, AP2Action.GET_VARIABLE),
-            IfAction(104, IfAction.IS_TRUE, 107),
+            IfAction(104, IfAction.COMP_IS_TRUE, 107),
             # Loop code.
             AP2Action(105, AP2Action.NEXT_FRAME),
             # Loop finished jump back to beginning.
@@ -826,11 +826,11 @@ class TestAFPDecompile(ExtendedTestCase):
             # Check exit condition.
             PushAction(102, ["finished"]),
             AP2Action(103, AP2Action.GET_VARIABLE),
-            IfAction(104, IfAction.IS_TRUE, 112),
+            IfAction(104, IfAction.COMP_IS_TRUE, 112),
             # Loop code with a continue statement.
             PushAction(105, ["some_condition"]),
             AP2Action(106, AP2Action.GET_VARIABLE),
-            IfAction(107, IfAction.IS_FALSE, 110),
+            IfAction(107, IfAction.COMP_IS_FALSE, 110),
             AP2Action(108, AP2Action.NEXT_FRAME),
             # Continue statement.
             JumpAction(109, 102),
@@ -862,7 +862,7 @@ class TestAFPDecompile(ExtendedTestCase):
             # Check exit condition.
             PushAction(102, [10, "i"]),
             AP2Action(103, AP2Action.GET_VARIABLE),
-            IfAction(104, IfAction.LT_EQUALS, 109),
+            IfAction(104, IfAction.COMP_LT_EQUALS, 109),
             # Loop code.
             AP2Action(105, AP2Action.NEXT_FRAME),
             # Increment, also the continue point.
@@ -889,11 +889,11 @@ class TestAFPDecompile(ExtendedTestCase):
             # Check exit condition.
             PushAction(102, [10, "i"]),
             AP2Action(103, AP2Action.GET_VARIABLE),
-            IfAction(104, IfAction.LT_EQUALS, 115),
+            IfAction(104, IfAction.COMP_LT_EQUALS, 115),
             # Loop code with a continue statement.
             PushAction(105, ["some_condition"]),
             AP2Action(106, AP2Action.GET_VARIABLE),
-            IfAction(107, IfAction.IS_FALSE, 110),
+            IfAction(107, IfAction.COMP_IS_FALSE, 110),
             AP2Action(108, AP2Action.NEXT_FRAME),
             # Continue statement.
             JumpAction(109, 112),

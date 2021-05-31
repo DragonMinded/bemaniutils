@@ -95,6 +95,8 @@ class IFS:
             elif child.name == "_super_":
                 super_name = child.value
                 super_md5 = child.child_value('md5')
+                if not isinstance(super_name, str) or not isinstance(super_md5, bytes):
+                    raise Exception(f'Super definition {child} has invalid data!')
                 supers.append((super_name, super_md5))
 
         def get_children(parent: str, node: Node) -> None:
@@ -159,6 +161,7 @@ class IFS:
                 if texdata is None:
                     # Now, try as XML
                     xenc = XmlEncoding()
+                    encoding = "ascii"
                     texdata = xenc.decode(
                         b'<?xml encoding="ascii"?>' +
                         self.__files[filename]
@@ -166,6 +169,10 @@ class IFS:
 
                     if texdata is None:
                         continue
+                else:
+                    if benc.encoding is None:
+                        raise Exception("Logic error, expected an encoding from binary decoder!")
+                    encoding = benc.encoding
 
                 if texdata.name != 'texturelist':
                     raise Exception(f"Unexpected name {texdata.name} in texture list!")
@@ -180,13 +187,18 @@ class IFS:
                         continue
 
                     textfmt = child.attribute('format')
+                    if textfmt is None:
+                        raise Exception(f"Texture {child} has no texture format!")
 
                     for subchild in child.children:
                         if subchild.name != 'image':
                             continue
-                        md5sum = hashlib.md5(subchild.attribute('name').encode(benc.encoding)).hexdigest()
+                        name = subchild.attribute('name')
+                        if name is None:
+                            raise Exception(f"Texture entry {subchild} has no name!")
+                        md5sum = hashlib.md5(name.encode(encoding)).hexdigest()
                         oldname = os.path.join(texdir, md5sum)
-                        newname = os.path.join(texdir, subchild.attribute('name'))
+                        newname = os.path.join(texdir, name)
 
                         if oldname in self.__files:
                             supported = False
@@ -236,6 +248,7 @@ class IFS:
                 if afpdata is None:
                     # Now, try as XML
                     xenc = XmlEncoding()
+                    encoding = 'ascii'
                     afpdata = xenc.decode(
                         b'<?xml encoding="ascii"?>' +
                         self.__files[filename]
@@ -243,6 +256,10 @@ class IFS:
 
                     if afpdata is None:
                         continue
+                else:
+                    if benc.encoding is None:
+                        raise Exception("Logic error, expected an encoding from binary decoder!")
+                    encoding = benc.encoding
 
                 if afpdata.name != 'afplist':
                     raise Exception(f"Unexpected name {afpdata.name} in afp list!")
@@ -253,7 +270,9 @@ class IFS:
 
                     # First, fix up the afp files themselves.
                     name = child.attribute('name')
-                    md5sum = hashlib.md5(name.encode(benc.encoding)).hexdigest()
+                    if name is None:
+                        raise Exception("AFP entry {child} has no name!")
+                    md5sum = hashlib.md5(name.encode(encoding)).hexdigest()
 
                     for fixdir in [afpdir, bsidir]:
                         oldname = os.path.join(fixdir, md5sum)
@@ -270,7 +289,7 @@ class IFS:
                     if geodata is not None:
                         for geoid in geodata:
                             geoname = f"{name}_shape{geoid}"
-                            md5sum = hashlib.md5(geoname.encode(benc.encoding)).hexdigest()
+                            md5sum = hashlib.md5(geoname.encode(encoding)).hexdigest()
 
                             oldname = os.path.join(geodir, md5sum)
                             newname = os.path.join(geodir, geoname)

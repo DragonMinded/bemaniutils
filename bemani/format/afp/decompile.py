@@ -683,6 +683,8 @@ class ByteCodeDecompiler(VerboseOutput):
             if not chunk.next_chunks:
                 num_end_chunks += 1
             if not chunk.previous_chunks:
+                if bytecode.start_offset is None:
+                    raise Exception("Logic error, expected a start offset for bytecode chunk, we shouldn't be decompiling empty bytecode!")
                 if chunk.id != offset_to_id[bytecode.start_offset]:
                     raise Exception(f"Start of graph found at ID {chunk.id} but expected to be {offset_to_id[bytecode.start_offset]}!")
                 num_start_chunks += 1
@@ -871,7 +873,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                     chunk.actions[-1] = IntermediateIf(
                         cast(IfAction, last_action),
-                        [true_action],
+                        [true_action] if true_action else [],
                         [false_action] if false_action else [],
                     )
 
@@ -1120,7 +1122,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         if true_action or false_action:
                             chunk.actions[-1] = IntermediateIf(
                                 cast(IfAction, last_action),
-                                [true_action],
+                                [true_action] if true_action else [],
                                 [false_action] if false_action else [],
                             )
 
@@ -1540,40 +1542,40 @@ class ByteCodeDecompiler(VerboseOutput):
         # into the spot where they were called since we know that they aren't used.
 
         def make_if_expr(action: IfAction) -> IfExpr:
-            if action.comparison in [IfAction.IS_UNDEFINED, IfAction.IS_NOT_UNDEFINED]:
+            if action.comparison in [IfAction.COMP_IS_UNDEFINED, IfAction.COMP_IS_NOT_UNDEFINED]:
                 conditional = stack.pop()
-                return IsUndefinedIf(conditional, negate=(action.comparison != IfAction.IS_UNDEFINED))
-            elif action.comparison in [IfAction.IS_TRUE, IfAction.IS_FALSE]:
+                return IsUndefinedIf(conditional, negate=(action.comparison != IfAction.COMP_IS_UNDEFINED))
+            elif action.comparison in [IfAction.COMP_IS_TRUE, IfAction.COMP_IS_FALSE]:
                 conditional = stack.pop()
-                return IsBooleanIf(conditional, negate=(action.comparison != IfAction.IS_TRUE))
+                return IsBooleanIf(conditional, negate=(action.comparison != IfAction.COMP_IS_TRUE))
             elif action.comparison in [
-                IfAction.EQUALS,
-                IfAction.NOT_EQUALS,
-                IfAction.STRICT_EQUALS,
-                IfAction.STRICT_NOT_EQUALS,
-                IfAction.LT,
-                IfAction.GT,
-                IfAction.LT_EQUALS,
-                IfAction.GT_EQUALS
+                IfAction.COMP_EQUALS,
+                IfAction.COMP_NOT_EQUALS,
+                IfAction.COMP_STRICT_EQUALS,
+                IfAction.COMP_STRICT_NOT_EQUALS,
+                IfAction.COMP_LT,
+                IfAction.COMP_GT,
+                IfAction.COMP_LT_EQUALS,
+                IfAction.COMP_GT_EQUALS
             ]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
                 comp = {
-                    IfAction.EQUALS: TwoParameterIf.EQUALS,
-                    IfAction.NOT_EQUALS: TwoParameterIf.NOT_EQUALS,
-                    IfAction.STRICT_EQUALS: TwoParameterIf.STRICT_EQUALS,
-                    IfAction.STRICT_NOT_EQUALS: TwoParameterIf.STRICT_NOT_EQUALS,
-                    IfAction.LT: TwoParameterIf.LT,
-                    IfAction.GT: TwoParameterIf.GT,
-                    IfAction.LT_EQUALS: TwoParameterIf.LT_EQUALS,
-                    IfAction.GT_EQUALS: TwoParameterIf.GT_EQUALS,
+                    IfAction.COMP_EQUALS: TwoParameterIf.EQUALS,
+                    IfAction.COMP_NOT_EQUALS: TwoParameterIf.NOT_EQUALS,
+                    IfAction.COMP_STRICT_EQUALS: TwoParameterIf.STRICT_EQUALS,
+                    IfAction.COMP_STRICT_NOT_EQUALS: TwoParameterIf.STRICT_NOT_EQUALS,
+                    IfAction.COMP_LT: TwoParameterIf.LT,
+                    IfAction.COMP_GT: TwoParameterIf.GT,
+                    IfAction.COMP_LT_EQUALS: TwoParameterIf.LT_EQUALS,
+                    IfAction.COMP_GT_EQUALS: TwoParameterIf.GT_EQUALS,
                 }[action.comparison]
 
                 return TwoParameterIf(conditional1, comp, conditional2)
-            elif action.comparison in [IfAction.BITAND, IfAction.NOT_BITAND]:
+            elif action.comparison in [IfAction.COMP_BITAND, IfAction.COMP_NOT_BITAND]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
-                comp = TwoParameterIf.NOT_EQUALS if action.comparison == IfAction.BITAND else TwoParameterIf.EQUALS
+                comp = TwoParameterIf.NOT_EQUALS if action.comparison == IfAction.COMP_BITAND else TwoParameterIf.EQUALS
 
                 return TwoParameterIf(
                     ArithmeticExpression(conditional1, "&", conditional2),
@@ -2385,10 +2387,7 @@ class ByteCodeDecompiler(VerboseOutput):
             if len(chunk.next_chunks) > 1:
                 # We've checked so this should be impossible.
                 raise Exception("Logic error!")
-            if chunk.next_chunks:
-                next_chunk_id = chunk.next_chunks[0]
-            else:
-                next_chunk_id = next_id
+            next_chunk_id = chunk.next_chunks[0] if chunk.next_chunks else next_id
 
             if isinstance(chunk, Loop):
                 # Evaluate the loop. No need to update per-chunk stacks here since we will do it in a child eval.
@@ -2470,6 +2469,8 @@ class ByteCodeDecompiler(VerboseOutput):
                             offset_map,
                         )
                     else:
+                        if next_chunk_id is None:
+                            raise Exception("Logic error, cannot reconcile stacks when next chunk is the end!")
                         reconcile_stacks(chunk.id, next_chunk_id, stack_leftovers)
 
                     false_statements: List[Statement] = []
@@ -2494,6 +2495,8 @@ class ByteCodeDecompiler(VerboseOutput):
                             offset_map,
                         )
                     else:
+                        if next_chunk_id is None:
+                            raise Exception("Logic error, cannot reconcile stacks when next chunk is the end!")
                         reconcile_stacks(chunk.id, next_chunk_id, stack_leftovers)
 
                     # Convert this IfExpr to a full-blown IfStatement.
@@ -2507,7 +2510,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     chunk = if_body_chunk
                 else:
                     # We must propagate the stack to the next entry. If it already exists we must merge it.
-                    new_next_ids: Set[int] = {next_chunk_id}
+                    new_next_ids: Set[int] = {next_chunk_id} if next_chunk_id else set()
                     if new_statements:
                         last_new_statement = new_statements[-1]
                         if isinstance(last_new_statement, GotoStatement):
@@ -2755,7 +2758,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         updated: bool = False
 
-        def remove_returns(statement: Statement) -> Statement:
+        def remove_returns(statement: Statement) -> Optional[Statement]:
             nonlocal updated
 
             for removable in returns:
@@ -2877,7 +2880,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         updated: bool = False
 
-        def remove_continues(statement: Statement) -> Statement:
+        def remove_continues(statement: Statement) -> Optional[Statement]:
             nonlocal updated
 
             for removable in continues:
@@ -2895,14 +2898,17 @@ class ByteCodeDecompiler(VerboseOutput):
             if expression.op in {"+", "-", "*", "/"}:
                 # It is, let's see if one of the two sides contains the
                 # variable we care about.
+                left = None
                 try:
                     left = object_ref(expression.left, "")
                 except Exception:
-                    left = None
+                    pass
+
+                right = None
                 try:
                     right = object_ref(expression.right, "")
                 except Exception:
-                    right = None
+                    pass
 
                 return left == variable or right == variable
         return False
@@ -2943,35 +2949,39 @@ class ByteCodeDecompiler(VerboseOutput):
                 # This is possibly a candidate, check the condition's variable usage.
                 if isinstance(possible_if.cond, IsUndefinedIf):
                     if required_variable is not None:
+                        if_variable = None
                         try:
                             if_variable = object_ref(possible_if.cond.conditional, "")
                         except Exception:
-                            if_variable = None
+                            pass
                         if required_variable != if_variable:
-                            return None
+                            return None, []
                     return possible_if.cond, possible_if.false_statements
                 elif isinstance(possible_if.cond, IsBooleanIf):
                     if required_variable is not None:
+                        if_variable = None
                         try:
                             if_variable = object_ref(possible_if.cond.conditional, "")
                         except Exception:
-                            if_variable = None
+                            pass
                         if required_variable != if_variable:
-                            return None
+                            return None, []
                     return possible_if.cond, possible_if.false_statements
                 elif isinstance(possible_if.cond, TwoParameterIf):
                     if required_variable is not None:
+                        if_variable1 = None
                         try:
                             if_variable1 = object_ref(possible_if.cond.conditional1, "")
                         except Exception:
-                            if_variable1 = None
+                            pass
                         if if_variable1 == required_variable:
                             return possible_if.cond, possible_if.false_statements
 
+                        if_variable2 = None
                         try:
                             if_variable2 = object_ref(possible_if.cond.conditional2, "")
                         except Exception:
-                            if_variable2 = None
+                            pass
                         if if_variable2 == required_variable:
                             return possible_if.cond.swap(), possible_if.false_statements
                     return possible_if.cond, possible_if.false_statements
@@ -3230,6 +3240,8 @@ class ByteCodeDecompiler(VerboseOutput):
         # First, we need to construct a control flow graph.
         self.vprint("Generating control flow graph...")
         chunks, offset_map = self.__graph_control_flow(self.bytecode)
+        if self.bytecode.start_offset is None:
+            raise Exception("Logic error, we should not be decompiling empty bytecode!")
         start_id = offset_map[self.bytecode.start_offset]
 
         # Now, compute dominators so we can locate back-refs.

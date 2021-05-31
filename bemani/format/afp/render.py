@@ -1006,16 +1006,13 @@ class AFPRenderer(VerboseOutput):
 
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
+            new_only_depths: Optional[List[int]] = None
             if only_depths is not None:
                 if renderable.depth not in only_depths:
                     if renderable.depth != -1:
                         # Not on the correct depth plane.
                         return img
                     new_only_depths = only_depths
-                else:
-                    new_only_depths = None
-            else:
-                new_only_depths = None
 
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
@@ -1062,6 +1059,8 @@ class AFPRenderer(VerboseOutput):
                         # of a rectangle, but let's assume that doesn't happen for now.
                         if len(shape.vertex_points) != 4:
                             print("WARNING: Unsupported non-rectangle shape!")
+                        if params.blend is None:
+                            raise Exception("Logic error, rectangle without a blend color!")
 
                         x_points = set(p.x for p in shape.vertex_points)
                         y_points = set(p.y for p in shape.vertex_points)
@@ -1407,10 +1406,9 @@ class AFPRenderer(VerboseOutput):
         actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
         actual_blend = 0
 
+        max_frame: Optional[int] = None
         if only_frames:
             max_frame = max(only_frames)
-        else:
-            max_frame = None
 
         # Now play the frames of the root clip.
         try:

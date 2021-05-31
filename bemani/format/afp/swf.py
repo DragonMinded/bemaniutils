@@ -101,6 +101,8 @@ class Tag:
 
 
 class AP2ShapeTag(Tag):
+    id: int
+
     def __init__(self, id: int, reference: str) -> None:
         super().__init__(id)
 
@@ -115,6 +117,8 @@ class AP2ShapeTag(Tag):
 
 
 class AP2ImageTag(Tag):
+    id: int
+
     def __init__(self, id: int, reference: str) -> None:
         super().__init__(id)
 
@@ -129,6 +133,8 @@ class AP2ImageTag(Tag):
 
 
 class AP2DefineFontTag(Tag):
+    id: int
+
     def __init__(self, id: int, fontname: str, xml_prefix: str, heights: List[int], text_indexes: List[int]) -> None:
         super().__init__(id)
 
@@ -196,6 +202,8 @@ class AP2TextLine:
 
 
 class AP2DefineMorphShapeTag(Tag):
+    id: int
+
     def __init__(self, id: int) -> None:
         # TODO: I need to figure out what morph shapes actually DO, and take the
         # values that I parsed out store them here...
@@ -208,6 +216,8 @@ class AP2DefineMorphShapeTag(Tag):
 
 
 class AP2DefineButtonTag(Tag):
+    id: int
+
     def __init__(self, id: int) -> None:
         # TODO: I need to figure out what buttons actually DO, and take the
         # values that I parsed out store them here...
@@ -232,6 +242,8 @@ class AP2PlaceCameraTag(Tag):
 
 
 class AP2DefineTextTag(Tag):
+    id: int
+
     def __init__(self, id: int, lines: List[AP2TextLine]) -> None:
         super().__init__(id)
 
@@ -356,6 +368,8 @@ class AP2RemoveObjectTag(Tag):
 
 
 class AP2DefineSpriteTag(Tag):
+    id: int
+
     def __init__(self, id: int, tags: List[Tag], frames: List[Frame], labels: Dict[str, int]) -> None:
         super().__init__(id)
 
@@ -379,6 +393,8 @@ class AP2DefineSpriteTag(Tag):
 
 
 class AP2DefineEditTextTag(Tag):
+    id: int
+
     def __init__(self, id: int, font_tag_id: int, font_height: int, rect: Rectangle, color: Color, default_text: Optional[str] = None) -> None:
         super().__init__(id)
 
@@ -892,7 +908,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 offset_ptr += 3
 
                 self.vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}")
-                actions.append(IfAction(lineno, IfAction.IS_TRUE, jump_if_true_offset))
+                actions.append(IfAction(lineno, IfAction.COMP_IS_TRUE, jump_if_true_offset))
             elif opcode == AP2Action.IF2:
                 if2_type, jump_if_true_offset = struct.unpack(">Bh", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
                 jump_if_true_offset += (lineno + 4)
@@ -2327,13 +2343,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                 tag_id, frame, action_bytecode_offset, action_bytecode_length = struct.unpack("<HHII", data[item_offset:(item_offset + 12)])
                 self.add_coverage(item_offset, 12)
 
+                bytecode: Optional[ByteCode] = None
                 if action_bytecode_length != 0:
                     self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, ByteCode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
                     bytecode_data = data[(action_bytecode_offset + imported_tag_initializers_offset):(action_bytecode_offset + imported_tag_initializers_offset + action_bytecode_length)]
                     bytecode = self.__parse_bytecode(f"on_import_tag_{tag_id}", bytecode_data)
                 else:
                     self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No ByteCode Present")
-                    bytecode = None
 
                 # Add it to the frame's instructions
                 if frame >= len(self.frames):

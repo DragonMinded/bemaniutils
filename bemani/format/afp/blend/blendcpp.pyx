@@ -132,5 +132,8 @@ def affine_composite(
     if errors != 0:
         raise Exception("Error raised in C++!")
 
-    # We blitted in-place, return that.
-    return Image.frombytes('RGBA', (imgwidth, imgheight), imgbytes)
+    # We blitted in-place, return that. There seems to be a reference bug in Cython
+    # when called from compiled mypyc code, so if we don't assign to a local variable
+    # first this function appears to return None.
+    img = Image.frombytes('RGBA', (imgwidth, imgheight), imgbytes)
+    return img

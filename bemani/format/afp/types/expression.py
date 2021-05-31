@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, List, Tuple, Optional, Union
 
 if TYPE_CHECKING:
     # Circular import otherwise
@@ -48,7 +48,7 @@ class Register(Expression):
 
 
 class StringConstant(Expression):
-    __PROPERTIES: List[Tuple[int, str]] = [
+    __PROPERTIES: Final[List[Tuple[int, str]]] = [
         # Seems to be properties on every object. These also match the original
         # SWF properties up to 0x115. GET_PROPERTY and SET_PROPERTY use these
         # values to determine what to look up on an object.

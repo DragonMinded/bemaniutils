@@ -68,6 +68,8 @@ class IIDXChart:
 
     @property
     def bpm(self) -> Tuple[int, int]:
+        if self.__bpm_min is None or self.__bpm_max is None:
+            raise Exception("BPM change was not found in the chart!")
         return (self.__bpm_min, self.__bpm_max)
 
     @property

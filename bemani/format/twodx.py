@@ -43,6 +43,8 @@ class TwoDX:
 
     @property
     def name(self) -> str:
+        if self.__name is None:
+            raise Exception("Logic error, tried to get name of 2dx file before setting it or parsing file!")
         return self.__name
 
     def set_name(self, name: str) -> None:

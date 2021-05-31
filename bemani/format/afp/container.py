@@ -309,8 +309,8 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 if name_crc != TXP2File.crc32(name.encode('ascii')):
                     raise Exception(f"Name CRC failed for {name}")
 
-        for i, name in enumerate(names):
-            if name is None:
+        for i, n in enumerate(names):
+            if n is None:
                 raise Exception(f"Didn't get mapping for entry {i + 1}")
 
         for i, o in enumerate(ordering):
@@ -318,8 +318,8 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Didn't get ordering for entry {i + 1}")
 
         return PMAN(
-            entries=names,
-            ordering=ordering,
+            entries=[n for n in names if n is not None],
+            ordering=[o for o in ordering if o is not None],
             flags1=flags1,
             flags2=flags2,
             flags3=flags3,
@@ -388,6 +388,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         name = descramble_text(bytedata, self.text_obfuscated)
 
                     if name_offset != 0 and texture_offset != 0:
+                        lz_data: Optional[bytes] = None
                         if self.legacy_lz:
                             raise Exception("We don't support legacy lz mode!")
                         elif self.modern_lz:
@@ -423,7 +424,6 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             self.vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
 
                             # Just grab the raw data.
-                            lz_data = None
                             raw_data = self.data[(texture_offset + 8):(texture_offset + 8 + deflated_size)]
                             self.add_coverage(texture_offset, deflated_size + 8)
 
@@ -1440,6 +1440,8 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             bitchunks[16] = struct.pack(f"{self.endian}I", offset)
 
             # Now, encode the font information.
+            if self.fontdata is None:
+                raise Exception("Container has fontdata, but fontdata is None!")
             fontbytes = self.benc.encode(self.fontdata)
             body += struct.pack(
                 f"{self.endian}III",
