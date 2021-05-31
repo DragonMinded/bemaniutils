@@ -642,13 +642,11 @@ def render_path(
                 movie_transform=transform,
             )
         )
-        if len(images) == 0:
-            raise Exception("Did not render any frames!")
+        if len(images) > 0:
+            with open(output, "wb") as bfp:
+                images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
 
-        with open(output, "wb") as bfp:
-            images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
-
-        print(f"Wrote animation to {output}")
+            print(f"Wrote animation to {output}")
     else:
         # Write all the frames out in individual_files.
         filename = output[:-4]
