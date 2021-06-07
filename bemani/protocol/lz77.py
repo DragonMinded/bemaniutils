@@ -1,7 +1,8 @@
 import ctypes
 import os
 from collections import defaultdict
-from typing import Generator, Final, List, MutableMapping, Optional, Set, Tuple
+from typing import Generator, List, MutableMapping, Optional, Set, Tuple
+from typing_extensions import Final
 
 from .. import package_root
 
