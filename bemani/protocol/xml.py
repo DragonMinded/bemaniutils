@@ -1,6 +1,7 @@
 import copy
 import struct
-from typing import Any, Dict, Final, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing_extensions import Final
 
 from bemani.protocol.stream import InputStream
 from bemani.protocol.node import Node

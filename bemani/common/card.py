@@ -1,4 +1,5 @@
-from typing import Dict, Final, List
+from typing import Dict, List
+from typing_extensions import Final
 
 
 class CardCipherException(Exception):

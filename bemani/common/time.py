@@ -2,7 +2,8 @@ import calendar
 import datetime
 from dateutil import tz
 
-from typing import List, Final, Optional
+from typing import List, Optional
+from typing_extensions import Final
 
 
 class Time:

@@ -1,5 +1,6 @@
 import os
-from typing import Any, Final, List, Sequence, Union
+from typing import Any, List, Sequence, Union
+from typing_extensions import Final
 
 from .expression import (
     Expression,

@@ -1,5 +1,6 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Final, List, Tuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Optional, Union
+from typing_extensions import Final
 
 if TYPE_CHECKING:
     # Circular import otherwise

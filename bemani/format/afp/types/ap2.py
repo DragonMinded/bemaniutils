@@ -1,5 +1,6 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Final, List, Set, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Optional
+from typing_extensions import Final
 
 from .expression import Register
 

@@ -1,6 +1,7 @@
 import binascii
 import hashlib
-from typing import Final, Optional
+from typing import Optional
+from typing_extensions import Final
 
 from bemani.protocol.lz77 import Lz77
 from bemani.protocol.binary import BinaryEncoding

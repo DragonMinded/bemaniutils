@@ -1,7 +1,7 @@
 import copy
 import struct
-from typing import Any, Dict, Final, List, Optional, Union
-
+from typing import Any, Dict, List, Optional, Union
+from typing_extensions import Final
 
 # Hack to get around mypy's lack of scoping on types.
 _renamed_float = float
