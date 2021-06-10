@@ -7,6 +7,12 @@ Requests
 mysqlclient
 passlib
 mypy
+typing-extensions
+types-python-dateutil
+types-requests
+types-PyYAML
+types-Werkzeug
+types-Flask
 flake8
 typed-ast
 freezegun

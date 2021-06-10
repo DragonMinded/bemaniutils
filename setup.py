@@ -168,7 +168,7 @@ class CleanExtCommand(Command):
     def run(self) -> None:
         print("Removing build directory...")
         shutil.rmtree(os.path.abspath("build/"), ignore_errors=True)
-        for dirname, subdirList, fileList in os.walk(os.path.abspath("bemani/")):
+        for dirname, subdirList, fileList in os.walk(os.path.abspath(".")):
             for filename in fileList:
                 if filename[-3:] == ".so":
                     fullname = os.path.join(dirname, filename)
