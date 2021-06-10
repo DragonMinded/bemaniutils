@@ -879,27 +879,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.add_child(extra_boss_event)
         extra_boss_event.set_attribute('phase', '2')
 
-        expert = Node.void('expert')
-        root.add_child(expert)
-        expert.set_attribute('phase', '1')
-
-        expert_random_select = Node.void('expert_random_secret')
-        root.add_child(expert_random_select)
-        expert_random_select.set_attribute('phase', '1')
-
-        expert_full = Node.void('expert_secret_full_open')
-        root.add_child(expert_full)
-
-        # some new nodes for rootage
-
-        system_voice = Node.void('system_voice_phase')
-        root.add_child(system_voice)
-        system_voice.set_attribute('phase', '1')
-
-        anniv20 = Node.void('anniv20_phase')
-        root.add_child(anniv20)
-        anniv20.set_attribute('phase', '1')
-
         return root
 
     def handle_IIDX26pc_delete_request(self, request: Node) -> Node:
