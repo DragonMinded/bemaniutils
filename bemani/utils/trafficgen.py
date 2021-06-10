@@ -10,6 +10,8 @@ from bemani.client.iidx import (
     IIDXPendualClient,
     IIDXCopulaClient,
     IIDXSinobuzClient,
+    IIDXCannonBallersClient,
+    IIDXRootageClient,
 )
 from bemani.client.jubeat import (
     JubeatSaucerClient,
@@ -118,6 +120,18 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
         )
     if game == 'jubeat-clan':
         return JubeatClanClient(
+            proto,
+            pcbid,
+            config,
+        )
+    if game == 'iidx-rootage':
+        return IIDXRootageClient(
+            proto,
+            pcbid,
+            config,
+        )
+    if game == 'iidx-cannonballers':
+        return IIDXCannonBallersClient(
             proto,
             pcbid,
             config,
@@ -333,6 +347,16 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             'model': "L44:J:E:A:2018070901",
             'avs': "2.17.3 r8311",
         },
+        'iidx-rootage': {
+            'name': "Beatmania IIDX ROOTAGE",
+            'model': "LDJ:J:A:A:2019090200",
+            'avs': "2.17.0 r7883"
+        },
+        'iidx-cannonballers': {
+            'name': "Beatmania IIDX CANNON BALLERS",
+            'model': "LDJ:J:A:A:2018091900",
+            'avs': "2.17.0 r7883"
+        },
         'iidx-sinobuz': {
             'name': "Beatmania IIDX SINOBUZ",
             'model': "LDJ:J:A:A:2017082800",
@@ -515,6 +539,8 @@ def main() -> None:
         'iidx-22': 'iidx-pendual',
         'iidx-23': 'iidx-copula',
         'iidx-24': 'iidx-sinobuz',
+        'iidx-25': 'iidx-cannonballers',
+        'iidx-26': 'iidx-rootage',
         'jubeat-5': 'jubeat-saucer',
         'jubeat-5+': 'jubeat-saucer-fulfill',
         'jubeat-6': 'jubeat-prop',
