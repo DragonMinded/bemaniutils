@@ -396,8 +396,8 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         convention.set_attribute('clid', str(chart))
         convention.set_attribute('update_date', str(Time.now() * 1000))
 
-        # Grab all scores for each of the four songs, filter out people who haven't
-        # set us as their arcade and then return the top 20 scores (adding all 4 songs).
+        # Grab all scores for each of the four songs, filter all scores not achieved
+        # on this machine and then return the top 20 scores (adding all 4 songs).
         songids = [
             course.get_int('music_0'),
             course.get_int('music_1'),
@@ -416,6 +416,9 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             )
 
             for score in scores:
+                # Exclude scores not achieved here
+                if score[1].location != machine.id:
+                    continue
                 if score[0] not in totalscores:
                     totalscores[score[0]] = 0
                     profile = self.get_any_profile(score[0])
@@ -429,7 +432,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             [
                 (totalscores[userid], profiles[userid])
                 for userid in totalscores
-                if self.user_joined_arcade(machine, profiles[userid])
             ],
             key=lambda tup: tup[0],
             reverse=True,
@@ -694,12 +696,13 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             self.get_any_profiles([s[0] for s in all_scores])
         }
 
+        shop_id = ID.parse_machine_id(request.attribute('location_id'))
         if not global_scores:
             all_scores = [
                 score for score in all_scores
                 if (
                     score[0] == userid or
-                    self.user_joined_arcade(machine, all_players[score[0]])
+                    score[1].location == shop_id
                 )
             ]
 
@@ -775,7 +778,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
                     score for score in all_scores
                     if (
                         score[0] == userid or
-                        self.user_joined_arcade(machine, all_players[score[0]])
+                        score[1].location == shop_id
                     )
                 ]
 
@@ -805,7 +808,6 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
                 data.set_attribute('name', profile.get_str('name'))
 
                 machine_name = ''
-                shop_id = ID.parse_machine_id(request.attribute('location_id'))
                 machine = self.get_machine_by_id(shop_id)
                 if machine is not None:
                     machine_name = machine.name
