@@ -366,95 +366,8 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         return Node.void('IIDX26shop')
 
     def handle_IIDX26ranking_getranker_request(self, request: Node) -> Node:
-        root = Node.void('IIDX26ranking')
-        chart = int(request.attribute('clid'))
-        if chart not in [
-            self.CHART_TYPE_N7,
-            self.CHART_TYPE_H7,
-            self.CHART_TYPE_A7,
-            self.CHART_TYPE_N14,
-            self.CHART_TYPE_H14,
-            self.CHART_TYPE_A14,
-        ]:
-            # Chart type 6 is presumably beginner mode, but it crashes the game
-            return root
-
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
-        if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
-        else:
-            course = None
-
-        if course is None:
-            course = ValidatedDict()
-
-        if not course.get_bool('valid'):
-            # Shop course not enabled or not present
-            return root
-
-        convention = Node.void('convention')
-        root.add_child(convention)
-        convention.set_attribute('clid', str(chart))
-        convention.set_attribute('update_date', str(Time.now() * 1000))
-
-        # Grab all scores for each of the four songs, filter out people who haven't
-        # set us as their arcade and then return the top 20 scores (adding all 4 songs).
-        songids = [
-            course.get_int('music_0'),
-            course.get_int('music_1'),
-            course.get_int('music_2'),
-            course.get_int('music_3'),
-        ]
-
-        totalscores: Dict[UserID, int] = {}
-        profiles: Dict[UserID, ValidatedDict] = {}
-        for songid in songids:
-            scores = self.data.local.music.get_all_scores(
-                self.game,
-                self.music_version,
-                songid=songid,
-                songchart=chart,
-            )
-
-            for score in scores:
-                if score[0] not in totalscores:
-                    totalscores[score[0]] = 0
-                    profile = self.get_any_profile(score[0])
-                    if profile is None:
-                        profile = ValidatedDict()
-                    profiles[score[0]] = profile
-
-                totalscores[score[0]] += score[1].points
-
-        topscores = sorted(
-            [
-                (totalscores[userid], profiles[userid])
-                for userid in totalscores
-                if self.user_joined_arcade(machine, profiles[userid])
-            ],
-            key=lambda tup: tup[0],
-            reverse=True,
-        )[:20]
-
-        rank = 0
-        for topscore in topscores:
-            rank = rank + 1
-
-            detail = Node.void('detail')
-            convention.add_child(detail)
-            detail.set_attribute('name', topscore[1].get_str('name'))
-            detail.set_attribute('rank', str(rank))
-            detail.set_attribute('score', str(topscore[0]))
-            detail.set_attribute('pid', str(topscore[1].get_int('pid')))
-
-            qpro = topscore[1].get_dict('qpro')
-            detail.set_attribute('head', str(qpro.get_int('head')))
-            detail.set_attribute('hair', str(qpro.get_int('hair')))
-            detail.set_attribute('face', str(qpro.get_int('face')))
-            detail.set_attribute('body', str(qpro.get_int('body')))
-            detail.set_attribute('hand', str(qpro.get_int('hand')))
-
-        return root
+        # Expert mode is removed so do nothing
+        return Node.void('IIDX26ranking')
 
     def handle_IIDX26music_crate_request(self, request: Node) -> Node:
         root = Node.void('IIDX26music')
@@ -636,12 +549,13 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             self.get_any_profiles([s[0] for s in all_scores])
         }
 
+        shop_id = ID.parse_machine_id(request.attribute('location_id'))
         if not global_scores:
             all_scores = [
                 score for score in all_scores
                 if (
                     score[0] == userid or
-                    self.user_joined_arcade(machine, all_players[score[0]])
+                    score[1].location == shop_id
                 )
             ]
 
@@ -717,7 +631,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                     score for score in all_scores
                     if (
                         score[0] == userid or
-                        self.user_joined_arcade(machine, all_players[score[0]])
+                        score[1].location == shop_id
                     )
                 ]
 
@@ -747,7 +661,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 data.set_attribute('name', profile.get_str('name'))
 
                 machine_name = ''
-                shop_id = ID.parse_machine_id(request.attribute('location_id'))
                 machine = self.get_machine_by_id(shop_id)
                 if machine is not None:
                     machine_name = machine.name
