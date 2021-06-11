@@ -355,6 +355,9 @@ var settings_view = React.createClass({
     },
 
     renderHomeArcade: function(player) {
+        // Arcade joining is removed in Cannon Ballers so return early
+        if (this.state.version >= 25)
+            return null;
         if (!player.arcade || player.arcade == "") {
             return (
                 <LabelledSection vertical={true} label="Home Arcade">
