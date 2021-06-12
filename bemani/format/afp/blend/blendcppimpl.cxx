@@ -249,6 +249,13 @@ extern "C"
     }
 
     void chunk_composite_fast(work_t *work) {
+        // Regardless of AA work, calculate the transform matrix for determining the stride for AA pixel lookups, since it
+        // costs us almost nothing. Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
+        // minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing scaled up images
+        // a bit softer than would otherwise be achieved.
+        float xswing = 0.5 * fmax(1.0, 1.0 / sqrt(work->inverse.a * work->inverse.a + work->inverse.b * work->inverse.b));
+        float yswing = 0.5 * fmax(1.0, 1.0 / sqrt(work->inverse.c * work->inverse.c + work->inverse.d * work->inverse.d));
+
         for (unsigned int imgy = work->miny; imgy < work->maxy; imgy++) {
             for (unsigned int imgx = work->minx; imgx < work->maxx; imgx++) {
                 // Determine offset.
@@ -268,9 +275,6 @@ extern "C"
                     int b = 0;
                     int a = 0;
                     int count = 0;
-
-                    float xswing = fabs(0.5 / work->inverse.a);
-                    float yswing = fabs(0.5 / work->inverse.d);
 
                     for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
                         for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {

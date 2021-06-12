@@ -1,3 +1,4 @@
+import math
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
@@ -427,8 +428,11 @@ def pixel_renderer(
         a = 0
         count = 0
 
-        xswing = abs(0.5 / inverse.a)
-        yswing = abs(0.5 / inverse.d)
+        # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
+        # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
+        # scaled up images a bit softer than would otherwise be achieved.
+        xswing = 0.5 * max(1.0, 1.0 / math.sqrt(inverse.a * inverse.a + inverse.b * inverse.b))
+        yswing = 0.5 * max(1.0, 1.0 / math.sqrt(inverse.c * inverse.c + inverse.d * inverse.d))
 
         xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
         ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
