@@ -191,7 +191,11 @@ class PlacedClip(PlacedObject):
         return self.frame == len(self.source.frames)
 
     def __repr__(self) -> str:
-        return f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, total_frames={len(self.source.frames)}, finished={self.finished})"
+        return (
+            f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, " +
+            f"requested_frame={self.requested_frame}, total_frames={len(self.source.frames)}, playing={self.playing}, " +
+            f"finished={self.finished})"
+        )
 
     def __resolve_frame(self, frame: Any) -> Optional[int]:
         if isinstance(frame, int):
@@ -234,14 +238,13 @@ class PlacedClip(PlacedObject):
 
     @frameOffset.setter
     def frameOffset(self, val: Any) -> None:
-        if not isinstance(val, int):
-            # TODO: Technically this should also allow string labels to frames as identified in the
-            # SWF specification, but we don't support that here.
+        actual_frame = self.__resolve_frame(val)
+        if actual_frame is None:
             print(f"WARNING: Non-integer frameOffset {val} to frameOffset attribute!")
             return
-        if val < 0 or val >= len(self.source.frames):
+        if actual_frame < 0 or actual_frame >= len(self.source.frames):
             return
-        self.requested_frame = val + 1
+        self.requested_frame = actual_frame + 1
 
 
 class PlacedImage(PlacedObject):
@@ -346,8 +349,27 @@ class AEPLib:
             print(f"WARNING: Ignoring aeplib.aep_set_rect_mask call with unrecognized target {thisptr}!")
 
     def aep_set_set_frame(self, thisptr: Any, frame: Any) -> None:
-        # I have no idea what this should do, so let's ignore it.
+        # This appears to be some sort of callback that the game or other animations can use to figure out
+        # what frame of animation is currently happening. Whenever I've seen it, it is with the 'frame' set
+        # to an integer value that matches the currently rendering frame in the render loop. I think its
+        # safe to ignore this, but if we ever create animations it might be necessary to add calls to this.
         pass
+
+    def aep_set_frame_control(self, thisptr: Any, depth: Any, frame: Any) -> None:
+        if not isinstance(thisptr, PlacedClip):
+            print(f"WARNING: Ignoring aeplib.aep_set_frame_control with unrecognized current object {thisptr}!")
+            return
+
+        for obj in thisptr.placed_objects:
+            if obj.depth == depth:
+                if not isinstance(obj, PlacedClip):
+                    print(f"WARNING: Ignoring aeplib.aep_set_frame_control called on object {obj} at depth {depth}!")
+                    return
+
+                obj.frameOffset = frame
+                return
+
+        print(f"WARNING: Ignoring aeplib.aep_set_frame_control called on nonexistent object at depth {depth}!")
 
     def gotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
         # This appears to be a wrapper to allow calling gotoAndPlay on clips.
