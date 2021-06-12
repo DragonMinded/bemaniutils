@@ -643,8 +643,12 @@ def render_path(
             )
         )
         if len(images) > 0:
-            dirof = os.path.dirname(output)
-            os.makedirs(dirof, exist_ok=True)
+            try:
+                dirof = os.path.dirname(os.path.abspath(output))
+                os.makedirs(dirof, exist_ok=True)
+            except FileNotFoundError:
+                # Apparently on OSX this is possible?
+                pass
 
             with open(output, "wb") as bfp:
                 images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
@@ -673,8 +677,12 @@ def render_path(
             ):
                 fullname = f"{filename}-{i:{digits}}{ext}"
 
-                dirof = os.path.dirname(fullname)
-                os.makedirs(dirof, exist_ok=True)
+                try:
+                    dirof = os.path.dirname(os.path.abspath(fullname))
+                    os.makedirs(dirof, exist_ok=True)
+                except FileNotFoundError:
+                    # Apparently on OSX this is possible?
+                    pass
 
                 with open(fullname, "wb") as bfp:
                     img.save(bfp, format=fmt)
