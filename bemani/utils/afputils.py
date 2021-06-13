@@ -526,6 +526,8 @@ def render_path(
     enable_anti_aliasing: bool = False,
     background_color: Optional[str] = None,
     background_image: Optional[str] = None,
+    force_width: Optional[int] = None,
+    force_height: Optional[int] = None,
     force_aspect_ratio: Optional[str] = None,
     scale_width: float = 1.0,
     scale_height: float = 1.0,
@@ -571,8 +573,8 @@ def render_path(
 
     # Calculate the size of the SWF so we can apply scaling options.
     swf_location = renderer.compute_path_location(path)
-    requested_width = swf_location.width
-    requested_height = swf_location.height
+    requested_width = force_width if force_width is not None else swf_location.width
+    requested_height = force_height if force_height is not None else swf_location.height
 
     # Allow overriding the aspect ratio.
     if force_aspect_ratio:
@@ -603,6 +605,7 @@ def render_path(
             else:
                 requested_height = new_height
 
+    # Finally, apply requested final scaling.
     requested_width *= scale_width
     requested_height *= scale_height
 
@@ -909,22 +912,34 @@ def main() -> int:
         help="Only render these frames. Can provide either a number or a comma-separated list of numbers, or a range such as 10-20.",
     )
     render_parser.add_argument(
+        "--force-width",
+        type=int,
+        default=None,
+        help="Force the width of the rendered image to a specific pixel value, such as 640 or 800.",
+    )
+    render_parser.add_argument(
+        "--force-height",
+        type=int,
+        default=None,
+        help="Force the height of the rendered image to a specific pixel value, such as 480 or 600.",
+    )
+    render_parser.add_argument(
         "--force-aspect-ratio",
         type=str,
         default=None,
-        help="Force the aspect ratio of the rendered image, as a colon-separated aspect ratio such as 16:9 or 4:3.",
+        help="Force the aspect ratio of the rendered image, as a colon-separated aspect ratio such as 16:9 or 4:3, after applying any forced width and height.",
     )
     render_parser.add_argument(
         "--scale-width",
         type=float,
         default=1.0,
-        help="Scale the width of the animation by some factor, such as 2.0 or 0.5.",
+        help="Scale the final width of the animation by some factor, such as 2.0 or 0.5, after applying any forced width, height and aspect ratio.",
     )
     render_parser.add_argument(
         "--scale-height",
         type=float,
         default=1.0,
-        help="Scale the height of the animation by some factor, such as 2.0 or 0.5.",
+        help="Scale the final height of the animation by some factor, such as 2.0 or 0.5, after applying any forced width, height and aspect ratio.",
     )
     render_parser.add_argument(
         "--disable-threads",
@@ -934,7 +949,7 @@ def main() -> int:
     render_parser.add_argument(
         "--enable-anti-aliasing",
         action="store_true",
-        help="Enable experimental anti-aliased rendering.",
+        help="Enable anti-aliased rendering, using bilinear interpolation and super-sampling depending on the circumstance.",
     )
     render_parser.add_argument(
         "-v",
@@ -1003,6 +1018,8 @@ def main() -> int:
             enable_anti_aliasing=args.enable_anti_aliasing,
             background_color=args.background_color,
             background_image=args.background_image,
+            force_width=args.force_width,
+            force_height=args.force_height,
             force_aspect_ratio=args.force_aspect_ratio,
             scale_width=args.scale_width,
             scale_height=args.scale_height,

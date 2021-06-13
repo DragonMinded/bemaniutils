@@ -64,7 +64,7 @@ class Point:
         }
 
     def as_tuple(self) -> Tuple[int, int]:
-        return (int(self.x), int(self.y))
+        return (int(round(self.x, 5)), int(round(self.y, 5)))
 
     def add(self, other: "Point") -> "Point":
         x = self.x + other.x
