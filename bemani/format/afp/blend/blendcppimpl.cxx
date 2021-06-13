@@ -275,6 +275,7 @@ extern "C"
                     int b = 0;
                     int a = 0;
                     int count = 0;
+                    int denom = 0;
 
                     for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
                         for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
@@ -282,16 +283,22 @@ extern "C"
                             int aax = texloc.x;
                             int aay = texloc.y;
 
-                            // If we're out of bounds, don't update.
+                            // If we're out of bounds, don't update. Factor this in, however, so we can get partial
+                            // transparency to the pixel that is already there.
+                            denom ++;
                             if (aax < 0 or aay < 0 or aax >= (int)work->texwidth or aay >= (int)work->texheight) {
                                 continue;
                             }
 
-                            // Grab the values to average, for SSAA.
+                            // Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
+                            // blend to ensure that partial transparency pixel values don't unnecessarily factor
+                            // into average calculations.
                             unsigned int texoff = aax + (aay * work->texwidth);
-                            r += work->texdata[texoff].r;
-                            g += work->texdata[texoff].g;
-                            b += work->texdata[texoff].b;
+                            float apercent = work->texdata[texoff].a / 255.0;
+
+                            r += (int)(work->texdata[texoff].r * apercent);
+                            g += (int)(work->texdata[texoff].g * apercent);
+                            b += (int)(work->texdata[texoff].b * apercent);
                             a += work->texdata[texoff].a;
                             count ++;
                         }
@@ -302,13 +309,28 @@ extern "C"
                         continue;
                     }
 
-                    // Average the pixels.
-                    intcolor_t average = (intcolor_t){
-                        (unsigned char)(r / count),
-                        (unsigned char)(g / count),
-                        (unsigned char)(b / count),
-                        (unsigned char)(a / count),
-                    };
+                    // Average the pixels. Make sure to divide out the alpha in preparation for blending.
+                    unsigned char alpha = (unsigned char)(a / denom);
+                    intcolor_t average;
+
+                    if (alpha == 0) {
+                        // Samples existed in bounds, but with zero alpha.
+                        average = (intcolor_t){
+                            255,
+                            255,
+                            255,
+                            alpha,
+                        };
+                    } else {
+                        // Samples existed in bounds, with some alpha component, un-premultiply it.
+                        float apercent = alpha / 255.0;
+                        average = (intcolor_t){
+                            (unsigned char)((r / denom) / apercent),
+                            (unsigned char)((g / denom) / apercent),
+                            (unsigned char)((b / denom) / apercent),
+                            alpha,
+                        };
+                    }
 
                     // Blend it.
                     work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, average, work->imgdata[imgoff], work->blendfunc);

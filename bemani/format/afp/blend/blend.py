@@ -427,6 +427,7 @@ def pixel_renderer(
         b = 0
         a = 0
         count = 0
+        denom = 0
 
         # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
@@ -442,15 +443,21 @@ def pixel_renderer(
                 texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
                 aax, aay = texloc.as_tuple()
 
-                # If we're out of bounds, don't update.
+                # If we're out of bounds, don't update. Factor this in, however, so we can get partial
+                # transparency to the pixel that is already there.
+                denom += 1
                 if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
                     continue
 
-                # Grab the values to average, for SSAA.
+                # Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
+                # blend to ensure that partial transparency pixel values don't unnecessarily factor
+                # into average calculations.
                 texoff = (aax + (aay * texwidth)) * 4
-                r += texbytes[texoff]
-                g += texbytes[texoff + 1]
-                b += texbytes[texoff + 2]
+                apercent = texbytes[texoff + 3] / 255.0
+
+                r += int(texbytes[texoff] * apercent)
+                g += int(texbytes[texoff + 1] * apercent)
+                b += int(texbytes[texoff + 2] * apercent)
                 a += texbytes[texoff + 3]
                 count += 1
 
@@ -458,8 +465,16 @@ def pixel_renderer(
             # None of the samples existed in-bounds.
             return imgbytes[imgoff:(imgoff + 4)]
 
-        # Average the pixels.
-        average = [r // count, g // count, b // count, a // count]
+        # Average the pixels. Make sure to divide out the alpha in preparation for blending.
+        alpha = a // denom
+
+        if alpha == 0:
+            average = [255, 255, 255, alpha]
+        else:
+            apercent = alpha / 255.0
+            average = [int((r / denom) / apercent), int((g / denom) / apercent), int((b / denom) / apercent), alpha]
+
+        # Finally, blend it with the destination.
         return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
     else:
         # Calculate what texture pixel data goes here.
