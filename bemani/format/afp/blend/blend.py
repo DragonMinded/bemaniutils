@@ -453,8 +453,13 @@ def pixel_renderer(
                 # blend to ensure that partial transparency pixel values don't unnecessarily factor
                 # into average calculations.
                 texoff = (aax + (aay * texwidth)) * 4
-                apercent = texbytes[texoff + 3] / 255.0
 
+                # If this is a fully transparent pixel, the below formulas work out to adding nothing
+                # so we should skip this altogether.
+                if texbytes[texoff + 3] == 0:
+                    continue
+
+                apercent = texbytes[texoff + 3] / 255.0
                 r += int(texbytes[texoff] * apercent)
                 g += int(texbytes[texoff + 1] * apercent)
                 b += int(texbytes[texoff + 2] * apercent)

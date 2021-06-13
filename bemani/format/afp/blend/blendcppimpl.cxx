@@ -294,8 +294,14 @@ extern "C"
                             // blend to ensure that partial transparency pixel values don't unnecessarily factor
                             // into average calculations.
                             unsigned int texoff = aax + (aay * work->texwidth);
-                            float apercent = work->texdata[texoff].a / 255.0;
 
+                            // If this is a fully transparent pixel, the below formulas work out to adding nothing
+                            // so we should skip this altogether.
+                            if (work->texdata[texoff].a == 0) {
+                                continue;
+                            }
+
+                            float apercent = work->texdata[texoff].a / 255.0;
                             r += (int)(work->texdata[texoff].r * apercent);
                             g += (int)(work->texdata[texoff].g * apercent);
                             b += (int)(work->texdata[texoff].b * apercent);
