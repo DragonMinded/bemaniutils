@@ -432,52 +432,109 @@ def pixel_renderer(
         # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
         # scaled up images a bit softer than would otherwise be achieved.
-        xswing = 0.5 * max(1.0, 1.0 / math.sqrt(inverse.a * inverse.a + inverse.b * inverse.b))
-        yswing = 0.5 * max(1.0, 1.0 / math.sqrt(inverse.c * inverse.c + inverse.d * inverse.d))
+        xscale = 1.0 / math.sqrt(inverse.a * inverse.a + inverse.b * inverse.b)
+        yscale = 1.0 / math.sqrt(inverse.c * inverse.c + inverse.d * inverse.d)
+
+        # These are used for picking the various sample points for SSAA method below.
+        xswing = 0.5 * max(1.0, xscale)
+        yswing = 0.5 * max(1.0, yscale)
 
         xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
         ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
 
-        for addy in ypoints:
-            for addx in xpoints:
-                texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
-                aax, aay = texloc.as_tuple()
+        # First, figure out if we can use bilinear resampling.
+        bilinear = False
+        if xscale >= 1.0 and yscale >= 1.0:
+            aaloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
+            aax, aay = aaloc.as_tuple()
+            if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
+                bilinear = True
 
-                # If we're out of bounds, don't update. Factor this in, however, so we can get partial
-                # transparency to the pixel that is already there.
-                denom += 1
-                if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
-                    continue
+        # Now perform the desired AA operation.
+        if bilinear:
+            # Calculate the pixel we're after, and what percentage into the pixel we are.
+            texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
+            aax, aay = texloc.as_tuple()
+            aaxrem = texloc.x - aax
+            aayrem = texloc.y - aay
 
-                # Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
-                # blend to ensure that partial transparency pixel values don't unnecessarily factor
-                # into average calculations.
-                texoff = (aax + (aay * texwidth)) * 4
+            # Find the four pixels that we can interpolate from. The first number is the x, and second is y.
+            tex00 = (aax + (aay * texwidth)) * 4
+            tex10 = tex00 + 4
+            tex01 = (aax + ((aay + 1) * texwidth)) * 4
+            tex11 = tex01 + 4
 
-                # If this is a fully transparent pixel, the below formulas work out to adding nothing
-                # so we should skip this altogether.
-                if texbytes[texoff + 3] == 0:
-                    continue
+            # Calculate various scaling factors based on alpha and percentage.
+            tex00percent = texbytes[tex00 + 3] / 255.0
+            tex10percent = texbytes[tex10 + 3] / 255.0
+            tex01percent = texbytes[tex01 + 3] / 255.0
+            tex11percent = texbytes[tex11 + 3] / 255.0
 
-                apercent = texbytes[texoff + 3] / 255.0
-                r += int(texbytes[texoff] * apercent)
-                g += int(texbytes[texoff + 1] * apercent)
-                b += int(texbytes[texoff + 2] * apercent)
-                a += texbytes[texoff + 3]
-                count += 1
+            y0percent = (tex00percent * (1.0 - aaxrem)) + (tex10percent * aaxrem)
+            y1percent = (tex01percent * (1.0 - aaxrem)) + (tex11percent * aaxrem)
+            finalpercent = (y0percent * (1.0 - aayrem)) + (y1percent * aayrem)
 
-        if count == 0:
-            # None of the samples existed in-bounds.
-            return imgbytes[imgoff:(imgoff + 4)]
+            if finalpercent <= 0.0:
+                # This pixel would be blank, so we avoid dividing by zero.
+                average = [255, 255, 255, 0]
+            else:
+                # Interpolate in the X direction on both Y axis.
+                y0r = ((texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10] * tex10percent * aaxrem))
+                y0g = ((texbytes[tex00 + 1] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 1] * tex10percent * aaxrem))
+                y0b = ((texbytes[tex00 + 2] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 2] * tex10percent * aaxrem))
 
-        # Average the pixels. Make sure to divide out the alpha in preparation for blending.
-        alpha = a // denom
+                y1r = ((texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11] * tex11percent * aaxrem))
+                y1g = ((texbytes[tex01 + 1] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 1] * tex11percent * aaxrem))
+                y1b = ((texbytes[tex01 + 2] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 2] * tex11percent * aaxrem))
 
-        if alpha == 0:
-            average = [255, 255, 255, alpha]
+                # Now interpolate the Y direction to get the final pixel value.
+                average = [
+                    int(((y0r * (1.0 - aayrem)) + (y1r * aayrem)) / finalpercent),
+                    int(((y0g * (1.0 - aayrem)) + (y1g * aayrem)) / finalpercent),
+                    int(((y0b * (1.0 - aayrem)) + (y1b * aayrem)) / finalpercent),
+                    int(finalpercent * 255),
+                ]
         else:
-            apercent = alpha / 255.0
-            average = [int((r / denom) / apercent), int((g / denom) / apercent), int((b / denom) / apercent), alpha]
+            for addy in ypoints:
+                for addx in xpoints:
+                    texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
+                    aax, aay = texloc.as_tuple()
+
+                    # If we're out of bounds, don't update. Factor this in, however, so we can get partial
+                    # transparency to the pixel that is already there.
+                    denom += 1
+                    if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
+                        continue
+
+                    # Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
+                    # blend to ensure that partial transparency pixel values don't unnecessarily factor
+                    # into average calculations.
+                    texoff = (aax + (aay * texwidth)) * 4
+
+                    # If this is a fully transparent pixel, the below formulas work out to adding nothing
+                    # so we should skip this altogether.
+                    if texbytes[texoff + 3] == 0:
+                        continue
+
+                    apercent = texbytes[texoff + 3] / 255.0
+                    r += int(texbytes[texoff] * apercent)
+                    g += int(texbytes[texoff + 1] * apercent)
+                    b += int(texbytes[texoff + 2] * apercent)
+                    a += texbytes[texoff + 3]
+                    count += 1
+
+            if count == 0:
+                # None of the samples existed in-bounds.
+                return imgbytes[imgoff:(imgoff + 4)]
+
+            # Average the pixels. Make sure to divide out the alpha in preparation for blending.
+            alpha = a // denom
+
+            if alpha == 0:
+                average = [255, 255, 255, alpha]
+            else:
+                apercent = alpha / 255.0
+                average = [int((r / denom) / apercent), int((g / denom) / apercent), int((b / denom) / apercent), alpha]
 
         # Finally, blend it with the destination.
         return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)

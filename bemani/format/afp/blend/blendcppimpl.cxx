@@ -253,8 +253,12 @@ extern "C"
         // costs us almost nothing. Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         // minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing scaled up images
         // a bit softer than would otherwise be achieved.
-        float xswing = 0.5 * fmax(1.0, 1.0 / sqrt(work->inverse.a * work->inverse.a + work->inverse.b * work->inverse.b));
-        float yswing = 0.5 * fmax(1.0, 1.0 / sqrt(work->inverse.c * work->inverse.c + work->inverse.d * work->inverse.d));
+        float xscale = 1.0 / sqrt(work->inverse.a * work->inverse.a + work->inverse.b * work->inverse.b);
+        float yscale = 1.0 / sqrt(work->inverse.c * work->inverse.c + work->inverse.d * work->inverse.d);
+
+        // These are used for picking the various sample points for SSAA method below.
+        float xswing = 0.5 * fmax(1.0, xscale);
+        float yswing = 0.5 * fmax(1.0, yscale);
 
         for (unsigned int imgy = work->miny; imgy < work->maxy; imgy++) {
             for (unsigned int imgx = work->minx; imgx < work->maxx; imgx++) {
@@ -277,65 +281,131 @@ extern "C"
                     int count = 0;
                     int denom = 0;
 
-                    for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
-                        for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
-                            point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
-                            int aax = texloc.x;
-                            int aay = texloc.y;
+                    // First, figure out if we can use bilinear resampling.
+                    int bilinear = 0;
+                    if (xscale >= 1.0 && yscale >= 1.0) {
+                        point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                        int aax = aaloc.x;
+                        int aay = aaloc.y;
 
-                            // If we're out of bounds, don't update. Factor this in, however, so we can get partial
-                            // transparency to the pixel that is already there.
-                            denom ++;
-                            if (aax < 0 or aay < 0 or aax >= (int)work->texwidth or aay >= (int)work->texheight) {
-                                continue;
-                            }
-
-                            // Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
-                            // blend to ensure that partial transparency pixel values don't unnecessarily factor
-                            // into average calculations.
-                            unsigned int texoff = aax + (aay * work->texwidth);
-
-                            // If this is a fully transparent pixel, the below formulas work out to adding nothing
-                            // so we should skip this altogether.
-                            if (work->texdata[texoff].a == 0) {
-                                continue;
-                            }
-
-                            float apercent = work->texdata[texoff].a / 255.0;
-                            r += (int)(work->texdata[texoff].r * apercent);
-                            g += (int)(work->texdata[texoff].g * apercent);
-                            b += (int)(work->texdata[texoff].b * apercent);
-                            a += work->texdata[texoff].a;
-                            count ++;
+                        if (!(aax <= 0 || aay <= 0 || aax >= ((int)work->texwidth - 1) || aay >= ((int)work->texheight - 1))) {
+                            bilinear = 1;
                         }
                     }
 
-                    if (count == 0) {
-                        // None of the samples existed in-bounds.
-                        continue;
-                    }
-
-                    // Average the pixels. Make sure to divide out the alpha in preparation for blending.
-                    unsigned char alpha = (unsigned char)(a / denom);
+                    // Now perform the desired AA operation.
                     intcolor_t average;
+                    if (bilinear) {
+                        // Calculate the pixel we're after, and what percentage into the pixel we are.
+                        point_t texloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                        int aax = texloc.x;
+                        int aay = texloc.y;
+                        float aaxrem = texloc.x - (float)aax;
+                        float aayrem = texloc.y - (float)aay;
 
-                    if (alpha == 0) {
-                        // Samples existed in bounds, but with zero alpha.
-                        average = (intcolor_t){
-                            255,
-                            255,
-                            255,
-                            alpha,
-                        };
+                        // Find the four pixels that we can interpolate from. The first number is the x, and second is y.
+                        unsigned int tex00 = aax + (aay * work->texwidth);
+                        unsigned int tex10 = tex00 + 1;
+                        unsigned int tex01 = aax + ((aay + 1) * work->texwidth);
+                        unsigned int tex11 = tex01 + 1;
+
+                        // Calculate various scaling factors based on alpha and percentage.
+                        float tex00percent = work->texdata[tex00].a / 255.0;
+                        float tex10percent = work->texdata[tex10].a / 255.0;
+                        float tex01percent = work->texdata[tex01].a / 255.0;
+                        float tex11percent = work->texdata[tex11].a / 255.0;
+
+                        float y0percent = (tex00percent * (1.0 - aaxrem)) + (tex10percent * aaxrem);
+                        float y1percent = (tex01percent * (1.0 - aaxrem)) + (tex11percent * aaxrem);
+                        float finalpercent = (y0percent * (1.0 - aayrem)) + (y1percent * aayrem);
+
+                        if (finalpercent <= 0.0) {
+                            // This pixel would be blank, so we avoid dividing by zero.
+                            average = (intcolor_t){
+                                255,
+                                255,
+                                255,
+                                0,
+                            };
+                        } else {
+                            // Interpolate in the X direction on both Y axis.
+                            float y0r = ((work->texdata[tex00].r * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].r * tex10percent * aaxrem));
+                            float y0g = ((work->texdata[tex00].g * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].g * tex10percent * aaxrem));
+                            float y0b = ((work->texdata[tex00].b * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].b * tex10percent * aaxrem));
+
+
+                            float y1r = ((work->texdata[tex01].r * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].r * tex11percent * aaxrem));
+                            float y1g = ((work->texdata[tex01].g * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].g * tex11percent * aaxrem));
+                            float y1b = ((work->texdata[tex01].b * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].b * tex11percent * aaxrem));
+
+                            // Now interpolate the Y direction to get the final pixel value.
+                            average = (intcolor_t){
+                                (unsigned char)(((y0r * (1.0 - aayrem)) + (y1r * aayrem)) / finalpercent),
+                                (unsigned char)(((y0g * (1.0 - aayrem)) + (y1g * aayrem)) / finalpercent),
+                                (unsigned char)(((y0b * (1.0 - aayrem)) + (y1b * aayrem)) / finalpercent),
+                                (unsigned char)(finalpercent * 255),
+                            };
+                        }
                     } else {
-                        // Samples existed in bounds, with some alpha component, un-premultiply it.
-                        float apercent = alpha / 255.0;
-                        average = (intcolor_t){
-                            (unsigned char)((r / denom) / apercent),
-                            (unsigned char)((g / denom) / apercent),
-                            (unsigned char)((b / denom) / apercent),
-                            alpha,
-                        };
+                        for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
+                            for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
+                                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
+                                int aax = texloc.x;
+                                int aay = texloc.y;
+
+                                // If we're out of bounds, don't update. Factor this in, however, so we can get partial
+                                // transparency to the pixel that is already there.
+                                denom ++;
+                                if (aax < 0 || aay < 0 || aax >= (int)work->texwidth || aay >= (int)work->texheight) {
+                                    continue;
+                                }
+
+                                // Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
+                                // blend to ensure that partial transparency pixel values don't unnecessarily factor
+                                // into average calculations.
+                                unsigned int texoff = aax + (aay * work->texwidth);
+
+                                // If this is a fully transparent pixel, the below formulas work out to adding nothing
+                                // so we should skip this altogether.
+                                if (work->texdata[texoff].a == 0) {
+                                    continue;
+                                }
+
+                                float apercent = work->texdata[texoff].a / 255.0;
+                                r += (int)(work->texdata[texoff].r * apercent);
+                                g += (int)(work->texdata[texoff].g * apercent);
+                                b += (int)(work->texdata[texoff].b * apercent);
+                                a += work->texdata[texoff].a;
+                                count ++;
+                            }
+                        }
+
+                        if (count == 0) {
+                            // None of the samples existed in-bounds.
+                            continue;
+                        }
+
+                        // Average the pixels. Make sure to divide out the alpha in preparation for blending.
+                        unsigned char alpha = (unsigned char)(a / denom);
+
+                        if (alpha == 0) {
+                            // Samples existed in bounds, but with zero alpha.
+                            average = (intcolor_t){
+                                255,
+                                255,
+                                255,
+                                0,
+                            };
+                        } else {
+                            // Samples existed in bounds, with some alpha component, un-premultiply it.
+                            float apercent = alpha / 255.0;
+                            average = (intcolor_t){
+                                (unsigned char)((r / denom) / apercent),
+                                (unsigned char)((g / denom) / apercent),
+                                (unsigned char)((b / denom) / apercent),
+                                alpha,
+                            };
+                        }
                     }
 
                     // Blend it.
@@ -347,7 +417,7 @@ extern "C"
                     int texy = texloc.y;
 
                     // If we're out of bounds, don't update.
-                    if (texx < 0 or texy < 0 or texx >= (int)work->texwidth or texy >= (int)work->texheight) {
+                    if (texx < 0 || texy < 0 || texx >= (int)work->texwidth || texy >= (int)work->texheight) {
                         continue;
                     }
 
