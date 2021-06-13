@@ -1063,13 +1063,11 @@ class AFPRenderer(VerboseOutput):
                     print("WARNING: Unhandled UV coordinate color!")
 
                 texture = None
-                enable_aa = False
                 if params.flags & 0x2:
                     # We need to look up the texture for this.
                     if params.region not in self.textures:
                         raise Exception(f"Cannot find texture reference {params.region}!")
                     texture = self.textures[params.region]
-                    enable_aa = self.__enable_aa
 
                     if params.flags & 0x8:
                         # TODO: This texture gets further blended somehow? Not sure this is ever used.
@@ -1108,7 +1106,7 @@ class AFPRenderer(VerboseOutput):
                     texture = shape.rectangle
 
                 if texture is not None:
-                    img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded, enable_aa=enable_aa)
+                    img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded, enable_aa=self.__enable_aa)
         elif isinstance(renderable, PlacedImage):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
