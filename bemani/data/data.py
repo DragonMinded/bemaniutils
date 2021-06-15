@@ -22,6 +22,7 @@ from bemani.data.mysql.game import GameData
 from bemani.data.mysql.network import NetworkData
 from bemani.data.mysql.lobby import LobbyData
 from bemani.data.mysql.api import APIData
+from bemani.data.triggers import Triggers
 
 
 class DBCreateException(Exception):
@@ -118,6 +119,7 @@ class Data:
             self.__api,
         )
         self.remote = GlobalProvider(self.local)
+        self.triggers = Triggers(config)
 
     @classmethod
     def sqlalchemy_url(cls, config: Dict[str, Any]) -> str:
