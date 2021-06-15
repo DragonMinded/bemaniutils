@@ -3,8 +3,6 @@ import copy
 import random
 import struct
 from typing import Optional, Dict, List, Tuple, Any
-from datetime import datetime
-from discord_webhook import DiscordWebhook, DiscordEmbed  # type: ignore
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.tricoro import IIDXTricoro
@@ -1004,11 +1002,6 @@ class IIDXSpada(IIDXBase):
         return None
 
     def handle_IIDX21pc_eaappliresult_request(self, request: Node) -> Node:
-        # first, we register the iidx webhook. this is done by sending all of our money to konami
-        if self.config['webhooks'][self.game] is None:
-            return Node.void('IIDX21pc')
-        webhook = DiscordWebhook(url=self.config['webhooks'][self.game])
-
         clear_map = {
             self.GAME_CLEAR_STATUS_NO_PLAY: 'NO PLAY',
             self.GAME_CLEAR_STATUS_FAILED: 'FAILED',
@@ -1054,47 +1047,39 @@ class IIDXSpada(IIDXBase):
         now_clear_string = clear_map.get(now_clear, 'NO PLAY')
         # let's get the song info first
         song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
+        notecount = song.data.get('notecount', 0)
+        # Construct the dictionary for the broadcast
+        card_data = {
+            'DJ Name': name,
+            'Song': song.name,
+            'Artist': song.artist,
+            'Difficulty': song.data.get('difficulty', 0),
+            'Target EXScore': target_exscore,
+            'Your EXScore': now_exscore,
+            'Best Clear': best_clear_string,
+            'Clear Status': now_clear_string,
+            'Play Stats': 'How did you do?',
+            'Perfect Greats': now_pgreat,
+            'Greats': now_great,
+            'Goods': now_good,
+            'Bads': now_bad,
+            'Poors': now_poor,
+            'Combo Breaks': now_combo,
+            'Slow': now_slow,
+            'Fast': now_fast,
+        }
+        if notecount != 0:
+            max_score = notecount * 2
+            percent = now_exscore / max_score
+            grade = int(9 * percent)
+            grades = ['F', 'F', 'E', 'D', 'C', 'B', 'A', 'AA', 'AAA', 'MAX']
+            card_data['Grade'] = grades[grade]
+            card_data['Score Rate'] = str(round(percent, 2))
 
-        # now we will build up the embed
-        now = datetime.now()
+        # Try to broadcast out the score to our webhook(s)
+        self.data.triggers.broadcast_score(card_data, self.game, song)
 
-        # now, we generate the embed
-        scoreembed = DiscordEmbed(title='New IIDX Score!', description="Login to see whole score.", color='fbba08')
-        scoreembed.set_footer(text=(now.strftime('Score was recorded on %m/%d/%y at %H:%M:%S')))
-
-        # lets give it an author
-        scoreembed.set_author(name=self.config['name'], url=self.config['server']['uri'])
-        # Set `inline=False` for the embed field to occupy the whole line
-        scoreembed.add_embed_field(name='DJ Name', value=(name), inline=False)
-        scoreembed.add_embed_field(name='Song', value=(song.name), inline=False)
-        scoreembed.add_embed_field(name='Artist', value=(song.artist), inline=False)
-        scoreembed.add_embed_field(name='Difficulty', value=(song.data.get('difficulty', 0)))
-        scoreembed.add_embed_field(name='Target EXScore', value=(target_exscore))
-        scoreembed.add_embed_field(name='Your EXScore', value=(now_exscore))
-        scoreembed.add_embed_field(name='Best Clear', value=best_clear_string)
-        scoreembed.add_embed_field(name='Clear Status', value=now_clear_string)
-        scoreembed.add_embed_field(name='Note Counts', value='How did you do?', inline=False)
-        scoreembed.add_embed_field(name=('Perfect Greats'), value=((now_pgreat)))
-        scoreembed.add_embed_field(name=('Greats'), value=((now_great)))
-        scoreembed.add_embed_field(name=('Goods'), value=((now_good)))
-        scoreembed.add_embed_field(name=('Bads'), value=((now_bad)))
-        scoreembed.add_embed_field(name=('Poors'), value=((now_poor)))
-
-        scoreembed.add_embed_field(name='Combo Breaks', value=(now_combo))
-
-        # scoreembed.add_embed_field(name='Timing Stats', value='Were you on time?', inline = False)
-        scoreembed.add_embed_field(name=('Slow'), value=((now_slow)))
-        scoreembed.add_embed_field(name=('Fast'), value=((now_fast)))
-
-        # add embed object to webhook
-        webhook.add_embed(scoreembed)
-
-        # now we send the webhook!
-        webhook.execute()
-
-        end = Node.void('IIDX21pc')
-
-        return end
+        return Node.void('IIDX21pc')
 
     def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
         root = Node.void('IIDX21pc')
@@ -1475,6 +1460,8 @@ class IIDXSpada(IIDXBase):
             if 'durability' in boss1_dict:
                 boss1.add_child(Node.binary('durability', boss1_dict.get_bytes('durability')))
 
+        # Ea app features
+        root.add_child(Node.void('bind_eaappli'))
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
