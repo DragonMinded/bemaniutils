@@ -1828,8 +1828,8 @@ class ImportIIDX(ImportBase):
             filename_offset = 0
             qpro_id_offset = 1
             packedfmt = (
-                'L'  # filename
-                'L'  # string containing id and name of the part
+                'Q'  # filename
+                'Q'  # string containing id and name of the part
             )
         if self.version == VersionConstants.IIDX_ROOTAGE:
             stride = 16
@@ -1846,8 +1846,8 @@ class ImportIIDX(ImportBase):
             filename_offset = 0
             qpro_id_offset = 1
             packedfmt = (
-                'L'  # filename
-                'L'  # string containing id and name of the part
+                'Q'  # filename
+                'Q'  # string containing id and name of the part
             )
 
         def read_string(offset: int) -> str:
