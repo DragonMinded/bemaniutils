@@ -173,9 +173,7 @@ a suitable response that said DLL/EXE will properly parse. Essentially, if you a
 reversing a new game and they use the `psmap` function to decode all or part of a
 packet, you can grab either the physical offset into the DLL or the virtual address of
 the data and use this utility to generate the code necessary to service that request.
-Note that this doesn't currently work on 64bit games, but it should be trivial to
-figure out the differences in the 64-bit psmap implementation. Run it like
-`./psmap --help` to see how to use this utility.
+Run it like `./psmap --help` to see how to use this utility.
 
 ## read
 
@@ -220,7 +218,7 @@ This should be given the same config file as "api", "frontend" and "services".
 
 Development version of an eAmusement protocol server using flask and the protocol
 libraries also used in "bemanishark" and "trafficgen". Currently it lets most modern
-BEMANI games boot and supports full profile and events for Beatmania IIDX 20-24,
+BEMANI games boot and supports full profile and events for Beatmania IIDX 20-26,
 Pop'n Music 19-24, Jubeat Saucer, Saucer Fulfill, Prop, Qubell and Clan, Sound Voltex
 1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace, MÚSECA 1,
 MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper, Volzza
@@ -253,7 +251,7 @@ this will run through and attempt to verify simple operation of that service. No
 guarantees are made on the accuracy of the emulation though I've strived to be
 correct. In some cases, I will verify the response, and in other cases I will
 simply verify that certain things exist so as not to crash a real client. This
-currently generates traffic emulating Beatmania IIDX 20-24, Pop'n Music 19-24, Jubeat
+currently generates traffic emulating Beatmania IIDX 20-26, Pop'n Music 19-24, Jubeat
 Saucer, Fulfill, Prop, Qubell and Clan, Sound Voltex 1, 2, 3 Season 1/2 and 4, Dance
 Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA 1+1/2,
 Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper, Volzza 1 and
@@ -445,7 +443,7 @@ will not work properly. An example is as follows:
 For IIDX, you will need the data directory of the mix you wish to support. The import
 script automatically scrapes the music DB as well as the song charts to determine
 difficulty, notecounts and BPM. For a normal mix, you will want to run the command like
-so. This network supports versions 20-24 so you will want to run this command once for
+so. This network supports versions 20-26 so you will want to run this command once for
 every version, giving the correct bin file:
 
 ```
