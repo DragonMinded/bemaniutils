@@ -668,6 +668,67 @@ class GlobalMusicData(BaseGlobalData):
 
         return self.__merge_global_scores(game, version, localcards, localscores, remotescores)
 
+    def __merge_global_records(
+        self,
+        game: str,
+        version: int,
+        localcards: List[Tuple[str, UserID]],
+        localscores: List[Tuple[UserID, Score]],
+        remotescores: List[Dict[str, Any]],
+    ) -> List[Tuple[UserID, Score]]:
+        card_to_id = {cardid: userid for (cardid, userid) in localcards}
+        allscores: Dict[int, Dict[int, Tuple[UserID, Score]]] = {}
+
+        def add_score(userid: UserID, score: Score) -> None:
+            if score.id not in allscores:
+                allscores[score.id] = {}
+            allscores[score.id][score.chart] = (userid, score)
+
+        def get_score(songid: int, songchart: int) -> Tuple[Optional[UserID], Optional[Score]]:
+            return allscores.get(songid, {}).get(songchart, (None, None))
+
+        # First, seed with local records
+        for (userid, score) in localscores:
+            add_score(userid, score)
+
+        # Second, merge in remote records
+        for remotescore in remotescores:
+            # Figure out the userid of this score
+            cardids = sorted([card.upper() for card in remotescore.get('cards', [])])
+            if len(cardids) == 0:
+                continue
+
+            for cardid in cardids:
+                if cardid in card_to_id:
+                    userid = card_to_id[cardid]
+                    break
+            else:
+                userid = RemoteUser.card_to_userid(cardids[0])
+
+            songid = int(remotescore['song'])
+            chart = int(remotescore['chart'])
+            newscore = self.__format_score(game, version, songid, chart, remotescore)
+            oldid, oldscore = get_score(songid, chart)
+
+            if oldscore is None:
+                add_score(userid, newscore)
+            else:
+                # if IDs are the same then we should merge them
+                if oldid == userid:
+                    add_score(userid, self.__merge_score(game, version, oldscore, newscore))
+                else:
+                    # if the IDs are different we need to check which score actually belongs
+                    if newscore.points > oldscore.points:
+                        add_score(userid, newscore)
+
+        # Finally, flatten and return
+        finalscores: List[Tuple[UserID, Score]] = []
+        for songid in allscores:
+            for chart in allscores[songid]:
+                finalscores.append((allscores[songid][chart][0], allscores[songid][chart][1]))
+
+        return finalscores
+
     def get_all_records(
         self,
         game: str,
@@ -696,7 +757,7 @@ class GlobalMusicData(BaseGlobalData):
             )),
         ])
 
-        return self.__merge_global_scores(game, version, localcards, localscores, remotescores)
+        return self.__merge_global_records(game, version, localcards, localscores, remotescores)
 
     def get_clear_rates(
         self,
