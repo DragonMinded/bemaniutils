@@ -1846,7 +1846,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 self.vprint(f"{prefix}      Unk5: {unk5}, Unk6: {unk6}, F1: {f1}, F2: {f2}, F3: {f3}, F4: {f4}, ABC: {a} {b} {c}, Count: {some_count}")
 
-                for j in range(some_count):
+                for _ in range(some_count):
                     shorts = struct.unpack("<HHHHHHHH", ap2data[chunk_offset:(chunk_offset + 16)])
                     self.add_coverage(chunk_offset, 16)
                     chunk_offset += 16
@@ -2136,7 +2136,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         # Finally, parse frame labels
         self.vprint(f"{prefix}Number of Frame Labels: {name_reference_count}, Flags: {hex(name_reference_flags)}")
         labels: Dict[str, int] = {}
-        for i in range(name_reference_count):
+        for _ in range(name_reference_count):
             frameno, stringoffset = struct.unpack("<HH", ap2data[name_reference_offset:(name_reference_offset + 4)])
             strval = self.__get_string(stringoffset)
             self.add_coverage(name_reference_offset, 4)
@@ -2348,7 +2348,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         self.vprint(f"Number of Imported Tags: {imported_tags_count}")
         self.imported_tags = {}
-        for i in range(imported_tags_count):
+        for _ in range(imported_tags_count):
             # First grab the SWF this is importing from, and the number of assets being imported.
             swf_name_offset, count = struct.unpack("<HH", data[imported_tags_offset:(imported_tags_offset + 4)])
             self.add_coverage(imported_tags_offset, 4)
@@ -2357,7 +2357,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.vprint(f"  Source SWF: {swf_name}")
 
             # Now, grab the actual asset names being imported.
-            for j in range(count):
+            for _ in range(count):
                 asset_id_no, asset_name_offset = struct.unpack("<HH", data[imported_tags_data_offset:(imported_tags_data_offset + 4)])
                 self.add_coverage(imported_tags_data_offset, 4)
 

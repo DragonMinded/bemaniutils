@@ -218,7 +218,7 @@ class JubeatProp(
 
         scores = []
         absentees = []
-        for [userid, player] in profiles:
+        for [userid, _player] in profiles:
             # Look up scores for last week if they played
             league_score = data.local.user.get_achievement(
                 cls.game,

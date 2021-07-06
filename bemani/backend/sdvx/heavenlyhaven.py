@@ -3269,7 +3269,7 @@ class SoundVoltexHeavenlyHaven(
         catalog = Node.void('catalog')
         game.add_child(catalog)
 
-        for item in []:  # type: ignore
+        for _item in []:  # type: ignore
             info = Node.void('info')
             catalog.add_child(info)
             info.add_child(Node.u8('catalog_type', 0))

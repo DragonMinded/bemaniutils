@@ -55,7 +55,7 @@ class PackedOrdering:
         self.order: List[Optional[int]] = []
         self.expand = allow_expansion
 
-        for i in range(size):
+        for _ in range(size):
             self.order.append(None)
         self.__orderlen = size
         self.__lastbyte = 0
@@ -282,7 +282,7 @@ class BinaryDecoder:
             return val
 
         data = ''
-        for i in range(binary_length):
+        for _ in range(binary_length):
             next_byte = self.stream.read_int()
             if next_byte is None:
                 raise BinaryEncodingException("Ran out of data when attempting to read node name!")

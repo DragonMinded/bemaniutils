@@ -129,7 +129,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
     def __add_event_info(self, request: Node) -> None:
         events: Dict[int, int] = {}
 
-        for (eventid, phase) in events.items():
+        for (_eventid, _phase) in events.items():
             data = Node.void('data')
             request.add_child(data)
             data.add_child(Node.s32('type', -1))
@@ -158,7 +158,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         hitchart = self.data.local.music.get_hit_chart(self.game, self.version, 10)
         rank = 1
-        for (mid, plays) in hitchart:
+        for (mid, _plays) in hitchart:
             record = Node.void('record')
             originals.add_child(record)
             record.add_child(Node.s16('id', mid))

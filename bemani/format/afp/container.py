@@ -1162,7 +1162,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 if self.endian == "<":
                     magic = b"TDXT"
                 elif self.endian == ">":
-                    magic != b"TXDT"
+                    magic = b"TXDT"
                 else:
                     raise Exception("Unexpected texture format!")
 

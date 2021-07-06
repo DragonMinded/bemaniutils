@@ -487,9 +487,9 @@ class PopnMusicUsaNekoClient(BaseClient):
                     # Song unlocks after one play
                     continue
                 raise Exception('Got nonzero items count on a new card!')
-            for char in unlocks['characters']:
+            for _ in unlocks['characters']:
                 raise Exception('Got nonzero characters count on a new card!')
-            for course in unlocks['courses']:
+            for _ in unlocks['courses']:
                 raise Exception('Got nonzero course count on a new card!')
             if unlocks['points'][0]['points'] != 300:
                 raise Exception('Got wrong default value for points on a new card!')
@@ -540,9 +540,9 @@ class PopnMusicUsaNekoClient(BaseClient):
 
             # Verify score handling
             scores = self.verify_player24_read_score(ref_id)
-            for medal in scores['medals']:
+            for _ in scores['medals']:
                 raise Exception('Got nonzero medals count on a new card!')
-            for score in scores['scores']:
+            for _ in scores['scores']:
                 raise Exception('Got nonzero scores count on a new card!')
 
             for phase in [1, 2]:

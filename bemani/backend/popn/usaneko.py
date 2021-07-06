@@ -282,7 +282,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         # Calculate most popular characters
         profiles = self.data.remote.user.get_all_profiles(self.game, self.version)
         charas: Dict[int, int] = {}
-        for (userid, profile) in profiles:
+        for (_userid, profile) in profiles:
             chara = profile.get_int('chara', -1)
             if chara <= 0:
                 continue
@@ -299,14 +299,14 @@ class PopnMusicUsaNeko(PopnMusicBase):
         )
 
         # Top 20 Popular characters
-        for rank, (charaid, usecount) in enumerate(charamap[:20]):
+        for rank, (charaid, _usecount) in enumerate(charamap[:20]):
             popular = Node.void('popular')
             root.add_child(popular)
             popular.add_child(Node.s16('rank', rank + 1))
             popular.add_child(Node.s16('chara_num', charaid))
 
         # Top 500 Popular music
-        for (songid, plays) in self.data.local.music.get_hit_chart(self.game, self.version, 500):
+        for (songid, _plays) in self.data.local.music.get_hit_chart(self.game, self.version, 500):
             popular_music = Node.void('popular_music')
             root.add_child(popular_music)
             popular_music.add_child(Node.s16('music_num', songid))

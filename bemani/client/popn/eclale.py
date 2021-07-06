@@ -434,11 +434,11 @@ class PopnMusicEclaleClient(BaseClient):
 
         # Verify unlocks/story mode work
         unlocks = self.verify_player23_read(ref_id, msg_type='query')
-        for item in unlocks['items']:
+        for _ in unlocks['items']:
             raise Exception('Got nonzero items count on a new card!')
-        for med in unlocks['medals']:
+        for _ in unlocks['medals']:
             raise Exception('Got nonzero medals count on a new card!')
-        for char in unlocks['characters']:
+        for _ in unlocks['characters']:
             raise Exception('Got nonzero characters count on a new card!')
         if unlocks['lumina'][0]['lumina'] != 300:
             raise Exception('Got wrong default value for lumina on a new card!')
@@ -483,9 +483,9 @@ class PopnMusicEclaleClient(BaseClient):
         if cardid is None:
             # Verify score handling
             scores = self.verify_player23_read_score(ref_id)
-            for medal in scores['medals']:
+            for _ in scores['medals']:
                 raise Exception('Got nonzero medals count on a new card!')
-            for score in scores['scores']:
+            for _ in scores['scores']:
                 raise Exception('Got nonzero scores count on a new card!')
 
             for phase in [1, 2]:

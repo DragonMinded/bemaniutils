@@ -336,7 +336,7 @@ def affine_composite(
             imgy, result = results.get()
             lines[imgy] = result
 
-        for proc in procs:
+        for _proc in procs:
             work.put(None)
         for proc in procs:
             proc.join()

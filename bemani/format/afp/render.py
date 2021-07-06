@@ -468,7 +468,7 @@ class AFPRenderer(VerboseOutput):
         verbose: bool = False,
     ) -> Generator[Image.Image, None, None]:
         # Given a path to a SWF root animation, attempt to render it to a list of frames.
-        for name, swf in self.swfs.items():
+        for _name, swf in self.swfs.items():
             if swf.exported_name == path:
                 # This is the SWF we care about.
                 with self.debugging(verbose):
@@ -483,7 +483,7 @@ class AFPRenderer(VerboseOutput):
         path: str,
     ) -> Rectangle:
         # Given a path to a SWF root animation, find its bounding rectangle.
-        for name, swf in self.swfs.items():
+        for _name, swf in self.swfs.items():
             if swf.exported_name == path:
                 # This is the SWF we care about.
                 return swf.location
@@ -496,7 +496,7 @@ class AFPRenderer(VerboseOutput):
     ) -> int:
         # Given a path to a SWF root animation, figure out how many frames are
         # in that root path with no regard to bytecode 'stop()' commands.
-        for name, swf in self.swfs.items():
+        for _name, swf in self.swfs.items():
             if swf.exported_name == path:
                 # This is the SWF we care about.
                 return len(swf.frames)
@@ -509,7 +509,7 @@ class AFPRenderer(VerboseOutput):
     ) -> int:
         # Given a path to a SWF root animation, figure out how many milliseconds are
         # occupied by each frame.
-        for name, swf in self.swfs.items():
+        for _name, swf in self.swfs.items():
             if swf.exported_name == path:
                 # This is the SWF we care about.
                 spf = 1.0 / swf.fps
@@ -523,7 +523,7 @@ class AFPRenderer(VerboseOutput):
     ) -> Rectangle:
         # Given a path to a SWF root animation, figure out what the dimensions
         # of the SWF are.
-        for name, swf in self.swfs.items():
+        for _name, swf in self.swfs.items():
             if swf.exported_name == path:
                 return swf.location
 
@@ -531,7 +531,7 @@ class AFPRenderer(VerboseOutput):
 
     def list_paths(self, verbose: bool = False) -> Generator[str, None, None]:
         # Given the loaded animations, return a list of possible paths to render.
-        for name, swf in self.swfs.items():
+        for _name, swf in self.swfs.items():
             yield swf.exported_name
 
     def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis, prefix: str="") -> None:
@@ -1222,7 +1222,7 @@ class AFPRenderer(VerboseOutput):
 
         # Go through, recursively resolve imports for all SWF files.
         for tag_id, imp in swf.imported_tags.items():
-            for name, other in self.swfs.items():
+            for _name, other in self.swfs.items():
                 if other.exported_name == imp.swf:
                     # This SWF should have the tag reference.
                     if imp.tag not in other.exported_tags:
@@ -1271,7 +1271,7 @@ class AFPRenderer(VerboseOutput):
         for frame in clip.frames:
             tags = clip.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
 
-            for tagno, tag in enumerate(tags):
+            for tag in tags:
                 # Attempt to place any tags.
                 if isinstance(tag, AP2ShapeTag):
                     if tag.id == tag_id:

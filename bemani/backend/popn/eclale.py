@@ -91,7 +91,7 @@ class PopnMusicEclale(PopnMusicBase):
         # Calculate most popular characters
         profiles = self.data.remote.user.get_all_profiles(self.game, self.version)
         charas: Dict[int, int] = {}
-        for (userid, profile) in profiles:
+        for (_userid, profile) in profiles:
             chara = profile.get_int('chara', -1)
             if chara <= 0:
                 continue
@@ -109,7 +109,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         # Output the top 20 of them
         rank = 1
-        for (charaid, usecount) in charamap[:20]:
+        for (charaid, _usecount) in charamap[:20]:
             popular = Node.void('popular')
             root.add_child(popular)
             popular.add_child(Node.s16('rank', rank))
@@ -117,7 +117,7 @@ class PopnMusicEclale(PopnMusicBase):
             rank = rank + 1
 
         # Output the hit chart
-        for (songid, plays) in self.data.local.music.get_hit_chart(self.game, self.version, 500):
+        for (songid, _plays) in self.data.local.music.get_hit_chart(self.game, self.version, 500):
             popular_music = Node.void('popular_music')
             root.add_child(popular_music)
             popular_music.add_child(Node.s16('music_num', songid))
