@@ -130,6 +130,10 @@ def cacheable(max_age: int) -> Callable:
 def jsx(filename: str) -> Response:
     # Figure out what our update time is to namespace on
     jsxfile = os.path.join(static_location, filename)
+    normalized_path = os.path.normpath(jsxfile)
+    # Check for path traversal exploit
+    if not normalized_path.startswith(static_location):
+        raise IOError()
     mtime = os.path.getmtime(jsxfile)
     namespace = f'{mtime}.{jsxfile}'
     jsx = g.cache.get(namespace)
