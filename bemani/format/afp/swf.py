@@ -230,14 +230,21 @@ class AP2DefineButtonTag(Tag):
 
 
 class AP2PlaceCameraTag(Tag):
-    def __init__(self) -> None:
-        # TODO: I need to figure out what camera placements actually DO, and take the
-        # values that I parsed out store them here...
+    def __init__(self, camera_id: int, center: Optional[Point], focal_length: float) -> None:
         super().__init__(None)
+
+        # This is not actually Tag ID, just a way to refer to the camera. Confusing, I know.
+        # Probably this happened when they hacked 3D into the format.
+        self.camera_id = camera_id
+        self.center = center
+        self.focal_length = focal_length
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
+            "camera_id": self.camera_id,
+            'center': self.center.as_dict(*args, **kwargs) if self.center is not None else None,
+            "focal_length": self.focal_length,
         }
 
 
@@ -283,7 +290,7 @@ class AP2PlaceObjectTag(Tag):
         blend: Optional[int],
         update: bool,
         transform: Optional[Matrix],
-        rotation_offset: Optional[Point],
+        rotation_origin: Optional[Point],
         mult_color: Optional[Color],
         add_color: Optional[Color],
         triggers: Dict[int, List[ByteCode]],
@@ -315,7 +322,7 @@ class AP2PlaceObjectTag(Tag):
 
         # Whether there is a transform matrix to apply before placing/updating this object or not.
         self.transform = transform
-        self.rotation_offset = rotation_offset
+        self.rotation_origin = rotation_origin
 
         # If there is a color to blend with the sprite/shape when drawing.
         self.mult_color = mult_color
@@ -338,7 +345,7 @@ class AP2PlaceObjectTag(Tag):
             'blend': self.blend,
             'update': self.update,
             'transform': self.transform.as_dict(*args, **kwargs) if self.transform is not None else None,
-            'rotation_offset': self.rotation_offset.as_dict(*args, **kwargs) if self.rotation_offset is not None else None,
+            'rotation_origin': self.rotation_origin.as_dict(*args, **kwargs) if self.rotation_origin is not None else None,
             'mult_color': self.mult_color.as_dict(*args, **kwargs) if self.mult_color is not None else None,
             'add_color': self.add_color.as_dict(*args, **kwargs) if self.add_color is not None else None,
             'triggers': {i: [b.as_dict(*args, **kwargs) for b in t] for (i, t) in self.triggers.items()}
@@ -1134,6 +1141,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             # Handle transformation matrix.
             transform = Matrix.identity()
+            transform_set = False
 
             if flags & 0x100:
                 # Has scale component.
@@ -1144,6 +1152,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.a = float(a_int) / 1024.0
                 transform.d = float(d_int) / 1024.0
+                transform_set = True
+
                 self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
             if flags & 0x200:
@@ -1155,6 +1165,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.b = float(b_int) / 1024.0
                 transform.c = float(c_int) / 1024.0
+                transform_set = True
+
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
             if flags & 0x400:
@@ -1166,6 +1178,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.tx = float(tx_int) / 20.0
                 transform.ty = float(ty_int) / 20.0
+                transform_set = True
+
                 self.vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
 
             # Handle object colors
@@ -1325,7 +1339,9 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # I don't know however as I've not encountered data with this bit.
                 self.vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {filter_size}")
 
-            rotation_offset = None
+            rotation_origin = Point(0.0, 0.0, 0.0)
+            rotation_origin_set = False
+
             if flags & 0x1000000:
                 # I am certain that this is the rotation origin, as treating it as such works for
                 # basically all files.
@@ -1334,26 +1350,34 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
 
-                rotation_offset = Point(float(x) / 20.0, float(y) / 20.0)
-                self.vprint(f"{prefix}    Rotation Origin: {rotation_offset}")
+                rotation_origin.x = float(x) / 20.0
+                rotation_origin.y = float(y) / 20.0
+                rotation_origin_set = True
+
+                self.vprint(f"{prefix}    Rotation XY Origin: {rotation_origin.x}, {rotation_origin.y}")
 
             if flags & 0x200000000:
-                # TODO: This might be z rotation origin? I've only seen it on files that have a place
-                # camera, and its setting a local value that is close to the rotation origin
-                # x and y constants.
+                # This is Z rotation origin.
                 unhandled_flags &= ~0x200000000
                 z_int = struct.unpack("<i", datachunk[running_pointer:(running_pointer + 4)])[0]
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                z = float(z_int) / 20.0
-                self.vprint(f"{prefix}    Unknown Rotation Origin Float: {z}")
+                rotation_origin.z = float(z_int) / 20.0
+                rotation_origin_set = True
+
+                self.vprint(f"{prefix}    Rotation Z Origin: {rotation_origin.z}")
 
             if flags & 0x2000000:
-                # Same as above, but initializing to 0, 0 instead of from data.
+                # Same as above, but initializing to 0, 0, 0 instead of from data.
                 unhandled_flags &= ~0x2000000
-                rotation_offset = Point(0.0, 0.0)
-                self.vprint(f"{prefix}    Rotation Origin: {rotation_offset}")
+
+                rotation_origin.x = 0.0
+                rotation_origin.y = 0.0
+                rotation_origin.z = 0.0
+                rotation_origin_set = True
+
+                self.vprint(f"{prefix}    Rotation XYZ Origin: {rotation_origin.x}, {rotation_origin.y}, {rotation_origin.z}")
 
             if flags & 0x40000:
                 # This appears in newer IIDX to be an alternative method for populating
@@ -1374,6 +1398,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     transform.a = float(a_int) / 32768.0
                     transform.d = float(d_int) / 32768.0
+                    transform_set = True
+
                     self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
             if flags & 0x80000:
@@ -1386,6 +1412,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.b = float(b_int) / 32768.0
                 transform.c = float(c_int) / 32768.0
+                transform_set = True
+
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
             if flags & 0x100000:
@@ -1405,34 +1433,43 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += catchup
 
             if flags & 0x8000000:
-                # TODO: Some unknown float. This might be the "tz" value for a 3D matrix.
+                # This is the translation offset "z" for a 3D transform matrix.
                 unhandled_flags &= ~0x8000000
-                unk_5 = struct.unpack("<i", datachunk[running_pointer:(running_pointer + 4)])[0]
+                tz_int = struct.unpack("<i", datachunk[running_pointer:(running_pointer + 4)])[0]
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                unk_5_f = unk_5 / 20.0
+                transform.tz = tz_int / 20.0
+                transform_set = True
 
-                self.vprint(f"{prefix}    Unk 5: {unk_5_f}")
+                self.vprint(f"{prefix}    Translate Z offset: {transform.tz}")
 
             if flags & 0x10000000:
-                # TODO: Absolutely no idea, the games that use this reuse the transform
-                # matrix variables but then don't put them in the same spot, so
-                # this might be a 3D transform matrix? Would make sense given the
-                # unknown float above as well as the unknown rotation origin above
-                # as well as the newly-discovered AP2_PLACE_CAMERA tag.
+                # This is a 3x3 grid of initializers for a 3D transform matrix. It appears that
+                # files also include the A/D and B/C pairs that match the correct locations in
+                # previous transform parsing sections, possibly for backwards compatibility?
                 unhandled_flags &= ~0x10000000
                 ints = struct.unpack("<iiiiiiiii", datachunk[running_pointer:(running_pointer + 36)])
                 self.add_coverage(dataoffset + running_pointer, 36)
                 running_pointer += 36
 
-                floats = [float(i) / 1024.0 for i in ints]
+                floats = [x / 1024.0 for x in ints]
+                if False:
+                    # TODO: Start actually doing perspective projections when needed.
+                    transform.a11 = floats[0]
+                    transform.a12 = floats[1]
+                    transform.a13 = floats[2]
+                    transform.a21 = floats[3]
+                    transform.a22 = floats[4]
+                    transform.a23 = floats[5]
+                    transform.a31 = floats[6]
+                    transform.a32 = floats[7]
+                    transform.a33 = floats[8]
 
-                self.vprint(f"{prefix}    Unknown 3D Transform Matrix: {', '.join(str(f) for f in floats)}")
+                self.vprint(f"{prefix}    3D Transform Matrix: {', '.join(str(f) for f in floats)}")
 
             if flags & 0x20000000:
-                # TODO: Again, absolutely no idea, gets passed into a function and I
-                # don't see how its used.
+                # TODO: Again, absolutely no idea, gets passed into a function and I don't see how its used.
                 unhandled_flags &= ~0x20000000
                 unk_a, unk_b, unk_c = struct.unpack("<hbb", datachunk[running_pointer:(running_pointer + 4)])
                 self.add_coverage(dataoffset + running_pointer, 4)
@@ -1524,9 +1561,19 @@ class SWF(TrackedCoverage, VerboseOutput):
             else:
                 self.vprint(f"{prefix}    Ignore color information")
             if flags & 0x4000000:
-                self.vprint(f"{prefix}    Use 3D transform matrix?")
+                self.vprint(f"{prefix}    Use 3D transform system")
             else:
-                self.vprint(f"{prefix}    Ignore 3D transform matrix?")
+                self.vprint(f"{prefix}    Use 2D transform system")
+
+                # Unset any previously set 3D transforms. Files shouldn't include both 3D
+                # transforms AND the old 2D transform flag, but let's respect that bit.
+                rotation_origin.z = 0.0
+                transform.a13 = 0.0
+                transform.a23 = 0.0
+                transform.a31 = 0.0
+                transform.a32 = 0.0
+                transform.a33 = 1.0
+                transform.a43 = 0.0
 
             if unhandled_flags != 0:
                 raise Exception(f"Did not handle {hex(unhandled_flags)} flag bits!")
@@ -1543,8 +1590,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 label_name=label_name,
                 blend=blend,
                 update=True if (flags & 0x1) else False,
-                transform=transform if (flags & 0x4) else None,
-                rotation_offset=rotation_offset,
+                transform=transform if (transform_set and (flags & 0x4)) else None,
+                rotation_origin=rotation_origin if (rotation_origin_set and (flags & 0x4)) else None,
                 mult_color=multcolor if (flags & 0x8) else None,
                 add_color=addcolor if (flags & 0x8) else None,
                 triggers=bytecodes,
@@ -1750,7 +1797,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         chunk_offset += 48
                         unprocessed_flags &= ~0x4
 
-                        matrix1 = Matrix(
+                        matrix1 = Matrix.affine(
                             a=a1,
                             b=b1,
                             c=c1,
@@ -1759,7 +1806,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                             ty=ty1,
                         )
 
-                        matrix2 = Matrix(
+                        matrix2 = Matrix.affine(
                             a=a2,
                             b=b2,
                             c=c2,
@@ -1981,43 +2028,37 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             return AP2DefineButtonTag(button_id)
         elif tagid == AP2Tag.AP2_PLACE_CAMERA:
-            flags, unk1, = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
+            flags, camera_id, = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
             self.add_coverage(dataoffset, 4)
             running_data_ptr = dataoffset + 4
 
-            self.vprint(f"{prefix}    Flags: {hex(flags)}, Unknown: {unk1}")
+            self.vprint(f"{prefix}    Flags: {hex(flags)}, Camera ID: {camera_id}")
 
-            if flags & 1:
+            center = None
+            if flags & 0x1:
                 i1, i2, i3 = struct.unpack("<iii", ap2data[running_data_ptr:(running_data_ptr + 12)])
                 self.add_coverage(running_data_ptr, 12)
                 running_data_ptr += 12
 
-                # These appear to be camera x, y, z coordinates.
-                f1 = i1 / 20.0
-                f2 = i2 / 20.0
-                f3 = i3 / 20.0
+                # This is the camera's X/Y/Z position in the scene, looking "down" at the canvas.
+                center = Point(i1 / 20.0, i2 / 20.0, i3 / 20.0)
+                self.vprint(f"{prefix}      Camera Center: {center}")
 
-                self.vprint(f"{prefix}      Unknown Floats: {f1}, {f2}, {f3}")
-
+            focal_length = 0.0
             if flags & 0x2:
                 i4 = struct.unpack("<i", ap2data[running_data_ptr:(running_data_ptr + 4)])[0]
                 self.add_coverage(running_data_ptr, 4)
                 running_data_ptr += 4
 
-                # I have no idea what this is for. The game adds this to f3 above for
-                # some stored calculation.
-                f4 = i4 / 20.0
+                # This is the focal length of the camera, used to construct the FOV.
+                focal_length = i4 / 20.0
 
-                self.vprint(f"{prefix}      Unknown Float: {f4}")
-            else:
-                # The games I've looked at will take the stored value of a previously
-                # parsed place camera for f4 if this is set to zero.
-                pass
+                self.vprint(f"{prefix}      Focal Length: {focal_length}")
 
             if dataoffset + size != running_data_ptr:
                 raise Exception(f"Failed to parse {dataoffset + size - running_data_ptr} bytes of data!")
 
-            return AP2PlaceCameraTag()
+            return AP2PlaceCameraTag(camera_id, center, focal_length)
         elif tagid == AP2Tag.AP2_IMAGE:
             if size != 8:
                 raise Exception(f"Invalid size {size} to get data from AP2_IMAGE!")

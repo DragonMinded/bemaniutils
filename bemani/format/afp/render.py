@@ -96,10 +96,10 @@ class Mask:
 
 class PlacedObject:
     # An object that occupies the screen at some depth.
-    def __init__(self, object_id: int, depth: int, rotation_offset: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, mask: Optional[Mask]) -> None:
+    def __init__(self, object_id: int, depth: int, rotation_origin: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, mask: Optional[Mask]) -> None:
         self.__object_id = object_id
         self.__depth = depth
-        self.rotation_offset = rotation_offset
+        self.rotation_origin = rotation_origin
         self.transform = transform
         self.mult_color = mult_color
         self.add_color = add_color
@@ -129,7 +129,7 @@ class PlacedShape(PlacedObject):
         self,
         object_id: int,
         depth: int,
-        rotation_offset: Point,
+        rotation_origin: Point,
         transform: Matrix,
         mult_color: Color,
         add_color: Color,
@@ -137,7 +137,7 @@ class PlacedShape(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredShape,
     ) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -155,7 +155,7 @@ class PlacedClip(PlacedObject):
         self,
         object_id: int,
         depth: int,
-        rotation_offset: Point,
+        rotation_origin: Point,
         transform: Matrix,
         mult_color: Color,
         add_color: Color,
@@ -163,7 +163,7 @@ class PlacedClip(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredClip,
     ) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
         self.placed_objects: List[PlacedObject] = []
         self.frame: int = 0
         self.unplayed_tags: List[int] = [i for i in range(len(source.tags))]
@@ -254,7 +254,7 @@ class PlacedImage(PlacedObject):
         self,
         object_id: int,
         depth: int,
-        rotation_offset: Point,
+        rotation_origin: Point,
         transform: Matrix,
         mult_color: Color,
         add_color: Color,
@@ -262,7 +262,7 @@ class PlacedImage(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredImage,
     ) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -279,7 +279,7 @@ class PlacedDummy(PlacedObject):
         self,
         object_id: int,
         depth: int,
-        rotation_offset: Point,
+        rotation_origin: Point,
         transform: Matrix,
         mult_color: Color,
         add_color: Color,
@@ -287,7 +287,7 @@ class PlacedDummy(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredDummy,
     ) -> None:
-        super().__init__(object_id, depth, rotation_offset, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -721,7 +721,7 @@ class AFPRenderer(VerboseOutput):
                         new_mult_color = tag.mult_color or obj.mult_color
                         new_add_color = tag.add_color or obj.add_color
                         new_transform = tag.transform or obj.transform
-                        new_rotation_offset = tag.rotation_offset or obj.rotation_offset
+                        new_rotation_origin = tag.rotation_origin or obj.rotation_origin
                         new_blend = tag.blend or obj.blend
 
                         if tag.source_tag_id is not None and tag.source_tag_id != obj.source.tag_id:
@@ -733,7 +733,7 @@ class AFPRenderer(VerboseOutput):
                                 operating_clip.placed_objects[i] = PlacedShape(
                                     obj.object_id,
                                     obj.depth,
-                                    new_rotation_offset,
+                                    new_rotation_origin,
                                     new_transform,
                                     new_mult_color,
                                     new_add_color,
@@ -748,7 +748,7 @@ class AFPRenderer(VerboseOutput):
                                 operating_clip.placed_objects[i] = PlacedImage(
                                     obj.object_id,
                                     obj.depth,
-                                    new_rotation_offset,
+                                    new_rotation_origin,
                                     new_transform,
                                     new_mult_color,
                                     new_add_color,
@@ -763,7 +763,7 @@ class AFPRenderer(VerboseOutput):
                                 new_clip = PlacedClip(
                                     tag.object_id,
                                     tag.depth,
-                                    new_rotation_offset,
+                                    new_rotation_origin,
                                     new_transform,
                                     new_mult_color,
                                     new_add_color,
@@ -779,7 +779,7 @@ class AFPRenderer(VerboseOutput):
                                 operating_clip.placed_objects[i] = PlacedDummy(
                                     obj.object_id,
                                     obj.depth,
-                                    new_rotation_offset,
+                                    new_rotation_origin,
                                     new_transform,
                                     new_mult_color,
                                     new_add_color,
@@ -798,7 +798,7 @@ class AFPRenderer(VerboseOutput):
                             obj.mult_color = new_mult_color
                             obj.add_color = new_add_color
                             obj.transform = new_transform
-                            obj.rotation_offset = new_rotation_offset
+                            obj.rotation_origin = new_rotation_origin
                             obj.blend = new_blend
                             return None, True
 
@@ -818,7 +818,7 @@ class AFPRenderer(VerboseOutput):
                             PlacedShape(
                                 tag.object_id,
                                 tag.depth,
-                                tag.rotation_offset or Point.identity(),
+                                tag.rotation_origin or Point.identity(),
                                 tag.transform or Matrix.identity(),
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
@@ -835,7 +835,7 @@ class AFPRenderer(VerboseOutput):
                             PlacedImage(
                                 tag.object_id,
                                 tag.depth,
-                                tag.rotation_offset or Point.identity(),
+                                tag.rotation_origin or Point.identity(),
                                 tag.transform or Matrix.identity(),
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
@@ -851,7 +851,7 @@ class AFPRenderer(VerboseOutput):
                         placed_clip = PlacedClip(
                             tag.object_id,
                             tag.depth,
-                            tag.rotation_offset or Point.identity(),
+                            tag.rotation_origin or Point.identity(),
                             tag.transform or Matrix.identity(),
                             tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                             tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
@@ -875,7 +875,7 @@ class AFPRenderer(VerboseOutput):
                             PlacedDummy(
                                 tag.object_id,
                                 tag.depth,
-                                tag.rotation_offset or Point.identity(),
+                                tag.rotation_origin or Point.identity(),
                                 tag.transform or Matrix.identity(),
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
@@ -1012,7 +1012,7 @@ class AFPRenderer(VerboseOutput):
         self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}")
 
         # Compute the affine transformation matrix for this object.
-        transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_offset))
+        transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_origin))
 
         # Calculate blending and blend color if it is present.
         mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(parent_mult_color)
@@ -1331,7 +1331,7 @@ class AFPRenderer(VerboseOutput):
         frameno: int = 0
 
         # Calculate actual size based on given movie transform.
-        actual_size = movie_transform.multiply_point(Point(swf.location.width, swf.location.height)).as_tuple()
+        resized_width, resized_height, _ = movie_transform.multiply_point(Point(swf.location.width, swf.location.height)).as_tuple()
 
         # TODO: If the location top/left is nonzero, we need move the root transform
         # so that the correct viewport is rendered.
@@ -1360,7 +1360,7 @@ class AFPRenderer(VerboseOutput):
             # Stretch the image to make sure it fits the entire frame.
             imgwidth = float(background_image.width)
             imgheight = float(background_image.height)
-            background_matrix = Matrix(
+            background_matrix = Matrix.affine(
                 a=swf.location.width / imgwidth,
                 b=0,
                 c=0,
@@ -1388,10 +1388,10 @@ class AFPRenderer(VerboseOutput):
                         -1,
                         # The coordinates of the rectangle of the shape in screen space.
                         [
-                            Point(0.0, 0.0),
-                            Point(imgwidth, 0.0),
+                            Point(0, 0),
+                            Point(imgwidth, 0),
                             Point(imgwidth, imgheight),
-                            Point(0.0, imgheight),
+                            Point(0, imgheight),
                         ],
                         # The coordinates of the original texture in UV space (we don't use this).
                         [
@@ -1419,7 +1419,7 @@ class AFPRenderer(VerboseOutput):
             )
 
         # Create the root mask for where to draw the root clip.
-        movie_mask = Image.new("RGBA", actual_size, color=(255, 0, 0, 255))
+        movie_mask = Image.new("RGBA", (resized_width, resized_height), color=(255, 0, 0, 255))
 
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
@@ -1452,7 +1452,7 @@ class AFPRenderer(VerboseOutput):
                 if changed or last_rendered_frame is None:
                     # Now, render out the placed objects.
                     color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-                    curimage = Image.new("RGBA", actual_size, color=color.as_tuple())
+                    curimage = Image.new("RGBA", (resized_width, resized_height), color=color.as_tuple())
                     curimage = self.__render_object(curimage, root_clip, movie_transform, movie_mask, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
                 else:
                     # Nothing changed, make a copy of the previous render.

@@ -1,7 +1,8 @@
 from PIL import Image  # type: ignore
-from typing import Optional, Tuple
+from typing import Optional
 
-from ..types import Color, Matrix, Point
+from ..types import Color, Matrix
+
 
 def affine_composite(
     img: Image.Image,
@@ -11,7 +12,7 @@ def affine_composite(
     mask: Optional[Image.Image],
     blendfunc: int,
     texture: Image.Image,
-    single_threaded: bool = False,
-    enable_aa: bool = True,
+    single_threaded: bool = ...,
+    enable_aa: bool = ...,
 ) -> Image.Image:
     ...

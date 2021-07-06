@@ -610,7 +610,7 @@ def render_path(
     requested_height *= scale_height
 
     # Calculate the overall view matrix based on the requested width/height.
-    transform = Matrix(
+    transform = Matrix.affine(
         a=requested_width / swf_location.width,
         b=0.0,
         c=0.0,

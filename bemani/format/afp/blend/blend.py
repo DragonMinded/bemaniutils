@@ -1,4 +1,3 @@
-import math
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
@@ -432,8 +431,8 @@ def pixel_renderer(
         # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
         # scaled up images a bit softer than would otherwise be achieved.
-        xscale = 1.0 / math.sqrt(inverse.a * inverse.a + inverse.b * inverse.b)
-        yscale = 1.0 / math.sqrt(inverse.c * inverse.c + inverse.d * inverse.d)
+        xscale = 1.0 / inverse.xscale
+        yscale = 1.0 / inverse.yscale
 
         # These are used for picking the various sample points for SSAA method below.
         xswing = 0.5 * max(1.0, xscale)
@@ -446,7 +445,7 @@ def pixel_renderer(
         bilinear = False
         if xscale >= 1.0 and yscale >= 1.0:
             aaloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-            aax, aay = aaloc.as_tuple()
+            aax, aay, _ = aaloc.as_tuple()
             if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
                 bilinear = True
 
@@ -454,7 +453,7 @@ def pixel_renderer(
         if bilinear:
             # Calculate the pixel we're after, and what percentage into the pixel we are.
             texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-            aax, aay = texloc.as_tuple()
+            aax, aay, _ = texloc.as_tuple()
             aaxrem = texloc.x - aax
             aayrem = texloc.y - aay
 
@@ -498,7 +497,7 @@ def pixel_renderer(
             for addy in ypoints:
                 for addx in xpoints:
                     texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
-                    aax, aay = texloc.as_tuple()
+                    aax, aay, _ = texloc.as_tuple()
 
                     # If we're out of bounds, don't update. Factor this in, however, so we can get partial
                     # transparency to the pixel that is already there.
@@ -541,7 +540,7 @@ def pixel_renderer(
     else:
         # Calculate what texture pixel data goes here.
         texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-        texx, texy = texloc.as_tuple()
+        texx, texy, _ = texloc.as_tuple()
 
         # If we're out of bounds, don't update.
         if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:

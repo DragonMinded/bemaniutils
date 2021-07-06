@@ -24,28 +24,45 @@ extern "C"
     typedef struct point {
         float x;
         float y;
+        float z;
 
         struct point add(struct point other) {
             return (struct point){
                 x + other.x,
                 y + other.y,
+                z + other.z,
             };
         };
     } point_t;
 
     typedef struct matrix {
-        float a;
-        float b;
-        float c;
-        float d;
-        float tx;
-        float ty;
+        float a11;
+        float a12;
+        float a13;
+        float a21;
+        float a22;
+        float a23;
+        float a31;
+        float a32;
+        float a33;
+        float a41;
+        float a42;
+        float a43;
 
         point_t multiply_point(point_t point) {
             return (point_t){
-                (a * point.x) + (c * point.y) + tx,
-                (b * point.x) + (d * point.y) + ty,
+                (a11 * point.x) + (a21 * point.y) + (a31 * point.z) + a41,
+                (a12 * point.x) + (a22 * point.y) + (a32 * point.z) + a42,
+                (a13 * point.x) + (a23 * point.y) + (a33 * point.z) + a43,
             };
+        }
+
+        float xscale() {
+            return sqrt((a11 * a11) + (a12 * a12) + (a13 * a13));
+        }
+
+        float yscale() {
+            return sqrt((a21 * a21) + (a22 * a22) + (a23 * a23));
         }
     } matrix_t;
 
@@ -253,8 +270,8 @@ extern "C"
         // costs us almost nothing. Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         // minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing scaled up images
         // a bit softer than would otherwise be achieved.
-        float xscale = 1.0 / sqrt(work->inverse.a * work->inverse.a + work->inverse.b * work->inverse.b);
-        float yscale = 1.0 / sqrt(work->inverse.c * work->inverse.c + work->inverse.d * work->inverse.d);
+        float xscale = 1.0 / work->inverse.xscale();
+        float yscale = 1.0 / work->inverse.yscale();
 
         // These are used for picking the various sample points for SSAA method below.
         float xswing = 0.5 * fmax(1.0, xscale);

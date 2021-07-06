@@ -11,16 +11,18 @@ cdef extern struct floatcolor_t:
     float a;
 
 cdef extern struct matrix_t:
-    float a;
-    float b;
-    float c;
-    float d;
-    float tx;
-    float ty;
-
-cdef extern struct point_t:
-    float x;
-    float y;
+    float a11;
+    float a12;
+    float a13;
+    float a21;
+    float a22;
+    float a23;
+    float a31;
+    float a32;
+    float a33;
+    float a41;
+    float a42;
+    float a43;
 
 cdef extern int affine_composite_fast(
     unsigned char *imgdata,
@@ -106,7 +108,12 @@ def affine_composite(
     # Convert classes to C structs.
     cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
-    cdef matrix_t c_inverse = matrix_t(a=inverse.a, b=inverse.b, c=inverse.c, d=inverse.d, tx=inverse.tx, ty=inverse.ty)
+    cdef matrix_t c_inverse = matrix_t(
+        a11=inverse.a11, a12=inverse.a12, a13=inverse.a13,
+        a21=inverse.a21, a22=inverse.a22, a23=inverse.a23,
+        a31=inverse.a31, a32=inverse.a32, a33=inverse.a33,
+        a41=inverse.a41, a42=inverse.a42, a43=inverse.a43,
+    )
     cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()
 
     # Call the C++ function.
