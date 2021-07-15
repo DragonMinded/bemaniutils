@@ -2854,6 +2854,53 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, remove_continues)
         return statements, updated
 
+    def __eliminate_useless_breaks(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Go through and find breaks that show up just before another break logically.
+        def find_breaks(statements: Sequence[Statement], parent_next_statement: Statement) -> Set[BreakStatement]:
+            breaks: Set[BreakStatement] = set()
+
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
+                if (
+                    isinstance(cur_statement, BreakStatement) and
+                    isinstance(next_statement, BreakStatement)
+                ):
+                    breaks.add(cur_statement)
+
+                elif isinstance(cur_statement, DoWhileStatement):
+                    # The next entry after a loop can be a break, as it applies to a different statement.
+                    breaks.update(find_breaks(cur_statement.body, NopStatement()))
+
+                elif isinstance(cur_statement, IfStatement):
+                    breaks.update(find_breaks(cur_statement.true_statements, next_statement))
+                    breaks.update(find_breaks(cur_statement.false_statements, next_statement))
+
+                elif isinstance(cur_statement, SwitchStatement):
+                    # The next entry after a switch can be a break, as it applies to a different statement.
+                    for case in cur_statement.cases:
+                        breaks.update(find_breaks(case.statements, NopStatement()))
+
+            return breaks
+
+        # Instead of an empty next statement, make up a return because that's what
+        # falling off the end of execution means.
+        breaks = find_breaks(statements, NullReturnStatement())
+
+        updated: bool = False
+
+        def remove_breaks(statement: Statement) -> Optional[Statement]:
+            nonlocal updated
+
+            for removable in breaks:
+                if removable is statement:
+                    updated = True
+                    return None
+            return statement
+
+        statements = self.__walk(statements, remove_breaks)
+        return statements, updated
+
     def __is_math(self, expression: Expression, variable: str) -> bool:
         if isinstance(expression, ArithmeticExpression):
             # Okay, let's see if it is any sort of math.
@@ -3255,7 +3302,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     running_conditional = OrIf(AndIf(true_cond, running_conditional), AndIf(false_cond, running_conditional)).simplify()
             else:
                 flowed_statements.append((running_conditional, statement))
-                if isinstance(statement, (NullReturnStatement, ReturnStatement, ThrowStatement)):
+                if isinstance(statement, (NullReturnStatement, ReturnStatement, ThrowStatement, BreakStatement, ContinueStatement)):
                     # We shouldn't find any more statements after this, unless there's a label.
                     running_conditional = IsBooleanIf(False)
                 elif isinstance(statement, GotoStatement):
@@ -3274,7 +3321,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         continue
                     goto_conditional = OrIf(gotos[stmt.location], goto_conditional).simplify()
                 flowed_statements[i] = (OrIf(cond, goto_conditional).simplify(), stmt)
-                if isinstance(stmt, (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement)):
+                if isinstance(stmt, (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement, BreakStatement, ContinueStatement)):
                     # The current running conditional no longer applies after this statement.
                     goto_conditional = IsBooleanIf(False)
 
@@ -3433,7 +3480,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         false_statements.append(statement)
                         i += 1
 
-                        if isinstance(statement, (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement)):
+                        if isinstance(statement, (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement, BreakStatement, ContinueStatement)):
                             break
 
                     # Now, add this new if statement, but make sure to gather up
@@ -3841,6 +3888,61 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return new_statements, changed
 
+    def __convert_switch_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Go through and find switch cases that goto the next line in the switch, replacing those
+        # with break statements.
+        def find_gotos(statements: Sequence[Statement], parent_next_statement: Statement, goto_next_statement: Statement) -> Set[GotoStatement]:
+            gotos: Set[GotoStatement] = set()
+
+            for i in range(len(statements)):
+                cur_statement = statements[i]
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
+
+                if (
+                    isinstance(cur_statement, GotoStatement) and
+                    isinstance(goto_next_statement, DefineLabelStatement) and
+                    cur_statement.location == goto_next_statement.location
+                ):
+                    # We are jumping to a location where we could insert a break.
+                    gotos.add(cur_statement)
+
+                elif isinstance(cur_statement, DoWhileStatement):
+                    # We don't want to track gotos into while loops because replacing one of
+                    # these with a break would change the flow.
+                    gotos.update(find_gotos(cur_statement.body, next_statement, NopStatement()))
+
+                elif isinstance(cur_statement, IfStatement):
+                    gotos.update(find_gotos(cur_statement.true_statements, next_statement, goto_next_statement))
+                    gotos.update(find_gotos(cur_statement.false_statements, next_statement, goto_next_statement))
+
+                elif isinstance(cur_statement, SwitchStatement):
+                    # The next entry after this switch is what we're interested in, so pass it
+                    # as the goto next statement. This is the only reason we need to track this.
+                    # We don't care about the semantic next statement for the purposes of this
+                    # call, so just set it as a NOP.
+                    for case in cur_statement.cases:
+                        gotos.update(find_gotos(case.statements, NopStatement(), next_statement))
+
+            return gotos
+
+        # Instead of an empty next statement, make up a return because that's what
+        # falling off the end of execution means.
+        gotos = find_gotos(statements, NullReturnStatement(), NullReturnStatement())
+
+        updated: bool = False
+
+        def remove_gotos(statement: Statement) -> Optional[Statement]:
+            nonlocal updated
+
+            for removable in gotos:
+                if removable is statement:
+                    updated = True
+                    return BreakStatement()
+            return statement
+
+        statements = self.__walk(statements, remove_gotos)
+        return statements, updated
+
     def _optimize_code(self, statements: Sequence[Statement]) -> List[Statement]:
         statements = list(statements)
 
@@ -3848,6 +3950,7 @@ class ByteCodeDecompiler(VerboseOutput):
             funcs = [
                 self.__collapse_identical_labels,
                 self.__eliminate_useless_continues,
+                self.__eliminate_useless_breaks,
                 self.__eliminate_unused_labels,
                 self.__remove_useless_gotos,
                 self.__remove_goto_return,
@@ -3859,6 +3962,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 self.__swap_ugly_ifexprs,
                 self.__rearrange_compound_ifs,
                 self.__convert_switches,
+                self.__convert_switch_gotos,
             ]
         else:
             # These are required for some sanity checks to pass.
