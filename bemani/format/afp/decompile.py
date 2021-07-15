@@ -2721,9 +2721,35 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 elif isinstance(cur_statement, SwitchStatement):
                     # Switch cases do not "flow" into the next line, they flow into the next switch
-                    # case.
-                    for case in cur_statement.cases:
-                        gotos.extend(find_goto_next_line(case.statements, NopStatement()))
+                    # case. Only if they have a 'break' statement do they flow to the parent. So
+                    # we check for this case, removing breaks when we find them (to simulate falling
+                    # out of the execution to the parent) and setting the next statement to the next
+                    # switch case first instruction when we don't. This isn't perfect, but eliminates
+                    # a lot of gotos in practice.
+                    cases = cur_statement.cases
+                    def get_next_instruction(case: SwitchCase) -> Statement:
+                        found = False
+
+                        for newcase in cases:
+                            if found:
+                                # If we identified the case, grab the next statement
+                                # from the next available case that has statements.
+                                if case.statements:
+                                    return case.statements[0]
+                            if newcase is case:
+                                # We found our case, so the next case with statements
+                                # is the one we care about.
+                                found = True
+
+                        # We failed to find our case, or we failed to find a case
+                        # after ours with statements.
+                        return NopStatement()
+
+                    for case in cases:
+                        if case.statements and isinstance(case.statements[-1], BreakStatement):
+                            gotos.extend(find_goto_next_line(case.statements[:-1], next_statement))
+                        else:
+                            gotos.extend(find_goto_next_line(case.statements, get_next_instruction(case)))
 
             return gotos
 
@@ -3564,6 +3590,25 @@ class ByteCodeDecompiler(VerboseOutput):
 
             return statement
 
+        def has_break(statements: Sequence[Statement]) -> bool:
+            # We intentionally ignore switch/while/for statements here, because
+            # if there is a break inside one of those, it applies to that statement.
+            # We only want to know if there are any break statements in our children.
+
+            for statement in statements:
+                if isinstance(statement, BreakStatement):
+                    # This is a break statement.
+                    return True
+                elif isinstance(statement, IfStatement):
+                    # Need to check the true and false cases.
+                    if has_break(statement.true_statements):
+                        return True
+                    if has_break(statement.false_statements):
+                        return True
+
+            # We found no break statements, we're solid.
+            return False
+
         def replace_if_with_switch(statement: Statement) -> Optional[Statement]:
             nonlocal changed
             nonlocal batches
@@ -3622,13 +3667,19 @@ class ByteCodeDecompiler(VerboseOutput):
                     if new_batch[i] is not cur_statement:
                         raise Exception("Logic error!")
 
+                    if not isinstance(cur_statement, IfStatement):
+                        # This isn't even an if statement. We should never hit
+                        # this but the type checker wants to be happy.
+                        return statement
+                    if has_break(cur_statement.true_statements) or has_break(cur_statement.false_statements):
+                        # This code already uses a 'break' statement. If we stuck it
+                        # in a switch, it would change the sematics of this statement
+                        # so we have no choice but to ignore this.
+                        return statement
+
                     if i < (len(new_batch) - 1):
                         # We dont check for the final case, since this will include
                         # the 'default' case in the else body.
-                        if not isinstance(cur_statement, IfStatement):
-                            # This isn't even an if statement. We should never hit
-                            # this but the type checker wants to be happy.
-                            return statement
                         if len(cur_statement.false_statements) != 1:
                             # This can't be a switch, it needs to be an embedded if.
                             return statement
