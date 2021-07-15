@@ -3287,7 +3287,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     true_cond = AndIf(conditional, candidate_true_expr).simplify()
                     false_cond = AndIf(conditional, candidate_false_expr).simplify()
 
-                    if true_cond in paths and false_cond in paths:
+                    if false_cond in paths:
                         if len(candidate_statements) < 2:
                             return None
                         else:
@@ -3348,8 +3348,15 @@ class ByteCodeDecompiler(VerboseOutput):
                     true_statements = []
                     false_statements = []
 
+                    hit_after = False
                     for stmt in candidate_statements[-1].true_statements:
-                        if stmt_to_flow[stmt] == parent_conditional:
+                        if isinstance(stmt, DefineLabelStatement):
+                            hit_after = True
+
+                        # We know that this is going to have a jump into it at some point.
+                        # So, gather everything until the jump as the true statements, and
+                        # everything after the jump as the hoisted statements.
+                        if hit_after:
                             hoist_after.append(stmt)
                         else:
                             true_statements.append(stmt)
@@ -3359,21 +3366,18 @@ class ByteCodeDecompiler(VerboseOutput):
                     i += 1
                     while i < len(statements):
                         statement = statements[i]
-                        if stmt_to_flow[statement] == false_cond:
-                            false_statements.append(statement)
+                        if stmt_to_flow[statement] == parent_conditional:
+                            # In some alternate cases, this can be a label that is jumped to
+                            # by the true case. This should only happen if we never ran into
+                            # a hoisted after statement above.
+                            if hit_after:
+                                raise Exception("Logic error!")
+                            break
 
-                            # Thigs get a little complicated here, on account of the fact that
-                            # we might have scooped up an internal compound or. If that's the
-                            # case, we need to grab its own else clause too.
-                            if isinstance(statement, IfStatement):
-                                # See if this is a compound if pattern.
-                                new_candidate_statements = get_candidate_group(false_cond, statement)
-                                if new_candidate_statements is not None:
-                                    false_cond = AndIf(false_cond, get_compound_if(new_candidate_statements).invert()).simplify()
+                        false_statements.append(statement)
+                        i += 1
 
-                            i += 1
-                        else:
-                            # We don't need to include this statement.
+                        if isinstance(statement, (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement)):
                             break
 
                     # Now, add this new if statement, but make sure to gather up
