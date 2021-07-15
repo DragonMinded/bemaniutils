@@ -11,7 +11,7 @@ from bemani.protocol.node import Node
 
 from .swf import SWF
 from .geo import Shape
-from .util import TrackedCoverage, VerboseOutput, scramble_text, descramble_text, pad, align, _hex
+from .util import TrackedCoverage, VerboseOutput, scramble_text, descramble_text, pad, align
 
 
 class PMAN:
@@ -72,8 +72,8 @@ class Texture:
             'fmt': self.fmt,
             'header_flags': [self.header_flags1, self.header_flags2, self.header_flags3],
             'fmt_flags': self.fmtflags,
-            'raw': "".join(_hex(x) for x in self.raw),
-            'compressed': "".join(_hex(x) for x in self.compressed) if self.compressed is not None else None,
+            'raw': self.raw.hex(),
+            'compressed': self.compressed.hex() if self.compressed is not None else None,
         }
 
 
@@ -120,7 +120,7 @@ class Unknown1:
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             'name': self.name,
-            'data': "".join(_hex(x) for x in self.data),
+            'data': self.data.hex(),
         }
 
 
@@ -135,7 +135,7 @@ class Unknown2:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'data': "".join(_hex(x) for x in self.data),
+            'data': self.data.hex(),
         }
 
 
@@ -219,7 +219,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         return {
             'endian': self.endian,
             'features': self.features,
-            'file_flags': "".join(_hex(x) for x in self.file_flags),
+            'file_flags': self.file_flags.hex(),
             'obfuscated': self.text_obfuscated,
             'legacy_lz': self.legacy_lz,
             'modern_lz': self.modern_lz,

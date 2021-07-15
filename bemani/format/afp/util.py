@@ -3,13 +3,6 @@ import sys
 from typing import Any, List, Optional, Tuple
 
 
-def _hex(data: int) -> str:
-    hexval = hex(data)[2:]
-    if len(hexval) == 1:
-        return "0" + hexval
-    return hexval
-
-
 def align(val: int) -> int:
     return (val + 3) & 0xFFFFFFFFC
 
