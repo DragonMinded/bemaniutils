@@ -1097,3 +1097,74 @@ class WhileStatement(DoWhileStatement):
             *entries,
             f"{prefix}}}",
         ]
+
+
+class SwitchCase:
+    def __init__(self, const: Any, statements: Sequence[Statement]) -> None:
+        self.const = const
+        self.statements = list(statements)
+
+    def __repr__(self) -> str:
+        entries: List[str] = []
+        for statement in self.statements:
+            entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
+
+        if self.const is not None:
+            const = value_ref(self.const, "")
+            return os.linesep.join([
+                f"case {const}:",
+                os.linesep.join(entries),
+            ])
+        else:
+            return os.linesep.join([
+                "default:",
+                os.linesep.join(entries),
+            ])
+
+    def render(self, prefix: str) -> List[str]:
+        entries: List[str] = []
+        for statement in self.statements:
+            entries.extend(statement.render(prefix=prefix + "    "))
+
+        if self.const is not None:
+            const = value_ref(self.const, prefix)
+            return [
+                f"{prefix}case {const}:",
+                *entries,
+            ]
+        else:
+            return [
+                f"{prefix}default:",
+                *entries,
+            ]
+
+
+class SwitchStatement(Statement):
+    def __init__(self, check_variable: Any, cases: Sequence[SwitchCase]) -> None:
+        self.check_variable = check_variable
+        self.cases = list(cases)
+
+    def __repr__(self) -> str:
+        cases: List[str] = []
+        for case in self.cases:
+            cases.extend([f"  {s}" for s in str(case).split(os.linesep)])
+
+        check = object_ref(self.check_variable, "")
+        return os.linesep.join([
+            f"switch ({check}) {{",
+            os.linesep.join(cases),
+            "}"
+        ])
+
+    def render(self, prefix: str) -> List[str]:
+        cases: List[str] = []
+        for case in self.cases:
+            cases.extend(case.render(prefix=prefix + "    "))
+
+        check = object_ref(self.check_variable, prefix)
+        return [
+            f"{prefix}switch ({check})",
+            f"{prefix}{{",
+            *cases,
+            f"{prefix}}}"
+        ]

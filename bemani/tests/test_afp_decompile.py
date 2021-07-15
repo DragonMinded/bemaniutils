@@ -747,21 +747,20 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(113, AP2Action.RETURN),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: This should be optimized as an if/elseif/else chunk without so much indentation.
         self.assertEqual(self.__equiv(statements), [
-            f"if (registers[0] != 1) {OPEN_BRACKET}{os.linesep}"
-            f"  if (registers[0] != 2) {OPEN_BRACKET}{os.linesep}"
-            f"    if (registers[0] != 3) {OPEN_BRACKET}{os.linesep}"
-            f"      tempvar_0 = 'd'{os.linesep}"
-            f"    {CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
-            f"      tempvar_0 = 'c'{os.linesep}"
-            f"    {CLOSE_BRACKET}{os.linesep}"
-            f"  {CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
+            f"switch (registers[0]) {OPEN_BRACKET}{os.linesep}"
+            f"  case 1:{os.linesep}"
+            f"    tempvar_0 = 'a'{os.linesep}"
+            f"    break{os.linesep}"
+            f"  case 2:{os.linesep}"
             f"    tempvar_0 = 'b'{os.linesep}"
-            f"  {CLOSE_BRACKET}{os.linesep}"
-            f"{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
-            f"  tempvar_0 = 'a'{os.linesep}"
+            f"    break{os.linesep}"
+            f"  case 3:{os.linesep}"
+            f"    tempvar_0 = 'c'{os.linesep}"
+            f"    break{os.linesep}"
+            f"  default:{os.linesep}"
+            f"    tempvar_0 = 'd'{os.linesep}"
+            f"    break{os.linesep}"
             "}",
             "return tempvar_0"
         ])
