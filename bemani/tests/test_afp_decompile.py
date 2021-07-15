@@ -660,7 +660,7 @@ class TestAFPDecompile(ExtendedTestCase):
             # "returning" early from a function.
         ])
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(self.__equiv(statements), [f"if (not True) {OPEN_BRACKET}{os.linesep}  return{os.linesep}{CLOSE_BRACKET}", "builtin_StartPlaying()"])
+        self.assertEqual(self.__equiv(statements), [f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET}"])
 
     def test_if_handling_diamond(self) -> None:
         # If true-false diamond case.

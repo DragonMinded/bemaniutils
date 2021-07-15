@@ -3111,11 +3111,35 @@ class ByteCodeDecompiler(VerboseOutput):
                         statement.false_statements and
                         isinstance(
                             statement.true_statements[-1],
-                            (BreakStatement, ContinueStatement, ReturnStatement, NullReturnStatement, ThrowStatement, GotoStatement),
+                            (ReturnStatement, NullReturnStatement, ThrowStatement, GotoStatement),
                         ) and
                         not isinstance(
                             statement.false_statements[-1],
-                            (BreakStatement, ContinueStatement, ReturnStatement, NullReturnStatement, ThrowStatement, GotoStatement),
+                            (ReturnStatement, NullReturnStatement, ThrowStatement, GotoStatement),
+                        )
+                    ):
+                        # We need to walk both halves still, but once we're done, swap the true/false
+                        # locations of the statements, so that the false value can be eliminated at
+                        # some later optimization stage.
+                        changed = True
+                        false_statements, _ = update_ifs(statement.true_statements)
+                        true_statements, _ = update_ifs(statement.false_statements)
+
+                        # Now, append the if statement, and follow up with the body.
+                        statement.true_statements = true_statements
+                        statement.false_statements = false_statements
+                        statement.cond = statement.cond.invert()
+                        new_statements.append(statement)
+                    elif (
+                        statement.true_statements and
+                        statement.false_statements and
+                        isinstance(
+                            statement.true_statements[-1],
+                            (BreakStatement, ContinueStatement),
+                        ) and
+                        not isinstance(
+                            statement.false_statements[-1],
+                            (BreakStatement, ContinueStatement),
                         )
                     ):
                         # We need to walk both halves still, but once we're done, hoist the false
@@ -3283,8 +3307,6 @@ class ByteCodeDecompiler(VerboseOutput):
                     # First, is the current combination a valid combined or statement?
                     candidate_true_expr = get_compound_if(candidate_statements)
                     candidate_false_expr = candidate_true_expr.invert().simplify()
-
-                    true_cond = AndIf(conditional, candidate_true_expr).simplify()
                     false_cond = AndIf(conditional, candidate_false_expr).simplify()
 
                     if false_cond in paths:
@@ -3482,7 +3504,7 @@ class ByteCodeDecompiler(VerboseOutput):
         def get_lhs(statement: IfStatement) -> Optional[Expression]:
             if not isinstance(statement.cond, TwoParameterIf):
                 return None
-            if statement.cond.comp not in {TwoParameterIf.EQUALS, TwoParameterIf.NOT_EQUALS}:
+            if statement.cond.comp not in {TwoParameterIf.EQUALS, TwoParameterIf.NOT_EQUALS, TwoParameterIf.STRICT_EQUALS, TwoParameterIf.STRICT_NOT_EQUALS}:
                 return None
             if not isinstance(statement.cond.conditional1, (Variable, Register, Member)):
                 return None
@@ -3573,7 +3595,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         cond = cast(TwoParameterIf, statement.cond)
 
                         # If its already switched, leave it alone.
-                        if cond.comp == TwoParameterIf.EQUALS:
+                        if cond.comp in {TwoParameterIf.EQUALS, TwoParameterIf.STRICT_EQUALS}:
                             new_batch.append(statement)
                             return statement
 
@@ -3681,6 +3703,85 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, replace_if_with_switch)
         return statements, changed
 
+    def __convert_if_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Find if statements in the middle of a chunk of code whose last true statement is
+        # a return/goto/throw. Take all the following statements and put them in the if
+        # statement's false clause. We do this because it allows us to recognize other
+        # optimizations we could do on the code, including switch folding and redundant
+        # statement eliminiation. It also often helps get rid of gotos that were only used
+        # to skip the false path of an if statement.
+        new_statements: List[Statement] = []
+        changed: bool = False
+
+        i = 0
+        while i < len(statements):
+            cur_statement = statements[i]
+
+            if isinstance(cur_statement, IfStatement):
+                if (
+                    cur_statement.true_statements and
+                    not cur_statement.false_statements and
+                    isinstance(cur_statement.true_statements[-1], (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement))
+                ):
+                    # This is a candidate! Take all following statements up until the possible label we jump to and
+                    # make them into the false chunk.
+                    last_true_statement = cur_statement.true_statements[-1]
+                    stop_at_label: Optional[int] = None
+                    if isinstance(last_true_statement, GotoStatement):
+                        stop_at_label = last_true_statement.location
+
+                    # We skip past this statement because its the one we're updating.
+                    i += 1
+
+                    false_statements: List[Statement] = []
+                    while i < len(statements):
+                        false_statement = statements[i]
+                        if stop_at_label is not None and isinstance(false_statement, DefineLabelStatement):
+                            if stop_at_label == false_statement.location:
+                                # Exit early, the rest of the code including this
+                                # label is not part of the else case.
+                                break
+
+                        false_statements.append(false_statement)
+                        i += 1
+
+                    # Add all of these to the false case.
+                    if false_statements:
+                        cur_statement.false_statements = false_statements
+                        changed = True
+                else:
+                    # Skip past this statement, we have nothing to do aside from walk its children.
+                    i += 1
+
+                # Regardless of whether we modified the if statement, recurse down its true and false path.
+                cur_statement.true_statements, new_changed = self.__convert_if_gotos(cur_statement.true_statements)
+                changed = changed or new_changed
+
+                cur_statement.false_statements, new_changed = self.__convert_if_gotos(cur_statement.false_statements)
+                changed = changed or new_changed
+
+                new_statements.append(cur_statement)
+
+            elif isinstance(cur_statement, SwitchStatement):
+                for case in cur_statement.cases:
+                    case.statements, new_changed = self.__convert_if_gotos(case.statements)
+                    changed = changed or new_changed
+                new_statements.append(cur_statement)
+                i += 1
+
+            elif isinstance(cur_statement, DoWhileStatement):
+                cur_statement.body, new_changed = self.__convert_if_gotos(cur_statement.body)
+                changed = changed or new_changed
+
+                new_statements.append(cur_statement)
+                i += 1
+
+            else:
+                new_statements.append(cur_statement)
+                i += 1
+
+        return new_statements, changed
+
     def _optimize_code(self, statements: Sequence[Statement]) -> List[Statement]:
         statements = list(statements)
 
@@ -3693,6 +3794,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 self.__remove_goto_return,
                 self.__eliminate_useless_returns,
                 self.__convert_loops,
+                self.__convert_if_gotos,
                 self.__swap_empty_ifs,
                 self.__drop_unneeded_else,
                 self.__swap_ugly_ifexprs,
