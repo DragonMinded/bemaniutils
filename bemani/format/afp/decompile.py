@@ -64,6 +64,8 @@ from .types import (
     StoreRegisterStatement,
     ExpressionStatement,
     IfExpr,
+    AndIf,
+    OrIf,
     IsUndefinedIf,
     IsBooleanIf,
     TwoParameterIf,
@@ -1381,113 +1383,6 @@ class ByteCodeDecompiler(VerboseOutput):
         self.vprint(f"Finished separating if statements out of graph starting at {start_id}")
         return [c for _, c in chunks_by_id.items()]
 
-    def __new_separate_ifs(self, start_id: int, end_id: Optional[int], chunks: Sequence[ArbitraryCodeChunk], offset_map: Dict[int, int]) -> List[ArbitraryCodeChunk]:
-        # TODO: This algorithm can possibly do better than the original at identifying cases.
-        # In particular, it handles compound if statements (if x or y) where the previous one
-        # ends up sticking gotos in. The problem is that it needs to know what if statements
-        # exist before combining them, and we can't do that until we walk the stack, and the
-        # stack walking algorithm both a) comes later and b) relies on all ifs being processed.
-        # So, this stays as a beta for now, and will possibly be integrated at a later time.
-        # If we want to use this, we should probably reformat it to work on the finished
-        # statement list we get after fully rendering the stack, and use it in the optimization
-        # pass phase to rewrite code with fewer (possibly sometimes no) gotos.
-        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
-        chunks_examined: Set[int] = set()
-
-        self.vprint(f"BETA: Separating if statements out of graph starting at {start_id}")
-
-        def walk_children(cur_chunk: ArbitraryCodeChunk, apply_logic: Sequence[IfResult]) -> Dict[int, Set[IfResult]]:
-            # First, if we have any previous if statements to apply to this chunk, do that now.
-            self.vprint(f"BETA: Applying {apply_logic} to {cur_chunk.id}")
-            chunks_to_logic: Dict[int, Set[IfResult]] = {cur_chunk.id: {x for x in apply_logic}}
-
-            # Now, if it is a loop and we haven't already passed over this chunk, recursively
-            # find if statements inside it as well.
-            if isinstance(cur_chunk, Loop):
-                if cur_chunk.id not in chunks_examined:
-                    chunks_examined.add(cur_chunk.id)
-
-                    self.vprint(f"BETA: Examining loop {cur_chunk.id} body for if statements...")
-                    cur_chunk.chunks = self.__new_separate_ifs(cur_chunk.id, None, cur_chunk.chunks, offset_map)
-                    self.vprint(f"BETA: Finished examining loop {cur_chunk.id} body for if statements...")
-
-            # Now, see if we need to split logic up or not.
-            if not cur_chunk.next_chunks:
-                # We are at the end of our walk.
-                return chunks_to_logic
-
-            if len(cur_chunk.next_chunks) == 1:
-                # We only have one child, so follow that link.
-                next_chunk = cur_chunk.next_chunks[0]
-                if next_chunk in chunks_by_id:
-                    for cid, logic in walk_children(chunks_by_id[next_chunk], apply_logic).items():
-                        chunks_to_logic[cid] = {*chunks_to_logic.get(cid, set()), *logic}
-                return chunks_to_logic
-
-            if not isinstance(cur_chunk, ByteCodeChunk):
-                # We should only be looking at bytecode chunks at this point, all other
-                # types should have a single next chunk.
-                raise Exception(f"Logic error, found converted Loop or If chunk {cur_chunk.id} with multiple successors!")
-
-            if len(cur_chunk.next_chunks) != 2:
-                # This needs to be an if statement.
-                raise Exception(f"Logic error, expected 2 successors but got {len(cur_chunk.next_chunks)} in chunk {cur_chunk.id}!")
-            last_action = cur_chunk.actions[-1]
-            if not isinstance(last_action, IfAction):
-                # This needs, again, to be an if statement.
-                raise Exception("Logic error, only IfActions can have multiple successors in chunk {cur_chunk.id}!")
-
-            # Find the true and false jump points, walk those graphs and assign logical predecessors
-            # to each of them.
-            true_jump_point, false_jump_point = self.__get_jump_points(cur_chunk, offset_map)
-            if true_jump_point == false_jump_point:
-                # This should never happen.
-                raise Exception("Logic error, both true and false jumps are to the same location!")
-
-            self.vprint(f"BETA: Chunk ID {cur_chunk.id} is an if statement with true node {true_jump_point} and false node {false_jump_point}")
-
-            # Walk both halves, assigning the if statement that has to exist to get to each half.
-            if true_jump_point in chunks_by_id:
-                for cid, logic in walk_children(chunks_by_id[true_jump_point], [*apply_logic, IfResult(cur_chunk.id, True)]).items():
-                    chunks_to_logic[cid] = {*chunks_to_logic.get(cid, set()), *logic}
-            if false_jump_point in chunks_by_id:
-                for cid, logic in walk_children(chunks_by_id[false_jump_point], [*apply_logic, IfResult(cur_chunk.id, False)]).items():
-                    chunks_to_logic[cid] = {*chunks_to_logic.get(cid, set()), *logic}
-            return chunks_to_logic
-
-        # First, walk through and identify how we get to each chunk.
-        chunks_by_logic = walk_children(chunks_by_id[start_id], [])
-        self.vprint(f"BETA: List of logics: {chunks_by_logic}")
-
-        # Now, go through each chunk and remove tautologies (where we get to it through a previous
-        # if statement from both true and false paths, meaning this isn't owned by an if statement).
-        for cid in chunks_by_logic:
-            changed: bool = True
-            while changed:
-                # Assume we didn't change anything.
-                changed = False
-
-                # Figure out if there is a tautology existing in this logic.
-                for path in chunks_by_logic[cid]:
-                    remove: Optional[IfResult] = None
-                    for other in chunks_by_logic[cid]:
-                        if path.makes_tautology(other):
-                            remove = other
-                            break
-
-                    if remove:
-                        # We found a tautology, remove both halves.
-                        self.vprint(f"BETA: {path} makes a tautology with {remove}, removing both of them!")
-                        chunks_by_logic[cid].remove(path)
-                        chunks_by_logic[cid].remove(remove)
-                        changed = True
-                        break
-
-        self.vprint(f"BETA: Cleaned up logics: {chunks_by_logic}")
-
-        self.vprint(f"BETA: Finished separating if statements out of graph starting at {start_id}")
-        return [c for _, c in chunks_by_id.items()]
-
     def __check_graph(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk]) -> List[ArbitraryCodeChunk]:
         # Recursively go through and verify that all entries to the graph have only one link.
         # Also, clean up the graph.
@@ -1535,19 +1430,19 @@ class ByteCodeDecompiler(VerboseOutput):
         # Make a copy of the stack so we can safely modify it ourselves.
         stack = [s for s in stack]
 
-        # TODO: Its possible for there to be a function/method call with no subsequent use of the return
-        # value and no POP to clear the stack. If this is the case, technically the function WAS called,
-        # just the result was completely ignored. This shows up in a few Pop'n animations. What should
-        # happen is that we check the stack for any leftover function/method calls and re-insert them
-        # into the spot where they were called since we know that they aren't used.
-
         def make_if_expr(action: IfAction) -> IfExpr:
-            if action.comparison in [IfAction.COMP_IS_UNDEFINED, IfAction.COMP_IS_NOT_UNDEFINED]:
+            if action.comparison == IfAction.COMP_IS_UNDEFINED:
                 conditional = stack.pop()
-                return IsUndefinedIf(conditional, negate=(action.comparison != IfAction.COMP_IS_UNDEFINED))
-            elif action.comparison in [IfAction.COMP_IS_TRUE, IfAction.COMP_IS_FALSE]:
+                return IsUndefinedIf(conditional)
+            elif action.comparison == IfAction.COMP_IS_NOT_UNDEFINED:
                 conditional = stack.pop()
-                return IsBooleanIf(conditional, negate=(action.comparison != IfAction.COMP_IS_TRUE))
+                return IsUndefinedIf(conditional).invert()
+            elif action.comparison == IfAction.COMP_IS_TRUE:
+                conditional = stack.pop()
+                return IsBooleanIf(conditional)
+            elif action.comparison == IfAction.COMP_IS_FALSE:
+                conditional = stack.pop()
+                return IsBooleanIf(conditional).invert()
             elif action.comparison in [
                 IfAction.COMP_EQUALS,
                 IfAction.COMP_NOT_EQUALS,
@@ -3192,6 +3087,329 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return update_ifs(statements, in_loop=False)
 
+    def __gather_flow(self, parent_conditional: IfExpr, statements: Sequence[Statement]) -> Tuple[IfExpr, Dict[int, IfExpr], List[Tuple[IfExpr, Statement]]]:
+        flowed_statements: List[Tuple[IfExpr, Statement]] = []
+        running_conditional: IfExpr = parent_conditional
+        gotos: Dict[int, IfExpr] = {}
+
+        def merge_gotos(location: int, conditional: IfExpr) -> None:
+            if location in gotos:
+                gotos[location] = OrIf(gotos[location], conditional).simplify()
+            else:
+                gotos[location] = conditional
+
+        for statement in statements:
+            if isinstance(statement, IfStatement):
+                true_cond, true_gotos, true_statements = self.__gather_flow(AndIf(running_conditional, statement.cond).simplify(), statement.true_statements)
+                false_cond, false_gotos, false_statements = self.__gather_flow(AndIf(running_conditional, statement.cond.invert()).simplify(), statement.false_statements)
+
+                flowed_statements.append((running_conditional, statement))
+                flowed_statements.extend(true_statements)
+                flowed_statements.extend(false_statements)
+                for line, goto in true_gotos.items():
+                    merge_gotos(line, goto)
+                for line, goto in false_gotos.items():
+                    merge_gotos(line, goto)
+
+                if true_cond == IsBooleanIf(False) and false_cond == IsBooleanIf(False):
+                    # Both conditionals exited.
+                    running_conditional = IsBooleanIf(False)
+                elif true_cond != IsBooleanIf(False) and false_cond == IsBooleanIf(False):
+                    # The subsequent statements are only parented by the true conditional.
+                    running_conditional = AndIf(true_cond, running_conditional).simplify()
+                elif true_cond == IsBooleanIf(False) and false_cond != IsBooleanIf(False):
+                    # The subsequent statements are only parented by the false conditional.
+                    running_conditional = AndIf(false_cond, running_conditional).simplify()
+                else:
+                    # We are parented by either of the true/false cases.
+                    running_conditional = OrIf(AndIf(true_cond, running_conditional), AndIf(false_cond, running_conditional)).simplify()
+            else:
+                flowed_statements.append((running_conditional, statement))
+                if isinstance(statement, (NullReturnStatement, ReturnStatement, ThrowStatement)):
+                    # We shouldn't find any more statements after this, unless there's a label.
+                    running_conditional = IsBooleanIf(False)
+                elif isinstance(statement, GotoStatement):
+                    # The statements after this start from scratch, we shouldn't find any more
+                    # statements after this unless its followed by a label.
+                    merge_gotos(statement.location, running_conditional)
+                    running_conditional = IsBooleanIf(False)
+
+        if gotos:
+            goto_conditional: IfExpr = IsBooleanIf(False)
+            for i, (cond, stmt) in enumerate(flowed_statements):
+                if isinstance(stmt, DefineLabelStatement):
+                    # This code might not be fully optimized yet and this might be a label
+                    # to which there is no goto.
+                    if stmt.location not in gotos:
+                        continue
+                    goto_conditional = OrIf(gotos[stmt.location], goto_conditional).simplify()
+                flowed_statements[i] = (OrIf(cond, goto_conditional).simplify(), stmt)
+                if isinstance(stmt, (NullReturnStatement, ReturnStatement, ThrowStatement, GotoStatement)):
+                    # The current running conditional no longer applies after this statement.
+                    goto_conditional = IsBooleanIf(False)
+
+        return running_conditional, gotos, flowed_statements
+
+    def __gather_candidates(self, statements: Sequence[Statement]) -> List[IfStatement]:
+        candidates: List[IfStatement] = []
+
+        for statement in statements:
+            # We intentionally ignore while loops here, because we don't collapse gotos across while loop
+            # boundaries. We will end up running this code again over the contents of any while loop when
+            # we call __rearrange_compound_ifs on its body.
+            if isinstance(statement, IfStatement):
+                if statement.true_statements and not statement.false_statements:
+                    candidates.append(statement)
+
+                candidates.extend(self.__gather_candidates(statement.true_statements))
+                candidates.extend(self.__gather_candidates(statement.false_statements))
+
+        return candidates
+
+    def __hoist_compound_ifs(
+        self,
+        parent_conditional: IfExpr,
+        statements: Sequence[Statement],
+        candidates: List[IfStatement],
+        flow: List[Tuple[IfExpr, Statement]],
+    ) -> Tuple[List[Statement], bool]:
+        stmt_to_flow: Dict[Statement, IfExpr] = {f[1]: f[0] for f in flow}
+        paths: Set[IfExpr] = {f[0] for f in flow}
+        new_statements: List[Statement] = []
+        changed: bool = False
+
+        def get_child_candidate(statement: IfStatement) -> Optional[IfStatement]:
+            # If the current if statement has any false statements, or its only true
+            # statement isn't a child if, then there is no child candidate to add.
+            if statement.false_statements or len(statement.true_statements) != 1:
+                return None
+
+            # Now, see if the child candidate is in our list of valid candidates.
+            for candidate in candidates:
+                if candidate is statement.true_statements[0]:
+                    return candidate
+
+            # We didn't find a candidate.
+            return None
+
+        def get_compound_if(statements: List[IfStatement]) -> IfExpr:
+            # Start with "True", since anding with true is the identity.
+            combined: IfExpr = IsBooleanIf(True)
+
+            # Each if statement contributes to the full if.
+            for statement in statements:
+                combined = AndIf(combined, statement.cond)
+
+            # Finally, simplify it for ease of comparison.
+            return combined.simplify()
+
+        i = 0
+        while i < len(statements):
+            statement = statements[i]
+
+            if isinstance(statement, IfStatement):
+                # See if this is a compound if pattern.
+                candidate_statements: List[IfStatement] = [statement]
+                is_candidate = False
+
+                if candidates and (not statement.false_statements) and len(statement.true_statements) == 1:
+                    while True:
+                        # First, is the current combination a valid combined or statement?
+                        candidate_true_expr = get_compound_if(candidate_statements)
+                        candidate_false_expr = candidate_true_expr.invert().simplify()
+
+                        true_cond = AndIf(parent_conditional, candidate_true_expr).simplify()
+                        false_cond = AndIf(parent_conditional, candidate_false_expr).simplify()
+
+                        if true_cond in paths and false_cond in paths:
+                            is_candidate = True
+                            break
+
+                        # Now, try to add on the next in the layer.
+                        new_candidate = get_child_candidate(candidate_statements[-1])
+                        if new_candidate is None:
+                            # There are no more candidates to try to add.
+                            break
+
+                        # Add this to our consideration, retry the logic test.
+                        candidate_statements.append(new_candidate)
+
+                if len(candidate_statements) < 2 or not is_candidate:
+                    # Move past this statement, we don't care about it.
+                    i += 1
+
+                    # However, check its children for any compound ifs that could
+                    # be collapsed.
+                    true_statements, child_changed = self.__hoist_compound_ifs(
+                        AndIf(parent_conditional, statement.cond).simplify(),
+                        statement.true_statements,
+                        candidates,
+                        flow,
+                    )
+                    changed = changed or child_changed
+                    false_statements, child_changed = self.__hoist_compound_ifs(
+                        AndIf(parent_conditional, statement.cond.invert()).simplify(),
+                        statement.false_statements,
+                        candidates,
+                        flow,
+                    )
+                    changed = changed or child_changed
+
+                    new_statements.append(
+                        IfStatement(
+                            statement.cond,
+                            true_statements,
+                            false_statements,
+                        )
+                    )
+                else:
+                    true_expr = get_compound_if(candidate_statements)
+                    false_expr = true_expr.invert().simplify()
+                    true_cond = AndIf(parent_conditional, true_expr).simplify()
+                    false_cond = AndIf(parent_conditional, false_expr).simplify()
+
+                    hoist_after: List[Statement] = []
+                    true_statements = []
+                    false_statements = []
+
+                    for stmt in candidate_statements[-1].true_statements:
+                        if stmt_to_flow[stmt] == parent_conditional:
+                            hoist_after.append(stmt)
+                        else:
+                            true_statements.append(stmt)
+
+                    # Handled this statement, look at the following statements to figure out
+                    # which ones are part of the false portion.
+                    i += 1
+                    while i < len(statements):
+                        statement = statements[i]
+                        if stmt_to_flow[statement] == false_cond:
+                            false_statements.append(statement)
+                            i += 1
+                        else:
+                            # We don't need to include this statement.
+                            break
+
+                    # Now, add this new if statement, but make sure to gather up
+                    # any compound if statements in any of its true/false children
+                    # that we just updated.
+                    true_statements, child_changed = self.__hoist_compound_ifs(
+                        true_cond,
+                        true_statements,
+                        candidates,
+                        flow,
+                    )
+                    changed = changed or child_changed
+                    false_statements, child_changed = self.__hoist_compound_ifs(
+                        false_cond,
+                        false_statements,
+                        candidates,
+                        flow,
+                    )
+                    changed = changed or child_changed
+
+                    # Due to the way decompiling works, negating the if produces
+                    # more pleasing decompilation. This is due to the fact that
+                    # these are compound or statements and the easiest way for a
+                    # compiler to generate code is to do an and of the negation.
+                    new_statements.append(
+                        IfStatement(
+                            true_expr.invert(),
+                            false_statements,
+                            true_statements,
+                        )
+                    )
+
+                    # Finally, add the statements we hoisted after the compound
+                    # expression, being sure to recurse into any if statements therein.
+                    for stmt in hoist_after:
+                        if isinstance(stmt, IfStatement):
+                            true_statements, child_changed = self.__hoist_compound_ifs(
+                                AndIf(parent_conditional, stmt.cond).simplify(),
+                                stmt.true_statements,
+                                candidates,
+                                flow,
+                            )
+                            changed = changed or child_changed
+                            false_statements, child_changed = self.__hoist_compound_ifs(
+                                AndIf(parent_conditional, stmt.cond.invert()).simplify(),
+                                stmt.false_statements,
+                                candidates,
+                                flow,
+                            )
+                            changed = changed or child_changed
+                            new_statements.append(
+                                IfStatement(
+                                    stmt.cond,
+                                    true_statements,
+                                    false_statements,
+                                )
+                            )
+                        elif isinstance(stmt, DoWhileStatement):
+                            new_body, child_changed = self.__rearrange_compound_ifs(stmt.body)
+                            changed = changed or child_changed
+                            stmt.body = new_body
+                            new_statements.append(stmt)
+                        else:
+                            new_statements.append(stmt)
+
+                    # We hoisted a compound if, so report a change.
+                    changed = True
+            elif isinstance(statement, DoWhileStatement):
+                new_body, child_changed = self.__rearrange_compound_ifs(statement.body)
+                changed = changed or child_changed
+                statement.body = new_body
+                new_statements.append(statement)
+                i += 1
+            else:
+                new_statements.append(statement)
+                i += 1
+
+        return new_statements, changed
+
+    def __rearrange_compound_ifs(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        candidates = self.__gather_candidates(statements)
+        if candidates:
+            _, _, flow = self.__gather_flow(IsBooleanIf(True), statements)
+        else:
+            flow = []
+
+        return self.__hoist_compound_ifs(IsBooleanIf(True), statements, candidates, flow)
+
+    def _optimize_code(self, statements: Sequence[Statement]) -> List[Statement]:
+        statements = list(statements)
+
+        if self.optimize:
+            while True:
+                self.vprint("Running optimizer pass...")
+                any_changed = False
+                for func in [
+                    self.__collapse_identical_labels,
+                    self.__eliminate_useless_continues,
+                    self.__eliminate_unused_labels,
+                    self.__remove_useless_gotos,
+                    self.__remove_goto_return,
+                    self.__eliminate_useless_returns,
+                    self.__convert_loops,
+                    self.__swap_empty_ifs,
+                    self.__drop_unneeded_else,
+                    self.__rearrange_compound_ifs,
+                ]:
+                    statements, changed = func(statements)
+                    any_changed = any_changed or changed
+
+                if not any_changed:
+                    self.vprint("Optimizer did not change anything.")
+                    break
+                else:
+                    self.vprint("Optimizer changed code, running another pass.")
+
+        # TODO: We probably want to collapse some really long if chains to switch
+        # statements or if/elif/else blocks for readability but that is left as a
+        # future enhancement.
+
+        return statements
+
     def __verify_balanced_labels(self, statements: Sequence[Statement]) -> None:
         gotos: Set[int] = set()
         labels: Set[int] = set()
@@ -3228,7 +3446,11 @@ class ByteCodeDecompiler(VerboseOutput):
 
         self.__walk(statements, check_ifs)
 
-    def __pretty_print(self, statements: Sequence[Statement], prefix: str = "") -> str:
+    def __sanity_check_code(self, statements: Sequence[Statement]) -> None:
+        self.__verify_balanced_labels(statements)
+        self.__verify_no_empty_ifs(statements)
+
+    def _pretty_print(self, statements: Sequence[Statement], prefix: str = "") -> str:
         output: List[str] = []
 
         for statement in statements:
@@ -3271,25 +3493,7 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__eval_chunks(start_id, chunks_loops_and_ifs, offset_map)
 
         # Now, let's do some clean-up passes.
-        if self.optimize:
-            while True:
-                any_changed = False
-                for func in [
-                    self.__collapse_identical_labels,
-                    self.__eliminate_useless_continues,
-                    self.__eliminate_unused_labels,
-                    self.__remove_useless_gotos,
-                    self.__remove_goto_return,
-                    self.__eliminate_useless_returns,
-                    self.__convert_loops,
-                    self.__swap_empty_ifs,
-                    self.__drop_unneeded_else,
-                ]:
-                    statements, changed = func(statements)
-                    any_changed = any_changed or changed
-
-                if not any_changed:
-                    break
+        statements = self._optimize_code(statements)
 
         # TODO: There's definitely a lot missing from this decompilation process.
         # For one, function definitions do not include any mention of number of
@@ -3306,24 +3510,15 @@ class ByteCodeDecompiler(VerboseOutput):
         # contents in a function call to nail this down, but it is left as a future
         # enhancement.
 
-        # TODO: If statements still don't support compound or properly, and resort
-        # to using nasty gotos. We have a prototype of an algorithm above with its
-        # own TODO section that can possibly fix this, but I haven't taken the time
-        # to try to fix it up and integrate it. It would produde far more readable
-        # code in some instances. We also would probably want to collapse some really
-        # long if chains to swithc statements or if/elif/else blocks for readability
-        # but that is also left as a future enhancement.
-
         # Let's sanity check the code for a few things that might trip us up.
-        self.__verify_balanced_labels(statements)
-        self.__verify_no_empty_ifs(statements)
+        self.__sanity_check_code(statements)
 
         # Finally, let's save the code!
         self.__statements = statements
 
     def as_string(self, prefix: str = "", verbose: bool = False) -> str:
         with self.debugging(verbose):
-            code = self.__pretty_print(self.statements, prefix=prefix)
+            code = self._pretty_print(self.statements, prefix=prefix)
             self.vprint(f"Final code:{os.linesep}{code}")
             return code
 

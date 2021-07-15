@@ -5,7 +5,32 @@ from typing import Dict, List, Sequence, Tuple, Union
 
 from bemani.tests.helpers import ExtendedTestCase
 from bemani.format.afp.decompile import ByteCodeDecompiler, ByteCode, BitVector, ByteCodeChunk, ControlFlow
-from bemani.format.afp.types import AP2Action, IfAction, JumpAction, PushAction, AddNumVariableAction, Register, Statement
+from bemani.format.afp.types import (
+    AP2Action,
+    IfAction,
+    JumpAction,
+    PushAction,
+    AddNumVariableAction,
+    Register,
+    Variable,
+    ArithmeticExpression,
+    UNDEFINED,
+    Statement,
+    DefineLabelStatement,
+    GotoStatement,
+    ReturnStatement,
+    PlayMovieStatement,
+    StopMovieStatement,
+    NextFrameStatement,
+    PreviousFrameStatement,
+    IfStatement,
+    ForStatement,
+    IsUndefinedIf,
+    IsBooleanIf,
+    TwoParameterIf,
+    AndIf,
+    OrIf,
+)
 
 
 OPEN_BRACKET = "{"
@@ -778,18 +803,13 @@ class TestAFPDecompile(ExtendedTestCase):
             AP2Action(108, AP2Action.RETURN),
         ])
         statements = self.__call_decompile(bytecode)
-
-        # TODO: This should be optimized as a compound if statement.
         self.assertEqual(self.__equiv(statements), [
-            f"if (registers[0] != 1) {OPEN_BRACKET}{os.linesep}"
-            f"  if (registers[0] != 2) {OPEN_BRACKET}{os.linesep}"
-            f"    builtin_StopPlaying(){os.linesep}"
-            f"    label_4:{os.linesep}"
-            f"    return 'strval'{os.linesep}"
-            f"  {CLOSE_BRACKET}{os.linesep}"
-            "}",
-            "builtin_StartPlaying()",
-            "goto label_4",
+            f"if (registers[0] == 1 || registers[0] == 2) {OPEN_BRACKET}{os.linesep}"
+            f"  builtin_StartPlaying(){os.linesep}"
+            f"{CLOSE_BRACKET} else {OPEN_BRACKET}{os.linesep}"
+            f"  builtin_StopPlaying(){os.linesep}"
+            f"{CLOSE_BRACKET}",
+            "return 'strval'"
         ])
 
     def test_basic_while(self) -> None:
@@ -919,3 +939,1125 @@ class TestAFPDecompile(ExtendedTestCase):
             f"  builtin_GotoNextFrame(){os.linesep}"
             "}"
         ])
+
+
+class TestIfExprs(ExtendedTestCase):
+    def test_simple(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(Variable('a'))), "a is UNDEFINED")
+        self.assertEqual(str(IsBooleanIf(Variable('a'))), "a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.EQUALS, Variable("b"))), "a == b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.NOT_EQUALS, Variable("b"))), "a != b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b"))), "a < b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT, Variable("b"))), "a > b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT_EQUALS, Variable("b"))), "a <= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b"))), "a >= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_EQUALS, Variable("b"))), "a === b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b"))), "a !== b")
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                )
+            ),
+            "a < b && c > d",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                )
+            ),
+            "a < b || c > d",
+        )
+
+    def test_invert_simple(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(Variable('a')).invert()), "a is not UNDEFINED")
+        self.assertEqual(str(IsBooleanIf(Variable('a')).invert()), "not a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.EQUALS, Variable("b")).invert()), "a != b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.NOT_EQUALS, Variable("b")).invert()), "a == b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")).invert()), "a >= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT, Variable("b")).invert()), "a <= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT_EQUALS, Variable("b")).invert()), "a > b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b")).invert()), "a < b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_EQUALS, Variable("b")).invert()), "a !== b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).invert()), "a === b")
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).invert()
+            ),
+            "a >= b || c <= d",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).invert(),
+            ),
+            "a >= b && c <= d",
+        )
+
+    def test_invert_double(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(Variable('a')).invert().invert()), "a is UNDEFINED")
+        self.assertEqual(str(IsBooleanIf(Variable('a')).invert().invert()), "a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.EQUALS, Variable("b")).invert().invert()), "a == b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.NOT_EQUALS, Variable("b")).invert().invert()), "a != b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")).invert().invert()), "a < b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT, Variable("b")).invert().invert()), "a > b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT_EQUALS, Variable("b")).invert().invert()), "a <= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b")).invert().invert()), "a >= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_EQUALS, Variable("b")).invert().invert()), "a === b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).invert().invert()), "a !== b")
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).invert().invert()
+            ),
+            "a < b && c > d",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).invert().invert()
+            ),
+            "a < b || c > d",
+        )
+
+    def test_swap_simple(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(Variable('a')).swap()), "a is UNDEFINED")
+        self.assertEqual(str(IsBooleanIf(Variable('a')).swap()), "a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.EQUALS, Variable("b")).swap()), "b == a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.NOT_EQUALS, Variable("b")).swap()), "b != a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")).swap()), "b > a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT, Variable("b")).swap()), "b < a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT_EQUALS, Variable("b")).swap()), "b >= a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b")).swap()), "b <= a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_EQUALS, Variable("b")).swap()), "b === a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).swap()), "b !== a")
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).swap()
+            ),
+            "c > d && a < b",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).swap(),
+            ),
+            "c > d || a < b",
+        )
+
+    def test_swap_double(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(Variable('a')).swap().swap()), "a is UNDEFINED")
+        self.assertEqual(str(IsBooleanIf(Variable('a')).swap().swap()), "a")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.EQUALS, Variable("b")).swap().swap()), "a == b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.NOT_EQUALS, Variable("b")).swap().swap()), "a != b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")).swap().swap()), "a < b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT, Variable("b")).swap().swap()), "a > b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.LT_EQUALS, Variable("b")).swap().swap()), "a <= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b")).swap().swap()), "a >= b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_EQUALS, Variable("b")).swap().swap()), "a === b")
+        self.assertEqual(str(TwoParameterIf(Variable('a'), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).swap().swap()), "a !== b")
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).swap().swap()
+            ),
+            "a < b && c > d",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).swap().swap()
+            ),
+            "a < b || c > d",
+        )
+
+    def test_simplify_noop(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(Variable('a')).simplify()), "a is UNDEFINED")
+        self.assertEqual(str(IsUndefinedIf(Variable('a')).invert().simplify()), "a is not UNDEFINED")
+        self.assertEqual(str(IsBooleanIf(Variable('a')).simplify()), "a")
+        self.assertEqual(str(IsBooleanIf(Variable('a')).invert().simplify()), "not a")
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).simplify()
+            ),
+            "a < b && c > d",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('c'), TwoParameterIf.GT, Variable("d")),
+                ).simplify()
+            ),
+            "a < b || c > d",
+        )
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("c")),
+                ).simplify()
+            ),
+            "a < b && a >= c",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.GT, Variable("b")),
+                ).simplify()
+            ),
+            "a < b || a > b",
+        )
+
+    def test_simplify_basic(self) -> None:
+        self.assertEqual(str(IsUndefinedIf(UNDEFINED).simplify()), "True")
+        self.assertEqual(str(IsUndefinedIf(UNDEFINED).invert().simplify()), "False")
+        self.assertEqual(str(IsBooleanIf(True).simplify()), "True")
+        self.assertEqual(str(IsBooleanIf(True).invert().simplify()), "False")
+        self.assertEqual(str(IsBooleanIf(False).simplify()), "False")
+        self.assertEqual(str(IsBooleanIf(False).invert().simplify()), "True")
+
+    def test_simplify_compound(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    IsBooleanIf(True),
+                ).simplify()
+            ),
+            "a < b",
+        )
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    IsBooleanIf(False),
+                ).simplify()
+            ),
+            "False",
+        )
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(True),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                ).simplify()
+            ),
+            "a < b",
+        )
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(False),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                ).simplify()
+            ),
+            "False",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    IsBooleanIf(True),
+                ).simplify()
+            ),
+            "True",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    IsBooleanIf(False),
+                ).simplify()
+            ),
+            "a < b",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(True),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                ).simplify()
+            ),
+            "True",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(False),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                ).simplify()
+            ),
+            "a < b",
+        )
+
+    def test_simplify_equivalent(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b")),
+                ).simplify()
+            ),
+            "False",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    TwoParameterIf(Variable('a'), TwoParameterIf.LT, Variable("b")),
+                    TwoParameterIf(Variable('a'), TwoParameterIf.GT_EQUALS, Variable("b")),
+                ).simplify()
+            ),
+            "True",
+        )
+
+    def test_equals_associativity(self) -> None:
+        self.assertEqual(
+            AndIf(
+                IsBooleanIf(Variable('a')),
+                AndIf(
+                    IsBooleanIf(Variable('b')),
+                    IsBooleanIf(Variable('c')),
+                ),
+            ),
+            AndIf(
+                AndIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(Variable('b')),
+                ),
+                IsBooleanIf(Variable('c')),
+            ),
+        )
+        self.assertEqual(
+            OrIf(
+                IsBooleanIf(Variable('a')),
+                OrIf(
+                    IsBooleanIf(Variable('b')),
+                    IsBooleanIf(Variable('c')),
+                ),
+            ),
+            OrIf(
+                OrIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(Variable('b')),
+                ),
+                IsBooleanIf(Variable('c')),
+            ),
+        )
+
+    def test_equals_commutativity(self) -> None:
+        self.assertEqual(
+            AndIf(
+                IsBooleanIf(Variable('a')),
+                IsBooleanIf(Variable('b')),
+            ),
+            AndIf(
+                IsBooleanIf(Variable('b')),
+                IsBooleanIf(Variable('a')),
+            ),
+        )
+        self.assertEqual(
+            OrIf(
+                IsBooleanIf(Variable('a')),
+                IsBooleanIf(Variable('b')),
+            ),
+            OrIf(
+                IsBooleanIf(Variable('b')),
+                IsBooleanIf(Variable('a')),
+            ),
+        )
+
+    def test_simplify_identity(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(True),
+                ).simplify(),
+            ),
+            "a",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(False),
+                ).simplify(),
+            ),
+            "a",
+        )
+
+    def test_simplify_annihilation(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(False),
+                ).simplify(),
+            ),
+            "False",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(True),
+                ).simplify(),
+            ),
+            "True",
+        )
+
+    def test_simplify_idempotence(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(Variable('a')),
+                ).simplify(),
+            ),
+            "a",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(Variable('a')),
+                ).simplify(),
+            ),
+            "a",
+        )
+
+    def test_simplify_complementation(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(Variable('a')).invert(),
+                ).simplify(),
+            ),
+            "False",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(Variable('a')),
+                    IsBooleanIf(Variable('a')).invert(),
+                ).simplify(),
+            ),
+            "True",
+        )
+
+    def test_simplify_elimination(self) -> None:
+        self.assertEqual(
+            str(
+                OrIf(
+                    AndIf(
+                        IsBooleanIf(Variable('x')),
+                        IsBooleanIf(Variable('y')),
+                    ),
+                    AndIf(
+                        IsBooleanIf(Variable('x')),
+                        IsBooleanIf(Variable('y')).invert(),
+                    ),
+                ).simplify(),
+            ),
+            "x",
+        )
+        self.assertEqual(
+            str(
+                AndIf(
+                    OrIf(
+                        IsBooleanIf(Variable('x')),
+                        IsBooleanIf(Variable('y')),
+                    ),
+                    OrIf(
+                        IsBooleanIf(Variable('x')),
+                        IsBooleanIf(Variable('y')).invert(),
+                    ),
+                ).simplify(),
+            ),
+            "x",
+        )
+
+    def test_simplify_absorption(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(Variable('x')),
+                    OrIf(
+                        IsBooleanIf(Variable('x')),
+                        IsBooleanIf(Variable('y')),
+                    ),
+                ).simplify(),
+            ),
+            "x",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(Variable('x')),
+                    AndIf(
+                        IsBooleanIf(Variable('x')),
+                        IsBooleanIf(Variable('y')),
+                    ),
+                ).simplify(),
+            ),
+            "x",
+        )
+
+    def test_simplify_negative_absorption(self) -> None:
+        self.assertEqual(
+            str(
+                AndIf(
+                    IsBooleanIf(Variable('x')),
+                    OrIf(
+                        IsBooleanIf(Variable('x')).invert(),
+                        IsBooleanIf(Variable('y')),
+                    ),
+                ).simplify(),
+            ),
+            "x && y",
+        )
+        self.assertEqual(
+            str(
+                OrIf(
+                    IsBooleanIf(Variable('x')),
+                    AndIf(
+                        IsBooleanIf(Variable('x')).invert(),
+                        IsBooleanIf(Variable('y')),
+                    ),
+                ).simplify(),
+            ),
+            "x || y",
+        )
+
+
+class TestAFPOptimize(ExtendedTestCase):
+    def __optimize_code(self, statements: Sequence[Statement]) -> List[str]:
+        bcd = ByteCodeDecompiler(
+            ByteCode(
+                None,
+                [],
+                -1,
+            ),
+            optimize=True
+        )
+        with bcd.debugging(verbose=self.verbose):
+            return bcd._pretty_print(bcd._optimize_code(statements), prefix="").split(os.linesep)
+
+    def test_no_flow(self) -> None:
+        statements: List[Statement] = [
+            PlayMovieStatement(),
+            StopMovieStatement(),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'builtin_StartPlaying();',
+                'builtin_StopPlaying();',
+            ]
+        )
+
+    def test_basic_flow(self) -> None:
+        statements: List[Statement] = [
+            PlayMovieStatement(),
+            IfStatement(
+                IsBooleanIf(
+                    Variable('a'),
+                ),
+                [
+                    NextFrameStatement(),
+                ],
+                [
+                    PreviousFrameStatement(),
+                ],
+            ),
+            StopMovieStatement(),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'builtin_StartPlaying();',
+                'if (a)',
+                '{',
+                '    builtin_GotoNextFrame();',
+                '}',
+                'else',
+                '{',
+                '    builtin_GotoPreviousFrame();',
+                '}',
+                'builtin_StopPlaying();',
+            ]
+        )
+
+    def test_compound_or_basic(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            StopMovieStatement(),
+                            DefineLabelStatement(1000),
+                            ReturnStatement('strval'),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            PlayMovieStatement(),
+            GotoStatement(1000),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2)',
+                '{',
+                '    builtin_StartPlaying();',
+                '}',
+                'else',
+                '{',
+                '    builtin_StopPlaying();',
+                '}',
+                "return 'strval';",
+            ]
+        )
+
+    def test_compound_or_alternate(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            StopMovieStatement(),
+                            GotoStatement(1000),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            PlayMovieStatement(),
+            DefineLabelStatement(1000),
+            ReturnStatement('strval'),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2)',
+                '{',
+                '    builtin_StartPlaying();',
+                '}',
+                'else',
+                '{',
+                '    builtin_StopPlaying();',
+                '}',
+                "return 'strval';",
+            ]
+        )
+
+    def test_compound_or_inside_if(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                IsBooleanIf(
+                    Variable('debug'),
+                ).invert(),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            1,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('a'),
+                                    TwoParameterIf.NOT_EQUALS,
+                                    2,
+                                ),
+                                [
+                                    StopMovieStatement(),
+                                    DefineLabelStatement(1000),
+                                    ReturnStatement('strval'),
+                                ],
+                                [],
+                            ),
+                        ],
+                        [],
+                    ),
+                    PlayMovieStatement(),
+                    GotoStatement(1000),
+                ],
+                [],
+            ),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (not debug)',
+                '{',
+                '    if (a == 1 || a == 2)',
+                '    {',
+                '        builtin_StartPlaying();',
+                '    }',
+                '    else',
+                '    {',
+                '        builtin_StopPlaying();',
+                '    }',
+                "    return 'strval';",
+                '}',
+            ]
+        )
+
+    def test_compound_or_inside_while(self) -> None:
+        statements: List[Statement] = [
+            ForStatement(
+                "x",
+                0,
+                TwoParameterIf(
+                    Variable('x'),
+                    TwoParameterIf.LT,
+                    10,
+                ),
+                ArithmeticExpression(
+                    Variable('x'),
+                    '+',
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            1,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('a'),
+                                    TwoParameterIf.NOT_EQUALS,
+                                    2,
+                                ),
+                                [
+                                    StopMovieStatement(),
+                                    DefineLabelStatement(1000),
+                                    ReturnStatement('strval'),
+                                ],
+                                [],
+                            ),
+                        ],
+                        [],
+                    ),
+                    PlayMovieStatement(),
+                    GotoStatement(1000),
+                ],
+                local=True,
+            ),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'for (local x = 0; x < 10; x = x + 1)',
+                '{',
+                '    if (a == 1 || a == 2)',
+                '    {',
+                '        builtin_StartPlaying();',
+                '    }',
+                '    else',
+                '    {',
+                '        builtin_StopPlaying();',
+                '    }',
+                "    return 'strval';",
+                '}',
+            ]
+        )
+
+    def test_compound_or_with_inner_if(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('x'),
+                                    TwoParameterIf.EQUALS,
+                                    5,
+                                ),
+                                [
+                                    StopMovieStatement(),
+                                ],
+                                [],
+                            ),
+                            DefineLabelStatement(1000),
+                            ReturnStatement('strval'),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            IfStatement(
+                TwoParameterIf(
+                    Variable('x'),
+                    TwoParameterIf.EQUALS,
+                    10,
+                ),
+                [
+                    PlayMovieStatement(),
+                ],
+                [],
+            ),
+            GotoStatement(1000),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2)',
+                '{',
+                '    if (x == 10)',
+                '    {',
+                '        builtin_StartPlaying();',
+                '    }',
+                '}',
+                'else',
+                '{',
+                '    if (x == 5)',
+                '    {',
+                '        builtin_StopPlaying();',
+                '    }',
+                '}',
+                "return 'strval';",
+            ]
+        )
+
+    def test_compound_or_with_inner_compound_or(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('x'),
+                                    TwoParameterIf.NOT_EQUALS,
+                                    10,
+                                ),
+                                [
+                                    IfStatement(
+                                        TwoParameterIf(
+                                            Variable('x'),
+                                            TwoParameterIf.NOT_EQUALS,
+                                            20,
+                                        ),
+                                        [
+                                            StopMovieStatement(),
+                                            GotoStatement(1000),
+                                        ],
+                                        [],
+                                    ),
+                                ],
+                                [],
+                            ),
+                            PlayMovieStatement(),
+                            GotoStatement(1000),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            NextFrameStatement(),
+            PreviousFrameStatement(),
+            DefineLabelStatement(1000),
+            ReturnStatement('strval'),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2)',
+                '{',
+                '    builtin_GotoNextFrame();',
+                '    builtin_GotoPreviousFrame();',
+                '}',
+                'else',
+                '{',
+                '    if (x == 10 || x == 20)',
+                '    {',
+                '        builtin_StartPlaying();',
+                '    }',
+                '    else',
+                '    {',
+                '        builtin_StopPlaying();',
+                '    }',
+                '}',
+                "return 'strval';",
+            ]
+        )
+
+    def test_compound_or_triple(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('a'),
+                                    TwoParameterIf.NOT_EQUALS,
+                                    3,
+                                ),
+                                [
+                                    StopMovieStatement(),
+                                    DefineLabelStatement(1000),
+                                    ReturnStatement('strval'),
+                                ],
+                                [],
+                            ),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            PlayMovieStatement(),
+            GotoStatement(1000),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2 || a == 3)',
+                '{',
+                '    builtin_StartPlaying();',
+                '}',
+                'else',
+                '{',
+                '    builtin_StopPlaying();',
+                '}',
+                "return 'strval';",
+            ]
+        )
+
+    def test_compound_or_quad(self) -> None:
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('a'),
+                                    TwoParameterIf.NOT_EQUALS,
+                                    3,
+                                ),
+                                [
+                                    IfStatement(
+                                        TwoParameterIf(
+                                            Variable('a'),
+                                            TwoParameterIf.NOT_EQUALS,
+                                            4,
+                                        ),
+                                        [
+                                            StopMovieStatement(),
+                                            DefineLabelStatement(1000),
+                                            ReturnStatement('strval'),
+                                        ],
+                                        [],
+                                    ),
+                                ],
+                                [],
+                            ),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            PlayMovieStatement(),
+            GotoStatement(1000),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2 || a == 3 || a == 4)',
+                '{',
+                '    builtin_StartPlaying();',
+                '}',
+                'else',
+                '{',
+                '    builtin_StopPlaying();',
+                '}',
+                "return 'strval';",
+            ]
+        )
+
+    def test_compound_or_quint(self) -> None:
+        # Okay, at this point I believe that the algorithm works...
+        statements: List[Statement] = [
+            IfStatement(
+                TwoParameterIf(
+                    Variable('a'),
+                    TwoParameterIf.NOT_EQUALS,
+                    1,
+                ),
+                [
+                    IfStatement(
+                        TwoParameterIf(
+                            Variable('a'),
+                            TwoParameterIf.NOT_EQUALS,
+                            2,
+                        ),
+                        [
+                            IfStatement(
+                                TwoParameterIf(
+                                    Variable('a'),
+                                    TwoParameterIf.NOT_EQUALS,
+                                    3,
+                                ),
+                                [
+                                    IfStatement(
+                                        TwoParameterIf(
+                                            Variable('a'),
+                                            TwoParameterIf.NOT_EQUALS,
+                                            4,
+                                        ),
+                                        [
+                                            IfStatement(
+                                                TwoParameterIf(
+                                                    Variable('a'),
+                                                    TwoParameterIf.NOT_EQUALS,
+                                                    5,
+                                                ),
+                                                [
+                                                    StopMovieStatement(),
+                                                    DefineLabelStatement(1000),
+                                                    ReturnStatement('strval'),
+                                                ],
+                                                [],
+                                            ),
+                                        ],
+                                        [],
+                                    ),
+                                ],
+                                [],
+                            ),
+                        ],
+                        [],
+                    ),
+                ],
+                [],
+            ),
+            PlayMovieStatement(),
+            GotoStatement(1000),
+        ]
+
+        self.assertEqual(
+            self.__optimize_code(statements),
+            [
+                'if (a == 1 || a == 2 || a == 3 || a == 4 || a == 5)',
+                '{',
+                '    builtin_StartPlaying();',
+                '}',
+                'else',
+                '{',
+                '    builtin_StopPlaying();',
+                '}',
+                "return 'strval';",
+            ]
+        )

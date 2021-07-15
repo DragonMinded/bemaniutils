@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 from typing_extensions import Final
 
 from .expression import (
@@ -9,6 +9,7 @@ from .expression import (
     value_ref,
     name_ref,
     object_ref,
+    UNDEFINED,
 )
 
 
@@ -411,40 +412,451 @@ class IfExpr(ConvertedAction):
     def swap(self) -> "IfExpr":
         raise NotImplementedError("Not implemented!")
 
+    def is_always_true(self) -> bool:
+        return False
+
+    def is_always_false(self) -> bool:
+        return False
+
+    def simplify(self) -> "IfExpr":
+        if self.is_always_true():
+            return IsBooleanIf(True)
+        if self.is_always_false():
+            return IsBooleanIf(False)
+        return self
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IfExpr):
+            return False
+        return repr(self) == repr(other)
+
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
+
+class AndIf(IfExpr):
+    def __init__(self, left: IfExpr, right: IfExpr) -> None:
+        self.left: Final[IfExpr] = left.simplify()
+        self.right: Final[IfExpr] = right.simplify()
+        self.__true: Optional[bool] = None
+        self.__false: Optional[bool] = None
+        self._simplified = False
+        self.__inverted: Optional[OrIf] = None
+        self._gathered: Optional[List[IfExpr]] = None
+        self.__hash: Optional[int] = None
+
+    def invert(self) -> "OrIf":
+        if self.__inverted is None:
+            self.__inverted = OrIf(self.left.invert(), self.right.invert())
+            self.__inverted._simplified = self._simplified
+        return self.__inverted
+
+    def swap(self) -> "AndIf":
+        new_and = AndIf(self.right, self.left)
+        new_and.__true = self.__true
+        new_and.__false = self.__false
+        new_and._simplified = self._simplified
+        new_and._gathered = self._gathered
+        new_and.__hash = self.__hash
+        return new_and
+
+    def is_always_true(self) -> bool:
+        if self.__true is None:
+            self.__true = self.left.is_always_true() and self.right.is_always_true()
+        return self.__true
+
+    def is_always_false(self) -> bool:
+        if self.__false is None:
+            if self.left.invert() == self.right:
+                # If the left and right side are inverses of each other, we know
+                # for a fact that this if can never be true.
+                self.__false = True
+            else:
+                self.__false = self.left.is_always_false() or self.right.is_always_false()
+        return self.__false
+
+    def simplify(self) -> "IfExpr":
+        # If we already know that we're as simple as we can get, just return ourselves.
+        if self._simplified:
+            return self
+
+        # Basic superclass stuff.
+        if self.is_always_true():
+            return IsBooleanIf(True)
+        if self.is_always_false():
+            return IsBooleanIf(False)
+
+        # Tautology simplifications.
+        if self.left.is_always_true() and not self.right.is_always_true():
+            return self.right
+        if not self.left.is_always_true() and self.right.is_always_true():
+            return self.left
+
+        # Equivalent folding (this can get complicated because "x && y && x"
+        # should be folded to "x && y". We use set membership to fold.
+        # Gather up each piece in order, dropping duplicates.
+        ifexprs: List[IfExpr] = _gather_and(self)
+        final: List[IfExpr] = []
+
+        for expr in ifexprs:
+            if expr.is_always_true():
+                # Don't bother adding this, it should always be discarded.
+                continue
+            if expr in final:
+                # Don't bother adding this, we already saw it.
+                continue
+
+            # Now, make sure that this isn't a negation of a previous term.
+            for fexpr in final:
+                if fexpr == expr.invert():
+                    return IsBooleanIf(False)
+
+            # Now, try to factor this expression out with an existing one to simplify.
+            for i, fexpr in enumerate(final):
+                factor = _factor_and(fexpr, expr)
+                if factor:
+                    final[i] = factor
+                    break
+            else:
+                # We did not find a factor. See if there's a negative absorption available.
+                for i, fexpr in enumerate(final):
+                    absorb = _negative_absorb_and(fexpr, expr)
+                    if absorb:
+                        final[i] = absorb
+                        break
+                else:
+                    # Nothing simplifies, just add this
+                    final.append(expr)
+
+        # Now, grab the last entry, adding it to the right side of and expressions
+        # over and over until we have nothing to add.
+        if len(final) == 1:
+            return final[0]
+        new_and = _accum_and(final, simplified=True)
+        if not isinstance(new_and, AndIf):
+            raise Exception("Logic error!")
+        new_and.__true = self.__true
+        new_and.__false = self.__false
+        new_and._simplified = True
+        return new_and
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AndIf):
+            return False
+        return set(_gather_and(self)) == set(_gather_and(other))
+
+    def __hash__(self) -> int:
+        if self.__hash is None:
+            self.__hash = hash("AND:" + ",".join(sorted(str(hash(s)) for s in set(_gather_and(self)))))
+        return self.__hash
+
+    def __repr__(self) -> str:
+        return " && ".join((f"({c!r})" if isinstance(c, (AndIf, OrIf)) else repr(c)) for c in _gather_and(self))
+
+
+class OrIf(IfExpr):
+    def __init__(self, left: IfExpr, right: IfExpr) -> None:
+        self.left: Final[IfExpr] = left.simplify()
+        self.right: Final[IfExpr] = right.simplify()
+        self.__true: Optional[bool] = None
+        self.__false: Optional[bool] = None
+        self._simplified = False
+        self.__inverted: Optional[AndIf] = None
+        self._gathered: Optional[List[IfExpr]] = None
+        self.__hash: Optional[int] = None
+
+    def invert(self) -> "AndIf":
+        if not self.__inverted:
+            self.__inverted = AndIf(self.left.invert(), self.right.invert())
+            self.__inverted._simplified = self._simplified
+        return self.__inverted
+
+    def swap(self) -> "OrIf":
+        new_or = OrIf(self.right, self.left)
+        new_or.__true = self.__true
+        new_or.__false = self.__false
+        new_or._simplified = self._simplified
+        new_or._gathered = self._gathered
+        new_or.__hash = self.__hash
+        return new_or
+
+    def is_always_true(self) -> bool:
+        if self.__true is None:
+            if self.left.invert() == self.right:
+                # If the left and right side are inverses of each other, we know
+                # for a fact that this if can never be false.
+                self.__true = True
+            else:
+                self.__true = self.left.is_always_true() or self.right.is_always_true()
+        return self.__true
+
+    def is_always_false(self) -> bool:
+        if self.__false is None:
+            self.__false = self.left.is_always_false() and self.right.is_always_false()
+        return self.__false
+
+    def simplify(self) -> "IfExpr":
+        # If we already know that we're as simple as we can get, just return ourselves.
+        if self._simplified:
+            return self
+
+        # Basic superclass stuff.
+        if self.is_always_true():
+            return IsBooleanIf(True)
+        if self.is_always_false():
+            return IsBooleanIf(False)
+
+        # Tautology simplifications.
+        if self.left.is_always_false() and not self.right.is_always_false():
+            return self.right
+        if not self.left.is_always_false() and self.right.is_always_false():
+            return self.left
+
+        # Equivalent folding (this can get complicated because "x && y && x"
+        # should be folded to "x && y". We use set membership to fold.
+        # Gather up each piece in order, dropping duplicates.
+        ifexprs: List[IfExpr] = _gather_or(self)
+        final: List[IfExpr] = []
+
+        for expr in ifexprs:
+            if expr.is_always_false():
+                # Don't bother adding this, it should always be discarded.
+                continue
+            if expr in final:
+                # Don't bother adding this, we already saw it.
+                continue
+
+            # Now, make sure that this isn't a negation of a previous term.
+            for fexpr in final:
+                if fexpr == expr.invert():
+                    return IsBooleanIf(True)
+
+            # Now, try to factor this expression out with an existing one to simplify.
+            for i, fexpr in enumerate(final):
+                factor = _factor_or(fexpr, expr)
+                if factor:
+                    final[i] = factor
+                    break
+            else:
+                # We did not find a factor. See if there's a negative absorption available.
+                for i, fexpr in enumerate(final):
+                    absorb = _negative_absorb_or(fexpr, expr)
+                    if absorb:
+                        final[i] = absorb
+                        break
+                else:
+                    # Nothing simplifies, just add this
+                    final.append(expr)
+
+        # Now, grab the last entry, adding it to the right side of and expressions
+        # over and over until we have nothing to add.
+        if len(final) == 1:
+            return final[0]
+        new_or = _accum_or(final, simplified=True)
+        if not isinstance(new_or, OrIf):
+            raise Exception("Logic error!")
+        new_or.__true = self.__true
+        new_or.__false = self.__false
+        new_or._simplified = True
+        return new_or
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, OrIf):
+            return False
+        return set(_gather_or(self)) == set(_gather_or(other))
+
+    def __hash__(self) -> int:
+        if self.__hash is None:
+            self.__hash = hash("OR:" + ",".join(sorted(str(hash(s)) for s in set(_gather_or(self)))))
+        return self.__hash
+
+    def __repr__(self) -> str:
+        return " || ".join((f"({c!r})" if isinstance(c, (AndIf, OrIf)) else repr(c)) for c in _gather_or(self))
+
+
+def _gather_and(obj: IfExpr) -> List[IfExpr]:
+    if isinstance(obj, AndIf):
+        if obj._gathered is None:
+            obj._gathered = [*_gather_and(obj.left), *_gather_and(obj.right)]
+        return obj._gathered
+    else:
+        return [obj]
+
+
+def _accum_and(objs: List[IfExpr], simplified: bool = False) -> IfExpr:
+    accum = objs[-1]
+    for i, obj in enumerate(reversed(objs)):
+        if i == 0:
+            continue
+        accum = AndIf(obj, accum)
+        accum._simplified = simplified
+    return accum
+
+
+def _factor_and(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
+    left_ors = _gather_or(left)
+    right_ors = _gather_or(right)
+    commons: List[IfExpr] = []
+
+    for exp in left_ors:
+        if exp in right_ors:
+            commons.append(exp)
+
+    if commons:
+        left_ors = [exp for exp in left_ors if exp not in commons]
+        right_ors = [exp for exp in right_ors if exp not in commons]
+        if not left_ors or not right_ors:
+            return _accum_or(commons).simplify()
+
+        return OrIf(_accum_or(commons), AndIf(_accum_or(left_ors), _accum_or(right_ors))).simplify()
+    else:
+        return None
+
+
+def _negative_absorb_and(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
+    left_ors = _gather_or(left)
+    right_ors = _gather_or(right)
+    neg_left = left.invert()
+    neg_right = right.invert()
+
+    for val in right_ors:
+        if neg_left == val:
+            return AndIf(
+                left,
+                _accum_or([o for o in right_ors if o is not val]),
+            ).simplify()
+    for val in left_ors:
+        if neg_right == val:
+            return AndIf(
+                _accum_or([o for o in left_ors if o is not val]),
+                right,
+            ).simplify()
+
+    return None
+
+
+def _gather_or(obj: IfExpr) -> List[IfExpr]:
+    if isinstance(obj, OrIf):
+        if obj._gathered is None:
+            obj._gathered = [*_gather_or(obj.left), *_gather_or(obj.right)]
+        return obj._gathered
+    else:
+        return [obj]
+
+
+def _accum_or(objs: List[IfExpr], simplified: bool = False) -> IfExpr:
+    accum = objs[-1]
+    for i, obj in enumerate(reversed(objs)):
+        if i == 0:
+            continue
+        accum = OrIf(obj, accum)
+        accum._simplified = simplified
+    return accum
+
+
+def _factor_or(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
+    left_ands = _gather_and(left)
+    right_ands = _gather_and(right)
+    commons: List[IfExpr] = []
+
+    for exp in left_ands:
+        if exp in right_ands:
+            commons.append(exp)
+
+    if commons:
+        left_ands = [exp for exp in left_ands if exp not in commons]
+        right_ands = [exp for exp in right_ands if exp not in commons]
+        if not left_ands or not right_ands:
+            return _accum_and(commons).simplify()
+
+        return AndIf(_accum_and(commons), OrIf(_accum_and(left_ands), _accum_and(right_ands))).simplify()
+    else:
+        return None
+
+
+def _negative_absorb_or(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
+    left_ands = _gather_and(left)
+    right_ands = _gather_and(right)
+    neg_left = left.invert()
+    neg_right = right.invert()
+
+    for val in right_ands:
+        if neg_left == val:
+            return OrIf(
+                left,
+                _accum_and([o for o in right_ands if o is not val]),
+            ).simplify()
+    for val in left_ands:
+        if neg_right == val:
+            return OrIf(
+                _accum_and([o for o in left_ands if o is not val]),
+                right,
+            ).simplify()
+
+    return None
+
 
 class IsUndefinedIf(IfExpr):
-    def __init__(self, conditional: Any, negate: bool) -> None:
-        self.conditional = conditional
-        self.negate = negate
+    def __init__(self, conditional: Any) -> None:
+        self.conditional: Final[Any] = conditional
+        self.__negated = False
 
     def invert(self) -> "IsUndefinedIf":
-        return IsUndefinedIf(self.conditional, not self.negate)
+        new = IsUndefinedIf(self.conditional)
+        new.__negated = not self.__negated
+        return new
 
     def swap(self) -> "IsUndefinedIf":
-        return IsUndefinedIf(self.conditional, self.negate)
+        return IsUndefinedIf(self.conditional)
+
+    def is_always_true(self) -> bool:
+        if self.conditional is UNDEFINED:
+            return not self.__negated
+        return False
+
+    def is_always_false(self) -> bool:
+        if self.conditional is UNDEFINED:
+            return self.__negated
+        return False
 
     def __repr__(self) -> str:
         val = value_ref(self.conditional, "", parens=True)
-        if self.negate:
+        if self.__negated:
             return f"{val} is not UNDEFINED"
         else:
             return f"{val} is UNDEFINED"
 
 
 class IsBooleanIf(IfExpr):
-    def __init__(self, conditional: Any, negate: bool) -> None:
-        self.conditional = conditional
-        self.negate = negate
+    def __init__(self, conditional: Any) -> None:
+        self.conditional: Final[Any] = conditional
+        self.__negated = False
 
     def invert(self) -> "IsBooleanIf":
-        return IsBooleanIf(self.conditional, not self.negate)
+        new = IsBooleanIf(self.conditional)
+        new.__negated = not self.__negated
+        return new
 
     def swap(self) -> "IsBooleanIf":
-        return IsBooleanIf(self.conditional, self.negate)
+        return IsBooleanIf(self.conditional)
+
+    def is_always_true(self) -> bool:
+        if self.conditional is True:
+            return not self.__negated
+        elif self.conditional is False:
+            return self.__negated
+        return False
+
+    def is_always_false(self) -> bool:
+        if self.conditional is True:
+            return self.__negated
+        elif self.conditional is False:
+            return not self.__negated
+        return False
 
     def __repr__(self) -> str:
         val = value_ref(self.conditional, "", parens=True)
-        if self.negate:
+        if self.__negated:
             return f"not {val}"
         else:
             return f"{val}"
@@ -473,9 +885,9 @@ class TwoParameterIf(IfExpr):
         }:
             raise Exception(f"Invalid comparision {comp}!")
 
-        self.conditional1 = conditional1
-        self.comp = comp
-        self.conditional2 = conditional2
+        self.conditional1: Final[Any] = conditional1
+        self.comp: Final[str] = comp
+        self.conditional2: Final[Any] = conditional2
 
     def invert(self) -> "TwoParameterIf":
         if self.comp == self.EQUALS:
@@ -650,7 +1062,7 @@ class ForStatement(DoWhileStatement):
             local = ""
 
         return [
-            f"{prefix}for ({local}{self.inc_variable} = {inc_init}; {self.cond}; {self.inc_variable} = {inc_assign}) {{",
+            f"{prefix}for ({local}{self.inc_variable} = {inc_init}; {self.cond}; {self.inc_variable} = {inc_assign})",
             f"{prefix}{{",
             *entries,
             f"{prefix}}}",
@@ -680,7 +1092,7 @@ class WhileStatement(DoWhileStatement):
             entries.extend(statement.render(prefix=prefix + "    "))
 
         return [
-            f"{prefix}while ({self.cond}) {{",
+            f"{prefix}while ({self.cond})",
             f"{prefix}{{",
             *entries,
             f"{prefix}}}",

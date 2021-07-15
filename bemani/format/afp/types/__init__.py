@@ -82,6 +82,8 @@ from .statement import (
     IsUndefinedIf,
     IsBooleanIf,
     TwoParameterIf,
+    AndIf,
+    OrIf,
 )
 
 
@@ -156,6 +158,8 @@ __all__ = [
     'IsUndefinedIf',
     'IsBooleanIf',
     'TwoParameterIf',
+    'AndIf',
+    'OrIf',
     'PushAction',
     'InitRegisterAction',
     'StoreRegisterAction',
