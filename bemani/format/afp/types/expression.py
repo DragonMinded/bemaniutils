@@ -2204,7 +2204,7 @@ def value_ref(param: Any, parent_prefix: str, parens: bool = False) -> str:
         return repr(param.render(parent_prefix))
     elif isinstance(param, Expression):
         return param.render(parent_prefix, nested=parens)
-    elif isinstance(param, (str, int, float)):
+    elif isinstance(param, (str, int, float, bool)):
         return repr(param)
     else:
         raise Exception(f"Unsupported valueref {param} ({type(param)})")

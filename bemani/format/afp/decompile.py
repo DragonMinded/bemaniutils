@@ -3031,6 +3031,31 @@ class ByteCodeDecompiler(VerboseOutput):
             if not changed:
                 return statements, updated
 
+    def __swap_ugly_ifexprs(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
+        # Swap if expressions that have a constant on the LHS.
+        changed: bool = False
+
+        def swap_ugly_ifs(statement: Statement) -> Optional[Statement]:
+            nonlocal changed
+
+            if isinstance(statement, IfStatement):
+                if isinstance(statement.cond, TwoParameterIf):
+                    if (
+                        isinstance(statement.cond.conditional1, (str, int, bool, float, StringConstant)) and
+                        isinstance(statement.cond.conditional2, Expression) and
+                        not isinstance(statement.cond.conditional2, StringConstant)
+                    ):
+                        changed = True
+                        return IfStatement(
+                            statement.cond.swap(),
+                            statement.true_statements,
+                            statement.false_statements,
+                        )
+            return statement
+
+        statements = self.__walk(statements, swap_ugly_ifs)
+        return statements, changed
+
     def __drop_unneeded_else(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # If an if has an else, but the last line of the if is a break/continue/return/throw/goto
         # then the else body doesn't need to exist, so hoist it up into the parent. If the false
@@ -3203,38 +3228,42 @@ class ByteCodeDecompiler(VerboseOutput):
             # Finally, simplify it for ease of comparison.
             return combined.simplify()
 
+        def get_candidate_group(conditional: IfExpr, statement: IfStatement) -> Optional[List[IfStatement]]:
+            candidate_statements: List[IfStatement] = [statement]
+
+            if candidates and (not statement.false_statements) and len(statement.true_statements) == 1:
+                while True:
+                    # First, is the current combination a valid combined or statement?
+                    candidate_true_expr = get_compound_if(candidate_statements)
+                    candidate_false_expr = candidate_true_expr.invert().simplify()
+
+                    true_cond = AndIf(conditional, candidate_true_expr).simplify()
+                    false_cond = AndIf(conditional, candidate_false_expr).simplify()
+
+                    if true_cond in paths and false_cond in paths:
+                        if len(candidate_statements) < 2:
+                            return None
+                        else:
+                            return candidate_statements
+
+                    # Now, try to add on the next in the layer.
+                    new_candidate = get_child_candidate(candidate_statements[-1])
+                    if new_candidate is None:
+                        # There are no more candidates to try to add.
+                        return None
+
+                    # Add this to our consideration, retry the logic test.
+                    candidate_statements.append(new_candidate)
+            return None
+
         i = 0
         while i < len(statements):
             statement = statements[i]
 
             if isinstance(statement, IfStatement):
                 # See if this is a compound if pattern.
-                candidate_statements: List[IfStatement] = [statement]
-                is_candidate = False
-
-                if candidates and (not statement.false_statements) and len(statement.true_statements) == 1:
-                    while True:
-                        # First, is the current combination a valid combined or statement?
-                        candidate_true_expr = get_compound_if(candidate_statements)
-                        candidate_false_expr = candidate_true_expr.invert().simplify()
-
-                        true_cond = AndIf(parent_conditional, candidate_true_expr).simplify()
-                        false_cond = AndIf(parent_conditional, candidate_false_expr).simplify()
-
-                        if true_cond in paths and false_cond in paths:
-                            is_candidate = True
-                            break
-
-                        # Now, try to add on the next in the layer.
-                        new_candidate = get_child_candidate(candidate_statements[-1])
-                        if new_candidate is None:
-                            # There are no more candidates to try to add.
-                            break
-
-                        # Add this to our consideration, retry the logic test.
-                        candidate_statements.append(new_candidate)
-
-                if len(candidate_statements) < 2 or not is_candidate:
+                candidate_statements = get_candidate_group(parent_conditional, statement)
+                if candidate_statements is None:
                     # Move past this statement, we don't care about it.
                     i += 1
 
@@ -3285,6 +3314,16 @@ class ByteCodeDecompiler(VerboseOutput):
                         statement = statements[i]
                         if stmt_to_flow[statement] == false_cond:
                             false_statements.append(statement)
+
+                            # Thigs get a little complicated here, on account of the fact that
+                            # we might have scooped up an internal compound or. If that's the
+                            # case, we need to grab its own else clause too.
+                            if isinstance(statement, IfStatement):
+                                # See if this is a compound if pattern.
+                                new_candidate_statements = get_candidate_group(false_cond, statement)
+                                if new_candidate_statements is not None:
+                                    false_cond = AndIf(false_cond, get_compound_if(new_candidate_statements).invert()).simplify()
+
                             i += 1
                         else:
                             # We don't need to include this statement.
@@ -3393,6 +3432,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     self.__convert_loops,
                     self.__swap_empty_ifs,
                     self.__drop_unneeded_else,
+                    self.__swap_ugly_ifexprs,
                     self.__rearrange_compound_ifs,
                 ]:
                     statements, changed = func(statements)
