@@ -3685,31 +3685,38 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = list(statements)
 
         if self.optimize:
-            while True:
-                self.vprint("Running optimizer pass...")
-                any_changed = False
-                for func in [
-                    self.__collapse_identical_labels,
-                    self.__eliminate_useless_continues,
-                    self.__eliminate_unused_labels,
-                    self.__remove_useless_gotos,
-                    self.__remove_goto_return,
-                    self.__eliminate_useless_returns,
-                    self.__convert_loops,
-                    self.__swap_empty_ifs,
-                    self.__drop_unneeded_else,
-                    self.__swap_ugly_ifexprs,
-                    self.__rearrange_compound_ifs,
-                    self.__convert_switches,
-                ]:
-                    statements, changed = func(statements)
-                    any_changed = any_changed or changed
+            funcs = [
+                self.__collapse_identical_labels,
+                self.__eliminate_useless_continues,
+                self.__eliminate_unused_labels,
+                self.__remove_useless_gotos,
+                self.__remove_goto_return,
+                self.__eliminate_useless_returns,
+                self.__convert_loops,
+                self.__swap_empty_ifs,
+                self.__drop_unneeded_else,
+                self.__swap_ugly_ifexprs,
+                self.__rearrange_compound_ifs,
+                self.__convert_switches,
+            ]
+        else:
+            # These are required for some sanity checks to pass.
+            funcs = [
+                self.__eliminate_unused_labels,
+            ]
 
-                if not any_changed:
-                    self.vprint("Optimizer did not change anything.")
-                    break
-                else:
-                    self.vprint("Optimizer changed code, running another pass.")
+        while True:
+            self.vprint("Running optimizer pass...")
+            any_changed = False
+            for func in funcs:
+                statements, changed = func(statements)
+                any_changed = any_changed or changed
+
+            if not any_changed:
+                self.vprint("Optimizer did not change anything.")
+                break
+            else:
+                self.vprint("Optimizer changed code, running another pass.")
 
         return statements
 
