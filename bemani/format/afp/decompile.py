@@ -3858,6 +3858,14 @@ class ByteCodeDecompiler(VerboseOutput):
                 self.__eliminate_unused_labels,
             ]
 
+        # TODO: The bytecode compiler that was used in Bishi seems to like using
+        # registers as temporary storage for variables in a lot of cases. We should
+        # be able to track register assignment and use and see if there is only one
+        # use/assignment of a register after all other optimization passes are done.
+        # If this is the case, we should be able to substitute the original assignment
+        # for the register when used, and get rid of the assignment altogether. This
+        # should slightly clean up a fair bit of code.
+
         while True:
             self.vprint("Running optimizer pass...")
             any_changed = False
