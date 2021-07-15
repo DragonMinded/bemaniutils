@@ -2707,6 +2707,13 @@ class ByteCodeDecompiler(VerboseOutput):
                     if cur_statement.location == next_statement.location:
                         gotos.append(cur_statement)
 
+                if (
+                    isinstance(cur_statement, GotoStatement) and
+                    isinstance(next_statement, GotoStatement)
+                ):
+                    if cur_statement.location == next_statement.location:
+                        gotos.append(cur_statement)
+
                 elif isinstance(cur_statement, DoWhileStatement):
                     # Loops do not "flow" into the next line, they can only "break" to the next
                     # line. Goto of the next line has already been converted to a "break" statement.
@@ -2727,6 +2734,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # switch case first instruction when we don't. This isn't perfect, but eliminates
                     # a lot of gotos in practice.
                     cases = cur_statement.cases
+
                     def get_next_instruction(case: SwitchCase) -> Statement:
                         found = False
 
