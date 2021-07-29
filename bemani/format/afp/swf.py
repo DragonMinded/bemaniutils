@@ -294,6 +294,7 @@ class AP2PlaceObjectTag(Tag):
         mult_color: Optional[Color],
         add_color: Optional[Color],
         triggers: Dict[int, List[ByteCode]],
+        unrecognized_options: bool,
     ) -> None:
         # Place Object Tags are not identified by any tag ID.
         super().__init__(None)
@@ -333,6 +334,9 @@ class AP2PlaceObjectTag(Tag):
         # List of triggers for this object, and their respective bytecodes to execute when the trigger
         # fires.
         self.triggers = triggers
+
+        # Whether this tag has unrecognized options applied to it.
+        self.unrecognized_options = unrecognized_options
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
@@ -1085,6 +1089,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unhandled_flags = flags
 
             self.vprint(f"{prefix}    Flags: {hex(flags)}, Object ID: {object_id}, Depth: {depth}")
+            unrecognized_options = False
 
             if flags & 0x2:
                 # Has a shape component.
@@ -1120,6 +1125,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unk3 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
+                unrecognized_options = True
                 self.vprint(f"{prefix}    Unk3: {hex(unk3)}")
 
             if flags & 0x20000:
@@ -1331,6 +1337,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 count, filter_size = struct.unpack("<HH", datachunk[running_pointer:(running_pointer + 4)])
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += filter_size
+                unrecognized_options = True
 
                 # TODO: This is not understood at all. I need to find data that uses it to continue.
                 # running_pointer + 4 starts a series of shorts (exactly count of them) which are
@@ -1365,6 +1372,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 rotation_origin.z = float(z_int) / 20.0
                 rotation_origin_set = True
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Rotation Z Origin: {rotation_origin.z}")
 
@@ -1422,6 +1430,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unk_4 = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Unk 4: {unk_4}")
 
@@ -1441,6 +1450,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.tz = tz_int / 20.0
                 transform_set = True
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Translate Z offset: {transform.tz}")
 
@@ -1465,6 +1475,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     transform.a31 = floats[6]
                     transform.a32 = floats[7]
                     transform.a33 = floats[8]
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    3D Transform Matrix: {', '.join(str(f) for f in floats)}")
 
@@ -1474,6 +1485,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unk_a, unk_b, unk_c = struct.unpack("<hbb", datachunk[running_pointer:(running_pointer + 4)])
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Unknown Data: {unk_a}, {unk_b}, {unk_c}")
 
@@ -1515,6 +1527,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                         # Skip past data.
                         running_pointer += chunk_size
+                unrecognized_options = True
 
             if flags & 0x1000000000:
                 # I have no idea what this is, but the two shorts that it pulls out are assigned
@@ -1523,6 +1536,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unk1, unk2, unk3 = struct.unpack("<Ihh", datachunk[running_pointer:(running_pointer + 8)])
                 self.add_coverage(dataoffset + running_pointer, 8)
                 running_pointer += 8
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}")
 
@@ -1533,6 +1547,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unk1, unk2, unk3 = struct.unpack("<Hhh", datachunk[running_pointer:(running_pointer + 6)])
                 self.add_coverage(dataoffset + running_pointer, 6)
                 running_pointer += 6
+                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}")
 
@@ -1595,6 +1610,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 mult_color=multcolor if (flags & 0x8) else None,
                 add_color=addcolor if (flags & 0x8) else None,
                 triggers=bytecodes,
+                unrecognized_options=unrecognized_options,
             )
         elif tagid == AP2Tag.AP2_REMOVE_OBJECT:
             if size != 4:

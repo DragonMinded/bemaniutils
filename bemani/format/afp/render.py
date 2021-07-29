@@ -105,6 +105,7 @@ class PlacedObject:
         self.add_color = add_color
         self.blend = blend
         self.mask = mask
+        self.visible: bool = True
 
     @property
     def source(self) -> Union[RegisteredClip, RegisteredShape, RegisteredImage, RegisteredDummy]:
@@ -172,6 +173,7 @@ class PlacedClip(PlacedObject):
         # Dynamic properties that are adjustable by SWF bytecode.
         self.playing: bool = True
         self.requested_frame: Optional[int] = None
+        self.visible_frame: int = -1
 
     @property
     def source(self) -> RegisteredClip:
@@ -180,6 +182,9 @@ class PlacedClip(PlacedObject):
     def advance(self) -> None:
         if self.frame < len(self.source.frames):
             self.frame += 1
+        if self.frame >= self.visible_frame:
+            self.visible = True
+            self.visible_frame = -1
 
     def rewind(self) -> None:
         self.frame = 0
@@ -231,6 +236,16 @@ class PlacedClip(PlacedObject):
 
     def play(self) -> None:
         self.playing = True
+
+    def setInvisibleUntil(self, frame: Any) -> None:
+        actual_frame = self.__resolve_frame(frame)
+        if actual_frame is None:
+            print(f"WARNING: Non-integer frame {frame} to setInvisibleUntil function!")
+            return
+        self.visible = False
+        if actual_frame <= 0 or actual_frame > len(self.source.frames):
+            return
+        self.visible_frame = actual_frame
 
     @property
     def frameOffset(self) -> int:
@@ -366,7 +381,7 @@ class AEPLib:
                     print(f"WARNING: Ignoring aeplib.aep_set_frame_control called on object {obj} at depth {depth}!")
                     return
 
-                obj.frameOffset = frame
+                obj.setInvisibleUntil(frame)
                 return
 
         print(f"WARNING: Ignoring aeplib.aep_set_frame_control called on nonexistent object at depth {depth}!")
@@ -713,6 +728,12 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2PlaceObjectTag):
+            if tag.unrecognized_options:
+                if tag.source_tag_id is not None:
+                    print(f"WARNING: Place object tag referencing {tag.source_tag_id} includes unparsed options and might not display properly!")
+                else:
+                    print(f"WARNING: Place object tag on depth {tag.depth} includes unparsed options and might not display properly!")
+
             if tag.update:
                 for i in range(len(operating_clip.placed_objects) - 1, -1, -1):
                     obj = operating_clip.placed_objects[i]
@@ -1009,6 +1030,10 @@ class AFPRenderer(VerboseOutput):
         only_depths: Optional[List[int]] = None,
         prefix: str="",
     ) -> Image.Image:
+        if not renderable.visible:
+            self.vprint(f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}")
+            return img
+
         self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}")
 
         # Compute the affine transformation matrix for this object.
