@@ -1147,7 +1147,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             # Handle transformation matrix.
             transform = Matrix.identity()
-            transform_set = False
 
             if flags & 0x100:
                 # Has scale component.
@@ -1158,7 +1157,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.a = float(a_int) / 1024.0
                 transform.d = float(d_int) / 1024.0
-                transform_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
@@ -1171,7 +1169,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.b = float(b_int) / 1024.0
                 transform.c = float(c_int) / 1024.0
-                transform_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
@@ -1184,7 +1181,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.tx = float(tx_int) / 20.0
                 transform.ty = float(ty_int) / 20.0
-                transform_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
 
@@ -1406,7 +1402,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     transform.a = float(a_int) / 32768.0
                     transform.d = float(d_int) / 32768.0
-                    transform_set = True
 
                     self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
@@ -1420,7 +1415,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.b = float(b_int) / 32768.0
                 transform.c = float(c_int) / 32768.0
-                transform_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
@@ -1449,7 +1443,6 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 4
 
                 transform.tz = tz_int / 20.0
-                transform_set = True
                 unrecognized_options = True
 
                 self.vprint(f"{prefix}    Translate Z offset: {transform.tz}")
@@ -1605,8 +1598,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 label_name=label_name,
                 blend=blend,
                 update=True if (flags & 0x1) else False,
-                transform=transform if (transform_set and (flags & 0x4)) else None,
-                rotation_origin=rotation_origin if (rotation_origin_set and (flags & 0x4)) else None,
+                transform=transform if (flags & 0x4) else None,
+                rotation_origin=rotation_origin if rotation_origin_set else None,
                 mult_color=multcolor if (flags & 0x8) else None,
                 add_color=addcolor if (flags & 0x8) else None,
                 triggers=bytecodes,
