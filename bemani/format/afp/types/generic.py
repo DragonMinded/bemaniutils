@@ -319,6 +319,14 @@ class Matrix:
         )
 
     def inverse(self) -> "Matrix":
+        try:
+            return self.__inverse_impl()
+        except ZeroDivisionError:
+            pass
+
+        raise ZeroDivisionError(f"Matrix({self}) cannot be inverted!")
+
+    def __inverse_impl(self) -> "Matrix":
         # Use gauss-jordan eliminiation to invert the matrix.
         size = 4
         m = [
@@ -329,36 +337,44 @@ class Matrix:
         ]
         inverse: List[List[float]] = [[1 if row == col else 0 for col in range(size)] for row in range(size)]
 
-        # First, get upper triangle of the matrix.
         for col in range(size):
+            # First, get upper triangle of the matrix.
             if col < size - 1:
                 numbers = [m[row][col] for row in range(col, size)]
                 if all(n == 0 for n in numbers):
-                    print("HOO!")
                     raise ZeroDivisionError(f"Matrix({self}) cannot be inverted!")
 
                 # Reorder the matrix until all nonzero numbers are at the top.
-                for row in range(col, size - 1):
-                    # First, make sure all non-zero values are at the top.
+                nonzeros_m = []
+                nonzeros_inverse = []
+                zeros_m = []
+                zeros_inverse = []
+
+                for row in range(size):
                     nrow = row - col
+                    if nrow < 0:
+                        # This is above the current part of the triangle, just
+                        # include it as-is without reordering.
+                        nonzeros_m.append(m[row])
+                        nonzeros_inverse.append(inverse[row])
+                        continue
+
                     if numbers[nrow] == 0:
                         # Put this at the end.
-                        numbers = [
-                            *numbers[:nrow],
-                            *numbers[(nrow + 1):],
-                            numbers[nrow],
-                        ]
-                        m = [
-                            *m[:row],
-                            *m[(row + 1):],
-                            m[row],
-                        ]
-                        inverse = [
-                            *inverse[:row],
-                            *inverse[(row + 1):],
-                            inverse[row],
-                        ]
-                    row += 1
+                        zeros_m.append(m[row])
+                        zeros_inverse.append(inverse[row])
+                    else:
+                        nonzeros_m.append(m[row])
+                        nonzeros_inverse.append(inverse[row])
+
+                m = [
+                    *nonzeros_m,
+                    *zeros_m,
+                ]
+                inverse = [
+                    *nonzeros_inverse,
+                    *zeros_inverse,
+                ]
 
             # Now, figure out what multiplier we need to make every
             # other entry zero.
