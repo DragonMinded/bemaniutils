@@ -179,17 +179,21 @@ class PlacedClip(PlacedObject):
     def source(self) -> RegisteredClip:
         return self.__source
 
+    def __check_visible(self) -> None:
+        if self.visible_frame >= 0 and self.frame >= self.visible_frame:
+            self.visible = True
+            self.visible_frame = -1
+
     def advance(self) -> None:
         if self.frame < len(self.source.frames):
             self.frame += 1
-        if self.frame >= self.visible_frame:
-            self.visible = True
-            self.visible_frame = -1
+        self.__check_visible()
 
     def rewind(self) -> None:
         self.frame = 0
         self.unplayed_tags = [i for i in range(len(self.__source.tags))]
         self.placed_objects = []
+        self.__check_visible()
 
     @property
     def finished(self) -> bool:
