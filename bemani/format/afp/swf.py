@@ -1368,7 +1368,6 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 rotation_origin.z = float(z_int) / 20.0
                 rotation_origin_set = True
-                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Rotation Z Origin: {rotation_origin.z}")
 
@@ -1443,7 +1442,6 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 4
 
                 transform.tz = tz_int / 20.0
-                unrecognized_options = True
 
                 self.vprint(f"{prefix}    Translate Z offset: {transform.tz}")
 
@@ -1468,7 +1466,6 @@ class SWF(TrackedCoverage, VerboseOutput):
                     transform.a31 = floats[6]
                     transform.a32 = floats[7]
                     transform.a33 = floats[8]
-                unrecognized_options = True
 
                 self.vprint(f"{prefix}    3D Transform Matrix: {', '.join(str(f) for f in floats)}")
 
