@@ -1730,6 +1730,7 @@ class ImportIIDX(ImportBase):
 
         qpros: List[Dict[str, Any]] = []
         if self.version == VersionConstants.IIDX_TRICORO:
+            # Based on LDJ:J:A:A:2013090900
             stride = 4
             qp_head_offset = 0x1CCB18    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 79          # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -1746,6 +1747,7 @@ class ImportIIDX(ImportBase):
                 'I'  # filename
             )
         if self.version == VersionConstants.IIDX_SPADA:
+            # Based on LDJ:J:A:A:2014071600
             stride = 4
             qp_head_offset = 0x213B50    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 125         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -1762,6 +1764,7 @@ class ImportIIDX(ImportBase):
                 'I'  # filename
             )
         if self.version == VersionConstants.IIDX_PENDUAL:
+            # Based on LDJ:J:A:A:2015080500
             stride = 4
             qp_head_offset = 0x1D5228    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 163         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -1778,6 +1781,7 @@ class ImportIIDX(ImportBase):
                 'I'  # filename
             )
         if self.version == VersionConstants.IIDX_COPULA:
+            # Based on LDJ:J:A:A:2016083100
             stride = 8
             qp_head_offset = 0x12F9D8    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 186         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -1796,6 +1800,7 @@ class ImportIIDX(ImportBase):
                 'I'  # string containing id and name of the part
             )
         if self.version == VersionConstants.IIDX_SINOBUZ:
+            # Based on LDJ:J:A:A:2017082800
             stride = 8
             qp_head_offset = 0x149F88    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 211         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -1814,6 +1819,7 @@ class ImportIIDX(ImportBase):
                 'I'  # string containing id and name of the part
             )
         if self.version == VersionConstants.IIDX_CANNON_BALLERS:
+            # Based on LDJ:J:A:A:2018091900
             stride = 16
             qp_head_offset = 0x2339E0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 231         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -1832,6 +1838,7 @@ class ImportIIDX(ImportBase):
                 'Q'  # string containing id and name of the part
             )
         if self.version == VersionConstants.IIDX_ROOTAGE:
+            # Based on LDJ:J:A:A:2019090200
             stride = 16
             qp_head_offset = 0x5065F0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 259         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
