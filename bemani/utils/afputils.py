@@ -534,9 +534,16 @@ def render_path(
     only_depths: Optional[str] = None,
     only_frames: Optional[str] = None,
     verbose: bool = False,
+    show_progress: bool = False,
 ) -> int:
+    if show_progress:
+        print("Loading textures, shapes and animation instructions...")
+
     renderer = AFPRenderer(single_threaded=disable_threads, enable_aa=enable_anti_aliasing)
     load_containers(renderer, containers, need_extras=True, verbose=verbose)
+
+    if show_progress:
+        print("Calculating render parameters...")
 
     # Verify the correct params.
     if output.lower().endswith(".gif"):
@@ -634,7 +641,9 @@ def render_path(
     if fmt in ["GIF", "WEBP"]:
         # Write all the frames out in one file.
         duration = renderer.compute_path_frame_duration(path)
-        images = list(
+        frames = renderer.compute_path_frames(path)
+        images: List[Image] = []
+        for i, img in enumerate(
             renderer.render_path(
                 path,
                 verbose=verbose,
@@ -644,7 +653,11 @@ def render_path(
                 only_frames=requested_frames,
                 movie_transform=transform,
             )
-        )
+        ):
+            if show_progress:
+                print(f"Rendered animation frame {i + 1}/{frames}.")
+            images.append(img)
+
         if len(images) > 0:
             try:
                 dirof = os.path.dirname(os.path.abspath(output))
@@ -957,6 +970,12 @@ def main() -> int:
         action="store_true",
         help="Display verbuse debugging output",
     )
+    render_parser.add_argument(
+        "-s",
+        "--show-progress",
+        action="store_true",
+        help="Display per-frame rendering progress",
+    )
 
     list_parser = subparsers.add_parser('list', help='List out the possible paths to render from a series of SWFs')
     list_parser.add_argument(
@@ -1025,6 +1044,7 @@ def main() -> int:
             scale_height=args.scale_height,
             only_depths=args.only_depths,
             only_frames=args.only_frames,
+            show_progress=args.show_progress,
             verbose=args.verbose,
         )
     else:
