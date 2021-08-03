@@ -880,19 +880,19 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         music_list = [0, 0, 0, 0]
         cpu_list = [0, 0, 0, 0]
         grade_to_percentage_map = {
-            6: 50,
-            7: 55,
-            8: 60,
-            9: 60,
-            10: 65,
-            11: 65,
-            12: 70,
-            13: 70,
-            14: 75,
-            15: 75,
-            16: 80,
-            17: 80,
-            18: 80,
+            self.GAME_SP_DAN_RANK_1_KYU: 50,
+            self.GAME_SP_DAN_RANK_1_DAN: 55,
+            self.GAME_SP_DAN_RANK_2_DAN: 60,
+            self.GAME_SP_DAN_RANK_3_DAN: 60,
+            self.GAME_SP_DAN_RANK_4_DAN: 65,
+            self.GAME_SP_DAN_RANK_5_DAN: 65,
+            self.GAME_SP_DAN_RANK_6_DAN: 70,
+            self.GAME_SP_DAN_RANK_7_DAN: 70,
+            self.GAME_SP_DAN_RANK_8_DAN: 75,
+            self.GAME_SP_DAN_RANK_9_DAN: 75,
+            self.GAME_SP_DAN_RANK_10_DAN: 80,
+            self.GAME_SP_DAN_RANK_CHUDEN: 80,
+            self.GAME_SP_DAN_RANK_KAIDEN: 80,
         }
         for item in request.children:
             if item.name == 'music_list':
@@ -1385,6 +1385,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
         notecount = song.data.get('notecount', 0)
         # Construct the dictionary for the broadcast
+        # TODO: Change the strings on the left to a set of constants since these names are very brittle.
         card_data = {
             'DJ Name': name,
             'Song': song.name,

@@ -25,7 +25,8 @@ server:
     # Whether PCBIDs must be added to the network before games will work.
     enforce_pcbid: False
 
-# Webhook URLs
+# Webhook URLs. These allow for game scores from games with scorecard support to be broadcasted to outside services.
+# Delete this to disable this support.
 webhooks:
     discord:
         iidx: 
