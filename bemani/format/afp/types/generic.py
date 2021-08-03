@@ -158,7 +158,8 @@ class Matrix:
         self.a43 = a43
         self.__scale_set = True
         self.__rotate_set = True
-        self.__translate_set = True
+        self.__translate_xy_set = True
+        self.__translate_z_set = True
 
     @staticmethod
     def identity() -> "Matrix":
@@ -170,7 +171,8 @@ class Matrix:
         )
         new.__scale_set = False
         new.__rotate_set = False
-        new.__translate_set = False
+        new.__translate_xy_set = False
+        new.__translate_z_set = False
         return new
 
     @staticmethod
@@ -255,9 +257,10 @@ class Matrix:
             if other.__rotate_set:
                 new.b = other.b
                 new.c = other.c
-            if other.__translate_set:
+            if other.__translate_xy_set:
                 new.tx = other.tx
                 new.ty = other.ty
+            if other.__translate_z_set:
                 new.tz = other.tz
 
         return new
@@ -316,7 +319,7 @@ class Matrix:
 
     @tx.setter
     def tx(self, val: float) -> None:
-        self.__translate_set = True
+        self.__translate_xy_set = True
         self.a41 = val
 
     @property
@@ -325,7 +328,7 @@ class Matrix:
 
     @ty.setter
     def ty(self, val: float) -> None:
-        self.__translate_set = True
+        self.__translate_xy_set = True
         self.a42 = val
 
     @property
@@ -334,7 +337,7 @@ class Matrix:
 
     @tz.setter
     def tz(self, val: float) -> None:
-        self.__translate_set = True
+        self.__translate_z_set = True
         self.a43 = val
 
     def multiply_point(self, point: Point) -> Point:
