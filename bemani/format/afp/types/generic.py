@@ -156,15 +156,22 @@ class Matrix:
         self.a41 = a41
         self.a42 = a42
         self.a43 = a43
+        self.__scale_set = True
+        self.__rotate_set = True
+        self.__translate_set = True
 
     @staticmethod
     def identity() -> "Matrix":
-        return Matrix(
+        new = Matrix(
             a11=1.0, a12=0.0, a13=0.0,
             a21=0.0, a22=1.0, a23=0.0,
             a31=0.0, a32=0.0, a33=1.0,
             a41=0.0, a42=0.0, a43=0.0,
         )
+        new.__scale_set = False
+        new.__rotate_set = False
+        new.__translate_set = False
+        return new
 
     @staticmethod
     def affine(*, a: float, b: float, c: float, d: float, tx: float, ty: float) -> "Matrix":
@@ -175,6 +182,7 @@ class Matrix:
             a41=tx, a42=ty, a43=0.0,
         )
 
+    @property
     def __is_affine(self) -> bool:
         return (
             round(abs(self.a13), 5) == 0.0 and
@@ -211,6 +219,49 @@ class Matrix:
                 'a43': self.a43,
             }
 
+    def update(self, other: "Matrix") -> "Matrix":
+        new = Matrix(
+            a11=self.a11,
+            a12=self.a12,
+            a13=self.a13,
+            a21=self.a21,
+            a22=self.a22,
+            a23=self.a23,
+            a31=self.a31,
+            a32=self.a32,
+            a33=self.a33,
+            a41=self.a41,
+            a42=self.a42,
+            a43=self.a43,
+        )
+
+        if not other.__is_affine:
+            new.a11 = other.a11
+            new.a12 = other.a12
+            new.a13 = other.a13
+            new.a21 = other.a21
+            new.a22 = other.a22
+            new.a23 = other.a23
+            new.a31 = other.a31
+            new.a32 = other.a32
+            new.a33 = other.a33
+            new.a41 = other.a41
+            new.a42 = other.a42
+            new.a43 = other.a43
+        else:
+            if other.__scale_set:
+                new.a = other.a
+                new.d = other.d
+            if other.__rotate_set:
+                new.b = other.b
+                new.c = other.c
+            if other.__translate_set:
+                new.tx = other.tx
+                new.ty = other.ty
+                new.tz = other.tz
+
+        return new
+
     @property
     def xscale(self) -> float:
         return math.sqrt((self.a11 * self.a11) + (self.a12 * self.a12) + (self.a13 * self.a13))
@@ -220,11 +271,16 @@ class Matrix:
         return math.sqrt((self.a21 * self.a21) + (self.a22 * self.a22) + (self.a23 * self.a23))
 
     @property
+    def zscale(self) -> float:
+        return math.sqrt((self.a31 * self.a31) + (self.a32 * self.a32) + (self.a33 * self.a33))
+
+    @property
     def a(self) -> float:
         return self.a11
 
     @a.setter
     def a(self, val: float) -> None:
+        self.__scale_set = True
         self.a11 = val
 
     @property
@@ -233,6 +289,7 @@ class Matrix:
 
     @b.setter
     def b(self, val: float) -> None:
+        self.__rotate_set = True
         self.a12 = val
 
     @property
@@ -241,6 +298,7 @@ class Matrix:
 
     @c.setter
     def c(self, val: float) -> None:
+        self.__rotate_set = True
         self.a21 = val
 
     @property
@@ -249,6 +307,7 @@ class Matrix:
 
     @d.setter
     def d(self, val: float) -> None:
+        self.__scale_set = True
         self.a22 = val
 
     @property
@@ -257,6 +316,7 @@ class Matrix:
 
     @tx.setter
     def tx(self, val: float) -> None:
+        self.__translate_set = True
         self.a41 = val
 
     @property
@@ -265,6 +325,7 @@ class Matrix:
 
     @ty.setter
     def ty(self, val: float) -> None:
+        self.__translate_set = True
         self.a42 = val
 
     @property
@@ -273,6 +334,7 @@ class Matrix:
 
     @tz.setter
     def tz(self, val: float) -> None:
+        self.__translate_set = True
         self.a43 = val
 
     def multiply_point(self, point: Point) -> Point:

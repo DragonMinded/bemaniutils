@@ -745,7 +745,7 @@ class AFPRenderer(VerboseOutput):
                     if obj.object_id == tag.object_id and obj.depth == tag.depth:
                         new_mult_color = tag.mult_color or obj.mult_color
                         new_add_color = tag.add_color or obj.add_color
-                        new_transform = tag.transform or obj.transform
+                        new_transform = obj.transform.update(tag.transform) if tag.transform is not None else obj.transform
                         new_rotation_origin = tag.rotation_origin or obj.rotation_origin
                         new_blend = tag.blend or obj.blend
 
