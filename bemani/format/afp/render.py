@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generator, List, Set, Tuple, Optional, Union
 from PIL import Image  # type: ignore
 
-from .blend import affine_composite
+from .blend import affine_composite, perspective_composite
 from .swf import (
     SWF,
     Frame,
@@ -453,6 +453,7 @@ class AFPRenderer(VerboseOutput):
         # Internal render parameters.
         self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]] = {}
         self.__root: Optional[PlacedClip] = None
+        self.__camera: Optional[AP2PlaceCameraTag] = None
 
         # List of imports that we provide stub implementations for.
         self.__stubbed_swfs: Set[str] = {
@@ -975,7 +976,8 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2PlaceCameraTag):
-            print("WARNING: Unhandled PLACE_CAMERA tag!")
+            self.vprint(f"{prefix}    Place camera tag.")
+            self.__camera = tag
 
             # Didn't place a new clip.
             return None, False
@@ -1135,7 +1137,32 @@ class AFPRenderer(VerboseOutput):
                     texture = shape.rectangle
 
                 if texture is not None:
-                    img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded, enable_aa=self.__enable_aa)
+                    if transform.is_affine or self.__camera is None:
+                        img = affine_composite(
+                            img,
+                            add_color,
+                            mult_color,
+                            transform,
+                            mask,
+                            blend,
+                            texture,
+                            single_threaded=self.__single_threaded,
+                            enable_aa=self.__enable_aa,
+                        )
+                    else:
+                        img = perspective_composite(
+                            img,
+                            add_color,
+                            mult_color,
+                            transform,
+                            self.__camera.center,
+                            self.__camera.focal_length,
+                            mask,
+                            blend,
+                            texture,
+                            single_threaded=self.__single_threaded,
+                            enable_aa=self.__enable_aa,
+                        )
         elif isinstance(renderable, PlacedImage):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -1143,7 +1170,32 @@ class AFPRenderer(VerboseOutput):
 
             # This is a shape draw reference.
             texture = self.textures[renderable.source.reference]
-            img = affine_composite(img, add_color, mult_color, transform, mask, blend, texture, single_threaded=self.__single_threaded, enable_aa=self.__enable_aa)
+            if transform.is_affine or self.__camera is None:
+                img = affine_composite(
+                    img,
+                    add_color,
+                    mult_color,
+                    transform,
+                    mask,
+                    blend,
+                    texture,
+                    single_threaded=self.__single_threaded,
+                    enable_aa=self.__enable_aa,
+                )
+            else:
+                img = perspective_composite(
+                    img,
+                    add_color,
+                    mult_color,
+                    transform,
+                    self.__camera.center,
+                    self.__camera.focal_length,
+                    mask,
+                    blend,
+                    texture,
+                    single_threaded=self.__single_threaded,
+                    enable_aa=self.__enable_aa,
+                )
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass
@@ -1482,7 +1534,16 @@ class AFPRenderer(VerboseOutput):
                     # Now, render out the placed objects.
                     color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
                     curimage = Image.new("RGBA", (resized_width, resized_height), color=color.as_tuple())
-                    curimage = self.__render_object(curimage, root_clip, movie_transform, movie_mask, actual_mult_color, actual_add_color, actual_blend, only_depths=only_depths)
+                    curimage = self.__render_object(
+                        curimage,
+                        root_clip,
+                        movie_transform,
+                        movie_mask,
+                        actual_mult_color,
+                        actual_add_color,
+                        actual_blend,
+                        only_depths=only_depths,
+                    )
                 else:
                     # Nothing changed, make a copy of the previous render.
                     self.vprint("  Using previous frame render")

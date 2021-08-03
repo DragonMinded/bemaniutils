@@ -549,3 +549,65 @@ def pixel_renderer(
         # Blend it.
         texoff = (texx + (texy * texwidth)) * 4
         return blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
+
+
+def perspective_composite(
+    img: Image.Image,
+    add_color: Color,
+    mult_color: Color,
+    transform: Matrix,
+    camera: Point,
+    focal_length: float,
+    mask: Optional[Image.Image],
+    blendfunc: int,
+    texture: Image.Image,
+    single_threaded: bool = False,
+    enable_aa: bool = True,
+) -> Image.Image:
+    # Warn if we have an unsupported blend.
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
+        print(f"WARNING: Unsupported blend {blendfunc}")
+        return img
+
+    # These are calculated properties and caching them outside of the loop
+    # speeds things up a bit.
+    imgwidth = img.width
+    imgheight = img.height
+    texwidth = texture.width
+    texheight = texture.height
+
+    # Get the data in an easier to manipulate and faster to update fashion.
+    imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
+    texbytes = texture.tobytes('raw', 'RGBA')
+    if mask:
+        alpha = mask.split()[-1]
+        maskbytes = alpha.tobytes('raw', 'L')
+    else:
+        maskbytes = None
+
+    for texy in range(texheight):
+        for texx in range(texwidth):
+            # Calculate perspective projection.
+            imgloc = transform.multiply_point(Point(texx, texy))
+            perspective = focal_length / (imgloc.z - camera.z)
+            imgx = int(((imgloc.x - camera.x) * perspective) + camera.x)
+            imgy = int(((imgloc.y - camera.y) * perspective) + camera.y)
+
+            # Check clipping.
+            if imgx < 0 or imgx >= imgwidth:
+                continue
+            if imgy < 0 or imgy >= imgheight:
+                continue
+
+            # Check mask rectangle.
+            maskoff = imgx + (imgy * imgwidth)
+            imgoff = maskoff * 4
+            if maskbytes is not None and maskbytes[maskoff] == 0:
+                continue
+
+            # Blend it.
+            texoff = (texx + (texy * texwidth)) * 4
+            imgbytes[imgoff:(imgoff + 4)] = blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
+
+        img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
+    return img

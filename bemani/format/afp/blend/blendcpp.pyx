@@ -44,6 +44,26 @@ cdef extern int affine_composite_fast(
     unsigned int enable_aa,
 )
 
+cdef extern int perspective_composite_fast(
+    unsigned char *imgbytes,
+    unsigned char *maskbytes,
+    unsigned int imgwidth,
+    unsigned int imgheight,
+    float camera_x,
+    float camera_y,
+    float camera_z,
+    float focal_length,
+    floatcolor_t add_color,
+    floatcolor_t mult_color,
+    matrix_t transform,
+    int blendfunc,
+    unsigned char *texbytes,
+    unsigned int texwidth,
+    unsigned int texheight,
+    unsigned int threads,
+    unsigned int enable_aa
+)
+
 def affine_composite(
     img: Image.Image,
     add_color: Color,
@@ -129,6 +149,85 @@ def affine_composite(
         c_addcolor,
         c_multcolor,
         c_inverse,
+        blendfunc,
+        texbytes,
+        texwidth,
+        texheight,
+        threads,
+        1 if enable_aa else 0,
+    )
+    if errors != 0:
+        raise Exception("Error raised in C++!")
+
+    # We blitted in-place, return that. There seems to be a reference bug in Cython
+    # when called from compiled mypyc code, so if we don't assign to a local variable
+    # first this function appears to return None.
+    img = Image.frombytes('RGBA', (imgwidth, imgheight), imgbytes)
+    return img
+
+
+def perspective_composite(
+    img: Image.Image,
+    add_color: Color,
+    mult_color: Color,
+    transform: Matrix,
+    camera: Point,
+    focal_length: float,
+    mask: Optional[Image.Image],
+    blendfunc: int,
+    texture: Image.Image,
+    single_threaded: bool = False,
+    enable_aa: bool = True,
+) -> Image.Image:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
+        print(f"WARNING: Unsupported blend {blendfunc}")
+        return img
+
+    # These are calculated properties and caching them outside of the loop
+    # speeds things up a bit.
+    imgwidth = img.width
+    imgheight = img.height
+    texwidth = texture.width
+    texheight = texture.height
+
+    # Grab the raw image data.
+    imgbytes = img.tobytes('raw', 'RGBA')
+    texbytes = texture.tobytes('raw', 'RGBA')
+
+    # Grab the mask data.
+    if mask is not None:
+        alpha = mask.split()[-1]
+        maskdata = alpha.tobytes('raw', 'L')
+    else:
+        maskdata = None
+    cdef unsigned char *maskbytes = NULL
+    if maskdata is not None:
+        maskbytes = maskdata
+
+    # Convert classes to C structs.
+    cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
+    cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
+    cdef matrix_t c_transform = matrix_t(
+        a11=transform.a11, a12=transform.a12, a13=transform.a13,
+        a21=transform.a21, a22=transform.a22, a23=transform.a23,
+        a31=transform.a31, a32=transform.a32, a33=transform.a33,
+        a41=transform.a41, a42=transform.a42, a43=transform.a43,
+    )
+    cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()
+
+    # Call the C++ function.
+    errors = perspective_composite_fast(
+        imgbytes,
+        maskbytes,
+        imgwidth,
+        imgheight,
+        camera.x,
+        camera.y,
+        camera.z,
+        focal_length,
+        c_addcolor,
+        c_multcolor,
+        c_transform,
         blendfunc,
         texbytes,
         texwidth,

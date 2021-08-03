@@ -584,4 +584,58 @@ extern "C"
 
         return 0;
     }
+
+    int perspective_composite_fast(
+        unsigned char *imgbytes,
+        unsigned char *maskbytes,
+        unsigned int imgwidth,
+        unsigned int imgheight,
+        float camera_x,
+        float camera_y,
+        float camera_z,
+        float focal_length,
+        floatcolor_t add_color,
+        floatcolor_t mult_color,
+        matrix_t transform,
+        int blendfunc,
+        unsigned char *texbytes,
+        unsigned int texwidth,
+        unsigned int texheight,
+        unsigned int threads,
+        unsigned int enable_aa
+    ) {
+        // Cast to a usable type.
+        intcolor_t *imgdata = (intcolor_t *)imgbytes;
+        intcolor_t *texdata = (intcolor_t *)texbytes;
+
+        for (unsigned int texy = 0; texy < texheight; texy++) {
+            for (unsigned int texx = 0; texx < texwidth; texx++) {
+                // Calculate perspective projection.
+                point_t imgloc = transform.multiply_point((point_t){(float)texx, (float)texy});
+                float perspective = focal_length / (imgloc.z - camera_z);
+                int imgx = ((imgloc.x - camera_x) * perspective) + camera_x;
+                int imgy = ((imgloc.y - camera_y) * perspective) + camera_y;
+
+                // Check clipping.
+                if (imgx < 0 || imgx >= (int)imgwidth) {
+                    continue;
+                }
+                if (imgy < 0 || imgy >= (int)imgheight) {
+                    continue;
+                }
+
+                // Check mask rectangle.
+                unsigned int imgoff = imgx + (imgy * imgwidth);
+                if (maskbytes != NULL && maskbytes[imgoff] == 0) {
+                    continue;
+                }
+
+                // Blend it.
+                unsigned int texoff = (texx + (texy * texwidth));
+                imgdata[imgoff] = blend_point(add_color, mult_color, texdata[texoff], imgdata[imgoff], blendfunc);
+            }
+        }
+
+        return 0;
+    }
 }

@@ -1455,17 +1455,15 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 36
 
                 floats = [x / 1024.0 for x in ints]
-                if False:
-                    # TODO: Start actually doing perspective projections when needed.
-                    transform.a11 = floats[0]
-                    transform.a12 = floats[1]
-                    transform.a13 = floats[2]
-                    transform.a21 = floats[3]
-                    transform.a22 = floats[4]
-                    transform.a23 = floats[5]
-                    transform.a31 = floats[6]
-                    transform.a32 = floats[7]
-                    transform.a33 = floats[8]
+                transform.a11 = floats[0]
+                transform.a12 = floats[1]
+                transform.a13 = floats[2]
+                transform.a21 = floats[3]
+                transform.a22 = floats[4]
+                transform.a23 = floats[5]
+                transform.a31 = floats[6]
+                transform.a32 = floats[7]
+                transform.a33 = floats[8]
 
                 self.vprint(f"{prefix}    3D Transform Matrix: {', '.join(str(f) for f in floats)}")
 
