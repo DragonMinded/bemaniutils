@@ -29,15 +29,15 @@ def perspective_calculate(
     ]:
         imgloc = transform.multiply_point(Point(texx, texy))
         distance = imgloc.z - camera.z
-        imgx = int(((imgloc.x - camera.x) * (focal_length / distance)) + camera.x)
-        imgy = int(((imgloc.y - camera.y) * (focal_length / distance)) + camera.y)
+        imgx = ((imgloc.x - camera.x) * (focal_length / distance)) + camera.x
+        imgy = ((imgloc.y - camera.y) * (focal_length / distance)) + camera.y
 
         xy_point = Point(imgx, imgy)
         xy.append(xy_point)
         uvz[xy_point] = Point(
-            focal_length * texx / distance,
-            focal_length * texy / distance,
-            focal_length / distance,
+            texx / distance,
+            texy / distance,
+            1 / distance,
         )
 
     # Calculate the maximum range of update this texture can possibly reside in.
