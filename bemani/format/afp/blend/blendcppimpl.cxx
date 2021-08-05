@@ -56,14 +56,6 @@ extern "C"
                 (a13 * point.x) + (a23 * point.y) + (a33 * point.z) + a43,
             };
         }
-
-        float xscale() {
-            return sqrt((a11 * a11) + (a12 * a12) + (a13 * a13));
-        }
-
-        float yscale() {
-            return sqrt((a21 * a21) + (a22 * a22) + (a23 * a23));
-        }
     } matrix_t;
 
     typedef struct work {
@@ -77,7 +69,10 @@ extern "C"
         intcolor_t *texdata;
         unsigned int texwidth;
         unsigned int texheight;
+        float xscale;
+        float yscale;
         matrix_t inverse;
+        int use_perspective;
         floatcolor_t add_color;
         floatcolor_t mult_color;
         int blendfunc;
@@ -270,12 +265,8 @@ extern "C"
         // costs us almost nothing. Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         // minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing scaled up images
         // a bit softer than would otherwise be achieved.
-        float xscale = 1.0 / work->inverse.xscale();
-        float yscale = 1.0 / work->inverse.yscale();
-
-        // These are used for picking the various sample points for SSAA method below.
-        float xswing = 0.5 * fmax(1.0, xscale);
-        float yswing = 0.5 * fmax(1.0, yscale);
+        float xswing = 0.5 * fmax(1.0, work->xscale);
+        float yswing = 0.5 * fmax(1.0, work->yscale);
 
         for (unsigned int imgy = work->miny; imgy < work->maxy; imgy++) {
             for (unsigned int imgx = work->minx; imgx < work->maxx; imgx++) {
@@ -300,10 +291,21 @@ extern "C"
 
                     // First, figure out if we can use bilinear resampling.
                     int bilinear = 0;
-                    if (xscale >= 1.0 && yscale >= 1.0) {
-                        point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
-                        int aax = aaloc.x;
-                        int aay = aaloc.y;
+                    if (work->xscale >= 1.0 && work->yscale >= 1.0) {
+                        int aax = -1;
+                        int aay = -1;
+
+                        if (work->use_perspective) {
+                            point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                            if (aaloc.z > 0.0) {
+                                aax = aaloc.x / aaloc.z;
+                                aay = aaloc.y / aaloc.z;
+                            }
+                        } else {
+                            point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                            aax = aaloc.x;
+                            aay = aaloc.y;
+                        }
 
                         if (!(aax <= 0 || aay <= 0 || aax >= ((int)work->texwidth - 1) || aay >= ((int)work->texheight - 1))) {
                             bilinear = 1;
@@ -314,11 +316,28 @@ extern "C"
                     intcolor_t average;
                     if (bilinear) {
                         // Calculate the pixel we're after, and what percentage into the pixel we are.
-                        point_t texloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
-                        int aax = texloc.x;
-                        int aay = texloc.y;
-                        float aaxrem = texloc.x - (float)aax;
-                        float aayrem = texloc.y - (float)aay;
+                        int aax;
+                        int aay;
+                        float aaxrem;
+                        float aayrem;
+
+                        if (work->use_perspective) {
+                            // We don't check for negative here, because we already checked it above and wouldn't
+                            // have enabled bilinear interpoliation.
+                            point_t texloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                            float fx = texloc.x / texloc.z;
+                            float fy = texloc.y / texloc.z;
+                            aax = fx;
+                            aay = fy;
+                            aaxrem = fx - (float)aax;
+                            aayrem = fy - (float)aay;
+                        } else {
+                            point_t texloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                            aax = texloc.x;
+                            aay = texloc.y;
+                            aaxrem = texloc.x - (float)aax;
+                            aayrem = texloc.y - (float)aay;
+                        }
 
                         // Find the four pixels that we can interpolate from. The first number is the x, and second is y.
                         unsigned int tex00 = aax + (aay * work->texwidth);
@@ -366,9 +385,20 @@ extern "C"
                     } else {
                         for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
                             for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
-                                point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
-                                int aax = texloc.x;
-                                int aay = texloc.y;
+                                int aax = -1;
+                                int aay = -1;
+
+                                if (work->use_perspective) {
+                                    point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
+                                    if (texloc.z > 0.0) {
+                                        aax = texloc.x / texloc.z;
+                                        aay = texloc.y / texloc.z;
+                                    }
+                                } else {
+                                    point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
+                                    aax = texloc.x;
+                                    aay = texloc.y;
+                                }
 
                                 // If we're out of bounds, don't update. Factor this in, however, so we can get partial
                                 // transparency to the pixel that is already there.
@@ -429,9 +459,20 @@ extern "C"
                     work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, average, work->imgdata[imgoff], work->blendfunc);
                 } else {
                     // Grab the center of the pixel to get the color.
-                    point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
-                    int texx = texloc.x;
-                    int texy = texloc.y;
+                    int texx = -1;
+                    int texy = -1;
+
+                    if (work->use_perspective) {
+                        point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
+                        if (texloc.z > 0.0) {
+                            texx = texloc.x / texloc.z;
+                            texy = texloc.y / texloc.z;
+                        }
+                    } else {
+                        point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
+                        texx = texloc.x;
+                        texy = texloc.y;
+                    }
 
                     // If we're out of bounds, don't update.
                     if (texx < 0 || texy < 0 || texx >= (int)work->texwidth || texy >= (int)work->texheight) {
@@ -452,7 +493,7 @@ extern "C"
         return NULL;
     }
 
-    int affine_composite_fast(
+    int composite_fast(
         unsigned char *imgbytes,
         unsigned char *maskbytes,
         unsigned int imgwidth,
@@ -463,7 +504,10 @@ extern "C"
         unsigned int maxy,
         floatcolor_t add_color,
         floatcolor_t mult_color,
+        float xscale,
+        float yscale,
         matrix_t inverse,
+        int use_perspective,
         int blendfunc,
         unsigned char *texbytes,
         unsigned int texwidth,
@@ -488,11 +532,14 @@ extern "C"
             work.texdata = texdata;
             work.texwidth = texwidth;
             work.texheight = texheight;
+            work.xscale = xscale;
+            work.yscale = yscale;
             work.inverse = inverse;
             work.add_color = add_color;
             work.mult_color = mult_color;
             work.blendfunc = blendfunc;
             work.enable_aa = enable_aa;
+            work.use_perspective = use_perspective;
 
             chunk_composite_fast(&work);
         } else {
@@ -531,12 +578,15 @@ extern "C"
                 work->texdata = texdata;
                 work->texwidth = texwidth;
                 work->texheight = texheight;
+                work->xscale = xscale;
+                work->yscale = yscale;
                 work->inverse = inverse;
                 work->add_color = add_color;
                 work->mult_color = mult_color;
                 work->blendfunc = blendfunc;
                 work->thread = thread;
                 work->enable_aa = enable_aa;
+                work->use_perspective = use_perspective;
 
                 if (me)
                 {
@@ -580,60 +630,6 @@ extern "C"
 
             // Free the memory we allocated.
             free(mywork);
-        }
-
-        return 0;
-    }
-
-    int perspective_composite_fast(
-        unsigned char *imgbytes,
-        unsigned char *maskbytes,
-        unsigned int imgwidth,
-        unsigned int imgheight,
-        float camera_x,
-        float camera_y,
-        float camera_z,
-        float focal_length,
-        floatcolor_t add_color,
-        floatcolor_t mult_color,
-        matrix_t transform,
-        int blendfunc,
-        unsigned char *texbytes,
-        unsigned int texwidth,
-        unsigned int texheight,
-        unsigned int threads,
-        unsigned int enable_aa
-    ) {
-        // Cast to a usable type.
-        intcolor_t *imgdata = (intcolor_t *)imgbytes;
-        intcolor_t *texdata = (intcolor_t *)texbytes;
-
-        for (unsigned int texy = 0; texy < texheight; texy++) {
-            for (unsigned int texx = 0; texx < texwidth; texx++) {
-                // Calculate perspective projection.
-                point_t imgloc = transform.multiply_point((point_t){(float)texx, (float)texy});
-                float perspective = focal_length / (imgloc.z - camera_z);
-                int imgx = ((imgloc.x - camera_x) * perspective) + camera_x;
-                int imgy = ((imgloc.y - camera_y) * perspective) + camera_y;
-
-                // Check clipping.
-                if (imgx < 0 || imgx >= (int)imgwidth) {
-                    continue;
-                }
-                if (imgy < 0 || imgy >= (int)imgheight) {
-                    continue;
-                }
-
-                // Check mask rectangle.
-                unsigned int imgoff = imgx + (imgy * imgwidth);
-                if (maskbytes != NULL && maskbytes[imgoff] == 0) {
-                    continue;
-                }
-
-                // Blend it.
-                unsigned int texoff = (texx + (texy * texwidth));
-                imgdata[imgoff] = blend_point(add_color, mult_color, texdata[texoff], imgdata[imgoff], blendfunc);
-            }
         }
 
         return 0;

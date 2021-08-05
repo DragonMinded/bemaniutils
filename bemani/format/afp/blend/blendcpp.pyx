@@ -3,6 +3,7 @@ from PIL import Image  # type: ignore
 from typing import Optional, Tuple
 
 from ..types import Color, Matrix, Point
+from .perspective import perspective_calculate
 
 cdef extern struct floatcolor_t:
     float r;
@@ -24,9 +25,9 @@ cdef extern struct matrix_t:
     float a42;
     float a43;
 
-cdef extern int affine_composite_fast(
-    unsigned char *imgdata,
-    unsigned char *maskdata,
+cdef extern int composite_fast(
+    unsigned char *imgbytes,
+    unsigned char *maskbytes,
     unsigned int imgwidth,
     unsigned int imgheight,
     unsigned int minx,
@@ -35,27 +36,10 @@ cdef extern int affine_composite_fast(
     unsigned int maxy,
     floatcolor_t add_color,
     floatcolor_t mult_color,
+    float xscale,
+    float yscale,
     matrix_t inverse,
-    int blendfunc,
-    unsigned char *texdata,
-    unsigned int texwidth,
-    unsigned int texheight,
-    unsigned int threads,
-    unsigned int enable_aa,
-)
-
-cdef extern int perspective_composite_fast(
-    unsigned char *imgbytes,
-    unsigned char *maskbytes,
-    unsigned int imgwidth,
-    unsigned int imgheight,
-    float camera_x,
-    float camera_y,
-    float camera_z,
-    float focal_length,
-    floatcolor_t add_color,
-    floatcolor_t mult_color,
-    matrix_t transform,
+    int use_perspective,
     int blendfunc,
     unsigned char *texbytes,
     unsigned int texwidth,
@@ -137,7 +121,7 @@ def affine_composite(
     cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()
 
     # Call the C++ function.
-    errors = affine_composite_fast(
+    errors = composite_fast(
         imgbytes,
         maskbytes,
         imgwidth,
@@ -148,7 +132,10 @@ def affine_composite(
         maxy,
         c_addcolor,
         c_multcolor,
+        transform.xscale,
+        transform.yscale,
         c_inverse,
+        0,
         blendfunc,
         texbytes,
         texwidth,
@@ -190,6 +177,12 @@ def perspective_composite(
     texwidth = texture.width
     texheight = texture.height
 
+    # Get the perspective-correct inverse matrix for looking up texture coordinates.
+    inverse_matrix, minx, miny, maxx, maxy = perspective_calculate(imgwidth, imgheight, texwidth, texheight, transform, camera, focal_length)
+    if inverse_matrix is None:
+        # This texture is entirely off of the screen.
+        return img
+
     # Grab the raw image data.
     imgbytes = img.tobytes('raw', 'RGBA')
     texbytes = texture.tobytes('raw', 'RGBA')
@@ -207,27 +200,30 @@ def perspective_composite(
     # Convert classes to C structs.
     cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
-    cdef matrix_t c_transform = matrix_t(
-        a11=transform.a11, a12=transform.a12, a13=transform.a13,
-        a21=transform.a21, a22=transform.a22, a23=transform.a23,
-        a31=transform.a31, a32=transform.a32, a33=transform.a33,
-        a41=transform.a41, a42=transform.a42, a43=transform.a43,
+    cdef matrix_t c_inverse = matrix_t(
+        a11=inverse_matrix.a11, a12=inverse_matrix.a12, a13=inverse_matrix.a13,
+        a21=inverse_matrix.a21, a22=inverse_matrix.a22, a23=inverse_matrix.a23,
+        a31=inverse_matrix.a31, a32=inverse_matrix.a32, a33=inverse_matrix.a33,
+        a41=inverse_matrix.a41, a42=inverse_matrix.a42, a43=inverse_matrix.a43,
     )
     cdef unsigned int threads = 1 if single_threaded else multiprocessing.cpu_count()
 
     # Call the C++ function.
-    errors = perspective_composite_fast(
+    errors = composite_fast(
         imgbytes,
         maskbytes,
         imgwidth,
         imgheight,
-        camera.x,
-        camera.y,
-        camera.z,
-        focal_length,
+        minx,
+        maxx,
+        miny,
+        maxy,
         c_addcolor,
         c_multcolor,
-        c_transform,
+        transform.xscale,
+        transform.yscale,
+        c_inverse,
+        1,
         blendfunc,
         texbytes,
         texwidth,

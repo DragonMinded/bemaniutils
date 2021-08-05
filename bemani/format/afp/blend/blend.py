@@ -1,9 +1,10 @@
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 from ..types import Color, Matrix, Point
+from .perspective import perspective_calculate
 
 
 def clamp(color: float) -> int:
@@ -192,6 +193,218 @@ def blend_point(
         return blend_normal(dest_color, src_color)
 
 
+def pixel_renderer(
+    imgx: int,
+    imgy: int,
+    imgwidth: int,
+    texwidth: int,
+    texheight: int,
+    xscale: float,
+    yscale: float,
+    callback: Callable[[Point], Optional[Point]],
+    add_color: Color,
+    mult_color: Color,
+    blendfunc: int,
+    imgbytes: Union[bytes, bytearray],
+    texbytes: Union[bytes, bytearray],
+    maskbytes: Optional[Union[bytes, bytearray]],
+    enable_aa: bool,
+) -> Sequence[int]:
+    # Determine offset
+    maskoff = imgx + (imgy * imgwidth)
+    imgoff = maskoff * 4
+
+    if maskbytes is not None and maskbytes[maskoff] == 0:
+        # This pixel is masked off!
+        return imgbytes[imgoff:(imgoff + 4)]
+
+    if enable_aa:
+        r = 0
+        g = 0
+        b = 0
+        a = 0
+        count = 0
+        denom = 0
+
+        # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
+        # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
+        # scaled up images a bit softer than would otherwise be achieved.
+        xswing = 0.5 * max(1.0, xscale)
+        yswing = 0.5 * max(1.0, yscale)
+
+        xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
+        ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
+
+        # First, figure out if we can use bilinear resampling.
+        bilinear = False
+        if xscale >= 1.0 and yscale >= 1.0:
+            aaloc = callback(Point(imgx + 0.5, imgy + 0.5))
+            if aaloc is not None:
+                aax, aay, _ = aaloc.as_tuple()
+                if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
+                    bilinear = True
+
+        # Now perform the desired AA operation.
+        if bilinear:
+            # Calculate the pixel we're after, and what percentage into the pixel we are.
+            texloc = callback(Point(imgx + 0.5, imgy + 0.5))
+            if texloc is None:
+                raise Exception("Logic error!")
+            aax, aay, _ = texloc.as_tuple()
+            aaxrem = texloc.x - aax
+            aayrem = texloc.y - aay
+
+            # Find the four pixels that we can interpolate from. The first number is the x, and second is y.
+            tex00 = (aax + (aay * texwidth)) * 4
+            tex10 = tex00 + 4
+            tex01 = (aax + ((aay + 1) * texwidth)) * 4
+            tex11 = tex01 + 4
+
+            # Calculate various scaling factors based on alpha and percentage.
+            tex00percent = texbytes[tex00 + 3] / 255.0
+            tex10percent = texbytes[tex10 + 3] / 255.0
+            tex01percent = texbytes[tex01 + 3] / 255.0
+            tex11percent = texbytes[tex11 + 3] / 255.0
+
+            y0percent = (tex00percent * (1.0 - aaxrem)) + (tex10percent * aaxrem)
+            y1percent = (tex01percent * (1.0 - aaxrem)) + (tex11percent * aaxrem)
+            finalpercent = (y0percent * (1.0 - aayrem)) + (y1percent * aayrem)
+
+            if finalpercent <= 0.0:
+                # This pixel would be blank, so we avoid dividing by zero.
+                average = [255, 255, 255, 0]
+            else:
+                # Interpolate in the X direction on both Y axis.
+                y0r = ((texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10] * tex10percent * aaxrem))
+                y0g = ((texbytes[tex00 + 1] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 1] * tex10percent * aaxrem))
+                y0b = ((texbytes[tex00 + 2] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 2] * tex10percent * aaxrem))
+
+                y1r = ((texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11] * tex11percent * aaxrem))
+                y1g = ((texbytes[tex01 + 1] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 1] * tex11percent * aaxrem))
+                y1b = ((texbytes[tex01 + 2] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 2] * tex11percent * aaxrem))
+
+                # Now interpolate the Y direction to get the final pixel value.
+                average = [
+                    int(((y0r * (1.0 - aayrem)) + (y1r * aayrem)) / finalpercent),
+                    int(((y0g * (1.0 - aayrem)) + (y1g * aayrem)) / finalpercent),
+                    int(((y0b * (1.0 - aayrem)) + (y1b * aayrem)) / finalpercent),
+                    int(finalpercent * 255),
+                ]
+        else:
+            for addy in ypoints:
+                for addx in xpoints:
+                    texloc = callback(Point(imgx + addx, imgy + addy))
+                    denom += 1
+
+                    if texloc is None:
+                        continue
+
+                    aax, aay, _ = texloc.as_tuple()
+
+                    # If we're out of bounds, don't update. Factor this in, however, so we can get partial
+                    # transparency to the pixel that is already there.
+                    if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
+                        continue
+
+                    # Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
+                    # blend to ensure that partial transparency pixel values don't unnecessarily factor
+                    # into average calculations.
+                    texoff = (aax + (aay * texwidth)) * 4
+
+                    # If this is a fully transparent pixel, the below formulas work out to adding nothing
+                    # so we should skip this altogether.
+                    if texbytes[texoff + 3] == 0:
+                        continue
+
+                    apercent = texbytes[texoff + 3] / 255.0
+                    r += int(texbytes[texoff] * apercent)
+                    g += int(texbytes[texoff + 1] * apercent)
+                    b += int(texbytes[texoff + 2] * apercent)
+                    a += texbytes[texoff + 3]
+                    count += 1
+
+            if count == 0:
+                # None of the samples existed in-bounds.
+                return imgbytes[imgoff:(imgoff + 4)]
+
+            # Average the pixels. Make sure to divide out the alpha in preparation for blending.
+            alpha = a // denom
+
+            if alpha == 0:
+                average = [255, 255, 255, alpha]
+            else:
+                apercent = alpha / 255.0
+                average = [int((r / denom) / apercent), int((g / denom) / apercent), int((b / denom) / apercent), alpha]
+
+        # Finally, blend it with the destination.
+        return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
+    else:
+        # Calculate what texture pixel data goes here.
+        texloc = callback(Point(imgx + 0.5, imgy + 0.5))
+        if texloc is None:
+            return imgbytes[imgoff:(imgoff + 4)]
+
+        texx, texy, _ = texloc.as_tuple()
+
+        # If we're out of bounds, don't update.
+        if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
+            return imgbytes[imgoff:(imgoff + 4)]
+
+        # Blend it.
+        texoff = (texx + (texy * texwidth)) * 4
+        return blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
+
+
+def affine_line_renderer(
+    work: multiprocessing.Queue,
+    results: multiprocessing.Queue,
+    minx: int,
+    maxx: int,
+    imgwidth: int,
+    texwidth: int,
+    texheight: int,
+    inverse: Matrix,
+    add_color: Color,
+    mult_color: Color,
+    blendfunc: int,
+    imgbytes: Union[bytes, bytearray],
+    texbytes: Union[bytes, bytearray],
+    maskbytes: Optional[Union[bytes, bytearray]],
+    enable_aa: bool,
+) -> None:
+    while True:
+        imgy = work.get()
+        if imgy is None:
+            return
+
+        rowbytes = bytearray(imgbytes[(imgy * imgwidth * 4):((imgy + 1) * imgwidth * 4)])
+        for imgx in range(imgwidth):
+            if imgx < minx or imgx >= maxx:
+                # No need to even consider this pixel.
+                continue
+            else:
+                # Blit new pixel into the correct range.
+                rowbytes[(imgx * 4):((imgx + 1) * 4)] = pixel_renderer(
+                    imgx,
+                    imgy,
+                    imgwidth,
+                    texwidth,
+                    texheight,
+                    1.0 / inverse.xscale,
+                    1.0 / inverse.yscale,
+                    lambda point: inverse.multiply_point(point),
+                    add_color,
+                    mult_color,
+                    blendfunc,
+                    imgbytes,
+                    texbytes,
+                    maskbytes,
+                    enable_aa,
+                )
+
+        results.put((imgy, bytes(rowbytes)))
+
+
 def affine_composite(
     img: Image.Image,
     add_color: Color,
@@ -262,7 +475,9 @@ def affine_composite(
                     imgwidth,
                     texwidth,
                     texheight,
-                    inverse,
+                    1.0 / inverse.xscale,
+                    1.0 / inverse.yscale,
+                    lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
                     blendfunc,
@@ -298,7 +513,7 @@ def affine_composite(
 
         for _ in range(cores):
             proc = multiprocessing.Process(
-                target=line_renderer,
+                target=affine_line_renderer,
                 args=(
                     work,
                     results,
@@ -349,7 +564,7 @@ def affine_composite(
     return img
 
 
-def line_renderer(
+def perspective_line_renderer(
     work: multiprocessing.Queue,
     results: multiprocessing.Queue,
     minx: int,
@@ -357,6 +572,8 @@ def line_renderer(
     imgwidth: int,
     texwidth: int,
     texheight: int,
+    xscale: float,
+    yscale: float,
     inverse: Matrix,
     add_color: Color,
     mult_color: Color,
@@ -366,6 +583,14 @@ def line_renderer(
     maskbytes: Optional[Union[bytes, bytearray]],
     enable_aa: bool,
 ) -> None:
+    def perspective_inverse(imgpoint: Point) -> Optional[Point]:
+        # Calculate the texture coordinate with our perspective interpolation.
+        texdiv = inverse.multiply_point(imgpoint)
+        if texdiv.z <= 0.0:
+            return None
+
+        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z)
+
     while True:
         imgy = work.get()
         if imgy is None:
@@ -384,7 +609,9 @@ def line_renderer(
                     imgwidth,
                     texwidth,
                     texheight,
-                    inverse,
+                    xscale,
+                    yscale,
+                    perspective_inverse,
                     add_color,
                     mult_color,
                     blendfunc,
@@ -395,160 +622,6 @@ def line_renderer(
                 )
 
         results.put((imgy, bytes(rowbytes)))
-
-
-def pixel_renderer(
-    imgx: int,
-    imgy: int,
-    imgwidth: int,
-    texwidth: int,
-    texheight: int,
-    inverse: Matrix,
-    add_color: Color,
-    mult_color: Color,
-    blendfunc: int,
-    imgbytes: Union[bytes, bytearray],
-    texbytes: Union[bytes, bytearray],
-    maskbytes: Optional[Union[bytes, bytearray]],
-    enable_aa: bool,
-) -> Sequence[int]:
-    # Determine offset
-    maskoff = imgx + (imgy * imgwidth)
-    imgoff = maskoff * 4
-
-    if maskbytes is not None and maskbytes[maskoff] == 0:
-        # This pixel is masked off!
-        return imgbytes[imgoff:(imgoff + 4)]
-
-    if enable_aa:
-        r = 0
-        g = 0
-        b = 0
-        a = 0
-        count = 0
-        denom = 0
-
-        # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
-        # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
-        # scaled up images a bit softer than would otherwise be achieved.
-        xscale = 1.0 / inverse.xscale
-        yscale = 1.0 / inverse.yscale
-
-        # These are used for picking the various sample points for SSAA method below.
-        xswing = 0.5 * max(1.0, xscale)
-        yswing = 0.5 * max(1.0, yscale)
-
-        xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
-        ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
-
-        # First, figure out if we can use bilinear resampling.
-        bilinear = False
-        if xscale >= 1.0 and yscale >= 1.0:
-            aaloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-            aax, aay, _ = aaloc.as_tuple()
-            if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
-                bilinear = True
-
-        # Now perform the desired AA operation.
-        if bilinear:
-            # Calculate the pixel we're after, and what percentage into the pixel we are.
-            texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-            aax, aay, _ = texloc.as_tuple()
-            aaxrem = texloc.x - aax
-            aayrem = texloc.y - aay
-
-            # Find the four pixels that we can interpolate from. The first number is the x, and second is y.
-            tex00 = (aax + (aay * texwidth)) * 4
-            tex10 = tex00 + 4
-            tex01 = (aax + ((aay + 1) * texwidth)) * 4
-            tex11 = tex01 + 4
-
-            # Calculate various scaling factors based on alpha and percentage.
-            tex00percent = texbytes[tex00 + 3] / 255.0
-            tex10percent = texbytes[tex10 + 3] / 255.0
-            tex01percent = texbytes[tex01 + 3] / 255.0
-            tex11percent = texbytes[tex11 + 3] / 255.0
-
-            y0percent = (tex00percent * (1.0 - aaxrem)) + (tex10percent * aaxrem)
-            y1percent = (tex01percent * (1.0 - aaxrem)) + (tex11percent * aaxrem)
-            finalpercent = (y0percent * (1.0 - aayrem)) + (y1percent * aayrem)
-
-            if finalpercent <= 0.0:
-                # This pixel would be blank, so we avoid dividing by zero.
-                average = [255, 255, 255, 0]
-            else:
-                # Interpolate in the X direction on both Y axis.
-                y0r = ((texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10] * tex10percent * aaxrem))
-                y0g = ((texbytes[tex00 + 1] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 1] * tex10percent * aaxrem))
-                y0b = ((texbytes[tex00 + 2] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 2] * tex10percent * aaxrem))
-
-                y1r = ((texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11] * tex11percent * aaxrem))
-                y1g = ((texbytes[tex01 + 1] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 1] * tex11percent * aaxrem))
-                y1b = ((texbytes[tex01 + 2] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 2] * tex11percent * aaxrem))
-
-                # Now interpolate the Y direction to get the final pixel value.
-                average = [
-                    int(((y0r * (1.0 - aayrem)) + (y1r * aayrem)) / finalpercent),
-                    int(((y0g * (1.0 - aayrem)) + (y1g * aayrem)) / finalpercent),
-                    int(((y0b * (1.0 - aayrem)) + (y1b * aayrem)) / finalpercent),
-                    int(finalpercent * 255),
-                ]
-        else:
-            for addy in ypoints:
-                for addx in xpoints:
-                    texloc = inverse.multiply_point(Point(imgx + addx, imgy + addy))
-                    aax, aay, _ = texloc.as_tuple()
-
-                    # If we're out of bounds, don't update. Factor this in, however, so we can get partial
-                    # transparency to the pixel that is already there.
-                    denom += 1
-                    if aax < 0 or aay < 0 or aax >= texwidth or aay >= texheight:
-                        continue
-
-                    # Grab the values to average, for SSAA. Make sure to factor in alpha as a poor-man's
-                    # blend to ensure that partial transparency pixel values don't unnecessarily factor
-                    # into average calculations.
-                    texoff = (aax + (aay * texwidth)) * 4
-
-                    # If this is a fully transparent pixel, the below formulas work out to adding nothing
-                    # so we should skip this altogether.
-                    if texbytes[texoff + 3] == 0:
-                        continue
-
-                    apercent = texbytes[texoff + 3] / 255.0
-                    r += int(texbytes[texoff] * apercent)
-                    g += int(texbytes[texoff + 1] * apercent)
-                    b += int(texbytes[texoff + 2] * apercent)
-                    a += texbytes[texoff + 3]
-                    count += 1
-
-            if count == 0:
-                # None of the samples existed in-bounds.
-                return imgbytes[imgoff:(imgoff + 4)]
-
-            # Average the pixels. Make sure to divide out the alpha in preparation for blending.
-            alpha = a // denom
-
-            if alpha == 0:
-                average = [255, 255, 255, alpha]
-            else:
-                apercent = alpha / 255.0
-                average = [int((r / denom) / apercent), int((g / denom) / apercent), int((b / denom) / apercent), alpha]
-
-        # Finally, blend it with the destination.
-        return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
-    else:
-        # Calculate what texture pixel data goes here.
-        texloc = inverse.multiply_point(Point(imgx + 0.5, imgy + 0.5))
-        texx, texy, _ = texloc.as_tuple()
-
-        # If we're out of bounds, don't update.
-        if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-            return imgbytes[imgoff:(imgoff + 4)]
-
-        # Blend it.
-        texoff = (texx + (texy * texwidth)) * 4
-        return blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
 
 
 def perspective_composite(
@@ -576,6 +649,12 @@ def perspective_composite(
     texwidth = texture.width
     texheight = texture.height
 
+    # Get the perspective-correct inverse matrix for looking up texture coordinates.
+    inverse_matrix, minx, miny, maxx, maxy = perspective_calculate(imgwidth, imgheight, texwidth, texheight, transform, camera, focal_length)
+    if inverse_matrix is None:
+        # This texture is entirely off of the screen.
+        return img
+
     # Get the data in an easier to manipulate and faster to update fashion.
     imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
     texbytes = texture.tobytes('raw', 'RGBA')
@@ -585,29 +664,122 @@ def perspective_composite(
     else:
         maskbytes = None
 
-    for texy in range(texheight):
-        for texx in range(texwidth):
-            # Calculate perspective projection.
-            imgloc = transform.multiply_point(Point(texx, texy))
-            perspective = focal_length / (imgloc.z - camera.z)
-            imgx = int(((imgloc.x - camera.x) * perspective) + camera.x)
-            imgy = int(((imgloc.y - camera.y) * perspective) + camera.y)
+    def perspective_inverse(imgpoint: Point) -> Optional[Point]:
+        # Calculate the texture coordinate with our perspective interpolation.
+        texdiv = inverse_matrix.multiply_point(imgpoint)
+        if texdiv.z <= 0.0:
+            return None
 
-            # Check clipping.
-            if imgx < 0 or imgx >= imgwidth:
-                continue
-            if imgy < 0 or imgy >= imgheight:
-                continue
+        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z)
 
-            # Check mask rectangle.
-            maskoff = imgx + (imgy * imgwidth)
-            imgoff = maskoff * 4
-            if maskbytes is not None and maskbytes[maskoff] == 0:
-                continue
+    cores = multiprocessing.cpu_count()
+    if single_threaded or cores < 2:
+        # Get the data in an easier to manipulate and faster to update fashion.
+        imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
+        texbytes = texture.tobytes('raw', 'RGBA')
+        if mask:
+            alpha = mask.split()[-1]
+            maskbytes = alpha.tobytes('raw', 'L')
+        else:
+            maskbytes = None
 
-            # Blend it.
-            texoff = (texx + (texy * texwidth)) * 4
-            imgbytes[imgoff:(imgoff + 4)] = blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
+        # We don't have enough CPU cores to bother multiprocessing.
+        for imgy in range(miny, maxy):
+            for imgx in range(minx, maxx):
+                # Determine offset
+                imgoff = (imgx + (imgy * imgwidth)) * 4
+                imgbytes[imgoff:(imgoff + 4)] = pixel_renderer(
+                    imgx,
+                    imgy,
+                    imgwidth,
+                    texwidth,
+                    texheight,
+                    transform.xscale,
+                    transform.yscale,
+                    perspective_inverse,
+                    add_color,
+                    mult_color,
+                    blendfunc,
+                    imgbytes,
+                    texbytes,
+                    maskbytes,
+                    enable_aa,
+                )
 
         img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
+    else:
+        imgbytes = img.tobytes('raw', 'RGBA')
+        texbytes = texture.tobytes('raw', 'RGBA')
+        if mask:
+            alpha = mask.split()[-1]
+            maskbytes = alpha.tobytes('raw', 'L')
+        else:
+            maskbytes = None
+
+        # Let's spread the load across multiple processors.
+        procs: List[multiprocessing.Process] = []
+        work: multiprocessing.Queue = multiprocessing.Queue()
+        results: multiprocessing.Queue = multiprocessing.Queue()
+        expected: int = 0
+        interrupted: bool = False
+
+        def ctrlc(sig: Any, frame: Any) -> None:
+            nonlocal interrupted
+            interrupted = True
+
+        previous_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, ctrlc)
+
+        for _ in range(cores):
+            proc = multiprocessing.Process(
+                target=perspective_line_renderer,
+                args=(
+                    work,
+                    results,
+                    minx,
+                    maxx,
+                    imgwidth,
+                    texwidth,
+                    texheight,
+                    transform.xscale,
+                    transform.yscale,
+                    inverse_matrix,
+                    add_color,
+                    mult_color,
+                    blendfunc,
+                    imgbytes,
+                    texbytes,
+                    maskbytes,
+                    enable_aa,
+                ),
+            )
+            procs.append(proc)
+            proc.start()
+
+        for imgy in range(miny, maxy):
+            work.put(imgy)
+            expected += 1
+
+        lines: List[bytes] = [
+            imgbytes[x:(x + (imgwidth * 4))]
+            for x in range(
+                0,
+                imgwidth * imgheight * 4,
+                imgwidth * 4,
+            )
+        ]
+        for _ in range(expected):
+            imgy, result = results.get()
+            lines[imgy] = result
+
+        for _proc in procs:
+            work.put(None)
+        for proc in procs:
+            proc.join()
+
+        signal.signal(signal.SIGINT, previous_handler)
+        if interrupted:
+            raise KeyboardInterrupt()
+
+        img = Image.frombytes('RGBA', (imgwidth, imgheight), b''.join(lines))
     return img
