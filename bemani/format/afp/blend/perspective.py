@@ -51,17 +51,22 @@ def perspective_calculate(
             1 / distance,
         )
 
+    # Clip out anything that is completely off screen.
+    if minz is None or maxz is None:
+        raise Exception("Logic error!")
+
     # Calculate the maximum range of update this texture can possibly reside in.
     minx = max(int(min(p.x for p in xy)), 0)
     maxx = min(int(max(p.x for p in xy)) + 1, imgwidth)
     miny = max(int(min(p.y for p in xy)), 0)
     maxy = min(int(max(p.y for p in xy)) + 1, imgheight)
 
-    if minz is None or maxz is None:
-        raise Exception("Logic error!")
-
     if minz <= 0.0 and maxz <= 0.0:
         # This is entirely behind the camera, clip it.
+        return (None, minx, miny, maxx, maxy)
+
+    if minx >= imgwidth or maxx < 0 or miny >= imgheight or maxy < 0:
+        # This is entirely off screen, clip it.
         return (None, minx, miny, maxx, maxy)
 
     if minz < 0.0 and maxz > 0.0:
