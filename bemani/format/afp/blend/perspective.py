@@ -19,6 +19,8 @@ def perspective_calculate(
     # v/Z since those ARE linear, and work backwards from there.
     xy: List[Point] = []
     uvz: Dict[Point, Point] = {}
+    minz: Optional[float] = None
+    maxz: Optional[float] = None
     for (texx, texy) in [
         (0, 0),
         (texwidth, 0),
@@ -31,6 +33,15 @@ def perspective_calculate(
         distance = imgloc.z - camera.z
         imgx = ((imgloc.x - camera.x) * (focal_length / distance)) + camera.x
         imgy = ((imgloc.y - camera.y) * (focal_length / distance)) + camera.y
+
+        if minz is None:
+            minz = distance
+        else:
+            minz = min(distance, minz)
+        if maxz is None:
+            maxz = distance
+        else:
+            maxz = max(distance, maxz)
 
         xy_point = Point(imgx, imgy)
         xy.append(xy_point)
@@ -46,9 +57,19 @@ def perspective_calculate(
     miny = max(int(min(p.y for p in xy)), 0)
     maxy = min(int(max(p.y for p in xy)) + 1, imgheight)
 
-    if maxx <= minx or maxy <= miny:
-        # This image is entirely off the screen!
+    if minz is None or maxz is None:
+        raise Exception("Logic error!")
+
+    if minx <= 0.0 and maxz <= 0.0:
+        # This is entirely behind the camera, clip it.
         return (None, minx, miny, maxx, maxy)
+
+    if minz < 0 and maxz > 0:
+        # This clips through the camera, default to drawing the whole image.
+        minx = 0
+        maxx = imgwidth
+        miny = 0
+        maxy = imgheight
 
     # Now that we have three points, construct a matrix that allows us to calculate
     # what amount of each u/z, v/z and 1/z vector we need to interpolate values. The
