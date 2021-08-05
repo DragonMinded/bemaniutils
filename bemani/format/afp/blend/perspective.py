@@ -60,11 +60,11 @@ def perspective_calculate(
     if minz is None or maxz is None:
         raise Exception("Logic error!")
 
-    if minx <= 0.0 and maxz <= 0.0:
+    if minz <= 0.0 and maxz <= 0.0:
         # This is entirely behind the camera, clip it.
         return (None, minx, miny, maxx, maxy)
 
-    if minz < 0 and maxz > 0:
+    if minz < 0.0 and maxz > 0.0:
         # This clips through the camera, default to drawing the whole image.
         minx = 0
         maxx = imgwidth

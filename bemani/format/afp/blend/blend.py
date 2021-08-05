@@ -1,7 +1,7 @@
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 from ..types import Color, Matrix, Point
 from .perspective import perspective_calculate
@@ -201,7 +201,7 @@ def pixel_renderer(
     texheight: int,
     xscale: float,
     yscale: float,
-    callback: Callable[[Point], Optional[Point]],
+    callback: Callable[[Point], Tuple[Optional[Point], bool]],
     add_color: Color,
     mult_color: Color,
     blendfunc: int,
@@ -238,8 +238,8 @@ def pixel_renderer(
         # First, figure out if we can use bilinear resampling.
         bilinear = False
         if xscale >= 1.0 and yscale >= 1.0:
-            aaloc = callback(Point(imgx + 0.5, imgy + 0.5))
-            if aaloc is not None:
+            aaloc, enable_bilinear = callback(Point(imgx + 0.5, imgy + 0.5))
+            if aaloc is not None and enable_bilinear:
                 aax, aay, _ = aaloc.as_tuple()
                 if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
                     bilinear = True
@@ -247,7 +247,7 @@ def pixel_renderer(
         # Now perform the desired AA operation.
         if bilinear:
             # Calculate the pixel we're after, and what percentage into the pixel we are.
-            texloc = callback(Point(imgx + 0.5, imgy + 0.5))
+            texloc, _ = callback(Point(imgx + 0.5, imgy + 0.5))
             if texloc is None:
                 raise Exception("Logic error!")
             aax, aay, _ = texloc.as_tuple()
@@ -293,7 +293,7 @@ def pixel_renderer(
         else:
             for addy in ypoints:
                 for addx in xpoints:
-                    texloc = callback(Point(imgx + addx, imgy + addy))
+                    texloc, _ = callback(Point(imgx + addx, imgy + addy))
                     denom += 1
 
                     if texloc is None:
@@ -340,7 +340,7 @@ def pixel_renderer(
         return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
     else:
         # Calculate what texture pixel data goes here.
-        texloc = callback(Point(imgx + 0.5, imgy + 0.5))
+        texloc, _ = callback(Point(imgx + 0.5, imgy + 0.5))
         if texloc is None:
             return imgbytes[imgoff:(imgoff + 4)]
 
@@ -392,7 +392,7 @@ def affine_line_renderer(
                     texheight,
                     1.0 / inverse.xscale,
                     1.0 / inverse.yscale,
-                    lambda point: inverse.multiply_point(point),
+                    lambda point: (inverse.multiply_point(point), True),
                     add_color,
                     mult_color,
                     blendfunc,
@@ -477,7 +477,7 @@ def affine_composite(
                     texheight,
                     1.0 / inverse.xscale,
                     1.0 / inverse.yscale,
-                    lambda point: inverse.multiply_point(point),
+                    lambda point: (inverse.multiply_point(point), True),
                     add_color,
                     mult_color,
                     blendfunc,
@@ -583,13 +583,13 @@ def perspective_line_renderer(
     maskbytes: Optional[Union[bytes, bytearray]],
     enable_aa: bool,
 ) -> None:
-    def perspective_inverse(imgpoint: Point) -> Optional[Point]:
+    def perspective_inverse(imgpoint: Point) -> Tuple[Optional[Point], bool]:
         # Calculate the texture coordinate with our perspective interpolation.
         texdiv = inverse.multiply_point(imgpoint)
         if texdiv.z <= 0.0:
-            return None
+            return None, False
 
-        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z)
+        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z), False
 
     while True:
         imgy = work.get()
@@ -664,13 +664,13 @@ def perspective_composite(
     else:
         maskbytes = None
 
-    def perspective_inverse(imgpoint: Point) -> Optional[Point]:
+    def perspective_inverse(imgpoint: Point) -> Tuple[Optional[Point], bool]:
         # Calculate the texture coordinate with our perspective interpolation.
         texdiv = inverse_matrix.multiply_point(imgpoint)
         if texdiv.z <= 0.0:
-            return None
+            return None, False
 
-        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z)
+        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z), False
 
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:

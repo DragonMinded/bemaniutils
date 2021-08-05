@@ -289,23 +289,13 @@ extern "C"
                     int count = 0;
                     int denom = 0;
 
-                    // First, figure out if we can use bilinear resampling.
+                    // First, figure out if we can use bilinear resampling. Bilinear seems to look
+                    // awful on perspective transforms, so disable it for all of them.
                     int bilinear = 0;
-                    if (work->xscale >= 1.0 && work->yscale >= 1.0) {
-                        int aax = -1;
-                        int aay = -1;
-
-                        if (work->use_perspective) {
-                            point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
-                            if (aaloc.z > 0.0) {
-                                aax = aaloc.x / aaloc.z;
-                                aay = aaloc.y / aaloc.z;
-                            }
-                        } else {
-                            point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
-                            aax = aaloc.x;
-                            aay = aaloc.y;
-                        }
+                    if (!work->use_perspective && work->xscale >= 1.0 && work->yscale >= 1.0) {
+                        point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                        int aax = aaloc.x;
+                        int aay = aaloc.y;
 
                         if (!(aax <= 0 || aay <= 0 || aax >= ((int)work->texwidth - 1) || aay >= ((int)work->texheight - 1))) {
                             bilinear = 1;
