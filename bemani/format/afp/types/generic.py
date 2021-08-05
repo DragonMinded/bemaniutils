@@ -185,7 +185,7 @@ class Matrix:
         )
 
     @property
-    def is_affine(self) -> bool:
+    def __is_affine(self) -> bool:
         return (
             round(abs(self.a13), 5) == 0.0 and
             round(abs(self.a23), 5) == 0.0 and
@@ -196,7 +196,7 @@ class Matrix:
         )
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        if self.is_affine:
+        if self.__is_affine:
             return {
                 'a': self.a,
                 'b': self.b,
@@ -237,7 +237,7 @@ class Matrix:
             a43=self.a43,
         )
 
-        if not other.is_affine:
+        if not other.__is_affine:
             new.a11 = other.a11
             new.a12 = other.a12
             new.a13 = other.a13
@@ -486,7 +486,7 @@ class Matrix:
         )
 
     def __repr__(self) -> str:
-        if self.is_affine:
+        if self.__is_affine:
             return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
         else:
             return "; ".join([

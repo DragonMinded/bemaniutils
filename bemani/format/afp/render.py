@@ -96,11 +96,23 @@ class Mask:
 
 class PlacedObject:
     # An object that occupies the screen at some depth.
-    def __init__(self, object_id: int, depth: int, rotation_origin: Point, transform: Matrix, mult_color: Color, add_color: Color, blend: int, mask: Optional[Mask]) -> None:
+    def __init__(
+        self,
+        object_id: int,
+        depth: int,
+        rotation_origin: Point,
+        transform: Matrix,
+        projection: int,
+        mult_color: Color,
+        add_color: Color,
+        blend: int,
+        mask: Optional[Mask],
+    ) -> None:
         self.__object_id = object_id
         self.__depth = depth
         self.rotation_origin = rotation_origin
         self.transform = transform
+        self.projection = projection
         self.mult_color = mult_color
         self.add_color = add_color
         self.blend = blend
@@ -132,13 +144,14 @@ class PlacedShape(PlacedObject):
         depth: int,
         rotation_origin: Point,
         transform: Matrix,
+        projection: int,
         mult_color: Color,
         add_color: Color,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredShape,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -158,13 +171,14 @@ class PlacedClip(PlacedObject):
         depth: int,
         rotation_origin: Point,
         transform: Matrix,
+        projection: int,
         mult_color: Color,
         add_color: Color,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredClip,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
         self.placed_objects: List[PlacedObject] = []
         self.frame: int = 0
         self.unplayed_tags: List[int] = [i for i in range(len(source.tags))]
@@ -275,13 +289,14 @@ class PlacedImage(PlacedObject):
         depth: int,
         rotation_origin: Point,
         transform: Matrix,
+        projection: int,
         mult_color: Color,
         add_color: Color,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredImage,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -300,13 +315,14 @@ class PlacedDummy(PlacedObject):
         depth: int,
         rotation_origin: Point,
         transform: Matrix,
+        projection: int,
         mult_color: Color,
         add_color: Color,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredDummy,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, mult_color, add_color, blend, mask)
+        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
         self.__source = source
 
     @property
@@ -749,6 +765,7 @@ class AFPRenderer(VerboseOutput):
                         new_transform = obj.transform.update(tag.transform) if tag.transform is not None else obj.transform
                         new_rotation_origin = tag.rotation_origin or obj.rotation_origin
                         new_blend = tag.blend or obj.blend
+                        new_projection = tag.projection if tag.projection != AP2PlaceObjectTag.PROJECTION_NONE else obj.projection
 
                         if tag.source_tag_id is not None and tag.source_tag_id != obj.source.tag_id:
                             # This completely updates the pointed-at object.
@@ -761,6 +778,7 @@ class AFPRenderer(VerboseOutput):
                                     obj.depth,
                                     new_rotation_origin,
                                     new_transform,
+                                    new_projection,
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
@@ -776,6 +794,7 @@ class AFPRenderer(VerboseOutput):
                                     obj.depth,
                                     new_rotation_origin,
                                     new_transform,
+                                    new_projection,
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
@@ -791,6 +810,7 @@ class AFPRenderer(VerboseOutput):
                                     tag.depth,
                                     new_rotation_origin,
                                     new_transform,
+                                    new_projection,
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
@@ -807,6 +827,7 @@ class AFPRenderer(VerboseOutput):
                                     obj.depth,
                                     new_rotation_origin,
                                     new_transform,
+                                    new_projection,
                                     new_mult_color,
                                     new_add_color,
                                     new_blend,
@@ -825,6 +846,7 @@ class AFPRenderer(VerboseOutput):
                             obj.add_color = new_add_color
                             obj.transform = new_transform
                             obj.rotation_origin = new_rotation_origin
+                            obj.projection = new_projection
                             obj.blend = new_blend
                             return None, True
 
@@ -846,6 +868,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.depth,
                                 tag.rotation_origin or Point.identity(),
                                 tag.transform or Matrix.identity(),
+                                tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                                 tag.blend or 0,
@@ -863,6 +886,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.depth,
                                 tag.rotation_origin or Point.identity(),
                                 tag.transform or Matrix.identity(),
+                                tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                                 tag.blend or 0,
@@ -879,6 +903,7 @@ class AFPRenderer(VerboseOutput):
                             tag.depth,
                             tag.rotation_origin or Point.identity(),
                             tag.transform or Matrix.identity(),
+                            tag.projection,
                             tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                             tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                             tag.blend or 0,
@@ -903,6 +928,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.depth,
                                 tag.rotation_origin or Point.identity(),
                                 tag.transform or Matrix.identity(),
+                                tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
                                 tag.blend or 0,
@@ -1029,6 +1055,7 @@ class AFPRenderer(VerboseOutput):
         img: Image.Image,
         renderable: PlacedObject,
         parent_transform: Matrix,
+        parent_projection: int,
         parent_mask: Image.Image,
         parent_mult_color: Color,
         parent_add_color: Color,
@@ -1044,6 +1071,7 @@ class AFPRenderer(VerboseOutput):
 
         # Compute the affine transformation matrix for this object.
         transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_origin))
+        projection = AP2PlaceObjectTag.PROJECTION_PERSPECTIVE if parent_projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE else renderable.projection
 
         # Calculate blending and blend color if it is present.
         mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(parent_mult_color)
@@ -1074,7 +1102,7 @@ class AFPRenderer(VerboseOutput):
                 for obj in renderable.placed_objects:
                     if obj.depth != depth:
                         continue
-                    img = self.__render_object(img, obj, transform, mask, mult_color, add_color, blend, only_depths=new_only_depths, prefix=prefix + " ")
+                    img = self.__render_object(img, obj, transform, projection, mask, mult_color, add_color, blend, only_depths=new_only_depths, prefix=prefix + " ")
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -1137,7 +1165,7 @@ class AFPRenderer(VerboseOutput):
                     texture = shape.rectangle
 
                 if texture is not None:
-                    if transform.is_affine or self.__camera is None:
+                    if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
                         img = affine_composite(
                             img,
                             add_color,
@@ -1149,20 +1177,35 @@ class AFPRenderer(VerboseOutput):
                             single_threaded=self.__single_threaded,
                             enable_aa=self.__enable_aa,
                         )
-                    else:
-                        img = perspective_composite(
-                            img,
-                            add_color,
-                            mult_color,
-                            transform,
-                            self.__camera.center,
-                            self.__camera.focal_length,
-                            mask,
-                            blend,
-                            texture,
-                            single_threaded=self.__single_threaded,
-                            enable_aa=self.__enable_aa,
-                        )
+                    elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
+                        if self.__camera is None:
+                            print("WARNING: Element requests perspective projection but no camera exists!")
+                            img = affine_composite(
+                                img,
+                                add_color,
+                                mult_color,
+                                transform,
+                                mask,
+                                blend,
+                                texture,
+                                single_threaded=self.__single_threaded,
+                                enable_aa=self.__enable_aa,
+                            )
+                        else:
+                            img = perspective_composite(
+                                img,
+                                add_color,
+                                mult_color,
+                                transform,
+                                self.__camera.center,
+                                self.__camera.focal_length,
+                                mask,
+                                blend,
+                                texture,
+                                single_threaded=self.__single_threaded,
+                                enable_aa=self.__enable_aa,
+                            )
+
         elif isinstance(renderable, PlacedImage):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -1170,7 +1213,7 @@ class AFPRenderer(VerboseOutput):
 
             # This is a shape draw reference.
             texture = self.textures[renderable.source.reference]
-            if transform.is_affine or self.__camera is None:
+            if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
                 img = affine_composite(
                     img,
                     add_color,
@@ -1182,20 +1225,34 @@ class AFPRenderer(VerboseOutput):
                     single_threaded=self.__single_threaded,
                     enable_aa=self.__enable_aa,
                 )
-            else:
-                img = perspective_composite(
-                    img,
-                    add_color,
-                    mult_color,
-                    transform,
-                    self.__camera.center,
-                    self.__camera.focal_length,
-                    mask,
-                    blend,
-                    texture,
-                    single_threaded=self.__single_threaded,
-                    enable_aa=self.__enable_aa,
-                )
+            elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
+                if self.__camera is None:
+                    print("WARNING: Element requests perspective projection but no camera exists!")
+                    img = affine_composite(
+                        img,
+                        add_color,
+                        mult_color,
+                        transform,
+                        mask,
+                        blend,
+                        texture,
+                        single_threaded=self.__single_threaded,
+                        enable_aa=self.__enable_aa,
+                    )
+                else:
+                    img = perspective_composite(
+                        img,
+                        add_color,
+                        mult_color,
+                        transform,
+                        self.__camera.center,
+                        self.__camera.focal_length,
+                        mask,
+                        blend,
+                        texture,
+                        single_threaded=self.__single_threaded,
+                        enable_aa=self.__enable_aa,
+                    )
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!
             pass
@@ -1423,6 +1480,7 @@ class AFPRenderer(VerboseOutput):
             -1,
             Point.identity(),
             Matrix.identity(),
+            AP2PlaceObjectTag.PROJECTION_AFFINE,
             Color(1.0, 1.0, 1.0, 1.0),
             Color(0.0, 0.0, 0.0, 0.0),
             0,
@@ -1461,6 +1519,7 @@ class AFPRenderer(VerboseOutput):
                     -1,
                     Point.identity(),
                     background_matrix,
+                    AP2PlaceObjectTag.PROJECTION_AFFINE,
                     Color(1.0, 1.0, 1.0, 1.0),
                     Color(0.0, 0.0, 0.0, 0.0),
                     0,
@@ -1538,6 +1597,7 @@ class AFPRenderer(VerboseOutput):
                         curimage,
                         root_clip,
                         movie_transform,
+                        AP2PlaceObjectTag.PROJECTION_AFFINE,
                         movie_mask,
                         actual_mult_color,
                         actual_add_color,

@@ -2,6 +2,7 @@ import os
 import struct
 import sys
 from typing import Any, Dict, List, Optional, Tuple
+from typing_extensions import Final
 
 from .decompile import ByteCode
 from .types import (
@@ -280,6 +281,10 @@ class AP2DoActionTag(Tag):
 
 
 class AP2PlaceObjectTag(Tag):
+    PROJECTION_NONE: Final[int] = 0
+    PROJECTION_AFFINE: Final[int] = 1
+    PROJECTION_PERSPECTIVE: Final[int] = 2
+
     def __init__(
         self,
         object_id: int,
@@ -291,6 +296,7 @@ class AP2PlaceObjectTag(Tag):
         update: bool,
         transform: Optional[Matrix],
         rotation_origin: Optional[Point],
+        projection: int,
         mult_color: Optional[Color],
         add_color: Optional[Color],
         triggers: Dict[int, List[ByteCode]],
@@ -325,6 +331,9 @@ class AP2PlaceObjectTag(Tag):
         self.transform = transform
         self.rotation_origin = rotation_origin
 
+        # What projection system to use when displaying this object.
+        self.projection = projection
+
         # If there is a color to blend with the sprite/shape when drawing.
         self.mult_color = mult_color
 
@@ -350,6 +359,7 @@ class AP2PlaceObjectTag(Tag):
             'update': self.update,
             'transform': self.transform.as_dict(*args, **kwargs) if self.transform is not None else None,
             'rotation_origin': self.rotation_origin.as_dict(*args, **kwargs) if self.rotation_origin is not None else None,
+            'projection': 'none' if self.projection == self.PROJECTION_NONE else ('affine' if self.projection == self.PROJECTION_AFFINE else 'perspective'),
             'mult_color': self.mult_color.as_dict(*args, **kwargs) if self.mult_color is not None else None,
             'add_color': self.add_color.as_dict(*args, **kwargs) if self.add_color is not None else None,
             'triggers': {i: [b.as_dict(*args, **kwargs) for b in t] for (i, t) in self.triggers.items()}
@@ -1549,22 +1559,35 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x4000000000:
                 raise Exception("TODO")
 
-            # This flag states whether we are creating a new object on this depth, or updating one.
+            projection = AP2PlaceObjectTag.PROJECTION_NONE
             unhandled_flags &= ~0x400000D
+
+            # This flag states whether we are creating a new object on this depth, or updating one.
             if flags & 0x1:
                 self.vprint(f"{prefix}    Update object request")
+                update_request = True
             else:
                 self.vprint(f"{prefix}    Create object request")
+                update_request = False
+
             if flags & 0x4:
                 self.vprint(f"{prefix}    Use transform matrix")
+                projection = AP2PlaceObjectTag.PROJECTION_AFFINE
+                transform_information = True
             else:
                 self.vprint(f"{prefix}    Ignore transform matrix")
+                transform_information = False
+
             if flags & 0x8:
                 self.vprint(f"{prefix}    Use color information")
+                color_information = True
             else:
                 self.vprint(f"{prefix}    Ignore color information")
+                color_information = False
+
             if flags & 0x4000000:
                 self.vprint(f"{prefix}    Use 3D transform system")
+                projection = AP2PlaceObjectTag.PROJECTION_PERSPECTIVE
             else:
                 self.vprint(f"{prefix}    Use 2D transform system")
 
@@ -1592,11 +1615,12 @@ class SWF(TrackedCoverage, VerboseOutput):
                 movie_name=movie_name,
                 label_name=label_name,
                 blend=blend,
-                update=True if (flags & 0x1) else False,
-                transform=transform if (flags & 0x4) else None,
+                update=update_request,
+                transform=transform if transform_information else None,
                 rotation_origin=rotation_origin if rotation_origin_set else None,
-                mult_color=multcolor if (flags & 0x8) else None,
-                add_color=addcolor if (flags & 0x8) else None,
+                projection=projection,
+                mult_color=multcolor if color_information else None,
+                add_color=addcolor if color_information else None,
                 triggers=bytecodes,
                 unrecognized_options=unrecognized_options,
             )
