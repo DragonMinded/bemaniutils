@@ -330,6 +330,13 @@ class PlacedDummy(PlacedObject):
         return self.__source
 
 
+class PlacedCamera:
+    def __init__(self, center: Point, focal_length: float) -> None:
+        self.center = center
+        self.focal_length = focal_length
+        self.adjusted = False
+
+
 class Global:
     def __init__(self, root: PlacedClip, clip: PlacedClip) -> None:
         self.root = root
@@ -469,7 +476,7 @@ class AFPRenderer(VerboseOutput):
         # Internal render parameters.
         self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]] = {}
         self.__root: Optional[PlacedClip] = None
-        self.__camera: Optional[AP2PlaceCameraTag] = None
+        self.__camera: Optional[PlacedCamera] = None
 
         # List of imports that we provide stub implementations for.
         self.__stubbed_swfs: Set[str] = {
@@ -1003,7 +1010,10 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2PlaceCameraTag):
             self.vprint(f"{prefix}    Place camera tag.")
-            self.__camera = tag
+            self.__camera = PlacedCamera(
+                tag.center,
+                tag.focal_length,
+            )
 
             # Didn't place a new clip.
             return None, False
@@ -1580,6 +1590,11 @@ class AFPRenderer(VerboseOutput):
                 changed = self.__process_tags(root_clip, False)
                 while self.__is_dirty(root_clip):
                     changed = self.__process_tags(root_clip, True) or changed
+
+                # Adjust camera based on the movie's scaling.
+                if self.__camera is not None and not self.__camera.adjusted:
+                    self.__camera.center = movie_transform.multiply_point(self.__camera.center)
+                    self.__camera.adjusted = True
 
                 # If we're only rendering some frames, don't bother to do the draw operations
                 # if we aren't going to return the frame.
