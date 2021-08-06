@@ -247,21 +247,17 @@ class Matrix:
             new.a31 = other.a31
             new.a32 = other.a32
             new.a33 = other.a33
-            new.a41 = other.a41
-            new.a42 = other.a42
-            new.a43 = other.a43
-        else:
-            if other.__scale_set:
-                new.a = other.a
-                new.d = other.d
-            if other.__rotate_set:
-                new.b = other.b
-                new.c = other.c
-            if other.__translate_xy_set:
-                new.tx = other.tx
-                new.ty = other.ty
-            if other.__translate_z_set:
-                new.tz = other.tz
+        if other.__scale_set:
+            new.a = other.a
+            new.d = other.d
+        if other.__rotate_set:
+            new.b = other.b
+            new.c = other.c
+        if other.__translate_xy_set:
+            new.tx = other.tx
+            new.ty = other.ty
+        if other.__translate_z_set:
+            new.tz = other.tz
 
         return new
 

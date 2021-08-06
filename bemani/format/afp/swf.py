@@ -1570,7 +1570,11 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.vprint(f"{prefix}    Create object request")
                 update_request = False
 
-            if flags & 0x4:
+            if flags & 0x18000004:
+                # Technically only flag 0x4 is the "use transform matrix" flag, but when they
+                # added perspective to the format, they also just made setting the TZ or the
+                # 3x3 transform portion of a 4x4 matrix equivalent. So if those exist, this
+                # implicitly is enabled.
                 self.vprint(f"{prefix}    Use transform matrix")
                 projection = AP2PlaceObjectTag.PROJECTION_AFFINE
                 transform_information = True
