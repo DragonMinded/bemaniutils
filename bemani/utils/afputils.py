@@ -691,7 +691,7 @@ def render_path(
                     movie_transform=transform,
                 )
             ):
-                fullname = f"{filename}-{i:{digits}}{ext}"
+                fullname = f"{filename}-{(i + 1):{digits}}{ext}"
 
                 try:
                     dirof = os.path.dirname(os.path.abspath(fullname))
