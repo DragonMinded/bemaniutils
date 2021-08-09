@@ -199,6 +199,7 @@ def pixel_renderer(
     imgx: int,
     imgy: int,
     imgwidth: int,
+    imgheight: int,
     texwidth: int,
     texheight: int,
     xscale: float,
@@ -299,7 +300,12 @@ def pixel_renderer(
         else:
             for addy in ypoints:
                 for addx in xpoints:
-                    texloc = callback(Point(imgx + addx, imgy + addy))
+                    xloc = imgx + addx
+                    yloc = imgy + addy
+                    if xloc < 0.0 or yloc < 0.0 or xloc >= imgwidth or yloc >= imgheight:
+                        continue
+
+                    texloc = callback(Point(xloc, yloc))
                     denom += 1
 
                     if texloc is None:
@@ -367,6 +373,7 @@ def affine_line_renderer(
     minx: int,
     maxx: int,
     imgwidth: int,
+    imgheight: int,
     texwidth: int,
     texheight: int,
     inverse: Matrix,
@@ -394,6 +401,7 @@ def affine_line_renderer(
                     imgx,
                     imgy,
                     imgwidth,
+                    imgheight,
                     texwidth,
                     texheight,
                     1.0 / inverse.xscale,
@@ -479,6 +487,7 @@ def affine_composite(
                     imgx,
                     imgy,
                     imgwidth,
+                    imgheight,
                     texwidth,
                     texheight,
                     1.0 / inverse.xscale,
@@ -526,6 +535,7 @@ def affine_composite(
                     minx,
                     maxx,
                     imgwidth,
+                    imgheight,
                     texwidth,
                     texheight,
                     inverse,
@@ -576,6 +586,7 @@ def perspective_line_renderer(
     minx: int,
     maxx: int,
     imgwidth: int,
+    imgheight: int,
     texwidth: int,
     texheight: int,
     xscale: float,
@@ -613,6 +624,7 @@ def perspective_line_renderer(
                     imgx,
                     imgy,
                     imgwidth,
+                    imgheight,
                     texwidth,
                     texheight,
                     xscale,
@@ -698,6 +710,7 @@ def perspective_composite(
                     imgx,
                     imgy,
                     imgwidth,
+                    imgheight,
                     texwidth,
                     texheight,
                     transform.xscale,
@@ -745,6 +758,7 @@ def perspective_composite(
                     minx,
                     maxx,
                     imgwidth,
+                    imgheight,
                     texwidth,
                     texheight,
                     transform.xscale,

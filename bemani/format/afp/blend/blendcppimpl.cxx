@@ -67,6 +67,7 @@ extern "C"
         intcolor_t *imgdata;
         unsigned char *maskdata;
         unsigned int imgwidth;
+        unsigned int imgheight;
         unsigned int minx;
         unsigned int maxx;
         unsigned int miny;
@@ -393,14 +394,20 @@ extern "C"
                                 int aax = -1;
                                 int aay = -1;
 
+                                float xloc = (float)imgx + addx;
+                                float yloc = (float)imgy + addy;
+                                if (xloc < 0.0 || yloc < 0.0 || xloc >= (float)work->imgwidth || yloc >= (float)work->imgheight) {
+                                    continue;
+                                }
+
                                 if (work->use_perspective) {
-                                    point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
+                                    point_t texloc = work->inverse.multiply_point((point_t){xloc, yloc});
                                     if (texloc.z > 0.0) {
                                         aax = texloc.x / texloc.z;
                                         aay = texloc.y / texloc.z;
                                     }
                                 } else {
-                                    point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + addx, (float)imgy + addy});
+                                    point_t texloc = work->inverse.multiply_point((point_t){xloc, yloc});
                                     aax = texloc.x;
                                     aay = texloc.y;
                                 }
@@ -530,6 +537,7 @@ extern "C"
             work.imgdata = imgdata;
             work.maskdata = maskbytes;
             work.imgwidth = imgwidth;
+            work.imgheight = imgheight;
             work.minx = minx;
             work.maxx = maxx;
             work.miny = miny;
@@ -576,6 +584,7 @@ extern "C"
                 work->imgdata = imgdata;
                 work->maskdata = maskbytes;
                 work->imgwidth = imgwidth;
+                work->imgheight = imgheight;
                 work->minx = minx;
                 work->maxx = maxx;
                 work->miny = imgy;
