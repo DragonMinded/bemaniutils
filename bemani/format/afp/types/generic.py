@@ -144,22 +144,23 @@ class Matrix:
         a31: float, a32: float, a33: float,
         a41: float, a42: float, a43: float,
     ) -> None:
-        self.a11 = a11
-        self.a12 = a12
-        self.a13 = a13
-        self.a21 = a21
-        self.a22 = a22
-        self.a23 = a23
-        self.a31 = a31
-        self.a32 = a32
-        self.a33 = a33
-        self.a41 = a41
-        self.a42 = a42
-        self.a43 = a43
+        self.__a11 = a11
+        self.__a12 = a12
+        self.__a13 = a13
+        self.__a21 = a21
+        self.__a22 = a22
+        self.__a23 = a23
+        self.__a31 = a31
+        self.__a32 = a32
+        self.__a33 = a33
+        self.__a41 = a41
+        self.__a42 = a42
+        self.__a43 = a43
         self.__scale_set = True
         self.__rotate_set = True
         self.__translate_xy_set = True
         self.__translate_z_set = True
+        self.__3d_grid_set = True
 
     @staticmethod
     def identity() -> "Matrix":
@@ -173,6 +174,7 @@ class Matrix:
         new.__rotate_set = False
         new.__translate_xy_set = False
         new.__translate_z_set = False
+        new.__3d_grid_set = False
         return new
 
     @staticmethod
@@ -187,174 +189,286 @@ class Matrix:
     @property
     def __is_affine(self) -> bool:
         return (
-            round(abs(self.a13), 5) == 0.0 and
-            round(abs(self.a23), 5) == 0.0 and
-            round(abs(self.a31), 5) == 0.0 and
-            round(abs(self.a32), 5) == 0.0 and
-            round(self.a33, 5) == 1.0 and
-            round(abs(self.a43), 5) == 0.0
+            round(abs(self.__a13), 5) == 0.0 and
+            round(abs(self.__a23), 5) == 0.0 and
+            round(abs(self.__a31), 5) == 0.0 and
+            round(abs(self.__a32), 5) == 0.0 and
+            round(self.__a33, 5) == 1.0 and
+            round(abs(self.__a43), 5) == 0.0
         )
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         if self.__is_affine:
             return {
-                'a': self.a,
-                'b': self.b,
-                'c': self.c,
-                'd': self.d,
-                'tx': self.tx,
-                'ty': self.ty,
+                'a': self.__a11,
+                'b': self.__a12,
+                'c': self.__a21,
+                'd': self.__a22,
+                'tx': self.__a41,
+                'ty': self.__a42,
             }
         else:
             return {
-                'a11': self.a11,
-                'a12': self.a12,
-                'a13': self.a13,
-                'a21': self.a21,
-                'a22': self.a22,
-                'a23': self.a23,
-                'a31': self.a31,
-                'a32': self.a32,
-                'a33': self.a33,
-                'a41': self.a41,
-                'a42': self.a42,
-                'a43': self.a43,
+                'a11': self.__a11,
+                'a12': self.__a12,
+                'a13': self.__a13,
+                'a21': self.__a21,
+                'a22': self.__a22,
+                'a23': self.__a23,
+                'a31': self.__a31,
+                'a32': self.__a32,
+                'a33': self.__a33,
+                'tx': self.__a41,
+                'ty': self.__a42,
+                'tz': self.__a43,
             }
 
     def update(self, other: "Matrix") -> "Matrix":
         new = Matrix(
-            a11=self.a11,
-            a12=self.a12,
-            a13=self.a13,
-            a21=self.a21,
-            a22=self.a22,
-            a23=self.a23,
-            a31=self.a31,
-            a32=self.a32,
-            a33=self.a33,
-            a41=self.a41,
-            a42=self.a42,
-            a43=self.a43,
+            a11=self.__a11,
+            a12=self.__a12,
+            a13=self.__a13,
+            a21=self.__a21,
+            a22=self.__a22,
+            a23=self.__a23,
+            a31=self.__a31,
+            a32=self.__a32,
+            a33=self.__a33,
+            a41=self.__a41,
+            a42=self.__a42,
+            a43=self.__a43,
         )
 
-        if not other.__is_affine:
-            new.a11 = other.a11
-            new.a12 = other.a12
-            new.a13 = other.a13
-            new.a21 = other.a21
-            new.a22 = other.a22
-            new.a23 = other.a23
-            new.a31 = other.a31
-            new.a32 = other.a32
-            new.a33 = other.a33
+        if other.__3d_grid_set:
+            new.__a11 = other.__a11
+            new.__a12 = other.__a12
+            new.__a13 = other.__a13
+            new.__a21 = other.__a21
+            new.__a22 = other.__a22
+            new.__a23 = other.__a23
+            new.__a31 = other.__a31
+            new.__a32 = other.__a32
+            new.__a33 = other.__a33
         if other.__scale_set:
-            new.a = other.a
-            new.d = other.d
+            new.__a11 = other.__a11
+            new.__a22 = other.__a22
         if other.__rotate_set:
-            new.b = other.b
-            new.c = other.c
+            new.__a12 = other.__a12
+            new.__a21 = other.__a21
         if other.__translate_xy_set:
-            new.tx = other.tx
-            new.ty = other.ty
+            new.__a41 = other.__a41
+            new.__a42 = other.__a42
         if other.__translate_z_set:
-            new.tz = other.tz
+            new.__a43 = other.__a43
 
         return new
 
     @property
     def xscale(self) -> float:
-        return math.sqrt((self.a11 * self.a11) + (self.a12 * self.a12) + (self.a13 * self.a13))
+        return math.sqrt((self.__a11 * self.__a11) + (self.__a12 * self.__a12) + (self.__a13 * self.__a13))
 
     @property
     def yscale(self) -> float:
-        return math.sqrt((self.a21 * self.a21) + (self.a22 * self.a22) + (self.a23 * self.a23))
+        return math.sqrt((self.__a21 * self.__a21) + (self.__a22 * self.__a22) + (self.__a23 * self.__a23))
 
     @property
     def zscale(self) -> float:
-        return math.sqrt((self.a31 * self.a31) + (self.a32 * self.a32) + (self.a33 * self.a33))
+        return math.sqrt((self.__a31 * self.__a31) + (self.__a32 * self.__a32) + (self.__a33 * self.__a33))
 
     @property
     def a(self) -> float:
-        return self.a11
+        return self.__a11
 
     @a.setter
     def a(self, val: float) -> None:
         self.__scale_set = True
-        self.a11 = val
+        self.__a11 = val
 
     @property
     def b(self) -> float:
-        return self.a12
+        return self.__a12
 
     @b.setter
     def b(self, val: float) -> None:
         self.__rotate_set = True
-        self.a12 = val
+        self.__a12 = val
 
     @property
     def c(self) -> float:
-        return self.a21
+        return self.__a21
 
     @c.setter
     def c(self, val: float) -> None:
         self.__rotate_set = True
-        self.a21 = val
+        self.__a21 = val
 
     @property
     def d(self) -> float:
-        return self.a22
+        return self.__a22
 
     @d.setter
     def d(self, val: float) -> None:
         self.__scale_set = True
-        self.a22 = val
+        self.__a22 = val
 
     @property
     def tx(self) -> float:
-        return self.a41
+        return self.__a41
 
     @tx.setter
     def tx(self, val: float) -> None:
         self.__translate_xy_set = True
-        self.a41 = val
+        self.__a41 = val
 
     @property
     def ty(self) -> float:
-        return self.a42
+        return self.__a42
 
     @ty.setter
     def ty(self, val: float) -> None:
         self.__translate_xy_set = True
-        self.a42 = val
+        self.__a42 = val
 
     @property
     def tz(self) -> float:
-        return self.a43
+        return self.__a43
 
     @tz.setter
     def tz(self, val: float) -> None:
         self.__translate_z_set = True
-        self.a43 = val
+        self.__a43 = val
+
+    @property
+    def a11(self) -> float:
+        return self.__a11
+
+    @a11.setter
+    def a11(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__scale_set = True
+        self.__a11 = val
+
+    @property
+    def a12(self) -> float:
+        return self.__a12
+
+    @a12.setter
+    def a12(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__rotate_set = True
+        self.__a12 = val
+
+    @property
+    def a13(self) -> float:
+        return self.__a13
+
+    @a13.setter
+    def a13(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__a13 = val
+
+    @property
+    def a21(self) -> float:
+        return self.__a21
+
+    @a21.setter
+    def a21(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__rotate_set = True
+        self.__a21 = val
+
+    @property
+    def a22(self) -> float:
+        return self.__a22
+
+    @a22.setter
+    def a22(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__scale_set = True
+        self.__a22 = val
+
+    @property
+    def a23(self) -> float:
+        return self.__a23
+
+    @a23.setter
+    def a23(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__a23 = val
+
+    @property
+    def a31(self) -> float:
+        return self.__a31
+
+    @a31.setter
+    def a31(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__a31 = val
+
+    @property
+    def a32(self) -> float:
+        return self.__a32
+
+    @a32.setter
+    def a32(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__a32 = val
+
+    @property
+    def a33(self) -> float:
+        return self.__a33
+
+    @a33.setter
+    def a33(self, val: float) -> None:
+        self.__3d_grid_set = True
+        self.__a33 = val
+
+    @property
+    def a41(self) -> float:
+        return self.__a41
+
+    @a41.setter
+    def a41(self, val: float) -> None:
+        self.__translate_xy_set = True
+        self.__a41 = val
+
+    @property
+    def a42(self) -> float:
+        return self.__a42
+
+    @a42.setter
+    def a42(self, val: float) -> None:
+        self.__translate_xy_set = True
+        self.__a42 = val
+
+    @property
+    def a43(self) -> float:
+        return self.__a43
+
+    @a43.setter
+    def a43(self, val: float) -> None:
+        self.__translate_z_set = True
+        self.__a43 = val
 
     def multiply_point(self, point: Point) -> Point:
         return Point(
-            x=(self.a11 * point.x) + (self.a21 * point.y) + (self.a31 * point.z) + self.a41,
-            y=(self.a12 * point.x) + (self.a22 * point.y) + (self.a32 * point.z) + self.a42,
-            z=(self.a13 * point.x) + (self.a23 * point.y) + (self.a33 * point.z) + self.a43,
+            x=(self.__a11 * point.x) + (self.__a21 * point.y) + (self.__a31 * point.z) + self.__a41,
+            y=(self.__a12 * point.x) + (self.__a22 * point.y) + (self.__a32 * point.z) + self.__a42,
+            z=(self.__a13 * point.x) + (self.__a23 * point.y) + (self.__a33 * point.z) + self.__a43,
         )
 
     def translate(self, point: Point) -> "Matrix":
         new_point = self.multiply_point(point)
         return Matrix(
-            a11=self.a11,
-            a12=self.a12,
-            a13=self.a13,
-            a21=self.a21,
-            a22=self.a22,
-            a23=self.a23,
-            a31=self.a31,
-            a32=self.a32,
-            a33=self.a33,
+            a11=self.__a11,
+            a12=self.__a12,
+            a13=self.__a13,
+            a21=self.__a21,
+            a22=self.__a22,
+            a23=self.__a23,
+            a31=self.__a31,
+            a32=self.__a32,
+            a33=self.__a33,
             a41=new_point.x,
             a42=new_point.y,
             a43=new_point.z,
@@ -362,21 +476,21 @@ class Matrix:
 
     def multiply(self, other: "Matrix") -> "Matrix":
         return Matrix(
-            a11=self.a11 * other.a11 + self.a12 * other.a21 + self.a13 * other.a31,
-            a12=self.a11 * other.a12 + self.a12 * other.a22 + self.a13 * other.a32,
-            a13=self.a11 * other.a13 + self.a12 * other.a23 + self.a13 * other.a33,
+            a11=self.__a11 * other.__a11 + self.__a12 * other.__a21 + self.__a13 * other.__a31,
+            a12=self.__a11 * other.__a12 + self.__a12 * other.__a22 + self.__a13 * other.__a32,
+            a13=self.__a11 * other.__a13 + self.__a12 * other.__a23 + self.__a13 * other.__a33,
 
-            a21=self.a21 * other.a11 + self.a22 * other.a21 + self.a23 * other.a31,
-            a22=self.a21 * other.a12 + self.a22 * other.a22 + self.a23 * other.a32,
-            a23=self.a21 * other.a13 + self.a22 * other.a23 + self.a23 * other.a33,
+            a21=self.__a21 * other.__a11 + self.__a22 * other.__a21 + self.__a23 * other.__a31,
+            a22=self.__a21 * other.__a12 + self.__a22 * other.__a22 + self.__a23 * other.__a32,
+            a23=self.__a21 * other.__a13 + self.__a22 * other.__a23 + self.__a23 * other.__a33,
 
-            a31=self.a31 * other.a11 + self.a32 * other.a21 + self.a33 * other.a31,
-            a32=self.a31 * other.a12 + self.a32 * other.a22 + self.a33 * other.a32,
-            a33=self.a31 * other.a13 + self.a32 * other.a23 + self.a33 * other.a33,
+            a31=self.__a31 * other.__a11 + self.__a32 * other.__a21 + self.__a33 * other.__a31,
+            a32=self.__a31 * other.__a12 + self.__a32 * other.__a22 + self.__a33 * other.__a32,
+            a33=self.__a31 * other.__a13 + self.__a32 * other.__a23 + self.__a33 * other.__a33,
 
-            a41=self.a41 * other.a11 + self.a42 * other.a21 + self.a43 * other.a31 + other.a41,
-            a42=self.a41 * other.a12 + self.a42 * other.a22 + self.a43 * other.a32 + other.a42,
-            a43=self.a41 * other.a13 + self.a42 * other.a23 + self.a43 * other.a33 + other.a43,
+            a41=self.__a41 * other.__a11 + self.__a42 * other.__a21 + self.__a43 * other.__a31 + other.__a41,
+            a42=self.__a41 * other.__a12 + self.__a42 * other.__a22 + self.__a43 * other.__a32 + other.__a42,
+            a43=self.__a41 * other.__a13 + self.__a42 * other.__a23 + self.__a43 * other.__a33 + other.__a43,
         )
 
     def inverse(self) -> "Matrix":
@@ -391,10 +505,10 @@ class Matrix:
         # Use gauss-jordan eliminiation to invert the matrix.
         size = 4
         m = [
-            [self.a11, self.a12, self.a13, 0.0],
-            [self.a21, self.a22, self.a23, 0.0],
-            [self.a31, self.a32, self.a33, 0.0],
-            [self.a41, self.a42, self.a43, 1.0],
+            [self.__a11, self.__a12, self.__a13, 0.0],
+            [self.__a21, self.__a22, self.__a23, 0.0],
+            [self.__a31, self.__a32, self.__a33, 0.0],
+            [self.__a41, self.__a42, self.__a43, 1.0],
         ]
         inverse: List[List[float]] = [[1 if row == col else 0 for col in range(size)] for row in range(size)]
 
@@ -483,11 +597,11 @@ class Matrix:
 
     def __repr__(self) -> str:
         if self.__is_affine:
-            return f"a: {round(self.a, 5)}, b: {round(self.b, 5)}, c: {round(self.c, 5)}, d: {round(self.d, 5)}, tx: {round(self.tx, 5)}, ty: {round(self.ty, 5)}"
+            return f"a: {round(self.__a11, 5)}, b: {round(self.__a12, 5)}, c: {round(self.__a21, 5)}, d: {round(self.__a22, 5)}, tx: {round(self.__a41, 5)}, ty: {round(self.__a42, 5)}"
         else:
             return "; ".join([
-                f"a11: {round(self.a11, 5)}, a12: {round(self.a12, 5)}, a13: {round(self.a13, 5)}",
-                f"a21: {round(self.a21, 5)}, a22: {round(self.a22, 5)}, a23: {round(self.a23, 5)}",
-                f"a31: {round(self.a31, 5)}, a32: {round(self.a32, 5)}, a33: {round(self.a33, 5)}",
-                f"a41: {round(self.a41, 5)}, a42: {round(self.a42, 5)}, a43: {round(self.a43, 5)}",
+                f"a11: {round(self.__a11, 5)}, a12: {round(self.__a12, 5)}, a13: {round(self.__a13, 5)}",
+                f"a21: {round(self.__a21, 5)}, a22: {round(self.__a22, 5)}, a23: {round(self.__a23, 5)}",
+                f"a31: {round(self.__a31, 5)}, a32: {round(self.__a32, 5)}, a33: {round(self.__a33, 5)}",
+                f"tx:  {round(self.__a41, 5)}, ty:  {round(self.__a42, 5)}, tz:  {round(self.__a43, 5)}",
             ])
