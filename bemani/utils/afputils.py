@@ -655,7 +655,8 @@ def render_path(
             )
         ):
             if show_progress:
-                print(f"Rendered animation frame {i + 1}/{frames}.")
+                frameno = requested_frames[i] if requested_frames is not None else (i + 1)
+                print(f"Rendered animation frame {frameno}/{frames}.")
             images.append(img)
 
         if len(images) > 0:
@@ -691,7 +692,8 @@ def render_path(
                     movie_transform=transform,
                 )
             ):
-                fullname = f"{filename}-{(i + 1):{digits}}{ext}"
+                frameno = requested_frames[i] if requested_frames is not None else (i + 1)
+                fullname = f"{filename}-{frameno:{digits}}{ext}"
 
                 try:
                     dirof = os.path.dirname(os.path.abspath(fullname))
