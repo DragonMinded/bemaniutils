@@ -22,6 +22,7 @@ from .types import (
     Matrix,
     Point,
     Rectangle,
+    AAMode,
     AP2Trigger,
     AP2Action,
     PushAction,
@@ -1046,7 +1047,7 @@ class AFPRenderer(VerboseOutput):
                 257,
                 mask.rectangle,
                 single_threaded=self.__single_threaded,
-                enable_aa=False,
+                aa_mode=AAMode.NONE,
             )
         elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
             if self.__camera is None:
@@ -1060,7 +1061,7 @@ class AFPRenderer(VerboseOutput):
                     257,
                     mask.rectangle,
                     single_threaded=self.__single_threaded,
-                    enable_aa=False,
+                    aa_mode=AAMode.NONE,
                 )
             else:
                 calculated_mask = perspective_composite(
@@ -1074,7 +1075,7 @@ class AFPRenderer(VerboseOutput):
                     257,
                     mask.rectangle,
                     single_threaded=self.__single_threaded,
-                    enable_aa=False,
+                    aa_mode=AAMode.NONE,
                 )
 
         # Composite it onto the current mask.
@@ -1087,7 +1088,7 @@ class AFPRenderer(VerboseOutput):
             256,
             calculated_mask,
             single_threaded=self.__single_threaded,
-            enable_aa=False,
+            aa_mode=AAMode.NONE,
         )
 
     def __render_object(
@@ -1162,6 +1163,7 @@ class AFPRenderer(VerboseOutput):
                     print("WARNING: Unhandled UV coordinate color!")
 
                 texture = None
+                rectangle = False
                 if params.flags & 0x2:
                     # We need to look up the texture for this.
                     if params.region not in self.textures:
@@ -1203,9 +1205,15 @@ class AFPRenderer(VerboseOutput):
 
                         shape.rectangle = Image.new('RGBA', (int(right - left), int(bottom - top)), (params.blend.as_tuple()))
                     texture = shape.rectangle
+                    rectangle = True
 
                 if texture is not None:
                     if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
+                        if self.__enable_aa:
+                            aamode = AAMode.UNSCALED_SSAA_ONLY if rectangle else AAMode.SSAA_OR_BILINEAR
+                        else:
+                            aamode = AAMode.NONE
+
                         img = affine_composite(
                             img,
                             add_color,
@@ -1215,10 +1223,15 @@ class AFPRenderer(VerboseOutput):
                             blend,
                             texture,
                             single_threaded=self.__single_threaded,
-                            enable_aa=self.__enable_aa,
+                            aa_mode=aamode,
                         )
                     elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
                         if self.__camera is None:
+                            if self.__enable_aa:
+                                aamode = AAMode.UNSCALED_SSAA_ONLY if rectangle else AAMode.SSAA_OR_BILINEAR
+                            else:
+                                aamode = AAMode.NONE
+
                             print("WARNING: Element requests perspective projection but no camera exists!")
                             img = affine_composite(
                                 img,
@@ -1229,9 +1242,14 @@ class AFPRenderer(VerboseOutput):
                                 blend,
                                 texture,
                                 single_threaded=self.__single_threaded,
-                                enable_aa=self.__enable_aa,
+                                aa_mode=aamode,
                             )
                         else:
+                            if self.__enable_aa:
+                                aamode = AAMode.UNSCALED_SSAA_ONLY if rectangle else AAMode.SSAA_ONLY
+                            else:
+                                aamode = AAMode.NONE
+
                             img = perspective_composite(
                                 img,
                                 add_color,
@@ -1243,7 +1261,7 @@ class AFPRenderer(VerboseOutput):
                                 blend,
                                 texture,
                                 single_threaded=self.__single_threaded,
-                                enable_aa=self.__enable_aa,
+                                aa_mode=aamode,
                             )
 
         elif isinstance(renderable, PlacedImage):
@@ -1263,7 +1281,7 @@ class AFPRenderer(VerboseOutput):
                     blend,
                     texture,
                     single_threaded=self.__single_threaded,
-                    enable_aa=self.__enable_aa,
+                    aa_mode=AAMode.SSAA_OR_BILINEAR if self.__enable_aa else AAMode.NONE,
                 )
             elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
                 if self.__camera is None:
@@ -1277,7 +1295,7 @@ class AFPRenderer(VerboseOutput):
                         blend,
                         texture,
                         single_threaded=self.__single_threaded,
-                        enable_aa=self.__enable_aa,
+                        aa_mode=AAMode.SSAA_OR_BILINEAR if self.__enable_aa else AAMode.NONE,
                     )
                 else:
                     img = perspective_composite(
@@ -1291,7 +1309,7 @@ class AFPRenderer(VerboseOutput):
                         blend,
                         texture,
                         single_threaded=self.__single_threaded,
-                        enable_aa=self.__enable_aa,
+                        aa_mode=AAMode.SSAA_ONLY if self.__enable_aa else AAMode.NONE,
                     )
         elif isinstance(renderable, PlacedDummy):
             # Nothing to do!

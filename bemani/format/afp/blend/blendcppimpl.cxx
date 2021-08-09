@@ -5,6 +5,11 @@
 
 #define MIN_THREAD_WORK 10
 
+#define AA_MODE_NONE 0
+#define AA_MODE_UNSCALED_SSAA_ONLY 1
+#define AA_MODE_SSAA_ONLY 2
+#define AA_MODE_SSAA_OR_BILINEAR 3
+
 extern "C"
 {
     typedef struct intcolor {
@@ -77,7 +82,7 @@ extern "C"
         floatcolor_t mult_color;
         int blendfunc;
         pthread_t *thread;
-        int enable_aa;
+        int aa_mode;
     } work_t;
 
     inline unsigned char clamp(float color) {
@@ -265,8 +270,16 @@ extern "C"
         // costs us almost nothing. Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         // minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing scaled up images
         // a bit softer than would otherwise be achieved.
-        float xswing = 0.5 * fmax(1.0, work->xscale);
-        float yswing = 0.5 * fmax(1.0, work->yscale);
+        float xswing;
+        float yswing;
+
+        if (work->aa_mode == AA_MODE_UNSCALED_SSAA_ONLY) {
+            xswing = 0.5;
+            yswing = 0.5;
+        } else {
+            xswing = 0.5 * fmax(1.0, work->xscale);
+            yswing = 0.5 * fmax(1.0, work->yscale);
+        }
 
         for (unsigned int imgy = work->miny; imgy < work->maxy; imgy++) {
             for (unsigned int imgx = work->minx; imgx < work->maxx; imgx++) {
@@ -280,7 +293,7 @@ extern "C"
                 }
 
                 // Blend for simple anti-aliasing.
-                if (work->enable_aa) {
+                if (work->aa_mode != AA_MODE_NONE) {
                     // Calculate what texture pixel data goes here.
                     int r = 0;
                     int g = 0;
@@ -292,7 +305,7 @@ extern "C"
                     // First, figure out if we can use bilinear resampling. Bilinear seems to look
                     // awful on perspective transforms, so disable it for all of them.
                     int bilinear = 0;
-                    if (!work->use_perspective && work->xscale >= 1.0 && work->yscale >= 1.0) {
+                    if (work->aa_mode == AA_MODE_SSAA_OR_BILINEAR && work->xscale >= 1.0 && work->yscale >= 1.0) {
                         point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
                         int aax = aaloc.x;
                         int aay = aaloc.y;
@@ -503,7 +516,7 @@ extern "C"
         unsigned int texwidth,
         unsigned int texheight,
         unsigned int threads,
-        unsigned int enable_aa
+        unsigned int aa_mode
     ) {
         // Cast to a usable type.
         intcolor_t *imgdata = (intcolor_t *)imgbytes;
@@ -528,7 +541,7 @@ extern "C"
             work.add_color = add_color;
             work.mult_color = mult_color;
             work.blendfunc = blendfunc;
-            work.enable_aa = enable_aa;
+            work.aa_mode = aa_mode;
             work.use_perspective = use_perspective;
 
             chunk_composite_fast(&work);
@@ -575,7 +588,7 @@ extern "C"
                 work->mult_color = mult_color;
                 work->blendfunc = blendfunc;
                 work->thread = thread;
-                work->enable_aa = enable_aa;
+                work->aa_mode = aa_mode;
                 work->use_perspective = use_perspective;
 
                 if (me)

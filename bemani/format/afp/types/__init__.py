@@ -87,6 +87,7 @@ from .statement import (
     AndIf,
     OrIf,
 )
+from .aa import AAMode
 
 
 __all__ = [
@@ -176,4 +177,5 @@ __all__ = [
     'GetURL2Action',
     'StartDragAction',
     'DefineFunction2Action',
+    'AAMode',
 ]

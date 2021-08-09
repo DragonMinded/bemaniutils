@@ -13,7 +13,7 @@ def affine_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = ...,
-    enable_aa: bool = ...,
+    aa_mode: int = ...
 ) -> Image.Image:
     ...
 
@@ -29,6 +29,6 @@ def perspective_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = ...,
-    enable_aa: bool = ...,
+    aa_mode: int = ...
 ) -> Image.Image:
     ...

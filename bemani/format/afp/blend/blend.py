@@ -1,9 +1,9 @@
 import multiprocessing
 import signal
 from PIL import Image  # type: ignore
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, Optional, Sequence, Union
 
-from ..types import Color, Matrix, Point
+from ..types import Color, Matrix, Point, AAMode
 from .perspective import perspective_calculate
 
 
@@ -201,14 +201,14 @@ def pixel_renderer(
     texheight: int,
     xscale: float,
     yscale: float,
-    callback: Callable[[Point], Tuple[Optional[Point], bool]],
+    callback: Callable[[Point], Optional[Point]],
     add_color: Color,
     mult_color: Color,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
     maskbytes: Optional[Union[bytes, bytearray]],
-    enable_aa: bool,
+    aa_mode: int,
 ) -> Sequence[int]:
     # Determine offset
     maskoff = imgx + (imgy * imgwidth)
@@ -218,7 +218,7 @@ def pixel_renderer(
         # This pixel is masked off!
         return imgbytes[imgoff:(imgoff + 4)]
 
-    if enable_aa:
+    if aa_mode != AAMode.NONE:
         r = 0
         g = 0
         b = 0
@@ -229,17 +229,21 @@ def pixel_renderer(
         # Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         # minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing
         # scaled up images a bit softer than would otherwise be achieved.
-        xswing = 0.5 * max(1.0, xscale)
-        yswing = 0.5 * max(1.0, yscale)
+        if aa_mode == AAMode.UNSCALED_SSAA_ONLY:
+            xswing = 0.5
+            yswing = 0.5
+        else:
+            xswing = 0.5 * max(1.0, xscale)
+            yswing = 0.5 * max(1.0, yscale)
 
         xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
         ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
 
         # First, figure out if we can use bilinear resampling.
         bilinear = False
-        if xscale >= 1.0 and yscale >= 1.0:
-            aaloc, enable_bilinear = callback(Point(imgx + 0.5, imgy + 0.5))
-            if aaloc is not None and enable_bilinear:
+        if aa_mode == AAMode.SSAA_OR_BILINEAR and xscale >= 1.0 and yscale >= 1.0:
+            aaloc = callback(Point(imgx + 0.5, imgy + 0.5))
+            if aaloc is not None:
                 aax, aay, _ = aaloc.as_tuple()
                 if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
                     bilinear = True
@@ -247,7 +251,7 @@ def pixel_renderer(
         # Now perform the desired AA operation.
         if bilinear:
             # Calculate the pixel we're after, and what percentage into the pixel we are.
-            texloc, _ = callback(Point(imgx + 0.5, imgy + 0.5))
+            texloc = callback(Point(imgx + 0.5, imgy + 0.5))
             if texloc is None:
                 raise Exception("Logic error!")
             aax, aay, _ = texloc.as_tuple()
@@ -293,7 +297,7 @@ def pixel_renderer(
         else:
             for addy in ypoints:
                 for addx in xpoints:
-                    texloc, _ = callback(Point(imgx + addx, imgy + addy))
+                    texloc = callback(Point(imgx + addx, imgy + addy))
                     denom += 1
 
                     if texloc is None:
@@ -340,7 +344,7 @@ def pixel_renderer(
         return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
     else:
         # Calculate what texture pixel data goes here.
-        texloc, _ = callback(Point(imgx + 0.5, imgy + 0.5))
+        texloc = callback(Point(imgx + 0.5, imgy + 0.5))
         if texloc is None:
             return imgbytes[imgoff:(imgoff + 4)]
 
@@ -370,7 +374,7 @@ def affine_line_renderer(
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
     maskbytes: Optional[Union[bytes, bytearray]],
-    enable_aa: bool,
+    aa_mode: int,
 ) -> None:
     while True:
         imgy = work.get()
@@ -392,14 +396,14 @@ def affine_line_renderer(
                     texheight,
                     1.0 / inverse.xscale,
                     1.0 / inverse.yscale,
-                    lambda point: (inverse.multiply_point(point), True),
+                    lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
                     blendfunc,
                     imgbytes,
                     texbytes,
                     maskbytes,
-                    enable_aa,
+                    aa_mode,
                 )
 
         results.put((imgy, bytes(rowbytes)))
@@ -414,7 +418,7 @@ def affine_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
-    enable_aa: bool = True,
+    aa_mode: int = AAMode.SSAA_OR_BILINEAR,
 ) -> Image.Image:
     # Calculate the inverse so we can map canvas space back to texture space.
     try:
@@ -477,14 +481,14 @@ def affine_composite(
                     texheight,
                     1.0 / inverse.xscale,
                     1.0 / inverse.yscale,
-                    lambda point: (inverse.multiply_point(point), True),
+                    lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
                     blendfunc,
                     imgbytes,
                     texbytes,
                     maskbytes,
-                    enable_aa,
+                    aa_mode,
                 )
 
         img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
@@ -529,7 +533,7 @@ def affine_composite(
                     imgbytes,
                     texbytes,
                     maskbytes,
-                    enable_aa,
+                    aa_mode,
                 ),
             )
             procs.append(proc)
@@ -581,15 +585,15 @@ def perspective_line_renderer(
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
     maskbytes: Optional[Union[bytes, bytearray]],
-    enable_aa: bool,
+    aa_mode: int,
 ) -> None:
-    def perspective_inverse(imgpoint: Point) -> Tuple[Optional[Point], bool]:
+    def perspective_inverse(imgpoint: Point) -> Optional[Point]:
         # Calculate the texture coordinate with our perspective interpolation.
         texdiv = inverse.multiply_point(imgpoint)
         if texdiv.z <= 0.0:
-            return None, False
+            return None
 
-        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z), False
+        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z)
 
     while True:
         imgy = work.get()
@@ -618,7 +622,7 @@ def perspective_line_renderer(
                     imgbytes,
                     texbytes,
                     maskbytes,
-                    enable_aa,
+                    aa_mode,
                 )
 
         results.put((imgy, bytes(rowbytes)))
@@ -635,7 +639,7 @@ def perspective_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
-    enable_aa: bool = True,
+    aa_mode: int = AAMode.SSAA_ONLY,
 ) -> Image.Image:
     # Warn if we have an unsupported blend.
     if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
@@ -664,13 +668,13 @@ def perspective_composite(
     else:
         maskbytes = None
 
-    def perspective_inverse(imgpoint: Point) -> Tuple[Optional[Point], bool]:
+    def perspective_inverse(imgpoint: Point) -> Optional[Point]:
         # Calculate the texture coordinate with our perspective interpolation.
         texdiv = inverse_matrix.multiply_point(imgpoint)
         if texdiv.z <= 0.0:
-            return None, False
+            return None
 
-        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z), False
+        return Point(texdiv.x / texdiv.z, texdiv.y / texdiv.z)
 
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:
@@ -703,7 +707,7 @@ def perspective_composite(
                     imgbytes,
                     texbytes,
                     maskbytes,
-                    enable_aa,
+                    aa_mode,
                 )
 
         img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
@@ -750,7 +754,7 @@ def perspective_composite(
                     imgbytes,
                     texbytes,
                     maskbytes,
-                    enable_aa,
+                    aa_mode,
                 ),
             )
             procs.append(proc)

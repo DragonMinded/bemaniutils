@@ -2,7 +2,7 @@ import multiprocessing
 from PIL import Image  # type: ignore
 from typing import Optional, Tuple
 
-from ..types import Color, Matrix, Point
+from ..types import Color, Matrix, Point, AAMode
 from .perspective import perspective_calculate
 
 cdef extern struct floatcolor_t:
@@ -45,7 +45,7 @@ cdef extern int composite_fast(
     unsigned int texwidth,
     unsigned int texheight,
     unsigned int threads,
-    unsigned int enable_aa
+    unsigned int aa_mode
 )
 
 def affine_composite(
@@ -57,7 +57,7 @@ def affine_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
-    enable_aa: bool = True,
+    aa_mode: int = AAMode.SSAA_OR_BILINEAR,
 ) -> Image.Image:
     # Calculate the inverse so we can map canvas space back to texture space.
     try:
@@ -141,7 +141,7 @@ def affine_composite(
         texwidth,
         texheight,
         threads,
-        1 if enable_aa else 0,
+        aa_mode,
     )
     if errors != 0:
         raise Exception("Error raised in C++!")
@@ -164,7 +164,7 @@ def perspective_composite(
     blendfunc: int,
     texture: Image.Image,
     single_threaded: bool = False,
-    enable_aa: bool = True,
+    aa_mode: int = AAMode.SSAA_ONLY,
 ) -> Image.Image:
     if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
         print(f"WARNING: Unsupported blend {blendfunc}")
@@ -229,7 +229,7 @@ def perspective_composite(
         texwidth,
         texheight,
         threads,
-        1 if enable_aa else 0,
+        aa_mode,
     )
     if errors != 0:
         raise Exception("Error raised in C++!")
