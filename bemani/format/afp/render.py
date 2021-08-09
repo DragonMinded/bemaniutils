@@ -1025,6 +1025,7 @@ class AFPRenderer(VerboseOutput):
         self,
         parent_mask: Image.Image,
         transform: Matrix,
+        projection: int,
         mask: Mask,
     ) -> Image.Image:
         if mask.rectangle is None:
@@ -1035,17 +1036,46 @@ class AFPRenderer(VerboseOutput):
         transform = transform.translate(Point(mask.bounds.left, mask.bounds.top))
 
         # Draw the mask onto a new image.
-        calculated_mask = affine_composite(
-            Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
-            Color(0.0, 0.0, 0.0, 0.0),
-            Color(1.0, 1.0, 1.0, 1.0),
-            transform,
-            None,
-            257,
-            mask.rectangle,
-            single_threaded=self.__single_threaded,
-            enable_aa=False,
-        )
+        if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
+            calculated_mask = affine_composite(
+                Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+                Color(0.0, 0.0, 0.0, 0.0),
+                Color(1.0, 1.0, 1.0, 1.0),
+                transform,
+                None,
+                257,
+                mask.rectangle,
+                single_threaded=self.__single_threaded,
+                enable_aa=False,
+            )
+        elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
+            if self.__camera is None:
+                print("WARNING: Element requests perspective projection but no camera exists!")
+                calculated_mask = affine_composite(
+                    Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+                    Color(0.0, 0.0, 0.0, 0.0),
+                    Color(1.0, 1.0, 1.0, 1.0),
+                    transform,
+                    None,
+                    257,
+                    mask.rectangle,
+                    single_threaded=self.__single_threaded,
+                    enable_aa=False,
+                )
+            else:
+                calculated_mask = perspective_composite(
+                    Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+                    Color(0.0, 0.0, 0.0, 0.0),
+                    Color(1.0, 1.0, 1.0, 1.0),
+                    transform,
+                    self.__camera.center,
+                    self.__camera.focal_length,
+                    None,
+                    257,
+                    mask.rectangle,
+                    single_threaded=self.__single_threaded,
+                    enable_aa=False,
+                )
 
         # Composite it onto the current mask.
         return affine_composite(
@@ -1091,7 +1121,7 @@ class AFPRenderer(VerboseOutput):
             blend = parent_blend
 
         if renderable.mask:
-            mask = self.__apply_mask(parent_mask, transform, renderable.mask)
+            mask = self.__apply_mask(parent_mask, transform, projection, renderable.mask)
         else:
             mask = parent_mask
 
