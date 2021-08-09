@@ -185,10 +185,12 @@ extern "C"
         // source alpha is always 255.
 
         // Calculate final color blending.
+        float src_alpha = src.a / 255.0;
+        float src_remainder = 1.0 - src_alpha;
         return (intcolor_t){
-            clamp(255 * ((dest.r / 255.0) * (src.r / 255.0))),
-            clamp(255 * ((dest.g / 255.0) * (src.g / 255.0))),
-            clamp(255 * ((dest.b / 255.0) * (src.b / 255.0))),
+            clamp((255 * ((dest.r / 255.0) * (src.r / 255.0) * src_alpha)) + (dest.r * src_remainder)),
+            clamp((255 * ((dest.g / 255.0) * (src.g / 255.0) * src_alpha)) + (dest.g * src_remainder)),
+            clamp((255 * ((dest.b / 255.0) * (src.b / 255.0) * src_alpha)) + (dest.b * src_remainder)),
             dest.a,
         };
     }
