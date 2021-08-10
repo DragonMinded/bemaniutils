@@ -1157,6 +1157,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             # Handle transformation matrix.
             transform = Matrix.identity()
+            scale_set = False
+            rotate_set = False
 
             if flags & 0x100:
                 # Has scale component.
@@ -1167,6 +1169,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.a = float(a_int) / 1024.0
                 transform.d = float(d_int) / 1024.0
+                scale_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
@@ -1179,6 +1182,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.b = float(b_int) / 1024.0
                 transform.c = float(c_int) / 1024.0
+                rotate_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
@@ -1411,6 +1415,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     transform.a = float(a_int) / 32768.0
                     transform.d = float(d_int) / 32768.0
+                    scale_set = True
 
                     self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
 
@@ -1424,6 +1429,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.b = float(b_int) / 32768.0
                 transform.c = float(c_int) / 32768.0
+                rotate_set = True
 
                 self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
 
@@ -1465,11 +1471,18 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 36
 
                 floats = [x / 1024.0 for x in ints]
-                transform.a11 = floats[0]
-                transform.a12 = floats[1]
+
+                # Due to the way the format works, a/b/c/d can be more accurately specified in
+                # some extended flag nodes above than they can be here. So, we favor those values
+                # if they were set.
+                if not scale_set:
+                    transform.a11 = floats[0]
+                    transform.a22 = floats[4]
+                if not rotate_set:
+                    transform.a12 = floats[1]
+                    transform.a21 = floats[3]
+
                 transform.a13 = floats[2]
-                transform.a21 = floats[3]
-                transform.a22 = floats[4]
                 transform.a23 = floats[5]
                 transform.a31 = floats[6]
                 transform.a32 = floats[7]
@@ -1604,6 +1617,8 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.a32 = 0.0
                 transform.a33 = 1.0
                 transform.a43 = 0.0
+
+            self.vprint(f"{prefix}    Final transform: {transform}")
 
             if unhandled_flags != 0:
                 raise Exception(f"Did not handle {hex(unhandled_flags)} flag bits!")

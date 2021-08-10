@@ -249,12 +249,14 @@ class Matrix:
             new.__a31 = other.__a31
             new.__a32 = other.__a32
             new.__a33 = other.__a33
-        if other.__scale_set:
-            new.__a11 = other.__a11
-            new.__a22 = other.__a22
-        if other.__rotate_set:
-            new.__a12 = other.__a12
-            new.__a21 = other.__a21
+        else:
+            if other.__scale_set:
+                new.__a11 = other.__a11
+                new.__a22 = other.__a22
+            if other.__rotate_set:
+                new.__a12 = other.__a12
+                new.__a21 = other.__a21
+
         if other.__translate_xy_set:
             new.__a41 = other.__a41
             new.__a42 = other.__a42
