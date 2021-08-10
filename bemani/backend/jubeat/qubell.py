@@ -431,6 +431,17 @@ class JubeatQubell(
         data = request.child('data')
         player = data.child('player')
         extid = player.child_value('jid')
+        mdata_ver = player.child_value('mdata_ver')  # Game requests mdata 3 times per profile for some reason
+        if mdata_ver != 1:
+            root = Node.void('gametop')
+            datanode = Node.void('data')
+            root.add_child(datanode)
+            player = Node.void('player')
+            datanode.add_child(player)
+            player.add_child(Node.s32('jid', extid))
+            playdata = Node.void('mdata_list')
+            player.add_child(playdata)
+            return root
         root = self.get_scores_by_extid(extid)
         if root is None:
             root = Node.void('gametop')
@@ -831,7 +842,6 @@ class JubeatQubell(
         return root
 
     def format_scores(self, userid: UserID, profile: ValidatedDict, scores: List[Score]) -> Node:
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
 
         root = Node.void('gametop')
         datanode = Node.void('data')
