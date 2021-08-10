@@ -6,24 +6,24 @@ from ..types import Color, Matrix, Point, AAMode
 from .perspective import perspective_calculate
 
 cdef extern struct floatcolor_t:
-    float r;
-    float g;
-    float b;
-    float a;
+    double r;
+    double g;
+    double b;
+    double a;
 
 cdef extern struct matrix_t:
-    float a11;
-    float a12;
-    float a13;
-    float a21;
-    float a22;
-    float a23;
-    float a31;
-    float a32;
-    float a33;
-    float a41;
-    float a42;
-    float a43;
+    double a11;
+    double a12;
+    double a13;
+    double a21;
+    double a22;
+    double a23;
+    double a31;
+    double a32;
+    double a33;
+    double a41;
+    double a42;
+    double a43;
 
 cdef extern int composite_fast(
     unsigned char *imgbytes,
@@ -36,8 +36,8 @@ cdef extern int composite_fast(
     unsigned int maxy,
     floatcolor_t add_color,
     floatcolor_t mult_color,
-    float xscale,
-    float yscale,
+    double xscale,
+    double yscale,
     matrix_t inverse,
     int use_perspective,
     int blendfunc,

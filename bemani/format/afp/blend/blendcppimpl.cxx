@@ -20,16 +20,16 @@ extern "C"
     } intcolor_t;
 
     typedef struct floatcolor {
-        float r;
-        float g;
-        float b;
-        float a;
+        double r;
+        double g;
+        double b;
+        double a;
     } floatcolor_t;
 
     typedef struct point {
-        float x;
-        float y;
-        float z;
+        double x;
+        double y;
+        double z;
 
         struct point add(struct point other) {
             return (struct point){
@@ -41,18 +41,18 @@ extern "C"
     } point_t;
 
     typedef struct matrix {
-        float a11;
-        float a12;
-        float a13;
-        float a21;
-        float a22;
-        float a23;
-        float a31;
-        float a32;
-        float a33;
-        float a41;
-        float a42;
-        float a43;
+        double a11;
+        double a12;
+        double a13;
+        double a21;
+        double a22;
+        double a23;
+        double a31;
+        double a32;
+        double a33;
+        double a41;
+        double a42;
+        double a43;
 
         point_t multiply_point(point_t point) {
             return (point_t){
@@ -75,8 +75,8 @@ extern "C"
         intcolor_t *texdata;
         unsigned int texwidth;
         unsigned int texheight;
-        float xscale;
-        float yscale;
+        double xscale;
+        double yscale;
         matrix_t inverse;
         int use_perspective;
         floatcolor_t add_color;
@@ -86,7 +86,7 @@ extern "C"
         int aa_mode;
     } work_t;
 
-    inline unsigned char clamp(float color) {
+    inline unsigned char clamp(double color) {
         return fmin(fmax(0.0, roundf(color)), 255.0);
     }
 
@@ -110,10 +110,10 @@ extern "C"
         }
 
         // Calculate alpha blending.
-        float srcpercent = src.a / 255.0;
-        float destpercent = dest.a / 255.0;
-        float srcremainder = 1.0 - srcpercent;
-        float new_alpha = fmin(fmax(0.0, srcpercent + destpercent * srcremainder), 1.0);
+        double srcpercent = src.a / 255.0;
+        double destpercent = dest.a / 255.0;
+        double srcremainder = 1.0 - srcpercent;
+        double new_alpha = fmin(fmax(0.0, srcpercent + destpercent * srcremainder), 1.0);
         return (intcolor_t){
             clamp(((dest.r * destpercent * srcremainder) + (src.r * srcpercent)) / new_alpha),
             clamp(((dest.g * destpercent * srcremainder) + (src.g * srcpercent)) / new_alpha),
@@ -136,7 +136,7 @@ extern "C"
         }
 
         // Calculate final color blending.
-        float srcpercent = src.a / 255.0;
+        double srcpercent = src.a / 255.0;
         return (intcolor_t){
             clamp(dest.r + (src.r * srcpercent)),
             clamp(dest.g + (src.g * srcpercent)),
@@ -167,7 +167,7 @@ extern "C"
         }
 
         // Calculate final color blending.
-        float srcpercent = src.a / 255.0;
+        double srcpercent = src.a / 255.0;
         return (intcolor_t){
             clamp(dest.r - (src.r * srcpercent)),
             clamp(dest.g - (src.g * srcpercent)),
@@ -186,8 +186,8 @@ extern "C"
         // source alpha is always 255.
 
         // Calculate final color blending.
-        float src_alpha = src.a / 255.0;
-        float src_remainder = 1.0 - src_alpha;
+        double src_alpha = src.a / 255.0;
+        double src_remainder = 1.0 - src_alpha;
         return (intcolor_t){
             clamp((255 * ((dest.r / 255.0) * (src.r / 255.0) * src_alpha)) + (dest.r * src_remainder)),
             clamp((255 * ((dest.g / 255.0) * (src.g / 255.0) * src_alpha)) + (dest.g * src_remainder)),
@@ -273,8 +273,8 @@ extern "C"
         // costs us almost nothing. Essentially what we're doing here is calculating the scale, clamping it at 1.0 as the
         // minimum and then setting the AA sample swing accordingly. This has the effect of anti-aliasing scaled up images
         // a bit softer than would otherwise be achieved.
-        float xswing;
-        float yswing;
+        double xswing;
+        double yswing;
 
         if (work->aa_mode == AA_MODE_UNSCALED_SSAA_ONLY) {
             xswing = 0.5;
@@ -309,7 +309,7 @@ extern "C"
                     // awful on perspective transforms, so disable it for all of them.
                     int bilinear = 0;
                     if (work->aa_mode == AA_MODE_SSAA_OR_BILINEAR && work->xscale >= 1.0 && work->yscale >= 1.0) {
-                        point_t aaloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                        point_t aaloc = work->inverse.multiply_point((point_t){(double)(imgx + 0.5), (double)(imgy + 0.5)});
                         int aax = aaloc.x;
                         int aay = aaloc.y;
 
@@ -324,25 +324,25 @@ extern "C"
                         // Calculate the pixel we're after, and what percentage into the pixel we are.
                         int aax;
                         int aay;
-                        float aaxrem;
-                        float aayrem;
+                        double aaxrem;
+                        double aayrem;
 
                         if (work->use_perspective) {
                             // We don't check for negative here, because we already checked it above and wouldn't
                             // have enabled bilinear interpoliation.
-                            point_t texloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
-                            float fx = texloc.x / texloc.z;
-                            float fy = texloc.y / texloc.z;
+                            point_t texloc = work->inverse.multiply_point((point_t){(double)(imgx + 0.5), (double)(imgy + 0.5)});
+                            double fx = texloc.x / texloc.z;
+                            double fy = texloc.y / texloc.z;
                             aax = fx;
                             aay = fy;
-                            aaxrem = fx - (float)aax;
-                            aayrem = fy - (float)aay;
+                            aaxrem = fx - (double)aax;
+                            aayrem = fy - (double)aay;
                         } else {
-                            point_t texloc = work->inverse.multiply_point((point_t){(float)(imgx + 0.5), (float)(imgy + 0.5)});
+                            point_t texloc = work->inverse.multiply_point((point_t){(double)(imgx + 0.5), (double)(imgy + 0.5)});
                             aax = texloc.x;
                             aay = texloc.y;
-                            aaxrem = texloc.x - (float)aax;
-                            aayrem = texloc.y - (float)aay;
+                            aaxrem = texloc.x - (double)aax;
+                            aayrem = texloc.y - (double)aay;
                         }
 
                         // Find the four pixels that we can interpolate from. The first number is the x, and second is y.
@@ -352,14 +352,14 @@ extern "C"
                         unsigned int tex11 = tex01 + 1;
 
                         // Calculate various scaling factors based on alpha and percentage.
-                        float tex00percent = work->texdata[tex00].a / 255.0;
-                        float tex10percent = work->texdata[tex10].a / 255.0;
-                        float tex01percent = work->texdata[tex01].a / 255.0;
-                        float tex11percent = work->texdata[tex11].a / 255.0;
+                        double tex00percent = work->texdata[tex00].a / 255.0;
+                        double tex10percent = work->texdata[tex10].a / 255.0;
+                        double tex01percent = work->texdata[tex01].a / 255.0;
+                        double tex11percent = work->texdata[tex11].a / 255.0;
 
-                        float y0percent = (tex00percent * (1.0 - aaxrem)) + (tex10percent * aaxrem);
-                        float y1percent = (tex01percent * (1.0 - aaxrem)) + (tex11percent * aaxrem);
-                        float finalpercent = (y0percent * (1.0 - aayrem)) + (y1percent * aayrem);
+                        double y0percent = (tex00percent * (1.0 - aaxrem)) + (tex10percent * aaxrem);
+                        double y1percent = (tex01percent * (1.0 - aaxrem)) + (tex11percent * aaxrem);
+                        double finalpercent = (y0percent * (1.0 - aayrem)) + (y1percent * aayrem);
 
                         if (finalpercent <= 0.0) {
                             // This pixel would be blank, so we avoid dividing by zero.
@@ -371,14 +371,14 @@ extern "C"
                             };
                         } else {
                             // Interpolate in the X direction on both Y axis.
-                            float y0r = ((work->texdata[tex00].r * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].r * tex10percent * aaxrem));
-                            float y0g = ((work->texdata[tex00].g * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].g * tex10percent * aaxrem));
-                            float y0b = ((work->texdata[tex00].b * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].b * tex10percent * aaxrem));
+                            double y0r = ((work->texdata[tex00].r * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].r * tex10percent * aaxrem));
+                            double y0g = ((work->texdata[tex00].g * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].g * tex10percent * aaxrem));
+                            double y0b = ((work->texdata[tex00].b * tex00percent * (1.0 - aaxrem)) + (work->texdata[tex10].b * tex10percent * aaxrem));
 
 
-                            float y1r = ((work->texdata[tex01].r * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].r * tex11percent * aaxrem));
-                            float y1g = ((work->texdata[tex01].g * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].g * tex11percent * aaxrem));
-                            float y1b = ((work->texdata[tex01].b * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].b * tex11percent * aaxrem));
+                            double y1r = ((work->texdata[tex01].r * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].r * tex11percent * aaxrem));
+                            double y1g = ((work->texdata[tex01].g * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].g * tex11percent * aaxrem));
+                            double y1b = ((work->texdata[tex01].b * tex01percent * (1.0 - aaxrem)) + (work->texdata[tex11].b * tex11percent * aaxrem));
 
                             // Now interpolate the Y direction to get the final pixel value.
                             average = (intcolor_t){
@@ -389,14 +389,14 @@ extern "C"
                             };
                         }
                     } else {
-                        for (float addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
-                            for (float addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
+                        for (double addy = 0.5 - yswing; addy <= 0.5 + yswing; addy += yswing / 2.0) {
+                            for (double addx = 0.5 - xswing; addx <= 0.5 + xswing; addx += xswing / 2.0) {
                                 int aax = -1;
                                 int aay = -1;
 
-                                float xloc = (float)imgx + addx;
-                                float yloc = (float)imgy + addy;
-                                if (xloc < 0.0 || yloc < 0.0 || xloc >= (float)work->imgwidth || yloc >= (float)work->imgheight) {
+                                double xloc = (double)imgx + addx;
+                                double yloc = (double)imgy + addy;
+                                if (xloc < 0.0 || yloc < 0.0 || xloc >= (double)work->imgwidth || yloc >= (double)work->imgheight) {
                                     continue;
                                 }
 
@@ -430,7 +430,7 @@ extern "C"
                                     continue;
                                 }
 
-                                float apercent = work->texdata[texoff].a / 255.0;
+                                double apercent = work->texdata[texoff].a / 255.0;
                                 r += (int)(work->texdata[texoff].r * apercent);
                                 g += (int)(work->texdata[texoff].g * apercent);
                                 b += (int)(work->texdata[texoff].b * apercent);
@@ -457,7 +457,7 @@ extern "C"
                             };
                         } else {
                             // Samples existed in bounds, with some alpha component, un-premultiply it.
-                            float apercent = alpha / 255.0;
+                            double apercent = alpha / 255.0;
                             average = (intcolor_t){
                                 (unsigned char)((r / denom) / apercent),
                                 (unsigned char)((g / denom) / apercent),
@@ -475,13 +475,13 @@ extern "C"
                     int texy = -1;
 
                     if (work->use_perspective) {
-                        point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
+                        point_t texloc = work->inverse.multiply_point((point_t){(double)imgx + (double)0.5, (double)imgy + (double)0.5});
                         if (texloc.z > 0.0) {
                             texx = texloc.x / texloc.z;
                             texy = texloc.y / texloc.z;
                         }
                     } else {
-                        point_t texloc = work->inverse.multiply_point((point_t){(float)imgx + (float)0.5, (float)imgy + (float)0.5});
+                        point_t texloc = work->inverse.multiply_point((point_t){(double)imgx + (double)0.5, (double)imgy + (double)0.5});
                         texx = texloc.x;
                         texy = texloc.y;
                     }
@@ -516,8 +516,8 @@ extern "C"
         unsigned int maxy,
         floatcolor_t add_color,
         floatcolor_t mult_color,
-        float xscale,
-        float yscale,
+        double xscale,
+        double yscale,
         matrix_t inverse,
         int use_perspective,
         int blendfunc,
