@@ -235,8 +235,10 @@ class PlacedClip(PlacedObject):
         if actual_frame is None:
             print(f"WARNING: Unrecognized frame {frame} to gotoAndStop function!")
             return
-        if actual_frame <= 0 or actual_frame > len(self.source.frames):
-            return
+        if actual_frame <= 0:
+            actual_frame = 1
+        if actual_frame > len(self.source.frames):
+            actual_frame = len(self.source.frames)
         self.requested_frame = actual_frame
         self.playing = False
 
@@ -245,8 +247,10 @@ class PlacedClip(PlacedObject):
         if actual_frame is None:
             print(f"WARNING: Non-integer frame {frame} to gotoAndPlay function!")
             return
-        if actual_frame <= 0 or actual_frame > len(self.source.frames):
-            return
+        if actual_frame <= 0:
+            actual_frame = 1
+        if actual_frame > len(self.source.frames):
+            actual_frame = len(self.source.frames)
         self.requested_frame = actual_frame
         self.playing = True
 
@@ -262,8 +266,10 @@ class PlacedClip(PlacedObject):
             print(f"WARNING: Non-integer frame {frame} to setInvisibleUntil function!")
             return
         self.visible = False
-        if actual_frame <= 0 or actual_frame > len(self.source.frames):
-            return
+        if actual_frame <= 0:
+            actual_frame = 1
+        if actual_frame > len(self.source.frames):
+            actual_frame = len(self.source.frames)
         self.visible_frame = actual_frame
 
     @property
@@ -276,8 +282,10 @@ class PlacedClip(PlacedObject):
         if actual_frame is None:
             print(f"WARNING: Non-integer frameOffset {val} to frameOffset attribute!")
             return
-        if actual_frame < 0 or actual_frame >= len(self.source.frames):
-            return
+        if actual_frame < 0:
+            actual_frame = 0
+        if actual_frame >= len(self.source.frames):
+            actual_frame = len(self.source.frames) - 1
         self.requested_frame = actual_frame + 1
 
 
