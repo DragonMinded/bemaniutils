@@ -1039,10 +1039,17 @@ class AFPRenderer(VerboseOutput):
     ) -> Image.Image:
         if mask.rectangle is None:
             # Calculate the new mask rectangle.
-            mask.rectangle = Image.new('RGBA', (int(mask.bounds.width), int(mask.bounds.height)), (255, 0, 0, 255))
-
-        # Offset it by its top/left.
-        transform = transform.translate(Point(mask.bounds.left, mask.bounds.top))
+            mask.rectangle = affine_composite(
+                Image.new('RGBA', (int(mask.bounds.right), int(mask.bounds.bottom)), (0, 0, 0, 0)),
+                Color(0.0, 0.0, 0.0, 0.0),
+                Color(1.0, 1.0, 1.0, 1.0),
+                Matrix.identity().translate(Point(mask.bounds.left, mask.bounds.top)),
+                None,
+                0,
+                Image.new('RGBA', (int(mask.bounds.width), int(mask.bounds.height)), (255, 0, 0, 255)),
+                single_threaded=self.__single_threaded,
+                aa_mode=AAMode.NONE,
+            )
 
         # Draw the mask onto a new image.
         if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
