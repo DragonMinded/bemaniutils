@@ -8,7 +8,7 @@ import os.path
 import sys
 import textwrap
 from PIL import Image, ImageDraw  # type: ignore
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color, Matrix
 from bemani.format import IFS
@@ -572,9 +572,65 @@ def render_path(
     else:
         color = None
 
-    # Allow inserting a background image.
+    # Allow inserting a background image, series of images or animation.
     if background_image:
-        background = Image.open(background_image)
+        background_image = os.path.abspath(background_image)
+        background: List[Image.Image] = []
+
+        if os.path.isfile(background_image):
+            # This is a direct reference.
+            bgimg = Image.open(background_image)
+            frames = getattr(bgimg, "n_frames", 1)
+
+            if frames == 1:
+                background.append(bgimg)
+            elif frames > 1:
+                for frame in range(frames):
+                    bgimg.seek(frame)
+                    background.append(bgimg.copy())
+            else:
+                raise Exception("Invalid image specified as background!")
+        else:
+            # This is probably a reference to a list of images.
+            dirof, fileof = os.path.split(background_image)
+            startof, endof = os.path.splitext(fileof)
+            if len(startof) == 0 or len(endof) == 0:
+                raise Exception("Invalid image specified as background!")
+            startof = startof + '-'
+
+            # Gather up the sequence of files so we can make frames out of them.
+            seqdict: Dict[int, str] = {}
+            for filename in os.listdir(dirof):
+                if filename.startswith(startof) and filename.endswith(endof):
+                    seqno = filename[len(startof):(-len(endof))]
+                    if seqno.isdigit():
+                        seqint = int(seqno)
+                        if seqint in seqdict:
+                            raise Exception(f"{filename} specifies the same background frame number as {seqdict[seqint]}!")
+                        seqdict[seqint] = filename
+
+            # Now, order the sequence by the integer of the sequence number so we can load the images.
+            seqtuple: List[Tuple[int, str]] = sorted(
+                [(s, p) for (s, p) in seqdict.items()],
+                key=lambda e: e[0],
+            )
+
+            # Finally, get the filenames from this sequence.
+            filenames: List[str] = [os.path.join(dirof, filename) for (_, filename) in seqtuple]
+
+            # Now that we have the list, lets load the images!
+            for filename in filenames:
+                bgimg = Image.open(filename)
+                frames = getattr(bgimg, "n_frames", 1)
+
+                if frames == 1:
+                    background.append(bgimg)
+                elif frames > 1:
+                    for frame in range(frames):
+                        bgimg.seek(frame)
+                        background.append(bgimg.copy())
+                else:
+                    raise Exception("Invalid image specified as background!")
     else:
         background = None
 
@@ -900,7 +956,10 @@ def main() -> int:
         metavar="IMAGE",
         type=str,
         default="out.gif",
-        help='The output file (ending either in .gif, .webp or .png) where the render should be saved.',
+        help=(
+            'The output file (ending either in .gif, .webp or .png) where the render should be saved. If .png is chosen then the '
+            'output will be a series of png files for each rendered frame.'
+        ),
     )
     render_parser.add_argument(
         "--background-color",
@@ -912,7 +971,10 @@ def main() -> int:
         "--background-image",
         type=str,
         default=None,
-        help="Set a background image to be placed behind the animation. Note that it will be stretched to fit the animation.",
+        help=(
+            "Set a background image or animation to be placed behind the animation. Note that the background will be stretched to fit "
+            "the animation. If a .png is specified and multiple rendered frames are present, it will use that series as an animation."
+        ),
     )
     render_parser.add_argument(
         "--only-depths",
