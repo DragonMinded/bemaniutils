@@ -526,6 +526,8 @@ def render_path(
     enable_anti_aliasing: bool = False,
     background_color: Optional[str] = None,
     background_image: Optional[str] = None,
+    background_loop_start: Optional[int] = None,
+    background_loop_end: Optional[int] = None,
     force_width: Optional[int] = None,
     force_height: Optional[int] = None,
     force_aspect_ratio: Optional[str] = None,
@@ -631,6 +633,25 @@ def render_path(
                         background.append(bgimg.copy())
                 else:
                     raise Exception("Invalid image specified as background!")
+
+        # Make sure background frames are 1-indexed here as well.
+        if background_loop_start is None:
+            background_loop_start = 0
+        else:
+            background_loop_start -= 1
+
+        # Don't one-index the end because we want it to be inclusive.
+        if background_loop_end is None:
+            background_loop_end = len(background)
+
+        if background_loop_start >= background_loop_end:
+            raise Exception("Cannot start background loop after the end of the background loop!")
+        if background_loop_start < 0 or background_loop_end < 0:
+            raise Exception("Cannot start or end background loop on a negative frame!")
+        if background_loop_start >= len(background) or background_loop_end > len(background):
+            raise Exception("Cannot start or end background loop larger than the number of background animation frames!")
+
+        background = background[background_loop_start:background_loop_end]
     else:
         background = None
 
@@ -977,6 +998,18 @@ def main() -> int:
         ),
     )
     render_parser.add_argument(
+        "--background-loop-start",
+        type=int,
+        default=None,
+        help="The starting frame of the background animation. Specify this to start the background animation on a frame other than the first.",
+    )
+    render_parser.add_argument(
+        "--background-loop-end",
+        type=int,
+        default=None,
+        help="The ending frame of the background animation. Specify this to end the background animation on a frame other than the last.",
+    )
+    render_parser.add_argument(
         "--only-depths",
         type=str,
         default=None,
@@ -1101,6 +1134,8 @@ def main() -> int:
             enable_anti_aliasing=args.enable_anti_aliasing,
             background_color=args.background_color,
             background_image=args.background_image,
+            background_loop_start=args.background_loop_start,
+            background_loop_end=args.background_loop_end,
             force_width=args.force_width,
             force_height=args.force_height,
             force_aspect_ratio=args.force_aspect_ratio,
