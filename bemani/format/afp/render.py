@@ -13,6 +13,7 @@ from .swf import (
     AP2DoActionTag,
     AP2DefineFontTag,
     AP2DefineEditTextTag,
+    AP2DefineMorphShapeTag,
     AP2PlaceCameraTag,
     AP2ImageTag,
 )
@@ -1013,6 +1014,16 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DefineEditTextTag):
             print("WARNING: Unhandled DEFINE_EDIT_TEXT tag!")
+
+            # Didn't place a new clip.
+            return None, False
+
+        elif isinstance(tag, AP2DefineMorphShapeTag):
+            print("WARNING: Unhandled DEFINE_MORPH_SHAPE tag!")
+
+            self.__registered_objects[tag.id] = RegisteredDummy(
+                tag.id,
+            )
 
             # Didn't place a new clip.
             return None, False
