@@ -257,6 +257,8 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
             '22': VersionConstants.POPN_MUSIC_LAPISTORIA,
             '23': VersionConstants.POPN_MUSIC_ECLALE,
             '24': VersionConstants.POPN_MUSIC_USANEKO,
+            '25': VersionConstants.POPN_MUSIC_PEACE,
+            '26': VersionConstants.POPN_MUSIC_KRIDDLES,
         },
         GameConstants.REFLEC_BEAT: {
             '1': VersionConstants.REFLEC_BEAT,
