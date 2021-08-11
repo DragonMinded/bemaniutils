@@ -46,7 +46,7 @@ class PopnMusicPeace(PopnMusicBase):
     GAME_PLAY_RANK_S = 8
 
     # Biggest ID in the music DB
-    GAME_MAX_MUSIC_ID = 1876 # perditus†paradisus
+    GAME_MAX_MUSIC_ID = 1877
 
     def previous_version(self) -> Optional[PopnMusicBase]:
         return PopnMusicUsaNeko(self.data, self.config, self.model)
@@ -131,42 +131,53 @@ class PopnMusicPeace(PopnMusicBase):
         phases = {
             # Default song phase availability (0-23)
             0: 23,
-            # Unknown event (0-4)
+            # Unknown event
             1: 4,
-            # Unknown event (0-2)
+            # Unknown event
             2: 2,
-            # Unknown event (0-4)
+            # Unknown event
             3: 4,
-            # Unknown event (0-1)
+            # Unknown event
             4: 1,
             # Enable Net Taisen, including win/loss display on song select (0-1)
             5: 0, # ?
-            # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1)
+            # Unknown event
             6: 1,
-            # Unknown event (0-1)
+            # Unknown event
             7: 1,
-            # Unknown event (0-2)
+            # Unknown event
             8: 2,
             # Daily Mission (0-2)
-            9: 0, #?
-            # ?
+            9: 0,
+            # Unknown event
             10: 30,
-            # Unknown event (0-1)
+            # Unknown event
             11: 1,
-            # Unknown event (0-2)
+            # Unknown event
             12: 2,
-            # Sorry, idk what these do
+            # Unknown event
             13: 1,
+            # Unknown event
             14: 39,
+            # Unknown event
             15: 2,
+            # Unknown event
             16: 3,
+            # Unknown event
             17: 8,
+            # Unknown event
             18: 1,
+            # Unknown event
             19: 1,
+            # Unknown event
             20: 13,
+            # Event archive flag
             21: 20,
+            # Unknown event
             22: 2,
+            # Unknown event
             23: 1,
+            # Unknown event
             24: 1,
         }
 
