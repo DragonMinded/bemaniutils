@@ -8,7 +8,7 @@ import os.path
 import sys
 import textwrap
 from PIL import Image, ImageDraw  # type: ignore
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
 from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color, Matrix
 from bemani.format import IFS
@@ -517,6 +517,45 @@ def list_paths(containers: List[str], *, include_frames: bool=False, include_siz
     return 0
 
 
+BackgroundT = TypeVar("BackgroundT")
+
+
+def adjust_background_loop(
+    background: List[BackgroundT],
+    background_loop_start: Optional[int] = None,
+    background_loop_end: Optional[int] = None,
+    background_loop_offset: Optional[int] = None,
+) -> List[BackgroundT]:
+    # Make sure background frames are 1-indexed here as well.
+    if background_loop_start is None:
+        background_loop_start = 0
+    else:
+        background_loop_start -= 1
+
+    if background_loop_offset is None:
+        background_loop_offset = 0
+    else:
+        background_loop_offset -= (background_loop_start + 1)
+
+    # Don't one-index the end because we want it to be inclusive.
+    if background_loop_end is None:
+        background_loop_end = len(background)
+
+    if background_loop_start >= background_loop_end:
+        raise Exception("Cannot start background loop after the end of the background loop!")
+    if background_loop_start < 0 or background_loop_end < 0:
+        raise Exception("Cannot start or end background loop on a negative frame!")
+    if background_loop_start >= len(background) or background_loop_end > len(background):
+        raise Exception("Cannot start or end background loop larger than the number of background animation frames!")
+
+    background = background[background_loop_start:background_loop_end]
+
+    if background_loop_offset < 0 or background_loop_offset >= len(background):
+        raise Exception("Cannot start first iteration of background loop outside the loop bounds!")
+
+    return background[background_loop_offset:] + background[:background_loop_offset]
+
+
 def render_path(
     containers: List[str],
     path: str,
@@ -528,6 +567,7 @@ def render_path(
     background_image: Optional[str] = None,
     background_loop_start: Optional[int] = None,
     background_loop_end: Optional[int] = None,
+    background_loop_offset: Optional[int] = None,
     force_width: Optional[int] = None,
     force_height: Optional[int] = None,
     force_aspect_ratio: Optional[str] = None,
@@ -634,24 +674,7 @@ def render_path(
                 else:
                     raise Exception("Invalid image specified as background!")
 
-        # Make sure background frames are 1-indexed here as well.
-        if background_loop_start is None:
-            background_loop_start = 0
-        else:
-            background_loop_start -= 1
-
-        # Don't one-index the end because we want it to be inclusive.
-        if background_loop_end is None:
-            background_loop_end = len(background)
-
-        if background_loop_start >= background_loop_end:
-            raise Exception("Cannot start background loop after the end of the background loop!")
-        if background_loop_start < 0 or background_loop_end < 0:
-            raise Exception("Cannot start or end background loop on a negative frame!")
-        if background_loop_start >= len(background) or background_loop_end > len(background):
-            raise Exception("Cannot start or end background loop larger than the number of background animation frames!")
-
-        background = background[background_loop_start:background_loop_end]
+        background = adjust_background_loop(background, background_loop_start, background_loop_end, background_loop_offset)
     else:
         background = None
 
@@ -1001,13 +1024,19 @@ def main() -> int:
         "--background-loop-start",
         type=int,
         default=None,
-        help="The starting frame of the background animation. Specify this to start the background animation on a frame other than the first.",
+        help="The starting frame of the background animation loop. Specify this to loop to a background animation frame other than the first.",
     )
     render_parser.add_argument(
         "--background-loop-end",
         type=int,
         default=None,
-        help="The ending frame of the background animation. Specify this to end the background animation on a frame other than the last.",
+        help="The ending frame of the background animation loop. Specify this to loop from a background animation frame other than the last.",
+    )
+    render_parser.add_argument(
+        "--background-loop-offset",
+        type=int,
+        default=None,
+        help="The very first frame of the background animation. Specify this to start the first loop anywhere other than the loop start frame.",
     )
     render_parser.add_argument(
         "--only-depths",
@@ -1136,6 +1165,7 @@ def main() -> int:
             background_image=args.background_image,
             background_loop_start=args.background_loop_start,
             background_loop_end=args.background_loop_end,
+            background_loop_offset=args.background_loop_offset,
             force_width=args.force_width,
             force_height=args.force_height,
             force_aspect_ratio=args.force_aspect_ratio,
