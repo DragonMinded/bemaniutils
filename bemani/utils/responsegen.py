@@ -130,7 +130,7 @@ def generate_code(infile: str, outfile: str, encoding: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="A utility to generate code that will generate a packet.")
+    parser = argparse.ArgumentParser(description="A utility to generate code that will generate a packet given an example packet from a log or binary dump.")
     parser.add_argument("-i", "--infile", help="File containing an XML or binary node structure. Use - for stdin.", type=str, default=None, required=True)
     parser.add_argument("-o", "--outfile", help="File to write python code to. Use - for stdout.", type=str, default=None, required=True)
     parser.add_argument("-e", "--encoding", help="Encoding for the packet, defaults to UTF-8.", type=str, default='utf-8')

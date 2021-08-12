@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="A backend services provider for eAmusement games")
     parser.add_argument("-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80)
     parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
-    parser.add_argument("-r", "--profile", help="Turn on profiling for front end", action="store_true")
+    parser.add_argument("-r", "--profile", help="Turn on profiling for services, writing CProfile data to the currenct directory", action="store_true")
     args = parser.parse_args()
 
     # Set up global configuration, overriding config port for convenience

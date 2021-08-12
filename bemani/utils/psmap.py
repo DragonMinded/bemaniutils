@@ -200,7 +200,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--offset",
-        help="Hex offset into the file.",
+        help="Hex offset into the file. This can be specified as either a raw offset into the DLL or as a virtual offset.",
         type=str,
         default=None,
         required=True,
@@ -215,7 +215,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--root",
-        help="Root node name.",
+        help="Root node name to be used for the generated code.",
         type=str,
         default="root",
     )

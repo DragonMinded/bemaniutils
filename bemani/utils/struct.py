@@ -5,20 +5,6 @@ import sys
 from typing import Optional, Tuple, List, Any
 
 
-"""
-Some examples of valid format specifiers and what they do are as follows:
-
-*z&+0x200# = Decodes an array of string pointers, and includes the count
-             alongside the string, starting at 0x200, and displayed in
-             hex. Broken down, it has the following parts:
-
-             *z = Dereference the current value (*) and treat that integer
-                  as a pointer to a null-terminated string (z).
-             &+0x200# = Print the current line number (#), offset by the
-                        value 0x200 (+0x200) as a hex number (&).
-"""
-
-
 class LineNumber:
     def __init__(self, offset: int, hex: bool) -> None:
         self.offset = offset
@@ -227,7 +213,29 @@ class StructPrinter:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="A utility to print structs out of a DLL.")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="A utility to print structs out of a DLL.",
+        epilog=("""
+Some examples of valid format specifiers and what they do are as follows:
+
+*h = Decodes an array of short pointers, decoding the resulting shorts for each pointer in the array.
+
+*(hbb) = Decodes an array of pointers to a structure containing a short and two bytes, decoding that short and both bytes for each entry in the array.
+
+*z = Decodes an array null-terminated string pointers.
+
+Ih&h = Decodes an array of structures containing an unsigned integer and two shorts, displaying the second short in hex instead of decimal.
+
+#I = Decodes an array of unsigned integers, displaying the array entry number and the integer.
+
++64#h = Decodes an array of shorts, displaying the array entry number starting at 64 and the integer.
+
+*z&+0x200# = Decodes an array of null-terminated string pointers, displaying the array entry number in hex starting at 0x200 and string. Broken down, it has the following parts:
+    *z = Dereference the current value (*) and treat that integer as a pointer to a null-terminated string (z).
+    &+0x200# = Print the current line number (#), offset by the value 0x200 (+0x200) as a hex number (&).
+"""),
+    )
     parser.add_argument(
         "--file",
         help="DLL file to extract from.",
@@ -237,20 +245,20 @@ def main() -> int:
     )
     parser.add_argument(
         "--start",
-        help="Hex offset into the file we should start at.",
+        help="Hex offset into the file we should start at. This can be specified as either a raw offset into the DLL or as a virtual offset.",
         type=str,
         default=None,
         required=True,
     )
     parser.add_argument(
         "--end",
-        help="Hex offset into the file we should go until. Alternatively you can use --count",
+        help="Hex offset into the file we should go until. Alternatively you can use --count and the end offset will be calclated based on the start and format size.",
         type=str,
         default=None,
     )
     parser.add_argument(
         "--count",
-        help="Number of entries to parse, as a decimal or hex integer. Alternatively you can use --end",
+        help="Number of entries to parse, as a decimal or hex integer. Alternatively you can use --end and the count will be calculated based on the start, end and format size.",
         type=str,
         default=None,
     )
@@ -259,11 +267,12 @@ def main() -> int:
         help=(
             "Python struct format we should print using. See https://docs.python.org/3/library/struct.html "
             "for details. Additionally, prefixing a format specifier with * allows dereferencing pointers. "
-            "Surround a chunk of format specifiers with parenthesis to dereference complex structures. For "
-            "ease of unpacking C string pointers, the specifier \"z\" is recognzied to mean null-terminated "
-            "string. A & preceeding a format specifier means that we should convert to hex before displaying."
-            "For the ease of decoding enumerations, the specifier \"#\" is recognized to mean entry number."
-            "You can provide it a offset value such as \"+20#\" to start at a certain number."
+            "Surround a chunk of format specifiers with parenthesis to dereference structures. Note that "
+            "structures can be arbitrarily nested to decode complex data types. For ease of unpacking C string "
+            "pointers, the specifier \"z\" is recognzied to mean null-terminated string. A & preceeding a "
+            "format specifier means that we should convert to hex before displaying. For the ease of decoding "
+            "enumerations, the specifier \"#\" is recognized to mean entry number. You can provide it an "
+            "offset value such as \"+20#\" to start at a certain number."
         ),
         type=str,
         default=None,
