@@ -228,9 +228,9 @@ def valid_username(username: str) -> bool:
 
 def valid_pin(pin: str, type: str) -> bool:
     if type == 'card':
-        return re.match(r"\d\d\d\d", pin) is not None
+        return re.match(r"^\d\d\d\d$", pin) is not None
     elif type == 'arcade':
-        return re.match(r"\d\d\d\d\d\d\d\d", pin) is not None
+        return re.match(r"^\d\d\d\d\d\d\d\d$", pin) is not None
     else:
         return False
 
