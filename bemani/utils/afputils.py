@@ -1048,7 +1048,8 @@ def main() -> int:
         help=(
             'The output file (ending either in .gif, .webp or .png) where the render should be saved. If .png is chosen then the '
             'output will be a series of png files for each rendered frame. If .gif or .webp is chosen the output will be an '
-            'animated image.'
+            'animated image. Note that the .gif file format has several severe limitations which result in sub-optimal animations '
+            'so it is recommended to use .webp or .png instead.'
         ),
     )
     render_parser.add_argument(
