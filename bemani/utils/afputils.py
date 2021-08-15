@@ -620,8 +620,11 @@ def render_path(
         background: List[Image.Image] = []
 
         if os.path.isfile(background_image):
-            # This is a direct reference.
-            bgimg = Image.open(background_image)
+            # This is a direct reference, open it.
+            with open(background_image, "rb") as bfp:
+                # Work around the fact that PIL does not read the image until first use,
+                # meaning a long background image sequence can blow past max open files.
+                bgimg = Image.open(io.BytesIO(bfp.read()))
             frames = getattr(bgimg, "n_frames", 1)
 
             if frames == 1:
@@ -662,7 +665,10 @@ def render_path(
 
             # Now that we have the list, lets load the images!
             for filename in filenames:
-                bgimg = Image.open(filename)
+                with open(filename, "rb") as bfp:
+                    # Work around the fact that PIL does not read the image until first use,
+                    # meaning a long background image sequence can blow past max open files.
+                    bgimg = Image.open(io.BytesIO(bfp.read()))
                 frames = getattr(bgimg, "n_frames", 1)
 
                 if frames == 1:
