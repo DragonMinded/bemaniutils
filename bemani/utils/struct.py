@@ -1,8 +1,9 @@
 import argparse
-import pefile  # type: ignore
 import struct
 import sys
 from typing import Optional, Tuple, List, Any
+
+from bemani.common import PEFile
 
 
 class LineNumber:
@@ -20,7 +21,7 @@ class LineNumber:
 class StructPrinter:
     def __init__(self, data: bytes) -> None:
         self.data = data
-        self.pe = pefile.PE(data=data, fast_load=True)
+        self.pe = PEFile(data)
 
     def parse_format_spec(self, fmt: str) -> Tuple[str, List[Any]]:
         prefix: str = ""
@@ -106,15 +107,6 @@ class StructPrinter:
 
         return prefix, specs
 
-    def virtual_to_physical(self, offset: int) -> int:
-        for section in self.pe.sections:
-            start = section.VirtualAddress + self.pe.OPTIONAL_HEADER.ImageBase
-            end = start + section.SizeOfRawData
-
-            if offset >= start and offset < end:
-                return (offset - start) + section.PointerToRawData
-        raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
-
     def parse_struct(self, startaddr: str, endaddr: str, countstr: str, fmt: str) -> List[Any]:
         start: int = int(startaddr, 16)
         end: Optional[int] = int(endaddr, 16) if endaddr is not None else None
@@ -125,13 +117,13 @@ class StructPrinter:
         if end is not None and count is not None:
             raise Exception("Can't handle providing two ends!")
 
-        if start >= self.pe.OPTIONAL_HEADER.ImageBase:
+        if self.pe.is_virtual(start):
             # Assume this is virtual
-            start = self.virtual_to_physical(start)
+            start = self.pe.virtual_to_physical(start)
 
-        if end is not None and end >= self.pe.OPTIONAL_HEADER.ImageBase:
+        if end is not None and self.pe.is_virtual(end):
             # Assume this is virtual
-            end = self.virtual_to_physical(end)
+            end = self.pe.virtual_to_physical(end)
 
         # Parse out any dereference instructions.
         prefix, specs = self.parse_format_spec(fmt)
@@ -191,9 +183,14 @@ class StructPrinter:
                                 line.append(struct.unpack(prefix + spec, chunk)[0])
                         offset += size
                 else:
-                    chunk = self.data[offset:(offset + 4)]
-                    pointer = struct.unpack(prefix + "I", chunk)[0]
-                    offset += 4
+                    if self.pe.is_64bit():
+                        chunk = self.data[offset:(offset + 8)]
+                        pointer = struct.unpack(prefix + "Q", chunk)[0]
+                        offset += 8
+                    else:
+                        chunk = self.data[offset:(offset + 4)]
+                        pointer = struct.unpack(prefix + "I", chunk)[0]
+                        offset += 4
 
                     # Resolve the physical address of this pointer, trick the substructure into
                     # parsing only one iteration.
@@ -201,7 +198,7 @@ class StructPrinter:
                         # Null pointer
                         line.append(None)
                     else:
-                        pointer = self.virtual_to_physical(pointer)
+                        pointer = self.pe.virtual_to_physical(pointer)
                         subparse = self.__parse_struct(pointer, pointer + 1, None, prefix, spec)
                         if len(subparse) != 1:
                             raise Exception("Logic error!")

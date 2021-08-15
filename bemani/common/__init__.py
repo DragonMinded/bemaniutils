@@ -7,6 +7,7 @@ from bemani.common.id import ID
 from bemani.common.aes import AESCipher
 from bemani.common.time import Time
 from bemani.common.parallel import Parallel
+from bemani.common.pe import PEFile
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "Time",
     "Parallel",
     "intish",
+    "PEFile",
 ]
