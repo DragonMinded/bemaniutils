@@ -349,10 +349,11 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # If it is a new score, create a new dictionary to add to
             scoredata = ValidatedDict({
                 'clear_status': clear_status,
-                'miss_count': miss_count,
                 'pgreats': pgreats,
                 'greats': greats,
             })
+            if miss_count != -1:
+                scoredata.replace_int('miss_count', miss_count)
             if ghost is not None:
                 scoredata['ghost'] = ghost
             raised = True
@@ -364,8 +365,12 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             ex_score = max(ex_score, oldscore.points)
             scoredata = oldscore.data
             scoredata.replace_int('clear_status', max(scoredata.get_int('clear_status'), clear_status))
+            if miss_count != -1:
+                if scoredata.get_int('miss_count', -1) == -1:
+                    scoredata.replace_int('miss_count', miss_count)
+                else:
+                    scoredata.replace_int('miss_count', min(scoredata.get_int('miss_count'), miss_count))
             if raised:
-                scoredata.replace_int('miss_count', miss_count)
                 scoredata.replace_int('pgreats', pgreats)
                 scoredata.replace_int('greats', greats)
                 if ghost is not None:
