@@ -1,3 +1,4 @@
+from enum import Enum
 from typing_extensions import Final
 
 
@@ -257,3 +258,32 @@ class DBConstants:
     SDVX_GRADE_AAA: Final[int] = 700
     SDVX_GRADE_AAA_PLUS: Final[int] = 800
     SDVX_GRADE_S: Final[int] = 900
+
+
+class BroadcastConstants(Enum):
+    # Sections related to the player/song/etc.
+    DJ_NAME: Final[str] = 'DJ Name'
+    SONG_NAME: Final[str] = 'Song'
+    ARTIST_NAME: Final[str] = 'Artist'
+    DIFFICULTY: Final[str] = 'Difficulty'
+
+    # Section headers.
+    PLAY_STATS_HEADER: Final[str] = 'Play Stats'
+
+    # Stats that relate to the song, but not the current play of the song.
+    TARGET_EXSCORE: Final[str] = 'Target EXScore'
+    BEST_CLEAR_STATUS: Final[str] = 'Best Clear'
+
+    # Stats that have to do with the current play of the song.
+    EXSCORE: Final[str] = 'Your EXScore'
+    CLEAR_STATUS: Final[str] = 'Clear Status'
+    PERFECT_GREATS: Final[str] = 'Perfect Greats'
+    GREATS: Final[str] = 'Greats'
+    GOODS: Final[str] = 'Goods'
+    BADS: Final[str] = 'Bads'
+    POORS: Final[str] = 'Poors'
+    COMBO_BREAKS: Final[str] = 'Combo Breaks'
+    SLOWS: Final[str] = 'Slow'
+    FASTS: Final[str] = 'Fast'
+    GRADE: Final[str] = 'Grade'
+    RATE: Final[str] = 'Score Rate'
