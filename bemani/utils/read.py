@@ -7,7 +7,6 @@ import io
 import jaconv  # type: ignore
 import json
 import os
-import pefile  # type: ignore
 import struct
 import yaml
 import xml.etree.ElementTree as ET
@@ -18,7 +17,7 @@ from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from typing import Any, Dict, List, Optional, Tuple
 
-from bemani.common import GameConstants, VersionConstants, DBConstants, Time
+from bemani.common import GameConstants, VersionConstants, DBConstants, PEFile, Time
 from bemani.format import ARC, IFS, IIDXChart, IIDXMusicDB
 from bemani.data import Server, Song
 from bemani.data.interfaces import APIProviderInterface
@@ -396,16 +395,7 @@ class ImportPopn(ImportBase):
             data = myfile.read()
             myfile.close()
 
-        pe = pefile.PE(data=data, fast_load=True)
-
-        def virtual_to_physical(offset: int) -> int:
-            for section in pe.sections:
-                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-                end = start + section.SizeOfRawData
-
-                if offset >= start and offset < end:
-                    return (offset - start) + section.PointerToRawData
-            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
+        pe = PEFile(data)
 
         if self.version == VersionConstants.POPN_MUSIC_TUNE_STREET:
             # Based on K39:J:A:A:2010122200
@@ -1083,7 +1073,7 @@ class ImportPopn(ImportBase):
 
         def read_string(offset: int) -> str:
             # First, translate load offset in memory to disk offset
-            offset = virtual_to_physical(offset)
+            offset = pe.virtual_to_physical(offset)
 
             # Now, grab bytes until we're null-terminated
             bytestring = []
@@ -1749,18 +1739,9 @@ class ImportIIDX(ImportBase):
 
         import_qpros = True  # by default, try to import qpros
         try:
-            pe = pefile.PE(data=binarydata, fast_load=True)
+            pe = PEFile(binarydata)
         except BaseException:
             import_qpros = False  # if it failed then we're reading a music db file, not the executable
-
-        def virtual_to_physical(offset: int) -> int:
-            for section in pe.sections:
-                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-                end = start + section.SizeOfRawData
-
-                if offset >= start and offset < end:
-                    return (offset - start) + section.PointerToRawData
-            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
         songs: List[Dict[str, Any]] = []
         if not import_qpros:
@@ -1958,7 +1939,7 @@ class ImportIIDX(ImportBase):
 
         def read_string(offset: int) -> str:
             # First, translate load offset in memory to disk offset
-            offset = virtual_to_physical(offset)
+            offset = pe.virtual_to_physical(offset)
 
             # Now, grab bytes until we're null-terminated
             bytestring = []
@@ -2858,16 +2839,7 @@ class ImportSDVX(ImportBase):
             data = myfile.read()
             myfile.close()
 
-        pe = pefile.PE(data=data, fast_load=True)
-
-        def virtual_to_physical(offset: int) -> int:
-            for section in pe.sections:
-                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-                end = start + section.SizeOfRawData
-
-                if offset >= start and offset < end:
-                    return (offset - start) + section.PointerToRawData
-            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
+        pe = PEFile(data)
 
         if self.version == VersionConstants.SDVX_BOOTH:
             offset = 0xFFF28
@@ -2878,7 +2850,7 @@ class ImportSDVX(ImportBase):
 
         def read_string(spot: int) -> str:
             # First, translate load offset in memory to disk offset
-            spot = virtual_to_physical(spot)
+            spot = pe.virtual_to_physical(spot)
 
             # Now, grab bytes until we're null-terminated
             bytestring = []

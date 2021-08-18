@@ -216,7 +216,7 @@ class IIDXFrontend(FrontendBase):
 
     def format_score(self, userid: UserID, score: Score) -> Dict[str, Any]:
         formatted_score = super().format_score(userid, score)
-        formatted_score['miss_count'] = score.data.get_int('miss_count')
+        formatted_score['miss_count'] = score.data.get_int('miss_count', -1)
         formatted_score['lamp'] = score.data.get_int('clear_status')
         formatted_score['status'] = {
             IIDXBase.CLEAR_STATUS_NO_PLAY: 'NO PLAY',
@@ -232,7 +232,7 @@ class IIDXFrontend(FrontendBase):
 
     def format_top_score(self, userid: UserID, score: Score) -> Dict[str, Any]:
         formatted_score = super().format_score(userid, score)
-        formatted_score['miss_count'] = score.data.get_int('miss_count')
+        formatted_score['miss_count'] = score.data.get_int('miss_count', -1)
         formatted_score['lamp'] = score.data.get_int('clear_status')
         formatted_score['ghost'] = [x for x in (score.data.get_bytes('ghost') or b'')]
         formatted_score['status'] = {
@@ -249,7 +249,7 @@ class IIDXFrontend(FrontendBase):
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
         formatted_attempt = super().format_attempt(userid, attempt)
-        formatted_attempt['miss_count'] = attempt.data.get_int('miss_count')
+        formatted_attempt['miss_count'] = attempt.data.get_int('miss_count', -1)
         formatted_attempt['status'] = {
             IIDXBase.CLEAR_STATUS_NO_PLAY: 'NO PLAY',
             IIDXBase.CLEAR_STATUS_FAILED: 'FAILED',

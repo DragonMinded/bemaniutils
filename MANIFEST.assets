@@ -19,7 +19,3 @@ include bemani/frontend/static/controllers/ddr/*.js
 include bemani/frontend/static/controllers/reflec/*.js
 include bemani/frontend/static/controllers/sdvx/*.js
 include bemani/frontend/static/controllers/museca/*.js
-exclude bemani/protocol/lz77.py
-exclude bemani/protocol/stream.py
-exclude bemani/protocol/binary.py
-exclude bemani/protocol/xml.py

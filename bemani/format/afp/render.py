@@ -13,6 +13,7 @@ from .swf import (
     AP2DoActionTag,
     AP2DefineFontTag,
     AP2DefineEditTextTag,
+    AP2DefineMorphShapeTag,
     AP2PlaceCameraTag,
     AP2ImageTag,
 )
@@ -513,7 +514,7 @@ class AFPRenderer(VerboseOutput):
         self,
         path: str,
         background_color: Optional[Color] = None,
-        background_image: Optional[Image.Image] = None,
+        background_image: Optional[List[Image.Image]] = None,
         only_depths: Optional[List[int]] = None,
         only_frames: Optional[List[int]] = None,
         movie_transform: Matrix = Matrix.identity(),
@@ -1013,6 +1014,16 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DefineEditTextTag):
             print("WARNING: Unhandled DEFINE_EDIT_TEXT tag!")
+
+            # Didn't place a new clip.
+            return None, False
+
+        elif isinstance(tag, AP2DefineMorphShapeTag):
+            print("WARNING: Unhandled DEFINE_MORPH_SHAPE tag!")
+
+            self.__registered_objects[tag.id] = RegisteredDummy(
+                tag.id,
+            )
 
             # Didn't place a new clip.
             return None, False
@@ -1532,7 +1543,7 @@ class AFPRenderer(VerboseOutput):
         only_depths: Optional[List[int]],
         only_frames: Optional[List[int]],
         movie_transform: Matrix,
-        background_image: Optional[Image.Image],
+        background_image: Optional[List[Image.Image]],
     ) -> Generator[Image.Image, None, None]:
         # First, let's attempt to resolve imports.
         self.__registered_objects = self.__handle_imports(swf)
@@ -1568,10 +1579,13 @@ class AFPRenderer(VerboseOutput):
         self.__root = root_clip
 
         # If we have a background image, add it to the root clip.
+        background_object = RegisteredImage(-1, "INVALID_REFERENCE_NAME")
+        background_frames = 0
+
         if background_image:
-            # Stretch the image to make sure it fits the entire frame.
-            imgwidth = float(background_image.width)
-            imgheight = float(background_image.height)
+            # Stretch the images to make sure they fit the entire frame.
+            imgwidth = background_image[0].width
+            imgheight = background_image[0].height
             background_matrix = Matrix.affine(
                 a=swf.location.width / imgwidth,
                 b=0,
@@ -1580,14 +1594,18 @@ class AFPRenderer(VerboseOutput):
                 tx=0,
                 ty=0,
             )
+            background_frames = len(background_image)
 
-            # Register the background image with the texture library.
-            name = f"{swf.exported_name}_inserted_background"
-            self.textures[name] = background_image.convert("RGBA")
+            # Register the background images with the texture library.
+            for background_frame in range(background_frames):
+                if background_image[background_frame].width != imgwidth or background_image[background_frame].height != imgheight:
+                    raise Exception(f"Frame {background_frame + 1} of background image sequence has different dimensions than others!")
+                name = f"{swf.exported_name}_inserted_background_{background_frame}"
+                self.textures[name] = background_image[background_frame].convert("RGBA")
 
             # Place an instance of this background on the root clip.
             root_clip.placed_objects.append(
-                PlacedShape(
+                PlacedImage(
                     -1,
                     -1,
                     Point.identity(),
@@ -1597,37 +1615,7 @@ class AFPRenderer(VerboseOutput):
                     Color(0.0, 0.0, 0.0, 0.0),
                     0,
                     None,
-                    RegisteredShape(
-                        -1,
-                        # The coordinates of the rectangle of the shape in screen space.
-                        [
-                            Point(0, 0),
-                            Point(imgwidth, 0),
-                            Point(imgwidth, imgheight),
-                            Point(0, imgheight),
-                        ],
-                        # The coordinates of the original texture in UV space (we don't use this).
-                        [
-                            Point(0.0, 0.0),
-                            Point(1.0, 0.0),
-                            Point(1.0, 1.0),
-                            Point(0.0, 1.0),
-                        ],
-                        # No texture colors.
-                        [],
-                        [
-                            DrawParams(
-                                # Instantiable, includes texture.
-                                0x3,
-                                # The texture this should use for drawing.
-                                name,
-                                # The coordinates of the triangles that get drawn (we don't use this).
-                                [0, 1, 2, 2, 1, 3],
-                                # The blend color.
-                                None,
-                            ),
-                        ],
-                    ),
+                    background_object
                 ),
             )
 
@@ -1653,6 +1641,14 @@ class AFPRenderer(VerboseOutput):
                 changed = self.__process_tags(root_clip, False)
                 while self.__is_dirty(root_clip):
                     changed = self.__process_tags(root_clip, True) or changed
+
+                # Calculate a new background frame if needed.
+                if background_frames > 0:
+                    background_frame = frameno % background_frames
+                    name = f"{swf.exported_name}_inserted_background_{background_frame}"
+                    if background_object.reference != name:
+                        background_object.reference = name
+                        changed = True
 
                 # Adjust camera based on the movie's scaling.
                 if self.__camera is not None and not self.__camera.adjusted:

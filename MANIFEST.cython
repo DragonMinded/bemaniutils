@@ -1,0 +1,8 @@
+exclude bemani/protocol/lz77.py
+exclude bemani/protocol/stream.py
+exclude bemani/protocol/binary.py
+exclude bemani/protocol/node.py
+exclude bemani/protocol/protocol.py
+exclude bemani/protocol/xml.py
+exclude bemani/format/afp/types/generic.py
+exclude bemani/format/dxt.py
