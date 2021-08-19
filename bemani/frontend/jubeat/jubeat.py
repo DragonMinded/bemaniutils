@@ -19,10 +19,10 @@ class JubeatFrontend(FrontendBase):
 
     valid_rival_types = ['rival']
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from JubeatFactory.all_games()
 
-    def sanitized_games(self) -> Iterator[Tuple[str, int, str]]:
+    def sanitized_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         mapping = {
             VersionConstants.JUBEAT: 1,
             VersionConstants.JUBEAT_RIPPLES: 2,

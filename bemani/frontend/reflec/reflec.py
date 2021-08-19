@@ -29,7 +29,7 @@ class ReflecBeatFrontend(FrontendBase):
     def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
         super().__init__(data, config, cache)
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from ReflecBeatFactory.all_games()
 
     def format_score(self, userid: UserID, score: Score) -> Dict[str, Any]:

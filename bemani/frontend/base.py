@@ -1,20 +1,21 @@
 # vim: set fileencoding=utf-8
 import copy
+from abc import ABC
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
 from flask_caching import Cache  # type: ignore
 
-from bemani.common import ValidatedDict, ID
+from bemani.common import GameConstants, ValidatedDict, ID
 from bemani.data import Data, Score, Attempt, Link, Song, UserID, RemoteUser
 
 
-class FrontendBase:
+class FrontendBase(ABC):
 
     """
     All subclasses should override this attribute with the string
     the game series uses in the DB.
     """
-    game: str = None
+    game: GameConstants
 
     """
     If a subclass wishes to constrain music searches to a particular
@@ -98,14 +99,14 @@ class FrontendBase:
         else:
             return elems[:-(num % 10)]
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         """
         Override this to return an interator based on a game series factory.
         """
 
     def get_all_songs(self, force_db_load: bool=False) -> Dict[int, Dict[str, Any]]:
         if not force_db_load:
-            cached_songs = self.cache.get(f'{self.game}.sorted_songs')
+            cached_songs = self.cache.get(f'{self.game.value}.sorted_songs')
             if cached_songs is not None:
                 return cached_songs
 
@@ -120,7 +121,7 @@ class FrontendBase:
             else:
                 songs[song.id] = self.merge_song(songs[song.id], song)
 
-        self.cache.set(f'{self.game}.sorted_songs', songs, timeout=600)
+        self.cache.set(f'{self.game.value}.sorted_songs', songs, timeout=600)
         return songs
 
     def get_all_player_info(self, userids: List[UserID], limit: Optional[int]=None, allow_remote: bool=False) -> Dict[UserID, Dict[int, Dict[str, Any]]]:

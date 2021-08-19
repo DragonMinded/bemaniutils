@@ -2,7 +2,13 @@ from enum import Enum
 from typing_extensions import Final
 
 
-class GameConstants:
+class GameConstants(Enum):
+    """
+    Constants that identify a game series. These are used in the code as enums
+    in order to catch type errors and prevent raw strings being introduced for
+    game series. They re also used verbatum in MySQL, so any column named 'game'
+    in any of the tables should only contain one of the following strings.
+    """
     BISHI_BASHI: Final[str] = 'bishi'
     DANCE_EVOLUTION: Final[str] = 'danevo'
     DDR: Final[str] = 'ddr'
@@ -15,6 +21,11 @@ class GameConstants:
 
 
 class VersionConstants:
+    """
+    Constants used to centralize game versions. These are not enumerations
+    since there are multiple keys with the same value. However, all database
+    column named 'version' should contain only values found here.
+    """
     BISHI_BASHI_TSBB: Final[int] = 1
 
     DDR_1STMIX: Final[int] = 1
@@ -122,6 +133,11 @@ class VersionConstants:
 
 
 class APIConstants:
+    """
+    The four types of IDs found in a BEMAPI request or response.
+
+    TODO: These should be an enum.
+    """
     ID_TYPE_SERVER: Final[str] = 'server'
     ID_TYPE_CARD: Final[str] = 'card'
     ID_TYPE_SONG: Final[str] = 'song'
@@ -129,6 +145,10 @@ class APIConstants:
 
 
 class DBConstants:
+    """
+    Constants found in the DB relating to clear lamps, halos, grades, and the like.
+    """
+
     # When adding new game series, I try to make sure that constants
     # go in order, and have a difference of 100 between them. This is
     # so I can promote lamps/scores/etc by using a simple "max", while
@@ -261,6 +281,12 @@ class DBConstants:
 
 
 class BroadcastConstants(Enum):
+    """
+    Enum representing the various sections of a broadcast trigger. These come
+    into play when a new score is earned and there is a trigger such as a
+    discord webhook that needs to be notified.
+    """
+
     # Sections related to the player/song/etc.
     DJ_NAME: Final[str] = 'DJ Name'
     SONG_NAME: Final[str] = 'Song'

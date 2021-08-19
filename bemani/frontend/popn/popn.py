@@ -31,7 +31,7 @@ class PopnMusicFrontend(FrontendBase):
         VersionConstants.POPN_MUSIC_USANEKO: 4,
     }
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from PopnMusicFactory.all_games()
         yield (GameConstants.POPN_MUSIC, 0, 'CS and Licenses')  # Folder that doesn't belong to any specific game
 

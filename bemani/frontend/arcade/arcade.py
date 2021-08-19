@@ -78,8 +78,8 @@ def format_event(event: Event) -> Dict[str, Any]:
 
 
 def get_game_settings(arcade: Arcade) -> List[Dict[str, Any]]:
-    game_lut: Dict[str, Dict[int, str]] = {}
-    settings_lut: Dict[str, Dict[int, Dict[str, Any]]] = {}
+    game_lut: Dict[GameConstants, Dict[int, str]] = {}
+    settings_lut: Dict[GameConstants, Dict[int, Dict[str, Any]]] = {}
     all_settings = []
 
     for (game, version, name) in Base.all_games():
@@ -95,7 +95,7 @@ def get_game_settings(arcade: Arcade) -> List[Dict[str, Any]]:
 
         # First, set up the basics
         game_settings: Dict[str, Any] = {
-            'game': game,
+            'game': game.value,
             'version': version,
             'name': game_lut[game][version],
             'bools': [],
@@ -351,7 +351,7 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
     if g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to update!')
 
-    game = request.get_json()['game']
+    game = GameConstants(request.get_json()['game'])
     version = request.get_json()['version']
 
     for setting_type, update_function in [
@@ -380,6 +380,6 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
     return {
         'game_settings': [
             gs for gs in get_game_settings(arcade)
-            if gs['game'] == game and gs['version'] == version
+            if gs['game'] == game.value and gs['version'] == version
         ][0],
     }

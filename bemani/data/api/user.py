@@ -88,24 +88,25 @@ class GlobalUserData(BaseGlobalData):
             'extid': profile['extid'],
         }
 
-        if profile.get('game') == GameConstants.DDR:
+        profilegame = GameConstants(profile['game'])
+        if profilegame == GameConstants.DDR:
             base.update(self.__format_ddr_profile(profile))
-        if profile.get('game') == GameConstants.IIDX:
+        if profilegame == GameConstants.IIDX:
             base.update(self.__format_iidx_profile(profile))
-        if profile.get('game') == GameConstants.JUBEAT:
+        if profilegame == GameConstants.JUBEAT:
             base.update(self.__format_jubeat_profile(profile))
-        if profile.get('game') == GameConstants.MUSECA:
+        if profilegame == GameConstants.MUSECA:
             base.update(self.__format_museca_profile(profile))
-        if profile.get('game') == GameConstants.POPN_MUSIC:
+        if profilegame == GameConstants.POPN_MUSIC:
             base.update(self.__format_popn_profile(profile))
-        if profile.get('game') == GameConstants.REFLEC_BEAT:
+        if profilegame == GameConstants.REFLEC_BEAT:
             base.update(self.__format_reflec_profile(profile))
-        if profile.get('game') == GameConstants.SDVX:
+        if profilegame == GameConstants.SDVX:
             base.update(self.__format_sdvx_profile(profile))
 
         return ValidatedDict(base)
 
-    def __profile_request(self, game: str, version: int, userid: UserID, exact: bool) -> Optional[ValidatedDict]:
+    def __profile_request(self, game: GameConstants, version: int, userid: UserID, exact: bool) -> Optional[ValidatedDict]:
         # First, get or create the extid/refid for this virtual user
         cardid = RemoteUser.userid_to_card(userid)
         refid = self.user.get_refid(game, version, userid)
@@ -134,7 +135,7 @@ class GlobalUserData(BaseGlobalData):
                     del profile['match']
 
                 # Add in our defaults we always provide
-                profile['game'] = game
+                profile['game'] = game.value
                 profile['version'] = version if exact_match else 0
                 profile['refid'] = refid
                 profile['extid'] = extid
@@ -149,25 +150,25 @@ class GlobalUserData(BaseGlobalData):
             userid = RemoteUser.card_to_userid(cardid)
         return userid
 
-    def from_refid(self, game: str, version: int, refid: str) -> Optional[UserID]:
+    def from_refid(self, game: GameConstants, version: int, refid: str) -> Optional[UserID]:
         return self.user.from_refid(game, version, refid)
 
-    def from_extid(self, game: str, version: int, extid: int) -> Optional[UserID]:
+    def from_extid(self, game: GameConstants, version: int, extid: int) -> Optional[UserID]:
         return self.user.from_extid(game, version, extid)
 
-    def get_profile(self, game: str, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
         if RemoteUser.is_remote(userid):
             return self.__profile_request(game, version, userid, exact=True)
         else:
             return self.user.get_profile(game, version, userid)
 
-    def get_any_profile(self, game: str, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
         if RemoteUser.is_remote(userid):
             return self.__profile_request(game, version, userid, exact=False)
         else:
             return self.user.get_any_profile(game, version, userid)
 
-    def get_any_profiles(self, game: str, version: int, userids: List[UserID]) -> List[Tuple[UserID, Optional[ValidatedDict]]]:
+    def get_any_profiles(self, game: GameConstants, version: int, userids: List[UserID]) -> List[Tuple[UserID, Optional[ValidatedDict]]]:
         if len(userids) == 0:
             return []
 
@@ -223,7 +224,7 @@ class GlobalUserData(BaseGlobalData):
                     extid = self.user.get_extid(game, version, userid)
 
                     # Add in our defaults we always provide
-                    profile['game'] = game
+                    profile['game'] = game.value
                     profile['version'] = version if exact_match else 0
                     profile['refid'] = refid
                     profile['extid'] = extid
@@ -241,7 +242,7 @@ class GlobalUserData(BaseGlobalData):
 
             return local_profiles
 
-    def get_all_profiles(self, game: str, version: int) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_all_profiles(self, game: GameConstants, version: int) -> List[Tuple[UserID, ValidatedDict]]:
         # Fetch local and remote profiles, and then merge by adding remote profiles to local
         # profiles when we don't have a profile for that user ID yet.
         local_cards, local_profiles, remote_profiles = Parallel.execute([
@@ -282,7 +283,7 @@ class GlobalUserData(BaseGlobalData):
             extid = self.user.get_extid(game, version, userid)
 
             # Add in our defaults we always provide
-            profile['game'] = game
+            profile['game'] = game.value
             profile['version'] = version
             profile['refid'] = refid
             profile['extid'] = extid

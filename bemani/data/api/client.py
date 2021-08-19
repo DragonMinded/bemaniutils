@@ -107,7 +107,7 @@ class APIClient:
             raise UnsupportedVersionAPIException('The server does not support this version of the API!')
         raise APIException('The server returned an invalid status code {}!', format(r.status_code))
 
-    def __translate(self, game: str, version: int) -> Tuple[str, str]:
+    def __translate(self, game: GameConstants, version: int) -> Tuple[str, str]:
         servergame = {
             GameConstants.DDR: 'ddr',
             GameConstants.IIDX: 'iidx',
@@ -194,7 +194,7 @@ class APIClient:
             'versions': resp['versions'],
         })
 
-    def get_profiles(self, game: str, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
+    def get_profiles(self, game: GameConstants, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
         # Allow remote servers to be disabled
         if not self.allow_scores:
             return []
@@ -216,7 +216,7 @@ class APIClient:
 
     def get_records(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         idtype: str,
         ids: List[str],
@@ -247,7 +247,7 @@ class APIClient:
             # Couldn't talk to server, assume empty records
             return []
 
-    def get_statistics(self, game: str, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
+    def get_statistics(self, game: GameConstants, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
         # Allow remote servers to be disabled
         if not self.allow_stats:
             return []
@@ -267,7 +267,7 @@ class APIClient:
             # Couldn't talk to server, assume empty statistics
             return []
 
-    def get_catalog(self, game: str, version: int) -> Dict[str, List[Dict[str, Any]]]:
+    def get_catalog(self, game: GameConstants, version: int) -> Dict[str, List[Dict[str, Any]]]:
         # No point disallowing this, since its only ever used for bootstrapping.
 
         try:

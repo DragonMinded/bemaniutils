@@ -5,7 +5,7 @@ from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
-from bemani.common import ValidatedDict, Time
+from bemani.common import GameConstants, ValidatedDict, Time
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import UserID
 
@@ -46,12 +46,12 @@ lobby = Table(
 
 class LobbyData(BaseData):
 
-    def get_play_session_info(self, game: str, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_play_session_info(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
         """
         Given a game, version and a user ID, look up play session information for that user.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
             userid - Integer identifying a user, as possibly looked up by UserData.
 
@@ -69,7 +69,7 @@ class LobbyData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'userid': userid,
                 'time': Time.now() - Time.SECONDS_IN_HOUR,
@@ -86,12 +86,12 @@ class LobbyData(BaseData):
         data['time'] = result['time']
         return data
 
-    def get_all_play_session_infos(self, game: str, version: int) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_all_play_session_infos(self, game: GameConstants, version: int) -> List[Tuple[UserID, ValidatedDict]]:
         """
         Given a game and version, look up all play session information.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
 
         Returns:
@@ -106,7 +106,7 @@ class LobbyData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'time': Time.now() - Time.SECONDS_IN_HOUR,
             },
@@ -120,12 +120,12 @@ class LobbyData(BaseData):
             ret.append((UserID(result['userid']), data))
         return ret
 
-    def put_play_session_info(self, game: str, version: int, userid: UserID, data: Dict[str, Any]) -> None:
+    def put_play_session_info(self, game: GameConstants, version: int, userid: UserID, data: Dict[str, Any]) -> None:
         """
         Given a game, version and a user ID, save play session information for that user.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
             userid - Integer identifying a user.
             data - A dictionary of play session information to store.
@@ -143,7 +143,7 @@ class LobbyData(BaseData):
         self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'userid': userid,
                 'time': Time.now(),
@@ -151,12 +151,12 @@ class LobbyData(BaseData):
             },
         )
 
-    def destroy_play_session_info(self, game: str, version: int, userid: UserID) -> None:
+    def destroy_play_session_info(self, game: GameConstants, version: int, userid: UserID) -> None:
         """
         Given a game, version and a user ID, throw away session info for that play session.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
             userid - Integer identifying a user, as possibly looked up by UserData.
         """
@@ -167,7 +167,7 @@ class LobbyData(BaseData):
         self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'userid': userid,
             },
@@ -176,12 +176,12 @@ class LobbyData(BaseData):
         sql = "DELETE FROM playsession WHERE time <= :time"
         self.execute(sql, {'time': Time.now() - Time.SECONDS_IN_HOUR})
 
-    def get_lobby(self, game: str, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_lobby(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
         """
         Given a game, version and a user ID, look up lobby information for that user.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
             userid - Integer identifying a user, as possibly looked up by UserData.
 
@@ -199,7 +199,7 @@ class LobbyData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'userid': userid,
                 'time': Time.now() - Time.SECONDS_IN_HOUR,
@@ -216,12 +216,12 @@ class LobbyData(BaseData):
         data['time'] = result['time']
         return data
 
-    def get_all_lobbies(self, game: str, version: int) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_all_lobbies(self, game: GameConstants, version: int) -> List[Tuple[UserID, ValidatedDict]]:
         """
         Given a game and version, look up all active lobbies.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
 
         Returns:
@@ -234,7 +234,7 @@ class LobbyData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'time': Time.now() - Time.SECONDS_IN_HOUR,
             },
@@ -247,12 +247,12 @@ class LobbyData(BaseData):
             ret.append((UserID(result['userid']), data))
         return ret
 
-    def put_lobby(self, game: str, version: int, userid: UserID, data: Dict[str, Any]) -> None:
+    def put_lobby(self, game: GameConstants, version: int, userid: UserID, data: Dict[str, Any]) -> None:
         """
         Given a game, version and a user ID, save lobby information for that user.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - Integer identifying the version of the game in the series.
             userid - Integer identifying a user.
             data - A dictionary of lobby information to store.
@@ -270,7 +270,7 @@ class LobbyData(BaseData):
         self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'userid': userid,
                 'time': Time.now(),

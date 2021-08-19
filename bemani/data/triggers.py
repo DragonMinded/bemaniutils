@@ -13,7 +13,7 @@ class Triggers:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
 
-    def __gameconst_to_series(self, game: str) -> str:
+    def __gameconst_to_series(self, game: GameConstants) -> str:
         return {
             GameConstants.BISHI_BASHI: 'Bishi Bashi',
             GameConstants.DANCE_EVOLUTION: 'Dance Evolution',
@@ -26,12 +26,12 @@ class Triggers:
             GameConstants.SDVX: 'Sound Voltex',
         }.get(game, 'Unknown')
 
-    def broadcast_score(self, data: Dict[BroadcastConstants, str], game: str, song: Song) -> None:
+    def broadcast_score(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         # For now we only support discord
         if self.config.get('webhooks', {}).get('discord', {}).get(game, None) is not None:
             self.broadcast_score_discord(data, game, song)
 
-    def broadcast_score_discord(self, data: Dict[BroadcastConstants, str], game: str, song: Song) -> None:
+    def broadcast_score_discord(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         if game == GameConstants.IIDX:
             now = datetime.now()
 

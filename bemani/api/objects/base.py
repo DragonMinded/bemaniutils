@@ -1,6 +1,7 @@
 from typing import List, Any, Dict
 
 from bemani.api.exceptions import APIException
+from bemani.common import GameConstants
 from bemani.data import Data
 
 
@@ -13,7 +14,7 @@ class BaseObject:
     various fetch versions.
     """
 
-    def __init__(self, data: Data, game: str, version: int, omnimix: bool) -> None:
+    def __init__(self, data: Data, game: GameConstants, version: int, omnimix: bool) -> None:
         self.data = data
         self.game = game
         self.version = version

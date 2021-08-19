@@ -50,7 +50,7 @@ class ImportBase:
     def __init__(
         self,
         config: Dict[str, Any],
-        game: str,
+        game: GameConstants,
         version: Optional[int],
         no_combine: bool,
         update: bool,
@@ -123,7 +123,7 @@ class ImportBase:
                 "SELECT id FROM `music` WHERE songid = :songid AND chart = :chart AND game = :game AND version = :version"
             )
 
-        cursor = self.execute(sql, {'songid': songid, 'chart': chart, 'game': self.game, 'version': version})
+        cursor = self.execute(sql, {'songid': songid, 'chart': chart, 'game': self.game.value, 'version': version})
         if cursor.rowcount != 0:
             result = cursor.fetchone()
             return result['id']
@@ -158,7 +158,7 @@ class ImportBase:
             frags.append("version = :version")
 
         sql = "SELECT id FROM `music` WHERE " + " AND ".join(frags)
-        cursor = self.execute(sql, {'title': title, 'artist': artist, 'genre': genre, 'chart': chart, 'game': self.game, 'version': version})
+        cursor = self.execute(sql, {'title': title, 'artist': artist, 'genre': genre, 'chart': chart, 'game': self.game.value, 'version': version})
         if cursor.rowcount != 0:
             result = cursor.fetchone()
             return result['id']
@@ -194,7 +194,7 @@ class ImportBase:
                     'id': musicid,
                     'songid': songid,
                     'chart': chart,
-                    'game': self.game,
+                    'game': self.game.value,
                     'version': version,
                     'name': name,
                     'artist': artist,
@@ -244,7 +244,7 @@ class ImportBase:
             {
                 'songid': songid,
                 'chart': chart,
-                'game': self.game,
+                'game': self.game.value,
                 'version': version,
                 'name': name,
                 'artist': artist,
@@ -286,7 +286,7 @@ class ImportBase:
             sql,
             {
                 'musicid': musicid,
-                'game': self.game,
+                'game': self.game.value,
                 'version': version,
                 'name': name,
                 'artist': artist,
@@ -315,7 +315,7 @@ class ImportBase:
                 {
                     'id': catid,
                     'type': cattype,
-                    'game': self.game,
+                    'game': self.game.value,
                     'version': self.version,
                     'data': jsondata
                 },
@@ -332,7 +332,7 @@ class ImportBase:
                     {
                         'id': catid,
                         'type': cattype,
-                        'game': self.game,
+                        'game': self.game.value,
                         'version': self.version,
                         'data': jsondata
                     },
