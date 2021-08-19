@@ -192,7 +192,7 @@ class CatalogObject(BaseObject):
         else:
             return self.version
 
-    def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
         # Verify IDs
         if idtype != APIConstants.ID_TYPE_SERVER:
             raise APIException(

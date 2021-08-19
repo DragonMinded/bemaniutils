@@ -132,11 +132,9 @@ class VersionConstants:
     SDVX_HEAVENLY_HAVEN: Final[int] = 4
 
 
-class APIConstants:
+class APIConstants(Enum):
     """
     The four types of IDs found in a BEMAPI request or response.
-
-    TODO: These should be an enum.
     """
     ID_TYPE_SERVER: Final[str] = 'server'
     ID_TYPE_CARD: Final[str] = 'card'

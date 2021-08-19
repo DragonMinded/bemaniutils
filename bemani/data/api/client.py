@@ -2,7 +2,7 @@ import json
 import requests
 from typing import Tuple, Dict, List, Any, Optional
 
-from bemani.common import GameConstants, VersionConstants, DBConstants, ValidatedDict
+from bemani.common import APIConstants, GameConstants, VersionConstants, DBConstants, ValidatedDict
 
 
 class APIException(Exception):
@@ -194,7 +194,7 @@ class APIClient:
             'versions': resp['versions'],
         })
 
-    def get_profiles(self, game: GameConstants, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
+    def get_profiles(self, game: GameConstants, version: int, idtype: APIConstants, ids: List[str]) -> List[Dict[str, Any]]:
         # Allow remote servers to be disabled
         if not self.allow_scores:
             return []
@@ -205,7 +205,7 @@ class APIClient:
                 f'{self.API_VERSION}/{servergame}/{serverversion}',
                 {
                     'ids': ids,
-                    'type': idtype,
+                    'type': idtype.value,
                     'objects': ['profile'],
                 },
             )
@@ -218,7 +218,7 @@ class APIClient:
         self,
         game: GameConstants,
         version: int,
-        idtype: str,
+        idtype: APIConstants,
         ids: List[str],
         since: Optional[int]=None,
         until: Optional[int]=None,
@@ -231,7 +231,7 @@ class APIClient:
             servergame, serverversion = self.__translate(game, version)
             data: Dict[str, Any] = {
                 'ids': ids,
-                'type': idtype,
+                'type': idtype.value,
                 'objects': ['records'],
             }
             if since is not None:
@@ -247,7 +247,7 @@ class APIClient:
             # Couldn't talk to server, assume empty records
             return []
 
-    def get_statistics(self, game: GameConstants, version: int, idtype: str, ids: List[str]) -> List[Dict[str, Any]]:
+    def get_statistics(self, game: GameConstants, version: int, idtype: APIConstants, ids: List[str]) -> List[Dict[str, Any]]:
         # Allow remote servers to be disabled
         if not self.allow_stats:
             return []
@@ -258,7 +258,7 @@ class APIClient:
                 f'{self.API_VERSION}/{servergame}/{serverversion}',
                 {
                     'ids': ids,
-                    'type': idtype,
+                    'type': idtype.value,
                     'objects': ['statistics'],
                 },
             )

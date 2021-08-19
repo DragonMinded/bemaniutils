@@ -180,7 +180,7 @@ class StatisticsObject(BaseObject):
 
         return retval
 
-    def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         retval: List[Dict[str, Any]] = []
 
         # Fetch the attempts

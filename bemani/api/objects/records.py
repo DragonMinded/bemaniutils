@@ -230,7 +230,7 @@ class RecordsObject(BaseObject):
         else:
             return self.version
 
-    def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         since = params.get('since')
         until = params.get('until')
 
