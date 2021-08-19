@@ -157,15 +157,15 @@ class Base:
             this model. Its possible to return None from this function if a registered game has no way of
             handling this particular modelstring.
         """
-        if model.game not in cls.__registered_games:
+        if model.gamecode not in cls.__registered_games:
             # Return just this base model, which will provide nothing
             return Base(data, config, model)
         else:
             # Return the registered module providing this game
-            return cls.__registered_games[model.game].create(data, config, model, parentmodel=parentmodel)
+            return cls.__registered_games[model.gamecode].create(data, config, model, parentmodel=parentmodel)
 
     @classmethod
-    def register(cls, game: str, handler: Type[Factory]) -> None:
+    def register(cls, gamecode: str, handler: Type[Factory]) -> None:
         """
         Register a factory to handle a game. Note that the game should be the game
         code as returned by a game, such as "LDJ" or "MDX".
@@ -174,7 +174,7 @@ class Base:
             game - 3-character string identifying a game
             handler - A factory which has a create() method that can spawn game classes.
         """
-        cls.__registered_games[game] = handler
+        cls.__registered_games[gamecode] = handler
         cls.__registered_handlers.add(handler)
 
     @classmethod
