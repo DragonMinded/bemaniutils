@@ -1,5 +1,4 @@
 import argparse
-import yaml
 from typing import Any, Dict, List
 
 from bemani.backend.popn import PopnMusicFactory
@@ -20,6 +19,7 @@ from bemani.frontend.reflec import ReflecBeatCache
 from bemani.frontend.museca import MusecaCache
 from bemani.common import GameConstants, Time
 from bemani.data import Data
+from bemani.utils.config import load_config
 
 
 def run_scheduled_work(config: Dict[str, Any]) -> None:
@@ -28,28 +28,28 @@ def run_scheduled_work(config: Dict[str, Any]) -> None:
     # Only run scheduled work for enabled components
     enabled_factories: List[Any] = []
     enabled_caches: List[Any] = []
-    if config.get('support', {}).get(GameConstants.IIDX, False):
+    if GameConstants.IIDX in config['support']:
         enabled_factories.append(IIDXFactory)
         enabled_caches.append(IIDXCache)
-    if config.get('support', {}).get(GameConstants.POPN_MUSIC, False):
+    if GameConstants.POPN_MUSIC in config['support']:
         enabled_factories.append(PopnMusicFactory)
         enabled_caches.append(PopnMusicCache)
-    if config.get('support', {}).get(GameConstants.JUBEAT, False):
+    if GameConstants.JUBEAT in config['support']:
         enabled_factories.append(JubeatFactory)
         enabled_caches.append(JubeatCache)
-    if config.get('support', {}).get(GameConstants.BISHI_BASHI, False):
+    if GameConstants.BISHI_BASHI in config['support']:
         enabled_factories.append(BishiBashiFactory)
         enabled_caches.append(BishiBashiCache)
-    if config.get('support', {}).get(GameConstants.DDR, False):
+    if GameConstants.DDR in config['support']:
         enabled_factories.append(DDRFactory)
         enabled_caches.append(DDRCache)
-    if config.get('support', {}).get(GameConstants.SDVX, False):
+    if GameConstants.SDVX in config['support']:
         enabled_factories.append(SoundVoltexFactory)
         enabled_caches.append(SoundVoltexCache)
-    if config.get('support', {}).get(GameConstants.REFLEC_BEAT, False):
+    if GameConstants.REFLEC_BEAT in config['support']:
         enabled_factories.append(ReflecBeatFactory)
         enabled_caches.append(ReflecBeatCache)
-    if config.get('support', {}).get(GameConstants.MUSECA, False):
+    if GameConstants.MUSECA in config['support']:
         enabled_factories.append(MusecaFactory)
         enabled_caches.append(MusecaCache)
 
@@ -75,8 +75,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Set up global configuration
-    config = yaml.safe_load(open(args.config))
-    config['database']['engine'] = Data.create_engine(config)
+    config: Dict[str, Any] = {}
+    load_config(args.config, config)
 
     # Run out of band work
     run_scheduled_work(config)

@@ -3656,7 +3656,13 @@ if __name__ == "__main__":
     # Load the config so we can talk to the server
     config = yaml.safe_load(open(args.config))
 
-    if args.series == GameConstants.POPN_MUSIC:
+    series = None
+    try:
+        series = GameConstants(args.series)
+    except ValueError:
+        pass
+
+    if series == GameConstants.POPN_MUSIC:
         popn = ImportPopn(config, args.version, args.no_combine, args.update)
         if args.bin:
             songs = popn.scrape(args.bin)
@@ -3670,7 +3676,7 @@ if __name__ == "__main__":
         popn.import_music_db(songs)
         popn.close()
 
-    elif args.series == GameConstants.JUBEAT:
+    elif series == GameConstants.JUBEAT:
         jubeat = ImportJubeat(config, args.version, args.no_combine, args.update)
         if args.tsv is not None:
             # Special case for Jubeat, grab the title/artist metadata that was
@@ -3691,7 +3697,7 @@ if __name__ == "__main__":
             jubeat.import_emblems(emblems)
         jubeat.close()
 
-    elif args.series == GameConstants.IIDX:
+    elif series == GameConstants.IIDX:
         iidx = ImportIIDX(config, args.version, args.no_combine, args.update)
         if args.tsv is not None:
             # Special case for IIDX, grab the title/artist metadata that was
@@ -3712,7 +3718,7 @@ if __name__ == "__main__":
             iidx.import_qpros(qpros)
         iidx.close()
 
-    elif args.series == GameConstants.DDR:
+    elif series == GameConstants.DDR:
         ddr = ImportDDR(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             songs = ddr.lookup(args.server, args.token)
@@ -3735,7 +3741,7 @@ if __name__ == "__main__":
         ddr.import_music_db(songs)
         ddr.close()
 
-    elif args.series == GameConstants.SDVX:
+    elif series == GameConstants.SDVX:
         sdvx = ImportSDVX(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             sdvx.import_from_server(args.server, args.token)
@@ -3754,7 +3760,7 @@ if __name__ == "__main__":
                 sdvx.import_appeal_cards(args.csv)
         sdvx.close()
 
-    elif args.series == GameConstants.MUSECA:
+    elif series == GameConstants.MUSECA:
         museca = ImportMuseca(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             museca.import_from_server(args.server, args.token)
@@ -3767,7 +3773,7 @@ if __name__ == "__main__":
             )
         museca.close()
 
-    elif args.series == GameConstants.REFLEC_BEAT:
+    elif series == GameConstants.REFLEC_BEAT:
         reflec = ImportReflecBeat(config, args.version, args.no_combine, args.update)
         if args.bin is not None:
             songs = reflec.scrape(args.bin)
@@ -3781,7 +3787,7 @@ if __name__ == "__main__":
         reflec.import_music_db(songs)
         reflec.close()
 
-    elif args.series == GameConstants.DANCE_EVOLUTION:
+    elif series == GameConstants.DANCE_EVOLUTION:
         danevo = ImportDanceEvolution(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             songs = danevo.lookup(args.server, args.token)

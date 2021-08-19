@@ -503,7 +503,7 @@ class UserData(BaseData):
         profile = {
             'refid': result['refid'],
             'extid': result['extid'],
-            'game': game.value,
+            'game': game,
             'version': version,
         }
 
@@ -602,7 +602,7 @@ class UserData(BaseData):
             profile = {
                 'refid': result['refid'],
                 'extid': result['extid'],
-                'game': game.value,
+                'game': game,
                 'version': version,
             }
             profile.update(self.deserialize(result['data']))

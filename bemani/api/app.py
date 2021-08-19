@@ -209,7 +209,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
         ('reflecbeat', GameConstants.REFLEC_BEAT),
         ('soundvoltex', GameConstants.SDVX),
     ]:
-        if g.config.get('support', {}).get(constant, False):
+        if constant in g.config['support']:
             gamemapping[gameid] = constant
     game = gamemapping.get(requestgame)
     if game is None:

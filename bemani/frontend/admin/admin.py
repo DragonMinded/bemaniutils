@@ -156,9 +156,9 @@ def viewevents() -> Response:
             'refresh': url_for('admin_pages.listevents', since=-1),
             'backfill': url_for('admin_pages.backfillevents', until=-1),
             'viewuser': url_for('admin_pages.viewuser', userid=-1),
-            'jubeatsong': url_for('jubeat_pages.viewtopscores', musicid=-1) if g.config.get('support', {}).get(GameConstants.JUBEAT, False) else None,
-            'iidxsong': url_for('iidx_pages.viewtopscores', musicid=-1) if g.config.get('support', {}).get(GameConstants.IIDX, False) else None,
-            'pnmsong': url_for('popn_pages.viewtopscores', musicid=-1) if g.config.get('support', {}).get(GameConstants.POPN_MUSIC, False) else None,
+            'jubeatsong': url_for('jubeat_pages.viewtopscores', musicid=-1) if GameConstants.JUBEAT in g.config['support'] else None,
+            'iidxsong': url_for('iidx_pages.viewtopscores', musicid=-1) if GameConstants.IIDX in g.config['support'] else None,
+            'pnmsong': url_for('popn_pages.viewtopscores', musicid=-1) if GameConstants.POPN_MUSIC in g.config['support'] else None,
         },
     )
 

@@ -88,20 +88,19 @@ class GlobalUserData(BaseGlobalData):
             'extid': profile['extid'],
         }
 
-        profilegame = GameConstants(profile['game'])
-        if profilegame == GameConstants.DDR:
+        if profile['game'] == GameConstants.DDR:
             base.update(self.__format_ddr_profile(profile))
-        if profilegame == GameConstants.IIDX:
+        if profile['game'] == GameConstants.IIDX:
             base.update(self.__format_iidx_profile(profile))
-        if profilegame == GameConstants.JUBEAT:
+        if profile['game'] == GameConstants.JUBEAT:
             base.update(self.__format_jubeat_profile(profile))
-        if profilegame == GameConstants.MUSECA:
+        if profile['game'] == GameConstants.MUSECA:
             base.update(self.__format_museca_profile(profile))
-        if profilegame == GameConstants.POPN_MUSIC:
+        if profile['game'] == GameConstants.POPN_MUSIC:
             base.update(self.__format_popn_profile(profile))
-        if profilegame == GameConstants.REFLEC_BEAT:
+        if profile['game'] == GameConstants.REFLEC_BEAT:
             base.update(self.__format_reflec_profile(profile))
-        if profilegame == GameConstants.SDVX:
+        if profile['game'] == GameConstants.SDVX:
             base.update(self.__format_sdvx_profile(profile))
 
         return ValidatedDict(base)
@@ -135,7 +134,7 @@ class GlobalUserData(BaseGlobalData):
                     del profile['match']
 
                 # Add in our defaults we always provide
-                profile['game'] = game.value
+                profile['game'] = game
                 profile['version'] = version if exact_match else 0
                 profile['refid'] = refid
                 profile['extid'] = extid
@@ -224,7 +223,7 @@ class GlobalUserData(BaseGlobalData):
                     extid = self.user.get_extid(game, version, userid)
 
                     # Add in our defaults we always provide
-                    profile['game'] = game.value
+                    profile['game'] = game
                     profile['version'] = version if exact_match else 0
                     profile['refid'] = refid
                     profile['extid'] = extid
@@ -283,7 +282,7 @@ class GlobalUserData(BaseGlobalData):
             extid = self.user.get_extid(game, version, userid)
 
             # Add in our defaults we always provide
-            profile['game'] = game.value
+            profile['game'] = game
             profile['version'] = version
             profile['refid'] = refid
             profile['extid'] = extid
