@@ -2,7 +2,7 @@
 import os
 import sys
 import unittest
-from typing import Container, List, Dict, Any
+from typing import Iterable, List, Dict, Any
 
 
 # Supress custom handler tracebacks inside handler frames
@@ -14,7 +14,7 @@ class ExtendedTestCase(unittest.TestCase):
     def verbose(self) -> bool:
         return ("-v" in sys.argv) or ("--verbose" in sys.argv)
 
-    def assertItemsEqual(self, a: Container[Any], b: Container[Any]) -> None:
+    def assertItemsEqual(self, a: Iterable[Any], b: Iterable[Any]) -> None:
         a_items = {x for x in a}
         b_items = {x for x in b}
         self.assertEqual(a_items, b_items)

@@ -31,6 +31,12 @@ do
     cmdline+=("bemani.utils.$project")
 done
 
+for test in `find bemani/tests/ -name "test_*.py" | sed 's,.*/,,' | sed  's,\.py,,'`
+do
+    cmdline+=('-m')
+    cmdline+=("bemani.tests.$test")
+done
+
 MYPYPATH=$(python -c "import os; print(os.path.realpath('.'))") mypy \
     "${cmdline[@]}" \
     --warn-redundant-casts \

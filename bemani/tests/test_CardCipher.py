@@ -15,10 +15,10 @@ class TestCardCipher(unittest.TestCase):
         for pair in test_ciphers:
             inp = bytes(pair[0])
             out = bytes(pair[1])
-            encoded = CardCipher._encode(inp)  # type: ignore
-            self.assertEqual(encoded, out, f"Card encode {encoded} doesn't match expected {out}")
-            decoded = CardCipher._decode(out)  # type: ignore
-            self.assertEqual(decoded, inp, f"Card decode {decoded} doesn't match expected {inp}")
+            encoded = CardCipher._encode(inp)
+            self.assertEqual(encoded, out, f"Card encode {encoded!r} doesn't match expected {out!r}")
+            decoded = CardCipher._decode(out)
+            self.assertEqual(decoded, inp, f"Card decode {decoded!r} doesn't match expected {inp!r}")
 
     def test_external_cipher(self) -> None:
         test_cards = [

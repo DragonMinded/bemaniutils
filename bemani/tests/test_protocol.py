@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
 import unittest
-from typing import Optional
 
 from bemani.protocol import EAmuseProtocol, Node
 
@@ -9,7 +8,7 @@ class TestProtocol(unittest.TestCase):
 
     # Define a function that just encrypts/decrypts and encode/decodes, verify
     # that we can get the same thing back.
-    def assertLoopback(self, root: Node) -> Optional[int]:
+    def assertLoopback(self, root: Node) -> None:
         proto = EAmuseProtocol()
 
         for encoding in [EAmuseProtocol.BINARY, EAmuseProtocol.XML]:
@@ -36,7 +35,7 @@ class TestProtocol(unittest.TestCase):
             newroot = proto.decode('lz77', None, binary)
             self.assertEqual(newroot, root, f"Round trip with {loop_name}, no encryption and lz77 compression doesn't match!")
 
-    def test_game_packet1(self) -> Node:
+    def test_game_packet1(self) -> None:
         root = Node.void('call')
         root.set_attribute('model', 'M39:J:B:A:2014061900')
         root.set_attribute('srcid', '012010000000DEADBEEF')
@@ -58,7 +57,7 @@ class TestProtocol(unittest.TestCase):
 
         self.assertLoopback(root)
 
-    def test_game_packet2(self) -> Node:
+    def test_game_packet2(self) -> None:
         root = Node.void('call')
         root.set_attribute('model', 'LDJ:A:A:A:2015060700')
         root.set_attribute('srcid', '012010000000DEADBEEF')
@@ -79,13 +78,13 @@ class TestProtocol(unittest.TestCase):
 
         self.assertLoopback(root)
 
-    def test_game_packet3(self) -> Node:
+    def test_game_packet3(self) -> None:
         root = Node.void('response')
         root.add_child(Node.void('music'))
 
         self.assertLoopback(root)
 
-    def test_game_packet4(self) -> Node:
+    def test_game_packet4(self) -> None:
         root = Node.void('response')
         game = Node.void('game')
         root.add_child(game)
@@ -111,7 +110,7 @@ class TestProtocol(unittest.TestCase):
 
         self.assertLoopback(root)
 
-    def test_game_packet5(self) -> Node:
+    def test_game_packet5(self) -> None:
         root = Node.void('call')
         root.set_attribute('model', 'LDJ:A:A:A:2015060700')
         root.set_attribute('srcid', '012010000000DEADBEEF')
@@ -271,7 +270,7 @@ class TestProtocol(unittest.TestCase):
 
         self.assertLoopback(root)
 
-    def test_game_packet6(self) -> Node:
+    def test_game_packet6(self) -> None:
         root = Node.void('response')
         facility = Node.void('facility')
         root.add_child(facility)
@@ -327,7 +326,7 @@ class TestProtocol(unittest.TestCase):
 
         self.assertLoopback(root)
 
-    def test_packet1(self) -> Node:
+    def test_packet1(self) -> None:
         root = Node.void('test')
         root.set_attribute('test', 'test string value')
 
