@@ -8,9 +8,7 @@ import jaconv  # type: ignore
 import json
 import os
 import struct
-import yaml
 import xml.etree.ElementTree as ET
-from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import CursorResult  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 from sqlalchemy.sql import text  # type: ignore
@@ -25,6 +23,7 @@ from bemani.data.api.music import GlobalMusicData
 from bemani.data.api.game import GlobalGameData
 from bemani.data.mysql.music import MusicData
 from bemani.data.mysql.user import UserData
+from bemani.utils.config import load_config
 
 
 class ReadAPI(APIProviderInterface):
@@ -60,8 +59,7 @@ class ImportBase:
         self.update = update
         self.no_combine = no_combine
         self.__config = config
-        self.__url = f"mysql://{config['database']['user']}:{config['database']['password']}@{config['database']['address']}/{config['database']['database']}?charset=utf8mb4"
-        self.__engine = create_engine(self.__url)
+        self.__engine = self.__config['database']['engine']
         self.__sessionmanager = sessionmaker(self.__engine)
         self.__conn = self.__engine.connect()
         self.__session = self.__sessionmanager(bind=self.__conn)
@@ -3654,7 +3652,8 @@ if __name__ == "__main__":
         raise Exception("Cannot specify both a remote server and a local file to read from!")
 
     # Load the config so we can talk to the server
-    config = yaml.safe_load(open(args.config))
+    config: Dict[str, Any] = {}
+    load_config(args.config, config)
 
     series = None
     try:

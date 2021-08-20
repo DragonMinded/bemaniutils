@@ -1,10 +1,10 @@
 import argparse
 import getpass
 import sys
-import yaml
 from typing import Any, Dict, Optional
 
 from bemani.data import Data, DBCreateException
+from bemani.utils.config import load_config
 
 
 def create(config: Dict[str, Any]) -> None:
@@ -96,8 +96,9 @@ def main() -> None:
     parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
     args = parser.parse_args()
 
-    config = yaml.safe_load(open(args.config))
-    config['database']['engine'] = Data.create_engine(config)
+    config: Dict[str, Any] = {}
+    load_config(args.config, config)
+
     try:
         if args.operation == "create":
             create(config)
