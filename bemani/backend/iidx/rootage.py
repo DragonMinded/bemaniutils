@@ -289,7 +289,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             raise Exception('Invalid cltype!')
 
     def handle_IIDX26shop_getname_request(self, request: Node) -> Node:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine is not None:
             machine_name = machine.name
             close = machine.data.get_bool('close')
@@ -334,7 +334,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
     def handle_IIDX26shop_getconvention_request(self, request: Node) -> Node:
         root = Node.void('IIDX26shop')
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
         else:
@@ -351,7 +351,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         return root
 
     def handle_IIDX26shop_setconvention_request(self, request: Node) -> Node:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             course = ValidatedDict()
             course.replace_int('music_0', request.child_value('music_0'))
@@ -530,7 +530,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         if self.machine_joined_arcade():
             game_config = self.get_game_config()
             global_scores = game_config.get_bool('global_shop_ranking')
-            machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         else:
             # If we aren't in an arcade, we can only show global scores
             global_scores = True
@@ -1100,7 +1100,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
         # Look up judge window adjustments
         judge_dict = profile.get_dict('machine_judge_adjust')
-        machine_judge = judge_dict.get_dict(self.config['machine']['pcbid'])
+        machine_judge = judge_dict.get_dict(self.config.machine.pcbid)
 
         # Profile data
         pcdata = Node.void('pcdata')
@@ -1638,10 +1638,10 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
         # Update judge window adjustments per-machine
         judge_dict = newprofile.get_dict('machine_judge_adjust')
-        machine_judge = judge_dict.get_dict(self.config['machine']['pcbid'])
+        machine_judge = judge_dict.get_dict(self.config.machine.pcbid)
         machine_judge.replace_int('single', int(request.attribute('s_judgeAdj')))
         machine_judge.replace_int('double', int(request.attribute('d_judgeAdj')))
-        judge_dict.replace_dict(self.config['machine']['pcbid'], machine_judge)
+        judge_dict.replace_dict(self.config.machine.pcbid, machine_judge)
         newprofile.replace_dict('machine_judge_adjust', judge_dict)
 
         # Secret flags saving

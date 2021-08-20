@@ -466,7 +466,7 @@ class DDRAce(
         response.add_child(data)
         data.add_child(Node.s32('recordtype', requestdata.child_value('loadflag')))
 
-        thismachine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        thismachine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         machines_by_id: Dict[int, Optional[Machine]] = {thismachine.id: thismachine}
 
         loadkind = requestdata.child_value('loadflag')
@@ -559,7 +559,7 @@ class DDRAce(
         if userid is None:
             raise Exception('Expecting valid UserID to create new profile!')
 
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         profile = Profile(
             self.game,
             self.version,

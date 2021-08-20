@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
     <div class="section">
-        To change any of these settings, edit <span class="file">server.yaml</span>.
+        To change any of these settings, edit <span class="file">{{ config.filename }}</span>.
     </div>
     <div class="section">
         <h3>Database Settings</h3>
         <dl>
             <dt>Host</dt>
-            <dd>{{ config['database']['address'] }}</dd>
+            <dd>{{ config.database.address }}</dd>
             <dt>Database</dt>
-            <dd>{{ config['database']['database'] }}</dd>
+            <dd>{{ config.database.database }}</dd>
             <dt>User</dt>
-            <dd>{{ config['database']['user'] }}</dd>
+            <dd>{{ config.database.user }}</dd>
             <dt>Password</dt>
             <dd>&bull;&bull;&bull;&bull;&bull;&bull;</dd>
         </dl>
@@ -20,44 +20,51 @@
         <h3>Backend Settings</h3>
         <dl>
             <dt>Host</dt>
-            <dd>{{ config['server']['address'] }}</dd>
+            <dd>{{ config.server.address }}</dd>
             <dt>Port</dt>
-            <dd>{{ config['server']['port'] }}</dd>
+            <dd>{{ config.server.port }}</dd>
             <dt>HTTPS</dt>
-            <dd>{{ 'active' if config['server']['https'] else 'inactive' }}</dd>
+            <dd>{{ 'active' if config.server.https else 'inactive' }}</dd>
             <dt>Keepalive Address</dt>
-            <dd>{{ config['server']['keepalive'] }}</dd>
+            <dd>{{ config.server.keepalive }}</dd>
             <dt>HTTP Get Redirect Address</dt>
-            <dd>{{ config['server']['redirect'] if config['server']['redirect'] else 'disabled' }}</dd>
+            <dd>{{ config.server.redirect or 'disabled' }}</dd>
+        </dl>
+    </div>
+    <div class="section">
+        <h3>Cache Settings</h3>
+        <dl>
+            <dt>Cache Directory</dt>
+            <dd>{{ config.cache_dir }}</dd>
         </dl>
     </div>
     <div class="section">
         <h3>Frontend Settings</h3>
         <dl>
             <dt>Web Address</dt>
-            <dd>{{ config['server']['uri'] if config['server']['uri'] else 'http://eagate.573.jp' }}</dd>
+            <dd>{{ config.server.uri or 'http://eagate.573.jp' }}</dd>
             <dt>Network Name</dt>
-            <dd>{{ config.get('name','e-AMUSEMENT Network') }}</dd>
+            <dd>{{ config.name }}</dd>
         </dl>
     </div>
     <div class="section">
         <h3>Data Exchange API Settings</h3>
         <dl>
             <dt>Administrative Email</dt>
-            <dd>{{ config.get('email','nobody@nowhere.com') }}</dd>
+            <dd>{{ config.email }}</dd>
         </dl>
     </div>
     <div class="section">
         <h3>Server Settings</h3>
         <dl>
             <dt>PCBID Enforcement</dt>
-            <dd>{{ 'active' if config['server']['enforce_pcbid'] else 'inactive' }}</dd>
+            <dd>{{ 'active' if config.server.enforce_pcbid else 'inactive' }}</dd>
             <dt>PASELI Enabled</dt>
-            <dd>{{ 'yes' if config['paseli']['enabled'] else 'no' }} (can be overridden by arcade settings)</dd>
+            <dd>{{ 'yes' if config.paseli.enabled else 'no' }} (can be overridden by arcade settings)</dd>
             <dt>Infinite PASELI Enabled</dt>
-            <dd>{{ 'yes' if config['paseli']['infinite'] else 'no' }} (can be overridden by arcade settings)</dd>
+            <dd>{{ 'yes' if config.paseli.infinite else 'no' }} (can be overridden by arcade settings)</dd>
             <dt>Event Log Preservation Duration</dt>
-            <dd>{{ (config['event_log_duration']|string + ' seconds') if config['event_log_duration'] else 'infinite' }}</dd>
+            <dd>{{ (config.event_log_duration|string + ' seconds') if config.event_log_duration else 'infinite' }}</dd>
         </dl>
     </div>
 {% endblock %}

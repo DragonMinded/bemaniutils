@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any
+from typing import Optional
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.jubeat.stubs import (
@@ -17,7 +17,7 @@ from bemani.backend.jubeat.qubell import JubeatQubell
 from bemani.backend.jubeat.clan import JubeatClan
 from bemani.backend.jubeat.festo import JubeatFesto
 from bemani.common import Model
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class JubeatFactory(Factory):
@@ -44,7 +44,7 @@ class JubeatFactory(Factory):
             Base.register(gamecode, JubeatFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
         if model.gamecode == 'H44':
             return Jubeat(data, config, model)
         if model.gamecode == 'I44':

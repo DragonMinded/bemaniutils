@@ -1,24 +1,22 @@
 import argparse
-import copy
 import traceback
-from typing import Any, Dict
 from flask import Flask, request, redirect, Response, make_response
 
 from bemani.protocol import EAmuseProtocol
 from bemani.backend import Dispatch, UnrecognizedPCBIDException
-from bemani.data import Data
+from bemani.data import Config, Data
 from bemani.utils.config import load_config as base_load_config, register_games as base_register_games
 
 
 app = Flask(__name__)
-config: Dict[str, Any] = {}
+config = Config()
 
 
 @app.route('/', defaults={'path': ''}, methods=['GET'])
 @app.route('/<path:path>', methods=['GET'])
 def receive_healthcheck(path: str) -> Response:
     global config
-    redirect_uri = config['server'].get('redirect')
+    redirect_uri = config.server.redirect
     if redirect_uri is None:
         # Return a standard status OKAY message.
         return Response("Services OK.")
@@ -50,7 +48,7 @@ def receive_request(path: str) -> Response:
 
     # Create and format config
     global config
-    requestconfig = copy.copy(config)
+    requestconfig = config.clone()
     requestconfig['client'] = {
         'address': remote_address or request.remote_addr,
     }

@@ -28,7 +28,7 @@ def login() -> Response:
         return Response(render_template('account/login.html', **{'title': 'Log In', 'show_navigation': False, 'username': username}))
 
     if g.data.local.user.validate_password(userid, password):
-        aes = AESCipher(g.config['secret_key'])
+        aes = AESCipher(g.config.secret_key)
         sessionID = g.data.local.user.create_session(userid, expiration=90 * 86400)
         response = make_response(redirect(url_for('home_pages.viewhome')))
         response.set_cookie(
@@ -127,7 +127,7 @@ def register() -> Response:
     g.data.local.user.update_password(userid, password1)
 
     # Now, log them into that created account!
-    aes = AESCipher(g.config['secret_key'])
+    aes = AESCipher(g.config.secret_key)
     sessionID = g.data.local.user.create_session(userid)
     success('Successfully registered account!')
     response = make_response(redirect(url_for('home_pages.viewhome')))

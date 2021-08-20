@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.common import GameConstants, VersionConstants, DBConstants, PEFile, Time
 from bemani.format import ARC, IFS, IIDXChart, IIDXMusicDB
-from bemani.data import Server, Song
+from bemani.data import Config, Server, Song
 from bemani.data.interfaces import APIProviderInterface
 from bemani.data.api.music import GlobalMusicData
 from bemani.data.api.game import GlobalGameData
@@ -48,7 +48,7 @@ class ImportBase:
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         game: GameConstants,
         version: Optional[int],
         no_combine: bool,
@@ -59,7 +59,7 @@ class ImportBase:
         self.update = update
         self.no_combine = no_combine
         self.__config = config
-        self.__engine = self.__config['database']['engine']
+        self.__engine = self.__config.database.engine
         self.__sessionmanager = sessionmaker(self.__engine)
         self.__conn = self.__engine.connect()
         self.__session = self.__sessionmanager(bind=self.__conn)
@@ -76,7 +76,7 @@ class ImportBase:
         if not self.__batch:
             raise Exception('Logic error, cannot execute outside of a batch!')
 
-        if self.__config['database'].get('read_only', False):
+        if self.__config.database.read_only:
             # See if this is an insert/update/delete
             for write_statement in [
                 "insert into ",
@@ -359,7 +359,7 @@ class ImportPopn(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -1198,7 +1198,7 @@ class ImportJubeat(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -1453,7 +1453,7 @@ class ImportIIDX(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -2037,7 +2037,7 @@ class ImportDDR(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -2711,7 +2711,7 @@ class ImportSDVX(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -3050,7 +3050,7 @@ class ImportMuseca(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -3179,7 +3179,7 @@ class ImportReflecBeat(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -3448,7 +3448,7 @@ class ImportDanceEvolution(ImportBase):
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Config,
         version: str,
         no_combine: bool,
         update: bool,
@@ -3652,7 +3652,7 @@ if __name__ == "__main__":
         raise Exception("Cannot specify both a remote server and a local file to read from!")
 
     # Load the config so we can talk to the server
-    config: Dict[str, Any] = {}
+    config = Config()
     load_config(args.config, config)
 
     series = None

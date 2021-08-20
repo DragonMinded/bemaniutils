@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.sdvx.booth import SoundVoltexBooth
@@ -8,7 +8,7 @@ from bemani.backend.sdvx.gravitywars_s1 import SoundVoltexGravityWarsSeason1
 from bemani.backend.sdvx.gravitywars_s2 import SoundVoltexGravityWarsSeason2
 from bemani.backend.sdvx.heavenlyhaven import SoundVoltexHeavenlyHaven
 from bemani.common import Model, VersionConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class SoundVoltexFactory(Factory):
@@ -26,7 +26,7 @@ class SoundVoltexFactory(Factory):
             Base.register(gamecode, SoundVoltexFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
 
         def version_from_date(date: int) -> Optional[int]:
             if date < 2013060500:

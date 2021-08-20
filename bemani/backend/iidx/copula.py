@@ -293,7 +293,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         if method == 'getname':
             root = Node.void('IIDX23shop')
             root.set_attribute('cls_opt', '0')
-            machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             root.set_attribute('opname', machine.name)
             root.set_attribute('pid', '51')
             return root
@@ -309,7 +309,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
         if method == 'getconvention':
             root = Node.void('IIDX23shop')
-            machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             if machine.arcade is not None:
                 course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
             else:
@@ -327,7 +327,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
         if method == 'setconvention':
             root = Node.void('IIDX23shop')
-            machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             if machine.arcade is not None:
                 course = ValidatedDict()
                 course.replace_int('music_0', request.child_value('music_0'))
@@ -364,7 +364,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 # Chart type 6 is presumably beginner mode, but it crashes the game
                 return root
 
-            machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             if machine.arcade is not None:
                 course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
             else:
@@ -571,7 +571,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             if self.machine_joined_arcade():
                 game_config = self.get_game_config()
                 global_scores = game_config.get_bool('global_shop_ranking')
-                machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+                machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             else:
                 # If we aren't in an arcade, we can only show global scores
                 global_scores = True
@@ -1477,7 +1477,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
         # Look up judge window adjustments
         judge_dict = profile.get_dict('machine_judge_adjust')
-        machine_judge = judge_dict.get_dict(self.config['machine']['pcbid'])
+        machine_judge = judge_dict.get_dict(self.config.machine.pcbid)
 
         # Profile data
         pcdata = Node.void('pcdata')
@@ -1925,10 +1925,10 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
         # Update judge window adjustments per-machine
         judge_dict = newprofile.get_dict('machine_judge_adjust')
-        machine_judge = judge_dict.get_dict(self.config['machine']['pcbid'])
+        machine_judge = judge_dict.get_dict(self.config.machine.pcbid)
         machine_judge.replace_int('single', int(request.attribute('s_judgeAdj')))
         machine_judge.replace_int('double', int(request.attribute('d_judgeAdj')))
-        judge_dict.replace_dict(self.config['machine']['pcbid'], machine_judge)
+        judge_dict.replace_dict(self.config.machine.pcbid, machine_judge)
         newprofile.replace_dict('machine_judge_adjust', judge_dict)
 
         # Secret flags saving

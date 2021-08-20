@@ -1,5 +1,5 @@
 import argparse
-from typing import Any, Dict, List
+from typing import Any, List
 
 from bemani.backend.popn import PopnMusicFactory
 from bemani.backend.jubeat import JubeatFactory
@@ -18,38 +18,38 @@ from bemani.frontend.sdvx import SoundVoltexCache
 from bemani.frontend.reflec import ReflecBeatCache
 from bemani.frontend.museca import MusecaCache
 from bemani.common import GameConstants, Time
-from bemani.data import Data
+from bemani.data import Config, Data
 from bemani.utils.config import load_config
 
 
-def run_scheduled_work(config: Dict[str, Any]) -> None:
+def run_scheduled_work(config: Config) -> None:
     data = Data(config)
 
     # Only run scheduled work for enabled components
     enabled_factories: List[Any] = []
     enabled_caches: List[Any] = []
-    if GameConstants.IIDX in config['support']:
+    if GameConstants.IIDX in config.support:
         enabled_factories.append(IIDXFactory)
         enabled_caches.append(IIDXCache)
-    if GameConstants.POPN_MUSIC in config['support']:
+    if GameConstants.POPN_MUSIC in config.support:
         enabled_factories.append(PopnMusicFactory)
         enabled_caches.append(PopnMusicCache)
-    if GameConstants.JUBEAT in config['support']:
+    if GameConstants.JUBEAT in config.support:
         enabled_factories.append(JubeatFactory)
         enabled_caches.append(JubeatCache)
-    if GameConstants.BISHI_BASHI in config['support']:
+    if GameConstants.BISHI_BASHI in config.support:
         enabled_factories.append(BishiBashiFactory)
         enabled_caches.append(BishiBashiCache)
-    if GameConstants.DDR in config['support']:
+    if GameConstants.DDR in config.support:
         enabled_factories.append(DDRFactory)
         enabled_caches.append(DDRCache)
-    if GameConstants.SDVX in config['support']:
+    if GameConstants.SDVX in config.support:
         enabled_factories.append(SoundVoltexFactory)
         enabled_caches.append(SoundVoltexCache)
-    if GameConstants.REFLEC_BEAT in config['support']:
+    if GameConstants.REFLEC_BEAT in config.support:
         enabled_factories.append(ReflecBeatFactory)
         enabled_caches.append(ReflecBeatCache)
-    if GameConstants.MUSECA in config['support']:
+    if GameConstants.MUSECA in config.support:
         enabled_factories.append(MusecaFactory)
         enabled_caches.append(MusecaCache)
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Set up global configuration
-    config: Dict[str, Any] = {}
+    config = Config()
     load_config(args.config, config)
 
     # Run out of band work

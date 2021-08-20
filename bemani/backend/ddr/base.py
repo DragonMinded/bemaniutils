@@ -1,10 +1,10 @@
 # vim: set fileencoding=utf-8
-from typing import Optional, Dict, List, Any
+from typing import Optional, List
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
 from bemani.common import Model, Profile, ValidatedDict, GameConstants, DBConstants, Time
-from bemani.data import Data, Score, UserID, ScoreSaveException
+from bemani.data import Config, Data, Score, UserID, ScoreSaveException
 from bemani.protocol import Node
 
 
@@ -51,7 +51,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_DOUBLE_EXPERT = 8
     CHART_DOUBLE_CHALLENGE = 9
 
-    def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
             self.omnimix = True

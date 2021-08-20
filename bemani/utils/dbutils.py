@@ -1,19 +1,19 @@
 import argparse
 import getpass
 import sys
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from bemani.data import Data, DBCreateException
+from bemani.data import Config, Data, DBCreateException
 from bemani.utils.config import load_config
 
 
-def create(config: Dict[str, Any]) -> None:
+def create(config: Config) -> None:
     data = Data(config)
     data.create()
     data.close()
 
 
-def generate(config: Dict[str, Any], message: Optional[str], allow_empty: bool) -> None:
+def generate(config: Config, message: Optional[str], allow_empty: bool) -> None:
     if message is None:
         raise Exception('Please provide a message!')
     data = Data(config)
@@ -21,13 +21,13 @@ def generate(config: Dict[str, Any], message: Optional[str], allow_empty: bool) 
     data.close()
 
 
-def upgrade(config: Dict[str, Any]) -> None:
+def upgrade(config: Config) -> None:
     data = Data(config)
     data.upgrade()
     data.close()
 
 
-def change_password(config: Dict[str, Any], username: Optional[str]) -> None:
+def change_password(config: Config, username: Optional[str]) -> None:
     if username is None:
         raise Exception('Please provide a username!')
     password1 = getpass.getpass('Password: ')
@@ -42,7 +42,7 @@ def change_password(config: Dict[str, Any], username: Optional[str]) -> None:
     print(f'User {username} changed password.')
 
 
-def add_admin(config: Dict[str, Any], username: Optional[str]) -> None:
+def add_admin(config: Config, username: Optional[str]) -> None:
     if username is None:
         raise Exception('Please provide a username!')
     data = Data(config)
@@ -55,7 +55,7 @@ def add_admin(config: Dict[str, Any], username: Optional[str]) -> None:
     print(f'User {username} gained admin rights.')
 
 
-def remove_admin(config: Dict[str, Any], username: Optional[str]) -> None:
+def remove_admin(config: Config, username: Optional[str]) -> None:
     if username is None:
         raise Exception('Please provide a username!')
     data = Data(config)
@@ -96,7 +96,7 @@ def main() -> None:
     parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
     args = parser.parse_args()
 
-    config: Dict[str, Any] = {}
+    config = Config()
     load_config(args.config, config)
 
     try:

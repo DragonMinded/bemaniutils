@@ -3,6 +3,7 @@ import random
 from typing import Dict, Any, Optional
 
 from bemani.common import Time
+from bemani.data.config import Config
 
 from sqlalchemy.engine.base import Connection  # type: ignore
 from sqlalchemy.engine import CursorResult  # type: ignore
@@ -39,7 +40,7 @@ class BaseData:
 
     SESSION_LENGTH = 32
 
-    def __init__(self, config: Dict[str, Any], conn: Connection) -> None:
+    def __init__(self, config: Config, conn: Connection) -> None:
         """
         Initialize any DB singleton.
 
@@ -65,7 +66,7 @@ class BaseData:
         Returns:
             A SQLAlchemy CursorResult object.
         """
-        if self.__config['database'].get('read_only', False):
+        if self.__config.database.read_only:
             # See if this is an insert/update/delete
             for write_statement in [
                 "insert into ",

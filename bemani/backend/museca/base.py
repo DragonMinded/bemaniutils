@@ -1,10 +1,10 @@
 # vim: set fileencoding=utf-8
-from typing import Dict, Optional, Any
+from typing import Dict, Optional
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
 from bemani.common import Profile, ValidatedDict, GameConstants, DBConstants, Parallel, Model
-from bemani.data import UserID, Data
+from bemani.data import UserID, Config, Data
 from bemani.protocol import Node
 
 
@@ -33,7 +33,7 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CLEAR_TYPE_CLEARED = DBConstants.MUSECA_CLEAR_TYPE_CLEARED
     CLEAR_TYPE_FULL_COMBO = DBConstants.MUSECA_CLEAR_TYPE_FULL_COMBO
 
-    def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
             self.omnimix = True

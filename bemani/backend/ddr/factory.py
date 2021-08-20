@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any
+from typing import Optional
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.ddr.stubs import (
@@ -21,7 +21,7 @@ from bemani.backend.ddr.ddr2014 import DDR2014
 from bemani.backend.ddr.ddrace import DDRAce
 from bemani.backend.ddr.ddra20 import DDRA20
 from bemani.common import Model, VersionConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class DDRFactory(Factory):
@@ -52,7 +52,7 @@ class DDRFactory(Factory):
             Base.register(gamecode, DDRFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
 
         def version_from_date(date: int) -> Optional[int]:
             if date < 2014051200:

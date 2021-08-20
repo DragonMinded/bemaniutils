@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 import unittest
+from unittest.mock import Mock
 
 from bemani.data.mysql.base import BaseData
 
@@ -7,7 +8,7 @@ from bemani.data.mysql.base import BaseData
 class TestBaseData(unittest.TestCase):
 
     def test_basic_serialize(self) -> None:
-        data = BaseData({}, None)
+        data = BaseData(Mock(), None)
 
         testdict = {
             'test1': 1,
@@ -23,7 +24,7 @@ class TestBaseData(unittest.TestCase):
         self.assertEqual(data.deserialize(data.serialize(testdict)), testdict)
 
     def test_basic_byte_serialize(self) -> None:
-        data = BaseData({}, None)
+        data = BaseData(Mock(), None)
 
         testdict = {
             'bytes': b'\x01\x02\x03\x04\x05',
@@ -34,7 +35,7 @@ class TestBaseData(unittest.TestCase):
         self.assertEqual(data.deserialize(serialized), testdict)
 
     def test_deep_byte_serialize(self) -> None:
-        data = BaseData({}, None)
+        data = BaseData(Mock(), None)
 
         testdict = {
             'sentinal': True,

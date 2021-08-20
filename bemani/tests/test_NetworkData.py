@@ -11,7 +11,7 @@ from bemani.tests.helpers import FakeCursor
 class TestNetworkData(unittest.TestCase):
 
     def test_get_schedule_type(self) -> None:
-        network = NetworkData({}, None)
+        network = NetworkData(Mock(), None)
 
         with freeze_time('2016-01-01 12:00'):
             # Check daily schedule
@@ -29,7 +29,7 @@ class TestNetworkData(unittest.TestCase):
             )
 
     def test_should_schedule(self) -> None:
-        network = NetworkData({}, None)
+        network = NetworkData(Mock(), None)
 
         with freeze_time('2016-01-01'):
             # Check for should schedule if nothing in DB

@@ -10,7 +10,7 @@ from bemani.tests.helpers import FakeCursor
 class TestGameData(unittest.TestCase):
 
     def test_put_time_sensitive_settings(self) -> None:
-        game = GameData({}, None)
+        game = GameData(Mock(), None)
 
         # Verify that we catch incorrect input order
         with self.assertRaises(Exception) as context:

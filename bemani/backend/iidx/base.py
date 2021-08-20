@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
 from bemani.common import Profile, ValidatedDict, Model, GameConstants, DBConstants, Parallel
-from bemani.data import Data, Score, Machine, UserID
+from bemani.data import Config, Data, Score, Machine, UserID
 from bemani.protocol import Node
 
 
@@ -75,7 +75,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     GHOST_TYPE_RIVAL_TOP = 800
     GHOST_TYPE_RIVAL_AVERAGE = 900
 
-    def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
             self.omnimix = True
@@ -189,7 +189,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
     def machine_joined_arcade(self) -> bool:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         return machine.arcade is not None
 
     def get_clear_rates(

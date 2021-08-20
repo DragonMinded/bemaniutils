@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.reflec.reflecbeat import ReflecBeat
@@ -8,7 +8,7 @@ from bemani.backend.reflec.groovin import ReflecBeatGroovin
 from bemani.backend.reflec.volzza import ReflecBeatVolzza
 from bemani.backend.reflec.volzza2 import ReflecBeatVolzza2
 from bemani.common import Model, VersionConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class ReflecBeatFactory(Factory):
@@ -28,7 +28,7 @@ class ReflecBeatFactory(Factory):
             Base.register(gamecode, ReflecBeatFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
 
         def version_from_date(date: int) -> Optional[int]:
             if date < 2014060400:

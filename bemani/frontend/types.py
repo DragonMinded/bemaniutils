@@ -1,14 +1,14 @@
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
     from flask.ctx import _AppCtxGlobals
     from flask_caching import Cache  # type: ignore
 
-    from bemani.data import Data, UserID
+    from bemani.data import Config, Data, UserID
 
     class RequestGlobals(_AppCtxGlobals):
-        config: Dict[str, Any]
+        config: Config
         cache: Cache
         data: Data
         sessionID: Optional[str]

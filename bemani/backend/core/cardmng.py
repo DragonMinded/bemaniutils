@@ -49,7 +49,7 @@ class CardManagerHandler(Base):
                         expired = True
 
             refid = self.data.local.user.get_refid(self.game, self.version, userid)
-            paseli_enabled = self.supports_paseli() and self.config['paseli']['enabled']
+            paseli_enabled = self.supports_paseli() and self.config.paseli.enabled
 
             root = Node.void('cardmng')
             root.set_attribute('refid', refid)

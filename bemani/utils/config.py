@@ -1,5 +1,5 @@
 import yaml
-from typing import Any, Dict, Set
+from typing import Set
 
 from bemani.backend.iidx import IIDXFactory
 from bemani.backend.popn import PopnMusicFactory
@@ -10,12 +10,13 @@ from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
 from bemani.backend.museca import MusecaFactory
 from bemani.common import GameConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
-def load_config(filename: str, config: Dict[str, Any]) -> None:
+def load_config(filename: str, config: Config) -> None:
     config.update(yaml.safe_load(open(filename)))
     config['database']['engine'] = Data.create_engine(config)
+    config['filename'] = filename
 
     supported_series: Set[GameConstants] = set()
     for series in GameConstants:
@@ -24,20 +25,20 @@ def load_config(filename: str, config: Dict[str, Any]) -> None:
     config['support'] = supported_series
 
 
-def register_games(config: Dict[str, Any]) -> None:
-    if GameConstants.POPN_MUSIC in config['support']:
+def register_games(config: Config) -> None:
+    if GameConstants.POPN_MUSIC in config.support:
         PopnMusicFactory.register_all()
-    if GameConstants.JUBEAT in config['support']:
+    if GameConstants.JUBEAT in config.support:
         JubeatFactory.register_all()
-    if GameConstants.IIDX in config['support']:
+    if GameConstants.IIDX in config.support:
         IIDXFactory.register_all()
-    if GameConstants.BISHI_BASHI in config['support']:
+    if GameConstants.BISHI_BASHI in config.support:
         BishiBashiFactory.register_all()
-    if GameConstants.DDR in config['support']:
+    if GameConstants.DDR in config.support:
         DDRFactory.register_all()
-    if GameConstants.SDVX in config['support']:
+    if GameConstants.SDVX in config.support:
         SoundVoltexFactory.register_all()
-    if GameConstants.REFLEC_BEAT in config['support']:
+    if GameConstants.REFLEC_BEAT in config.support:
         ReflecBeatFactory.register_all()
-    if GameConstants.MUSECA in config['support']:
+    if GameConstants.MUSECA in config.support:
         MusecaFactory.register_all()

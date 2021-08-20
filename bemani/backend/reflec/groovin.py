@@ -295,7 +295,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
         all_profiles = self.data.local.user.get_all_profiles(self.game, self.version)
         all_attempts = self.data.local.music.get_all_attempts(self.game, self.version, timelimit=(Time.beginning_of_today() - Time.SECONDS_IN_DAY))
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             lids = [
                 machine.id for machine in self.data.local.machine.get_all_machines(machine.arcade)
