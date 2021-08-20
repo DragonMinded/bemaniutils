@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
 from bemani.backend.sdvx.booth import SoundVoltexBooth
-from bemani.common import Time, ValidatedDict, VersionConstants, ID
+from bemani.common import Time, Profile, VersionConstants, ID
 from bemani.data import UserID
 from bemani.protocol import Node
 
@@ -1993,7 +1993,7 @@ class SoundVoltexInfiniteInfection(
             info.add_child(Node.u32('id', score.id))
             info.add_child(Node.u32('type', score.chart))
             info.add_child(Node.string('name', profile.get_str('name')))
-            info.add_child(Node.string('code', ID.format_extid(profile.get_int('extid'))))
+            info.add_child(Node.string('code', ID.format_extid(profile.extid)))
             info.add_child(Node.u32('score', score.points))
 
             # Add to global scores
@@ -2023,7 +2023,7 @@ class SoundVoltexInfiniteInfection(
             info.add_child(Node.u32('id', score.id))
             info.add_child(Node.u32('type', score.chart))
             info.add_child(Node.string('name', profile.get_str('name')))
-            info.add_child(Node.string('code', ID.format_extid(profile.get_int('extid'))))
+            info.add_child(Node.string('code', ID.format_extid(profile.extid)))
             info.add_child(Node.u32('score', score.points))
 
             # Add to local scores
@@ -2289,12 +2289,12 @@ class SoundVoltexInfiniteInfection(
         game.add_child(Node.s8('result', result))
         return game
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         game = Node.void('game_2')
 
         # Generic profile stuff
         game.add_child(Node.string('name', profile.get_str('name')))
-        game.add_child(Node.string('code', ID.format_extid(profile.get_int('extid'))))
+        game.add_child(Node.string('code', ID.format_extid(profile.extid)))
         game.add_child(Node.u32('gamecoin_packet', profile.get_int('packet')))
         game.add_child(Node.u32('gamecoin_block', profile.get_int('block')))
         game.add_child(Node.s16('skill_name_id', profile.get_int('skill_name_id', -1)))
@@ -2424,7 +2424,7 @@ class SoundVoltexInfiniteInfection(
 
         return game
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         # Update blaster energy and in-game currencies

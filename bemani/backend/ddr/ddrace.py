@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.ddr.base import DDRBase
 from bemani.backend.ddr.ddr2014 import DDR2014
-from bemani.common import ValidatedDict, VersionConstants, CardCipher, Time, ID, intish
+from bemani.common import Profile, ValidatedDict, VersionConstants, CardCipher, Time, ID, intish
 from bemani.data import Achievement, Machine, Score, UserID
 from bemani.protocol import Node
 
@@ -466,11 +466,11 @@ class DDRAce(
         response.add_child(data)
         data.add_child(Node.s32('recordtype', requestdata.child_value('loadflag')))
 
-        thismachine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        thismachine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         machines_by_id: Dict[int, Optional[Machine]] = {thismachine.id: thismachine}
 
         loadkind = requestdata.child_value('loadflag')
-        profiles_by_userid: Dict[UserID, ValidatedDict] = {}
+        profiles_by_userid: Dict[UserID, Profile] = {}
 
         def get_machine(lid: int) -> Optional[Machine]:
             if lid not in machines_by_id:
@@ -551,7 +551,7 @@ class DDRAce(
             record.add_child(Node.u8('flagdata', 0))
             record.add_child(Node.string('name', profiledata.get_str('name')))
             record.add_child(Node.s32('area', profiledata.get_int('area', 58)))
-            record.add_child(Node.s32('code', profiledata.get_int('extid')))
+            record.add_child(Node.s32('code', profiledata.extid))
             record.add_child(Node.s32('score', score.points))
             record.add_child(Node.s32('ghostid', score.key))
 
@@ -559,14 +559,20 @@ class DDRAce(
         if userid is None:
             raise Exception('Expecting valid UserID to create new profile!')
 
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
-        self.put_profile(userid, ValidatedDict({
-            'lid': machine.id,
-        }))
-        profile = self.get_profile(userid)
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        profile = Profile(
+            self.game,
+            self.version,
+            "",
+            0,
+            {
+                'lid': machine.id,
+            },
+        )
+        self.put_profile(userid, profile)
 
-        response.add_child(Node.string('seq', ID.format_extid(profile.get_int('extid'))))
-        response.add_child(Node.s32('code', profile.get_int('extid')))
+        response.add_child(Node.string('seq', ID.format_extid(profile.extid)))
+        response.add_child(Node.s32('code', profile.extid))
         response.add_child(Node.string('shoparea', ''))
 
     def __handle_inheritance(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
@@ -588,7 +594,7 @@ class DDRAce(
 
         ghostdata = Node.void('ghostdata')
         response.add_child(ghostdata)
-        ghostdata.add_child(Node.s32('code', profile.get_int('extid')))
+        ghostdata.add_child(Node.s32('code', profile.extid))
         ghostdata.add_child(Node.u32('mcode', score.id))
         ghostdata.add_child(Node.u8('notetype', self.db_to_game_chart(score.chart)))
         ghostdata.add_child(Node.s32('ghostsize', len(score.data['ghost'])))
@@ -632,7 +638,7 @@ class DDRAce(
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
-            profile = self.get_profile(userid) or ValidatedDict()
+            profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             usergamedata = profile.get_dict('usergamedata')
 
             for record in request.child('data/record').children:
@@ -741,7 +747,7 @@ class DDRAce(
                             rival = usergamedata[ptype]['strdata'].split(b',')
                             lastdict = profile.get_dict('last')
 
-                            friends: Dict[int, Optional[ValidatedDict]] = {}
+                            friends: Dict[int, Optional[Profile]] = {}
                             for link in links:
                                 if link.type[:7] != 'friend_':
                                     continue
@@ -775,7 +781,7 @@ class DDRAce(
                                 }[rivalno]
 
                                 rival[activeslot] = acehex(rivalno).encode('ascii')
-                                rival[ddrcodeslot] = acehex(friendprofile.get_int('extid')).encode('ascii')
+                                rival[ddrcodeslot] = acehex(friendprofile.extid).encode('ascii')
 
                             usergamedata[ptype]['strdata'] = b','.join(rival)
 

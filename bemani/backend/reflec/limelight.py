@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any, Tuple
 from bemani.backend.reflec.base import ReflecBeatBase
 from bemani.backend.reflec.reflecbeat import ReflecBeat
 
-from bemani.common import ValidatedDict, VersionConstants, ID, Time
+from bemani.common import Profile, VersionConstants, ID, Time
 from bemani.data import UserID
 from bemani.protocol import Node
 
@@ -215,7 +215,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
             c = Node.void('c')
             commentnode.add_child(c)
-            c.add_child(Node.s32('uid', uid_mapping[uid].get_int('extid')))
+            c.add_child(Node.s32('uid', uid_mapping[uid].extid))
             c.add_child(Node.string('p_name', uid_mapping[uid].get_str('name')))
             c.add_child(Node.s32('exp', uid_mapping[uid].get_int('exp')))
             c.add_child(Node.s32('customize', comment.data.get_int('customize')))
@@ -241,7 +241,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
             s = Node.void('s')
             statusnode.add_child(s)
-            s.add_child(Node.s32('uid', uid_mapping[uid].get_int('extid')))
+            s.add_child(Node.s32('uid', uid_mapping[uid].extid))
             s.add_child(Node.string('p_name', uid_mapping[uid].get_str('name')))
             s.add_child(Node.s32('exp', uid_mapping[uid].get_int('exp')))
             s.add_child(Node.s32('customize', status.get_int('customize')))
@@ -365,7 +365,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
             e.add_child(Node.s32('eid', lobby.get_int('id')))
             e.add_child(Node.u16('mid', lobby.get_int('mid')))
             e.add_child(Node.u8('ng', lobby.get_int('ng')))
-            e.add_child(Node.s32('uid', profile.get_int('extid')))
+            e.add_child(Node.s32('uid', profile.extid))
             e.add_child(Node.string('pn', profile.get_str('name')))
             e.add_child(Node.s32('uattr', profile.get_int('uattr')))
             e.add_child(Node.s32('mopt', lobby.get_int('mopt')))
@@ -415,7 +415,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
                 e.add_child(Node.s32('eid', lobby.get_int('id')))
                 e.add_child(Node.u16('mid', lobby.get_int('mid')))
                 e.add_child(Node.u8('ng', lobby.get_int('ng')))
-                e.add_child(Node.s32('uid', profile.get_int('extid')))
+                e.add_child(Node.s32('uid', profile.extid))
                 e.add_child(Node.string('pn', profile.get_str('name')))
                 e.add_child(Node.s32('uattr', profile.get_int('uattr')))
                 e.add_child(Node.s32('mopt', lobby.get_int('mopt')))
@@ -537,11 +537,11 @@ class ReflecBeatLimelight(ReflecBeatBase):
         if profile is None:
             root.add_child(Node.s32('uid', 0))
         else:
-            root.add_child(Node.s32('uid', profile.get_int('extid')))
+            root.add_child(Node.s32('uid', profile.extid))
         root.add_child(Node.s32('time', Time.now()))
         return root
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
@@ -553,7 +553,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         base = Node.void('base')
         pdata.add_child(base)
-        base.add_child(Node.s32('uid', profile.get_int('extid')))
+        base.add_child(Node.s32('uid', profile.extid))
         base.add_child(Node.string('name', profile.get_str('name')))
         base.add_child(Node.s16('icon_id', profile.get_int('icon')))
         base.add_child(Node.s16('lv', profile.get_int('lvl')))
@@ -709,7 +709,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
             rival.add_child(r)
             r.add_child(Node.u8('slot_id', slotid))
             r.add_child(Node.string('name', rprofile.get_str('name')))
-            r.add_child(Node.s32('id', rprofile.get_int('extid')))
+            r.add_child(Node.s32('id', rprofile.extid))
             r.add_child(Node.bool('friend', True))
             r.add_child(Node.bool('locked', False))
             r.add_child(Node.s32('rc', 0))
@@ -747,7 +747,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = copy.deepcopy(oldprofile)
 

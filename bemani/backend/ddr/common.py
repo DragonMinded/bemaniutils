@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Tuple
 
 from bemani.backend.ddr.base import DDRBase
-from bemani.common import Time, ValidatedDict, intish
+from bemani.common import Time, Profile, intish
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -98,7 +98,7 @@ class DDRGameHiscoreHandler(DDRBase):
                 typenode.add_child(Node.u16('area', users[userid].get_int('area', 51)))
                 typenode.add_child(Node.u8('rank', gamerank))
                 typenode.add_child(Node.u8('combo_type', combo_type))
-                typenode.add_child(Node.u32('code', users[userid].get_int('extid')))
+                typenode.add_child(Node.u32('code', users[userid].extid))
 
         return game
 
@@ -154,7 +154,7 @@ class DDRGameAreaHiscoreHandler(DDRBase):
                 typenode.add_child(Node.u16('area', area_users[userid].get_int('area', 51)))
                 typenode.add_child(Node.u8('rank', gamerank))
                 typenode.add_child(Node.u8('combo_type', combo_type))
-                typenode.add_child(Node.u32('code', area_users[userid].get_int('extid')))
+                typenode.add_child(Node.u32('code', area_users[userid].extid))
 
         return game
 
@@ -303,7 +303,7 @@ class DDRGameOldHandler(DDRBase):
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         previous_version: Optional[DDRBase] = None
-        oldprofile: Optional[ValidatedDict] = None
+        oldprofile: Optional[Profile] = None
 
         if userid is not None:
             previous_version = self.previous_version()
@@ -362,7 +362,7 @@ class DDRGameFriendHandler(DDRBase):
 
         game = Node.void('game')
         game.set_attribute('data', '1')
-        game.add_child(Node.u32('code', friend.get_int('extid')))
+        game.add_child(Node.u32('code', friend.extid))
         game.add_child(Node.string('name', friend.get_str('name')))
         game.add_child(Node.u8('area', friend.get_int('area', 51)))
         game.add_child(Node.u32('exp', play_stats.get_int('exp')))

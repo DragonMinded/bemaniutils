@@ -3,7 +3,7 @@ import copy
 from typing import Any, Dict, Iterator, Tuple
 
 from bemani.backend.ddr import DDRFactory, DDRBase
-from bemani.common import ValidatedDict, GameConstants, VersionConstants
+from bemani.common import Profile, ValidatedDict, GameConstants, VersionConstants
 from bemani.data import Attempt, Link, RemoteUser, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
@@ -40,12 +40,12 @@ class DDRFrontend(FrontendBase):
     def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from DDRFactory.all_games()
 
-    def update_name(self, profile: ValidatedDict, name: str) -> ValidatedDict:
+    def update_name(self, profile: Profile, name: str) -> Profile:
         newprofile = copy.deepcopy(profile)
         newprofile.replace_str('name', name)
         return newprofile
 
-    def update_weight(self, profile: ValidatedDict, weight: int, enabled: bool) -> ValidatedDict:
+    def update_weight(self, profile: Profile, weight: int, enabled: bool) -> Profile:
         newprofile = copy.deepcopy(profile)
         if newprofile.get_int('version') in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             if enabled:
@@ -62,17 +62,17 @@ class DDRFrontend(FrontendBase):
                     del newprofile['weight']
         return newprofile
 
-    def update_early_late(self, profile: ValidatedDict, display_early_late: bool) -> ValidatedDict:
+    def update_early_late(self, profile: Profile, display_early_late: bool) -> Profile:
         newprofile = copy.deepcopy(profile)
         newprofile.replace_int('early_late', 1 if display_early_late else 0)
         return newprofile
 
-    def update_background_combo(self, profile: ValidatedDict, background_combo: bool) -> ValidatedDict:
+    def update_background_combo(self, profile: Profile, background_combo: bool) -> Profile:
         newprofile = copy.deepcopy(profile)
         newprofile.replace_int('combo', 1 if background_combo else 0)
         return newprofile
 
-    def update_settings(self, profile: ValidatedDict, new_settings: Dict[str, Any]) -> ValidatedDict:
+    def update_settings(self, profile: Profile, new_settings: Dict[str, Any]) -> Profile:
         newprofile = copy.deepcopy(profile)
         if newprofile.get_int('version') in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             newprofile.replace_int('arrowskin', new_settings['arrowskin'])
@@ -84,7 +84,7 @@ class DDRFrontend(FrontendBase):
             pass
         return newprofile
 
-    def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         if profile.get_int('version') in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             formatted_profile.update({
@@ -200,7 +200,7 @@ class DDRFrontend(FrontendBase):
             new_song['difficulties'][new.chart] = new.data.get_int('difficulty', 20)
         return new_song
 
-    def activate_rival(self, profile: ValidatedDict, position: int) -> ValidatedDict:
+    def activate_rival(self, profile: Profile, position: int) -> Profile:
         newprofile = copy.deepcopy(profile)
         if newprofile.get_int('version') == VersionConstants.DDR_X2:
             # X2 only has one active rival
@@ -219,7 +219,7 @@ class DDRFrontend(FrontendBase):
             newprofile.replace_dict('last', lastdict)
         return newprofile
 
-    def deactivate_rival(self, profile: ValidatedDict, position: int) -> ValidatedDict:
+    def deactivate_rival(self, profile: Profile, position: int) -> Profile:
         newprofile = copy.deepcopy(profile)
         if newprofile.get_int('version') == VersionConstants.DDR_X2:
             # X2 only has one active rival
@@ -239,11 +239,17 @@ class DDRFrontend(FrontendBase):
             newprofile.replace_dict('last', lastdict)
         return newprofile
 
-    def format_rival(self, link: Link, profile: ValidatedDict) -> Dict[str, Any]:
+    def format_rival(self, link: Link, profile: Profile) -> Dict[str, Any]:
         pos = int(link.type[7:])
         if profile.get_int('version') == VersionConstants.DDR_X2:
             active = pos == (profile.get_dict('last').get_int('fri') - 1)
-        elif profile.get_int('version') in [VersionConstants.DDR_X3_VS_2NDMIX, VersionConstants.DDR_2013, VersionConstants.DDR_2014, VersionConstants.DDR_ACE, VersionConstants.DDR_A20]:
+        elif profile.get_int('version') in {
+            VersionConstants.DDR_X3_VS_2NDMIX,
+            VersionConstants.DDR_2013,
+            VersionConstants.DDR_2014,
+            VersionConstants.DDR_ACE,
+            VersionConstants.DDR_A20
+        }:
             actives = [
                 profile.get_dict('last').get_int('rival1') - 1,
                 profile.get_dict('last').get_int('rival2') - 1,

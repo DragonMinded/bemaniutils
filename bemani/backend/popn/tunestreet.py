@@ -6,7 +6,7 @@ from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.stubs import PopnMusicSengokuRetsuden
 
 from bemani.backend.base import Status
-from bemani.common import ValidatedDict, VersionConstants
+from bemani.common import Profile, VersionConstants
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -100,7 +100,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
         }[score.data.get_int('medal')]
         return (flags << shift) | playedflag
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('playerdata')
 
         # Format profile
@@ -202,7 +202,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return root
 
-    def format_conversion(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('playerdata')
 
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
@@ -230,7 +230,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         # Extract the playmode, important for scores later
@@ -392,7 +392,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
             if userid is None:
                 return root
 
-            oldprofile = self.get_profile(userid) or ValidatedDict()
+            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             newprofile = self.unformat_profile(userid, request, oldprofile)
 
             if newprofile is not None:

@@ -9,12 +9,12 @@ from bemani.api.exceptions import APIException
 from bemani.api.objects import RecordsObject, ProfileObject, StatisticsObject, CatalogObject
 from bemani.api.types import g
 from bemani.common import GameConstants, APIConstants, VersionConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 
 app = Flask(
     __name__
 )
-config: Dict[str, Any] = {}
+config = Config()
 
 SUPPORTED_VERSIONS = ['v1']
 
@@ -172,8 +172,8 @@ def info() -> Dict[str, Any]:
 
     return {
         'versions': SUPPORTED_VERSIONS,
-        'name': g.config.get('name', 'e-AMUSEMENT Network'),
-        'email': g.config.get('email', 'nobody@nowhere.com'),
+        'name': g.config.name,
+        'email': g.config.email,
     }
 
 
@@ -209,7 +209,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
         ('reflecbeat', GameConstants.REFLEC_BEAT),
         ('soundvoltex', GameConstants.SDVX),
     ]:
-        if constant in g.config['support']:
+        if constant in g.config.support:
             gamemapping[gameid] = constant
     game = gamemapping.get(requestgame)
     if game is None:

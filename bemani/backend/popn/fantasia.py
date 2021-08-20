@@ -6,7 +6,7 @@ from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.tunestreet import PopnMusicTuneStreet
 
 from bemani.backend.base import Status
-from bemani.common import ValidatedDict, VersionConstants, Time, ID
+from bemani.common import Profile, VersionConstants, Time, ID
 from bemani.data import Score, Link, UserID
 from bemani.protocol import Node
 
@@ -68,14 +68,14 @@ class PopnMusicFantasia(PopnMusicBase):
         }[score.chart]
         return medal << (position * 4)
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('playerdata')
 
         # Set up the base profile
         base = Node.void('base')
         root.add_child(base)
         base.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        base.add_child(Node.string('g_pm_id', ID.format_extid(profile.get_int('extid'))))
+        base.add_child(Node.string('g_pm_id', ID.format_extid(profile.extid)))
         base.add_child(Node.u8('mode', profile.get_int('mode', 0)))
         base.add_child(Node.s8('button', profile.get_int('button', 0)))
         base.add_child(Node.s8('last_play_flag', profile.get_int('last_play_flag', -1)))
@@ -239,7 +239,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
         return root
 
-    def format_conversion(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('playerdata')
 
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
@@ -271,7 +271,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         # For some reason, Pop'n 20 sends us two profile saves, one with 'not done yet'
         # so we only want to process the done yet node. The 'not gameover' save has
         # jubeat collabo stuff set in it, but we don't use that so it doesn't matter.
@@ -422,7 +422,7 @@ class PopnMusicFantasia(PopnMusicBase):
             if userid is None:
                 return root
 
-            oldprofile = self.get_profile(userid) or ValidatedDict()
+            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             newprofile = self.unformat_profile(userid, request, oldprofile)
 
             if newprofile is not None:
@@ -443,7 +443,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
             # Grab the links that we care about.
             links = self.data.local.user.get_links(self.game, self.version, userid)
-            profiles: Dict[UserID, ValidatedDict] = {}
+            profiles: Dict[UserID, Profile] = {}
             rivals: List[Link] = []
             for link in links:
                 if link.type != 'rival':
@@ -470,7 +470,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
                 # Set up some sane defaults.
                 friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
-                friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.get_int('extid'))))
+                friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.extid)))
                 friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
 
                 # Perform hiscore/medal conversion.

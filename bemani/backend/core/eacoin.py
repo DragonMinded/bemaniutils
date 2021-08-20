@@ -27,7 +27,7 @@ class PASELIHandler(Base):
         """
         method = request.attribute('method')
 
-        if not self.config['paseli']['enabled']:
+        if not self.config.paseli.enabled:
             # Refuse to respond, we don't have PASELI enabled
             print("PASELI not enabled, ignoring eacoin request")
             root = Node.void('eacoin')
@@ -61,15 +61,15 @@ class PASELIHandler(Base):
 
             session = self.data.local.user.create_session(userid)
 
-            if self.config['paseli']['infinite']:
+            if self.config.paseli.infinite:
                 balance = PASELIHandler.INFINITE_PASELI_AMOUNT
             else:
-                if self.config['machine']['arcade'] is None:
+                if self.config.machine.arcade is None:
                     # There's no arcade for this machine, but infinite is not
                     # enabled, so there's no way to find a balance.
                     balance = 0
                 else:
-                    balance = self.data.local.user.get_balance(userid, self.config['machine']['arcade'])
+                    balance = self.data.local.user.get_balance(userid, self.config.machine.arcade)
 
             root.add_child(Node.s16('sequence', 0))
             root.add_child(Node.u8('acstatus', 0))
@@ -89,13 +89,13 @@ class PASELIHandler(Base):
                 root.set_attribute('status', str(Status.NO_PROFILE))
                 return root
 
-            if self.config['machine']['arcade'] is None:
+            if self.config.machine.arcade is None:
                 # Machine doesn't belong to an arcade
                 print("Machine doesn't belong to an arcade")
                 root.set_attribute('status', str(Status.NO_PROFILE))
                 return root
 
-            arcade = self.data.local.machine.get_arcade(self.config['machine']['arcade'])
+            arcade = self.data.local.machine.get_arcade(self.config.machine.arcade)
             if arcade is None:
                 # Refuse to do anything
                 print("No arcade for operator checkin request")
@@ -136,10 +136,10 @@ class PASELIHandler(Base):
                 print("Invalid session for eacoin consume request")
                 return make_resp(2, 0)
 
-            if self.config['paseli']['infinite']:
+            if self.config.paseli.infinite:
                 balance = PASELIHandler.INFINITE_PASELI_AMOUNT - payment
             else:
-                if self.config['machine']['arcade'] is None:
+                if self.config.machine.arcade is None:
                     # There's no arcade for this machine, but infinite is not
                     # enabled, so there's no way to find a balance, assume failed
                     # consume payment.
@@ -147,11 +147,11 @@ class PASELIHandler(Base):
                 else:
                     # Look up the new balance based on this delta. If there isn't enough,
                     # we will end up returning None here and exit without performing.
-                    balance = self.data.local.user.update_balance(userid, self.config['machine']['arcade'], -payment)
+                    balance = self.data.local.user.update_balance(userid, self.config.machine.arcade, -payment)
 
                 if balance is None:
                     print("Not enough balance for eacoin consume request")
-                    return make_resp(1, self.data.local.user.get_balance(userid, self.config['machine']['arcade']))
+                    return make_resp(1, self.data.local.user.get_balance(userid, self.config.machine.arcade))
                 else:
                     self.data.local.network.put_event(
                         'paseli_transaction',
@@ -160,10 +160,10 @@ class PASELIHandler(Base):
                             'balance': balance,
                             'service': -service,
                             'reason': details,
-                            'pcbid': self.config['machine']['pcbid'],
+                            'pcbid': self.config.machine.pcbid,
                         },
                         userid=userid,
-                        arcadeid=self.config['machine']['arcade'],
+                        arcadeid=self.config.machine.arcade,
                     )
 
             return make_resp(0, balance)
@@ -191,7 +191,7 @@ class PASELIHandler(Base):
             # If we're a user session, also look up the current arcade
             # so we display only entries that happened on this arcade.
             if userid is not None:
-                arcade = self.data.local.machine.get_arcade(self.config['machine']['arcade'])
+                arcade = self.data.local.machine.get_arcade(self.config.machine.arcade)
                 if arcade is None:
                     print("Machine doesn't belong to an arcade")
                     return root
@@ -394,13 +394,13 @@ class PASELIHandler(Base):
                 root.set_attribute('status', str(Status.NO_PROFILE))
                 return root
 
-            if self.config['machine']['arcade'] is None:
+            if self.config.machine.arcade is None:
                 # Machine doesn't belong to an arcade
                 print("Machine doesn't belong to an arcade")
                 root.set_attribute('status', str(Status.NO_PROFILE))
                 return root
 
-            arcade = self.data.local.machine.get_arcade(self.config['machine']['arcade'])
+            arcade = self.data.local.machine.get_arcade(self.config.machine.arcade)
             if arcade is None:
                 # Refuse to do anything
                 print("No arcade for operator pass change request")

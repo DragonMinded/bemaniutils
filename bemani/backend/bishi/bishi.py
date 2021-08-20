@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Sequence, Union
 
 from bemani.backend.bishi.base import BishiBashiBase
 from bemani.backend.ess import EventLogHandler
-from bemani.common import ValidatedDict, GameConstants, VersionConstants, Time
+from bemani.common import Profile, GameConstants, VersionConstants, Time
 from bemani.data import UserID
 from bemani.protocol import Node
 
@@ -215,7 +215,7 @@ class TheStarBishiBashi(
         oldprofile = self.get_profile(userid)
         is_new = False
         if oldprofile is None:
-            oldprofile = ValidatedDict()
+            oldprofile = Profile(self.game, self.version, refid, 0)
             is_new = True
         newprofile = self.unformat_profile(userid, request, oldprofile, is_new)
 
@@ -244,7 +244,7 @@ class TheStarBishiBashi(
             root.add_child(Node.s32('result', 1))  # Unclear if this is the right thing to do here.
             return root
 
-    def format_profile(self, userid: UserID, profiletype: str, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profiletype: str, profile: Profile) -> Node:
         root = Node.void('playerdata')
         root.add_child(Node.s32('result', 0))
         player = Node.void('player')
@@ -321,7 +321,7 @@ class TheStarBishiBashi(
         player.add_child(Node.u32('record_num', records))
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict, is_new: bool) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool) -> Profile:
         # Profile save request, data values are base64 encoded.
         # d is a CSV, and bin1 is binary data.
         newprofile = copy.deepcopy(oldprofile)

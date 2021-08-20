@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from bemani.backend.reflec.base import ReflecBeatBase
 from bemani.backend.reflec.colette import ReflecBeatColette
 
-from bemani.common import ValidatedDict, VersionConstants, ID, Time
+from bemani.common import Profile, ValidatedDict, VersionConstants, ID, Time
 from bemani.data import Achievement, Attempt, Score, UserID
 from bemani.protocol import Node
 
@@ -168,7 +168,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
             e.add_child(Node.s32('eid', lobby.get_int('id')))
             e.add_child(Node.u16('mid', lobby.get_int('mid')))
             e.add_child(Node.u8('ng', lobby.get_int('ng')))
-            e.add_child(Node.s32('uid', profile.get_int('extid')))
+            e.add_child(Node.s32('uid', profile.extid))
             e.add_child(Node.s32('uattr', profile.get_int('uattr')))
             e.add_child(Node.string('pn', profile.get_str('name')))
             e.add_child(Node.s32('plyid', info.get_int('id')))
@@ -223,7 +223,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
                 e.add_child(Node.s32('eid', lobby.get_int('id')))
                 e.add_child(Node.u16('mid', lobby.get_int('mid')))
                 e.add_child(Node.u8('ng', lobby.get_int('ng')))
-                e.add_child(Node.s32('uid', profile.get_int('extid')))
+                e.add_child(Node.s32('uid', profile.extid))
                 e.add_child(Node.s32('uattr', profile.get_int('uattr')))
                 e.add_child(Node.string('pn', profile.get_str('name')))
                 e.add_child(Node.s32('plyid', info.get_int('id')))
@@ -295,7 +295,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
         all_profiles = self.data.local.user.get_all_profiles(self.game, self.version)
         all_attempts = self.data.local.music.get_all_attempts(self.game, self.version, timelimit=(Time.beginning_of_today() - Time.SECONDS_IN_DAY))
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             lids = [
                 machine.id for machine in self.data.local.machine.get_all_machines(machine.arcade)
@@ -349,7 +349,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
                 data = Node.void('data')
                 rootnode.add_child(data)
                 data.add_child(Node.s16('day_id', int((Time.now() - timeoffset) / Time.SECONDS_IN_DAY)))
-                data.add_child(Node.s32('user_id', profile.get_int('extid')))
+                data.add_child(Node.s32('user_id', profile.extid))
                 data.add_child(Node.s16('icon_id', profile.get_dict('config').get_int('icon_id')))
                 data.add_child(Node.s16('point', min(points_by_user.get(userid, 0), 32767)))
                 data.add_child(Node.s32('update_time', Time.now()))
@@ -421,7 +421,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         root.add_child(shop_score)
         shop_score.add_child(Node.s32('time', Time.now()))
 
-        profiles: Dict[UserID, ValidatedDict] = {}
+        profiles: Dict[UserID, Profile] = {}
         for songid in range(start_music_id, end_music_id + 1):
             allscores = self.data.local.music.get_all_scores(
                 self.game,
@@ -453,7 +453,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
                     data.add_child(Node.s16('music_id', songid))
                     data.add_child(Node.s8('note_grade', score.chart))
                     data.add_child(Node.s8('clear_type', self.__db_to_game_clear_type(score.data.get_int('clear_type'))))
-                    data.add_child(Node.s32('user_id', profile.get_int('extid')))
+                    data.add_child(Node.s32('user_id', profile.extid))
                     data.add_child(Node.s16('icon_id', profile.get_dict('config').get_int('icon_id')))
                     data.add_child(Node.s32('score', score.points))
                     data.add_child(Node.s32('time', score.timestamp))
@@ -499,13 +499,19 @@ class ReflecBeatGroovin(ReflecBeatBase):
         }
 
         # Handle anonymous comments by returning a default profile
-        uid_mapping[UserID(0)] = ValidatedDict({'name': 'ＰＬＡＹＥＲ', 'extid': 0})
+        uid_mapping[UserID(0)] = Profile(
+            self.game,
+            self.version,
+            "",
+            0,
+            {'name': 'ＰＬＡＹＥＲ'},
+        )
 
         def add_comments(name: str, selected: List[Tuple[UserID, Achievement]]) -> None:
             for (uid, ach) in selected:
                 cmnt = Node.void(name)
                 root.add_child(cmnt)
-                cmnt.add_child(Node.s32('uid', uid_mapping[uid].get_int('extid')))
+                cmnt.add_child(Node.s32('uid', uid_mapping[uid].extid))
                 cmnt.add_child(Node.string('name', uid_mapping[uid].get_str('name')))
                 cmnt.add_child(Node.s16('icon', ach.data.get_int('icon')))
                 cmnt.add_child(Node.s8('bln', ach.data.get_int('bln')))
@@ -909,10 +915,10 @@ class ReflecBeatGroovin(ReflecBeatBase):
         if profile is None:
             root.add_child(Node.s32('uid', 0))
         else:
-            root.add_child(Node.s32('uid', profile.get_int('extid')))
+            root.add_child(Node.s32('uid', profile.extid))
         return root
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
@@ -936,7 +942,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         # Account info
         account = Node.void('account')
         pdata.add_child(account)
-        account.add_child(Node.s32('usrid', profile.get_int('extid')))
+        account.add_child(Node.s32('usrid', profile.extid))
         account.add_child(Node.s32('tpc', statistics.get_int('total_plays', 0)))
         account.add_child(Node.s32('dpc', today_count))
         account.add_child(Node.s32('crd', 1))
@@ -995,7 +1001,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
             r = Node.void('r')
             rival.add_child(r)
             r.add_child(Node.s32('slot_id', slotid))
-            r.add_child(Node.s32('id', rprofile.get_int('extid')))
+            r.add_child(Node.s32('id', rprofile.extid))
             r.add_child(Node.string('name', rprofile.get_str('name')))
             r.add_child(Node.s32('icon', profile.get_dict('config').get_int('icon_id')))
             r.add_child(Node.s32('m_level', profile.get_int('mg')))
@@ -1211,7 +1217,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = copy.deepcopy(oldprofile)
 
@@ -1375,8 +1381,8 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
                 # I assume this is copypasta, but I want to be sure
                 extid = child.child_value('user_id')
-                if extid != newprofile.get_int('extid'):
-                    raise Exception(f'Unexpected user ID, got {extid} expecting {newprofile.get_int("extid")}')
+                if extid != newprofile.extid:
+                    raise Exception(f'Unexpected user ID, got {extid} expecting {newprofile.extid}')
 
                 episode_type = child.child_value('type')
                 episode_value0 = child.child_value('value0')

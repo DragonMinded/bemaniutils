@@ -2,8 +2,8 @@ from abc import ABC
 import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 
-from bemani.common import Model, ValidatedDict, GameConstants, Time
-from bemani.data import Data, UserID, RemoteUser
+from bemani.common import Model, ValidatedDict, Profile, GameConstants, Time
+from bemani.data import Config, Data, UserID, RemoteUser
 
 
 class ProfileCreationException(Exception):
@@ -41,7 +41,7 @@ class Factory:
         raise Exception('Override this in subclass!')
 
     @classmethod
-    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> None:
+    def run_scheduled_work(cls, data: Data, config: Config) -> None:
         """
         Subclasses of this class should use this function to run any scheduled
         work on classes which it is a factory for. This is usually used for
@@ -84,7 +84,7 @@ class Factory:
             yield (game.game, game.version, game.get_settings())
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
         """
         Given a modelstring and an optional parent model, return an instantiated game class that can handle a packet.
 
@@ -129,13 +129,13 @@ class Base(ABC):
     """
     name: str
 
-    def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
         self.data = data
         self.config = config
         self.model = model
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
         """
         Given a modelstring and an optional parent model, return an instantiated game class that can handle a packet.
 
@@ -179,7 +179,7 @@ class Base(ABC):
         cls.__registered_handlers.add(handler)
 
     @classmethod
-    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Config) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Run any out-of-band scheduled work that is applicable to this game.
         """
@@ -248,7 +248,7 @@ class Base(ABC):
         """
         return self.data.local.user.get_profile(self.game, self.version, userid) is not None
 
-    def get_profile(self, userid: UserID) -> Optional[ValidatedDict]:
+    def get_profile(self, userid: UserID) -> Optional[Profile]:
         """
         Return the profile for a user given this game/version on any connected server.
 
@@ -260,7 +260,7 @@ class Base(ABC):
         """
         return self.data.remote.user.get_profile(self.game, self.version, userid)
 
-    def get_any_profile(self, userid: UserID) -> ValidatedDict:
+    def get_any_profile(self, userid: UserID) -> Profile:
         """
         Return ANY profile for a user in a game series.
 
@@ -279,10 +279,15 @@ class Base(ABC):
         """
         profile = self.data.remote.user.get_any_profile(self.game, self.version, userid)
         if profile is None:
-            profile = ValidatedDict()
+            profile = Profile(
+                self.game,
+                self.version,
+                "",
+                0,
+            )
         return profile
 
-    def get_any_profiles(self, userids: List[UserID]) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_any_profiles(self, userids: List[UserID]) -> List[Tuple[UserID, Profile]]:
         """
         Does the identical thing to the above function, but takes a list of user IDs to
         fetch in bulk.
@@ -297,11 +302,11 @@ class Base(ABC):
         userids = list(set(userids))
         profiles = self.data.remote.user.get_any_profiles(self.game, self.version, userids)
         return [
-            (userid, profile if profile is not None else ValidatedDict())
+            (userid, profile if profile is not None else Profile(self.game, self.version, "", 0))
             for (userid, profile) in profiles
         ]
 
-    def put_profile(self, userid: UserID, profile: ValidatedDict) -> None:
+    def put_profile(self, userid: UserID, profile: Profile) -> None:
         """
         Save a new profile for this user given a game/version.
 
@@ -382,23 +387,23 @@ class Base(ABC):
         self.data.local.game.put_settings(self.game, userid, settings)
 
     def get_machine_id(self) -> int:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         return machine.id
 
     def update_machine_name(self, newname: Optional[str]) -> None:
         if newname is None:
             return
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         machine.name = newname
         self.data.local.machine.put_machine(machine)
 
     def update_machine_data(self, newdata: Dict[str, Any]) -> None:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         machine.data.update(newdata)
         self.data.local.machine.put_machine(machine)
 
     def get_game_config(self) -> ValidatedDict:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             settings = self.data.local.machine.get_settings(machine.arcade, self.game, self.version, 'game_config')
         else:

@@ -14,7 +14,7 @@ from bemani.backend.jubeat.common import (
     JubeatLoggerReportHandler,
 )
 from bemani.backend.jubeat.stubs import JubeatCopiousAppend
-from bemani.common import ValidatedDict, VersionConstants, Time
+from bemani.common import Profile, ValidatedDict, VersionConstants, Time
 from bemani.data import Data, Score, UserID
 from bemani.protocol import Node
 
@@ -162,7 +162,7 @@ class JubeatSaucer(
             root.set_attribute('status', str(Status.NO_PROFILE))
         return root
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('gametop')
         data = Node.void('data')
         root.add_child(data)
@@ -287,7 +287,7 @@ class JubeatSaucer(
 
             rival = Node.void('rival')
             rivallist.add_child(rival)
-            rival.add_child(Node.s32('jid', rprofile.get_int('extid')))
+            rival.add_child(Node.s32('jid', rprofile.extid))
             rival.add_child(Node.string('name', rprofile.get_str('name')))
 
             # Lazy way of keeping track of rivals, since we can only have 4
@@ -450,8 +450,8 @@ class JubeatSaucer(
 
         # Basic profile info
         player.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        player.add_child(Node.s32('jid', profile.get_int('extid')))
-        player.add_child(Node.string('refid', profile.get_str('refid')))
+        player.add_child(Node.s32('jid', profile.extid))
+        player.add_child(Node.string('refid', profile.refid))
 
         # Miscelaneous history stuff
         data.add_child(Node.u8('termver', 16))
@@ -517,7 +517,7 @@ class JubeatSaucer(
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
         data = request.child('data')
 
@@ -657,14 +657,14 @@ class JubeatSaucer(
 
         return newprofile
 
-    def format_scores(self, userid: UserID, profile: ValidatedDict, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
 
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
         player = Node.void('player')
         datanode.add_child(player)
-        player.add_child(Node.s32('jid', profile.get_int('extid')))
+        player.add_child(Node.s32('jid', profile.extid))
         playdata = Node.void('playdata')
         player.add_child(playdata)
         playdata.set_attribute('count', str(len(scores)))

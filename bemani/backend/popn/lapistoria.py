@@ -6,7 +6,7 @@ from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.sunnypark import PopnMusicSunnyPark
 
 from bemani.backend.base import Status
-from bemani.common import ValidatedDict, VersionConstants, Time, ID
+from bemani.common import Profile, VersionConstants, Time, ID
 from bemani.data import UserID, Link
 from bemani.protocol import Node
 
@@ -168,7 +168,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             if userid is None:
                 return root
 
-            oldprofile = self.get_profile(userid) or ValidatedDict()
+            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             newprofile = self.unformat_profile(userid, request, oldprofile)
 
             if newprofile is not None:
@@ -193,7 +193,7 @@ class PopnMusicLapistoria(PopnMusicBase):
 
             # Grab the links that we care about.
             links = self.data.local.user.get_links(self.game, self.version, userid)
-            profiles: Dict[UserID, ValidatedDict] = {}
+            profiles: Dict[UserID, Profile] = {}
             rivals: List[Link] = []
             for link in links:
                 if link.type != 'rival':
@@ -217,7 +217,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             friend = Node.void('friend')
             root.add_child(friend)
             friend.add_child(Node.s16('no', no))
-            friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.get_int('extid'))))
+            friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.extid)))
             friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
             friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
             # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
@@ -319,7 +319,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         # Invalid method
         return None
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('player22')
 
         # Result
@@ -329,7 +329,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         account = Node.void('account')
         root.add_child(account)
         account.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        account.add_child(Node.string('g_pm_id', ID.format_extid(profile.get_int('extid'))))
+        account.add_child(Node.string('g_pm_id', ID.format_extid(profile.extid)))
         account.add_child(Node.s8('tutorial', profile.get_int('tutorial', -1)))
         account.add_child(Node.s16('read_news', profile.get_int('read_news', 0)))
         account.add_child(Node.s8('staff', 0))
@@ -548,7 +548,7 @@ class PopnMusicLapistoria(PopnMusicBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         account = request.child('account')
@@ -687,7 +687,7 @@ class PopnMusicLapistoria(PopnMusicBase):
 
         return newprofile
 
-    def format_conversion(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         # Circular import, ugh
         from bemani.backend.popn.eclale import PopnMusicEclale
 

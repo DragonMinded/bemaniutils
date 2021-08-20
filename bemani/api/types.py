@@ -1,13 +1,13 @@
-from typing import Any, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
     from flask.ctx import _AppCtxGlobals
 
-    from bemani.data import Data
+    from bemani.data import Config, Data
 
     class RequestGlobals(_AppCtxGlobals):
-        config: Dict[str, Any]
+        config: Config
         data: Data
         authorized: bool
 

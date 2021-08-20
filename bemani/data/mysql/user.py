@@ -1,4 +1,3 @@
-import copy
 import random
 from sqlalchemy import Table, Column, UniqueConstraint  # type: ignore
 from sqlalchemy.types import String, Integer, JSON  # type: ignore
@@ -7,7 +6,7 @@ from sqlalchemy.exc import IntegrityError  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 from passlib.hash import pbkdf2_sha512  # type: ignore
 
-from bemani.common import ValidatedDict, GameConstants, Time
+from bemani.common import ValidatedDict, Profile, GameConstants, Time
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.remoteuser import RemoteUser
 from bemani.data.types import User, Achievement, Link, UserID, ArcadeID
@@ -476,7 +475,7 @@ class UserData(BaseData):
         sql = "UPDATE user SET password = :hash WHERE id = :userid"
         self.execute(sql, {'hash': passhash, 'userid': userid})
 
-    def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         """
         Given a game/version/userid, look up the associated profile.
 
@@ -500,24 +499,24 @@ class UserData(BaseData):
             return None
 
         result = cursor.fetchone()
-        profile = {
-            'refid': result['refid'],
-            'extid': result['extid'],
-            'game': game,
-            'version': version,
-        }
+        profile = Profile(
+            game,
+            version,
+            result['refid'],
+            result['extid'],
+        )
 
         sql = "SELECT data FROM profile WHERE refid = :refid"
-        cursor = self.execute(sql, {'refid': profile['refid']})
+        cursor = self.execute(sql, {'refid': profile.refid})
         if cursor.rowcount != 1:
             # Profile doesn't exist
             return None
 
         result = cursor.fetchone()
         profile.update(self.deserialize(result['data']))
-        return ValidatedDict(profile)
+        return profile
 
-    def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         """
         Given a game/version/userid, look up the associated profile. If the profile for that version
         doesn't exist, try another profile, failing only if there is no profile for any version of
@@ -542,7 +541,7 @@ class UserData(BaseData):
         else:
             return None
 
-    def get_any_profiles(self, game: GameConstants, version: int, userids: List[UserID]) -> List[Tuple[UserID, Optional[ValidatedDict]]]:
+    def get_any_profiles(self, game: GameConstants, version: int, userids: List[UserID]) -> List[Tuple[UserID, Optional[Profile]]]:
         """
         Does the exact same thing as get_any_profile but across a list of users instead of one.
         Provided purely as a convenience function.
@@ -578,7 +577,7 @@ class UserData(BaseData):
             profiles.append((GameConstants(result['game']), result['version']))
         return profiles
 
-    def get_all_profiles(self, game: GameConstants, version: int) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_all_profiles(self, game: GameConstants, version: int) -> List[Tuple[UserID, Profile]]:
         """
         Given a game/version, look up all user profiles for that game.
 
@@ -599,17 +598,17 @@ class UserData(BaseData):
 
         profiles = []
         for result in cursor.fetchall():
-            profile = {
-                'refid': result['refid'],
-                'extid': result['extid'],
-                'game': game,
-                'version': version,
-            }
+            profile = Profile(
+                game,
+                version,
+                result['refid'],
+                result['extid'],
+            )
             profile.update(self.deserialize(result['data']))
             profiles.append(
                 (
                     UserID(result['userid']),
-                    ValidatedDict(profile),
+                    profile,
                 )
             )
 
@@ -668,7 +667,7 @@ class UserData(BaseData):
 
         return achievements
 
-    def put_profile(self, game: GameConstants, version: int, userid: UserID, profile: Dict[str, Any]) -> None:
+    def put_profile(self, game: GameConstants, version: int, userid: UserID, profile: Profile) -> None:
         """
         Given a game/version/userid, save an associated profile.
 
@@ -679,15 +678,6 @@ class UserData(BaseData):
             profile - A dictionary that a game class will want to retrieve later.
         """
         refid = self.get_refid(game, version, userid)
-        profile = copy.deepcopy(profile)
-        if 'refid' in profile:
-            del profile['refid']
-        if 'extid' in profile:
-            del profile['extid']
-        if 'game' in profile:
-            del profile['game']
-        if 'version' in profile:
-            del profile['version']
 
         # Add profile json to game profile
         sql = (
@@ -696,6 +686,13 @@ class UserData(BaseData):
             "ON DUPLICATE KEY UPDATE data=VALUES(data)"
         )
         self.execute(sql, {'refid': refid, 'json': self.serialize(profile)})
+
+        # Update profile details just in case this was a new profile that was just saved.
+        profile.game = game
+        profile.version = version
+        profile.refid = refid
+        if profile.extid == 0:
+            profile.extid = self.get_extid(game, version, userid)
 
     def get_achievement(self, game: GameConstants, version: int, userid: UserID, achievementid: int, achievementtype: str) -> Optional[ValidatedDict]:
         """

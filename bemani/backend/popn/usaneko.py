@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.eclale import PopnMusicEclale
-from bemani.common import Time, ID, ValidatedDict, VersionConstants, Parallel
+from bemani.common import Time, ID, Profile, ValidatedDict, VersionConstants, Parallel
 from bemani.data import Data, UserID, Achievement, Link
 from bemani.protocol import Node
 
@@ -205,7 +205,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 )
 
         # Cache of userID to profile
-        userid_to_profile: Dict[UserID, ValidatedDict] = {uid: profile for (uid, profile) in profiles}
+        userid_to_profile: Dict[UserID, Profile] = {uid: profile for (uid, profile) in profiles}
 
         # Course ranking info for the last 256 courses
         for course_info in course_infos[:256]:
@@ -224,7 +224,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 chart_rankings = course_rankings.get(name, [])
 
                 for pos, (uid, ach) in enumerate(chart_rankings[:20]):
-                    profile = userid_to_profile.get(uid, ValidatedDict())
+                    profile = userid_to_profile.get(uid, Profile(self.game, self.version, "", 0))
 
                     subnode = Node.void(name)
                     ranking_info.add_child(subnode)
@@ -395,7 +395,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             userid = None
 
         if userid is not None:
-            oldprofile = self.get_profile(userid) or ValidatedDict()
+            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             newprofile = self.unformat_profile(userid, request, oldprofile)
 
             if newprofile is not None:
@@ -453,7 +453,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             # Handle fetching all scores
             uids_and_courses, profile = Parallel.execute([
                 lambda: self.data.local.user.get_all_achievements(self.game, self.version),
-                lambda: self.get_profile(userid) or ValidatedDict()
+                lambda: self.get_profile(userid) or Profile(self.game, self.version, "", 0)
             ])
 
             # Grab a sorted list of all scores for this course and chart
@@ -513,7 +513,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
         # Grab the links that we care about.
         links = self.data.local.user.get_links(self.game, self.version, userid)
-        profiles: Dict[UserID, ValidatedDict] = {}
+        profiles: Dict[UserID, Profile] = {}
         rivals: List[Link] = []
         for link in links:
             if link.type != 'rival':
@@ -537,7 +537,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         friend = Node.void('friend')
         root.add_child(friend)
         friend.add_child(Node.s16('no', no))
-        friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.get_int('extid'))))  # UsaNeko formats on its own
+        friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.extid)))  # UsaNeko formats on its own
         friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
         friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
         # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
@@ -714,7 +714,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
             if lumina >= price:
                 # Update player lumina balance
-                profile = self.get_profile(userid) or ValidatedDict()
+                profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
                 profile.replace_int('player_point', lumina - price)
                 self.put_profile(userid, profile)
 
@@ -733,7 +733,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
         return Node.void('player24')
 
-    def format_conversion(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('player24')
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
         root.add_child(Node.s16('chara', profile.get_int('chara', -1)))
@@ -785,7 +785,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         crc = abs(binascii.crc32(data.encode('ascii'))) % 10000
         return f'{data}{crc:04d}'
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('player24')
 
         # Mark this as a current profile
@@ -794,7 +794,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         # Basic account info
         account = Node.void('account')
         root.add_child(account)
-        account.add_child(Node.string('g_pm_id', self.format_extid(profile.get_int('extid'))))
+        account.add_child(Node.string('g_pm_id', self.format_extid(profile.extid)))
         account.add_child(Node.string('name', profile.get_str('name', 'なし')))
         account.add_child(Node.s16('tutorial', profile.get_int('tutorial')))
         account.add_child(Node.s16('area_id', profile.get_int('area_id')))
@@ -1124,7 +1124,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         # Set that we've seen this profile

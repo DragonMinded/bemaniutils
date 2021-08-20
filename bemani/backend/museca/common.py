@@ -56,7 +56,7 @@ class MusecaGameHiscoreHandler(MusecaBase):
             info.add_child(Node.u32('id', score.id))
             info.add_child(Node.u32('type', score.chart))
             info.add_child(Node.string('name', profile.get_str('name')))
-            info.add_child(Node.string('seq', ID.format_extid(profile.get_int('extid'))))
+            info.add_child(Node.string('seq', ID.format_extid(profile.extid)))
             info.add_child(Node.u32('score', score.points))
 
             # Add to global scores
@@ -89,7 +89,7 @@ class MusecaGameHiscoreHandler(MusecaBase):
             info.add_child(Node.u32('id', score.id))
             info.add_child(Node.u32('type', score.chart))
             info.add_child(Node.string('name', profile.get_str('name')))
-            info.add_child(Node.string('seq', ID.format_extid(profile.get_int('extid'))))
+            info.add_child(Node.string('seq', ID.format_extid(profile.extid)))
             info.add_child(Node.u32('score', score.points))
 
             # Add to global scores

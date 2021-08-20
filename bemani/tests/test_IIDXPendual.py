@@ -27,14 +27,14 @@ class TestIIDXPendual(unittest.TestCase):
         )
 
     def test_average_no_scores(self) -> None:
-        base = IIDXPendual(Mock(), {}, Mock())
+        base = IIDXPendual(Mock(), Mock(), Mock())
         self.assertEqual(
             base.delta_score([], 3),
             (None, None),
         )
 
     def test_average_identity(self) -> None:
-        base = IIDXPendual(Mock(), {}, Mock())
+        base = IIDXPendual(Mock(), Mock(), Mock())
         self.assertEqual(
             base.delta_score([
                 self.__make_score([10, 20, 30]),
@@ -43,7 +43,7 @@ class TestIIDXPendual(unittest.TestCase):
         )
 
     def test_average_basic(self) -> None:
-        base = IIDXPendual(Mock(), {}, Mock())
+        base = IIDXPendual(Mock(), Mock(), Mock())
         self.assertEqual(
             base.delta_score([
                 self.__make_score([10, 20, 30]),
@@ -53,7 +53,7 @@ class TestIIDXPendual(unittest.TestCase):
         )
 
     def test_average_complex(self) -> None:
-        base = IIDXPendual(Mock(), {}, Mock())
+        base = IIDXPendual(Mock(), Mock(), Mock())
         self.assertEqual(
             base.delta_score([
                 self.__make_score([10, 20, 30]),
@@ -64,7 +64,7 @@ class TestIIDXPendual(unittest.TestCase):
         )
 
     def test_average_always_zero(self) -> None:
-        base = IIDXPendual(Mock(), {}, Mock())
+        base = IIDXPendual(Mock(), Mock(), Mock())
         ex_score, ghost = base.delta_score([
             self.__make_score([random.randint(0, 10) for _ in range(64)]),
             self.__make_score([random.randint(0, 10) for _ in range(64)]),

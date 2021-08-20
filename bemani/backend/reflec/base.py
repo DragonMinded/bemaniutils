@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import ValidatedDict, GameConstants, DBConstants, Time
+from bemani.common import Profile, ValidatedDict, GameConstants, DBConstants, Time
 from bemani.data import Machine, ScoreSaveException, UserID
 from bemani.protocol import Node
 
@@ -51,14 +51,14 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             'lobby2',
         ]
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
         return Node.void('pc')
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -86,7 +86,7 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
         return self.format_profile(userid, profile)
 
-    def put_profile_by_refid(self, refid: Optional[str], request: Node) -> Optional[ValidatedDict]:
+    def put_profile_by_refid(self, refid: Optional[str], request: Node) -> Optional[Profile]:
         """
         Given a RefID and a request node, unformat the profile and save it.
         """
@@ -97,8 +97,8 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         oldprofile = self.get_profile(userid)
         if oldprofile is None:
             # Create one so we can get refid/extid
-            self.put_profile(userid, ValidatedDict())
-            oldprofile = self.get_profile(userid)
+            oldprofile = Profile(self.game, self.version, refid, 0)
+            self.put_profile(userid, oldprofile)
         newprofile = self.unformat_profile(userid, request, oldprofile)
         if newprofile is not None:
             self.put_profile(userid, newprofile)

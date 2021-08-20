@@ -133,6 +133,8 @@ class LobbyData(BaseData):
         data = copy.deepcopy(data)
         if 'id' in data:
             del data['id']
+        if 'time' in data:
+            del data['time']
 
         # Add json to player session
         sql = (
@@ -244,6 +246,7 @@ class LobbyData(BaseData):
         for result in cursor.fetchall():
             data = ValidatedDict(self.deserialize(result['data']))
             data['id'] = result['id']
+            data['time'] = result['time']
             ret.append((UserID(result['userid']), data))
         return ret
 
@@ -260,6 +263,8 @@ class LobbyData(BaseData):
         data = copy.deepcopy(data)
         if 'id' in data:
             del data['id']
+        if 'time' in data:
+            del data['time']
 
         # Add json to lobby
         sql = (

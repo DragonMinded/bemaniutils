@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any
+from typing import Optional
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.popn.stubs import (
@@ -30,7 +30,7 @@ from bemani.backend.popn.usaneko import PopnMusicUsaNeko
 from bemani.backend.popn.peace import PopnMusicPeace
 from bemani.backend.popn.kriddles import PopnMusicKRiddles
 from bemani.common import Model, VersionConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class PopnMusicFactory(Factory):
@@ -70,7 +70,7 @@ class PopnMusicFactory(Factory):
             Base.register(gamecode, PopnMusicFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
 
         def version_from_date(date: int) -> Optional[int]:
             if date <= 2014061900:

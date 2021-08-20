@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
 from flask_caching import Cache  # type: ignore
 
-from bemani.common import GameConstants, ValidatedDict, ID
+from bemani.common import GameConstants, Profile, ValidatedDict, ID
 from bemani.data import Data, Score, Attempt, Link, Song, UserID, RemoteUser
 
 
@@ -67,17 +67,17 @@ class FrontendBase(ABC):
             'points': attempt.points,
         }
 
-    def format_rival(self, link: Link, profile: ValidatedDict) -> Dict[str, Any]:
+    def format_rival(self, link: Link, profile: Profile) -> Dict[str, Any]:
         return {
             'type': link.type,
             'userid': str(link.other_userid),
             'remote': RemoteUser.is_remote(link.other_userid),
         }
 
-    def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         return {
             'name': profile.get_str('name'),
-            'extid': ID.format_extid(profile.get_int('extid')),
+            'extid': ID.format_extid(profile.extid),
             'first_play_time': playstats.get_int('first_play_timestamp'),
             'last_play_time': playstats.get_int('last_play_timestamp'),
         }

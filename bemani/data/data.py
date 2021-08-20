@@ -1,5 +1,4 @@
 import os
-from typing import Dict, Any
 
 import alembic.config  # type: ignore
 from alembic.migration import MigrationContext  # type: ignore
@@ -14,6 +13,7 @@ from sqlalchemy.exc import ProgrammingError  # type: ignore
 from bemani.data.api.user import GlobalUserData
 from bemani.data.api.game import GlobalGameData
 from bemani.data.api.music import GlobalMusicData
+from bemani.data.config import Config
 from bemani.data.mysql.base import metadata
 from bemani.data.mysql.user import UserData
 from bemani.data.mysql.music import MusicData
@@ -86,7 +86,7 @@ class Data:
     and storing data.
     """
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: Config) -> None:
         """
         Initializes the data object.
 
@@ -95,7 +95,7 @@ class Data:
                      to initialize an internal DB connection.
         """
         session_factory = sessionmaker(
-            bind=config['database']['engine'],
+            bind=config.database.engine,
             autoflush=True,
             autocommit=True,
         )
@@ -122,11 +122,11 @@ class Data:
         self.triggers = Triggers(config)
 
     @classmethod
-    def sqlalchemy_url(cls, config: Dict[str, Any]) -> str:
-        return f"mysql://{config['database']['user']}:{config['database']['password']}@{config['database']['address']}/{config['database']['database']}?charset=utf8mb4"
+    def sqlalchemy_url(cls, config: Config) -> str:
+        return f"mysql://{config.database.user}:{config.database.password}@{config.database.address}/{config.database.database}?charset=utf8mb4"
 
     @classmethod
-    def create_engine(cls, config: Dict[str, Any]) -> Engine:
+    def create_engine(cls, config: Config) -> Engine:
         return create_engine(
             Data.sqlalchemy_url(config),
             pool_recycle=3600,
@@ -164,7 +164,7 @@ class Data:
             raise DBCreateException('Tables already created, use upgrade to upgrade schema!')
 
         metadata.create_all(
-            self.__config['database']['engine'].connect(),
+            self.__config.database.engine.connect(),
             checkfirst=True,
         )
 
@@ -182,7 +182,7 @@ class Data:
             raise DBCreateException('Tables have not been created yet, use create to create them!')
 
         # Verify that there are actual changes, and refuse to create empty migration scripts
-        context = MigrationContext.configure(self.__config['database']['engine'].connect(), opts={'compare_type': True})
+        context = MigrationContext.configure(self.__config.database.engine.connect(), opts={'compare_type': True})
         diff = compare_metadata(context, metadata)
         if (not allow_empty) and (len(diff) == 0):
             raise DBCreateException('There is nothing different between code and the DB, refusing to create migration!')

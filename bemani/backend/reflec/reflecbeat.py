@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple
 
 from bemani.backend.reflec.base import ReflecBeatBase
 
-from bemani.common import ValidatedDict, VersionConstants, ID, Time
+from bemani.common import Profile, VersionConstants, ID, Time
 from bemani.data import UserID
 from bemani.protocol import Node
 
@@ -178,7 +178,7 @@ class ReflecBeat(ReflecBeatBase):
             e.add_child(Node.s32('eid', lobby.get_int('id')))
             e.add_child(Node.u16('mid', lobby.get_int('mid')))
             e.add_child(Node.u8('ng', lobby.get_int('ng')))
-            e.add_child(Node.s32('uid', profile.get_int('extid')))
+            e.add_child(Node.s32('uid', profile.extid))
             e.add_child(Node.string('pn', profile.get_str('name')))
             e.add_child(Node.s32('exp', profile.get_int('exp')))
             e.add_child(Node.u8('mg', profile.get_int('mg')))
@@ -221,7 +221,7 @@ class ReflecBeat(ReflecBeatBase):
                 e.add_child(Node.s32('eid', lobby.get_int('id')))
                 e.add_child(Node.u16('mid', lobby.get_int('mid')))
                 e.add_child(Node.u8('ng', lobby.get_int('ng')))
-                e.add_child(Node.s32('uid', profile.get_int('extid')))
+                e.add_child(Node.s32('uid', profile.extid))
                 e.add_child(Node.string('pn', profile.get_str('name')))
                 e.add_child(Node.s32('exp', profile.get_int('exp')))
                 e.add_child(Node.u8('mg', profile.get_int('mg')))
@@ -298,11 +298,11 @@ class ReflecBeat(ReflecBeatBase):
         if profile is None:
             root.add_child(Node.s32('uid', 0))
         else:
-            root.add_child(Node.s32('uid', profile.get_int('extid')))
+            root.add_child(Node.s32('uid', profile.extid))
         root.add_child(Node.s32('time', Time.now()))
         return root
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
@@ -313,7 +313,7 @@ class ReflecBeat(ReflecBeatBase):
 
         base = Node.void('base')
         pdata.add_child(base)
-        base.add_child(Node.s32('uid', profile.get_int('extid')))
+        base.add_child(Node.s32('uid', profile.extid))
         base.add_child(Node.string('name', profile.get_str('name')))
         base.add_child(Node.s16('lv', profile.get_int('lvl')))
         base.add_child(Node.s32('exp', profile.get_int('exp')))
@@ -408,7 +408,7 @@ class ReflecBeat(ReflecBeatBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = copy.deepcopy(oldprofile)
 

@@ -8,7 +8,7 @@ from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.course import IIDXCourse
 from bemani.backend.iidx.copula import IIDXCopula
 
-from bemani.common import ValidatedDict, VersionConstants, BroadcastConstants, Time, ID, intish
+from bemani.common import Profile, ValidatedDict, VersionConstants, BroadcastConstants, Time, ID, intish
 from bemani.data import Data, UserID
 from bemani.protocol import Node
 
@@ -288,7 +288,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             raise Exception('Invalid cltype!')
 
     def handle_IIDX24shop_getname_request(self, request: Node) -> Node:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine is not None:
             machine_name = machine.name
             close = machine.data.get_bool('close')
@@ -333,7 +333,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
     def handle_IIDX24shop_getconvention_request(self, request: Node) -> Node:
         root = Node.void('IIDX24shop')
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
         else:
@@ -350,7 +350,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         return root
 
     def handle_IIDX24shop_setconvention_request(self, request: Node) -> Node:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             course = ValidatedDict()
             course.replace_int('music_0', request.child_value('music_0'))
@@ -376,7 +376,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             # Chart type 6 is presumably beginner mode, but it crashes the game
             return root
 
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
             course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
         else:
@@ -404,7 +404,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         ]
 
         totalscores: Dict[UserID, int] = {}
-        profiles: Dict[UserID, ValidatedDict] = {}
+        profiles: Dict[UserID, Profile] = {}
         for songid in songids:
             scores = self.data.local.music.get_all_scores(
                 self.game,
@@ -418,7 +418,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                     totalscores[score[0]] = 0
                     profile = self.get_any_profile(score[0])
                     if profile is None:
-                        profile = ValidatedDict()
+                        profile = Profile(self.game, self.version, "", 0)
                     profiles[score[0]] = profile
 
                 totalscores[score[0]] += score[1].points
@@ -675,7 +675,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         if self.machine_joined_arcade():
             game_config = self.get_game_config()
             global_scores = game_config.get_bool('global_shop_ranking')
-            machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         else:
             # If we aren't in an arcade, we can only show global scores
             global_scores = True
@@ -799,7 +799,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
                 data = Node.void('data')
                 ranklist.add_child(data)
-                data.set_attribute('iidx_id', str(profile.get_int('extid')))
+                data.set_attribute('iidx_id', str(profile.extid))
                 data.set_attribute('name', profile.get_str('name'))
 
                 machine_name = ''
@@ -1284,7 +1284,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         if userid is not None:
             profile = self.get_profile(userid)
             if profile is None:
-                profile = ValidatedDict()
+                profile = Profile(self.game, self.version, "", extid)
             profile.replace_int('shop_location', location)
             self.put_profile(userid, profile)
 
@@ -1321,7 +1321,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         root = Node.void('IIDX24pc')
         root.set_attribute('name', profile.get_str('name'))
-        root.set_attribute('idstr', ID.format_extid(profile.get_int('extid')))
+        root.set_attribute('idstr', ID.format_extid(profile.extid))
         root.set_attribute('pid', str(profile.get_int('pid')))
         return root
 
@@ -1333,7 +1333,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         root = Node.void('IIDX24pc')
         if newprofile is not None:
-            root.set_attribute('id', str(newprofile.get_int('extid')))
+            root.set_attribute('id', str(newprofile.extid))
         return root
 
     def handle_IIDX24pc_reg_request(self, request: Node) -> Node:
@@ -1344,8 +1344,8 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         root = Node.void('IIDX24pc')
         if profile is not None:
-            root.set_attribute('id', str(profile.get_int('extid')))
-            root.set_attribute('id_str', ID.format_extid(profile.get_int('extid')))
+            root.set_attribute('id', str(profile.extid))
+            root.set_attribute('id_str', ID.format_extid(profile.extid))
         return root
 
     def handle_IIDX24pc_get_request(self, request: Node) -> Node:
@@ -1441,7 +1441,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         return Node.void('IIDX24pc')
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('IIDX24pc')
 
         # Look up play stats we bridge to every mix
@@ -1449,13 +1449,13 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         # Look up judge window adjustments
         judge_dict = profile.get_dict('machine_judge_adjust')
-        machine_judge = judge_dict.get_dict(self.config['machine']['pcbid'])
+        machine_judge = judge_dict.get_dict(self.config.machine.pcbid)
 
         # Profile data
         pcdata = Node.void('pcdata')
         root.add_child(pcdata)
-        pcdata.set_attribute('id', str(profile.get_int('extid')))
-        pcdata.set_attribute('idstr', ID.format_extid(profile.get_int('extid')))
+        pcdata.set_attribute('id', str(profile.extid))
+        pcdata.set_attribute('idstr', ID.format_extid(profile.extid))
         pcdata.set_attribute('name', profile.get_str('name'))
         pcdata.set_attribute('pid', str(profile.get_int('pid')))
         pcdata.set_attribute('spnum', str(play_stats.get_int('single_plays')))
@@ -1652,8 +1652,8 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             rival = Node.void('rival')
             rlist.add_child(rival)
             rival.set_attribute('spdp', rival_type)
-            rival.set_attribute('id', str(other_profile.get_int('extid')))
-            rival.set_attribute('id_str', ID.format_extid(other_profile.get_int('extid')))
+            rival.set_attribute('id', str(other_profile.extid))
+            rival.set_attribute('id_str', ID.format_extid(other_profile.extid))
             rival.set_attribute('djname', other_profile.get_str('name'))
             rival.set_attribute('pid', str(other_profile.get_int('pid')))
             rival.set_attribute('sg', str(self.db_to_game_rank(other_profile.get_int(self.DAN_RANKING_SINGLE, -1), self.GAME_CLTYPE_SINGLE)))
@@ -1880,7 +1880,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         root.add_child(Node.void('bind_eaappli'))
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
         play_stats = self.get_play_statistics(userid)
 
@@ -1936,10 +1936,10 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         # Update judge window adjustments per-machine
         judge_dict = newprofile.get_dict('machine_judge_adjust')
-        machine_judge = judge_dict.get_dict(self.config['machine']['pcbid'])
+        machine_judge = judge_dict.get_dict(self.config.machine.pcbid)
         machine_judge.replace_int('single', int(request.attribute('s_judgeAdj')))
         machine_judge.replace_int('double', int(request.attribute('d_judgeAdj')))
-        judge_dict.replace_dict(self.config['machine']['pcbid'], machine_judge)
+        judge_dict.replace_dict(self.config.machine.pcbid, machine_judge)
         newprofile.replace_dict('machine_judge_adjust', judge_dict)
 
         # Secret flags saving

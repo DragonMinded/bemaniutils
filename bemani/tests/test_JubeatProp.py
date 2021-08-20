@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import Mock
 
 from bemani.backend.jubeat.prop import JubeatProp
-from bemani.common import ValidatedDict
+from bemani.common import Profile
 from bemani.data.types import Achievement, UserID
 
 
@@ -171,7 +171,7 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_scores(
                 data,
                 999,
-                [(UserID(1337), ValidatedDict())],
+                [(UserID(1337), Profile(JubeatProp.game, JubeatProp.version, "", 0))],
             ),
             (
                 [(1337, 1368)],
@@ -193,7 +193,7 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_scores(
                 data,
                 999,
-                [(UserID(1337), ValidatedDict())],
+                [(UserID(1337), Profile(JubeatProp.game, JubeatProp.version, "", 0))],
             ),
             (
                 [],
@@ -324,10 +324,16 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user = Mock()
 
         # Test demoting a user at the bottom does nothing.
-        data.local.user.get_profile = Mock(return_value=ValidatedDict({
-            'league_class': 1,
-            'league_subclass': 5,
-        }))
+        data.local.user.get_profile = Mock(return_value=Profile(
+            JubeatProp.game,
+            JubeatProp.version,
+            "",
+            0,
+            {
+                'league_class': 1,
+                'league_subclass': 5,
+            },
+        ))
         JubeatProp._modify_profile(
             data,
             UserID(1337),
@@ -336,10 +342,16 @@ class TestJubeatProp(unittest.TestCase):
         self.assertFalse(data.local.user.put_profile.called)
 
         # Test promoting a user at the top does nothing.
-        data.local.user.get_profile = Mock(return_value=ValidatedDict({
-            'league_class': 4,
-            'league_subclass': 1,
-        }))
+        data.local.user.get_profile = Mock(return_value=Profile(
+            JubeatProp.game,
+            JubeatProp.version,
+            "",
+            0,
+            {
+                'league_class': 4,
+                'league_subclass': 1,
+            },
+        ))
         JubeatProp._modify_profile(
             data,
             UserID(1337),
@@ -348,11 +360,17 @@ class TestJubeatProp(unittest.TestCase):
         self.assertFalse(data.local.user.put_profile.called)
 
         # Test regular promotion updates profile properly
-        data.local.user.get_profile = Mock(return_value=ValidatedDict({
-            'league_class': 1,
-            'league_subclass': 5,
-            'league_is_checked': True,
-        }))
+        data.local.user.get_profile = Mock(return_value=Profile(
+            JubeatProp.game,
+            JubeatProp.version,
+            "",
+            0,
+            {
+                'league_class': 1,
+                'league_subclass': 5,
+                'league_is_checked': True,
+            },
+        ))
         JubeatProp._modify_profile(
             data,
             UserID(1337),
@@ -375,11 +393,17 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user.put_profile.reset_mock()
 
         # Test regular demote updates profile properly
-        data.local.user.get_profile = Mock(return_value=ValidatedDict({
-            'league_class': 1,
-            'league_subclass': 3,
-            'league_is_checked': True,
-        }))
+        data.local.user.get_profile = Mock(return_value=Profile(
+            JubeatProp.game,
+            JubeatProp.version,
+            "",
+            0,
+            {
+                'league_class': 1,
+                'league_subclass': 3,
+                'league_is_checked': True,
+            },
+        ))
         JubeatProp._modify_profile(
             data,
             UserID(1337),
@@ -402,15 +426,21 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user.put_profile.reset_mock()
 
         # Test demotion after not checking doesn't update old values
-        data.local.user.get_profile = Mock(return_value=ValidatedDict({
-            'league_class': 1,
-            'league_subclass': 4,
-            'league_is_checked': False,
-            'last': {
+        data.local.user.get_profile = Mock(return_value=Profile(
+            JubeatProp.game,
+            JubeatProp.version,
+            "",
+            0,
+            {
                 'league_class': 1,
-                'league_subclass': 3,
+                'league_subclass': 4,
+                'league_is_checked': False,
+                'last': {
+                    'league_class': 1,
+                    'league_subclass': 3,
+                },
             },
-        }))
+        ))
         JubeatProp._modify_profile(
             data,
             UserID(1337),

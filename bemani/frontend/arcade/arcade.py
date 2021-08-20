@@ -153,7 +153,7 @@ def viewarcade(arcadeid: int) -> Response:
             'balances': {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
             'users': {user.id: user.username for user in g.data.local.user.get_all_users()},
             'events': [format_event(event) for event in g.data.local.network.get_events(arcadeid=arcadeid, event='paseli_transaction')],
-            'enforcing': g.config['server']['enforce_pcbid'],
+            'enforcing': g.config.server.enforce_pcbid,
         },
         {
             'refresh': url_for('arcade_pages.listarcade', arcadeid=arcadeid),

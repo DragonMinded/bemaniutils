@@ -1,10 +1,8 @@
-from typing import Dict, Any
-
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class BishiBashiCache:
 
     @classmethod
-    def preload(cls, data: Data, config: Dict[str, Any]) -> None:
+    def preload(cls, data: Data, config: Config) -> None:
         pass

@@ -8,7 +8,7 @@ from flask_caching import Cache  # type: ignore
 from functools import wraps
 
 from bemani.common import AESCipher, GameConstants
-from bemani.data import Data
+from bemani.data import Config, Data
 from bemani.frontend.types import g
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
@@ -18,7 +18,7 @@ app = Flask(
     template_folder=templates_location,
     static_folder=static_location,
 )
-config: Dict[str, Any] = {}
+config = Config()
 
 
 @app.before_request
@@ -26,7 +26,7 @@ def before_request() -> None:
     global config
     g.cache = Cache(app, config={
         'CACHE_TYPE': 'filesystem',
-        'CACHE_DIR': config['cache_dir'],
+        'CACHE_DIR': config.cache_dir,
     })
     if request.endpoint in ['jsx', 'static']:
         # This is just serving cached compiled frontends, skip loading from DB
@@ -37,7 +37,7 @@ def before_request() -> None:
     g.sessionID = None
     g.userID = None
     try:
-        aes = AESCipher(config['secret_key'])
+        aes = AESCipher(config.secret_key)
         sessionID = aes.decrypt(request.cookies.get('SessionID'))
     except Exception:
         sessionID = None
@@ -254,14 +254,24 @@ def navigation() -> Dict[str, Any]:
         return False
 
     # Look up the logged in user ID.
-    if g.userID is not None:
-        user = g.data.local.user.get_user(g.userID)
-        profiles = g.data.local.user.get_games_played(g.userID)
-    else:
+    try:
+        if g.userID is not None:
+            user = g.data.local.user.get_user(g.userID)
+            profiles = g.data.local.user.get_games_played(g.userID)
+        else:
+            return {
+                'components': components,
+                'any': jinja2_any,
+            }
+    except AttributeError:
+        # If we are trying to render a 500 error and we couldn't even run the
+        # before request, we won't have a userID object on g. So, just give
+        # up and refuse to render any navigation.
         return {
             'components': components,
             'any': jinja2_any,
         }
+
     pages: List[Dict[str, Any]] = []
 
     # Landing page
@@ -272,7 +282,7 @@ def navigation() -> Dict[str, Any]:
         },
     )
 
-    if GameConstants.BISHI_BASHI in g.config['support']:
+    if GameConstants.BISHI_BASHI in g.config.support:
         # BishiBashi pages
         bishi_entries = []
         if len([p for p in profiles if p[0] == GameConstants.BISHI_BASHI]) > 0:
@@ -301,7 +311,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.DDR in g.config['support']:
+    if GameConstants.DDR in g.config.support:
         # DDR pages
         ddr_entries = []
         if len([p for p in profiles if p[0] == GameConstants.DDR]) > 0:
@@ -350,7 +360,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.IIDX in g.config['support']:
+    if GameConstants.IIDX in g.config.support:
         # IIDX pages
         iidx_entries = []
         if len([p for p in profiles if p[0] == GameConstants.IIDX]) > 0:
@@ -399,7 +409,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.JUBEAT in g.config['support']:
+    if GameConstants.JUBEAT in g.config.support:
         # Jubeat pages
         jubeat_entries = []
         if len([p for p in profiles if p[0] == GameConstants.JUBEAT]) > 0:
@@ -448,7 +458,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.MUSECA in g.config['support']:
+    if GameConstants.MUSECA in g.config.support:
         # Museca pages
         museca_entries = []
         if len([p for p in profiles if p[0] == GameConstants.MUSECA]) > 0:
@@ -493,7 +503,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.POPN_MUSIC in g.config['support']:
+    if GameConstants.POPN_MUSIC in g.config.support:
         # Pop'n Music pages
         popn_entries = []
         if len([p for p in profiles if p[0] == GameConstants.POPN_MUSIC]) > 0:
@@ -542,7 +552,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.REFLEC_BEAT in g.config['support']:
+    if GameConstants.REFLEC_BEAT in g.config.support:
         # ReflecBeat pages
         reflec_entries = []
         if len([p for p in profiles if p[0] == GameConstants.REFLEC_BEAT]) > 0:
@@ -591,7 +601,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if GameConstants.SDVX in g.config['support']:
+    if GameConstants.SDVX in g.config.support:
         # SDVX pages
         sdvx_entries = []
         if len([p for p in profiles if p[0] == GameConstants.SDVX]) > 0:

@@ -1,10 +1,10 @@
 # vim: set fileencoding=utf-8
-from typing import Optional, Dict, List, Any
+from typing import Optional, List
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import Model, ValidatedDict, GameConstants, DBConstants, Time
-from bemani.data import Data, Score, UserID, ScoreSaveException
+from bemani.common import Model, Profile, ValidatedDict, GameConstants, DBConstants, Time
+from bemani.data import Config, Data, Score, UserID, ScoreSaveException
 from bemani.protocol import Node
 
 
@@ -51,7 +51,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_DOUBLE_EXPERT = 8
     CHART_DOUBLE_CHALLENGE = 9
 
-    def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
             self.omnimix = True
@@ -115,21 +115,21 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return None
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
         return Node.void('game')
 
-    def format_scores(self, userid: UserID, profile: ValidatedDict, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
         """
         return Node.void('game')
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -165,10 +165,16 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         if userid is None:
             return
 
-        defaultprofile = ValidatedDict({
-            'name': name,
-            'area': area,
-        })
+        defaultprofile = Profile(
+            self.game,
+            self.version,
+            refid,
+            0,
+            {
+                'name': name,
+                'area': area,
+            },
+        )
         self.put_profile(userid, defaultprofile)
 
     def put_profile_by_refid(self, refid: Optional[str], request: Node) -> None:

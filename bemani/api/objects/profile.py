@@ -2,18 +2,18 @@ from typing import Any, Dict, List, Set, Tuple
 
 from bemani.api.exceptions import APIException
 from bemani.api.objects.base import BaseObject
-from bemani.common import ValidatedDict, GameConstants, APIConstants
+from bemani.common import Profile, ValidatedDict, GameConstants, APIConstants
 from bemani.data import UserID
 
 
 class ProfileObject(BaseObject):
 
-    def __format_ddr_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_ddr_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
             'area': profile.get_int('area', -1) if exact else -1,
         }
 
-    def __format_iidx_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_iidx_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         qpro = profile.get_dict('qpro')
 
         return {
@@ -27,26 +27,26 @@ class ProfileObject(BaseObject):
             }
         }
 
-    def __format_jubeat_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_jubeat_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {}
 
-    def __format_museca_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_museca_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {}
 
-    def __format_popn_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_popn_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
             'character': profile.get_int('chara', -1) if exact else -1,
         }
 
-    def __format_reflec_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_reflec_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
             'icon': profile.get_dict('config').get_int('icon_id', -1) if exact else -1,
         }
 
-    def __format_sdvx_profile(self, profile: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_sdvx_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {}
 
-    def __format_profile(self, cardids: List[str], profile: ValidatedDict, settings: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_profile(self, cardids: List[str], profile: Profile, settings: ValidatedDict, exact: bool) -> Dict[str, Any]:
         base = {
             'name': profile.get_str('name'),
             'cards': cardids,
@@ -75,7 +75,7 @@ class ProfileObject(BaseObject):
 
     def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         # Fetch the profiles
-        profiles: List[Tuple[UserID, ValidatedDict]] = []
+        profiles: List[Tuple[UserID, Profile]] = []
         if idtype == APIConstants.ID_TYPE_SERVER:
             profiles.extend(self.data.local.user.get_all_profiles(self.game, self.version))
         elif idtype == APIConstants.ID_TYPE_SONG:
@@ -126,6 +126,6 @@ class ProfileObject(BaseObject):
             if settings is None:
                 settings = ValidatedDict({})
 
-            retval.append(self.__format_profile(id_to_cards[userid], profile, settings, profile['version'] == self.version))
+            retval.append(self.__format_profile(id_to_cards[userid], profile, settings, profile.version == self.version))
 
         return retval

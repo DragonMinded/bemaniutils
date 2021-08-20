@@ -4,8 +4,8 @@ from typing import Optional, Dict, Any, List, Tuple
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import ValidatedDict, Model, GameConstants, DBConstants, Parallel
-from bemani.data import Data, Score, Machine, UserID
+from bemani.common import Profile, ValidatedDict, Model, GameConstants, DBConstants, Parallel
+from bemani.data import Config, Data, Score, Machine, UserID
 from bemani.protocol import Node
 
 
@@ -75,7 +75,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     GHOST_TYPE_RIVAL_TOP = 800
     GHOST_TYPE_RIVAL_AVERAGE = 900
 
-    def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
             self.omnimix = True
@@ -103,14 +103,14 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             'local2',
         ]
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
         return Node.void('pc')
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -138,7 +138,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], pid: Optional[int]) -> ValidatedDict:
+    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], pid: Optional[int]) -> Profile:
         """
         Given a RefID and an optional name, create a profile and then return
         that newly created profile.
@@ -152,15 +152,20 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             pid = 51
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        defaultprofile = ValidatedDict({
-            'name': name,
-            'pid': pid,
-            'settings': {
-                'flags': 223  # Default to turning on all optional folders
+        profile = Profile(
+            self.game,
+            self.version,
+            refid,
+            0,
+            {
+                'name': name,
+                'pid': pid,
+                'settings': {
+                    'flags': 223  # Default to turning on all optional folders
+                },
             },
-        })
-        self.put_profile(userid, defaultprofile)
-        profile = self.get_profile(userid)
+        )
+        self.put_profile(userid, profile)
         return profile
 
     def put_profile_by_extid(self, extid: Optional[int], request: Node) -> None:
@@ -184,7 +189,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
     def machine_joined_arcade(self) -> bool:
-        machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         return machine.arcade is not None
 
     def get_clear_rates(
@@ -454,7 +459,12 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # Update profile if needed
             profile = self.get_profile(userid)
             if profile is None:
-                profile = ValidatedDict()
+                profile = Profile(
+                    self.game,
+                    self.version,
+                    "",
+                    0,
+                )
 
             profile.replace_int(dantype, max(rank, profile.get_int(dantype, -1)))
             self.put_profile(userid, profile)
@@ -606,7 +616,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Return averages
         return new_ex_score, struct.pack('b' * ghost_length, *delta_ghost)
 
-    def user_joined_arcade(self, machine: Machine, profile: Optional[ValidatedDict]) -> bool:
+    def user_joined_arcade(self, machine: Machine, profile: Optional[Profile]) -> bool:
         if profile is None:
             return False
 
@@ -671,7 +681,12 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 # other users who have also joined that arcade.
                 my_profile = self.get_profile(userid)
                 if my_profile is None:
-                    my_profile = ValidatedDict()
+                    my_profile = Profile(
+                        self.game,
+                        self.version,
+                        "",
+                        0,
+                    )
 
                 if 'shop_location' in my_profile:
                     shop_id = my_profile.get_int('shop_location')
@@ -708,7 +723,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                             'ghost': top_score.data.get_bytes('ghost'),
                             'name': top_profile.get_str('name'),
                             'pid': top_profile.get_int('pid'),
-                            'extid': top_profile.get_int('extid'),
+                            'extid': top_profile.extid,
                         }
                         break
 
@@ -734,7 +749,12 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             ]
             my_profile = self.get_profile(userid)
             if my_profile is None:
-                my_profile = ValidatedDict()
+                my_profile = Profile(
+                    self.game,
+                    self.version,
+                    "",
+                    0,
+                )
             if is_dp:
                 dan_rank = my_profile.get_int(self.DAN_RANKING_DOUBLE, -1)
             else:
@@ -766,7 +786,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                                 'ghost': top_score.data.get_bytes('ghost'),
                                 'name': top_profile.get_str('name'),
                                 'pid': top_profile.get_int('pid'),
-                                'extid': top_profile.get_int('extid'),
+                                'extid': top_profile.extid,
                             }
                             break
 
@@ -808,7 +828,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                             'ghost': top_score.data.get_bytes('ghost'),
                             'name': top_profile.get_str('name'),
                             'pid': top_profile.get_int('pid'),
-                            'extid': top_profile.get_int('extid'),
+                            'extid': top_profile.extid,
                         }
                         break
 

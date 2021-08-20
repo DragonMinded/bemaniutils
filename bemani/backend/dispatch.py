@@ -1,9 +1,8 @@
-import copy
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 
 from bemani.backend.base import Model, Base, Status
 from bemani.protocol import Node
-from bemani.data import Data
+from bemani.data import Config, Data
 
 
 class UnrecognizedPCBIDException(Exception):
@@ -20,7 +19,7 @@ class Dispatch:
     class and then returning a response.
     """
 
-    def __init__(self, config: Dict[str, Any], data: Data, verbose: bool) -> None:
+    def __init__(self, config: Config, data: Data, verbose: bool) -> None:
         """
         Initialize the Dispatch object.
 
@@ -77,9 +76,9 @@ class Dispatch:
 
         # If we are enforcing, bail out if we don't recognize thie ID
         pcb = self.__data.local.machine.get_machine(pcbid)
-        if self.__config['server']['enforce_pcbid'] and pcb is None:
+        if self.__config.server.enforce_pcbid and pcb is None:
             self.log("Unrecognized PCBID {}", pcbid)
-            raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config['client']['address'])
+            raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config.client.address)
 
         # If we don't have a Machine, but we aren't enforcing, we must create it
         if pcb is None:
@@ -87,7 +86,7 @@ class Dispatch:
 
         request = tree.children[0]
 
-        config = copy.copy(self.__config)
+        config = self.__config.clone()
         config['machine'] = {
             'pcbid': pcbid,
             'arcade': pcb.arcade,
@@ -103,9 +102,6 @@ class Dispatch:
                 if arcade.data.get_bool('mask_services_url'):
                     # Mask the address, no matter what the server settings are
                     config['server']['uri'] = None
-        # If we don't have a server URI, we should add the default
-        if 'uri' not in config['server']:
-            config['server']['uri'] = None
 
         game = Base.create(self.__data, config, model)
         method = request.attribute('method')
@@ -113,10 +109,10 @@ class Dispatch:
 
         # If we are enforcing, make sure the PCBID isn't specified to be
         # game-specific
-        if self.__config['server']['enforce_pcbid'] and pcb.game is not None:
+        if config.server.enforce_pcbid and pcb.game is not None:
             if pcb.game != game.game:
                 self.log("PCBID {} assigned to game {}, but connected from game {}", pcbid, pcb.game, game.game)
-                raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config['client']['address'])
+                raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
             if pcb.version is not None:
                 if pcb.version > 0 and pcb.version != game.version:
                     self.log(
@@ -127,7 +123,7 @@ class Dispatch:
                         game.game,
                         game.version,
                     )
-                    raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config['client']['address'])
+                    raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
                 if pcb.version < 0 and (-pcb.version) < game.version:
                     self.log(
                         "PCBID {} assigned to game {} maximum version {}, but connected from game {} version {}",
@@ -137,7 +133,7 @@ class Dispatch:
                         game.game,
                         game.version,
                     )
-                    raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config['client']['address'])
+                    raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
 
         # First, try to handle with specific service/method function
         try:

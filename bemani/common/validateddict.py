@@ -1,5 +1,7 @@
 from typing import Optional, List, Dict, Any
 
+from bemani.common.constants import GameConstants
+
 
 def intish(val: Any, base: int=10) -> Optional[int]:
     if val is None:
@@ -437,3 +439,18 @@ class ValidatedDict(dict):
             self[name] = 1
         else:
             self[name] = self[name] + 1
+
+
+class Profile(ValidatedDict):
+    """
+    A special case of a ValidatedDict, a profile is guaranteed to also contain
+    references to how it was created or loaded, including the game/version
+    combo and the refid and extid associated wit the profile.
+    """
+
+    def __init__(self, game: GameConstants, version: int, refid: str, extid: int, initial_values: Dict[str, Any] = {}) -> None:
+        super().__init__(initial_values or {})
+        self.game = game
+        self.version = version
+        self.refid = refid
+        self.extid = extid

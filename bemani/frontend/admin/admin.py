@@ -156,9 +156,9 @@ def viewevents() -> Response:
             'refresh': url_for('admin_pages.listevents', since=-1),
             'backfill': url_for('admin_pages.backfillevents', until=-1),
             'viewuser': url_for('admin_pages.viewuser', userid=-1),
-            'jubeatsong': url_for('jubeat_pages.viewtopscores', musicid=-1) if GameConstants.JUBEAT in g.config['support'] else None,
-            'iidxsong': url_for('iidx_pages.viewtopscores', musicid=-1) if GameConstants.IIDX in g.config['support'] else None,
-            'pnmsong': url_for('popn_pages.viewtopscores', musicid=-1) if GameConstants.POPN_MUSIC in g.config['support'] else None,
+            'jubeatsong': url_for('jubeat_pages.viewtopscores', musicid=-1) if GameConstants.JUBEAT in g.config.support else None,
+            'iidxsong': url_for('iidx_pages.viewtopscores', musicid=-1) if GameConstants.IIDX in g.config.support else None,
+            'pnmsong': url_for('popn_pages.viewtopscores', musicid=-1) if GameConstants.POPN_MUSIC in g.config.support else None,
         },
     )
 
@@ -214,8 +214,8 @@ def viewarcades() -> Response:
         {
             'arcades': [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
             'usernames': g.data.local.user.get_all_usernames(),
-            'paseli_enabled': g.config['paseli']['enabled'],
-            'paseli_infinite': g.config['paseli']['infinite'],
+            'paseli_enabled': g.config.paseli.enabled,
+            'paseli_infinite': g.config.paseli.infinite,
             'mask_services_url': False,
         },
         {
@@ -252,7 +252,7 @@ def viewmachines() -> Response:
                 GameConstants.SDVX.value: 'SDVX',
             },
             'games': games,
-            'enforcing': g.config['server']['enforce_pcbid'],
+            'enforcing': g.config.server.enforce_pcbid,
         },
         {
             'generatepcbid': url_for('admin_pages.generatepcbid'),

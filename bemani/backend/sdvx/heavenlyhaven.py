@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
 from bemani.backend.sdvx.gravitywars import SoundVoltexGravityWars
-from bemani.common import ID, Time, ValidatedDict, VersionConstants
+from bemani.common import ID, Time, Profile, VersionConstants
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -3470,7 +3470,7 @@ class SoundVoltexHeavenlyHaven(
                 highscores.add_child(info)
                 info.add_child(Node.u32('id', musicid))
                 info.add_child(Node.u32('ty', chart))
-                info.add_child(Node.string('a_sq', ID.format_extid(global_profile.get_int('extid'))))
+                info.add_child(Node.string('a_sq', ID.format_extid(global_profile.extid)))
                 info.add_child(Node.string('a_nm', global_profile.get_str('name')))
                 info.add_child(Node.u32('a_sc', globalscore.points))
                 info.add_child(Node.s32('cr', int(clear_rate * 10000)))
@@ -3479,7 +3479,7 @@ class SoundVoltexHeavenlyHaven(
                 if 'area' in records[musicid][chart]:
                     (localuserid, localscore) = records[musicid][chart]['area']
                     local_profile = users[localuserid]
-                    info.add_child(Node.string('l_sq', ID.format_extid(local_profile.get_int('extid'))))
+                    info.add_child(Node.string('l_sq', ID.format_extid(local_profile.extid)))
                     info.add_child(Node.string('l_nm', local_profile.get_str('name')))
                     info.add_child(Node.u32('l_sc', localscore.points))
 
@@ -3604,7 +3604,7 @@ class SoundVoltexHeavenlyHaven(
                 rival = Node.void('rival')
                 game.add_child(rival)
                 rival.add_child(Node.s16('no', index))
-                rival.add_child(Node.string('seq', ID.format_extid(other_profile.get_int('extid'))))
+                rival.add_child(Node.string('seq', ID.format_extid(other_profile.extid)))
                 rival.add_child(Node.string('name', other_profile.get_str('name')))
 
                 # Keep track of index
@@ -3841,13 +3841,13 @@ class SoundVoltexHeavenlyHaven(
         # Return a blank response
         return Node.void('game')
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         game = Node.void('game')
 
         # Generic profile stuff
         game.add_child(Node.string('name', profile.get_str('name')))
-        game.add_child(Node.string('code', ID.format_extid(profile.get_int('extid'))))
-        game.add_child(Node.string('sdvx_id', ID.format_extid(profile.get_int('extid'))))
+        game.add_child(Node.string('code', ID.format_extid(profile.extid)))
+        game.add_child(Node.string('sdvx_id', ID.format_extid(profile.extid)))
         game.add_child(Node.u16('appeal_id', profile.get_int('appealid')))
         game.add_child(Node.s16('skill_base_id', profile.get_int('skill_base_id')))
         game.add_child(Node.s16('skill_name_id', profile.get_int('skill_name_id')))
@@ -4035,7 +4035,7 @@ class SoundVoltexHeavenlyHaven(
 
         return game
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         # Update blaster energy and in-game currencies

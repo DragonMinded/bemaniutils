@@ -25,21 +25,21 @@ def register_blueprints() -> None:
     app.register_blueprint(arcade_pages)
     app.register_blueprint(home_pages)
 
-    if GameConstants.IIDX in config['support']:
+    if GameConstants.IIDX in config.support:
         app.register_blueprint(iidx_pages)
-    if GameConstants.POPN_MUSIC in config['support']:
+    if GameConstants.POPN_MUSIC in config.support:
         app.register_blueprint(popn_pages)
-    if GameConstants.JUBEAT in config['support']:
+    if GameConstants.JUBEAT in config.support:
         app.register_blueprint(jubeat_pages)
-    if GameConstants.BISHI_BASHI in config['support']:
+    if GameConstants.BISHI_BASHI in config.support:
         app.register_blueprint(bishi_pages)
-    if GameConstants.DDR in config['support']:
+    if GameConstants.DDR in config.support:
         app.register_blueprint(ddr_pages)
-    if GameConstants.SDVX in config['support']:
+    if GameConstants.SDVX in config.support:
         app.register_blueprint(sdvx_pages)
-    if GameConstants.REFLEC_BEAT in config['support']:
+    if GameConstants.REFLEC_BEAT in config.support:
         app.register_blueprint(reflec_pages)
-    if GameConstants.MUSECA in config['support']:
+    if GameConstants.MUSECA in config.support:
         app.register_blueprint(museca_pages)
 
 
@@ -51,7 +51,7 @@ def register_games() -> None:
 def load_config(filename: str) -> None:
     global config
     base_load_config(filename, config)
-    app.secret_key = config['secret_key']
+    app.secret_key = config.secret_key
 
 
 def main() -> None:

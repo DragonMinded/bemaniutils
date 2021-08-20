@@ -15,7 +15,7 @@ from bemani.backend.jubeat.common import (
 from bemani.backend.jubeat.qubell import JubeatQubell
 
 from bemani.backend.base import Status
-from bemani.common import Time, ValidatedDict, VersionConstants
+from bemani.common import Time, Profile, ValidatedDict, VersionConstants
 from bemani.data import Data, Achievement, Score, Song, UserID
 from bemani.protocol import Node
 
@@ -1102,14 +1102,14 @@ class JubeatClan(
 
         return Node.void('gameend')
 
-    def format_scores(self, userid: UserID, profile: ValidatedDict, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
 
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
         player = Node.void('player')
         datanode.add_child(player)
-        player.add_child(Node.s32('jid', profile.get_int('extid')))
+        player.add_child(Node.s32('jid', profile.extid))
         playdata = Node.void('mdata_list')
         player.add_child(playdata)
 
@@ -1185,7 +1185,7 @@ class JubeatClan(
 
         return root
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('gametop')
         data = Node.void('data')
         root.add_child(data)
@@ -1198,7 +1198,7 @@ class JubeatClan(
 
         # Basic profile info
         player.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        player.add_child(Node.s32('jid', profile.get_int('extid')))
+        player.add_child(Node.s32('jid', profile.extid))
 
         # Miscelaneous crap
         player.add_child(Node.s32('session_id', 1))
@@ -1288,7 +1288,7 @@ class JubeatClan(
 
             rival = Node.void('rival')
             rivallist.add_child(rival)
-            rival.add_child(Node.s32('jid', rprofile.get_int('extid')))
+            rival.add_child(Node.s32('jid', rprofile.extid))
             rival.add_child(Node.string('name', rprofile.get_str('name')))
 
             # This looks like a carry-over from prop's career and isn't displayed.
@@ -1577,7 +1577,7 @@ class JubeatClan(
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
         data = request.child('data')
 
