@@ -11,25 +11,91 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='table.css') }}" />
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='jquery-confirm.css') }}" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script type="text/javascript" src="{{ url_for('static', filename='chart.bundle.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='date.format.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='jquery-1.12.4.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='jquery-confirm.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='jquery.touchSwipe.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='tinynav.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='react.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='react-dom.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='ajax.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='messages.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='history.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='regions.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='iidx-options.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='ddr-options.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='link.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='merge.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='chart.bundle.min.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='date.format.min.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='jquery-1.12.4.min.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='jquery-confirm.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='jquery.touchSwipe.min.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='tinynav.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='react.min.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='react-dom.min.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='ajax.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='messages.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='history.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='regions.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='iidx-options.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='ddr-options.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='link.js') }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='merge.js') }}"></script>
         {% for entry in components %}
-        <script type="text/javascript" src="{{ url_for('jsx', filename=entry) }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('jsx', filename=entry) }}"></script>
         {% endfor %}
+        {% block scripts %}{% endblock %}
+	</head>
+	<body>
+        {% if show_navigation %}
+        <div class="navigation">
+            <ul class="navigation" id="nav">
+                {% for entry in navigation %}
+                    <li class="{{
+                        'right' if entry.get('right_justify') else 'left' }}
+                        {{ 'selected' if entry['uri'] == current_path or ((current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) and not (any(entry.get('entries'), 'uri', current_path))) else ''
+                    }}">
+                        {% with uri = entry.get('uri') %}
+                            {% with label = entry.get('label') %}
+                                {% if label %}
+                                    {% if uri %}
+                                    <a
+                                        class="{{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or (current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) else ''}} {{entry['gamecode']}} border"
+                                        href="{{ entry['uri'] }}"
+                                    >{{ entry['label'] }}</a>
+                                    {% else %}
+                                    <a
+                                        class="cursor {{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or (current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) else ''}} {{entry['gamecode']}} border"
+                                    >{{ entry['label'] }}</a>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="separator">&nbsp;</div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                        {% with subentries = entry.get('entries') %}
+                            {% if subentries %}
+                                <ul class="navigation_sub">
+                                    {% for subentry in subentries %}
+                                        <li class="{{ 'selected' if subentry['uri'] == current_path else '' }}">
+                                            <a
+                                                class="{{ 'current' if (subentry['uri'] == current_path) else '' }}"
+                                                href="{{ subentry['uri'] }}"
+                                            >{{ subentry['label'] }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        {% endwith %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="messages-anchor"></div>
+        <div class="messages">
+            <ul class="messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <li class="{{ category }}">
+                            {{ message }}
+                            <div class="close">&#10005;</div>
+                        </li>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </ul>
+        </div>
+        <div class="container">
+    	    {% block content %}{% endblock %}
+        </div>
         <script type="text/javascript">
             $(function () {
                 $("#nav").tinyNav();
@@ -103,71 +169,5 @@
                 }
             });
         </script>
-        {% block scripts %}{% endblock %}
-	</head>
-	<body>
-        {% if show_navigation %}
-        <div class="navigation">
-            <ul class="navigation" id="nav">
-                {% for entry in navigation %}
-                    <li class="{{
-                        'right' if entry.get('right_justify') else 'left' }}
-                        {{ 'selected' if entry['uri'] == current_path or ((current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) and not (any(entry.get('entries'), 'uri', current_path))) else ''
-                    }}">
-                        {% with uri = entry.get('uri') %}
-                            {% with label = entry.get('label') %}
-                                {% if label %}
-                                    {% if uri %}
-                                    <a
-                                        class="{{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or (current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) else ''}} {{entry['gamecode']}} border"
-                                        href="{{ entry['uri'] }}"
-                                    >{{ entry['label'] }}</a>
-                                    {% else %}
-                                    <a
-                                        class="cursor {{ 'current' if (entry['uri'] == current_path) or (any(entry.get('entries'), 'uri', current_path)) or (current_path.startswith(entry.get('base_uri', '/nonexistent') or '/nonexistent')) else ''}} {{entry['gamecode']}} border"
-                                    >{{ entry['label'] }}</a>
-                                    {% endif %}
-                                {% else %}
-                                    <div class="separator">&nbsp;</div>
-                                {% endif %}
-                            {% endwith %}
-                        {% endwith %}
-                        {% with subentries = entry.get('entries') %}
-                            {% if subentries %}
-                                <ul class="navigation_sub">
-                                    {% for subentry in subentries %}
-                                        <li class="{{ 'selected' if subentry['uri'] == current_path else '' }}">
-                                            <a
-                                                class="{{ 'current' if (subentry['uri'] == current_path) else '' }}"
-                                                href="{{ subentry['uri'] }}"
-                                            >{{ subentry['label'] }}</a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        {% endwith %}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-        <div class="messages-anchor"></div>
-        <div class="messages">
-            <ul class="messages">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                        <li class="{{ category }}">
-                            {{ message }}
-                            <div class="close">&#10005;</div>
-                        </li>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-            </ul>
-        </div>
-        <div class="container">
-    	    {% block content %}{% endblock %}
-        </div>
 	</body>
 </html>
