@@ -1,22 +1,19 @@
 import argparse
-import yaml
 
-from bemani.data import Data
 from bemani.api import app, config  # noqa: F401
+from bemani.utils.config import load_config as base_load_config
 
 
 def load_config(filename: str) -> None:
     global config
-
-    config.update(yaml.safe_load(open(filename)))
-    config['database']['engine'] = Data.create_engine(config)
+    base_load_config(filename, config)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="An API services provider for eAmusement games, conforming to BEMAPI specs.")
     parser.add_argument("-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80)
     parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
-    parser.add_argument("-r", "--profile", help="Turn on profiling for API", action="store_true")
+    parser.add_argument("-r", "--profile", help="Turn on profiling for API, writing CProfile data to the currenct directory", action="store_true")
     args = parser.parse_args()
 
     # Set up app

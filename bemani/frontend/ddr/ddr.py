@@ -37,7 +37,7 @@ class DDRFrontend(FrontendBase):
         VersionConstants.DDR_A20: 3,
     }
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from DDRFactory.all_games()
 
     def update_name(self, profile: ValidatedDict, name: str) -> ValidatedDict:

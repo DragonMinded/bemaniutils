@@ -14,20 +14,25 @@ def main() -> None:
     parser.add_argument(
         "-d",
         "--directory",
-        help="Directory to extract to.",
+        help="Directory to extract to. Specify this parameter if you want to extract an existing 2dx file.",
         default=None,
     )
     parser.add_argument(
         "-w",
         "--wavfile",
-        help="ADPCM wave file to add to archive.",
+        help=(
+            "ADPCM wave file to add to a new or existing archive. Specify this parameter to update an "
+            "existing 2dx file with a new wav file or build a new archive containing a particular wav file. "
+            "Note that you can specify this parameter multiple times to bundle multiple wav files into one "
+            "archive."
+        ),
         action="append",
         default=[],
     )
     parser.add_argument(
         "-n",
         "--name",
-        help="Name of the archive when updating.",
+        help="Name of the archive when creating a new 2dx file from scratch.",
         default=None,
     )
     args = parser.parse_args()
@@ -51,8 +56,7 @@ def main() -> None:
             os.makedirs(dirof, exist_ok=True)
             with open(realfn, 'wb') as fp:
                 fp.write(twodx.read_file(fn))
-
-    if len(args.wavfile) > 0:
+    elif len(args.wavfile) > 0:
         try:
             fp = open(args.file, 'rb')
             data = fp.read()
@@ -76,6 +80,8 @@ def main() -> None:
         fp = open(args.file, 'wb')
         fp.write(twodx.get_new_data())
         fp.close()
+    else:
+        raise Exception("Please provide either a directory to extract to, or a wav file to build into a 2dx file!")
 
 
 if __name__ == '__main__':

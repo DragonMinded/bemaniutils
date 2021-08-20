@@ -3,7 +3,7 @@ from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Any, Dict, List, Optional
 
-from bemani.common import ValidatedDict, Time
+from bemani.common import GameConstants, ValidatedDict, Time
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import Achievement, Item, UserID
 
@@ -74,7 +74,7 @@ time_sensitive_settings = Table(
 
 class GameData(BaseData):
 
-    def get_settings(self, game: str, userid: UserID) -> Optional[ValidatedDict]:
+    def get_settings(self, game: GameConstants, userid: UserID) -> Optional[ValidatedDict]:
         """
         Given a game and a user ID, look up game-wide settings as a dictionary.
 
@@ -83,7 +83,7 @@ class GameData(BaseData):
         all versions in a game series.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             userid - Integer identifying a user, as possibly looked up by UserData.
 
         Returns:
@@ -91,7 +91,7 @@ class GameData(BaseData):
             if there are no settings for this game/user.
         """
         sql = "SELECT data FROM game_settings WHERE game = :game AND userid = :userid"
-        cursor = self.execute(sql, {'game': game, 'userid': userid})
+        cursor = self.execute(sql, {'game': game.value, 'userid': userid})
 
         if cursor.rowcount != 1:
             # Settings doesn't exist
@@ -100,12 +100,12 @@ class GameData(BaseData):
         result = cursor.fetchone()
         return ValidatedDict(self.deserialize(result['data']))
 
-    def put_settings(self, game: str, userid: UserID, settings: Dict[str, Any]) -> None:
+    def put_settings(self, game: GameConstants, userid: UserID, settings: Dict[str, Any]) -> None:
         """
         Given a game and a user ID, save game-wide settings to the DB.
 
         Parameters:
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             userid - Integer identifying a user.
             settings - A dictionary of settings that a game wishes to retrieve later.
         """
@@ -115,9 +115,9 @@ class GameData(BaseData):
             "VALUES (:game, :userid, :data) " +
             "ON DUPLICATE KEY UPDATE data=VALUES(data)"
         )
-        self.execute(sql, {'game': game, 'userid': userid, 'data': self.serialize(settings)})
+        self.execute(sql, {'game': game.value, 'userid': userid, 'data': self.serialize(settings)})
 
-    def get_achievement(self, game: str, userid: UserID, achievementid: int, achievementtype: str) -> Optional[ValidatedDict]:
+    def get_achievement(self, game: GameConstants, userid: UserID, achievementid: int, achievementtype: str) -> Optional[ValidatedDict]:
         """
         Given a game/userid and achievement id/type, find that achievement.
 
@@ -125,7 +125,7 @@ class GameData(BaseData):
         as long as each one is a different type. Essentially, achievementtype namespaces achievements.
 
         Parameters:
-            game - String identifier of the game looking up the user.
+            game - Enum value identifier of the game looking up the user.
             userid - Integer user ID, as looked up by one of the above functions.
             achievementid - Integer ID, as provided by a game.
             achievementtype - The type of achievement.
@@ -137,7 +137,7 @@ class GameData(BaseData):
             "SELECT data FROM series_achievement "
             "WHERE game = :game AND userid = :userid AND id = :id AND type = :type"
         )
-        cursor = self.execute(sql, {'game': game, 'userid': userid, 'id': achievementid, 'type': achievementtype})
+        cursor = self.execute(sql, {'game': game.value, 'userid': userid, 'id': achievementid, 'type': achievementtype})
         if cursor.rowcount != 1:
             # score doesn't exist
             return None
@@ -145,19 +145,19 @@ class GameData(BaseData):
         result = cursor.fetchone()
         return ValidatedDict(self.deserialize(result['data']))
 
-    def get_achievements(self, game: str, userid: UserID) -> List[Achievement]:
+    def get_achievements(self, game: GameConstants, userid: UserID) -> List[Achievement]:
         """
         Given a game/userid, find all achievements
 
         Parameters:
-            game - String identifier of the game looking up the user.
+            game - Enum value identifier of the game looking up the user.
             userid - Integer user ID, as looked up by one of the above functions.
 
         Returns:
             A list of Achievement objects.
         """
         sql = "SELECT id, type, data FROM series_achievement WHERE game = :game AND userid = :userid"
-        cursor = self.execute(sql, {'game': game, 'userid': userid})
+        cursor = self.execute(sql, {'game': game.value, 'userid': userid})
 
         achievements = []
         for result in cursor.fetchall():
@@ -172,12 +172,12 @@ class GameData(BaseData):
 
         return achievements
 
-    def put_achievement(self, game: str, userid: UserID, achievementid: int, achievementtype: str, data: Dict[str, Any]) -> None:
+    def put_achievement(self, game: GameConstants, userid: UserID, achievementid: int, achievementtype: str, data: Dict[str, Any]) -> None:
         """
         Given a game/userid and achievement id/type, save an achievement.
 
         Parameters:
-            game - String identifier of the game looking up the user.
+            game - Enum value identifier of the game looking up the user.
             userid - Integer user ID, as looked up by one of the above functions.
             achievementid - Integer ID, as provided by a game.
             achievementtype - The type of achievement.
@@ -189,14 +189,14 @@ class GameData(BaseData):
             "VALUES (:game, :userid, :id, :type, :data) " +
             "ON DUPLICATE KEY UPDATE data=VALUES(data)"
         )
-        self.execute(sql, {'game': game, 'userid': userid, 'id': achievementid, 'type': achievementtype, 'data': self.serialize(data)})
+        self.execute(sql, {'game': game.value, 'userid': userid, 'id': achievementid, 'type': achievementtype, 'data': self.serialize(data)})
 
-    def get_time_sensitive_settings(self, game: str, version: int, name: str) -> Optional[ValidatedDict]:
+    def get_time_sensitive_settings(self, game: GameConstants, version: int, name: str) -> Optional[ValidatedDict]:
         """
         Given a game/version/name, look up the current time-sensitive settings for this game.
 
         Parameters:
-            game - String identifier of the game we want settings for.
+            game - Enum value identifier of the game we want settings for.
             version - Integer identifying the game version we want settings for.
             name - The name of the setting we are concerned with.
 
@@ -209,7 +209,7 @@ class GameData(BaseData):
             "SELECT data, start_time, end_time FROM time_sensitive_settings WHERE "
             "game = :game AND version = :version AND name = :name AND start_time <= :time AND end_time > :time"
         )
-        cursor = self.execute(sql, {'game': game, 'version': version, 'name': name, 'time': Time.now()})
+        cursor = self.execute(sql, {'game': game.value, 'version': version, 'name': name, 'time': Time.now()})
         if cursor.rowcount != 1:
             # setting doesn't exist
             return None
@@ -220,12 +220,12 @@ class GameData(BaseData):
         retval['end_time'] = result['end_time']
         return retval
 
-    def get_all_time_sensitive_settings(self, game: str, version: int, name: str) -> List[ValidatedDict]:
+    def get_all_time_sensitive_settings(self, game: GameConstants, version: int, name: str) -> List[ValidatedDict]:
         """
         Given a game/version/name, look up all of the time-sensitive settings for this game.
 
         Parameters:
-            game - String identifier of the game we want settings for.
+            game - Enum value identifier of the game we want settings for.
             version - Integer identifying the game version we want settings for.
             name - The name of the setting we are concerned with.
 
@@ -238,7 +238,7 @@ class GameData(BaseData):
             "SELECT data, start_time, end_time FROM time_sensitive_settings WHERE "
             "game = :game AND version = :version AND name = :name"
         )
-        cursor = self.execute(sql, {'game': game, 'version': version, 'name': name})
+        cursor = self.execute(sql, {'game': game.value, 'version': version, 'name': name})
         if cursor.rowcount == 0:
             # setting doesn't exist
             return []
@@ -251,7 +251,7 @@ class GameData(BaseData):
             settings.append(retval)
         return settings
 
-    def put_time_sensitive_settings(self, game: str, version: int, name: str, settings: Dict[str, Any]) -> None:
+    def put_time_sensitive_settings(self, game: GameConstants, version: int, name: str, settings: Dict[str, Any]) -> None:
         """
         Given a game/version/name and a settings dictionary that contains 'start_time' and 'end_time',
         as seconds since the unix epoch (UTC), update the DB to store or update this time-sensitive
@@ -259,7 +259,7 @@ class GameData(BaseData):
         the setting duration, and that this setting doesn't overlap any other setting already present.
 
         Parameters:
-            game - String identifier of the game we want settings for.
+            game - Enum value identifier of the game we want settings for.
             version - Integer identifying the game version we want settings for.
             name - The name of the setting we are concerned with.
             settings - A dictionary containing at least 'start_time' and 'end_time'.
@@ -287,7 +287,7 @@ class GameData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'name': name,
                 'start_time': start_time,
@@ -309,7 +309,7 @@ class GameData(BaseData):
         self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'name': name,
                 'start_time': start_time,
@@ -318,7 +318,7 @@ class GameData(BaseData):
             },
         )
 
-    def get_item(self, game: str, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
+    def get_item(self, game: GameConstants, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
         """
         Given a game/userid and catalog id/type, find that catalog entry.
 
@@ -326,7 +326,7 @@ class GameData(BaseData):
         as long as each one is a different type. Essentially, cattype namespaces catalog entry.
 
         Parameters:
-            game - String identifier of the game looking up this entry.
+            game - Enum value identifier of the game looking up this entry.
             version - Integer identifier of the version looking up this entry.
             catid - Integer ID, as provided by a game.
             cattype - The type of catalog entry.
@@ -338,7 +338,7 @@ class GameData(BaseData):
             "SELECT data FROM catalog "
             "WHERE game = :game AND version = :version AND id = :id AND type = :type"
         )
-        cursor = self.execute(sql, {'game': game, 'version': version, 'id': catid, 'type': cattype})
+        cursor = self.execute(sql, {'game': game.value, 'version': version, 'id': catid, 'type': cattype})
         if cursor.rowcount != 1:
             # entry doesn't exist
             return None
@@ -346,19 +346,19 @@ class GameData(BaseData):
         result = cursor.fetchone()
         return ValidatedDict(self.deserialize(result['data']))
 
-    def get_items(self, game: str, version: int) -> List[Item]:
+    def get_items(self, game: GameConstants, version: int) -> List[Item]:
         """
         Given a game/userid, find all items in the catalog.
 
         Parameters:
-            game - String identifier of the game looking up the catalog.
+            game - Enum value identifier of the game looking up the catalog.
             version - Integer identifier of the version looking up this catalog.
 
         Returns:
             A list of Item objects.
         """
         sql = "SELECT id, type, data FROM catalog WHERE game = :game AND version = :version"
-        cursor = self.execute(sql, {'game': game, 'version': version})
+        cursor = self.execute(sql, {'game': game.value, 'version': version})
 
         catalog = []
         for result in cursor.fetchall():

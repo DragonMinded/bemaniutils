@@ -48,7 +48,7 @@ def format_machine(machine: Machine) -> Dict[str, Any]:
         'description': machine.description,
         'arcade': machine.arcade,
         'port': machine.port,
-        'game': machine.game or 'any',
+        'game': machine.game.value if machine.game else 'any',
         'version': machine.version,
     }
 
@@ -156,9 +156,9 @@ def viewevents() -> Response:
             'refresh': url_for('admin_pages.listevents', since=-1),
             'backfill': url_for('admin_pages.backfillevents', until=-1),
             'viewuser': url_for('admin_pages.viewuser', userid=-1),
-            'jubeatsong': url_for('jubeat_pages.viewtopscores', musicid=-1) if g.config.get('support', {}).get(GameConstants.JUBEAT, False) else None,
-            'iidxsong': url_for('iidx_pages.viewtopscores', musicid=-1) if g.config.get('support', {}).get(GameConstants.IIDX, False) else None,
-            'pnmsong': url_for('popn_pages.viewtopscores', musicid=-1) if g.config.get('support', {}).get(GameConstants.POPN_MUSIC, False) else None,
+            'jubeatsong': url_for('jubeat_pages.viewtopscores', musicid=-1) if GameConstants.JUBEAT in g.config['support'] else None,
+            'iidxsong': url_for('iidx_pages.viewtopscores', musicid=-1) if GameConstants.IIDX in g.config['support'] else None,
+            'pnmsong': url_for('popn_pages.viewtopscores', musicid=-1) if GameConstants.POPN_MUSIC in g.config['support'] else None,
         },
     )
 
@@ -231,9 +231,9 @@ def viewarcades() -> Response:
 def viewmachines() -> Response:
     games: Dict[str, Dict[int, str]] = {}
     for (game, version, name) in Base.all_games():
-        if game not in games:
-            games[game] = {}
-        games[game][version] = name
+        if game.value not in games:
+            games[game.value] = {}
+        games[game.value][version] = name
 
     return render_react(
         'Machines',
@@ -242,14 +242,14 @@ def viewmachines() -> Response:
             'machines': [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
             'arcades': {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
             'series': {
-                GameConstants.BISHI_BASHI: 'BishiBashi',
-                GameConstants.DDR: 'DDR',
-                GameConstants.IIDX: 'IIDX',
-                GameConstants.JUBEAT: 'Jubeat',
-                GameConstants.MUSECA: 'MÚSECA',
-                GameConstants.POPN_MUSIC: 'Pop\'n Music',
-                GameConstants.REFLEC_BEAT: 'Reflec Beat',
-                GameConstants.SDVX: 'SDVX',
+                GameConstants.BISHI_BASHI.value: 'BishiBashi',
+                GameConstants.DDR.value: 'DDR',
+                GameConstants.IIDX.value: 'IIDX',
+                GameConstants.JUBEAT.value: 'Jubeat',
+                GameConstants.MUSECA.value: 'MÚSECA',
+                GameConstants.POPN_MUSIC.value: 'Pop\'n Music',
+                GameConstants.REFLEC_BEAT.value: 'Reflec Beat',
+                GameConstants.SDVX.value: 'SDVX',
             },
             'games': games,
             'enforcing': g.config['server']['enforce_pcbid'],
@@ -701,7 +701,7 @@ def updatepcbid() -> Dict[str, Any]:
     current_machine.description = machine['description']
     current_machine.arcade = machine['arcade']
     current_machine.port = machine['port']
-    current_machine.game = None if machine['game'] == 'any' else machine['game']
+    current_machine.game = None if machine['game'] == 'any' else GameConstants(machine['game'])
     current_machine.version = None if machine['game'] == 'any' else machine['version']
     g.data.local.machine.put_machine(current_machine)
 

@@ -228,9 +228,9 @@ def valid_username(username: str) -> bool:
 
 def valid_pin(pin: str, type: str) -> bool:
     if type == 'card':
-        return re.match(r"\d\d\d\d", pin) is not None
+        return re.match(r"^\d\d\d\d$", pin) is not None
     elif type == 'arcade':
-        return re.match(r"\d\d\d\d\d\d\d\d", pin) is not None
+        return re.match(r"^\d\d\d\d\d\d\d\d$", pin) is not None
     else:
         return False
 
@@ -272,7 +272,7 @@ def navigation() -> Dict[str, Any]:
         },
     )
 
-    if g.config.get('support', {}).get(GameConstants.BISHI_BASHI, False):
+    if GameConstants.BISHI_BASHI in g.config['support']:
         # BishiBashi pages
         bishi_entries = []
         if len([p for p in profiles if p[0] == GameConstants.BISHI_BASHI]) > 0:
@@ -301,7 +301,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.DDR, False):
+    if GameConstants.DDR in g.config['support']:
         # DDR pages
         ddr_entries = []
         if len([p for p in profiles if p[0] == GameConstants.DDR]) > 0:
@@ -350,7 +350,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.IIDX, False):
+    if GameConstants.IIDX in g.config['support']:
         # IIDX pages
         iidx_entries = []
         if len([p for p in profiles if p[0] == GameConstants.IIDX]) > 0:
@@ -399,7 +399,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.JUBEAT, False):
+    if GameConstants.JUBEAT in g.config['support']:
         # Jubeat pages
         jubeat_entries = []
         if len([p for p in profiles if p[0] == GameConstants.JUBEAT]) > 0:
@@ -448,7 +448,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.MUSECA, False):
+    if GameConstants.MUSECA in g.config['support']:
         # Museca pages
         museca_entries = []
         if len([p for p in profiles if p[0] == GameConstants.MUSECA]) > 0:
@@ -493,7 +493,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.POPN_MUSIC, False):
+    if GameConstants.POPN_MUSIC in g.config['support']:
         # Pop'n Music pages
         popn_entries = []
         if len([p for p in profiles if p[0] == GameConstants.POPN_MUSIC]) > 0:
@@ -542,7 +542,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.REFLEC_BEAT, False):
+    if GameConstants.REFLEC_BEAT in g.config['support']:
         # ReflecBeat pages
         reflec_entries = []
         if len([p for p in profiles if p[0] == GameConstants.REFLEC_BEAT]) > 0:
@@ -591,7 +591,7 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
-    if g.config.get('support', {}).get(GameConstants.SDVX, False):
+    if GameConstants.SDVX in g.config['support']:
         # SDVX pages
         sdvx_entries = []
         if len([p for p in profiles if p[0] == GameConstants.SDVX]) > 0:

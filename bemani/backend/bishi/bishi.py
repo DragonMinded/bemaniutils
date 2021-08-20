@@ -85,6 +85,8 @@ class TheStarBishiBashi(
     def __escape_string(self, data: Union[int, str]) -> str:
         data = str(data)
         data = data.replace("#", "##")
+        data = data.replace("\r\n", "#n")
+        data = data.replace("\r", "#n")
         data = data.replace("\n", "#n")
         data = data.replace(" ", "#s")
         data = data.replace(",", "#,")

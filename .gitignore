@@ -16,3 +16,4 @@ bemani.egg-info/
 server/
 emblems
 .vscode/
+MANIFEST.in

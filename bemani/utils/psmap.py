@@ -1,33 +1,24 @@
 import argparse
-import pefile  # type: ignore
 import struct
 from typing import List
 
+from bemani.common import PEFile
 from bemani.protocol import Node
 from bemani.utils.responsegen import generate_lines
 
 
 def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
-    pe = pefile.PE(data=data, fast_load=True)
+    pe = PEFile(data=data)
     root = Node.void(rootname)
     base = int(offset, 16)
 
-    def virtual_to_physical(offset: int) -> int:
-        for section in pe.sections:
-            start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-            end = start + section.SizeOfRawData
-
-            if offset >= start and offset < end:
-                return (offset - start) + section.PointerToRawData
-        raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
-
-    if base >= pe.OPTIONAL_HEADER.ImageBase:
+    if pe.is_virtual(base):
         # Assume this is virtual
-        base = virtual_to_physical(base)
+        base = pe.virtual_to_physical(base)
 
     def read_string(offset: int) -> str:
         # First, translate load offset in memory to disk offset
-        offset = virtual_to_physical(offset)
+        offset = pe.virtual_to_physical(offset)
 
         # Now, grab bytes until we're null-terminated
         bytestring = []
@@ -43,7 +34,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
     saved_loc: List[int] = []
 
     while True:
-        if hex(pe.FILE_HEADER.Machine) == '0x8664':  # 64 bit
+        if pe.is_64bit():  # 64 bit
             chunk = data[base:(base + 24)]
             base = base + 24
 
@@ -83,7 +74,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
 
             if defaultptr != 0:
                 saved_loc.append(base)
-                base = virtual_to_physical(defaultptr)
+                base = pe.virtual_to_physical(defaultptr)
             else:
                 saved_loc.append(None)
 
@@ -200,7 +191,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--offset",
-        help="Hex offset into the file.",
+        help="Hex offset into the file. This can be specified as either a raw offset into the DLL or as a virtual offset.",
         type=str,
         default=None,
         required=True,
@@ -215,7 +206,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--root",
-        help="Root node name.",
+        help="Root node name to be used for the generated code.",
         type=str,
         default="root",
     )

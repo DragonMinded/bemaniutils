@@ -10,6 +10,9 @@ def extensions():
     # extensions. Note that the pure python code will run slower.
     if 'PURE_PYTHON' in os.environ:
         # We've been asked not to compile extensions.
+        with open("MANIFEST.in", "w") as wfp:
+            with open("MANIFEST.assets", "r") as rfp:
+                wfp.write(rfp.read())
         return []
 
     from setuptools import Extension
@@ -41,6 +44,12 @@ def extensions():
             extra_link_args=["-std=c++14"],
         ),
     ]
+
+    with open("MANIFEST.in", "w") as wfp:
+        with open("MANIFEST.assets", "r") as rfp:
+            wfp.write(rfp.read())
+        with open("MANIFEST.cython", "r") as rfp:
+            wfp.write(rfp.read())
 
     if 'EXPERIMENTAL_MYPYC_COMPILER' in os.environ:
         from mypyc.build import mypycify

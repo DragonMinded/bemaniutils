@@ -8,7 +8,7 @@ from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.course import IIDXCourse
 from bemani.backend.iidx.pendual import IIDXPendual
 
-from bemani.common import ValidatedDict, VersionConstants, Time, ID
+from bemani.common import ValidatedDict, VersionConstants, BroadcastConstants, Time, ID
 from bemani.data import Data, UserID
 from bemani.protocol import Node
 
@@ -1438,31 +1438,31 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         notecount = song.data.get('notecount', 0)
         # Construct the dictionary for the broadcast
         card_data = {
-            'DJ Name': name,
-            'Song': song.name,
-            'Artist': song.artist,
-            'Difficulty': song.data.get('difficulty', 0),
-            'Target EXScore': target_exscore,
-            'Your EXScore': now_exscore,
-            'Best Clear': best_clear_string,
-            'Clear Status': now_clear_string,
-            'Play Stats': 'How did you do?',
-            'Perfect Greats': now_pgreat,
-            'Greats': now_great,
-            'Goods': now_good,
-            'Bads': now_bad,
-            'Poors': now_poor,
-            'Combo Breaks': now_combo,
-            'Slow': now_slow,
-            'Fast': now_fast,
+            BroadcastConstants.DJ_NAME: name,
+            BroadcastConstants.SONG_NAME: song.name,
+            BroadcastConstants.ARTIST_NAME: song.artist,
+            BroadcastConstants.DIFFICULTY: song.data.get('difficulty', 0),
+            BroadcastConstants.TARGET_EXSCORE: target_exscore,
+            BroadcastConstants.EXSCORE: now_exscore,
+            BroadcastConstants.BEST_CLEAR_STATUS: best_clear_string,
+            BroadcastConstants.CLEAR_STATUS: now_clear_string,
+            BroadcastConstants.PLAY_STATS_HEADER: 'How did you do?',
+            BroadcastConstants.PERFECT_GREATS: now_pgreat,
+            BroadcastConstants.GREATS: now_great,
+            BroadcastConstants.GOODS: now_good,
+            BroadcastConstants.BADS: now_bad,
+            BroadcastConstants.POORS: now_poor,
+            BroadcastConstants.COMBO_BREAKS: now_combo,
+            BroadcastConstants.SLOWS: now_slow,
+            BroadcastConstants.FASTS: now_fast,
         }
         if notecount != 0:
             max_score = notecount * 2
             percent = now_exscore / max_score
             grade = int(9 * percent)
             grades = ['F', 'F', 'E', 'D', 'C', 'B', 'A', 'AA', 'AAA', 'MAX']
-            card_data['Grade'] = grades[grade]
-            card_data['Score Rate'] = str(round(percent, 2))
+            card_data[BroadcastConstants.GRADE] = grades[grade]
+            card_data[BroadcastConstants.RATE] = str(round(percent, 2))
 
         # Try to broadcast out the score to our webhook(s)
         self.data.triggers.broadcast_score(card_data, self.game, song)

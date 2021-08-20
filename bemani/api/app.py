@@ -209,7 +209,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
         ('reflecbeat', GameConstants.REFLEC_BEAT),
         ('soundvoltex', GameConstants.SDVX),
     ]:
-        if g.config.get('support', {}).get(constant, False):
+        if constant in g.config['support']:
             gamemapping[gameid] = constant
     game = gamemapping.get(requestgame)
     if game is None:
@@ -288,10 +288,17 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
         # Don't support this version!
         abort(404)
 
-    idtype = requestdata['type']
-    ids = requestdata['ids']
-    if idtype not in [APIConstants.ID_TYPE_CARD, APIConstants.ID_TYPE_SONG, APIConstants.ID_TYPE_INSTANCE, APIConstants.ID_TYPE_SERVER]:
+    # Attempt to coerce ID type. If we fail, provide the correct failure message.
+    idtype = None
+    try:
+        idtype = APIConstants(requestdata['type'])
+    except ValueError:
+        pass
+    if idtype is None:
         raise APIException('Invalid ID type provided!')
+
+    # Validate the provided IDs given the ID type above.
+    ids = requestdata['ids']
     if idtype == APIConstants.ID_TYPE_CARD and len(ids) == 0:
         raise APIException('Invalid number of IDs given!')
     if idtype == APIConstants.ID_TYPE_SONG and len(ids) not in [1, 2]:

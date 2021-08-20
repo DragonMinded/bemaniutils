@@ -7,7 +7,6 @@ import io
 import jaconv  # type: ignore
 import json
 import os
-import pefile  # type: ignore
 import struct
 import yaml
 import xml.etree.ElementTree as ET
@@ -18,7 +17,7 @@ from sqlalchemy.sql import text  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from typing import Any, Dict, List, Optional, Tuple
 
-from bemani.common import GameConstants, VersionConstants, DBConstants, Time
+from bemani.common import GameConstants, VersionConstants, DBConstants, PEFile, Time
 from bemani.format import ARC, IFS, IIDXChart, IIDXMusicDB
 from bemani.data import Server, Song
 from bemani.data.interfaces import APIProviderInterface
@@ -51,7 +50,7 @@ class ImportBase:
     def __init__(
         self,
         config: Dict[str, Any],
-        game: str,
+        game: GameConstants,
         version: Optional[int],
         no_combine: bool,
         update: bool,
@@ -124,7 +123,7 @@ class ImportBase:
                 "SELECT id FROM `music` WHERE songid = :songid AND chart = :chart AND game = :game AND version = :version"
             )
 
-        cursor = self.execute(sql, {'songid': songid, 'chart': chart, 'game': self.game, 'version': version})
+        cursor = self.execute(sql, {'songid': songid, 'chart': chart, 'game': self.game.value, 'version': version})
         if cursor.rowcount != 0:
             result = cursor.fetchone()
             return result['id']
@@ -159,7 +158,7 @@ class ImportBase:
             frags.append("version = :version")
 
         sql = "SELECT id FROM `music` WHERE " + " AND ".join(frags)
-        cursor = self.execute(sql, {'title': title, 'artist': artist, 'genre': genre, 'chart': chart, 'game': self.game, 'version': version})
+        cursor = self.execute(sql, {'title': title, 'artist': artist, 'genre': genre, 'chart': chart, 'game': self.game.value, 'version': version})
         if cursor.rowcount != 0:
             result = cursor.fetchone()
             return result['id']
@@ -195,7 +194,7 @@ class ImportBase:
                     'id': musicid,
                     'songid': songid,
                     'chart': chart,
-                    'game': self.game,
+                    'game': self.game.value,
                     'version': version,
                     'name': name,
                     'artist': artist,
@@ -245,7 +244,7 @@ class ImportBase:
             {
                 'songid': songid,
                 'chart': chart,
-                'game': self.game,
+                'game': self.game.value,
                 'version': version,
                 'name': name,
                 'artist': artist,
@@ -287,7 +286,7 @@ class ImportBase:
             sql,
             {
                 'musicid': musicid,
-                'game': self.game,
+                'game': self.game.value,
                 'version': version,
                 'name': name,
                 'artist': artist,
@@ -316,7 +315,7 @@ class ImportBase:
                 {
                     'id': catid,
                     'type': cattype,
-                    'game': self.game,
+                    'game': self.game.value,
                     'version': self.version,
                     'data': jsondata
                 },
@@ -333,7 +332,7 @@ class ImportBase:
                     {
                         'id': catid,
                         'type': cattype,
-                        'game': self.game,
+                        'game': self.game.value,
                         'version': self.version,
                         'data': jsondata
                     },
@@ -396,16 +395,7 @@ class ImportPopn(ImportBase):
             data = myfile.read()
             myfile.close()
 
-        pe = pefile.PE(data=data, fast_load=True)
-
-        def virtual_to_physical(offset: int) -> int:
-            for section in pe.sections:
-                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-                end = start + section.SizeOfRawData
-
-                if offset >= start and offset < end:
-                    return (offset - start) + section.PointerToRawData
-            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
+        pe = PEFile(data)
 
         if self.version == VersionConstants.POPN_MUSIC_TUNE_STREET:
             # Based on K39:J:A:A:2010122200
@@ -1083,7 +1073,7 @@ class ImportPopn(ImportBase):
 
         def read_string(offset: int) -> str:
             # First, translate load offset in memory to disk offset
-            offset = virtual_to_physical(offset)
+            offset = pe.virtual_to_physical(offset)
 
             # Now, grab bytes until we're null-terminated
             bytestring = []
@@ -1749,18 +1739,9 @@ class ImportIIDX(ImportBase):
 
         import_qpros = True  # by default, try to import qpros
         try:
-            pe = pefile.PE(data=binarydata, fast_load=True)
+            pe = PEFile(binarydata)
         except BaseException:
             import_qpros = False  # if it failed then we're reading a music db file, not the executable
-
-        def virtual_to_physical(offset: int) -> int:
-            for section in pe.sections:
-                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-                end = start + section.SizeOfRawData
-
-                if offset >= start and offset < end:
-                    return (offset - start) + section.PointerToRawData
-            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
 
         songs: List[Dict[str, Any]] = []
         if not import_qpros:
@@ -1958,7 +1939,7 @@ class ImportIIDX(ImportBase):
 
         def read_string(offset: int) -> str:
             # First, translate load offset in memory to disk offset
-            offset = virtual_to_physical(offset)
+            offset = pe.virtual_to_physical(offset)
 
             # Now, grab bytes until we're null-terminated
             bytestring = []
@@ -2858,16 +2839,7 @@ class ImportSDVX(ImportBase):
             data = myfile.read()
             myfile.close()
 
-        pe = pefile.PE(data=data, fast_load=True)
-
-        def virtual_to_physical(offset: int) -> int:
-            for section in pe.sections:
-                start = section.VirtualAddress + pe.OPTIONAL_HEADER.ImageBase
-                end = start + section.SizeOfRawData
-
-                if offset >= start and offset < end:
-                    return (offset - start) + section.PointerToRawData
-            raise Exception(f'Couldn\'t find raw offset for virtual offset 0x{offset:08x}')
+        pe = PEFile(data)
 
         if self.version == VersionConstants.SDVX_BOOTH:
             offset = 0xFFF28
@@ -2878,7 +2850,7 @@ class ImportSDVX(ImportBase):
 
         def read_string(spot: int) -> str:
             # First, translate load offset in memory to disk offset
-            spot = virtual_to_physical(spot)
+            spot = pe.virtual_to_physical(spot)
 
             # Now, grab bytes until we're null-terminated
             bytestring = []
@@ -3783,7 +3755,13 @@ if __name__ == "__main__":
     # Load the config so we can talk to the server
     config = yaml.safe_load(open(args.config))
 
-    if args.series == GameConstants.POPN_MUSIC:
+    series = None
+    try:
+        series = GameConstants(args.series)
+    except ValueError:
+        pass
+
+    if series == GameConstants.POPN_MUSIC:
         popn = ImportPopn(config, args.version, args.no_combine, args.update)
         if args.bin:
             songs = popn.scrape(args.bin)
@@ -3797,7 +3775,7 @@ if __name__ == "__main__":
         popn.import_music_db(songs)
         popn.close()
 
-    elif args.series == GameConstants.JUBEAT:
+    elif series == GameConstants.JUBEAT:
         jubeat = ImportJubeat(config, args.version, args.no_combine, args.update)
         if args.tsv is not None:
             # Special case for Jubeat, grab the title/artist metadata that was
@@ -3818,7 +3796,7 @@ if __name__ == "__main__":
             jubeat.import_emblems(emblems)
         jubeat.close()
 
-    elif args.series == GameConstants.IIDX:
+    elif series == GameConstants.IIDX:
         iidx = ImportIIDX(config, args.version, args.no_combine, args.update)
         if args.tsv is not None:
             # Special case for IIDX, grab the title/artist metadata that was
@@ -3839,7 +3817,7 @@ if __name__ == "__main__":
             iidx.import_qpros(qpros)
         iidx.close()
 
-    elif args.series == GameConstants.DDR:
+    elif series == GameConstants.DDR:
         ddr = ImportDDR(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             songs = ddr.lookup(args.server, args.token)
@@ -3862,7 +3840,7 @@ if __name__ == "__main__":
         ddr.import_music_db(songs)
         ddr.close()
 
-    elif args.series == GameConstants.SDVX:
+    elif series == GameConstants.SDVX:
         sdvx = ImportSDVX(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             sdvx.import_from_server(args.server, args.token)
@@ -3881,7 +3859,7 @@ if __name__ == "__main__":
                 sdvx.import_appeal_cards(args.csv)
         sdvx.close()
 
-    elif args.series == GameConstants.MUSECA:
+    elif series == GameConstants.MUSECA:
         museca = ImportMuseca(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             museca.import_from_server(args.server, args.token)
@@ -3894,7 +3872,7 @@ if __name__ == "__main__":
             )
         museca.close()
 
-    elif args.series == GameConstants.REFLEC_BEAT:
+    elif series == GameConstants.REFLEC_BEAT:
         reflec = ImportReflecBeat(config, args.version, args.no_combine, args.update)
         if args.bin is not None:
             songs = reflec.scrape(args.bin)
@@ -3908,7 +3886,7 @@ if __name__ == "__main__":
         reflec.import_music_db(songs)
         reflec.close()
 
-    elif args.series == GameConstants.DANCE_EVOLUTION:
+    elif series == GameConstants.DANCE_EVOLUTION:
         danevo = ImportDanceEvolution(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             songs = danevo.lookup(args.server, args.token)

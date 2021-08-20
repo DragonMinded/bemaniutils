@@ -66,8 +66,8 @@ class PopnMusicFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for game in ['G15', 'H16', 'I17', 'J39', 'K39', 'L39', 'M39']:
-            Base.register(game, PopnMusicFactory)
+        for gamecode in ['G15', 'H16', 'I17', 'J39', 'K39', 'L39', 'M39']:
+            Base.register(gamecode, PopnMusicFactory)
 
     @classmethod
     def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
@@ -87,26 +87,26 @@ class PopnMusicFactory(Factory):
                 return VersionConstants.POPN_MUSIC_KRIDDLES
             return None
 
-        if model.game == 'G15':
+        if model.gamecode == 'G15':
             return PopnMusicAdventure(data, config, model)
-        if model.game == 'H16':
+        if model.gamecode == 'H16':
             return PopnMusicParty(data, config, model)
-        if model.game == 'I17':
+        if model.gamecode == 'I17':
             return PopnMusicTheMovie(data, config, model)
-        if model.game == 'J39':
+        if model.gamecode == 'J39':
             return PopnMusicSengokuRetsuden(data, config, model)
-        if model.game == 'K39':
+        if model.gamecode == 'K39':
             return PopnMusicTuneStreet(data, config, model)
-        if model.game == 'L39':
+        if model.gamecode == 'L39':
             return PopnMusicFantasia(data, config, model)
-        if model.game == 'M39':
+        if model.gamecode == 'M39':
             if model.version is None:
                 if parentmodel is None:
                     return None
 
                 # We have no way to tell apart newer versions. However, we can make
                 # an educated guess if we happen to be summoned for old profile lookup.
-                if parentmodel.game not in ['G15', 'H16', 'I17', 'J39', 'K39', 'L39', 'M39']:
+                if parentmodel.gamecode not in ['G15', 'H16', 'I17', 'J39', 'K39', 'L39', 'M39']:
                     return None
                 parentversion = version_from_date(parentmodel.version)
                 if parentversion == VersionConstants.POPN_MUSIC_LAPISTORIA:

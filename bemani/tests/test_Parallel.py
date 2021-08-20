@@ -1,4 +1,5 @@
 # vim: set fileencoding=utf-8
+from abc import ABC
 import unittest
 
 from bemani.common import Parallel
@@ -66,23 +67,27 @@ class TestParallel(unittest.TestCase):
         self.assertEqual(results, [20, -20, 4, -4, 2])
 
     def test_class(self) -> None:
-        class A:
+        class Base(ABC):
+            def fun(self, x: int) -> int:
+                ...
+
+        class A(Base):
             def fun(self, x: int) -> int:
                 return x * 10
 
-        class B:
+        class B(Base):
             def fun(self, x: int) -> int:
                 return x * 20
 
-        class C:
+        class C(Base):
             def fun(self, x: int) -> int:
                 return x * 30
 
-        class D:
+        class D(Base):
             def fun(self, x: int) -> int:
                 return x * 40
 
-        class E:
+        class E(Base):
             def fun(self, x: int) -> int:
                 return x * 50
 

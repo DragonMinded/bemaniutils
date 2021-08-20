@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any, NewType
 
-from bemani.common import ValidatedDict
+from bemani.common import ValidatedDict, GameConstants
 
 UserID = NewType('UserID', int)
 ArcadeID = NewType('ArcadeID', int)
@@ -102,7 +102,7 @@ class Machine:
         description: str,
         arcade: Optional[ArcadeID],
         port: int,
-        game: Optional[str],
+        game: Optional[GameConstants],
         version: Optional[int],
         data: Dict[str, Any],
     ) -> None:
@@ -174,7 +174,7 @@ class Song:
 
     def __init__(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         songid: int,
         songchart: int,

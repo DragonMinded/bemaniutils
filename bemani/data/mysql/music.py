@@ -4,7 +4,7 @@ from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
-from bemani.common import Time
+from bemani.common import GameConstants, Time
 from bemani.data.exceptions import ScoreSaveException
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import Score, Attempt, Song, UserID
@@ -82,12 +82,12 @@ music = Table(
 
 class MusicData(BaseData):
 
-    def __get_musicid(self, game: str, version: int, songid: int, songchart: int) -> int:
+    def __get_musicid(self, game: GameConstants, version: int, songid: int, songchart: int) -> int:
         """
         Given a game/version/songid/chart, look up the unique music ID for this song.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             songid - ID of the song according to the game.
             songchart - Chart number according to the game.
@@ -98,7 +98,7 @@ class MusicData(BaseData):
         sql = (
             "SELECT id FROM music WHERE songid = :songid AND chart = :chart AND game = :game AND version = :version"
         )
-        cursor = self.execute(sql, {'songid': songid, 'chart': songchart, 'game': game, 'version': version})
+        cursor = self.execute(sql, {'songid': songid, 'chart': songchart, 'game': game.value, 'version': version})
         if cursor.rowcount != 1:
             # music doesn't exist
             raise Exception(f'Song {songid} chart {songchart} doesn\'t exist for game {game} version {version}')
@@ -107,7 +107,7 @@ class MusicData(BaseData):
 
     def put_score(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         userid: UserID,
         songid: int,
@@ -122,7 +122,7 @@ class MusicData(BaseData):
         Given a game/version/song/chart and user ID, save a new/updated high score.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userid - Integer representing a user. Usually looked up with UserData.
             songid - ID of the song according to the game.
@@ -168,7 +168,7 @@ class MusicData(BaseData):
 
     def put_attempt(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         userid: Optional[UserID],
         songid: int,
@@ -186,7 +186,7 @@ class MusicData(BaseData):
         per song/chart in a given game, but they can have as many history entries as times played.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userid - Integer representing a user. Usually looked up with UserData.
             songid - ID of the song according to the game.
@@ -224,12 +224,12 @@ class MusicData(BaseData):
                 f'There is already an attempt by {userid if userid is not None else 0} for music id {musicid} at {ts}'
             )
 
-    def get_score(self, game: str, version: int, userid: UserID, songid: int, songchart: int) -> Optional[Score]:
+    def get_score(self, game: GameConstants, version: int, userid: UserID, songid: int, songchart: int) -> Optional[Score]:
         """
         Look up a user's previous high score.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userid - Integer representing a user. Usually looked up with UserData.
             songid - ID of the song according to the game.
@@ -248,7 +248,7 @@ class MusicData(BaseData):
             sql,
             {
                 'userid': userid,
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'songid': songid,
                 'songchart': songchart,
@@ -271,12 +271,12 @@ class MusicData(BaseData):
             self.deserialize(result['data']),
         )
 
-    def get_score_by_key(self, game: str, version: int, key: int) -> Optional[Tuple[UserID, Score]]:
+    def get_score_by_key(self, game: GameConstants, version: int, key: int) -> Optional[Tuple[UserID, Score]]:
         """
         Look up previous high score by key.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             key - Integer representing a unique key fetched in a previous Score lookup.
 
@@ -293,7 +293,7 @@ class MusicData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'scorekey': key,
             },
@@ -320,7 +320,7 @@ class MusicData(BaseData):
 
     def get_scores(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         userid: UserID,
         since: Optional[int]=None,
@@ -330,7 +330,7 @@ class MusicData(BaseData):
         Look up all of a user's previous high scores.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userid - Integer representing a user. Usually looked up with UserData.
 
@@ -347,7 +347,7 @@ class MusicData(BaseData):
             sql = sql + ' AND score.update >= :since'
         if until is not None:
             sql = sql + ' AND score.update < :until'
-        cursor = self.execute(sql, {'userid': userid, 'game': game, 'version': version, 'since': since, 'until': until})
+        cursor = self.execute(sql, {'userid': userid, 'game': game.value, 'version': version, 'since': since, 'until': until})
 
         scores = []
         for result in cursor.fetchall():
@@ -367,12 +367,12 @@ class MusicData(BaseData):
 
         return scores
 
-    def get_most_played(self, game: str, version: int, userid: UserID, count: int) -> List[Tuple[int, int]]:
+    def get_most_played(self, game: GameConstants, version: int, userid: UserID, count: int) -> List[Tuple[int, int]]:
         """
         Look up a user's most played songs.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userid - Integer representing a user. Usually looked up with UserData.
             count - Number of scores to look up.
@@ -386,7 +386,7 @@ class MusicData(BaseData):
             "AND music.game = :game AND music.version = :version " +
             "GROUP BY songid ORDER BY plays DESC LIMIT :count"
         )
-        cursor = self.execute(sql, {'userid': userid, 'game': game, 'version': version, 'count': count})
+        cursor = self.execute(sql, {'userid': userid, 'game': game.value, 'version': version, 'count': count})
 
         most_played = []
         for result in cursor.fetchall():
@@ -396,12 +396,12 @@ class MusicData(BaseData):
 
         return most_played
 
-    def get_last_played(self, game: str, version: int, userid: UserID, count: int) -> List[Tuple[int, int]]:
+    def get_last_played(self, game: GameConstants, version: int, userid: UserID, count: int) -> List[Tuple[int, int]]:
         """
         Look up a user's last played songs.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userid - Integer representing a user. Usually looked up with UserData.
             count - Number of scores to look up.
@@ -415,7 +415,7 @@ class MusicData(BaseData):
             "AND music.game = :game AND music.version = :version " +
             "ORDER BY timestamp DESC LIMIT :count"
         )
-        cursor = self.execute(sql, {'userid': userid, 'game': game, 'version': version, 'count': count})
+        cursor = self.execute(sql, {'userid': userid, 'game': game.value, 'version': version, 'count': count})
 
         last_played = []
         for result in cursor.fetchall():
@@ -427,7 +427,7 @@ class MusicData(BaseData):
 
     def get_hit_chart(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         count: int,
         days: Optional[int]=None,
@@ -436,7 +436,7 @@ class MusicData(BaseData):
         Look up a game's most played songs.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             count - Number of scores to look up.
 
@@ -454,7 +454,7 @@ class MusicData(BaseData):
             timestamp = Time.now() - (Time.SECONDS_IN_DAY * days)
 
         sql = sql + "GROUP BY songid ORDER BY plays DESC LIMIT :count"
-        cursor = self.execute(sql, {'game': game, 'version': version, 'count': count, 'timestamp': timestamp})
+        cursor = self.execute(sql, {'game': game.value, 'version': version, 'count': count, 'timestamp': timestamp})
 
         most_played = []
         for result in cursor.fetchall():
@@ -466,7 +466,7 @@ class MusicData(BaseData):
 
     def get_song(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         songid: int,
         songchart: int,
@@ -475,7 +475,7 @@ class MusicData(BaseData):
         Given a game/version/songid/chart, look up the name, artist and genre of that song.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             songid - Integer representing the ID (from the game) for this song.
             songchart - Integer representing the chart for this song.
@@ -488,7 +488,7 @@ class MusicData(BaseData):
             "FROM music WHERE music.game = :game AND music.version = :version AND " +
             "music.songid = :songid AND music.chart = :songchart"
         )
-        cursor = self.execute(sql, {'game': game, 'version': version, 'songid': songid, 'songchart': songchart})
+        cursor = self.execute(sql, {'game': game.value, 'version': version, 'songid': songid, 'songchart': songchart})
         if cursor.rowcount != 1:
             # music doesn't exist
             return None
@@ -506,14 +506,14 @@ class MusicData(BaseData):
 
     def get_all_songs(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
     ) -> List[Song]:
         """
         Given a game and a version, look up all song/chart combos associated with that game.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
 
         Returns:
@@ -523,7 +523,7 @@ class MusicData(BaseData):
             "SELECT version, songid, chart, name, artist, genre, data FROM music "
             "WHERE music.game = :game"
         )
-        params: Dict[str, Any] = {'game': game}
+        params: Dict[str, Any] = {'game': game.value}
         if version is not None:
             sql += " AND music.version = :version"
             params['version'] = version
@@ -550,7 +550,7 @@ class MusicData(BaseData):
 
     def get_all_versions_of_song(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         songid: int,
         songchart: int,
@@ -560,7 +560,7 @@ class MusicData(BaseData):
         Given a game/version/songid/chart, look up all versions of that song across all game versions.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             songid - Integer representing the ID (from the game) for this song.
             songchart - Integer representing the chart for this song.
@@ -594,7 +594,7 @@ class MusicData(BaseData):
 
     def get_all_scores(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
         userid: Optional[UserID]=None,
         songid: Optional[int]=None,
@@ -606,7 +606,7 @@ class MusicData(BaseData):
         Look up all of a game's high scores for all users.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
 
         Returns:
@@ -660,7 +660,7 @@ class MusicData(BaseData):
 
         # Now, query itself
         cursor = self.execute(sql, {
-            'game': game,
+            'game': game.value,
             'version': version,
             'userid': userid,
             'songid': songid,
@@ -693,7 +693,7 @@ class MusicData(BaseData):
 
     def get_all_records(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
         userlist: Optional[List[UserID]]=None,
         locationlist: Optional[List[int]]=None,
@@ -706,7 +706,7 @@ class MusicData(BaseData):
         display area-local high scores, etc.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             userlist - List of UserIDs to limit the search to.
             locationlist - A list of location IDs to limit searches to.
@@ -734,7 +734,7 @@ class MusicData(BaseData):
         musicid_sql = (
             "SELECT DISTINCT(score.musicid) FROM score, music WHERE score.musicid = music.id AND music.game = :game"
         )
-        params: Dict[str, Any] = {'game': game}
+        params: Dict[str, Any] = {'game': game.value}
         if version is not None:
             musicid_sql = musicid_sql + ' AND music.version = :version'
             params['version'] = version
@@ -790,12 +790,12 @@ class MusicData(BaseData):
 
         return scores
 
-    def get_attempt_by_key(self, game: str, version: int, key: int) -> Optional[Tuple[UserID, Attempt]]:
+    def get_attempt_by_key(self, game: GameConstants, version: int, key: int) -> Optional[Tuple[UserID, Attempt]]:
         """
         Look up a previous attempt by key.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
             key - Integer representing a unique key fetched in a previous Attempt lookup.
 
@@ -810,7 +810,7 @@ class MusicData(BaseData):
         cursor = self.execute(
             sql,
             {
-                'game': game,
+                'game': game.value,
                 'version': version,
                 'scorekey': key,
             },
@@ -836,7 +836,7 @@ class MusicData(BaseData):
 
     def get_all_attempts(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
         userid: Optional[UserID]=None,
         songid: Optional[int]=None,
@@ -849,7 +849,7 @@ class MusicData(BaseData):
         Look up all of the attempts to score for a particular game.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
 
         Returns:
@@ -901,7 +901,7 @@ class MusicData(BaseData):
 
         # Now, query itself
         cursor = self.execute(sql, {
-            'game': game,
+            'game': game.value,
             'version': version,
             'userid': userid,
             'songid': songid,

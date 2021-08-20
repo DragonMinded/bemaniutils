@@ -18,7 +18,7 @@ class BishiBashiFrontend(FrontendBase):
         super().__init__(data, config, cache)
         self.machines: Dict[int, str] = {}
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from BishiBashiFactory.all_games()
 
     def __update_value(self, oldvalue: str, newvalue: bytes) -> str:

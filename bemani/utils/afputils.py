@@ -8,7 +8,7 @@ import os.path
 import sys
 import textwrap
 from PIL import Image, ImageDraw  # type: ignore
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
 from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color, Matrix
 from bemani.format import IFS
@@ -49,7 +49,7 @@ def write_bytecode(swf: SWF, directory: str, *, verbose: bool) -> None:
     if lut:
         buff = [
             os.linesep.join([
-                '// Defined frame labels from SWF container, as used for frame lookups.',
+                '// Defined frame labels from animation container, as used for frame lookups.',
                 'FRAME_LUT = {',
                 *[f"    {name!r}: {frame}," for name, frame in lut.items()],
                 '};',
@@ -178,13 +178,13 @@ def extract_txp2(
             filename = os.path.join(output_dir, name)
 
             if pretend:
-                print(f"Would write {filename}.afp SWF data...")
-                print(f"Would write {filename}.bsi SWF descramble data...")
+                print(f"Would write {filename}.afp animation data...")
+                print(f"Would write {filename}.bsi animation descramble data...")
             else:
-                print(f"Writing {filename}.afp SWF data...")
+                print(f"Writing {filename}.afp animation data...")
                 with open(f"{filename}.afp", "wb") as bfp:
                     bfp.write(swf.data)
-                print(f"Writing {filename}.bsi SWF descramble data...")
+                print(f"Writing {filename}.bsi animation descramble data...")
                 with open(f"{filename}.bsi", "wb") as bfp:
                     bfp.write(swf.descramble_info)
 
@@ -406,7 +406,7 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                     renderer.add_shape(name, shape)
 
                     if verbose:
-                        print(f"Added {name} to SWF shape library.", file=sys.stderr)
+                        print(f"Added {name} to animation shape library.", file=sys.stderr)
 
                 # Now, split and load textures into the renderer.
                 sheets: Dict[str, Any] = {}
@@ -432,17 +432,17 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                         renderer.add_texture(name, sprite)
 
                         if verbose:
-                            print(f"Added {name} to SWF texture library.", file=sys.stderr)
+                            print(f"Added {name} to animation texture library.", file=sys.stderr)
                     else:
                         print(f"Cannot load {name} from {texturename} because it is not a supported format!")
 
-            # Finally, load the SWF data itself into the renderer.
+            # Finally, load the animation data itself into the renderer.
             for i, name in enumerate(afpfile.swfmap.entries):
                 swf = afpfile.swfdata[i]
                 renderer.add_swf(name, swf)
 
                 if verbose:
-                    print(f"Added {name} to SWF library.", file=sys.stderr)
+                    print(f"Added {name} to animation library.", file=sys.stderr)
 
             continue
 
@@ -469,7 +469,7 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                     renderer.add_shape(shapename, shape)
 
                     if verbose:
-                        print(f"Added {shapename} to SWF shape library.", file=sys.stderr)
+                        print(f"Added {shapename} to animation shape library.", file=sys.stderr)
                 elif fname.startswith(f"tex{os.sep}") and fname.endswith(".png"):
                     if not need_extras:
                         continue
@@ -483,7 +483,7 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                     renderer.add_texture(texname, tex)
 
                     if verbose:
-                        print(f"Added {texname} to SWF texture library.", file=sys.stderr)
+                        print(f"Added {texname} to animation texture library.", file=sys.stderr)
                 elif fname.startswith(f"afp{os.sep}"):
                     # Trim off directory, see if it has a corresponding bsi.
                     afpname = fname[(3 + len(os.sep)):]
@@ -496,7 +496,7 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                         renderer.add_swf(afpname, flash)
 
                         if verbose:
-                            print(f"Added {afpname} to SWF library.", file=sys.stderr)
+                            print(f"Added {afpname} to animation library.", file=sys.stderr)
             continue
 
 
@@ -517,6 +517,45 @@ def list_paths(containers: List[str], *, include_frames: bool=False, include_siz
     return 0
 
 
+BackgroundT = TypeVar("BackgroundT")
+
+
+def adjust_background_loop(
+    background: List[BackgroundT],
+    background_loop_start: Optional[int] = None,
+    background_loop_end: Optional[int] = None,
+    background_loop_offset: Optional[int] = None,
+) -> List[BackgroundT]:
+    # Make sure background frames are 1-indexed here as well.
+    if background_loop_start is None:
+        background_loop_start = 0
+    else:
+        background_loop_start -= 1
+
+    if background_loop_offset is None:
+        background_loop_offset = 0
+    else:
+        background_loop_offset -= (background_loop_start + 1)
+
+    # Don't one-index the end because we want it to be inclusive.
+    if background_loop_end is None:
+        background_loop_end = len(background)
+
+    if background_loop_start >= background_loop_end:
+        raise Exception("Cannot start background loop after the end of the background loop!")
+    if background_loop_start < 0 or background_loop_end < 0:
+        raise Exception("Cannot start or end background loop on a negative frame!")
+    if background_loop_start >= len(background) or background_loop_end > len(background):
+        raise Exception("Cannot start or end background loop larger than the number of background animation frames!")
+
+    background = background[background_loop_start:background_loop_end]
+
+    if background_loop_offset < 0 or background_loop_offset >= len(background):
+        raise Exception("Cannot start first iteration of background loop outside the loop bounds!")
+
+    return background[background_loop_offset:] + background[:background_loop_offset]
+
+
 def render_path(
     containers: List[str],
     path: str,
@@ -526,6 +565,9 @@ def render_path(
     enable_anti_aliasing: bool = False,
     background_color: Optional[str] = None,
     background_image: Optional[str] = None,
+    background_loop_start: Optional[int] = None,
+    background_loop_end: Optional[int] = None,
+    background_loop_offset: Optional[int] = None,
     force_width: Optional[int] = None,
     force_height: Optional[int] = None,
     force_aspect_ratio: Optional[str] = None,
@@ -572,13 +614,77 @@ def render_path(
     else:
         color = None
 
-    # Allow inserting a background image.
+    # Allow inserting a background image, series of images or animation.
     if background_image:
-        background = Image.open(background_image)
+        background_image = os.path.abspath(background_image)
+        background: List[Image.Image] = []
+
+        if os.path.isfile(background_image):
+            # This is a direct reference, open it.
+            with open(background_image, "rb") as bfp:
+                # Work around the fact that PIL does not read the image until first use,
+                # meaning a long background image sequence can blow past max open files.
+                bgimg = Image.open(io.BytesIO(bfp.read()))
+            frames = getattr(bgimg, "n_frames", 1)
+
+            if frames == 1:
+                background.append(bgimg)
+            elif frames > 1:
+                for frame in range(frames):
+                    bgimg.seek(frame)
+                    background.append(bgimg.copy())
+            else:
+                raise Exception("Invalid image specified as background!")
+        else:
+            # This is probably a reference to a list of images.
+            dirof, fileof = os.path.split(background_image)
+            startof, endof = os.path.splitext(fileof)
+            if len(startof) == 0 or len(endof) == 0:
+                raise Exception("Invalid image specified as background!")
+            startof = startof + '-'
+
+            # Gather up the sequence of files so we can make frames out of them.
+            seqdict: Dict[int, str] = {}
+            for filename in os.listdir(dirof):
+                if filename.startswith(startof) and filename.endswith(endof):
+                    seqno = filename[len(startof):(-len(endof))]
+                    if seqno.isdigit():
+                        seqint = int(seqno)
+                        if seqint in seqdict:
+                            raise Exception(f"{filename} specifies the same background frame number as {seqdict[seqint]}!")
+                        seqdict[seqint] = filename
+
+            # Now, order the sequence by the integer of the sequence number so we can load the images.
+            seqtuple: List[Tuple[int, str]] = sorted(
+                [(s, p) for (s, p) in seqdict.items()],
+                key=lambda e: e[0],
+            )
+
+            # Finally, get the filenames from this sequence.
+            filenames: List[str] = [os.path.join(dirof, filename) for (_, filename) in seqtuple]
+
+            # Now that we have the list, lets load the images!
+            for filename in filenames:
+                with open(filename, "rb") as bfp:
+                    # Work around the fact that PIL does not read the image until first use,
+                    # meaning a long background image sequence can blow past max open files.
+                    bgimg = Image.open(io.BytesIO(bfp.read()))
+                frames = getattr(bgimg, "n_frames", 1)
+
+                if frames == 1:
+                    background.append(bgimg)
+                elif frames > 1:
+                    for frame in range(frames):
+                        bgimg.seek(frame)
+                        background.append(bgimg.copy())
+                else:
+                    raise Exception("Invalid image specified as background!")
+
+        background = adjust_background_loop(background, background_loop_start, background_loop_end, background_loop_offset)
     else:
         background = None
 
-    # Calculate the size of the SWF so we can apply scaling options.
+    # Calculate the size of the animation so we can apply scaling options.
     swf_location = renderer.compute_path_location(path)
     requested_width = force_width if force_width is not None else swf_location.width
     requested_height = force_height if force_height is not None else swf_location.height
@@ -711,113 +817,129 @@ def render_path(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker")
+    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker.")
     subparsers = parser.add_subparsers(help='Action to take', dest='action')
 
-    extract_parser = subparsers.add_parser('extract', help='Extract relevant file data and textures from a TXP2 container')
+    extract_parser = subparsers.add_parser(
+        'extract',
+        help='Extract relevant file data and textures from a TXP2 container',
+        description="Extract textures, sprites, decompiled bytecode, AFP, BSI and GEO files from a TXP2 container.",
+    )
     extract_parser.add_argument(
         "file",
         metavar="FILE",
-        help="The file to extract",
+        help="The TXP2 container to extract",
     )
     extract_parser.add_argument(
         "dir",
         metavar="DIR",
-        help="Directory to extract to",
+        help="The directory to extract all contents to",
     )
     extract_parser.add_argument(
         "-p",
         "--pretend",
         action="store_true",
-        help="Pretend to extract instead of extracting",
+        help="Pretend to extract instead of extracting, printing what would have been extracted",
     )
     extract_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
     )
     extract_parser.add_argument(
         "-r",
         "--write-raw",
         action="store_true",
-        help="Always write raw texture files",
+        help="Always write raw texture data instead of only writing raw texture data for unrecognized texture formats",
     )
     extract_parser.add_argument(
         "-m",
         "--write-mappings",
         action="store_true",
-        help="Write mapping files to disk",
+        help="Write mapping files to disk as XML files",
     )
     extract_parser.add_argument(
         "-g",
         "--generate-mapping-overlays",
         action="store_true",
-        help="Generate overlay images showing mappings",
+        help="Generate overlay images showing mappings between textures and individual sprites",
     )
     extract_parser.add_argument(
         "-s",
         "--split-textures",
         action="store_true",
-        help="Split textures into individual sprites",
+        help="Split textures into individual sprite image files",
     )
     extract_parser.add_argument(
         "-b",
         "--write-binaries",
         action="store_true",
-        help="Write binary SWF files to disk",
+        help="Write raw AFP/BSI/GEO files to disk",
     )
     extract_parser.add_argument(
         "-y",
         "--write-bytecode",
         action="store_true",
-        help="Write decompiled bytecode files to disk",
+        help="Write decompiled bytecode files found in AFP files to disk",
     )
 
-    update_parser = subparsers.add_parser('update', help='Update relevant textures in a TXP2 container from a directory')
+    update_parser = subparsers.add_parser(
+        'update',
+        help='Update relevant textures in a TXP2 container from a directory',
+        description="Update textures and sprites in a TXP2 container based on images in a directory.",
+    )
     update_parser.add_argument(
         "file",
         metavar="FILE",
-        help="The file to update",
+        help="The TXP2 container to update",
     )
     update_parser.add_argument(
         "dir",
         metavar="DIR",
-        help="Directory to update from",
+        help="Directory to update all contents from",
     )
     update_parser.add_argument(
         "-p",
         "--pretend",
         action="store_true",
-        help="Pretend to update instead of updating",
+        help="Pretend to update instead of updating, printing what would have been updated",
     )
     update_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
     )
 
-    print_parser = subparsers.add_parser('print', help='Print the TXP2 container contents as a JSON dictionary')
+    print_parser = subparsers.add_parser(
+        'print',
+        help='Print a TXP2 container\'s contents as a JSON dictionary',
+        description='Print a TXP2 container\'s contents as a JSON dictionary.',
+    )
     print_parser.add_argument(
         "file",
         metavar="FILE",
-        help="The file to print",
-    )
-    print_parser.add_argument(
-        "-d",
-        "--decompile-bytecode",
-        action="store_true",
-        help="Attempt to decompile and print bytecode instead of printing the raw representation.",
+        help="The TXP2 container to print",
     )
     print_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
+    )
+    print_parser.add_argument(
+        "-d",
+        "--decompile-bytecode",
+        action="store_true",
+        help="Attempt to decompile and print pseudocode instead of printing the raw bytecode.",
     )
 
-    parseafp_parser = subparsers.add_parser('parseafp', help='Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container')
+    parseafp_parser = subparsers.add_parser(
+        'parseafp',
+        help='Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container',
+        description='Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container.',
+    )
     parseafp_parser.add_argument(
         "afp",
         metavar="AFPFILE",
@@ -829,19 +951,23 @@ def main() -> int:
         help="The BSI file to parse",
     )
     parseafp_parser.add_argument(
-        "-d",
-        "--decompile-bytecode",
-        action="store_true",
-        help="Attempt to decompile and print bytecode instead of printing the raw representation.",
-    )
-    parseafp_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
+    )
+    parseafp_parser.add_argument(
+        "-d",
+        "--decompile-bytecode",
+        action="store_true",
+        help="Attempt to decompile and print pseudocode instead of printing the raw bytecode.",
     )
 
-    decompile_parser = subparsers.add_parser('decompile', help='Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container')
+    decompile_parser = subparsers.add_parser(
+        'decompile',
+        help='Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container',
+        description='Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container.',
+    )
     decompile_parser.add_argument(
         "afp",
         metavar="AFPFILE",
@@ -851,6 +977,12 @@ def main() -> int:
         "bsi",
         metavar="BSIFILE",
         help="The BSI file to parse",
+    )
+    decompile_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display verbose debugging output",
     )
     decompile_parser.add_argument(
         "-d",
@@ -858,16 +990,14 @@ def main() -> int:
         metavar="DIR",
         default='.',
         type=str,
-        help="Directory to extract to after decompiling. Defaults to current directory.",
-    )
-    decompile_parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Display verbuse debugging output",
+        help="Directory to write decompiled pseudocode files. Defaults to current directory.",
     )
 
-    parsegeo_parser = subparsers.add_parser('parsegeo', help='Parse a raw GEO file previously extracted from an IFS or TXP2 container')
+    parsegeo_parser = subparsers.add_parser(
+        'parsegeo',
+        help='Parse a raw GEO file previously extracted from an IFS or TXP2 container',
+        description='Parse a raw GEO file previously extracted from an IFS or TXP2 container.',
+    )
     parsegeo_parser.add_argument(
         "geo",
         metavar="GEOFILE",
@@ -877,100 +1007,26 @@ def main() -> int:
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
     )
 
-    render_parser = subparsers.add_parser('render', help='Render a particular animation out of a series of SWFs')
+    render_parser = subparsers.add_parser(
+        'render',
+        help='Render a particular animation out of a collection of TXP2 or IFS containers',
+        description='Render a particular animation out of a collection of TXP2 or IFS containers.',
+    )
     render_parser.add_argument(
         "container",
         metavar="CONTAINER",
         type=str,
         nargs='+',
-        help="A container file to use for loading SWF data. Can be either a TXP2 or IFS container.",
-    )
-    render_parser.add_argument(
-        "--path",
-        metavar="PATH",
-        type=str,
-        required=True,
-        help='A path to render, specified as "moviename" of the animation to render. Use the "list" command to discover paths in a file.',
-    )
-    render_parser.add_argument(
-        "--output",
-        metavar="IMAGE",
-        type=str,
-        default="out.gif",
-        help='The output file (ending either in .gif, .webp or .png) where the render should be saved.',
-    )
-    render_parser.add_argument(
-        "--background-color",
-        type=str,
-        default=None,
-        help="Set the background color of the animation as a comma-separated RGB or RGBA color, overriding a default if present in the SWF.",
-    )
-    render_parser.add_argument(
-        "--background-image",
-        type=str,
-        default=None,
-        help="Set a background image to be placed behind the animation. Note that it will be stretched to fit the animation.",
-    )
-    render_parser.add_argument(
-        "--only-depths",
-        type=str,
-        default=None,
-        help="Only render objects on these depth planes. Can provide either a number or a comma-separated list of numbers, or a range such as 3-5.",
-    )
-    render_parser.add_argument(
-        "--only-frames",
-        type=str,
-        default=None,
-        help="Only render these frames. Can provide either a number or a comma-separated list of numbers, or a range such as 10-20.",
-    )
-    render_parser.add_argument(
-        "--force-width",
-        type=int,
-        default=None,
-        help="Force the width of the rendered image to a specific pixel value, such as 640 or 800.",
-    )
-    render_parser.add_argument(
-        "--force-height",
-        type=int,
-        default=None,
-        help="Force the height of the rendered image to a specific pixel value, such as 480 or 600.",
-    )
-    render_parser.add_argument(
-        "--force-aspect-ratio",
-        type=str,
-        default=None,
-        help="Force the aspect ratio of the rendered image, as a colon-separated aspect ratio such as 16:9 or 4:3, after applying any forced width and height.",
-    )
-    render_parser.add_argument(
-        "--scale-width",
-        type=float,
-        default=1.0,
-        help="Scale the final width of the animation by some factor, such as 2.0 or 0.5, after applying any forced width, height and aspect ratio.",
-    )
-    render_parser.add_argument(
-        "--scale-height",
-        type=float,
-        default=1.0,
-        help="Scale the final height of the animation by some factor, such as 2.0 or 0.5, after applying any forced width, height and aspect ratio.",
-    )
-    render_parser.add_argument(
-        "--disable-threads",
-        action="store_true",
-        help="Disable multi-threaded rendering.",
-    )
-    render_parser.add_argument(
-        "--enable-anti-aliasing",
-        action="store_true",
-        help="Enable anti-aliased rendering, using bilinear interpolation and super-sampling depending on the circumstance.",
+        help="A container to use for loading animation data. Can be either a TXP2 or IFS container.",
     )
     render_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
     )
     render_parser.add_argument(
         "-s",
@@ -978,30 +1034,177 @@ def main() -> int:
         action="store_true",
         help="Display per-frame rendering progress",
     )
+    render_parser.add_argument(
+        "--disable-threads",
+        action="store_true",
+        help="Disable multi-threaded rendering. The animation will be rendered on a single core and threads will not be spawned.",
+    )
+    render_parser.add_argument(
+        "--path",
+        metavar="PATH",
+        type=str,
+        required=True,
+        help='The path of the animation to render. Use the "list" command to discover paths in a container.',
+    )
+    render_parser.add_argument(
+        "--output",
+        metavar="IMAGE",
+        type=str,
+        default="out.gif",
+        help=(
+            'The output file (ending either in .gif, .webp or .png) where the render should be saved. If .png is chosen then the '
+            'output will be a series of png files for each rendered frame. If .gif or .webp is chosen the output will be an '
+            'animated image. Note that the .gif file format has several severe limitations which result in sub-optimal animations '
+            'so it is recommended to use .webp or .png instead.'
+        ),
+    )
+    render_parser.add_argument(
+        "--background-color",
+        type=str,
+        default=None,
+        help=(
+            "Set the background color of the animation as a comma-separated RGB or RGBA color (such as 255,0,0 for red or "
+            "0,255,0,128 for translucent green), overriding any default in the animation."
+        ),
+    )
+    render_parser.add_argument(
+        "--background-image",
+        type=str,
+        default=None,
+        help=(
+            "Set a background image or animation to be placed behind the animation but in front of the background color. "
+            "Note that the background will be stretched to fit the animation. If a .png is specified and multiple rendered "
+            "frames are present it will use that series as an animation. If a static image is specified and mulitple frames "
+            "are not present it will use that as a static background. If an animated image is specified it will use that "
+            "as an animated background."
+        ),
+    )
+    render_parser.add_argument(
+        "--background-loop-start",
+        type=int,
+        default=None,
+        help=(
+            "The starting frame of the background animation loop. Specify this to loop to a background animation frame other "
+            "than the first. For example, if your background animation has 10 frames and you specify a loop start of 6, the "
+            "resulting background animation loop will contain frames 6, 7, 8, 9 and 10 played in that order."
+        ),
+    )
+    render_parser.add_argument(
+        "--background-loop-end",
+        type=int,
+        default=None,
+        help=(
+            "The ending frame of the background animation loop. Specify this to loop from a background animation frame other "
+            "than the last. For example, if your background animation has 10 frames and you specify a loop end of 8, the "
+            "resulting background animation loop will contain frames 1, 2, 3, 4, 5, 6, 7 and 8 played in that order."
+        ),
+    )
+    render_parser.add_argument(
+        "--background-loop-offset",
+        type=int,
+        default=None,
+        help=(
+            "The very first frame of the background animation. Specify this to start the first loop anywhere other than the "
+            "loop start frame. For example, if your background animation has 10 frames and you specify a loop offset of 7, the "
+            "resulting background animation loop will contain frames 7, 8, 9 10, 1, 2, 3, 4, 5 and 6 played in that order. Note "
+            "that this can work in conjunction with the --background-loop-start and --background-loop-end parameters. For "
+            "example, if your background animation has 10 frames and you specify a loop start of 3, a loop end of 7 and a loop "
+            "offset of 5, the resulting background animation loop will contain frames 5, 6, 7, 3 and 4 played in that order."
+        ),
+    )
+    render_parser.add_argument(
+        "--only-depths",
+        type=str,
+        default=None,
+        help="Only render objects on these depth planes. Specify a number, a comma-separated list of numbers or a range such as 3-5.",
+    )
+    render_parser.add_argument(
+        "--only-frames",
+        type=str,
+        default=None,
+        help=(
+            "Only render these frames. Specify a number, a comma-separated list of numbers or a range such as 10-20. Note that the "
+            "first frame is frame 1, not frame 0."
+        ),
+    )
+    render_parser.add_argument(
+        "--force-width",
+        type=int,
+        default=None,
+        help=(
+            "Force the width of the rendered animation to a specific pixel value, such as 640 or 800. If the forced width does not match "
+            "the animation's original width it will be stretched horizontally."
+        ),
+    )
+    render_parser.add_argument(
+        "--force-height",
+        type=int,
+        default=None,
+        help=(
+            "Force the height of the rendered animation to a specific pixel value, such as 480 or 600. If the forced height does not match "
+            "the animation's original height it will be stretched vertically."
+        ),
+    )
+    render_parser.add_argument(
+        "--force-aspect-ratio",
+        type=str,
+        default=None,
+        help=(
+            "Force the aspect ratio of the rendered animation, as a colon-separated aspect ratio such as 16:9 or 4:3, after applying "
+            "any forced width and height. The resulting animation will be stretched to meet the requested aspect ratio."
+        ),
+    )
+    render_parser.add_argument(
+        "--scale-width",
+        type=float,
+        default=1.0,
+        help=(
+            "Scale the final width of the animation by some factor, such as 2.0 or 0.5, after applying any forced width, height and "
+            "aspect ratio. The resulting animation will be stretched horizontally by the scaling factor."
+        ),
+    )
+    render_parser.add_argument(
+        "--scale-height",
+        type=float,
+        default=1.0,
+        help=(
+            "Scale the final height of the animation by some factor, such as 2.0 or 0.5, after applying any forced width, height and "
+            "aspect ratio. The resulting animation will be stretched vertically by the scaling factor."
+        ),
+    )
+    render_parser.add_argument(
+        "--enable-anti-aliasing",
+        action="store_true",
+        help="Enable anti-aliased rendering, using bilinear interpolation and super-sampling where appropriate to produce the best resulting animation.",
+    )
 
-    list_parser = subparsers.add_parser('list', help='List out the possible paths to render from a series of SWFs')
+    list_parser = subparsers.add_parser(
+        'list',
+        help='List out the possible paths to render from a collection of TXP2 or IFS containers',
+        description='List out the possible paths to render from a collection of TXP2 or IFS containers.',
+    )
     list_parser.add_argument(
         "container",
         metavar="CONTAINER",
         type=str,
         nargs='+',
-        help="A container file to use for loading SWF data. Can be either a TXP2 or IFS container.",
-    )
-    list_parser.add_argument(
-        "--include-frames",
-        action="store_true",
-        help="Include number of frames per path in the output list.",
-    )
-    list_parser.add_argument(
-        "--include-size",
-        action="store_true",
-        help="Include width/height of the path in the output list.",
+        help="A container to use for loading animation data. Can be either a TXP2 or IFS container.",
     )
     list_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Display verbuse debugging output",
+        help="Display verbose debugging output",
+    )
+    list_parser.add_argument(
+        "--include-frames",
+        action="store_true",
+        help="Include number of frames per animation in the output list.",
+    )
+    list_parser.add_argument(
+        "--include-size",
+        action="store_true",
+        help="Include width/height per animation in the output list.",
     )
 
     args = parser.parse_args()
@@ -1039,6 +1242,9 @@ def main() -> int:
             enable_anti_aliasing=args.enable_anti_aliasing,
             background_color=args.background_color,
             background_image=args.background_image,
+            background_loop_start=args.background_loop_start,
+            background_loop_end=args.background_loop_end,
+            background_loop_offset=args.background_loop_offset,
             force_width=args.force_width,
             force_height=args.force_height,
             force_aspect_ratio=args.force_aspect_ratio,

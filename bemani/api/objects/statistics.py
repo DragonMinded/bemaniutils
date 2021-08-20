@@ -25,7 +25,7 @@ class StatisticsObject(BaseObject):
 
     @property
     def music_version(self) -> int:
-        if self.game in [GameConstants.IIDX, GameConstants.MUSECA]:
+        if self.game in {GameConstants.IIDX, GameConstants.MUSECA}:
             if self.omnimix:
                 return self.version + DBConstants.OMNIMIX_VERSION_BUMP
             else:
@@ -34,12 +34,12 @@ class StatisticsObject(BaseObject):
             return self.version
 
     def __is_play(self, attempt: Attempt) -> bool:
-        if self.game in [
+        if self.game in {
             GameConstants.DDR,
             GameConstants.JUBEAT,
             GameConstants.MUSECA,
             GameConstants.POPN_MUSIC,
-        ]:
+        }:
             return True
         if self.game == GameConstants.IIDX:
             return attempt.data.get_int('clear_status') != DBConstants.IIDX_CLEAR_STATUS_NO_PLAY
@@ -180,7 +180,7 @@ class StatisticsObject(BaseObject):
 
         return retval
 
-    def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         retval: List[Dict[str, Any]] = []
 
         # Fetch the attempts
