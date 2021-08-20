@@ -372,7 +372,6 @@ class ImportPopn(ImportBase):
             '23': VersionConstants.POPN_MUSIC_ECLALE,
             '24': VersionConstants.POPN_MUSIC_USANEKO,
             '25': VersionConstants.POPN_MUSIC_PEACE,
-            '26': VersionConstants.POPN_MUSIC_KRIDDLES,
         }.get(version, -1)
 
         if actual_version == VersionConstants.POPN_MUSIC_TUNE_STREET:

@@ -28,7 +28,6 @@ from bemani.client.popn import (
     PopnMusicEclaleClient,
     PopnMusicUsaNekoClient,
     PopnMusicPeaceClient,
-    PopnMusicKRiddlesClient,
 )
 from bemani.client.ddr import (
     DDRX2Client,
@@ -98,12 +97,6 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
         )
     if game == 'pnm-peace':
         return PopnMusicPeaceClient(
-            proto,
-            pcbid,
-            config,
-        )
-    if game == 'pnm-kriddles':
-        return PopnMusicKRiddlesClient(
             proto,
             pcbid,
             config,
@@ -342,12 +335,6 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             'old_profile_model': "M39:J:B:A",
             'avs': "2.15.8 r6631",
         },
-        'pnm-kriddles': {
-            'name': "Pop'n Music Kaimei Riddles",
-            'model': "M39:J:B:A:2021042600",
-            'old_profile_model': "M39:J:B:A",
-            'avs': "2.15.8 r6631",
-        },
         'jubeat-saucer': {
             'name': "Jubeat Saucer",
             'model': "L44:J:A:A:2014012802",
@@ -561,7 +548,6 @@ def main() -> None:
         'pnm-23': 'pnm-eclale',
         'pnm-24': 'pnm-usaneko',
         'pnm-25': 'pnm-peace',
-        'pnm-26': 'pnm-kriddles',
         'iidx-20': 'iidx-tricoro',
         'iidx-21': 'iidx-spada',
         'iidx-22': 'iidx-pendual',

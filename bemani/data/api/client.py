@@ -162,7 +162,6 @@ class APIClient:
                 VersionConstants.POPN_MUSIC_ECLALE: '23',
                 VersionConstants.POPN_MUSIC_USANEKO: '24',
                 VersionConstants.POPN_MUSIC_PEACE: '25',
-                VersionConstants.POPN_MUSIC_KRIDDLES: '26',
             },
             GameConstants.REFLEC_BEAT: {
                 VersionConstants.REFLEC_BEAT: '1',
