@@ -13,7 +13,7 @@ from bemani.protocol import Node
 
 class PopnMusicPeace(PopnMusicBase):
 
-    name = "Pop'n Music peace"
+    name = "Pop'n Music Peace"
     version = VersionConstants.POPN_MUSIC_PEACE
 
     # Chart type, as returned from the game
@@ -272,7 +272,7 @@ class PopnMusicPeace(PopnMusicBase):
             choco.add_child(Node.s32('param', -1))
 
         # Set up goods, educated guess here.
-        for goods_id in range(97):
+        for goods_id in range(98):
             if goods_id < 15:
                 price = 30
             elif goods_id < 30:
@@ -829,9 +829,12 @@ class PopnMusicPeace(PopnMusicBase):
         account.add_child(Node.s32('chocolate_sp_chara', profile.get_int('chocolate_sp_chara', -1)))
         account.add_child(Node.s32('chocolate_pass_cnt', profile.get_int('chocolate_pass_cnt')))
         account.add_child(Node.s32('chocolate_hon_cnt', profile.get_int('chocolate_hon_cnt')))
+        account.add_child(Node.s32('chocolate_giri_cnt', profile.get_int('chocolate_giri_cnt')))
+        account.add_child(Node.s32('chocolate_kokyu_cnt', profile.get_int('chocolate_kokyu_cnt')))
         account.add_child(Node.s16_array('teacher_setting', profile.get_int_array('teacher_setting', 10, [-1] * 10)))
         account.add_child(Node.bool('welcom_pack', profile.get_bool('welcome_pack')))
         account.add_child(Node.s32('ranking_node', profile.get_int('ranking_node')))
+        account.add_child(Node.s32('start_type', profile.get_int('start_type')))
         account.add_child(Node.s32('chara_ranking_kind_id', profile.get_int('chara_ranking_kind_id')))
         account.add_child(Node.s8('navi_evolution_flg', profile.get_int('navi_evolution_flg')))
         account.add_child(Node.s32('ranking_news_last_no', profile.get_int('ranking_news_last_no')))
@@ -1159,6 +1162,7 @@ class PopnMusicPeace(PopnMusicBase):
             newprofile.replace_int('area_id', account.child_value('area_id'))
             newprofile.replace_int('use_navi', account.child_value('use_navi'))
             newprofile.replace_int('ranking_node', account.child_value('ranking_node'))
+            newprofile.replace_int('start_type', account.child_value('start_type'))
             newprofile.replace_int('chara_ranking_kind_id', account.child_value('chara_ranking_kind_id'))
             newprofile.replace_int('navi_evolution_flg', account.child_value('navi_evolution_flg'))
             newprofile.replace_int('ranking_news_last_no', account.child_value('ranking_news_last_no'))
