@@ -73,7 +73,7 @@ class TrackedCoverage:
 
     def get_uncovered_chunks(self, req_start: Optional[int] = None, req_end: Optional[int] = None, adjust_offsets: bool = False) -> List[Tuple[int, int]]:
         # First offset that is not coverd in a run.
-        start = None
+        start: Optional[int] = None
         chunks: List[Tuple[int, int]] = []
 
         for offset, covered in enumerate(self.coverage):

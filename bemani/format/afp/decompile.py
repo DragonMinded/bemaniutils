@@ -2634,8 +2634,8 @@ class ByteCodeDecompiler(VerboseOutput):
 
             if isinstance(statement, GotoStatement):
                 if statement.location in labels:
-                    return NullReturnStatement()
                     updated = True
+                    return NullReturnStatement()
             return statement
 
         statements = self.__walk(statements, update_gotos)
