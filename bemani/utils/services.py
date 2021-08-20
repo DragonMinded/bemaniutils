@@ -68,8 +68,6 @@ def receive_request(path: str) -> Response:
             )
             return Response("No response generated", 404)
 
-        compression = None
-
         data = proto.encode(
             compression,
             encryption,

@@ -1,6 +1,7 @@
 from typing import Optional, Any
 
-from bemani.backend.base import Model, Base, Status
+from bemani.backend.base import Base, Status
+from bemani.common import Model
 from bemani.protocol import Node
 from bemani.data import Config, Data
 

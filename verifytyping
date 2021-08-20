@@ -41,9 +41,21 @@ MYPYPATH=$(python -c "import os; print(os.path.realpath('.'))") mypy \
     "${cmdline[@]}" \
     --warn-redundant-casts \
     --warn-unused-ignores \
+    --warn-unused-configs \
+    --warn-unreachable \
     --disallow-untyped-calls \
     --disallow-untyped-defs \
     --disallow-subclassing-any \
     --disallow-incomplete-defs \
+    --disallow-untyped-decorators \
+    --check-untyped-defs \
+    --strict-equality \
+    --no-implicit-reexport \
     --no-implicit-optional \
     --no-strict-optional
+
+# Currently we are missing the following options to make us "strict":
+# --disallow-any-generics - Currently impossible to type certain generics such as Callable.
+# --warn-return-any - This finds a lot of code that we know is correct but mypy can't prove, not worth it.
+# We also would want to get rid of the following options:
+# --no-strict-optional - We have a lot of code that doesn't check but should check for optional.

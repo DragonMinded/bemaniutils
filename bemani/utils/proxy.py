@@ -165,10 +165,14 @@ def receive_request(path: str) -> Response:
     }
 
     # Copy over required headers that are sent by game client.
-    if request_compression is not None:
+    if request_compression:
         headers['X-Compress'] = request_compression
-    if request_encryption is not None:
+    else:
+        headers['X-Compress'] = 'none'
+    if request_encryption:
         headers['X-Eamuse-Info'] = request_encryption
+
+    # Make sure to copy the user agent as well.
     if request_client is not None:
         headers['User-Agent'] = request_client
 

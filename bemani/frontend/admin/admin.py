@@ -631,8 +631,8 @@ def generatepcbid() -> Dict[str, Any]:
             raise Exception('Unable to find arcade to link PCBID to!')
 
     # Will be set by the game on boot.
-    name = 'なし'
-    pcbid = None
+    name: str = 'なし'
+    pcbid: Optional[str] = None
     while pcbid is None:
         # Generate a new PCBID, check for uniqueness
         potential_pcbid = "01201000000000" + "".join([random.choice("0123456789ABCDEF") for _ in range(6)])
