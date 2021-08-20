@@ -22,7 +22,7 @@ class MusecaFrontend(FrontendBase):
     def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
         super().__init__(data, config, cache)
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from MusecaFactory.all_games()
         yield (
             GameConstants.MUSECA,

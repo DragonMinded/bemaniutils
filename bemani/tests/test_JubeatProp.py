@@ -58,12 +58,12 @@ class TestJubeatProp(unittest.TestCase):
         self.assertEqual(
             JubeatProp._get_league_buckets(
                 [
-                    (5, 12345),
+                    (UserID(5), 12345),
                 ],
             ),
             (
                 [
-                    5,
+                    UserID(5),
                 ],
                 [],
                 [],
@@ -74,17 +74,17 @@ class TestJubeatProp(unittest.TestCase):
         self.assertEqual(
             JubeatProp._get_league_buckets(
                 [
-                    (5, 12345),
-                    (7, 54321),
+                    (UserID(5), 12345),
+                    (UserID(7), 54321),
                 ],
             ),
             (
                 [
-                    7,
+                    UserID(7),
                 ],
                 [],
                 [
-                    5,
+                    UserID(5),
                 ],
             ),
         )
@@ -93,20 +93,20 @@ class TestJubeatProp(unittest.TestCase):
         self.assertEqual(
             JubeatProp._get_league_buckets(
                 [
-                    (5, 12345),
-                    (7, 54321),
-                    (9, 33333),
+                    (UserID(5), 12345),
+                    (UserID(7), 54321),
+                    (UserID(9), 33333),
                 ],
             ),
             (
                 [
-                    7,
+                    UserID(7),
                 ],
                 [
-                    9,
+                    UserID(9),
                 ],
                 [
-                    5,
+                    UserID(5),
                 ],
             ),
         )
@@ -115,34 +115,34 @@ class TestJubeatProp(unittest.TestCase):
         self.assertEqual(
             JubeatProp._get_league_buckets(
                 [
-                    (5, 55555),
-                    (7, 77777),
-                    (9, 99999),
-                    (1, 11111),
-                    (6, 66666),
-                    (8, 88888),
-                    (2, 22222),
-                    (3, 33333),
-                    (10, 100000),
-                    (4, 44444),
+                    (UserID(5), 55555),
+                    (UserID(7), 77777),
+                    (UserID(9), 99999),
+                    (UserID(1), 11111),
+                    (UserID(6), 66666),
+                    (UserID(8), 88888),
+                    (UserID(2), 22222),
+                    (UserID(3), 33333),
+                    (UserID(10), 100000),
+                    (UserID(4), 44444),
                 ],
             ),
             (
                 [
-                    10,
-                    9,
-                    8,
+                    UserID(10),
+                    UserID(9),
+                    UserID(8),
                 ],
                 [
-                    7,
-                    6,
-                    5,
-                    4,
+                    UserID(7),
+                    UserID(6),
+                    UserID(5),
+                    UserID(4),
                 ],
                 [
-                    3,
-                    2,
-                    1,
+                    UserID(3),
+                    UserID(2),
+                    UserID(1),
                 ],
             ),
         )
@@ -171,7 +171,7 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_scores(
                 data,
                 999,
-                [(UserID(1337), {})],
+                [(UserID(1337), ValidatedDict())],
             ),
             (
                 [(1337, 1368)],
@@ -193,7 +193,7 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_scores(
                 data,
                 999,
-                [(UserID(1337), {})],
+                [(UserID(1337), ValidatedDict())],
             ),
             (
                 [],
@@ -230,14 +230,14 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_absentees(
                 data,
                 999,
-                [1337],
+                [UserID(1337)],
             ),
             [],
         )
         data.local.user.get_achievements.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
         )
         data.local.user.get_achievements.reset_mock()
 
@@ -249,14 +249,14 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_absentees(
                 data,
                 999,
-                [1337],
+                [UserID(1337)],
             ),
             [],
         )
         data.local.user.get_achievements.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
         )
         data.local.user.get_achievements.reset_mock()
 
@@ -268,14 +268,14 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_absentees(
                 data,
                 999,
-                [1337],
+                [UserID(1337)],
             ),
-            [1337],
+            [UserID(1337)],
         )
         data.local.user.get_achievements.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
         )
         data.local.user.get_achievements.reset_mock()
 
@@ -288,14 +288,14 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_absentees(
                 data,
                 999,
-                [1337],
+                [UserID(1337)],
             ),
             [],
         )
         data.local.user.get_achievements.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
         )
         data.local.user.get_achievements.reset_mock()
 
@@ -307,14 +307,14 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp._get_league_absentees(
                 data,
                 999,
-                [1337],
+                [UserID(1337)],
             ),
-            [1337],
+            [UserID(1337)],
         )
         data.local.user.get_achievements.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
         )
         data.local.user.get_achievements.reset_mock()
 
@@ -330,7 +330,7 @@ class TestJubeatProp(unittest.TestCase):
         }))
         JubeatProp._modify_profile(
             data,
-            1337,
+            UserID(1337),
             'demote',
         )
         self.assertFalse(data.local.user.put_profile.called)
@@ -342,7 +342,7 @@ class TestJubeatProp(unittest.TestCase):
         }))
         JubeatProp._modify_profile(
             data,
-            1337,
+            UserID(1337),
             'promote',
         )
         self.assertFalse(data.local.user.put_profile.called)
@@ -355,13 +355,13 @@ class TestJubeatProp(unittest.TestCase):
         }))
         JubeatProp._modify_profile(
             data,
-            1337,
+            UserID(1337),
             'promote',
         )
         data.local.user.put_profile.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
             {
                 'league_class': 1,
                 'league_subclass': 4,
@@ -382,13 +382,13 @@ class TestJubeatProp(unittest.TestCase):
         }))
         JubeatProp._modify_profile(
             data,
-            1337,
+            UserID(1337),
             'demote',
         )
         data.local.user.put_profile.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
             {
                 'league_class': 1,
                 'league_subclass': 4,
@@ -413,13 +413,13 @@ class TestJubeatProp(unittest.TestCase):
         }))
         JubeatProp._modify_profile(
             data,
-            1337,
+            UserID(1337),
             'demote',
         )
         data.local.user.put_profile.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
-            1337,
+            UserID(1337),
             {
                 'league_class': 1,
                 'league_subclass': 5,

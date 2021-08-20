@@ -289,7 +289,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_score(self, game: str, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Optional[Score]:
+    def __format_score(self, game: GameConstants, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Optional[Score]:
         if game == GameConstants.DDR:
             return self.__format_ddr_score(version, songid, songchart, data)
         if game == GameConstants.IIDX:
@@ -432,7 +432,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __merge_score(self, game: str, version: int, oldscore: Score, newscore: Score) -> Score:
+    def __merge_score(self, game: GameConstants, version: int, oldscore: Score, newscore: Score) -> Score:
         if oldscore.id != newscore.id or oldscore.chart != newscore.chart:
             raise Exception('Logic error! Tried to merge scores from different song/charts!')
 
@@ -453,7 +453,7 @@ class GlobalMusicData(BaseGlobalData):
 
         return oldscore
 
-    def get_score(self, game: str, version: int, userid: UserID, songid: int, songchart: int) -> Optional[Score]:
+    def get_score(self, game: GameConstants, version: int, userid: UserID, songid: int, songchart: int) -> Optional[Score]:
         # Helper function so we can iterate over all servers for a single card
         def get_scores_for_card(cardid: str) -> List[Score]:
             return Parallel.flatten(Parallel.call(
@@ -502,7 +502,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def get_scores(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         userid: UserID,
         since: Optional[int]=None,
@@ -571,7 +571,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def __merge_global_scores(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         localcards: List[Tuple[str, UserID]],
         localscores: List[Tuple[UserID, Score]],
@@ -629,7 +629,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def get_all_scores(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
         userid: Optional[UserID]=None,
         songid: Optional[int]=None,
@@ -670,7 +670,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def __merge_global_records(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         localcards: List[Tuple[str, UserID]],
         localscores: List[Tuple[UserID, Score]],
@@ -731,7 +731,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def get_all_records(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
         userlist: Optional[List[UserID]]=None,
         locationlist: Optional[List[int]]=None,
@@ -761,7 +761,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def get_clear_rates(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         songid: Optional[int]=None,
         songchart: Optional[int]=None,
@@ -1029,7 +1029,7 @@ class GlobalMusicData(BaseGlobalData):
 
     def __format_song(
         self,
-        game: str,
+        game: GameConstants,
         version: int,
         songid: int,
         songchart: int,
@@ -1056,14 +1056,14 @@ class GlobalMusicData(BaseGlobalData):
 
     def get_all_songs(
         self,
-        game: str,
+        game: GameConstants,
         version: Optional[int]=None,
     ) -> List[Song]:
         """
         Given a game and a version, look up all song/chart combos associated with that game.
 
         Parameters:
-            game - String representing a game series.
+            game - Enum value representing a game series.
             version - Integer representing which version of the game.
 
         Returns:

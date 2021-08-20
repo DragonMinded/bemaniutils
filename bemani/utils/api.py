@@ -1,15 +1,12 @@
 import argparse
-import yaml
 
-from bemani.data import Data
 from bemani.api import app, config  # noqa: F401
+from bemani.utils.config import load_config as base_load_config
 
 
 def load_config(filename: str) -> None:
     global config
-
-    config.update(yaml.safe_load(open(filename)))
-    config['database']['engine'] = Data.create_engine(config)
+    base_load_config(filename, config)
 
 
 def main() -> None:

@@ -16,8 +16,8 @@ class MusecaFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for game in ['PIX']:
-            Base.register(game, MusecaFactory)
+        for gamecode in ['PIX']:
+            Base.register(gamecode, MusecaFactory)
 
     @classmethod
     def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
@@ -29,7 +29,7 @@ class MusecaFactory(Factory):
                 return VersionConstants.MUSECA_1_PLUS
             return None
 
-        if model.game == 'PIX':
+        if model.gamecode == 'PIX':
             version = version_from_date(model.version)
             if version == VersionConstants.MUSECA:
                 return Museca1(data, config, model)

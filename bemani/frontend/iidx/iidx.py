@@ -31,7 +31,7 @@ class IIDXFrontend(FrontendBase):
         super().__init__(data, config, cache)
         self.machines: Dict[int, str] = {}
 
-    def all_games(self) -> Iterator[Tuple[str, int, str]]:
+    def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from IIDXFactory.all_games()
 
     def get_duplicate_id(self, musicid: int, chart: int) -> Optional[Tuple[int, int]]:

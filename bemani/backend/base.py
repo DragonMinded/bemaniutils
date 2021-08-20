@@ -1,7 +1,8 @@
+from abc import ABC
 import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 
-from bemani.common import Model, ValidatedDict, Time
+from bemani.common import Model, ValidatedDict, GameConstants, Time
 from bemani.data import Data, UserID, RemoteUser
 
 
@@ -65,7 +66,7 @@ class Factory:
                 data.local.network.put_event(event[0], event[1])
 
     @classmethod
-    def all_games(cls) -> Iterator[Tuple[str, int, str]]:
+    def all_games(cls) -> Iterator[Tuple[GameConstants, int, str]]:
         """
         Given a particular factory, iterate over all game, version combinations.
         Useful for loading things from the DB without wanting to hardcode values.
@@ -74,7 +75,7 @@ class Factory:
             yield (game.game, game.version, game.name)
 
     @classmethod
-    def all_settings(cls) -> Iterator[Tuple[str, int, Dict[str, Any]]]:
+    def all_settings(cls) -> Iterator[Tuple[GameConstants, int, Dict[str, Any]]]:
         """
         Given a particular factory, iterate over all game, version combinations that
         have settings and return those settings.
@@ -104,7 +105,7 @@ class Factory:
         raise Exception('Override this in subclass!')
 
 
-class Base:
+class Base(ABC):
     """
     The base class every game class inherits from. Incudes handlers for card management, PASELI, most
     non-game startup packets, and simple code for loading/storing profiles.
@@ -116,17 +117,17 @@ class Base:
     """
     Override this in your subclass.
     """
-    game = 'dummy'
+    game: GameConstants
 
     """
     Override this in your subclass.
     """
-    version = 0
+    version: int
 
     """
     Override this in your subclass.
     """
-    name = 'dummy'
+    name: str
 
     def __init__(self, data: Data, config: Dict[str, Any], model: Model) -> None:
         self.data = data
@@ -157,15 +158,15 @@ class Base:
             this model. Its possible to return None from this function if a registered game has no way of
             handling this particular modelstring.
         """
-        if model.game not in cls.__registered_games:
+        if model.gamecode not in cls.__registered_games:
             # Return just this base model, which will provide nothing
             return Base(data, config, model)
         else:
             # Return the registered module providing this game
-            return cls.__registered_games[model.game].create(data, config, model, parentmodel=parentmodel)
+            return cls.__registered_games[model.gamecode].create(data, config, model, parentmodel=parentmodel)
 
     @classmethod
-    def register(cls, game: str, handler: Type[Factory]) -> None:
+    def register(cls, gamecode: str, handler: Type[Factory]) -> None:
         """
         Register a factory to handle a game. Note that the game should be the game
         code as returned by a game, such as "LDJ" or "MDX".
@@ -174,7 +175,7 @@ class Base:
             game - 3-character string identifying a game
             handler - A factory which has a create() method that can spawn game classes.
         """
-        cls.__registered_games[game] = handler
+        cls.__registered_games[gamecode] = handler
         cls.__registered_handlers.add(handler)
 
     @classmethod
@@ -192,7 +193,7 @@ class Base:
         return {}
 
     @classmethod
-    def all_games(cls) -> Iterator[Tuple[str, int, str]]:
+    def all_games(cls) -> Iterator[Tuple[GameConstants, int, str]]:
         """
         Given all registered factories, iterate over all game, version combinations.
         Useful for loading things from the DB without wanting to hardcode values.
@@ -202,7 +203,7 @@ class Base:
                 yield (game.game, game.version, game.name)
 
     @classmethod
-    def all_settings(cls) -> Iterator[Tuple[str, int, Dict[str, Any]]]:
+    def all_settings(cls) -> Iterator[Tuple[GameConstants, int, Dict[str, Any]]]:
         """
         Given all registered factories, iterate over all game, version combinations that
         have settings and return those settings.

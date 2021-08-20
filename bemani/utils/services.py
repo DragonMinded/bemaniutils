@@ -1,22 +1,13 @@
 import argparse
 import copy
 import traceback
-import yaml
 from typing import Any, Dict
 from flask import Flask, request, redirect, Response, make_response
 
 from bemani.protocol import EAmuseProtocol
 from bemani.backend import Dispatch, UnrecognizedPCBIDException
-from bemani.backend.iidx import IIDXFactory
-from bemani.backend.popn import PopnMusicFactory
-from bemani.backend.jubeat import JubeatFactory
-from bemani.backend.bishi import BishiBashiFactory
-from bemani.backend.ddr import DDRFactory
-from bemani.backend.sdvx import SoundVoltexFactory
-from bemani.backend.reflec import ReflecBeatFactory
-from bemani.backend.museca import MusecaFactory
-from bemani.common import GameConstants
 from bemani.data import Data
+from bemani.utils.config import load_config as base_load_config, register_games as base_register_games
 
 
 app = Flask(__name__)
@@ -125,32 +116,14 @@ def receive_request(path: str) -> Response:
         dataprovider.close()
 
 
-def load_config(filename: str) -> None:
-    global config
-
-    config.update(yaml.safe_load(open(filename)))
-    config['database']['engine'] = Data.create_engine(config)
-
-
 def register_games() -> None:
     global config
+    base_register_games(config)
 
-    if config.get('support', {}).get(GameConstants.POPN_MUSIC, False):
-        PopnMusicFactory.register_all()
-    if config.get('support', {}).get(GameConstants.JUBEAT, False):
-        JubeatFactory.register_all()
-    if config.get('support', {}).get(GameConstants.IIDX, False):
-        IIDXFactory.register_all()
-    if config.get('support', {}).get(GameConstants.BISHI_BASHI, False):
-        BishiBashiFactory.register_all()
-    if config.get('support', {}).get(GameConstants.DDR, False):
-        DDRFactory.register_all()
-    if config.get('support', {}).get(GameConstants.REFLEC_BEAT, False):
-        ReflecBeatFactory.register_all()
-    if config.get('support', {}).get(GameConstants.SDVX, False):
-        SoundVoltexFactory.register_all()
-    if config.get('support', {}).get(GameConstants.MUSECA, False):
-        MusecaFactory.register_all()
+
+def load_config(filename: str) -> None:
+    global config
+    base_load_config(filename, config)
 
 
 if __name__ == '__main__':
@@ -160,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--profile", help="Turn on profiling for services, writing CProfile data to the currenct directory", action="store_true")
     args = parser.parse_args()
 
-    # Set up global configuration, overriding config port for convenience
+    # Set up global configuration, overriding config port for convenience in debugging.
     load_config(args.config)
     config['server']['port'] = args.port
 

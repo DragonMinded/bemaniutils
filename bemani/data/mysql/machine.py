@@ -3,7 +3,7 @@ from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
-from bemani.common import ValidatedDict
+from bemani.common import GameConstants, ValidatedDict
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import Machine, Arcade, UserID, ArcadeID
 
@@ -172,7 +172,7 @@ class MachineData(BaseData):
             result['description'],
             result['arcadeid'],
             result['port'],
-            result['game'],
+            GameConstants(result['game']) if result['game'] else None,
             result['version'],
             self.deserialize(result['data']),
         )
@@ -199,7 +199,7 @@ class MachineData(BaseData):
                 result['description'],
                 result['arcadeid'],
                 result['port'],
-                result['game'],
+                GameConstants(result['game']) if result['game'] else None,
                 result['version'],
                 self.deserialize(result['data']),
             ) for result in cursor.fetchall()
@@ -224,7 +224,7 @@ class MachineData(BaseData):
                 'description': machine.description,
                 'arcadeid': machine.arcade,
                 'port': machine.port,
-                'game': machine.game,
+                'game': machine.game.value if machine.game else None,
                 'version': machine.version,
                 'pcbid': machine.pcbid,
                 'data': self.serialize(machine.data)
@@ -424,13 +424,13 @@ class MachineData(BaseData):
             ) for result in cursor.fetchall()
         ]
 
-    def get_settings(self, arcadeid: ArcadeID, game: str, version: int, setting: str) -> Optional[ValidatedDict]:
+    def get_settings(self, arcadeid: ArcadeID, game: GameConstants, version: int, setting: str) -> Optional[ValidatedDict]:
         """
         Given an arcade and a game/version combo, look up this particular setting.
 
         Parameters:
             arcadeid - Integer specifying the arcade to delete.
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - String identifying a game version.
             setting - String identifying the particular setting we're interestsed in.
 
@@ -438,7 +438,7 @@ class MachineData(BaseData):
             A dictionary representing game settings, or None if there are no settings for this game/user.
         """
         sql = "SELECT data FROM arcade_settings WHERE arcadeid = :id AND game = :game AND version = :version AND type = :type"
-        cursor = self.execute(sql, {'id': arcadeid, 'game': game, 'version': version, 'type': setting})
+        cursor = self.execute(sql, {'id': arcadeid, 'game': game.value, 'version': version, 'type': setting})
 
         if cursor.rowcount != 1:
             # Settings doesn't exist
@@ -447,13 +447,13 @@ class MachineData(BaseData):
         result = cursor.fetchone()
         return ValidatedDict(self.deserialize(result['data']))
 
-    def put_settings(self, arcadeid: ArcadeID, game: str, version: int, setting: str, data: Dict[str, Any]) -> None:
+    def put_settings(self, arcadeid: ArcadeID, game: GameConstants, version: int, setting: str, data: Dict[str, Any]) -> None:
         """
         Given an arcade and a game/version combo, update the particular setting.
 
         Parameters:
             arcadeid - Integer specifying the arcade to delete.
-            game - String identifying a game series.
+            game - Enum value identifying a game series.
             version - String identifying a game version.
             setting - String identifying the particular setting we're interestsed in.
             data - A dictionary that should be saved for this setting.
@@ -463,7 +463,7 @@ class MachineData(BaseData):
             "VALUES (:id, :game, :version, :type, :data) "
             "ON DUPLICATE KEY UPDATE data=VALUES(data)"
         )
-        self.execute(sql, {'id': arcadeid, 'game': game, 'version': version, 'type': setting, 'data': self.serialize(data)})
+        self.execute(sql, {'id': arcadeid, 'game': game.value, 'version': version, 'type': setting, 'data': self.serialize(data)})
 
     def get_balances(self, arcadeid: ArcadeID) -> List[Tuple[UserID, int]]:
         """

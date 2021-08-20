@@ -184,7 +184,7 @@ class CatalogObject(BaseObject):
 
     @property
     def music_version(self) -> int:
-        if self.game in [GameConstants.IIDX, GameConstants.MUSECA]:
+        if self.game in {GameConstants.IIDX, GameConstants.MUSECA}:
             if self.omnimix:
                 return self.version + DBConstants.OMNIMIX_VERSION_BUMP
             else:
@@ -192,7 +192,7 @@ class CatalogObject(BaseObject):
         else:
             return self.version
 
-    def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
         # Verify IDs
         if idtype != APIConstants.ID_TYPE_SERVER:
             raise APIException(

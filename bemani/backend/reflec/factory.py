@@ -24,8 +24,8 @@ class ReflecBeatFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for game in ['KBR', 'LBR', 'MBR']:
-            Base.register(game, ReflecBeatFactory)
+        for gamecode in ['KBR', 'LBR', 'MBR']:
+            Base.register(gamecode, ReflecBeatFactory)
 
     @classmethod
     def create(cls, data: Data, config: Dict[str, Any], model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
@@ -43,16 +43,16 @@ class ReflecBeatFactory(Factory):
                 return VersionConstants.REFLEC_BEAT_REFLESIA
             return None
 
-        if model.game == 'KBR':
+        if model.gamecode == 'KBR':
             return ReflecBeat(data, config, model)
-        if model.game == 'LBR':
+        if model.gamecode == 'LBR':
             return ReflecBeatLimelight(data, config, model)
-        if model.game == 'MBR':
+        if model.gamecode == 'MBR':
             if model.version is None:
                 if parentmodel is None:
                     return None
 
-                if parentmodel.game not in ['KBR', 'LBR', 'MBR']:
+                if parentmodel.gamecode not in ['KBR', 'LBR', 'MBR']:
                     return None
                 parentversion = version_from_date(parentmodel.version)
                 if parentversion == VersionConstants.REFLEC_BEAT_COLETTE:

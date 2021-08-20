@@ -1,6 +1,7 @@
 from typing import List, Any, Dict
 
 from bemani.api.exceptions import APIException
+from bemani.common import APIConstants, GameConstants
 from bemani.data import Data
 
 
@@ -13,11 +14,11 @@ class BaseObject:
     various fetch versions.
     """
 
-    def __init__(self, data: Data, game: str, version: int, omnimix: bool) -> None:
+    def __init__(self, data: Data, game: GameConstants, version: int, omnimix: bool) -> None:
         self.data = data
         self.game = game
         self.version = version
         self.omnimix = omnimix
 
-    def fetch_v1(self, idtype: str, ids: List[str], params: Dict[str, Any]) -> Any:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> Any:
         raise APIException('Object fetch not supported for this version!')

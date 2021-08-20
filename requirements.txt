@@ -13,6 +13,7 @@ types-requests
 types-PyYAML
 types-Werkzeug
 types-Flask
+types-freezegun
 flake8
 typed-ast
 freezegun

@@ -3,7 +3,7 @@ from sqlalchemy.types import String, Integer, Text, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
-from bemani.common import Time
+from bemani.common import GameConstants, Time
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import News, Event, UserID, ArcadeID
 
@@ -152,7 +152,7 @@ class NetworkData(BaseData):
         # Should never happen
         return (0, 0)
 
-    def should_schedule(self, game: str, version: int, name: str, schedule: str) -> bool:
+    def should_schedule(self, game: GameConstants, version: int, name: str, schedule: str) -> bool:
         """
         Given a game/version/name pair and a schedule value, return whether
         this scheduled work is overdue or not.
@@ -165,7 +165,7 @@ class NetworkData(BaseData):
             "WHERE game = :game AND version = :version AND "
             "name = :name AND schedule = :schedule"
         )
-        cursor = self.execute(sql, {'game': game, 'version': version, 'name': name, 'schedule': schedule})
+        cursor = self.execute(sql, {'game': game.value, 'version': version, 'name': name, 'schedule': schedule})
         if cursor.rowcount != 1:
             # No scheduled work was registered, so time to get going!
             return True
@@ -191,7 +191,7 @@ class NetworkData(BaseData):
         # We have already run this work for this schedule
         return False
 
-    def mark_scheduled(self, game: str, version: int, name: str, schedule: str) -> None:
+    def mark_scheduled(self, game: GameConstants, version: int, name: str, schedule: str) -> None:
         if schedule not in ['daily', 'weekly']:
             raise Exception('Logic error, specify either \'daily\' or \'weekly\' for schedule type!')
 
@@ -205,7 +205,7 @@ class NetworkData(BaseData):
             self.execute(
                 sql,
                 {
-                    'game': game,
+                    'game': game.value,
                     'version': version,
                     'name': name,
                     'schedule': schedule,
@@ -224,7 +224,7 @@ class NetworkData(BaseData):
             self.execute(
                 sql,
                 {
-                    'game': game,
+                    'game': game.value,
                     'version': version,
                     'name': name,
                     'schedule': schedule,

@@ -49,12 +49,12 @@ class GlobalGameData(BaseGlobalData):
             }
         )
 
-    def get_items(self, game: str, version: int) -> List[Item]:
+    def get_items(self, game: GameConstants, version: int) -> List[Item]:
         """
         Given a game/userid, find all items in the catalog.
 
         Parameters:
-            game - String identifier of the game looking up the catalog.
+            game - Enum value identifier of the game looking up the catalog.
             version - Integer identifier of the version looking up this catalog.
 
         Returns:
@@ -103,7 +103,7 @@ class GlobalGameData(BaseGlobalData):
                     seen.add(key)
         return retval
 
-    def get_item(self, game: str, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
+    def get_item(self, game: GameConstants, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
         """
         Given a game/userid and catalog id/type, find that catalog entry.
 
@@ -111,7 +111,7 @@ class GlobalGameData(BaseGlobalData):
         as long as each one is a different type. Essentially, cattype namespaces catalog entry.
 
         Parameters:
-            game - String identifier of the game looking up this entry.
+            game - Enum value identifier of the game looking up this entry.
             version - Integer identifier of the version looking up this entry.
             catid - Integer ID, as provided by a game.
             cattype - The type of catalog entry.
