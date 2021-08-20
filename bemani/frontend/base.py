@@ -77,7 +77,7 @@ class FrontendBase(ABC):
     def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         return {
             'name': profile.get_str('name'),
-            'extid': ID.format_extid(profile.get_int('extid')),
+            'extid': ID.format_extid(profile.extid),
             'first_play_time': playstats.get_int('first_play_timestamp'),
             'last_play_time': playstats.get_int('last_play_timestamp'),
         }

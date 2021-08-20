@@ -79,7 +79,7 @@ class BishiBashiFrontend(FrontendBase):
 
         return {
             'name': name,
-            'extid': ID.format_extid(profile.get_int('extid')),
+            'extid': ID.format_extid(profile.extid),
             'shop': shop,
             'shop_area': shop_area,
             'first_play_time': playstats.get_int('first_play_timestamp'),
