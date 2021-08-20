@@ -3,7 +3,7 @@ from typing import Dict, Optional, Sequence
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import ValidatedDict, Time, GameConstants, DBConstants
+from bemani.common import Profile, ValidatedDict, Time, GameConstants, DBConstants
 from bemani.data import UserID, Achievement, ScoreSaveException
 from bemani.protocol import Node
 
@@ -48,14 +48,14 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return None
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
         return Node.void('playerdata')
 
-    def format_conversion(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for profile conversion. Given a userid and a profile
         dictionary, return a node which represents the converted profile for
@@ -66,7 +66,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void('playerdata')
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -137,12 +137,18 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
             raise Exception("Logic error! Didn't find user to tie profile to!")
-        defaultprofile = ValidatedDict({
-            'name': name,
-        })
+        profile = Profile(
+            self.game,
+            self.version,
+            refid,
+            0,
+            {
+                'name': name,
+            },
+        )
         if chara is not None:
-            defaultprofile.replace_int('chara', chara)
-        self.put_profile(userid, defaultprofile)
+            profile.replace_int('chara', chara)
+        self.put_profile(userid, profile)
         for achievement in achievements:
             self.data.local.user.put_achievement(
                 self.game,
@@ -152,10 +158,6 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 achievement.type,
                 achievement.data,
             )
-
-        profile = self.get_profile(userid)
-        if profile is None:
-            raise Exception("Logic error! Didn't find profile after writing it!")
         return self.format_profile(userid, profile)
 
     def update_score(

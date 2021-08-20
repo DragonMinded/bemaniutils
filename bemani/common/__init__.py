@@ -1,5 +1,5 @@
 from bemani.common.model import Model
-from bemani.common.validateddict import ValidatedDict, intish
+from bemani.common.validateddict import ValidatedDict, Profile, intish
 from bemani.common.http import HTTP
 from bemani.common.constants import APIConstants, GameConstants, VersionConstants, DBConstants, BroadcastConstants
 from bemani.common.card import CardCipher, CardCipherException
@@ -13,6 +13,7 @@ from bemani.common.pe import PEFile
 __all__ = [
     "Model",
     "ValidatedDict",
+    "Profile",
     "HTTP",
     "APIConstants",
     "GameConstants",

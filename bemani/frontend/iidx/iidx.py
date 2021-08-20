@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterator, Optional, Tuple, List
 from flask_caching import Cache  # type: ignore
 
 from bemani.backend.iidx import IIDXFactory, IIDXBase
-from bemani.common import ValidatedDict, GameConstants
+from bemani.common import Profile, ValidatedDict, GameConstants
 from bemani.data import Attempt, Data, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
@@ -185,7 +185,7 @@ class IIDXFrontend(FrontendBase):
             ],
         }
 
-    def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile.update({
             'arcade': "",

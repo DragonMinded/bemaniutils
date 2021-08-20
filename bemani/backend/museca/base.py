@@ -3,7 +3,7 @@ from typing import Dict, Optional, Any
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import ValidatedDict, GameConstants, DBConstants, Parallel, Model
+from bemani.common import Profile, ValidatedDict, GameConstants, DBConstants, Parallel, Model
 from bemani.data import UserID, Data
 from bemani.protocol import Node
 
@@ -100,24 +100,27 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         # First, create and save the default profile
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        defaultprofile = ValidatedDict({
-            'name': name,
-            'loc': locid,
-        })
-        self.put_profile(userid, defaultprofile)
-
-        # Now, reload and format the profile, looking up the has old version flag
-        profile = self.get_profile(userid)
+        profile = Profile(
+            self.game,
+            self.version,
+            refid,
+            0,
+            {
+                'name': name,
+                'loc': locid,
+            },
+        )
+        self.put_profile(userid, profile)
         return self.format_profile(userid, profile)
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
         return Node.void('game')
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.

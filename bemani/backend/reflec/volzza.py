@@ -5,7 +5,7 @@ from bemani.backend.reflec.base import ReflecBeatBase
 from bemani.backend.reflec.volzzabase import ReflecBeatVolzzaBase
 from bemani.backend.reflec.groovin import ReflecBeatGroovin
 
-from bemani.common import ValidatedDict, VersionConstants, ID, Time
+from bemani.common import Profile, ValidatedDict, VersionConstants, ID, Time
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -139,7 +139,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
 
                 rl = Node.void('rl')
                 rival_data.add_child(rl)
-                rl.add_child(Node.s32('uid', rprofile.get_int('extid')))
+                rl.add_child(Node.s32('uid', rprofile.extid))
                 rl.add_child(Node.string('nm', rprofile.get_str('name')))
                 rl.add_child(Node.s16('ic', rprofile.get_dict('config').get_int('icon_id')))
 
@@ -236,7 +236,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
         )
         minigame_scores = sorted(
             [
-                all_profiles.get(userid, ValidatedDict()).get_int('mgsc')
+                all_profiles.get(userid, Profile(self.game, self.version, "", 0)).get_int('mgsc')
                 for userid in all_users
             ],
             reverse=True,
@@ -298,10 +298,10 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
         if profile is None:
             root.add_child(Node.s32('uid', 0))
         else:
-            root.add_child(Node.s32('uid', profile.get_int('extid')))
+            root.add_child(Node.s32('uid', profile.extid))
         return root
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
@@ -332,7 +332,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
         # Account info
         account = Node.void('account')
         pdata.add_child(account)
-        account.add_child(Node.s32('usrid', profile.get_int('extid')))
+        account.add_child(Node.s32('usrid', profile.extid))
         account.add_child(Node.s32('tpc', statistics.get_int('total_plays', 0)))
         account.add_child(Node.s32('dpc', today_count))
         account.add_child(Node.s32('crd', 1))
@@ -380,7 +380,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
             r = Node.void('r')
             rival.add_child(r)
             r.add_child(Node.s32('slot_id', slotid))
-            r.add_child(Node.s32('id', rprofile.get_int('extid')))
+            r.add_child(Node.s32('id', rprofile.extid))
             r.add_child(Node.string('name', rprofile.get_str('name')))
             r.add_child(Node.s32('icon', rprofile.get_dict('config').get_int('icon_id')))
             r.add_child(Node.s32('class', rprofile.get_int('class')))
@@ -554,7 +554,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = copy.deepcopy(oldprofile)
 
@@ -652,8 +652,8 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
 
                 # I assume this is copypasta, but I want to be sure
                 extid = child.child_value('user_id')
-                if extid != newprofile.get_int('extid'):
-                    raise Exception(f'Unexpected user ID, got {extid} expecting {newprofile.get_int("extid")}')
+                if extid != newprofile.extid:
+                    raise Exception(f'Unexpected user ID, got {extid} expecting {newprofile.extid}')
 
                 episode_type = child.child_value('type')
                 episode_value0 = child.child_value('value0')

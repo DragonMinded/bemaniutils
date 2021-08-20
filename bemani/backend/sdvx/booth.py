@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
-from bemani.common import ValidatedDict, VersionConstants, ID, intish
+from bemani.common import Profile, VersionConstants, ID, intish
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -430,12 +430,12 @@ class SoundVoltexBooth(
         game.add_child(Node.s8('result', result))
         return game
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         game = Node.void('game')
 
         # Generic profile stuff
         game.add_child(Node.string('name', profile.get_str('name')))
-        game.add_child(Node.string('code', ID.format_extid(profile.get_int('extid'))))
+        game.add_child(Node.string('code', ID.format_extid(profile.extid)))
         game.add_child(Node.u32('gamecoin_packet', profile.get_int('packet')))
         game.add_child(Node.u32('gamecoin_block', profile.get_int('block')))
         game.add_child(Node.u32('exp_point', profile.get_int('exp')))
@@ -469,7 +469,7 @@ class SoundVoltexBooth(
 
         return game
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         # Update experience and in-game currencies

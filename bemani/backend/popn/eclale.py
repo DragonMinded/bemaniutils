@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.lapistoria import PopnMusicLapistoria
 
-from bemani.common import Time, ValidatedDict, VersionConstants
+from bemani.common import Time, Profile, VersionConstants
 from bemani.data import UserID, Link
 from bemani.protocol import Node
 
@@ -191,7 +191,7 @@ class PopnMusicEclale(PopnMusicBase):
             userid = None
 
         if userid is not None:
-            oldprofile = self.get_profile(userid) or ValidatedDict()
+            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             newprofile = self.unformat_profile(userid, request, oldprofile)
 
             if newprofile is not None:
@@ -236,7 +236,7 @@ class PopnMusicEclale(PopnMusicBase):
 
             if lumina >= price:
                 # Update player lumina balance
-                profile = self.get_profile(userid) or ValidatedDict()
+                profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
                 profile.replace_int('lumina', lumina - price)
                 self.put_profile(userid, profile)
 
@@ -323,7 +323,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         # Grab the links that we care about.
         links = self.data.local.user.get_links(self.game, self.version, userid)
-        profiles: Dict[UserID, ValidatedDict] = {}
+        profiles: Dict[UserID, Profile] = {}
         rivals: List[Link] = []
         for link in links:
             if link.type != 'rival':
@@ -347,7 +347,7 @@ class PopnMusicEclale(PopnMusicBase):
         friend = Node.void('friend')
         root.add_child(friend)
         friend.add_child(Node.s16('no', no))
-        friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.get_int('extid'))))  # Eclale formats on its own
+        friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.extid)))  # Eclale formats on its own
         friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
         friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
         # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
@@ -436,7 +436,7 @@ class PopnMusicEclale(PopnMusicBase):
         self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
         return root
 
-    def format_conversion(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('player23')
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
         root.add_child(Node.s16('chara', profile.get_int('chara', -1)))
@@ -488,7 +488,7 @@ class PopnMusicEclale(PopnMusicBase):
         crc = abs(binascii.crc32(data.encode('ascii'))) % 10000
         return f'{data}{crc:04d}'
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('player23')
 
         # Mark this as a current profile
@@ -497,7 +497,7 @@ class PopnMusicEclale(PopnMusicBase):
         # Account stuff
         account = Node.void('account')
         root.add_child(account)
-        account.add_child(Node.string('g_pm_id', self.format_extid(profile.get_int('extid'))))  # Eclale formats on its own
+        account.add_child(Node.string('g_pm_id', self.format_extid(profile.extid)))  # Eclale formats on its own
         account.add_child(Node.string('name', profile.get_str('name', 'なし')))
         account.add_child(Node.s8('tutorial', profile.get_int('tutorial')))
         account.add_child(Node.s16('area_id', profile.get_int('area_id')))
@@ -695,7 +695,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
         # Set that we've seen this profile

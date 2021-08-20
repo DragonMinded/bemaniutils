@@ -16,7 +16,7 @@ from bemani.backend.jubeat.common import (
 from bemani.backend.jubeat.course import JubeatCourse
 from bemani.backend.jubeat.base import JubeatBase
 from bemani.backend.jubeat.saucerfulfill import JubeatSaucerFulfill
-from bemani.common import ValidatedDict, VersionConstants, Time
+from bemani.common import Profile, ValidatedDict, VersionConstants, Time
 from bemani.data import Data, Score, UserID
 from bemani.protocol import Node
 
@@ -205,7 +205,7 @@ class JubeatProp(
         return (promotions, neutrals, demotions)
 
     @classmethod
-    def _get_league_scores(cls, data: Data, current_id: int, profiles: List[Tuple[UserID, ValidatedDict]]) -> Tuple[List[Tuple[UserID, int]], List[UserID]]:
+    def _get_league_scores(cls, data: Data, current_id: int, profiles: List[Tuple[UserID, Profile]]) -> Tuple[List[Tuple[UserID, int]], List[UserID]]:
         """
         Given the current League ID (calculated based on the date range) and a list of
         all user profiles for this game/version, return a uple containing two lists.
@@ -681,7 +681,7 @@ class JubeatProp(
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         profile = self.get_profile(userid)
         if profile is None:
-            profile = ValidatedDict()
+            profile = Profile(self.game, self.version, "", extid)
 
         # Player scores for courses
         player_list = Node.void('player_list')
@@ -725,7 +725,7 @@ class JubeatProp(
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         profile = self.get_profile(userid)
         if profile is None:
-            profile = ValidatedDict()
+            profile = Profile(self.game, self.version, "", extid)
 
         gametop = Node.void('gametop')
         data = Node.void('data')
@@ -786,7 +786,7 @@ class JubeatProp(
 
         return gametop
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('gametop')
         data = Node.void('data')
         root.add_child(data)
@@ -798,7 +798,7 @@ class JubeatProp(
 
         # Basic profile info
         player.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        player.add_child(Node.s32('jid', profile.get_int('extid')))
+        player.add_child(Node.s32('jid', profile.extid))
 
         # Miscelaneous crap
         player.add_child(Node.s32('session_id', 1))
@@ -950,7 +950,7 @@ class JubeatProp(
 
             rival = Node.void('rival')
             rivallist.add_child(rival)
-            rival.add_child(Node.s32('jid', rprofile.get_int('extid')))
+            rival.add_child(Node.s32('jid', rprofile.extid))
             rival.add_child(Node.string('name', rprofile.get_str('name')))
 
             rcareerdict = rprofile.get_dict('career')
@@ -1082,7 +1082,7 @@ class JubeatProp(
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
         data = request.child('data')
 
@@ -1339,14 +1339,14 @@ class JubeatProp(
 
         return newprofile
 
-    def format_scores(self, userid: UserID, profile: ValidatedDict, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
 
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
         player = Node.void('player')
         datanode.add_child(player)
-        player.add_child(Node.s32('jid', profile.get_int('extid')))
+        player.add_child(Node.s32('jid', profile.extid))
         playdata = Node.void('mdata_list')
         player.add_child(playdata)
 

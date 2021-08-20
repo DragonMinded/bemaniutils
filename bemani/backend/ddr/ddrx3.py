@@ -23,7 +23,7 @@ from bemani.backend.ddr.common import (
     DDRGameShopHandler,
     DDRGameTraceHandler,
 )
-from bemani.common import ValidatedDict, VersionConstants, Time, intish
+from bemani.common import Profile, VersionConstants, Time, intish
 from bemani.data import Achievement, Score, UserID
 from bemani.protocol import Node
 
@@ -346,7 +346,7 @@ class DDRX3(
         game = Node.void('game')
         return game
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('game')
 
         # Look up play stats we bridge to every mix
@@ -354,7 +354,7 @@ class DDRX3(
 
         # Basic game settings
         root.add_child(Node.string('seq', ''))
-        root.add_child(Node.u32('code', profile.get_int('extid')))
+        root.add_child(Node.u32('code', profile.extid))
         root.add_child(Node.string('name', profile.get_str('name')))
         root.add_child(Node.u8('area', profile.get_int('area', 51)))
         root.add_child(Node.u32('cnt_s', play_stats.get_int('single_plays')))
@@ -499,7 +499,7 @@ class DDRX3(
                 friendnode.set_attribute('pos', str(pos))
                 friendnode.set_attribute('vs', '0')
                 friendnode.set_attribute('up', '0')
-                friendnode.add_child(Node.u32('code', friend.get_int('extid')))
+                friendnode.add_child(Node.u32('code', friend.extid))
                 friendnode.add_child(Node.string('name', friend.get_str('name')))
                 friendnode.add_child(Node.u8('area', friend.get_int('area', 51)))
                 friendnode.add_child(Node.u32('exp', play_stats.get_int('exp')))
@@ -552,7 +552,7 @@ class DDRX3(
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
         play_stats = self.get_play_statistics(userid)
 

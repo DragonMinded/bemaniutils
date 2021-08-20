@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 
 from bemani.backend.reflec.base import ReflecBeatBase
 
-from bemani.common import ID, Time, ValidatedDict
+from bemani.common import ID, Time, Profile
 from bemani.data import Attempt, UserID
 from bemani.protocol import Node
 
@@ -135,7 +135,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                 data = Node.void('data')
                 rootnode.add_child(data)
                 data.add_child(Node.s16('day_id', int((Time.now() - timeoffset) / Time.SECONDS_IN_DAY)))
-                data.add_child(Node.s32('user_id', profile.get_int('extid')))
+                data.add_child(Node.s32('user_id', profile.extid))
                 data.add_child(Node.s16('icon_id', profile.get_dict('config').get_int('icon_id')))
                 data.add_child(Node.s16('point', min(points_by_user.get(userid, 0), 32767)))
                 data.add_child(Node.s32('update_time', Time.now()))
@@ -206,7 +206,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
         root.add_child(shop_score)
         shop_score.add_child(Node.s32('time', Time.now()))
 
-        profiles: Dict[UserID, ValidatedDict] = {}
+        profiles: Dict[UserID, Profile] = {}
         for songid in range(start_music_id, end_music_id + 1):
             allscores = self.data.local.music.get_all_scores(
                 self.game,
@@ -238,7 +238,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                     data.add_child(Node.s16('music_id', songid))
                     data.add_child(Node.s8('note_grade', score.chart))
                     data.add_child(Node.s8('clear_type', self._db_to_game_clear_type(score.data.get_int('clear_type'))))
-                    data.add_child(Node.s32('user_id', profile.get_int('extid')))
+                    data.add_child(Node.s32('user_id', profile.extid))
                     data.add_child(Node.s16('icon_id', profile.get_dict('config').get_int('icon_id')))
                     data.add_child(Node.s32('score', score.points))
                     data.add_child(Node.s32('time', score.timestamp))
@@ -291,7 +291,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
             e.add_child(Node.s32('eid', lobby.get_int('id')))
             e.add_child(Node.u16('mid', lobby.get_int('mid')))
             e.add_child(Node.u8('ng', lobby.get_int('ng')))
-            e.add_child(Node.s32('uid', profile.get_int('extid')))
+            e.add_child(Node.s32('uid', profile.extid))
             e.add_child(Node.s32('uattr', profile.get_int('uattr')))
             e.add_child(Node.string('pn', profile.get_str('name')))
             e.add_child(Node.s32('plyid', info.get_int('id')))
@@ -345,7 +345,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                 e.add_child(Node.s32('eid', lobby.get_int('id')))
                 e.add_child(Node.u16('mid', lobby.get_int('mid')))
                 e.add_child(Node.u8('ng', lobby.get_int('ng')))
-                e.add_child(Node.s32('uid', profile.get_int('extid')))
+                e.add_child(Node.s32('uid', profile.extid))
                 e.add_child(Node.s32('uattr', profile.get_int('uattr')))
                 e.add_child(Node.string('pn', profile.get_str('name')))
                 e.add_child(Node.s32('plyid', info.get_int('id')))

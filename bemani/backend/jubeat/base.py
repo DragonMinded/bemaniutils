@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import DBConstants, GameConstants, ValidatedDict
+from bemani.common import DBConstants, GameConstants, Profile, ValidatedDict
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -43,7 +43,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return None
 
-    def put_profile(self, userid: UserID, profile: ValidatedDict) -> None:
+    def put_profile(self, userid: UserID, profile: Profile) -> None:
         """
         Save a new profile for this user given a game/version. Overrides but calls
         the same functionality in Base, to ensure we don't save calculated values.
@@ -56,21 +56,21 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             del profile['has_old_version']
         super().put_profile(userid, profile)
 
-    def format_profile(self, userid: UserID, profile: ValidatedDict) -> Node:
+    def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
         return Node.void('gametop')
 
-    def format_scores(self, userid: UserID, profile: ValidatedDict, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
         """
         return Node.void('gametop')
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: ValidatedDict) -> ValidatedDict:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -114,14 +114,18 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         # First, create and save the default profile
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        defaultprofile = ValidatedDict({
-            'name': name,
-        })
-        self.put_profile(userid, defaultprofile)
+        profile = Profile(
+            self.game,
+            self.version,
+            refid,
+            0,
+            {
+                'name': name,
+            },
+        )
+        self.put_profile(userid, profile)
 
         # Now, reload and format the profile, looking up the has old version flag
-        profile = self.get_profile(userid)
-
         oldversion = self.previous_version()
         oldprofile = oldversion.get_profile(userid)
         profile['has_old_version'] = oldprofile is not None

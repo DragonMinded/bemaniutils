@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterator, Tuple
 from flask_caching import Cache  # type: ignore
 
 from bemani.backend.bishi import BishiBashiFactory
-from bemani.common import ValidatedDict, ID, GameConstants
+from bemani.common import Profile, ValidatedDict, ID, GameConstants
 from bemani.data import Data
 from bemani.frontend.base import FrontendBase
 
@@ -36,7 +36,7 @@ class BishiBashiFrontend(FrontendBase):
             return 'なし'
         return name
 
-    def update_name(self, profile: ValidatedDict, name: str) -> ValidatedDict:
+    def update_name(self, profile: Profile, name: str) -> Profile:
         newprofile = copy.deepcopy(profile)
         for i in range(len(newprofile['strdatas'])):
             strdata = newprofile['strdatas'][i]
@@ -55,7 +55,7 @@ class BishiBashiFrontend(FrontendBase):
 
         return newprofile
 
-    def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         name = 'なし'  # Nothing
         shop = '未設定'  # Not set
         shop_area = '未設定'  # Not set

@@ -2,7 +2,7 @@
 from typing import Any, Dict, Iterator, Tuple
 
 from bemani.backend.popn import PopnMusicFactory, PopnMusicBase
-from bemani.common import ValidatedDict, GameConstants, VersionConstants
+from bemani.common import Profile, ValidatedDict, GameConstants, VersionConstants
 from bemani.data import Attempt, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
@@ -73,7 +73,7 @@ class PopnMusicFrontend(FrontendBase):
         }.get(attempt.data.get_int('medal'), 'No Play')
         return formatted_attempt
 
-    def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile['plays'] = playstats.get_int('total_plays')
         return formatted_profile

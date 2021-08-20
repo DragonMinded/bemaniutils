@@ -2,7 +2,7 @@ from abc import ABC
 import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 
-from bemani.common import Model, ValidatedDict, GameConstants, Time
+from bemani.common import Model, ValidatedDict, Profile, GameConstants, Time
 from bemani.data import Data, UserID, RemoteUser
 
 
@@ -248,7 +248,7 @@ class Base(ABC):
         """
         return self.data.local.user.get_profile(self.game, self.version, userid) is not None
 
-    def get_profile(self, userid: UserID) -> Optional[ValidatedDict]:
+    def get_profile(self, userid: UserID) -> Optional[Profile]:
         """
         Return the profile for a user given this game/version on any connected server.
 
@@ -260,7 +260,7 @@ class Base(ABC):
         """
         return self.data.remote.user.get_profile(self.game, self.version, userid)
 
-    def get_any_profile(self, userid: UserID) -> ValidatedDict:
+    def get_any_profile(self, userid: UserID) -> Profile:
         """
         Return ANY profile for a user in a game series.
 
@@ -279,10 +279,15 @@ class Base(ABC):
         """
         profile = self.data.remote.user.get_any_profile(self.game, self.version, userid)
         if profile is None:
-            profile = ValidatedDict()
+            profile = Profile(
+                self.game,
+                self.version,
+                "",
+                0,
+            )
         return profile
 
-    def get_any_profiles(self, userids: List[UserID]) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_any_profiles(self, userids: List[UserID]) -> List[Tuple[UserID, Profile]]:
         """
         Does the identical thing to the above function, but takes a list of user IDs to
         fetch in bulk.
@@ -297,11 +302,11 @@ class Base(ABC):
         userids = list(set(userids))
         profiles = self.data.remote.user.get_any_profiles(self.game, self.version, userids)
         return [
-            (userid, profile if profile is not None else ValidatedDict())
+            (userid, profile if profile is not None else Profile(self.game, self.version, "", 0))
             for (userid, profile) in profiles
         ]
 
-    def put_profile(self, userid: UserID, profile: ValidatedDict) -> None:
+    def put_profile(self, userid: UserID, profile: Profile) -> None:
         """
         Save a new profile for this user given a game/version.
 

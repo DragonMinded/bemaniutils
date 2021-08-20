@@ -1,7 +1,6 @@
-import copy
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Optional
 
-from bemani.common import APIConstants, GameConstants, ValidatedDict, Parallel
+from bemani.common import APIConstants, GameConstants, Profile, Parallel
 from bemani.data.interfaces import APIProviderInterface
 from bemani.data.api.base import BaseGlobalData
 from bemani.data.mysql.user import UserData
@@ -15,25 +14,20 @@ class GlobalUserData(BaseGlobalData):
         super().__init__(api)
         self.user = user
 
-    def __format_ddr_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        updates = {}
-
+    def __format_ddr_profile(self, updates: Profile, profile: Profile) -> None:
         area = profile.get_int('area', -1)
         if area != -1:
             updates['area'] = area
 
-        return updates
-
-    def __format_iidx_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        updates: Dict[str, Any] = {
-            'qpro': {},
-        }
+    def __format_iidx_profile(self, updates: Profile, profile: Profile) -> None:
 
         area = profile.get_int('area', -1)
         if area != -1:
             updates['pid'] = area
 
         qpro = profile.get_dict('qpro')
+        updates['qpro'] = {}
+
         head = qpro.get_int('head', -1)
         if head != -1:
             updates['qpro']['head'] = head
@@ -50,62 +44,54 @@ class GlobalUserData(BaseGlobalData):
         if hand != -1:
             updates['qpro']['hand'] = hand
 
-        return updates
+    def __format_jubeat_profile(self, updates: Profile, profile: Profile) -> None:
+        pass
 
-    def __format_jubeat_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        return {}
+    def __format_museca_profile(self, updates: Profile, profile: Profile) -> None:
+        pass
 
-    def __format_museca_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        return {}
-
-    def __format_popn_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        updates = {}
-
+    def __format_popn_profile(self, updates: Profile, profile: Profile) -> None:
         chara = profile.get_int('character', -1)
         if chara != -1:
             updates['chara'] = chara
 
-        return updates
-
-    def __format_reflec_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        updates = {}
-
+    def __format_reflec_profile(self, updates: Profile, profile: Profile) -> None:
         icon = profile.get_int('icon', -1)
         if icon != -1:
             updates['config'] = {'icon_id': icon}
 
-        return updates
+    def __format_sdvx_profile(self, updates: Profile, profile: Profile) -> None:
+        pass
 
-    def __format_sdvx_profile(self, profile: ValidatedDict) -> Dict[str, Any]:
-        return {}
+    def __format_profile(self, profile: Profile) -> Profile:
+        new = Profile(
+            profile.game,
+            profile.version,
+            profile.refid,
+            profile.extid,
+            {
+                'name': profile.get('name', ''),
+            },
+        )
 
-    def __format_profile(self, profile: ValidatedDict) -> ValidatedDict:
-        base = {
-            'name': profile.get('name', ''),
-            'game': profile['game'],
-            'version': profile['version'],
-            'refid': profile['refid'],
-            'extid': profile['extid'],
-        }
+        if profile.game == GameConstants.DDR:
+            self.__format_ddr_profile(new, profile)
+        if profile.game == GameConstants.IIDX:
+            self.__format_iidx_profile(new, profile)
+        if profile.game == GameConstants.JUBEAT:
+            self.__format_jubeat_profile(new, profile)
+        if profile.game == GameConstants.MUSECA:
+            self.__format_museca_profile(new, profile)
+        if profile.game == GameConstants.POPN_MUSIC:
+            self.__format_popn_profile(new, profile)
+        if profile.game == GameConstants.REFLEC_BEAT:
+            self.__format_reflec_profile(new, profile)
+        if profile.game == GameConstants.SDVX:
+            self.__format_sdvx_profile(new, profile)
 
-        if profile['game'] == GameConstants.DDR:
-            base.update(self.__format_ddr_profile(profile))
-        if profile['game'] == GameConstants.IIDX:
-            base.update(self.__format_iidx_profile(profile))
-        if profile['game'] == GameConstants.JUBEAT:
-            base.update(self.__format_jubeat_profile(profile))
-        if profile['game'] == GameConstants.MUSECA:
-            base.update(self.__format_museca_profile(profile))
-        if profile['game'] == GameConstants.POPN_MUSIC:
-            base.update(self.__format_popn_profile(profile))
-        if profile['game'] == GameConstants.REFLEC_BEAT:
-            base.update(self.__format_reflec_profile(profile))
-        if profile['game'] == GameConstants.SDVX:
-            base.update(self.__format_sdvx_profile(profile))
+        return new
 
-        return ValidatedDict(base)
-
-    def __profile_request(self, game: GameConstants, version: int, userid: UserID, exact: bool) -> Optional[ValidatedDict]:
+    def __profile_request(self, game: GameConstants, version: int, userid: UserID, exact: bool) -> Optional[Profile]:
         # First, get or create the extid/refid for this virtual user
         cardid = RemoteUser.userid_to_card(userid)
         refid = self.user.get_refid(game, version, userid)
@@ -121,25 +107,22 @@ class GlobalUserData(BaseGlobalData):
         for profile in profiles:
             cards = [card.upper() for card in profile.get('cards', [])]
             if cardid in cards:
-                # Sanitize the returned data
-                profile = copy.deepcopy(profile)
-                del profile['cards']
-
+                # Don't take non-exact matches.
                 exact_match = profile.get('match', 'partial') == 'exact'
                 if exact and (not exact_match):
                     # This is a partial match, not for this game/version
                     continue
 
-                if 'match' in profile:
-                    del profile['match']
-
-                # Add in our defaults we always provide
-                profile['game'] = game
-                profile['version'] = version if exact_match else 0
-                profile['refid'] = refid
-                profile['extid'] = extid
-
-                return self.__format_profile(ValidatedDict(profile))
+                # Add in our defaults we always provide, convert it to a local format.
+                return self.__format_profile(
+                    Profile(
+                        game,
+                        version,
+                        refid,
+                        extid,
+                        profile,
+                    )
+                )
 
         return None
 
@@ -155,19 +138,19 @@ class GlobalUserData(BaseGlobalData):
     def from_extid(self, game: GameConstants, version: int, extid: int) -> Optional[UserID]:
         return self.user.from_extid(game, version, extid)
 
-    def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         if RemoteUser.is_remote(userid):
             return self.__profile_request(game, version, userid, exact=True)
         else:
             return self.user.get_profile(game, version, userid)
 
-    def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[ValidatedDict]:
+    def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         if RemoteUser.is_remote(userid):
             return self.__profile_request(game, version, userid, exact=False)
         else:
             return self.user.get_any_profile(game, version, userid)
 
-    def get_any_profiles(self, game: GameConstants, version: int, userids: List[UserID]) -> List[Tuple[UserID, Optional[ValidatedDict]]]:
+    def get_any_profiles(self, game: GameConstants, version: int, userids: List[UserID]) -> List[Tuple[UserID, Optional[Profile]]]:
         if len(userids) == 0:
             return []
 
@@ -211,25 +194,24 @@ class GlobalUserData(BaseGlobalData):
                         continue
 
                     # Sanitize the returned data
-                    profile = copy.deepcopy(profile)
-                    del profile['cards']
-
                     exact_match = profile.get('match', 'partial') == 'exact'
-
-                    if 'match' in profile:
-                        del profile['match']
-
                     refid = self.user.get_refid(game, version, userid)
                     extid = self.user.get_extid(game, version, userid)
 
                     # Add in our defaults we always provide
-                    profile['game'] = game
-                    profile['version'] = version if exact_match else 0
-                    profile['refid'] = refid
-                    profile['extid'] = extid
-
                     local_profiles.append(
-                        (userid, self.__format_profile(ValidatedDict(profile))),
+                        (
+                            userid,
+                            self.__format_profile(
+                                Profile(
+                                    game,
+                                    version if exact_match else 0,
+                                    refid,
+                                    extid,
+                                    profile,
+                                ),
+                            ),
+                        ),
                     )
 
                     # Mark that we saw this card/user
@@ -241,7 +223,7 @@ class GlobalUserData(BaseGlobalData):
 
             return local_profiles
 
-    def get_all_profiles(self, game: GameConstants, version: int) -> List[Tuple[UserID, ValidatedDict]]:
+    def get_all_profiles(self, game: GameConstants, version: int) -> List[Tuple[UserID, Profile]]:
         # Fetch local and remote profiles, and then merge by adding remote profiles to local
         # profiles when we don't have a profile for that user ID yet.
         local_cards, local_profiles, remote_profiles = Parallel.execute([
@@ -270,23 +252,24 @@ class GlobalUserData(BaseGlobalData):
                 # We have a local version of this profile!
                 continue
 
-            # Create a fake user with this profile
-            del profile['cards']
-
             exact_match = profile.get('match', 'partial') == 'exact'
             if not exact_match:
                 continue
 
+            # Create a fake user with this profile
             userid = RemoteUser.card_to_userid(cardids[0])
             refid = self.user.get_refid(game, version, userid)
             extid = self.user.get_extid(game, version, userid)
 
             # Add in our defaults we always provide
-            profile['game'] = game
-            profile['version'] = version
-            profile['refid'] = refid
-            profile['extid'] = extid
-
-            id_to_profile[userid] = self.__format_profile(ValidatedDict(profile))
+            id_to_profile[userid] = self.__format_profile(
+                Profile(
+                    game,
+                    version,
+                    refid,
+                    extid,
+                    profile,
+                ),
+            )
 
         return [(userid, id_to_profile[userid]) for userid in id_to_profile]

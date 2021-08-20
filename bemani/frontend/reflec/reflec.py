@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterator, Tuple
 from flask_caching import Cache  # type: ignore
 
 from bemani.backend.reflec import ReflecBeatFactory, ReflecBeatBase
-from bemani.common import GameConstants, ValidatedDict
+from bemani.common import GameConstants, Profile, ValidatedDict
 from bemani.data import Attempt, Data, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
@@ -74,7 +74,7 @@ class ReflecBeatFrontend(FrontendBase):
         formatted_attempt['medal'] = attempt.data.get_int('combo_type') * 1000 + attempt.data.get_int('clear_type')
         return formatted_attempt
 
-    def format_profile(self, profile: ValidatedDict, playstats: ValidatedDict) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile['plays'] = playstats.get_int('total_plays')
         return formatted_profile
