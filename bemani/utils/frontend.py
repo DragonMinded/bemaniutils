@@ -59,10 +59,13 @@ def main() -> None:
     parser.add_argument("-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80)
     parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
     parser.add_argument("-r", "--profile", help="Turn on profiling for front end, writing CProfile data to the currenct directory", action="store_true")
+    parser.add_argument("-o", "--read-only", action="store_true", help="Force the database into read-only mode.")
     args = parser.parse_args()
 
     # Set up app
     load_config(args.config)
+    if args.read_only:
+        config['database']['read_only'] = True
 
     # Register all blueprints
     register_blueprints()
