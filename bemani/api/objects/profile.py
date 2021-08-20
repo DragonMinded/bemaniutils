@@ -126,6 +126,6 @@ class ProfileObject(BaseObject):
             if settings is None:
                 settings = ValidatedDict({})
 
-            retval.append(self.__format_profile(id_to_cards[userid], profile, settings, profile['version'] == self.version))
+            retval.append(self.__format_profile(id_to_cards[userid], profile, settings, profile.version == self.version))
 
         return retval
