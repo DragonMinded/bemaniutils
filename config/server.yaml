@@ -7,6 +7,10 @@ database:
     user: "bemani"
     # Password of said user.
     password: "bemani"
+    # Force the network to read-only mode, refusing to write to the DB
+    # except for creating/destroying frontend sessions to enable login.
+    # Set this to False or delete this to run in production mode.
+    read_only: False
 
 server:
     # Advertised server IP or DNS entry games will connect to.
