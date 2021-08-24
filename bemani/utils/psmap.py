@@ -1,5 +1,7 @@
 import argparse
+import os
 import struct
+import sys
 from typing import List
 
 from bemani.common import PEFile
@@ -7,7 +9,7 @@ from bemani.protocol import Node
 from bemani.utils.responsegen import generate_lines
 
 
-def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
+def parse_psmap(data: bytes, offset: str, rootname: str, *, verbose: bool = False) -> Node:
     pe = PEFile(data=data)
     root = Node.void(rootname)
     base = int(offset, 16)
@@ -34,6 +36,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
     saved_loc: List[int] = []
 
     while True:
+        readbase = base
         if pe.is_64bit():  # 64 bit
             chunk = data[base:(base + 24)]
             base = base + 24
@@ -64,6 +67,23 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
         except ValueError:
             pass
 
+        # Grab the default
+        if defaultptr != 0:
+            defaultptr = pe.virtual_to_physical(defaultptr)
+
+        if verbose:
+            space = "    " * len(saved_root)
+            print(
+                f"{space}Node offset: {hex(readbase)}{os.linesep}"
+                f"{space}  Type: {hex(nodetype)}{os.linesep}"
+                f"{space}  Mandatory: {'yes' if mandatory != 0 else 'no'}{os.linesep}"
+                f"{space}  Name: {name}{os.linesep}"
+                f"{space}  Parse Offset: {outoffset}{os.linesep}"
+                f"{space}  Data Width: {width}{os.linesep}"
+                f"{space}  Default Pointer: {'null' if defaultptr == 0 else hex(defaultptr)}",
+                file=sys.stderr,
+            )
+
         if nodetype == 0x01:
             # This is a void node, so we should handle by recursing
             node = Node.void(name)
@@ -74,7 +94,7 @@ def parse_psmap(data: bytes, offset: str, rootname: str) -> Node:
 
             if defaultptr != 0:
                 saved_loc.append(base)
-                base = pe.virtual_to_physical(defaultptr)
+                base = defaultptr
             else:
                 saved_loc.append(None)
 
@@ -210,13 +230,19 @@ def main() -> None:
         type=str,
         default="root",
     )
+    parser.add_argument(
+        "--verbose",
+        help="Display verbose parsing info.",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
 
     fp = open(args.file, 'rb')
     data = fp.read()
     fp.close()
 
-    layout = parse_psmap(data, args.offset, args.root)
+    layout = parse_psmap(data, args.offset, args.root, verbose=args.verbose)
     # Walk through, outputting each node and attaching it to its parent
     code = '\n'.join(generate_lines(layout, {}))
 

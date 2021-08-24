@@ -927,27 +927,15 @@ class ReflecBeatGroovin(ReflecBeatBase):
         pdata = Node.void('pdata')
         root.add_child(pdata)
 
-        # Account time info
-        last_play_date = statistics.get_int_array('last_play_date', 3)
-        today_play_date = Time.todays_date()
-        if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
-        ):
-            today_count = statistics.get_int('today_plays', 0)
-        else:
-            today_count = 0
-
         # Account info
         account = Node.void('account')
         pdata.add_child(account)
         account.add_child(Node.s32('usrid', profile.extid))
-        account.add_child(Node.s32('tpc', statistics.get_int('total_plays', 0)))
-        account.add_child(Node.s32('dpc', today_count))
+        account.add_child(Node.s32('tpc', statistics.total_plays))
+        account.add_child(Node.s32('dpc', statistics.today_plays))
         account.add_child(Node.s32('crd', 1))
         account.add_child(Node.s32('brd', 1))
-        account.add_child(Node.s32('tdc', statistics.get_int('total_days', 0)))
+        account.add_child(Node.s32('tdc', statistics.total_days))
         account.add_child(Node.s32('intrvld', 0))
         account.add_child(Node.s16('ver', 1))
         account.add_child(Node.u64('pst', 0))

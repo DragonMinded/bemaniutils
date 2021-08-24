@@ -2,7 +2,7 @@ from abc import ABC
 import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 
-from bemani.common import Model, ValidatedDict, Profile, GameConstants, Time
+from bemani.common import Model, ValidatedDict, Profile, PlayStatistics, GameConstants, Time
 from bemani.data import Config, Data, UserID, RemoteUser
 
 
@@ -318,7 +318,7 @@ class Base(ABC):
             raise Exception('Trying to save a remote profile locally!')
         self.data.local.user.put_profile(self.game, self.version, userid, profile)
 
-    def update_play_statistics(self, userid: UserID, extra_stats: Optional[Dict[str, Any]]=None) -> None:
+    def update_play_statistics(self, userid: UserID, stats: Optional[PlayStatistics] = None) -> None:
         """
         Given a user ID, calculate new play statistics.
 
@@ -327,18 +327,19 @@ class Base(ABC):
 
         Parameters:
             userid - The user ID we are binding the profile for.
+            stats - A play statistics object we should store extra data from.
         """
         if RemoteUser.is_remote(userid):
             raise Exception('Trying to save remote statistics locally!')
 
         # We store the play statistics in a series-wide settings blob so its available
         # across all game versions, since it isn't game-specific.
-        settings = self.get_play_statistics(userid)
+        settings = self.data.local.game.get_settings(self.game, userid) or ValidatedDict({})
 
-        if extra_stats is not None:
-            for key in extra_stats:
+        if stats is not None:
+            for key in stats:
                 # Make sure we don't override anything we manage here
-                if key in [
+                if key in {
                     'total_plays',
                     'today_plays',
                     'total_days',
@@ -346,14 +347,14 @@ class Base(ABC):
                     'last_play_timestamp',
                     'last_play_date',
                     'consecutive_days',
-                ]:
+                }:
                     continue
                 # Safe to copy over
-                settings[key] = extra_stats[key]
+                settings[key] = stats[key]
 
         settings.replace_int('total_plays', settings.get_int('total_plays') + 1)
-        settings.replace_int('first_play_timestamp', settings.get_int('first_play_timestamp', int(Time.now())))
-        settings.replace_int('last_play_timestamp', int(Time.now()))
+        settings.replace_int('first_play_timestamp', settings.get_int('first_play_timestamp', Time.now()))
+        settings.replace_int('last_play_timestamp', Time.now())
 
         last_play_date = settings.get_int_array('last_play_date', 3)
         today_play_date = Time.todays_date()
@@ -363,13 +364,13 @@ class Base(ABC):
             last_play_date[1] == today_play_date[1] and
             last_play_date[2] == today_play_date[2]
         ):
-            # We already played today, add one
+            # We already played today, add one.
             settings.replace_int('today_plays', settings.get_int('today_plays') + 1)
         else:
-            # We played on a new day, so count total days up
+            # We played on a new day, so count total days up.
             settings.replace_int('total_days', settings.get_int('total_days') + 1)
 
-            # We haven't played yet today, reset to one
+            # We played only once today (the play we are saving).
             settings.replace_int('today_plays', 1)
             if (
                 last_play_date[0] == yesterday_play_date[0] and
@@ -379,7 +380,7 @@ class Base(ABC):
                 # We played yesterday, add one to consecutive days
                 settings.replace_int('consecutive_days', settings.get_int('consecutive_days') + 1)
             else:
-                # We haven't played yet today or yesterday, reset consecutive days
+                # We haven't played yesterday, so we have only one consecutive day.
                 settings.replace_int('consecutive_days', 1)
         settings.replace_int_array('last_play_date', 3, today_play_date)
 
@@ -413,7 +414,7 @@ class Base(ABC):
             settings = ValidatedDict()
         return settings
 
-    def get_play_statistics(self, userid: UserID) -> ValidatedDict:
+    def get_play_statistics(self, userid: UserID) -> PlayStatistics:
         """
         Given a user ID, get the play statistics.
 
@@ -433,8 +434,93 @@ class Base(ABC):
             consecutive_days - Number of consecutive days played at this time.
         """
         if RemoteUser.is_remote(userid):
-            return ValidatedDict({})
+            return PlayStatistics(
+                self.game,
+                0,
+                0,
+                0,
+                0,
+                Time.now(),
+                Time.now(),
+            )
+
+        # Grab the last saved settings and today's date.
         settings = self.data.local.game.get_settings(self.game, userid)
+        today_play_date = Time.todays_date()
+        yesterday_play_date = Time.yesterdays_date()
         if settings is None:
-            return ValidatedDict({})
-        return settings
+            return PlayStatistics(
+                self.game,
+                1,
+                1,
+                1,
+                1,
+                Time.now(),
+                Time.now(),
+            )
+
+        # Calculate whether we are on our first play of the day or not.
+        last_play_date = settings.get_int_array('last_play_date', 3)
+        if (
+            last_play_date[0] == today_play_date[0] and
+            last_play_date[1] == today_play_date[1] and
+            last_play_date[2] == today_play_date[2]
+        ):
+            # We last played today, so the total days and today plays are accurate
+            # as stored.
+            today_count = settings.get_int('today_plays', 0)
+            total_days = settings.get_int('total_days', 1)
+            consecutive_days = settings.get_int('consecutive_days', 1)
+        else:
+            if (
+                last_play_date[0] != 0 and
+                last_play_date[1] != 0 and
+                last_play_date[2] != 0
+            ):
+                # We've played before but not today, so the total days is
+                # the stored count plus today.
+                total_days = settings.get_int('total_days') + 1
+            else:
+                # We've never played before, so the total days is just 1.
+                total_days = 1
+
+            if (
+                last_play_date[0] == yesterday_play_date[0] and
+                last_play_date[1] == yesterday_play_date[1] and
+                last_play_date[2] == yesterday_play_date[2]
+            ):
+                # We've played before, and it was yesterday, so today is the
+                # next consecutive day. So add the current value and today.
+                consecutive_days = settings.get_int('consecutive_days') + 1
+            else:
+                # This is the first consecutive day, we've either never played
+                # or we played a bunch but in the past before yesterday.
+                consecutive_days = 1
+
+            # We haven't played yet today.
+            today_count = 0
+
+        # Grab any extra settings that a game may have stored here.
+        extra_settings: Dict[str, Any] = {
+            key: value for (key, value) in settings.items()
+            if key not in {
+                'total_plays',
+                'today_plays',
+                'total_days',
+                'first_play_timestamp',
+                'last_play_timestamp',
+                'last_play_date',
+                'consecutive_days',
+            }
+        }
+
+        return PlayStatistics(
+            self.game,
+            settings.get_int('total_plays') + 1,
+            today_count + 1,
+            total_days,
+            consecutive_days,
+            settings.get_int('first_play_timestamp', Time.now()),
+            settings.get_int('last_play_timestamp', Time.now()),
+            extra_settings,
+        )
