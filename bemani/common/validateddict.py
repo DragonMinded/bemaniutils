@@ -454,3 +454,37 @@ class Profile(ValidatedDict):
         self.version = version
         self.refid = refid
         self.extid = extid
+
+
+class PlayStatistics(ValidatedDict):
+    """
+    A special case of a ValidatedDict, a play statistics object is guaranteed
+    to also contain several values representing last play times, total play times,
+    and the like.
+    """
+
+    def __init__(
+        self,
+        game: GameConstants,
+        total_plays: int,
+        today_plays: int,
+        total_days: int,
+        consecutive_days: int,
+        first_play_timestamp: int,
+        last_play_timestamp: int,
+        extra_values: Dict[str, Any] = {},
+    ) -> None:
+        super().__init__(extra_values or {})
+        self.game = game
+        # How many actual profiles saves have we registered across all games in this series.
+        self.total_plays = total_plays
+        # How many actual profile saves have we registered today, so far.
+        self.today_plays = today_plays
+        # How many total days that we have registered at least one profile save.
+        self.total_days = total_days
+        # How many consecutive days in a row we registered at least one profile save.
+        self.consecutive_days = consecutive_days
+        # The timestamp of the very first play session, in seconds.
+        self.first_play_timestamp = first_play_timestamp
+        # The timestamp of the very last play session, in seconds.
+        self.last_play_timestamp = last_play_timestamp

@@ -408,19 +408,9 @@ class DDRX3(
             workout.set_attribute('disp', '1')
 
         # Daily play counts
-        last_play_date = play_stats.get_int_array('last_play_date', 3)
-        today_play_date = Time.todays_date()
-        if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
-        ):
-            today_count = play_stats.get_int('today_plays', 0)
-        else:
-            today_count = 0
         daycount = Node.void('daycount')
         root.add_child(daycount)
-        daycount.set_attribute('playcount', str(today_count))
+        daycount.set_attribute('playcount', str(play_stats.today_plays))
 
         # Daily combo stuff, unknown how this works
         dailycombo = Node.void('dailycombo')

@@ -86,7 +86,7 @@ class APIData(APIProviderInterface, BaseData):
         cursor = self.execute(
             sql,
             {
-                'timestamp': int(Time.now()),
+                'timestamp': Time.now(),
                 'name': name,
                 'token': str(uuid.uuid4()),
             },
@@ -175,7 +175,7 @@ class APIData(APIProviderInterface, BaseData):
         cursor = self.execute(
             sql,
             {
-                'timestamp': int(Time.now()),
+                'timestamp': Time.now(),
                 'uri': uri,
                 'token': token,
             },

@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.lapistoria import PopnMusicLapistoria
 
-from bemani.common import Time, Profile, VersionConstants
+from bemani.common import Profile, VersionConstants
 from bemani.data import UserID, Link
 from bemani.protocol import Node
 
@@ -546,20 +546,10 @@ class PopnMusicEclale(PopnMusicBase):
 
         # player statistics
         statistics = self.get_play_statistics(userid)
-        last_play_date = statistics.get_int_array('last_play_date', 3)
-        today_play_date = Time.todays_date()
-        if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
-        ):
-            today_count = statistics.get_int('today_plays', 0)
-        else:
-            today_count = 0
-        account.add_child(Node.s16('total_play_cnt', statistics.get_int('total_plays', 0)))
-        account.add_child(Node.s16('today_play_cnt', today_count))
-        account.add_child(Node.s16('consecutive_days', statistics.get_int('consecutive_days', 0)))
-        account.add_child(Node.s16('total_days', statistics.get_int('total_days', 0)))
+        account.add_child(Node.s16('total_play_cnt', statistics.total_plays))
+        account.add_child(Node.s16('today_play_cnt', statistics.today_plays))
+        account.add_child(Node.s16('consecutive_days', statistics.consecutive_days))
+        account.add_child(Node.s16('total_days', statistics.total_days))
         account.add_child(Node.s16('interval_day', 0))
 
         # Set up info node

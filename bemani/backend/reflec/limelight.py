@@ -563,23 +563,12 @@ class ReflecBeatLimelight(ReflecBeatBase):
         base.add_child(Node.s32('pc', profile.get_int('pc')))
         base.add_child(Node.s32('uattr', profile.get_int('uattr')))
 
-        last_play_date = statistics.get_int_array('last_play_date', 3)
-        today_play_date = Time.todays_date()
-        if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
-        ):
-            today_count = statistics.get_int('today_plays', 0)
-        else:
-            today_count = 0
-
         con = Node.void('con')
         pdata.add_child(con)
-        con.add_child(Node.s32('day', today_count))
-        con.add_child(Node.s32('cnt', statistics.get_int('total_plays')))
-        con.add_child(Node.s32('total_cnt', statistics.get_int('total_plays')))
-        con.add_child(Node.s32('last', statistics.get_int('last_play_timestamp')))
+        con.add_child(Node.s32('day', statistics.today_plays))
+        con.add_child(Node.s32('cnt', statistics.total_plays))
+        con.add_child(Node.s32('total_cnt', statistics.total_plays))
+        con.add_child(Node.s32('last', statistics.last_play_timestamp))
         con.add_child(Node.s32('now', Time.now()))
 
         team = Node.void('team')

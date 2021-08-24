@@ -88,7 +88,7 @@ class NetworkData(BaseData):
             The ID of the newly created entry.
         """
         sql = "INSERT INTO news (timestamp, title, body) VALUES (:timestamp, :title, :body)"
-        cursor = self.execute(sql, {'timestamp': int(Time.now()), 'title': title, 'body': body})
+        cursor = self.execute(sql, {'timestamp': Time.now(), 'title': title, 'body': body})
         return cursor.lastrowid
 
     def get_news(self, newsid: int) -> Optional[News]:

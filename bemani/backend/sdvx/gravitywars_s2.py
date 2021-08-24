@@ -3,7 +3,7 @@ import copy
 from typing import Any, Dict, List, Tuple
 
 from bemani.backend.sdvx.gravitywars import SoundVoltexGravityWars
-from bemani.common import ID, Time, Profile
+from bemani.common import ID, Profile
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -3970,19 +3970,9 @@ class SoundVoltexGravityWarsSeason2(
 
         # Play statistics
         statistics = self.get_play_statistics(userid)
-        last_play_date = statistics.get_int_array('last_play_date', 3)
-        today_play_date = Time.todays_date()
-        if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
-        ):
-            today_count = statistics.get_int('today_plays', 0)
-        else:
-            today_count = 0
-        game.add_child(Node.u32('play_count', statistics.get_int('total_plays', 0)))
-        game.add_child(Node.u32('daily_count', today_count))
-        game.add_child(Node.u32('play_chain', statistics.get_int('consecutive_days', 0)))
+        game.add_child(Node.u32('play_count', statistics.total_plays))
+        game.add_child(Node.u32('daily_count', statistics.today_plays))
+        game.add_child(Node.u32('play_chain', statistics.consecutive_days))
 
         # Last played stuff
         if 'last' in profile:
