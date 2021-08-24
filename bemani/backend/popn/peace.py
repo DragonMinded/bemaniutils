@@ -257,7 +257,7 @@ class PopnMusicPeace(PopnMusicBase):
                     subnode.add_child(Node.u8('clear_type', ach.data.get_int('clear_type')))
                     subnode.add_child(Node.u8('clear_rank', ach.data.get_int('clear_rank')))
 
-        for area_id in range(1, 16):
+        for area_id in range(1, 17):
             area = Node.void('area')
             root.add_child(area)
             area.add_child(Node.s16('area_id', area_id))
@@ -265,7 +265,7 @@ class PopnMusicPeace(PopnMusicBase):
             area.add_child(Node.s16('medal_id', area_id))
             area.add_child(Node.bool('is_limit', False))
 
-        for choco_id in range(1, 5):
+        for choco_id in range(1, 6):
             choco = Node.void('choco')
             root.add_child(choco)
             choco.add_child(Node.s16('choco_id', choco_id))
@@ -818,7 +818,6 @@ class PopnMusicPeace(PopnMusicBase):
         root.add_child(account)
         account.add_child(Node.string('g_pm_id', self.format_extid(profile.extid)))
         account.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        account.add_child(Node.s16('tutorial', profile.get_int('tutorial')))
         account.add_child(Node.s16('area_id', profile.get_int('area_id')))
         account.add_child(Node.s16('use_navi', profile.get_int('use_navi')))
         account.add_child(Node.s16('read_news', profile.get_int('read_news')))
@@ -842,6 +841,53 @@ class PopnMusicPeace(PopnMusicBase):
         account.add_child(Node.s32('player_point', profile.get_int('player_point', 300)))
         account.add_child(Node.s32_array('power_point_list', profile.get_int_array('power_point_list', 20, [-1] * 20)))
 
+        # Tutorial handling is all sorts of crazy in UsaNeko. the tutorial flag
+        # is split into two values. The game uses the flag modulo 100 for standard
+        # tutorial progress, and the flag divided by 100 for the hold note tutorial.
+        # The hold note tutorial will activate the first time you choose a song with
+        # hold notes in it, regardless of whether you say yes/no. The total times you
+        # have ever played Pop'n Music also factors in for some screens. The enumerated
+        # values are as follows:
+        #
+        # Lower values:
+        #   0 - Should not be used, presenting this to the game causes buggy behavior.
+        #   1 - User has not been prompted to choose any tutorials. Prompts the user for the
+        #       menu tutorial. If the user selects "no" then moves the tutorial state to
+        #       "2" at the end of the round. If the user selects "yes" then moves the
+        #       tutorial state to "3" immediately and starts the menu tutorial. If the total
+        #       play count for this user is "1" when this value is hit, the game will bug
+        #       out and play the hold note tutorial and then crash.
+        #   2 - Prompt the user on the mode select screen asking them if they want to see
+        #       the menu tutorial. If the user selects "no" then moves the tutorial state
+        #       to "8" immediately. If the user selects "yes" then moves the tutorial state
+        #       to "3" immediately. If the total play count for this user is "1" when this value
+        #       is hit, then the game will bug out and play the hold note tutorial and then crash.
+        #   3 - Display some tutorial elements on most screens, and then advance the tutorial
+        #       state to "4" on profile save.
+        #   4 - Display some tutorial elements on most screens, and then advance the tutorial
+        #       state to "5" on profile save.
+        #   5 - Display some tutorial elements on most screens, and then prompt user with a
+        #       repeat tutorial question. If the user selects "no" then moves the tutorial
+        #       state to "8". If the user selects "yes" then moves the tutorial state to "3".
+        #   6 - Do nothing, display nothing, but advance the tutorial state to "7" at the
+        #       end of the game. It seems that nothing requests this state.
+        #   7 - Display guide information prompt on the option select screen. Game moves
+        #       this to "8" after this tutorial has been displayed.
+        #   8 - Do not display any more tutorial stuff, this is a terminal state.
+        #
+        # Upper values:
+        #   0 - Should not be used, presenting this to the game causes buggy behavior.
+        #   1 - Hold note tutorial has not been activated yet and will be displayed when
+        #       the player chooses a song with hold notes. Game moves this to "2" after this
+        #       tutorial has been activated.
+        #   2 - Hold note tutorial was displayed to the user, but the mini-tutorial showing
+        #       the hold note indicator that pops up after the hold note tutorial has not
+        #       been displayed yet. Presumably this is just in case you play a hold note
+        #       song on your last stage. Game moves this to "3" after this tutorial has been
+        #       displayed.
+        #   3 - All hold note tutorials are finished, this is a terminal state.
+        account.add_child(Node.s16('tutorial', profile.get_int('tutorial')))
+
         # Stuff we never change
         account.add_child(Node.s8('staff', 0))
         account.add_child(Node.s16('item_type', 0))
@@ -862,20 +908,10 @@ class PopnMusicPeace(PopnMusicBase):
 
         # Player statistics
         statistics = self.get_play_statistics(userid)
-        last_play_date = statistics.get_int_array('last_play_date', 3)
-        today_play_date = Time.todays_date()
-        if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
-        ):
-            today_count = statistics.get_int('today_plays', 0)
-        else:
-            today_count = 0
-        account.add_child(Node.s16('total_play_cnt', statistics.get_int('total_plays', 0)))
-        account.add_child(Node.s16('today_play_cnt', today_count))
-        account.add_child(Node.s16('consecutive_days', statistics.get_int('consecutive_days', 0)))
-        account.add_child(Node.s16('total_days', statistics.get_int('total_days', 0)))
+        account.add_child(Node.s16('total_play_cnt', statistics.total_plays))
+        account.add_child(Node.s16('today_play_cnt', statistics.today_plays))
+        account.add_child(Node.s16('consecutive_days', statistics.consecutive_days))
+        account.add_child(Node.s16('total_days', statistics.total_days))
         account.add_child(Node.s16('interval_day', 0))
 
         # Number of rivals that are active for this version.
@@ -1327,21 +1363,6 @@ class PopnMusicPeace(PopnMusicBase):
                             'complete': complete,
                         },
                     )
-
-        # Unlock NAVI-kun and Kenshi Yonezu after one play
-        for songid in [1592, 1608]:
-            self.data.local.user.put_achievement(
-                self.game,
-                self.version,
-                userid,
-                songid,
-                'item_0',
-                {
-                    'param': 0xF,
-                    'is_new': False,
-                    'get_time': Time.now(),
-                },
-            )
 
         # Keep track of play statistics
         self.update_play_statistics(userid)
