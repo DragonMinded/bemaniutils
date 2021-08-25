@@ -817,23 +817,32 @@ class PopnMusicUsaNeko(PopnMusicBase):
         account.add_child(Node.s32_array('power_point_list', profile.get_int_array('power_point_list', 20, [-1] * 20)))
 
         # Tutorial handling is all sorts of crazy in UsaNeko. the tutorial flag
-        # is split into two values. The game uses the flag modulo 100 for standard
+        # is split into two values. The game uses the flag modulo 100 for navigation
         # tutorial progress, and the flag divided by 100 for the hold note tutorial.
         # The hold note tutorial will activate the first time you choose a song with
         # hold notes in it, regardless of whether you say yes/no. The total times you
-        # have ever played Pop'n Music also factors in for some screens. The enumerated
-        # values are as follows:
+        # have ever played Pop'n Music also factors in, as the game will only attempt
+        # to offer you the basic "how to play" tutorial screen and song on the playthrough
+        # attempt where the "total_play_cnt" value is 1. The game expects this to be 1-based,
+        # and if you set it to 0 for the first playthorough then it will play a mandatory
+        # cursed tutorial stage on the second profile load using the chart of your last
+        # played song and keysounds of system menu entries. Valid values for each of the
+        # two tutorial values is as follows:
         #
         # Lower values:
-        #   0 - Should not be used, presenting this to the game causes buggy behavior.
-        #   1 - User has not been prompted to choose any tutorials. Prompts the user for the
-        #       menu tutorial. If the user selects "no" then moves the tutorial state to
-        #       "2" at the end of the round. If the user selects "yes" then moves the
-        #       tutorial state to "3" immediately and starts the menu tutorial. If the total
-        #       play count for this user is "1" when this value is hit, the game will bug
-        #       out and play the hold note tutorial and then crash.
+        #   0 - Brand new profile and user has not been prompted to choose any tutorials.
+        #       Prompts the user for the nagivation tutorial. If the user selects "no" then
+        #       moves the tutorial state to "1" at the end of the round. If the user selects
+        #       "yes" then moves the tutorial state to "3" immediately and starts the navigation
+        #       tutorial. If the total play count for this user is "1" when this value is hit,
+        #       the game will offer a basic "how to play" tutorial that can be played or skipped.
+        #   1 - Prompt the user on the mode select screen asking them if they want to see
+        #       the navigation tutorial. If the user selects "no" then moves the tutorial state
+        #       to "2" after the round. If the user selects "yes" then moves the tutorial state
+        #       to "3" immediately. If the total play count for this user is "1" when this value
+        #       is hit, then the game will bug out and play the hold note tutorial and then crash.
         #   2 - Prompt the user on the mode select screen asking them if they want to see
-        #       the menu tutorial. If the user selects "no" then moves the tutorial state
+        #       the navigation tutorial. If the user selects "no" then moves the tutorial state
         #       to "8" immediately. If the user selects "yes" then moves the tutorial state
         #       to "3" immediately. If the total play count for this user is "1" when this value
         #       is hit, then the game will bug out and play the hold note tutorial and then crash.
@@ -847,11 +856,16 @@ class PopnMusicUsaNeko(PopnMusicBase):
         #   6 - Do nothing, display nothing, but advance the tutorial state to "7" at the
         #       end of the game. It seems that nothing requests this state.
         #   7 - Display guide information prompt on the option select screen. Game moves
-        #       this to "8" after this tutorial has been displayed.
+        #       this to "8" after this tutorial has been displayed. It appears that there is
+        #       code to go to this state instead of "8" when selecting "no" on the navigation
+        #       tutorial prompt but only when the total play count is "1". That crashes the game
+        #       as documented above, so it is not clear how this state was ever reachable.
         #   8 - Do not display any more tutorial stuff, this is a terminal state.
         #
         # Upper values:
-        #   0 - Should not be used, presenting this to the game causes buggy behavior.
+        #   0 - Brand new profile and user has not been asked for the above navigation tutorial
+        #       or shown an optional "how to play" tutorial. The game will advance this to "1"
+        #       after going through the mode and character select screens.
         #   1 - Hold note tutorial has not been activated yet and will be displayed when
         #       the player chooses a song with hold notes. Game moves this to "2" after this
         #       tutorial has been activated.
