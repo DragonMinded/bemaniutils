@@ -865,7 +865,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
         # Upper values:
         #   0 - Brand new profile and user has not been asked for the above navigation tutorial
         #       or shown an optional "how to play" tutorial. The game will advance this to "1"
-        #       after going through the mode and character select screens.
+        #       after going through the mode and character select screens, but only if the total
+        #       play count is "1".
         #   1 - Hold note tutorial has not been activated yet and will be displayed when
         #       the player chooses a song with hold notes. Game moves this to "2" after this
         #       tutorial has been activated.
@@ -875,7 +876,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
         #       song on your last stage. Game moves this to "3" after this tutorial has been
         #       displayed.
         #   3 - All hold note tutorials are finished, this is a terminal state.
-        account.add_child(Node.s16('tutorial', profile.get_int('tutorial')))
+        statistics = self.get_play_statistics(userid)
+        account.add_child(Node.s16('tutorial', profile.get_int('tutorial', 100 if statistics.total_plays > 1 else 0)))
 
         # Stuff we never change
         account.add_child(Node.s8('staff', 0))
@@ -896,7 +898,6 @@ class PopnMusicUsaNeko(PopnMusicBase):
         account.add_child(Node.s16_array('latest_music', last_played))
 
         # Player statistics
-        statistics = self.get_play_statistics(userid)
         account.add_child(Node.s16('total_play_cnt', statistics.total_plays))
         account.add_child(Node.s16('today_play_cnt', statistics.today_plays))
         account.add_child(Node.s16('consecutive_days', statistics.consecutive_days))
