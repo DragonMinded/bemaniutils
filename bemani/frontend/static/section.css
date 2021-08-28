@@ -65,6 +65,10 @@ div.labelledsection.iidx.themeoption select {
     width: 200px;
 }
 
+div.labelledsection.iidx.qprooption select {
+    width: 300px;
+}
+
 div.labelledsection.ddr.option select {
     width: 200px;
 }
