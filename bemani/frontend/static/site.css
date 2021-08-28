@@ -129,7 +129,6 @@ ul.navigation li {
 ul.navigation_sub {
     display: none;
     position: absolute;
-    top: 100%;
     background-color: #e4e4e4;
     padding: 10px;
     margin: 0;
