@@ -307,7 +307,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'BishiBashi',
                 'entries': bishi_entries,
                 'base_uri': app.blueprints['bishi_pages'].url_prefix,
-                'gamecode': GameConstants.BISHI_BASHI,
+                'gamecode': GameConstants.BISHI_BASHI.value,
             },
         )
 
@@ -356,7 +356,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'DDR',
                 'entries': ddr_entries,
                 'base_uri': app.blueprints['ddr_pages'].url_prefix,
-                'gamecode': GameConstants.DDR,
+                'gamecode': GameConstants.DDR.value,
             },
         )
 
@@ -405,7 +405,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'IIDX',
                 'entries': iidx_entries,
                 'base_uri': app.blueprints['iidx_pages'].url_prefix,
-                'gamecode': GameConstants.IIDX,
+                'gamecode': GameConstants.IIDX.value,
             },
         )
 
@@ -454,7 +454,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Jubeat',
                 'entries': jubeat_entries,
                 'base_uri': app.blueprints['jubeat_pages'].url_prefix,
-                'gamecode': GameConstants.JUBEAT,
+                'gamecode': GameConstants.JUBEAT.value,
             },
         )
 
@@ -499,7 +499,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'MÚSECA',
                 'entries': museca_entries,
                 'base_uri': app.blueprints['museca_pages'].url_prefix,
-                'gamecode': GameConstants.MUSECA,
+                'gamecode': GameConstants.MUSECA.value,
             },
         )
 
@@ -548,7 +548,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Pop\'n Music',
                 'entries': popn_entries,
                 'base_uri': app.blueprints['popn_pages'].url_prefix,
-                'gamecode': GameConstants.POPN_MUSIC,
+                'gamecode': GameConstants.POPN_MUSIC.value,
             },
         )
 
@@ -597,7 +597,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Reflec Beat',
                 'entries': reflec_entries,
                 'base_uri': app.blueprints['reflec_pages'].url_prefix,
-                'gamecode': GameConstants.REFLEC_BEAT,
+                'gamecode': GameConstants.REFLEC_BEAT.value,
             },
         )
 
@@ -646,7 +646,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'SDVX',
                 'entries': sdvx_entries,
                 'base_uri': app.blueprints['sdvx_pages'].url_prefix,
-                'gamecode': GameConstants.SDVX,
+                'gamecode': GameConstants.SDVX.value,
             },
         )
 
