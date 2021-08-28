@@ -693,7 +693,14 @@ def navigation() -> Dict[str, Any]:
 
     # Arcade owner pages
     arcadeids = g.data.local.machine.from_userid(g.userID)
-    if len(arcadeids) > 0:
+    if len(arcadeids) == 1:
+        arcade = g.data.local.machine.get_arcade(arcadeids[0])
+        pages.append({
+            'label': arcade.name,
+            'uri': url_for('arcade_pages.viewarcade', arcadeid=arcade.id),
+            'right_justify': True,
+        })
+    elif len(arcadeids) > 1:
         entries = []
         for arcadeid in arcadeids:
             arcade = g.data.local.machine.get_arcade(arcadeid)
