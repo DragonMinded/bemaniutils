@@ -235,7 +235,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                     subnode.add_child(Node.u8('clear_type', ach.data.get_int('clear_type')))
                     subnode.add_child(Node.u8('clear_rank', ach.data.get_int('clear_rank')))
 
-        for area_id in range(1, 16):
+        for area_id in range(1, 17):
             area = Node.void('area')
             root.add_child(area)
             area.add_child(Node.s16('area_id', area_id))
@@ -243,7 +243,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             area.add_child(Node.s16('medal_id', area_id))
             area.add_child(Node.bool('is_limit', False))
 
-        for choco_id in range(1, 5):
+        for choco_id in range(1, 6):
             choco = Node.void('choco')
             root.add_child(choco)
             choco.add_child(Node.s16('choco_id', choco_id))
@@ -1001,10 +1001,10 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 # seen 8 and 0. Might be what chart is available?
                 #
                 # Item limits are as follows:
-                # 0: 1704
+                # 0: 1704 - ID is the music ID that the player purchased/unlocked.
                 # 1: 2201
                 # 2: 3
-                # 3: 97
+                # 3: 97 - ID points at a character part that can be purchased on the character screen.
                 # 4: 1
                 # 5: 1
                 # 6: 60
@@ -1072,7 +1072,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 fes.add_child(Node.u16('gauge_point', points))
                 fes.add_child(Node.bool('is_cleared', cleared))
 
-        # Handle daily mission
+        # Handle daily mission. Note that we should be presenting 3 random IDs
+        # in the range of 1-228 inclusive, and presenting three new ones per day.
         achievements = self.data.local.user.get_time_based_achievements(
             self.game,
             self.version,
@@ -1081,20 +1082,25 @@ class PopnMusicUsaNeko(PopnMusicBase):
             until=Time.end_of_today(),
         )
         achievements = sorted(achievements, key=lambda a: a.timestamp)
-        daily_missions: Dict[int, ValidatedDict] = {
-            1: ValidatedDict(),
-            2: ValidatedDict(),
-            3: ValidatedDict(),
-        }
+        daily_missions: Dict[int, ValidatedDict] = {}
+
         # Find the newest version of each daily mission completion,
         # since we've sorted by time above. If we haven't started for
-        # today, the defaults will be set so we at least give the game
-        # the right ID.
+        # today, the defaults will be set after this loop so we at least
+        # give the game the right ID.
         for achievement in achievements:
             if achievement.type == 'mission':
                 daily_missions[achievement.id] = achievement.data
 
-        for daily_id, data in daily_missions.items():
+        while len(daily_missions) < 3:
+            new_id = random.randint(1, 228)
+            if new_id not in daily_missions:
+                daily_missions[new_id] = ValidatedDict()
+
+        for i, (daily_id, data) in enumerate(daily_missions.items()):
+            if i >= 3:
+                break
+
             points = data.get_int('points')
             complete = data.get_int('complete')
 
