@@ -80,9 +80,6 @@ class EAmuseProtocol:
         Returns:
             binary string representing transformed data
         """
-        if data is None:
-            return None
-
         key: Optional[bytes] = None
         if encryption_key:
             # Key is concatenated with the shared secret above
@@ -130,9 +127,6 @@ class EAmuseProtocol:
         Returns:
             binary string representing transformed data
         """
-        if data is None:
-            return None
-
         if compression is None or compression == 'none':
             # This isn't compressed
             return data
@@ -156,9 +150,6 @@ class EAmuseProtocol:
         Returns:
             binary string representing transformed data
         """
-        if data is None:
-            return None
-
         if compression is None or compression == 'none':
             # This isn't compressed
             return data
