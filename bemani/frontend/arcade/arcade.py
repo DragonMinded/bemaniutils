@@ -138,7 +138,7 @@ def viewarcade(arcadeid: int) -> Response:
     arcadeid = ArcadeID(arcadeid)
 
     arcade = g.data.local.machine.get_arcade(arcadeid)
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         abort(403)
     machines = [
         format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)
@@ -178,9 +178,7 @@ def listarcade(arcadeid: int) -> Dict[str, Any]:
 
     # Make sure the arcade is valid
     arcade = g.data.local.machine.get_arcade(arcadeid)
-    if arcade is None:
-        raise Exception('Unable to find arcade to list!')
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to list!')
 
     machines = [
@@ -205,9 +203,7 @@ def addbalance(arcadeid: int) -> Dict[str, Any]:
 
     # Make sure the arcade is valid
     arcade = g.data.local.machine.get_arcade(arcadeid)
-    if arcade is None:
-        raise Exception('Unable to find arcade to update!')
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to update!')
 
     try:
@@ -250,9 +246,7 @@ def updatebalance(arcadeid: int) -> Dict[str, Any]:
 
     # Make sure the arcade is valid
     arcade = g.data.local.machine.get_arcade(arcadeid)
-    if arcade is None:
-        raise Exception('Unable to find arcade to update!')
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to update!')
 
     # Update balances
@@ -288,9 +282,7 @@ def updatepin(arcadeid: int) -> Dict[str, Any]:
 
     # Make sure the arcade is valid
     arcade = g.data.local.machine.get_arcade(arcadeid)
-    if arcade is None:
-        raise Exception('Unable to find arcade to update!')
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to update!')
 
     if not valid_pin(pin, 'arcade'):
@@ -314,9 +306,7 @@ def updatearcade(arcadeid: int, attribute: str) -> Dict[str, Any]:
     # Attempt to look this arcade up
     new_value = request.get_json()['value']
     arcade = g.data.local.machine.get_arcade(arcadeid)
-    if arcade is None:
-        raise Exception('Unable to find arcade to update!')
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to update!')
 
     if attribute == 'paseli_enabled':
@@ -345,10 +335,7 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
 
     # Attempt to look this arcade up
     arcade = g.data.local.machine.get_arcade(arcadeid)
-
-    if arcade is None:
-        raise Exception('Unable to find arcade to update!')
-    if g.userID not in arcade.owners:
+    if arcade is None or g.userID not in arcade.owners:
         raise Exception('You don\'t own this arcade, refusing to update!')
 
     game = GameConstants(request.get_json()['game'])
