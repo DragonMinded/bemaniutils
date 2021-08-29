@@ -1,4 +1,5 @@
-from typing import Any, Dict, List
+import random
+from typing import Any, Dict, List, Optional
 from flask import Blueprint, request, Response, abort, url_for
 
 from bemani.backend.base import Base
@@ -17,6 +18,10 @@ arcade_pages = Blueprint(
     template_folder=templates_location,
     static_folder=static_location,
 )
+
+
+def is_user_editable(machine: Machine) -> bool:
+    return machine.game is None
 
 
 def format_machine(machine: Machine) -> Dict[str, Any]:
@@ -50,6 +55,7 @@ def format_machine(machine: Machine) -> Dict[str, Any]:
         'description': machine.description,
         'port': machine.port,
         'game': game,
+        'editable': is_user_editable(machine),
     }
 
 
@@ -154,10 +160,10 @@ def viewarcade(arcadeid: int) -> Response:
             'users': {user.id: user.username for user in g.data.local.user.get_all_users()},
             'events': [format_event(event) for event in g.data.local.network.get_events(arcadeid=arcadeid, event='paseli_transaction')],
             'enforcing': g.config.server.enforce_pcbid,
+            'max_pcbids': g.config.server.pcbid_self_grant_limit,
         },
         {
             'refresh': url_for('arcade_pages.listarcade', arcadeid=arcadeid),
-            'viewuser': url_for('admin_pages.viewuser', userid=-1),
             'paseli_enabled': url_for('arcade_pages.updatearcade', arcadeid=arcadeid, attribute='paseli_enabled'),
             'paseli_infinite': url_for('arcade_pages.updatearcade', arcadeid=arcadeid, attribute='paseli_infinite'),
             'mask_services_url': url_for('arcade_pages.updatearcade', arcadeid=arcadeid, attribute='mask_services_url'),
@@ -165,6 +171,9 @@ def viewarcade(arcadeid: int) -> Response:
             'add_balance': url_for('arcade_pages.addbalance', arcadeid=arcadeid),
             'update_balance': url_for('arcade_pages.updatebalance', arcadeid=arcadeid),
             'update_pin': url_for('arcade_pages.updatepin', arcadeid=arcadeid),
+            'generatepcbid': url_for('arcade_pages.generatepcbid', arcadeid=arcadeid),
+            'updatepcbid': url_for('arcade_pages.updatepcbid', arcadeid=arcadeid),
+            'removepcbid': url_for('arcade_pages.removepcbid', arcadeid=arcadeid),
         },
     )
 
@@ -294,6 +303,137 @@ def updatepin(arcadeid: int) -> Dict[str, Any]:
 
     # Return nothing
     return {'pin': pin}
+
+
+@arcade_pages.route('/<int:arcadeid>/pcbids/generate', methods=['POST'])
+@jsonify
+@loginrequired
+def generatepcbid(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
+    # Make sure that arcade owners are allowed to generate PCBIDs in the first place.
+    if g.config.server.pcbid_self_grant_limit <= 0:
+        raise Exception('You don\'t have permission to generate PCBIDs!')
+
+    # Make sure the arcade is valid and the current user has permissions to
+    # modify it.
+    arcade = g.data.local.machine.get_arcade(arcadeid)
+    if arcade is None or g.userID not in arcade.owners:
+        raise Exception('You don\'t own this arcade, refusing to update!')
+
+    # Make sure the user hasn't gone over their limit of PCBIDs.
+    existing_machine_count = len(
+        [machine for machine in g.data.local.machine.get_all_machines(arcade.id) if is_user_editable(machine)]
+    )
+    if existing_machine_count >= g.config.server.pcbid_self_grant_limit:
+        raise Exception('You have hit your limit of allowed PCBIDs!')
+
+    # Will be set by the game on boot.
+    name: str = 'なし'
+    pcbid: Optional[str] = None
+    new_machine = request.get_json()['machine']
+
+    while pcbid is None:
+        # Generate a new PCBID, check for uniqueness
+        potential_pcbid = "01201000000000" + "".join([random.choice("0123456789ABCDEF") for _ in range(6)])
+        if g.data.local.machine.get_machine(potential_pcbid) is None:
+            pcbid = potential_pcbid
+
+    # Finally, add the generated PCBID to the network.
+    g.data.local.machine.create_machine(pcbid, name, new_machine['description'], arcade.id)
+
+    # Just return all machines for ease of updating
+    return {
+        'machines': [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)],
+    }
+
+
+@arcade_pages.route('/<int:arcadeid>/pcbids/update', methods=['POST'])
+@jsonify
+@loginrequired
+def updatepcbid(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
+    # Make sure that arcade owners are allowed to edit PCBIDs in the first place.
+    if g.config.server.pcbid_self_grant_limit <= 0:
+        raise Exception('You don\'t have permission to edit PCBIDs!')
+
+    # Make sure the arcade is valid and the current user has permissions to
+    # modify it.
+    arcade = g.data.local.machine.get_arcade(arcadeid)
+    if arcade is None or g.userID not in arcade.owners:
+        raise Exception('You don\'t own this arcade, refusing to update!')
+
+    # Grab the new updates as well as the old values to validate editing permissions.
+    updated_machine = request.get_json()['machine']
+    current_machine = g.data.local.machine.get_machine(updated_machine['pcbid'])
+
+    # Make sure the PCBID we are trying to modify is actually owned by this arcade.
+    # Also, make sure that the PCBID is actually user-editable.
+    if current_machine is None or current_machine.arcade != arcadeid or not is_user_editable(current_machine):
+        raise Exception('You don\'t own this PCBID, refusing to update!')
+
+    # Make sure the port is actually valid.
+    try:
+        port = int(updated_machine['port'])
+    except ValueError:
+        port = None
+    if port is None:
+        raise Exception('The specified port is invalid!')
+    if port < 1 or port > 65535:
+        raise Exception('The specified port is out of range!')
+
+    # Make sure we don't duplicate port assignments.
+    other_pcbid = g.data.local.machine.from_port(port)
+    if other_pcbid is not None and other_pcbid != updated_machine['pcbid']:
+        raise Exception('The specified port is already in use!')
+
+    # Update the allowed bits of data.
+    current_machine.description = updated_machine['description']
+    current_machine.port = port
+    g.data.local.machine.put_machine(current_machine)
+
+    # Just return all machines for ease of updating
+    return {
+        'machines': [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)],
+    }
+
+
+@arcade_pages.route('/<int:arcadeid>/pcbids/remove', methods=['POST'])
+@jsonify
+@loginrequired
+def removepcbid(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
+    # Make sure that arcade owners are allowed to edit PCBIDs in the first place.
+    if g.config.server.pcbid_self_grant_limit <= 0:
+        raise Exception('You don\'t have permission to edit PCBIDs!')
+
+    # Make sure the arcade is valid and the current user has permissions to
+    # modify it.
+    arcade = g.data.local.machine.get_arcade(arcadeid)
+    if arcade is None or g.userID not in arcade.owners:
+        raise Exception('You don\'t own this arcade, refusing to update!')
+
+    # Attempt to look the PCBID we are deleting up to ensure it exists.
+    pcbid = request.get_json()['pcbid']
+
+    # Make sure the PCBID we are trying to delete is actually owned by this arcade.
+    # Also, make sure that the PCBID is actually user-editable.
+    machine = g.data.local.machine.get_machine(pcbid)
+    if machine is None or machine.arcade != arcadeid or not is_user_editable(machine):
+        raise Exception('You don\'t own this PCBID, refusing to update!')
+
+    # Actually delete it.
+    g.data.local.machine.destroy_machine(pcbid)
+
+    # Just return all machines for ease of updating
+    return {
+        'machines': [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)],
+    }
 
 
 @arcade_pages.route('/<int:arcadeid>/update/<string:attribute>', methods=['POST'])

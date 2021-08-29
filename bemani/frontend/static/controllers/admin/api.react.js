@@ -510,7 +510,7 @@ var api_management = React.createClass({
                                     <td>
                                         <input
                                             type="submit"
-                                            value="save"
+                                            value="add client"
                                         />
                                     </td>
                                 </tr>
@@ -593,7 +593,7 @@ var api_management = React.createClass({
                                     <td>
                                         <input
                                             type="submit"
-                                            value="save"
+                                            value="add server"
                                         />
                                     </td>
                                 </tr>

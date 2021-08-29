@@ -75,6 +75,10 @@ class Server:
     def enforce_pcbid(self) -> bool:
         return bool(self.__config.get('server', {}).get('enforce_pcbid', False))
 
+    @property
+    def pcbid_self_grant_limit(self) -> int:
+        return int(self.__config.get('server', {}).get('pcbid_self_grant_limit', 0))
+
 
 class Client:
     def __init__(self, parent_config: "Config") -> None:

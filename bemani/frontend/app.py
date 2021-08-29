@@ -670,7 +670,7 @@ def navigation() -> Dict[str, Any]:
                         'uri': url_for('admin_pages.viewarcades'),
                     },
                     {
-                        'label': 'Machines',
+                        'label': 'PCBIDs',
                         'uri': url_for('admin_pages.viewmachines'),
                     },
                     {
