@@ -112,6 +112,20 @@ class PopnMusicTuneStreet(PopnMusicBase):
                     }
                 },
             ],
+            'bools': [
+                {
+                    'name': 'Force Song Unlock',
+                    'tip': 'Force unlock all songs.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_songs',
+                },
+                {
+                    'name': 'Force Customization Unlock',
+                    'tip': 'Force unlock all theme and menu customizations.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_customizations',
+                },
+            ],
         }
 
     def __format_flags_for_score(self, score: Score) -> int:
@@ -265,8 +279,8 @@ class PopnMusicTuneStreet(PopnMusicBase):
         # Town purchases, including BGM/announcer changes and such.
         # The town customization area will show up if the player owns
         # one or more customization in any of the following four
-        # purchase locations.
-        # I think that 4-7 are song unlock flags.
+        # purchase locations. These are all purchased in town mode.
+        # - 4-7 are song unlock flags.
         # - 8 appears to be purchased pop-kuns.
         # - 9 appears to be purchased themes.
         # - 10 appears to be purchased BGMs.
@@ -285,6 +299,15 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         # Fill in purchase flags (this is for stuff like BGMs, SEs, Pop-kun customizations, etc).
         bought_flg = town.get_int_array('bought_flg', 3)
+        game_config = self.get_game_config()
+        force_unlock_songs = game_config.get_bool('force_unlock_songs')
+        force_unlock_customizations = game_config.get_bool('force_unlock_customizations')
+
+        if force_unlock_songs:
+            bought_flg[0] = 0xFFFFFFFF
+        if force_unlock_customizations:
+            bought_flg[1] = 0xFFFFFFFF
+
         for flg, off in enumerate([4, 8, 12]):
             binary_town[off + 0] = bought_flg[flg] & 0xFF
             binary_town[off + 1] = (bought_flg[flg] >> 8) & 0xFF
@@ -469,7 +492,21 @@ class PopnMusicTuneStreet(PopnMusicBase):
             if 'base' in townnode.attributes:
                 town.replace_int_array('base', 4, [int(x) for x in townnode.attribute('base').split(',')])
             if 'bought_flg' in townnode.attributes:
-                town.replace_int_array('bought_flg', 3, [int(x) for x in townnode.attribute('bought_flg').split(',')])
+                bought_array = [int(x) for x in townnode.attribute('bought_flg').split(',')]
+                if len(bought_array) == 3:
+                    game_config = self.get_game_config()
+                    force_unlock_songs = game_config.get_bool('force_unlock_songs')
+                    force_unlock_customizations = game_config.get_bool('force_unlock_customizations')
+                    old_bought_array = town.get_int_array('bought_flg', 3)
+
+                    if force_unlock_songs:
+                        # Don't save force unlocked flags, it'll clobber the profile.
+                        bought_array[0] = old_bought_array[0]
+                    if force_unlock_customizations:
+                        # Don't save force unlocked flags, it'll clobber the profile.
+                        bought_array[1] = old_bought_array[1]
+
+                    town.replace_int_array('bought_flg', 3, bought_array)
             if 'build_flg' in townnode.attributes:
                 town.replace_int_array('build_flg', 8, [int(x) for x in townnode.attribute('build_flg').split(',')])
             if 'chara_flg' in townnode.attributes:
