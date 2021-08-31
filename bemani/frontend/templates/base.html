@@ -3,12 +3,12 @@
 		{% if title %}
 		<title>{{ title }}</title>
 		{% endif %}
-        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='site.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='color.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='form.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='section.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='table.css') }}" />
+        <link rel="icon" type="image/png" href="{{ theme_url('favicon.png') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('site.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('color.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('form.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('section.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('table.css') }}" />
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='jquery-confirm.css') }}" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script type="text/javascript" src="{{ url_for('static', filename='chart.bundle.min.js') }}"></script>

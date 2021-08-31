@@ -194,6 +194,10 @@ class Config(dict):
         return os.path.abspath(str(self.get('cache_dir', '/tmp')))
 
     @property
+    def theme(self) -> str:
+        return str(self.get('theme', 'default'))
+
+    @property
     def event_log_duration(self) -> Optional[int]:
         duration = self.get('event_log_duration')
         return int(duration) if duration else None

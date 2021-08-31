@@ -235,6 +235,20 @@ def valid_pin(pin: str, type: str) -> bool:
         return False
 
 
+# Define useful functions for jnija2
+def jinja2_any(lval: Optional[List[Any]], pull: str, equals: str) -> bool:
+    if lval is None:
+        return False
+    for entry in lval:
+        if entry[pull] == equals:
+            return True
+    return False
+
+
+def jinja2_theme(filename: str) -> str:
+    return url_for('static', filename=f"{config.theme}/{filename}")
+
+
 @app.context_processor
 def navigation() -> Dict[str, Any]:
     # Look up JSX components we should provide for every page load
@@ -243,15 +257,6 @@ def navigation() -> Dict[str, Any]:
         for f in os.listdir(os.path.join(static_location, 'components'))
         if re.search(r'\.react\.js$', f)
     ]
-
-    # Define useful functions for jnija2
-    def jinja2_any(lval: Optional[List[Any]], pull: str, equals: str) -> bool:
-        if lval is None:
-            return False
-        for entry in lval:
-            if entry[pull] == equals:
-                return True
-        return False
 
     # Look up the logged in user ID.
     try:
@@ -262,6 +267,7 @@ def navigation() -> Dict[str, Any]:
             return {
                 'components': components,
                 'any': jinja2_any,
+                'theme_url': jinja2_theme,
             }
     except AttributeError:
         # If we are trying to render a 500 error and we couldn't even run the
@@ -270,6 +276,7 @@ def navigation() -> Dict[str, Any]:
         return {
             'components': components,
             'any': jinja2_any,
+            'theme_url': jinja2_theme,
         }
 
     pages: List[Dict[str, Any]] = []
@@ -747,4 +754,5 @@ def navigation() -> Dict[str, Any]:
         'navigation': pages,
         'components': components,
         'any': jinja2_any,
+        'theme_url': jinja2_theme,
     }
