@@ -19,6 +19,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
     # Play modes, as reported by profile save from the game
     GAME_PLAY_MODE_CHALLENGE = 3
     GAME_PLAY_MODE_CHO_CHALLENGE = 4
+    GAME_PLAY_MODE_TOWN_CHO_CHALLENGE = 15
 
     # Play flags, as saved into/loaded from the DB
     GAME_PLAY_FLAG_FAILED = 0
@@ -113,7 +114,6 @@ class PopnMusicTuneStreet(PopnMusicBase):
             ],
         }
 
-
     def __format_flags_for_score(self, score: Score) -> int:
         # Format song flags (cleared/not, combo flags)
         playedflag = {
@@ -182,6 +182,9 @@ class PopnMusicTuneStreet(PopnMusicBase):
             3: 1,
             4: 4,
             5: 2,
+            13: 5,
+            14: 5,
+            15: 5,
         }[profile.get_int('play_mode')]
 
         # Copy miscelaneous values
@@ -262,22 +265,60 @@ class PopnMusicTuneStreet(PopnMusicBase):
         # Town purchases, including BGM/announcer changes and such.
         # The town customization area will show up if the player owns
         # one or more customization in any of the following four
-        # categories.
-        town = [0] * 12
+        # purchase locations.
+        # I think that 4-7 are song unlock flags.
+        # - 8 appears to be purchased pop-kuns.
+        # - 9 appears to be purchased themes.
+        # - 10 appears to be purchased BGMs.
+        # - 11 appears to be purchased sound effects.
+        binary_town = [0] * 141
+        town = profile.get_dict('town')
 
-        # Position 8 appears to be purchased pop-kuns.
-        town[8] = 0
-        # Position 8 appears to be purchased themes.
-        town[9] = 0
-        # Position 10 appears to be purchased BGMs.
-        town[10] = 0
-        # Position 11 appears to be purchased sound effects.
-        town[11] = 0
+        # Last play flag, so the selection for 5/9/9+cool sticks.
+        binary_town[140] = town.get_int('play_type')
+
+        # Fill in basic town points, tracked here and returned in basic profile for some reason.
+        binary_town[0] = town.get_int('points') & 0xFF
+        binary_town[1] = (town.get_int('points') >> 8) & 0xFF
+        binary_town[2] = (town.get_int('points') >> 16) & 0xFF
+        binary_town[3] = (town.get_int('points') >> 24) & 0xFF
+
+        # Fill in purchase flags (this is for stuff like BGMs, SEs, Pop-kun customizations, etc).
+        bought_flg = town.get_int_array('bought_flg', 3)
+        for flg, off in enumerate([4, 8, 12]):
+            binary_town[off + 0] = bought_flg[flg] & 0xFF
+            binary_town[off + 1] = (bought_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (bought_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (bought_flg[flg] >> 24) & 0xFF
+
+        # Fill in build flags (presumably for what parcels of land have been bought and built on).
+        build_flg = town.get_int_array('build_flg', 8)
+        for flg, off in enumerate([16, 20, 24, 28, 32, 36, 40, 44]):
+            binary_town[off + 0] = build_flg[flg] & 0xFF
+            binary_town[off + 1] = (build_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (build_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (build_flg[flg] >> 24) & 0xFF
+
+        # Fill in character flags (presumably for character location, orientation, stats, etc).
+        chara_flg = town.get_int_array('chara_flg', 19)
+        for flg, off in enumerate([48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120]):
+            binary_town[off + 0] = chara_flg[flg] & 0xFF
+            binary_town[off + 1] = (chara_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (chara_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (chara_flg[flg] >> 24) & 0xFF
+
+        # Fill in miscellaneous event flags.
+        event_flg = town.get_int_array('event_flg', 4)
+        for flg, off in enumerate([124, 128, 132, 136]):
+            binary_town[off + 0] = event_flg[flg] & 0xFF
+            binary_town[off + 1] = (event_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (event_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (event_flg[flg] >> 24) & 0xFF
 
         # Construct final profile
         root.add_child(Node.binary('b', bytes(binary_profile)))
         root.add_child(Node.binary('hiscore', bytes(hiscore_array)))
-        root.add_child(Node.binary('town', bytes(town)))
+        root.add_child(Node.binary('town', bytes(binary_town)))
 
         return root
 
@@ -356,7 +397,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
                     continue
 
                 # Arrange order to be compatible with future mixes
-                if playmode == self.GAME_PLAY_MODE_CHO_CHALLENGE:
+                if playmode in {self.GAME_PLAY_MODE_CHO_CHALLENGE, self.GAME_PLAY_MODE_TOWN_CHO_CHALLENGE}:
                     if chart in [
                         self.GAME_CHART_TYPE_5_BUTTON,
                         self.GAME_CHART_TYPE_ENJOY_5_BUTTON,
@@ -413,6 +454,34 @@ class PopnMusicTuneStreet(PopnMusicBase):
                 }[flags]
                 self.update_score(userid, songid, chart, points, medal)
 
+        # Update town mode data.
+        town = newprofile.get_dict('town')
+
+        # Basic stuff that's in the base node for no reason?
+        if 'tp' in request.attributes:
+            town.replace_int('points', int(request.attribute('tp')))
+
+        # Stuff that is in the town node
+        townnode = request.child('town')
+        if townnode is not None:
+            if 'play_type' in townnode.attributes:
+                town.replace_int('play_type', int(townnode.attribute('play_type')))
+            if 'base' in townnode.attributes:
+                town.replace_int_array('base', 4, [int(x) for x in townnode.attribute('base').split(',')])
+            if 'bought_flg' in townnode.attributes:
+                town.replace_int_array('bought_flg', 3, [int(x) for x in townnode.attribute('bought_flg').split(',')])
+            if 'build_flg' in townnode.attributes:
+                town.replace_int_array('build_flg', 8, [int(x) for x in townnode.attribute('build_flg').split(',')])
+            if 'chara_flg' in townnode.attributes:
+                town.replace_int_array('chara_flg', 19, [int(x) for x in townnode.attribute('chara_flg').split(',')])
+            if 'event_flg' in townnode.attributes:
+                town.replace_int_array('event_flg', 4, [int(x) for x in townnode.attribute('event_flg').split(',')])
+            for bid in range(8):
+                if f'building_{bid}' in townnode.attributes:
+                    town.replace_int_array(f'building_{bid}', 8, [int(x) for x in townnode.attribute(f'building_{bid}').split(',')])
+
+        newprofile.replace_dict('town', town)
+
         return newprofile
 
     def handle_game_get_request(self, request: Node) -> Optional[Node]:
@@ -458,6 +527,46 @@ class PopnMusicTuneStreet(PopnMusicBase):
         if root is None:
             root = Node.void('playerdata')
             root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
+
+    def handle_playerdata_town_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('ref_id')
+        root = Node.void('playerdata')
+
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            return root
+
+        profile = self.get_profile(userid)
+        if profile is None:
+            return root
+
+        town = profile.get_dict('town')
+
+        residence = Node.void('residence')
+        root.add_child(residence)
+        residence.set_attribute('id', str(town.get_int('residence')))
+
+        # It appears there can be up to 9 map nodes, not sure why. I'm only returning the
+        # first one. Perhaps if there's multiple towns, the residence ID lets you choose
+        # between them? Maybe it has to do with friends towns?
+        mapdata = [0] * 180
+
+        # Map over progress for base and buildings. Positions 173-176 are for base flags.
+        base = town.get_int_array('base', 4)
+        for i in range(4):
+            mapdata[173 + i] = base[i]
+
+        # Positions 42-105 are for building flags.
+        for bid, start in enumerate([42, 50, 58, 66, 74, 82, 90, 98]):
+            building = town.get_int_array(f'building_{bid}', 8)
+            for i in range(8):
+                mapdata[start + i] = building[i]
+
+        mapnode = Node.binary('map', bytes(mapdata))
+        root.add_child(mapnode)
+        mapnode.set_attribute('residence', '0')
+
         return root
 
     def handle_playerdata_new_request(self, request: Node) -> Optional[Node]:
