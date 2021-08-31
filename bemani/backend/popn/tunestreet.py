@@ -415,87 +415,75 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return newprofile
 
-    def handle_game_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_game_get_request(self, request: Node) -> Optional[Node]:
+        game_config = self.get_game_config()
+        game_phase = game_config.get_int('game_phase')
+        town_phase = game_config.get_int('town_phase')
 
-        if method == 'get':
-            game_config = self.get_game_config()
-            game_phase = game_config.get_int('game_phase')
-            town_phase = game_config.get_int('town_phase')
+        root = Node.void('game')
+        root.set_attribute('game_phase', str(game_phase))  # Phase unlocks, for song availability.
+        root.set_attribute('boss_battle_point', '1')
+        root.set_attribute('boss_diff', '100,100,100,100,100,100,100,100,100,100')
+        root.set_attribute('card_phase', '3')
+        root.set_attribute('event_phase', str(town_phase))  # Town mode, for the main event.
+        root.set_attribute('gfdm_phase', '2')
+        root.set_attribute('ir_phase', '14')
+        root.set_attribute('jubeat_phase', '2')
+        root.set_attribute('local_matching_enable', '1')
+        root.set_attribute('matching_sec', '120')
+        root.set_attribute('netvs_phase', '0')  # Net taisen mode phase, maximum 18 (no lobby support).
+        return root
 
-            root = Node.void('game')
-            root.set_attribute('game_phase', str(game_phase))  # Phase unlocks, for song availability.
-            root.set_attribute('boss_battle_point', '1')
-            root.set_attribute('boss_diff', '100,100,100,100,100,100,100,100,100,100')
-            root.set_attribute('card_phase', '3')
-            root.set_attribute('event_phase', str(town_phase))  # Town mode, for the main event.
-            root.set_attribute('gfdm_phase', '2')
-            root.set_attribute('ir_phase', '14')
-            root.set_attribute('jubeat_phase', '2')
-            root.set_attribute('local_matching_enable', '1')
-            root.set_attribute('matching_sec', '120')
-            root.set_attribute('netvs_phase', '0')  # Net taisen mode phase, maximum 18 (no lobby support).
-            return root
+    def handle_game_active_request(self, request: Node) -> Optional[Node]:
+        # Update the name of this cab for admin purposes
+        self.update_machine_name(request.attribute('shop_name'))
+        return Node.void('game')
 
-        if method == 'active':
-            # Update the name of this cab for admin purposes
-            self.update_machine_name(request.attribute('shop_name'))
-            return Node.void('game')
+    def handle_game_taxphase_request(self, request: Node) -> Optional[Node]:
+        return Node.void('game')
 
-        if method == 'taxphase':
-            return Node.void('game')
+    def handle_playerdata_expire_request(self, request: Node) -> Optional[Node]:
+        return Node.void('playerdata')
 
-        # Invalid method
-        return None
+    def handle_playerdata_logout_request(self, request: Node) -> Optional[Node]:
+        return Node.void('playerdata')
 
-    def handle_playerdata_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
-
-        if method == 'expire':
-            return Node.void('playerdata')
-
-        elif method == 'logout':
-            return Node.void('playerdata')
-
-        elif method == 'get':
-            modelstring = request.attribute('model')
-            refid = request.attribute('ref_id')
-            root = self.get_profile_by_refid(
-                refid,
-                self.NEW_PROFILE_ONLY if modelstring is None else self.OLD_PROFILE_ONLY,
-            )
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'new':
-            refid = request.attribute('ref_id')
-            name = request.attribute('name')
-            root = self.new_profile_by_refid(refid, name)
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'set':
-            refid = request.attribute('ref_id')
-
+    def handle_playerdata_get_request(self, request: Node) -> Optional[Node]:
+        modelstring = request.attribute('model')
+        refid = request.attribute('ref_id')
+        root = self.get_profile_by_refid(
+            refid,
+            self.NEW_PROFILE_ONLY if modelstring is None else self.OLD_PROFILE_ONLY,
+        )
+        if root is None:
             root = Node.void('playerdata')
-            if refid is None:
-                return root
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                return root
+    def handle_playerdata_new_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('ref_id')
+        name = request.attribute('name')
+        root = self.new_profile_by_refid(refid, name)
+        if root is None:
+            root = Node.void('playerdata')
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
-            newprofile = self.unformat_profile(userid, request, oldprofile)
+    def handle_playerdata_set_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('ref_id')
 
-            if newprofile is not None:
-                self.put_profile(userid, newprofile)
-
+        root = Node.void('playerdata')
+        if refid is None:
             return root
 
-        # Invalid method
-        return None
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            return root
+
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
+        newprofile = self.unformat_profile(userid, request, oldprofile)
+
+        if newprofile is not None:
+            self.put_profile(userid, newprofile)
+
+        return root
