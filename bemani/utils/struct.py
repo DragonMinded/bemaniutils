@@ -173,9 +173,6 @@ class StructPrinter:
                         # Hex makes no sense here
                         if dohex:
                             raise Exception("Cannot display string as hex!")
-
-                        # TODO: We should have an optional encoding specifier that can be added to "z"
-                        # so that individual entries in strings can be overridden from the default.
                         line.append(bs.decode(self.default_encoding))
                     else:
                         size = struct.calcsize(prefix + spec)
