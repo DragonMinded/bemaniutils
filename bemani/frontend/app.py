@@ -128,22 +128,39 @@ def cacheable(max_age: int) -> Callable:
 @app.route('/jsx/<path:filename>')
 @cacheable(86400)
 def jsx(filename: str) -> Response:
-    # Figure out what our update time is to namespace on
-    jsxfile = os.path.join(static_location, filename)
-    normalized_path = os.path.normpath(jsxfile)
-    # Check for path traversal exploit
-    if not normalized_path.startswith(static_location):
-        raise IOError()
-    mtime = os.path.getmtime(jsxfile)
-    namespace = f'{mtime}.{jsxfile}'
-    jsx = g.cache.get(namespace)
-    if jsx is None:
-        with open(jsxfile, 'rb') as f:
-            transformer = JSXTransformer()
-            jsx = transformer.transform_string(f.read().decode('utf-8'))
-        # Set the cache to one year, since we namespace on this file's update time
-        g.cache.set(namespace, jsx, timeout=86400 * 365)
-    return Response(jsx, mimetype='application/javascript')
+    try:
+        # Figure out what our update time is to namespace on
+        jsxfile = os.path.join(static_location, filename)
+        normalized_path = os.path.normpath(jsxfile)
+        # Check for path traversal exploit
+        if not normalized_path.startswith(static_location):
+            raise IOError("Path traversal exploit detected!")
+        mtime = os.path.getmtime(jsxfile)
+        namespace = f'{mtime}.{jsxfile}'
+        jsx = g.cache.get(namespace)
+        if jsx is None:
+            with open(jsxfile, 'rb') as f:
+                transformer = JSXTransformer()
+                jsx = transformer.transform_string(f.read().decode('utf-8'))
+            # Set the cache to one year, since we namespace on this file's update time
+            g.cache.set(namespace, jsx, timeout=86400 * 365)
+        return Response(jsx, mimetype='application/javascript')
+    except Exception as exception:
+        if app.debug:
+            # We should make sure this error shows up on the frontend
+            # much like python or template errors do.
+            stack = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+            stack = stack.replace('"', '\\"')
+            stack = stack.replace('\r\n', '\\n')
+            stack = stack.replace('\r', '\\n')
+            stack = stack.replace('\n', '\\n')
+            return Response(
+                '$("ul.messages").append("<li class=\\"error\\">JSX transform error in <code>' + filename + '</code><br /><br /><pre>' + stack + '</li>");',
+                mimetype='application/javascript',
+            )
+        else:
+            # Just pass it forward like normal for production.
+            raise
 
 
 def render_react(
