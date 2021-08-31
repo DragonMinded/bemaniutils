@@ -646,7 +646,7 @@ class PopnMusicEclale(PopnMusicBase):
                 medal.add_child(Node.s32('set_count', set_count))
                 medal.add_child(Node.s32('get_count', get_count))
 
-        # Unknown customizations
+        # Character customizations
         customize = Node.void('customize')
         root.add_child(customize)
         customize.add_child(Node.u16('effect_left', profile.get_int('effect_left')))

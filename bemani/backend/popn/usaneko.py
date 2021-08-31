@@ -1163,15 +1163,15 @@ class PopnMusicUsaNeko(PopnMusicBase):
         netvs.add_child(Node.s8_array('set_recommend', [0] * 3))
         netvs.add_child(Node.u32('netvs_play_cnt', 0))
 
-        # Player customize section
+        # Character customizations
         customize = Node.void('customize')
         root.add_child(customize)
-        customize.add_child(Node.u16('effect_left', 0))
-        customize.add_child(Node.u16('effect_center', 0))
-        customize.add_child(Node.u16('effect_right', 0))
-        customize.add_child(Node.u16('hukidashi', 0))
-        customize.add_child(Node.u16('comment_1', 0))
-        customize.add_child(Node.u16('comment_2', 0))
+        customize.add_child(Node.u16('effect_left', profile.get_int('effect_left')))
+        customize.add_child(Node.u16('effect_center', profile.get_int('effect_center')))
+        customize.add_child(Node.u16('effect_right', profile.get_int('effect_right')))
+        customize.add_child(Node.u16('hukidashi', profile.get_int('hukidashi')))
+        customize.add_child(Node.u16('comment_1', profile.get_int('comment_1')))
+        customize.add_child(Node.u16('comment_2', profile.get_int('comment_2')))
 
         # Stamp stuff
         stamp = Node.void('stamp')
@@ -1258,6 +1258,15 @@ class PopnMusicUsaNeko(PopnMusicBase):
             option_dict.replace_int('judge', option.child_value('judge'))
             option_dict.replace_int('guide_se', option.child_value('guide_se'))
         newprofile.replace_dict('option', option_dict)
+
+        customize = request.child('customize')
+        if customize is not None:
+            newprofile.replace_int('effect_left', customize.child_value('effect_left'))
+            newprofile.replace_int('effect_center', customize.child_value('effect_center'))
+            newprofile.replace_int('effect_right', customize.child_value('effect_right'))
+            newprofile.replace_int('hukidashi', customize.child_value('hukidashi'))
+            newprofile.replace_int('comment_1', customize.child_value('comment_1'))
+            newprofile.replace_int('comment_2', customize.child_value('comment_2'))
 
         navi_data = request.child('navi_data')
         if navi_data is not None:
