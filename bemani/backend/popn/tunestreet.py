@@ -205,12 +205,17 @@ class PopnMusicTuneStreet(PopnMusicBase):
         binary_profile[15] = profile.get_int('last_play_flag') & 0xFF
         binary_profile[16] = profile.get_int('medal_and_friend') & 0xFF
         binary_profile[37] = profile.get_int('read_news') & 0xFF
+        binary_profile[38] = profile.get_int('skin_tex_note') & 0xFF
+        binary_profile[39] = profile.get_int('skin_tex_cmn') & 0xFF
+        binary_profile[40] = profile.get_int('skin_sd_bgm') & 0xFF
+        binary_profile[41] = profile.get_int('skin_sd_se') & 0xFF
         binary_profile[44] = profile.get_int('option') & 0xFF
         binary_profile[45] = (profile.get_int('option') >> 8) & 0xFF
         binary_profile[46] = (profile.get_int('option') >> 16) & 0xFF
         binary_profile[47] = (profile.get_int('option') >> 24) & 0xFF
         binary_profile[48] = profile.get_int('jubeat_collabo') & 0xFF
         binary_profile[49] = (profile.get_int('jubeat_collabo') >> 8) & 0xFF
+
         # 52-56 and 56-60 make up two 32 bit colors found in color_3p_flag.
         binary_profile[60] = profile.get_int('chara', -1) & 0xFF
         binary_profile[61] = (profile.get_int('chara', -1) >> 8) & 0xFF
@@ -400,6 +405,14 @@ class PopnMusicTuneStreet(PopnMusicBase):
             newprofile.replace_int('jubeat_collabo', int(request.attribute('jubeat_collabo')))
         if 'norma_point' in request.attributes:
             newprofile.replace_int('norma_point', int(request.attribute('norma_point')))
+        if 'skin_tex_note' in request.attributes:
+            newprofile.replace_int('skin_tex_note', int(request.attribute('skin_tex_note')))
+        if 'skin_tex_cmn' in request.attributes:
+            newprofile.replace_int('skin_tex_cmn', int(request.attribute('skin_tex_cmn')))
+        if 'skin_sd_bgm' in request.attributes:
+            newprofile.replace_int('skin_sd_bgm', int(request.attribute('skin_sd_bgm')))
+        if 'skin_sd_se' in request.attributes:
+            newprofile.replace_int('skin_sd_se', int(request.attribute('skin_sd_se')))
 
         # Keep track of play statistics
         self.update_play_statistics(userid)
