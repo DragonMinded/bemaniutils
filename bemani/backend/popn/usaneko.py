@@ -235,7 +235,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                     subnode.add_child(Node.u8('clear_type', ach.data.get_int('clear_type')))
                     subnode.add_child(Node.u8('clear_rank', ach.data.get_int('clear_rank')))
 
-        for area_id in range(1, 16):
+        for area_id in range(1, 17):
             area = Node.void('area')
             root.add_child(area)
             area.add_child(Node.s16('area_id', area_id))
@@ -243,7 +243,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             area.add_child(Node.s16('medal_id', area_id))
             area.add_child(Node.bool('is_limit', False))
 
-        for choco_id in range(1, 5):
+        for choco_id in range(1, 6):
             choco = Node.void('choco')
             root.add_child(choco)
             choco.add_child(Node.s16('choco_id', choco_id))
@@ -817,23 +817,32 @@ class PopnMusicUsaNeko(PopnMusicBase):
         account.add_child(Node.s32_array('power_point_list', profile.get_int_array('power_point_list', 20, [-1] * 20)))
 
         # Tutorial handling is all sorts of crazy in UsaNeko. the tutorial flag
-        # is split into two values. The game uses the flag modulo 100 for standard
+        # is split into two values. The game uses the flag modulo 100 for navigation
         # tutorial progress, and the flag divided by 100 for the hold note tutorial.
         # The hold note tutorial will activate the first time you choose a song with
         # hold notes in it, regardless of whether you say yes/no. The total times you
-        # have ever played Pop'n Music also factors in for some screens. The enumerated
-        # values are as follows:
+        # have ever played Pop'n Music also factors in, as the game will only attempt
+        # to offer you the basic "how to play" tutorial screen and song on the playthrough
+        # attempt where the "total_play_cnt" value is 1. The game expects this to be 1-based,
+        # and if you set it to 0 for the first playthorough then it will play a mandatory
+        # cursed tutorial stage on the second profile load using the chart of your last
+        # played song and keysounds of system menu entries. Valid values for each of the
+        # two tutorial values is as follows:
         #
         # Lower values:
-        #   0 - Should not be used, presenting this to the game causes buggy behavior.
-        #   1 - User has not been prompted to choose any tutorials. Prompts the user for the
-        #       menu tutorial. If the user selects "no" then moves the tutorial state to
-        #       "2" at the end of the round. If the user selects "yes" then moves the
-        #       tutorial state to "3" immediately and starts the menu tutorial. If the total
-        #       play count for this user is "1" when this value is hit, the game will bug
-        #       out and play the hold note tutorial and then crash.
+        #   0 - Brand new profile and user has not been prompted to choose any tutorials.
+        #       Prompts the user for the nagivation tutorial. If the user selects "no" then
+        #       moves the tutorial state to "1" at the end of the round. If the user selects
+        #       "yes" then moves the tutorial state to "3" immediately and starts the navigation
+        #       tutorial. If the total play count for this user is "1" when this value is hit,
+        #       the game will offer a basic "how to play" tutorial that can be played or skipped.
+        #   1 - Prompt the user on the mode select screen asking them if they want to see
+        #       the navigation tutorial. If the user selects "no" then moves the tutorial state
+        #       to "2" after the round. If the user selects "yes" then moves the tutorial state
+        #       to "3" immediately. If the total play count for this user is "1" when this value
+        #       is hit, then the game will bug out and play the hold note tutorial and then crash.
         #   2 - Prompt the user on the mode select screen asking them if they want to see
-        #       the menu tutorial. If the user selects "no" then moves the tutorial state
+        #       the navigation tutorial. If the user selects "no" then moves the tutorial state
         #       to "8" immediately. If the user selects "yes" then moves the tutorial state
         #       to "3" immediately. If the total play count for this user is "1" when this value
         #       is hit, then the game will bug out and play the hold note tutorial and then crash.
@@ -847,11 +856,17 @@ class PopnMusicUsaNeko(PopnMusicBase):
         #   6 - Do nothing, display nothing, but advance the tutorial state to "7" at the
         #       end of the game. It seems that nothing requests this state.
         #   7 - Display guide information prompt on the option select screen. Game moves
-        #       this to "8" after this tutorial has been displayed.
+        #       this to "8" after this tutorial has been displayed. It appears that there is
+        #       code to go to this state instead of "8" when selecting "no" on the navigation
+        #       tutorial prompt but only when the total play count is "1". That crashes the game
+        #       as documented above, so it is not clear how this state was ever reachable.
         #   8 - Do not display any more tutorial stuff, this is a terminal state.
         #
         # Upper values:
-        #   0 - Should not be used, presenting this to the game causes buggy behavior.
+        #   0 - Brand new profile and user has not been asked for the above navigation tutorial
+        #       or shown an optional "how to play" tutorial. The game will advance this to "1"
+        #       after going through the mode and character select screens, but only if the total
+        #       play count is "1".
         #   1 - Hold note tutorial has not been activated yet and will be displayed when
         #       the player chooses a song with hold notes. Game moves this to "2" after this
         #       tutorial has been activated.
@@ -861,7 +876,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
         #       song on your last stage. Game moves this to "3" after this tutorial has been
         #       displayed.
         #   3 - All hold note tutorials are finished, this is a terminal state.
-        account.add_child(Node.s16('tutorial', profile.get_int('tutorial')))
+        statistics = self.get_play_statistics(userid)
+        account.add_child(Node.s16('tutorial', profile.get_int('tutorial', 100 if statistics.total_plays > 1 else 0)))
 
         # Stuff we never change
         account.add_child(Node.s8('staff', 0))
@@ -882,7 +898,6 @@ class PopnMusicUsaNeko(PopnMusicBase):
         account.add_child(Node.s16_array('latest_music', last_played))
 
         # Player statistics
-        statistics = self.get_play_statistics(userid)
         account.add_child(Node.s16('total_play_cnt', statistics.total_plays))
         account.add_child(Node.s16('today_play_cnt', statistics.today_plays))
         account.add_child(Node.s16('consecutive_days', statistics.consecutive_days))
@@ -986,10 +1001,10 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 # seen 8 and 0. Might be what chart is available?
                 #
                 # Item limits are as follows:
-                # 0: 1704
+                # 0: 1704 - ID is the music ID that the player purchased/unlocked.
                 # 1: 2201
                 # 2: 3
-                # 3: 97
+                # 3: 97 - ID points at a character part that can be purchased on the character screen.
                 # 4: 1
                 # 5: 1
                 # 6: 60
@@ -1057,7 +1072,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 fes.add_child(Node.u16('gauge_point', points))
                 fes.add_child(Node.bool('is_cleared', cleared))
 
-        # Handle daily mission
+        # Handle daily mission. Note that we should be presenting 3 random IDs
+        # in the range of 1-228 inclusive, and presenting three new ones per day.
         achievements = self.data.local.user.get_time_based_achievements(
             self.game,
             self.version,
@@ -1066,20 +1082,25 @@ class PopnMusicUsaNeko(PopnMusicBase):
             until=Time.end_of_today(),
         )
         achievements = sorted(achievements, key=lambda a: a.timestamp)
-        daily_missions: Dict[int, ValidatedDict] = {
-            1: ValidatedDict(),
-            2: ValidatedDict(),
-            3: ValidatedDict(),
-        }
+        daily_missions: Dict[int, ValidatedDict] = {}
+
         # Find the newest version of each daily mission completion,
         # since we've sorted by time above. If we haven't started for
-        # today, the defaults will be set so we at least give the game
-        # the right ID.
+        # today, the defaults will be set after this loop so we at least
+        # give the game the right ID.
         for achievement in achievements:
             if achievement.type == 'mission':
                 daily_missions[achievement.id] = achievement.data
 
-        for daily_id, data in daily_missions.items():
+        while len(daily_missions) < 3:
+            new_id = random.randint(1, 228)
+            if new_id not in daily_missions:
+                daily_missions[new_id] = ValidatedDict()
+
+        for i, (daily_id, data) in enumerate(daily_missions.items()):
+            if i >= 3:
+                break
+
             points = data.get_int('points')
             complete = data.get_int('complete')
 
@@ -1142,15 +1163,15 @@ class PopnMusicUsaNeko(PopnMusicBase):
         netvs.add_child(Node.s8_array('set_recommend', [0] * 3))
         netvs.add_child(Node.u32('netvs_play_cnt', 0))
 
-        # Player customize section
+        # Character customizations
         customize = Node.void('customize')
         root.add_child(customize)
-        customize.add_child(Node.u16('effect_left', 0))
-        customize.add_child(Node.u16('effect_center', 0))
-        customize.add_child(Node.u16('effect_right', 0))
-        customize.add_child(Node.u16('hukidashi', 0))
-        customize.add_child(Node.u16('comment_1', 0))
-        customize.add_child(Node.u16('comment_2', 0))
+        customize.add_child(Node.u16('effect_left', profile.get_int('effect_left')))
+        customize.add_child(Node.u16('effect_center', profile.get_int('effect_center')))
+        customize.add_child(Node.u16('effect_right', profile.get_int('effect_right')))
+        customize.add_child(Node.u16('hukidashi', profile.get_int('hukidashi')))
+        customize.add_child(Node.u16('comment_1', profile.get_int('comment_1')))
+        customize.add_child(Node.u16('comment_2', profile.get_int('comment_2')))
 
         # Stamp stuff
         stamp = Node.void('stamp')
@@ -1237,6 +1258,15 @@ class PopnMusicUsaNeko(PopnMusicBase):
             option_dict.replace_int('judge', option.child_value('judge'))
             option_dict.replace_int('guide_se', option.child_value('guide_se'))
         newprofile.replace_dict('option', option_dict)
+
+        customize = request.child('customize')
+        if customize is not None:
+            newprofile.replace_int('effect_left', customize.child_value('effect_left'))
+            newprofile.replace_int('effect_center', customize.child_value('effect_center'))
+            newprofile.replace_int('effect_right', customize.child_value('effect_right'))
+            newprofile.replace_int('hukidashi', customize.child_value('hukidashi'))
+            newprofile.replace_int('comment_1', customize.child_value('comment_1'))
+            newprofile.replace_int('comment_2', customize.child_value('comment_2'))
 
         navi_data = request.child('navi_data')
         if navi_data is not None:

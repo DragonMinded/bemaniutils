@@ -226,7 +226,7 @@ def viewarcades() -> Response:
     )
 
 
-@admin_pages.route('/machines')
+@admin_pages.route('/pcbids')
 @adminrequired
 def viewmachines() -> Response:
     games: Dict[str, Dict[int, str]] = {}
@@ -255,6 +255,7 @@ def viewmachines() -> Response:
             'enforcing': g.config.server.enforce_pcbid,
         },
         {
+            'refresh': url_for('admin_pages.listmachines'),
             'generatepcbid': url_for('admin_pages.generatepcbid'),
             'addpcbid': url_for('admin_pages.addpcbid'),
             'updatepcbid': url_for('admin_pages.updatepcbid'),
@@ -375,6 +376,16 @@ def listuser(userid: int) -> Dict[str, Any]:
         'arcades': {arcade.id: arcade.name for arcade in arcades},
         'balances': {arcade.id: g.data.local.user.get_balance(userid, arcade.id) for arcade in arcades},
         'events': [format_event(event) for event in g.data.local.network.get_events(userid=userid, event='paseli_transaction')],
+    }
+
+
+@admin_pages.route('/arcades/list')
+@jsonify
+@adminrequired
+def listmachines() -> Dict[str, Any]:
+    return {
+        'machines': [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
+        'arcades': {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
     }
 
 
@@ -619,7 +630,7 @@ def removeserver() -> Dict[str, Any]:
     }
 
 
-@admin_pages.route('/machines/generate', methods=['POST'])
+@admin_pages.route('/pcbids/generate', methods=['POST'])
 @jsonify
 @adminrequired
 def generatepcbid() -> Dict[str, Any]:
@@ -647,7 +658,7 @@ def generatepcbid() -> Dict[str, Any]:
     }
 
 
-@admin_pages.route('/machines/add', methods=['POST'])
+@admin_pages.route('/pcbids/add', methods=['POST'])
 @jsonify
 @adminrequired
 def addpcbid() -> Dict[str, Any]:
@@ -678,11 +689,11 @@ def addpcbid() -> Dict[str, Any]:
     }
 
 
-@admin_pages.route('/machines/update', methods=['POST'])
+@admin_pages.route('/pcbids/update', methods=['POST'])
 @jsonify
 @adminrequired
 def updatepcbid() -> Dict[str, Any]:
-    # Attempt to look this arcade up
+    # Attempt to look this machine up
     machine = request.get_json()['machine']
     if machine['arcade'] is not None:
         arcade = g.data.local.machine.get_arcade(machine['arcade'])
@@ -692,7 +703,7 @@ def updatepcbid() -> Dict[str, Any]:
     # Make sure we don't duplicate port assignments
     other_pcbid = g.data.local.machine.from_port(machine['port'])
     if other_pcbid is not None and other_pcbid != machine['pcbid']:
-        raise Exception(f'This port is already in use by \'{other_pcbid}\'!')
+        raise Exception(f'The specified port is already in use by \'{other_pcbid}\'!')
 
     if machine['port'] < 1 or machine['port'] > 65535:
         raise Exception('The specified port is out of range!')
@@ -711,14 +722,14 @@ def updatepcbid() -> Dict[str, Any]:
     }
 
 
-@admin_pages.route('/machines/remove', methods=['POST'])
+@admin_pages.route('/pcbids/remove', methods=['POST'])
 @jsonify
 @adminrequired
 def removepcbid() -> Dict[str, Any]:
-    # Attempt to look this arcade up
+    # Attempt to look this machine up
     pcbid = request.get_json()['pcbid']
     if g.data.local.machine.get_machine(pcbid) is None:
-        raise Exception('Unable to find machine to delete!')
+        raise Exception('Unable to find PCBID to delete!')
 
     g.data.local.machine.destroy_machine(pcbid)
 

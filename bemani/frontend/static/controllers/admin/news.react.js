@@ -280,7 +280,7 @@ var news_management = React.createClass({
                             />
                             <input
                                 type="submit"
-                                value="save"
+                                value="post"
                             />
                         </LabelledSection>
                     </form>

@@ -385,7 +385,6 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
     # This is a complicated one, as we need to be able to specify multiple
     # directories of files as well as support IFS files and TXP2 files.
     for container in containers:
-        # TODO: Allow specifying individual folders and such.
         with open(container, "rb") as bfp:
             data = bfp.read()
 

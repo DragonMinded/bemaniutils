@@ -670,6 +670,16 @@ this as `127.0.0.1` as it will cause the game to ping itself and get a successfu
 This removes the usefulness of the network test screen outside of the IP setup but it is
 known to work.
 
+### pip install fails to compile MySQL on an ARM-based Mac
+
+It appears that if you are installing this software on an ARM-based OSX machine and you
+have installed dependencies using brew, library paths are not correctly set up for MySQL
+to find the zstd library. As a result, `pip install -r requirements.txt` will fail with
+a cryptic error message including the line `ld: library not found for -lzstd`. The
+workaround is to specify the zstd library path manually in the pip install line. Try
+running the following (or a variation of the following if you've modified your pip
+install line already): `LDFLAGS="-L$(brew --prefix zstd)/lib" pip install -r requirements.txt`.
+
 ## Production Setup
 
 As alluded to several times in this README, the recommended way to run a production

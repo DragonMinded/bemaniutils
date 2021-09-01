@@ -457,7 +457,7 @@ var card_management = React.createClass({
                                     <td>
                                         <input
                                             type="submit"
-                                            value="save"
+                                            value="add arcade"
                                         />
                                     </td>
                                 </tr>

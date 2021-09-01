@@ -52,7 +52,16 @@ class PopnMusicTuneStreetClient(BaseClient):
 
         for name in [
             'game_phase',
-            'psp_phase',
+            'boss_battle_point',
+            'boss_diff',
+            'card_phase',
+            'event_phase',
+            'gfdm_phase',
+            'ir_phase',
+            'jubeat_phase',
+            'local_matching_enable',
+            'matching_sec',
+            'netvs_phase',
         ]:
             if name not in resp.child('game').attributes:
                 raise Exception(f'Missing attribute \'{name}\' in response!')

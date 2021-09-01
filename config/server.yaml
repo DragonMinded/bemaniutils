@@ -29,6 +29,10 @@ server:
     redirect: "https://eagate.573.jp"
     # Whether PCBIDs must be added to the network before games will work.
     enforce_pcbid: False
+    # How many PCBIDs an arcade owner can grant to themselves on the arcade
+    # page. Note that this setting is irrelevant if PCBID enforcing is off.
+    # Set to 0 or delete this setting to disable self-granting PCBIDs.
+    pcbid_self_grant_limit: 0
 
 # Webhook URLs. These allow for game scores from games with scorecard support to be broadcasted to outside services.
 # Delete this to disable this support.
@@ -72,3 +76,5 @@ cache_dir: '/tmp'
 # Number of seconds to preserve event logs before deleting them.
 # Set to zero or delete to disable deleting logs.
 event_log_duration: 2592000
+# Frontend theme directory where sitewide CSS and favicon should be found.
+theme: "default"
