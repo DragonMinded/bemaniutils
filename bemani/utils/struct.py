@@ -19,8 +19,9 @@ class LineNumber:
 
 
 class StructPrinter:
-    def __init__(self, data: bytes) -> None:
+    def __init__(self, data: bytes, default_encoding: str="ascii") -> None:
         self.data = data
+        self.default_encoding = default_encoding
         self.pe = PEFile(data)
 
     def parse_format_spec(self, fmt: str) -> Tuple[str, List[Any]]:
@@ -172,7 +173,7 @@ class StructPrinter:
                         # Hex makes no sense here
                         if dohex:
                             raise Exception("Cannot display string as hex!")
-                        line.append(bs.decode('ascii'))
+                        line.append(bs.decode(self.default_encoding))
                     else:
                         size = struct.calcsize(prefix + spec)
                         chunk = self.data[offset:(offset + size)]
@@ -260,6 +261,12 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         default=None,
     )
     parser.add_argument(
+        "--encoding",
+        help="Encoding to use for strings, such as 'ascii', 'utf-8' or 'shift-jis'.",
+        default='ascii',
+        type=str,
+    )
+    parser.add_argument(
         "--format",
         help=(
             "Python struct format we should print using. See https://docs.python.org/3/library/struct.html "
@@ -301,7 +308,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         else:
             return repr(obj)
 
-    printer = StructPrinter(data)
+    printer = StructPrinter(data, default_encoding=args.encoding)
     lines = printer.parse_struct(args.start, args.end, args.count, args.format)
     for i, line in enumerate(lines):
         print(", ".join(__str(entry, i) for entry in line))

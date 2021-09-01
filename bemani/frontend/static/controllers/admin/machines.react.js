@@ -20,11 +20,29 @@ var machine_management = React.createClass({
         };
     },
 
+    componentDidMount: function() {
+        this.refreshMachines();
+    },
+
     componentDidUpdate: function() {
         if (this.focus_element && this.focus_element != this.already_focused) {
             this.focus_element.focus();
             this.already_focused = this.focus_element;
         }
+    },
+
+    refreshMachines: function() {
+        AJAX.get(
+            Link.get('refresh'),
+            function(response) {
+                this.setState({
+                    machines: response.machines,
+                    arcade: response.arcades,
+                });
+                // Refresh every 5 seconds
+                setTimeout(this.refreshMachines, 5000);
+            }.bind(this)
+        );
     },
 
     generateNewMachine: function(event) {
@@ -65,6 +83,11 @@ var machine_management = React.createClass({
     },
 
     saveMachine: function(event) {
+        machine = this.state.editing_machine;
+        if (machine.port == '') {
+            machine.port = 0;
+        }
+
         AJAX.post(
             Link.get('updatepcbid'),
             {machine: this.state.editing_machine},
@@ -83,8 +106,8 @@ var machine_management = React.createClass({
             escapeKey: 'Cancel',
             animation: 'none',
             closeAnimation: 'none',
-            title: 'Delete Arcade',
-            content: 'Are you sure you want to delete this arcade from the network?',
+            title: 'Delete PCBID',
+            content: 'Are you sure you want to delete this PCBID from the network?',
             buttons: {
                 Delete: {
                     btnClass: 'delete',
@@ -348,7 +371,11 @@ var machine_management = React.createClass({
                     var machine = this.state.editing_machine;
                     var intRegex = /^\d*$/;
                     if (intRegex.test(event.target.value)) {
-                        machine.port = parseInt(event.target.value);
+                        if (event.target.value.length > 0) {
+                            machine.port = parseInt(event.target.value);
+                        } else {
+                            machine.port = '';
+                        }
                         this.setState({
                             editing_machine: machine,
                         });
@@ -457,6 +484,7 @@ var machine_management = React.createClass({
                                 {
                                     name: '',
                                     render: this.renderEditButton,
+                                    action: true,
                                 },
                             ]}
                             rows={this.state.machines}
@@ -519,7 +547,7 @@ var machine_management = React.createClass({
                                     <td>
                                         <input
                                             type="submit"
-                                            value="save"
+                                            value="add PCBID"
                                         />
                                     </td>
                                 </tr>
@@ -569,7 +597,7 @@ var machine_management = React.createClass({
                                     <td>
                                         <input
                                             type="submit"
-                                            value="save"
+                                            value="generate PCBID"
                                         />
                                     </td>
                                 </tr>

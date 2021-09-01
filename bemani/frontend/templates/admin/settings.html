@@ -59,6 +59,8 @@
         <dl>
             <dt>PCBID Enforcement</dt>
             <dd>{{ 'active' if config.server.enforce_pcbid else 'inactive' }}</dd>
+            <dt>Self-Generated PCBID Limit</dt>
+            <dd>{{ 'disabled' if (config.server.pcbid_self_grant_limit <= 0 or not config.server.enforce_pcbid) else config.server.pcbid_self_grant_limit }}</dd>
             <dt>PASELI Enabled</dt>
             <dd>{{ 'yes' if config.paseli.enabled else 'no' }} (can be overridden by arcade settings)</dd>
             <dt>Infinite PASELI Enabled</dt>

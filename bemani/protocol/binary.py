@@ -817,8 +817,4 @@ class BinaryEncoding:
 
         encoder = BinaryEncoder(tree, self.__sanitize_encoding(encoding))
         data = encoder.get_data()
-
-        if data is not None:
-            return struct.pack(">BBBB", BinaryEncoding.MAGIC, BinaryEncoding.COMPRESSED_WITH_DATA, encoding_magic, (~encoding_magic & 0xFF)) + data
-        else:
-            return None
+        return struct.pack(">BBBB", BinaryEncoding.MAGIC, BinaryEncoding.COMPRESSED_WITH_DATA, encoding_magic, (~encoding_magic & 0xFF)) + data

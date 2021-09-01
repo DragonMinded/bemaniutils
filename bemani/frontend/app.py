@@ -128,22 +128,39 @@ def cacheable(max_age: int) -> Callable:
 @app.route('/jsx/<path:filename>')
 @cacheable(86400)
 def jsx(filename: str) -> Response:
-    # Figure out what our update time is to namespace on
-    jsxfile = os.path.join(static_location, filename)
-    normalized_path = os.path.normpath(jsxfile)
-    # Check for path traversal exploit
-    if not normalized_path.startswith(static_location):
-        raise IOError()
-    mtime = os.path.getmtime(jsxfile)
-    namespace = f'{mtime}.{jsxfile}'
-    jsx = g.cache.get(namespace)
-    if jsx is None:
-        with open(jsxfile, 'rb') as f:
-            transformer = JSXTransformer()
-            jsx = transformer.transform_string(f.read().decode('utf-8'))
-        # Set the cache to one year, since we namespace on this file's update time
-        g.cache.set(namespace, jsx, timeout=86400 * 365)
-    return Response(jsx, mimetype='application/javascript')
+    try:
+        # Figure out what our update time is to namespace on
+        jsxfile = os.path.join(static_location, filename)
+        normalized_path = os.path.normpath(jsxfile)
+        # Check for path traversal exploit
+        if not normalized_path.startswith(static_location):
+            raise IOError("Path traversal exploit detected!")
+        mtime = os.path.getmtime(jsxfile)
+        namespace = f'{mtime}.{jsxfile}'
+        jsx = g.cache.get(namespace)
+        if jsx is None:
+            with open(jsxfile, 'rb') as f:
+                transformer = JSXTransformer()
+                jsx = transformer.transform_string(f.read().decode('utf-8'))
+            # Set the cache to one year, since we namespace on this file's update time
+            g.cache.set(namespace, jsx, timeout=86400 * 365)
+        return Response(jsx, mimetype='application/javascript')
+    except Exception as exception:
+        if app.debug:
+            # We should make sure this error shows up on the frontend
+            # much like python or template errors do.
+            stack = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+            stack = stack.replace('"', '\\"')
+            stack = stack.replace('\r\n', '\\n')
+            stack = stack.replace('\r', '\\n')
+            stack = stack.replace('\n', '\\n')
+            return Response(
+                '$("ul.messages").append("<li class=\\"error\\">JSX transform error in <code>' + filename + '</code><br /><br /><pre>' + stack + '</li>");',
+                mimetype='application/javascript',
+            )
+        else:
+            # Just pass it forward like normal for production.
+            raise
 
 
 def render_react(
@@ -235,6 +252,20 @@ def valid_pin(pin: str, type: str) -> bool:
         return False
 
 
+# Define useful functions for jnija2
+def jinja2_any(lval: Optional[List[Any]], pull: str, equals: str) -> bool:
+    if lval is None:
+        return False
+    for entry in lval:
+        if entry[pull] == equals:
+            return True
+    return False
+
+
+def jinja2_theme(filename: str) -> str:
+    return url_for('static', filename=f"{config.theme}/{filename}")
+
+
 @app.context_processor
 def navigation() -> Dict[str, Any]:
     # Look up JSX components we should provide for every page load
@@ -243,15 +274,6 @@ def navigation() -> Dict[str, Any]:
         for f in os.listdir(os.path.join(static_location, 'components'))
         if re.search(r'\.react\.js$', f)
     ]
-
-    # Define useful functions for jnija2
-    def jinja2_any(lval: Optional[List[Any]], pull: str, equals: str) -> bool:
-        if lval is None:
-            return False
-        for entry in lval:
-            if entry[pull] == equals:
-                return True
-        return False
 
     # Look up the logged in user ID.
     try:
@@ -262,6 +284,7 @@ def navigation() -> Dict[str, Any]:
             return {
                 'components': components,
                 'any': jinja2_any,
+                'theme_url': jinja2_theme,
             }
     except AttributeError:
         # If we are trying to render a 500 error and we couldn't even run the
@@ -270,6 +293,7 @@ def navigation() -> Dict[str, Any]:
         return {
             'components': components,
             'any': jinja2_any,
+            'theme_url': jinja2_theme,
         }
 
     pages: List[Dict[str, Any]] = []
@@ -307,7 +331,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'BishiBashi',
                 'entries': bishi_entries,
                 'base_uri': app.blueprints['bishi_pages'].url_prefix,
-                'gamecode': GameConstants.BISHI_BASHI,
+                'gamecode': GameConstants.BISHI_BASHI.value,
             },
         )
 
@@ -356,7 +380,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'DDR',
                 'entries': ddr_entries,
                 'base_uri': app.blueprints['ddr_pages'].url_prefix,
-                'gamecode': GameConstants.DDR,
+                'gamecode': GameConstants.DDR.value,
             },
         )
 
@@ -405,7 +429,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'IIDX',
                 'entries': iidx_entries,
                 'base_uri': app.blueprints['iidx_pages'].url_prefix,
-                'gamecode': GameConstants.IIDX,
+                'gamecode': GameConstants.IIDX.value,
             },
         )
 
@@ -454,7 +478,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Jubeat',
                 'entries': jubeat_entries,
                 'base_uri': app.blueprints['jubeat_pages'].url_prefix,
-                'gamecode': GameConstants.JUBEAT,
+                'gamecode': GameConstants.JUBEAT.value,
             },
         )
 
@@ -499,7 +523,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'MÚSECA',
                 'entries': museca_entries,
                 'base_uri': app.blueprints['museca_pages'].url_prefix,
-                'gamecode': GameConstants.MUSECA,
+                'gamecode': GameConstants.MUSECA.value,
             },
         )
 
@@ -548,7 +572,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Pop\'n Music',
                 'entries': popn_entries,
                 'base_uri': app.blueprints['popn_pages'].url_prefix,
-                'gamecode': GameConstants.POPN_MUSIC,
+                'gamecode': GameConstants.POPN_MUSIC.value,
             },
         )
 
@@ -597,7 +621,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Reflec Beat',
                 'entries': reflec_entries,
                 'base_uri': app.blueprints['reflec_pages'].url_prefix,
-                'gamecode': GameConstants.REFLEC_BEAT,
+                'gamecode': GameConstants.REFLEC_BEAT.value,
             },
         )
 
@@ -646,7 +670,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'SDVX',
                 'entries': sdvx_entries,
                 'base_uri': app.blueprints['sdvx_pages'].url_prefix,
-                'gamecode': GameConstants.SDVX,
+                'gamecode': GameConstants.SDVX.value,
             },
         )
 
@@ -670,7 +694,7 @@ def navigation() -> Dict[str, Any]:
                         'uri': url_for('admin_pages.viewarcades'),
                     },
                     {
-                        'label': 'Machines',
+                        'label': 'PCBIDs',
                         'uri': url_for('admin_pages.viewmachines'),
                     },
                     {
@@ -693,7 +717,14 @@ def navigation() -> Dict[str, Any]:
 
     # Arcade owner pages
     arcadeids = g.data.local.machine.from_userid(g.userID)
-    if len(arcadeids) > 0:
+    if len(arcadeids) == 1:
+        arcade = g.data.local.machine.get_arcade(arcadeids[0])
+        pages.append({
+            'label': arcade.name,
+            'uri': url_for('arcade_pages.viewarcade', arcadeid=arcade.id),
+            'right_justify': True,
+        })
+    elif len(arcadeids) > 1:
         entries = []
         for arcadeid in arcadeids:
             arcade = g.data.local.machine.get_arcade(arcadeid)
@@ -740,4 +771,5 @@ def navigation() -> Dict[str, Any]:
         'navigation': pages,
         'components': components,
         'any': jinja2_any,
+        'theme_url': jinja2_theme,
     }

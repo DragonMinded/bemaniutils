@@ -413,59 +413,53 @@ var settings_view = React.createClass({
                     </div>
                     <div className="section">
                         <h3>QPro</h3>
-                        <form className="inline">
-                            <div className="fields">
-                                {
-                                    valid_qpro_options.map(function(qpro_option) {
-                                        var player = this.state.player[this.state.version]
-                                        var items = window.qpros[this.state.version].filter(function (qpro) {                                                
-                                            return qpro.type == qpro_option
-                                        });
-                                        var results = {};
-                                        items
-                                            .map(function(item) { return { 'id': item.id, 'name': `${item.name}` } })
-                                            .forEach (value => results[value.id] = value.name);
-                                        return (
-                                            <div className="field">
-                                            <b>{qpro_option}</b>
-                                            <br/>
-                                            <SelectInt
-                                                name={qpro_option}
-                                                value={player.qpro[qpro_option]}
-                                                choices={results}
-                                                onChange={function(choice) {
-                                                    var player = this.state.player;
-                                                    player[this.state.version].qpro[qpro_option] = choice;
-                                                    this.setState({
-                                                        player: player,
-                                                        qpro_changed: this.setQproChanged(true),
-                                                    })
-                                                }.bind(this)}
-                                            />
-                                        </div>
-                                        )
-                                    }.bind(this))
-                                }
-                                <div className="field">
-                                    <input
-                                        type="submit"
-                                        value="save"
-                                        disabled={!this.state.qpro_changed[this.state.version]}
-                                        onClick={function(event) {
-                                            this.saveQproOptions(event);
+                        {valid_qpro_options.map(function(qpro_option) {
+                            var player = this.state.player[this.state.version]
+                            var items = window.qpros[this.state.version].filter(function (qpro) {
+                                return qpro.type == qpro_option
+                            });
+                            var results = {};
+                            items
+                                .map(function(item) { return { 'id': item.id, 'name': `${item.name}` } })
+                                .forEach (value => results[value.id] = value.name);
+                            return (
+                                <LabelledSection
+                                    className="iidx qprooption"
+                                    vertical={true}
+                                    label={qpro_option}
+                                >
+                                    <SelectInt
+                                        name={qpro_option}
+                                        value={player.qpro[qpro_option]}
+                                        choices={results}
+                                        onChange={function(choice) {
+                                            var player = this.state.player;
+                                            player[this.state.version].qpro[qpro_option] = choice;
+                                            this.setState({
+                                                player: player,
+                                                qpro_changed: this.setQproChanged(true),
+                                            })
                                         }.bind(this)}
                                     />
-                                    { this.state.qpro_saving[this.state.version] ?
-                                        <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                                        null
-                                    }
-                                    { this.state.qpro_saved[this.state.version] ?
-                                        <span>&#x2713;</span> :
-                                        null
-                                    }
-                                </div>
-                            </div>
-                        </form>
+                                </LabelledSection>
+                            )
+                        }.bind(this))}
+                        <input
+                            type="submit"
+                            value="save"
+                            disabled={!this.state.qpro_changed[this.state.version]}
+                            onClick={function(event) {
+                                this.saveQproOptions(event);
+                            }.bind(this)}
+                        />
+                        { this.state.qpro_saving[this.state.version] ?
+                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                            null
+                        }
+                        { this.state.qpro_saved[this.state.version] ?
+                            <span>&#x2713;</span> :
+                            null
+                        }
                     </div>
                     <div className="section">
                         <h3>Theme</h3>

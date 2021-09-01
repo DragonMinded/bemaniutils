@@ -134,7 +134,6 @@ ul.navigation li {
 ul.navigation_sub {
     display: none;
     position: absolute;
-    top: 100%;
     background-color: #e4e4e4;
     padding: 10px;
     margin: 0;
@@ -189,9 +188,9 @@ ul.navigation li a:active {
 }
 
 ul.navigation > li > a.current {
-    border-bottom-width: 2px;
+    border-bottom-width: 1.6px;
     border-bottom-style: solid;
-    padding-bottom: 8px;
+    padding-bottom: 8.4px;
 }
 
 ul.navigation > li > ul.navigation_sub > li > a.current {

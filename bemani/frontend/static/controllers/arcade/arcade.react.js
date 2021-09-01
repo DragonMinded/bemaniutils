@@ -8,6 +8,14 @@ var valid_settings = window.game_settings.map(function(setting) {
 });
 var pagenav = new History(valid_settings);
 
+function count_pcbids(machines) {
+    var count = 0;
+    machines.map(function(machine) {
+        count += (machine.editable ? 1 : 0);
+    });
+    return count;
+}
+
 var arcade_management = React.createClass({
     getInitialState: function(props) {
         var credits = {};
@@ -27,8 +35,13 @@ var arcade_management = React.createClass({
             paseli_enabled_saving: false,
             paseli_infinite_saving: false,
             mask_services_url_saving: false,
+            editing_machine: null,
             machines: window.machines,
             settings: window.game_settings,
+            pcbcount: count_pcbids(window.machines),
+            random_pcbid: {
+                description: '',
+            },
             current_setting: pagenav.getInitialState(makeSettingName(window.game_settings[0])),
             settings_changed: {},
             settings_saving: {},
@@ -66,9 +79,10 @@ var arcade_management = React.createClass({
                     users: response.users,
                     balances: response.balances,
                     machines: response.machines,
+                    pcbcount: count_pcbids(response.machines),
                     events: response.events,
                 });
-                // Refresh every 15 seconds
+                // Refresh every 5 seconds
                 setTimeout(this.refreshArcade, 5000);
             }.bind(this)
         );
@@ -282,6 +296,177 @@ var arcade_management = React.createClass({
         );
     },
 
+    generateNewMachine: function(event) {
+        AJAX.post(
+            Link.get('generatepcbid'),
+            {machine: this.state.random_pcbid},
+            function(response) {
+                this.setState({
+                    machines: response.machines,
+                    pcbcount: count_pcbids(response.machines),
+                    random_pcbid: {
+                        description: '',
+                    },
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
+    deleteExistingMachine: function(event, pcbid) {
+        $.confirm({
+            escapeKey: 'Cancel',
+            animation: 'none',
+            closeAnimation: 'none',
+            title: 'Delete PCBID',
+            content: 'Are you sure you want to delete this PCBID from the network?',
+            buttons: {
+                Delete: {
+                    btnClass: 'delete',
+                    action: function() {
+                        AJAX.post(
+                            Link.get('removepcbid'),
+                            {pcbid: pcbid},
+                            function(response) {
+                                this.setState({
+                                    machines: response.machines,
+                                    pcbcount: count_pcbids(response.machines),
+                                });
+                            }.bind(this)
+                        );
+                    }.bind(this),
+                },
+                Cancel: function() {
+                },
+            }
+        });
+        event.preventDefault();
+    },
+
+    saveMachine: function(event) {
+        machine = this.state.editing_machine;
+        if (machine.port == '') {
+            machine.port = 0;
+        }
+
+        AJAX.post(
+            Link.get('updatepcbid'),
+            {machine: this.state.editing_machine},
+            function(response) {
+                this.setState({
+                    machines: response.machines,
+                    pcbcount: count_pcbids(response.machines),
+                    editing_machine: null,
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
+    renderDescription: function(machine) {
+        if (this.state.editing_machine && machine.pcbid == this.state.editing_machine.pcbid) {
+            return <input
+                name="description"
+                type="text"
+                autofocus="true"
+                ref={c => (this.focus_element = c)}
+                value={ this.state.editing_machine.description }
+                onChange={function(event) {
+                    var machine = this.state.editing_machine;
+                    machine.description = event.target.value;
+                    this.setState({
+                        editing_machine: machine,
+                    });
+                }.bind(this)}
+            />;
+        } else {
+            return (
+                <span>{ machine.description }</span>
+            );
+        }
+    },
+
+    renderPort: function(machine) {
+        if (this.state.editing_machine && machine.pcbid == this.state.editing_machine.pcbid) {
+            return <input
+                name="port"
+                type="text"
+                value={ this.state.editing_machine.port }
+                onChange={function(event) {
+                    var machine = this.state.editing_machine;
+                    var intRegex = /^\d*$/;
+                    if (intRegex.test(event.target.value)) {
+                        if (event.target.value.length > 0) {
+                            machine.port = parseInt(event.target.value);
+                        } else {
+                            machine.port = '';
+                        }
+                        this.setState({
+                            editing_machine: machine,
+                        });
+                    }
+                }.bind(this)}
+            />;
+        } else {
+            return (
+                <span>{ machine.port }</span>
+            );
+        }
+    },
+
+    renderEditButton: function(machine) {
+        if (this.state.editing_machine) {
+            if (this.state.editing_machine.pcbid == machine.pcbid) {
+                return (
+                    <span>
+                        <input
+                            type="submit"
+                            value="save"
+                        />
+                        <input
+                            type="button"
+                            value="cancel"
+                            onClick={function(event) {
+                                this.setState({
+                                    editing_machine: null,
+                                });
+                            }.bind(this)}
+                        />
+                    </span>
+                );
+            } else {
+                return <span></span>;
+            }
+        } else {
+            if (window.max_pcbids > 0 && machine.editable) {
+                return (
+                    <span>
+                        <Edit
+                            onClick={function(event) {
+                                var editing_machine = null;
+                                this.state.machines.map(function(a) {
+                                    if (a.pcbid == machine.pcbid) {
+                                        editing_machine = jQuery.extend(true, {}, a);
+                                    }
+                                });
+                                this.setState({
+                                    editing_machine: editing_machine,
+                                });
+                            }.bind(this)}
+                        />
+                        <Delete
+                            onClick={function(event) {
+                                this.deleteExistingMachine(event, machine.pcbid);
+                            }.bind(this)}
+                        />
+                    </span>
+                );
+            } else {
+                return <span></span>;
+            }
+        }
+    },
+
     render: function() {
         return (
             <div>
@@ -320,40 +505,86 @@ var arcade_management = React.createClass({
                 </div>
                 <div className="section">
                     <h3>PCBIDs Assigned to This Arcade</h3>
-                    <Table
-                        className="list machine"
-                        columns={[
-                            {
-                                name: "PCBID",
-                                render: function(machine) { return machine.pcbid; },
-                                sort: function(a, b) { return a.pcbid.localeCompare(b.pcbid); },
-                            },
-                            {
-                                name: "Name",
-                                render: function(machine) { return machine.name; },
-                                sort: function(a, b) { return a.name.localeCompare(b.name); },
-                            },
-                            {
-                                name: "Description",
-                                render: function(machine) { return machine.description; },
-                                sort: function(a, b) { return a.description.localeCompare(b.description); },
-                            },
-                            {
-                                name: "Applicable Game",
-                                render: function(machine) { return machine.game; },
-                                sort: function(a, b) { return a.game.localeCompare(b.game); },
-                                hidden: !window.enforcing,
-                            },
-                            {
-                                name: "Port",
-                                render: function(machine) { return machine.port; },
-                                sort: function(a, b) { return a.port - b.port; },
-                            },
-                        ]}
-                        rows={this.state.machines}
-                        emptymessage="There are no PCBIDs assigned to this arcade."
-                    />
+                    <form className="inline" onSubmit={this.saveMachine}>
+                        <Table
+                            className="list machine"
+                            columns={[
+                                {
+                                    name: "PCBID",
+                                    render: function(machine) { return machine.pcbid; },
+                                    sort: function(a, b) { return a.pcbid.localeCompare(b.pcbid); },
+                                },
+                                {
+                                    name: "Name",
+                                    render: function(machine) { return machine.name; },
+                                    sort: function(a, b) { return a.name.localeCompare(b.name); },
+                                },
+                                {
+                                    name: "Description",
+                                    render: this.renderDescription,
+                                    sort: function(a, b) { return a.description.localeCompare(b.description); },
+                                },
+                                {
+                                    name: "Applicable Game",
+                                    render: function(machine) { return machine.game; },
+                                    sort: function(a, b) { return a.game.localeCompare(b.game); },
+                                    hidden: !window.enforcing,
+                                },
+                                {
+                                    name: "Port",
+                                    render: this.renderPort,
+                                    sort: function(a, b) { return a.port - b.port; },
+                                },
+                                {
+                                    name: '',
+                                    render: this.renderEditButton,
+                                    hidden: !window.enforcing || window.max_pcbids < 1,
+                                    action: true,
+                                },
+                            ]}
+                            rows={this.state.machines}
+                            emptymessage="There are no PCBIDs assigned to this arcade."
+                        />
+                    </form>
                 </div>
+                { window.enforcing && this.state.pcbcount < window.max_pcbids ?
+                    <div className="section">
+                        <h3>Generate PCBID</h3>
+                        <form className="inline" onSubmit={this.generateNewMachine}>
+                            <table className="add machine">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <input
+                                                name="description"
+                                                type="text"
+                                                value={ this.state.random_pcbid.description }
+                                                onChange={function(event) {
+                                                    var pcbid = this.state.random_pcbid;
+                                                    pcbid.description = event.target.value;
+                                                    this.setState({random_pcbid: pcbid});
+                                                }.bind(this)}
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="submit"
+                                                value="generate PCBID"
+                                            />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </form>
+                    </div>
+                    : null
+                }
                 <div className="section settings-nav">
                     <h3>Game Settings For This Arcade</h3>
                     { this.state.settings.map(function(game_settings) {

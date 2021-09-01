@@ -75,6 +75,10 @@ class Server:
     def enforce_pcbid(self) -> bool:
         return bool(self.__config.get('server', {}).get('enforce_pcbid', False))
 
+    @property
+    def pcbid_self_grant_limit(self) -> int:
+        return int(self.__config.get('server', {}).get('pcbid_self_grant_limit', 0))
+
 
 class Client:
     def __init__(self, parent_config: "Config") -> None:
@@ -188,6 +192,10 @@ class Config(dict):
     @property
     def cache_dir(self) -> str:
         return os.path.abspath(str(self.get('cache_dir', '/tmp')))
+
+    @property
+    def theme(self) -> str:
+        return str(self.get('theme', 'default'))
 
     @property
     def event_log_duration(self) -> Optional[int]:

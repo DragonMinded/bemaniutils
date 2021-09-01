@@ -41,8 +41,21 @@ var network_scores = React.createClass({
                 return 'Hyper';
             case 3:
                 return 'EX';
+            case 4:
+                return 'Normal (no cools)';
+            case 5:
+                return 'Hyper (no cools)';
+            case 6:
+                return 'EX (no cools)';
+            case 7:
+                return 'Enjoy 5 Button';
+            case 8:
+                return 'Enjoy 9 Button';
+            case 9:
+                return '5 Button';
             default:
                 return 'u broke it';
+
         }
     },
 
@@ -104,9 +117,12 @@ var network_scores = React.createClass({
                                     </td>
                                     <td className="center">
                                         <div>
-                                            <a href={Link.get('individual_score', attempt.songid, this.convertChart(attempt.chart))}>{
-                                                this.convertChart(attempt.chart)
-                                            }</a>
+                                            { attempt.chart >= 4 ?
+                                              <span>{ this.convertChart(attempt.chart) }</span> :
+                                              <a href={Link.get('individual_score', attempt.songid, this.convertChart(attempt.chart))}>{
+                                                  this.convertChart(attempt.chart)
+                                                }</a>
+                                            }
                                         </div>
                                         <div>{
                                             this.state.songs[attempt.songid].difficulties[attempt.chart]

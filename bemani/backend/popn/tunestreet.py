@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Optional
+from typing import Dict, Any, Optional
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.stubs import PopnMusicSengokuRetsuden
@@ -19,6 +19,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
     # Play modes, as reported by profile save from the game
     GAME_PLAY_MODE_CHALLENGE = 3
     GAME_PLAY_MODE_CHO_CHALLENGE = 4
+    GAME_PLAY_MODE_TOWN_CHO_CHALLENGE = 15
 
     # Play flags, as saved into/loaded from the DB
     GAME_PLAY_FLAG_FAILED = 0
@@ -58,6 +59,74 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
     def previous_version(self) -> Optional[PopnMusicBase]:
         return PopnMusicSengokuRetsuden(self.data, self.config, self.model)
+
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'ints': [
+                {
+                    'name': 'Game Phase',
+                    'tip': 'Game unlock phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'game_phase',
+                    'values': {
+                        0: 'NO PHASE',
+                        1: 'SECRET DATA RELEASE',
+                        2: 'MAX: ALL DATA RELEASE',
+                    }
+                },
+                {
+                    'name': 'Town Mode Phase',
+                    'tip': 'Town mode phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'town_phase',
+                    'values': {
+                        0: 'town mode disabled',
+                        1: 'town phase 1',
+                        2: 'town phase 2',
+                        3: 'Pop\'n Naan Festival',
+                        # 4 seems to be a continuation of town phase 2. Intentionally leaving it out.
+                        5: 'town phase 3',
+                        6: 'town phase 4',
+                        7: 'Miracle 4 + 1',
+                        # 8 seems to be a continuation of town phase 4. Intentionally leaving it out.
+                        9: 'town phase MAX',
+                        10: 'Find your daughter!',
+                        # 11 is a continuation of phase MAX after find your daughter, with Tanabata
+                        # bamboo grass added as well.
+                        11: 'town phase MAX+1',
+                        12: 'Peruri-san visits',
+                        # 13 is a continuation of phase MAX+1 after peruri-san visits, with Watermelon
+                        # pattern tank added as well.
+                        13: 'town phase MAX+2',
+                        14: 'Find Deuil!',
+                        # 15 is a continuation of phase MAX+2 after find deuil, with Tsukimi dumplings
+                        # added as well.
+                        15: 'town phase MAX+3',
+                        16: 'Landmark stamp rally',
+                        # 17 is a continuation of MAX+3 after landmark stamp rally ends, but offering
+                        # no additional stuff.
+                    }
+                },
+            ],
+            'bools': [
+                {
+                    'name': 'Force Song Unlock',
+                    'tip': 'Force unlock all songs.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_songs',
+                },
+                {
+                    'name': 'Force Customization Unlock',
+                    'tip': 'Force unlock all theme and menu customizations.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_customizations',
+                },
+            ],
+        }
 
     def __format_flags_for_score(self, score: Score) -> int:
         # Format song flags (cleared/not, combo flags)
@@ -104,16 +173,22 @@ class PopnMusicTuneStreet(PopnMusicBase):
         root = Node.void('playerdata')
 
         # Format profile
-        binary_profile = [0] * 2200
+        binary_profile = [0] * 2198
 
-        # Copy name
+        # Copy name. We intentionally leave location 12 alone as it is
+        # the null termination for the name if it happens to be 12
+        # characters (6 shift-jis kana).
         name_binary = profile.get_str('name', 'なし').encode('shift-jis')[0:12]
-        name_pos = 0
-        for byte in name_binary:
+        for name_pos, byte in enumerate(name_binary):
             binary_profile[name_pos] = byte
-            name_pos = name_pos + 1
 
-        # Copy game mode
+        # Copy game mode. Modes sent to the game are as follows.
+        # 0 - Enjoy mode.
+        # 1 - Challenge mode.
+        # 2 - Battle mode.
+        # 3 - Net ranking mode (enabled by setting netvs_phase in game.get).
+        # 4 - Cho challenge mode.
+        # 5 - Town mode (enabled by event_phase in game.get).
         binary_profile[13] = {
             0: 0,
             1: 0,
@@ -121,24 +196,35 @@ class PopnMusicTuneStreet(PopnMusicBase):
             3: 1,
             4: 4,
             5: 2,
+            13: 5,
+            14: 5,
+            15: 5,
         }[profile.get_int('play_mode')]
 
         # Copy miscelaneous values
-        binary_profile[16] = profile.get_int('last_play_flag') & 0xFF
+        binary_profile[15] = profile.get_int('last_play_flag') & 0xFF
+        binary_profile[16] = profile.get_int('medal_and_friend') & 0xFF
+        binary_profile[37] = profile.get_int('read_news') & 0xFF
+        binary_profile[38] = profile.get_int('skin_tex_note') & 0xFF
+        binary_profile[39] = profile.get_int('skin_tex_cmn') & 0xFF
+        binary_profile[40] = profile.get_int('skin_sd_bgm') & 0xFF
+        binary_profile[41] = profile.get_int('skin_sd_se') & 0xFF
         binary_profile[44] = profile.get_int('option') & 0xFF
         binary_profile[45] = (profile.get_int('option') >> 8) & 0xFF
         binary_profile[46] = (profile.get_int('option') >> 16) & 0xFF
         binary_profile[47] = (profile.get_int('option') >> 24) & 0xFF
-        binary_profile[60] = profile.get_int('chara') & 0xFF
-        binary_profile[61] = (profile.get_int('chara') >> 8) & 0xFF
+        binary_profile[48] = profile.get_int('jubeat_collabo') & 0xFF
+        binary_profile[49] = (profile.get_int('jubeat_collabo') >> 8) & 0xFF
+
+        # 52-56 and 56-60 make up two 32 bit colors found in color_3p_flag.
+        binary_profile[60] = profile.get_int('chara', -1) & 0xFF
+        binary_profile[61] = (profile.get_int('chara', -1) >> 8) & 0xFF
         binary_profile[62] = profile.get_int('music') & 0xFF
         binary_profile[63] = (profile.get_int('music') >> 8) & 0xFF
         binary_profile[64] = profile.get_int('sheet') & 0xFF
         binary_profile[65] = profile.get_int('category') & 0xFF
-        # This might be the count of friends, since Tune Street *does* support
-        # rivals. However, I can no longer get it running on my cabinet or locally
-        # so there's no way for me to test.
-        binary_profile[67] = profile.get_int('medal_and_friend') & 0xFF
+        binary_profile[66] = profile.get_int('norma_point') & 0xFF
+        binary_profile[67] = (profile.get_int('norma_point') >> 8) & 0xFF
 
         # Format Scores
         hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 7) * 17) + 7) / 8)
@@ -195,10 +281,72 @@ class PopnMusicTuneStreet(PopnMusicBase):
             binary_profile[profile_pos + 1] = (musicid >> 8) & 0xFF
             profile_pos = profile_pos + 2
 
+        # Town purchases, including BGM/announcer changes and such.
+        # The town customization area will show up if the player owns
+        # one or more customization in any of the following four
+        # purchase locations. These are all purchased in town mode.
+        # - 4-7 are song unlock flags.
+        # - 8 appears to be purchased pop-kuns.
+        # - 9 appears to be purchased themes.
+        # - 10 appears to be purchased BGMs.
+        # - 11 appears to be purchased sound effects.
+        binary_town = [0] * 141
+        town = profile.get_dict('town')
+
+        # Last play flag, so the selection for 5/9/9+cool sticks.
+        binary_town[140] = town.get_int('play_type')
+
+        # Fill in basic town points, tracked here and returned in basic profile for some reason.
+        binary_town[0] = town.get_int('points') & 0xFF
+        binary_town[1] = (town.get_int('points') >> 8) & 0xFF
+        binary_town[2] = (town.get_int('points') >> 16) & 0xFF
+        binary_town[3] = (town.get_int('points') >> 24) & 0xFF
+
+        # Fill in purchase flags (this is for stuff like BGMs, SEs, Pop-kun customizations, etc).
+        bought_flg = town.get_int_array('bought_flg', 3)
+        game_config = self.get_game_config()
+        force_unlock_songs = game_config.get_bool('force_unlock_songs')
+        force_unlock_customizations = game_config.get_bool('force_unlock_customizations')
+
+        if force_unlock_songs:
+            bought_flg[0] = 0xFFFFFFFF
+        if force_unlock_customizations:
+            bought_flg[1] = 0xFFFFFFFF
+
+        for flg, off in enumerate([4, 8, 12]):
+            binary_town[off + 0] = bought_flg[flg] & 0xFF
+            binary_town[off + 1] = (bought_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (bought_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (bought_flg[flg] >> 24) & 0xFF
+
+        # Fill in build flags (presumably for what parcels of land have been bought and built on).
+        build_flg = town.get_int_array('build_flg', 8)
+        for flg, off in enumerate([16, 20, 24, 28, 32, 36, 40, 44]):
+            binary_town[off + 0] = build_flg[flg] & 0xFF
+            binary_town[off + 1] = (build_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (build_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (build_flg[flg] >> 24) & 0xFF
+
+        # Fill in character flags (presumably for character location, orientation, stats, etc).
+        chara_flg = town.get_int_array('chara_flg', 19)
+        for flg, off in enumerate([48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120]):
+            binary_town[off + 0] = chara_flg[flg] & 0xFF
+            binary_town[off + 1] = (chara_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (chara_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (chara_flg[flg] >> 24) & 0xFF
+
+        # Fill in miscellaneous event flags.
+        event_flg = town.get_int_array('event_flg', 4)
+        for flg, off in enumerate([124, 128, 132, 136]):
+            binary_town[off + 0] = event_flg[flg] & 0xFF
+            binary_town[off + 1] = (event_flg[flg] >> 8) & 0xFF
+            binary_town[off + 2] = (event_flg[flg] >> 16) & 0xFF
+            binary_town[off + 3] = (event_flg[flg] >> 24) & 0xFF
+
         # Construct final profile
         root.add_child(Node.binary('b', bytes(binary_profile)))
         root.add_child(Node.binary('hiscore', bytes(hiscore_array)))
-        root.add_child(Node.binary('town', b''))
+        root.add_child(Node.binary('town', bytes(binary_town)))
 
         return root
 
@@ -251,6 +399,20 @@ class PopnMusicTuneStreet(PopnMusicBase):
             newprofile.replace_int('sheet', int(request.attribute('sheet_num')))
         if 'category_num' in request.attributes:
             newprofile.replace_int('category', int(request.attribute('category_num')))
+        if 'read_news_no_max' in request.attributes:
+            newprofile.replace_int('read_news', int(request.attribute('read_news_no_max')))
+        if 'jubeat_collabo' in request.attributes:
+            newprofile.replace_int('jubeat_collabo', int(request.attribute('jubeat_collabo')))
+        if 'norma_point' in request.attributes:
+            newprofile.replace_int('norma_point', int(request.attribute('norma_point')))
+        if 'skin_tex_note' in request.attributes:
+            newprofile.replace_int('skin_tex_note', int(request.attribute('skin_tex_note')))
+        if 'skin_tex_cmn' in request.attributes:
+            newprofile.replace_int('skin_tex_cmn', int(request.attribute('skin_tex_cmn')))
+        if 'skin_sd_bgm' in request.attributes:
+            newprofile.replace_int('skin_sd_bgm', int(request.attribute('skin_sd_bgm')))
+        if 'skin_sd_se' in request.attributes:
+            newprofile.replace_int('skin_sd_se', int(request.attribute('skin_sd_se')))
 
         # Keep track of play statistics
         self.update_play_statistics(userid)
@@ -271,7 +433,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
                     continue
 
                 # Arrange order to be compatible with future mixes
-                if playmode == self.GAME_PLAY_MODE_CHO_CHALLENGE:
+                if playmode in {self.GAME_PLAY_MODE_CHO_CHALLENGE, self.GAME_PLAY_MODE_TOWN_CHO_CHALLENGE}:
                     if chart in [
                         self.GAME_CHART_TYPE_5_BUTTON,
                         self.GAME_CHART_TYPE_ENJOY_5_BUTTON,
@@ -328,77 +490,159 @@ class PopnMusicTuneStreet(PopnMusicBase):
                 }[flags]
                 self.update_score(userid, songid, chart, points, medal)
 
+        # Update town mode data.
+        town = newprofile.get_dict('town')
+
+        # Basic stuff that's in the base node for no reason?
+        if 'tp' in request.attributes:
+            town.replace_int('points', int(request.attribute('tp')))
+
+        # Stuff that is in the town node
+        townnode = request.child('town')
+        if townnode is not None:
+            if 'play_type' in townnode.attributes:
+                town.replace_int('play_type', int(townnode.attribute('play_type')))
+            if 'base' in townnode.attributes:
+                town.replace_int_array('base', 4, [int(x) for x in townnode.attribute('base').split(',')])
+            if 'bought_flg' in townnode.attributes:
+                bought_array = [int(x) for x in townnode.attribute('bought_flg').split(',')]
+                if len(bought_array) == 3:
+                    game_config = self.get_game_config()
+                    force_unlock_songs = game_config.get_bool('force_unlock_songs')
+                    force_unlock_customizations = game_config.get_bool('force_unlock_customizations')
+                    old_bought_array = town.get_int_array('bought_flg', 3)
+
+                    if force_unlock_songs:
+                        # Don't save force unlocked flags, it'll clobber the profile.
+                        bought_array[0] = old_bought_array[0]
+                    if force_unlock_customizations:
+                        # Don't save force unlocked flags, it'll clobber the profile.
+                        bought_array[1] = old_bought_array[1]
+
+                    town.replace_int_array('bought_flg', 3, bought_array)
+            if 'build_flg' in townnode.attributes:
+                town.replace_int_array('build_flg', 8, [int(x) for x in townnode.attribute('build_flg').split(',')])
+            if 'chara_flg' in townnode.attributes:
+                town.replace_int_array('chara_flg', 19, [int(x) for x in townnode.attribute('chara_flg').split(',')])
+            if 'event_flg' in townnode.attributes:
+                town.replace_int_array('event_flg', 4, [int(x) for x in townnode.attribute('event_flg').split(',')])
+            for bid in range(8):
+                if f'building_{bid}' in townnode.attributes:
+                    town.replace_int_array(f'building_{bid}', 8, [int(x) for x in townnode.attribute(f'building_{bid}').split(',')])
+
+        newprofile.replace_dict('town', town)
+
         return newprofile
 
-    def handle_game_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_game_get_request(self, request: Node) -> Optional[Node]:
+        game_config = self.get_game_config()
+        game_phase = game_config.get_int('game_phase')
+        town_phase = game_config.get_int('town_phase')
 
-        if method == 'get':
-            # TODO: Hook these up to config so we can change this
-            root = Node.void('game')
-            root.set_attribute('game_phase', '2')
-            root.set_attribute('psp_phase', '2')
-            return root
+        root = Node.void('game')
+        root.set_attribute('game_phase', str(game_phase))  # Phase unlocks, for song availability.
+        root.set_attribute('boss_battle_point', '1')
+        root.set_attribute('boss_diff', '100,100,100,100,100,100,100,100,100,100')
+        root.set_attribute('card_phase', '3')
+        root.set_attribute('event_phase', str(town_phase))  # Town mode, for the main event.
+        root.set_attribute('gfdm_phase', '2')
+        root.set_attribute('ir_phase', '14')
+        root.set_attribute('jubeat_phase', '2')
+        root.set_attribute('local_matching_enable', '1')
+        root.set_attribute('matching_sec', '120')
+        root.set_attribute('netvs_phase', '0')  # Net taisen mode phase, maximum 18 (no lobby support).
+        return root
 
-        if method == 'active':
-            # Update the name of this cab for admin purposes
-            self.update_machine_name(request.attribute('shop_name'))
-            return Node.void('game')
+    def handle_game_active_request(self, request: Node) -> Optional[Node]:
+        # Update the name of this cab for admin purposes
+        self.update_machine_name(request.attribute('shop_name'))
+        return Node.void('game')
 
-        if method == 'taxphase':
-            return Node.void('game')
+    def handle_game_taxphase_request(self, request: Node) -> Optional[Node]:
+        return Node.void('game')
 
-        # Invalid method
-        return None
+    def handle_playerdata_expire_request(self, request: Node) -> Optional[Node]:
+        return Node.void('playerdata')
 
-    def handle_playerdata_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_playerdata_logout_request(self, request: Node) -> Optional[Node]:
+        return Node.void('playerdata')
 
-        if method == 'expire':
-            return Node.void('playerdata')
-
-        elif method == 'logout':
-            return Node.void('playerdata')
-
-        elif method == 'get':
-            modelstring = request.attribute('model')
-            refid = request.attribute('ref_id')
-            root = self.get_profile_by_refid(
-                refid,
-                self.NEW_PROFILE_ONLY if modelstring is None else self.OLD_PROFILE_ONLY,
-            )
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'new':
-            refid = request.attribute('ref_id')
-            name = request.attribute('name')
-            root = self.new_profile_by_refid(refid, name)
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'set':
-            refid = request.attribute('ref_id')
-
+    def handle_playerdata_get_request(self, request: Node) -> Optional[Node]:
+        modelstring = request.attribute('model')
+        refid = request.attribute('ref_id')
+        root = self.get_profile_by_refid(
+            refid,
+            self.NEW_PROFILE_ONLY if modelstring is None else self.OLD_PROFILE_ONLY,
+        )
+        if root is None:
             root = Node.void('playerdata')
-            if refid is None:
-                return root
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                return root
+    def handle_playerdata_town_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('ref_id')
+        root = Node.void('playerdata')
 
-            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
-            newprofile = self.unformat_profile(userid, request, oldprofile)
-
-            if newprofile is not None:
-                self.put_profile(userid, newprofile)
-
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
             return root
 
-        # Invalid method
-        return None
+        profile = self.get_profile(userid)
+        if profile is None:
+            return root
+
+        town = profile.get_dict('town')
+
+        residence = Node.void('residence')
+        root.add_child(residence)
+        residence.set_attribute('id', str(town.get_int('residence')))
+
+        # It appears there can be up to 9 map nodes, not sure why. I'm only returning the
+        # first one. Perhaps if there's multiple towns, the residence ID lets you choose
+        # between them? Maybe it has to do with friends towns?
+        mapdata = [0] * 180
+
+        # Map over progress for base and buildings. Positions 173-176 are for base flags.
+        base = town.get_int_array('base', 4)
+        for i in range(4):
+            mapdata[173 + i] = base[i]
+
+        # Positions 42-105 are for building flags.
+        for bid, start in enumerate([42, 50, 58, 66, 74, 82, 90, 98]):
+            building = town.get_int_array(f'building_{bid}', 8)
+            for i in range(8):
+                mapdata[start + i] = building[i]
+
+        mapnode = Node.binary('map', bytes(mapdata))
+        root.add_child(mapnode)
+        mapnode.set_attribute('residence', '0')
+
+        return root
+
+    def handle_playerdata_new_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('ref_id')
+        name = request.attribute('name')
+        root = self.new_profile_by_refid(refid, name)
+        if root is None:
+            root = Node.void('playerdata')
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
+
+    def handle_playerdata_set_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('ref_id')
+
+        root = Node.void('playerdata')
+        if refid is None:
+            return root
+
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            return root
+
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
+        newprofile = self.unformat_profile(userid, request, oldprofile)
+
+        if newprofile is not None:
+            self.put_profile(userid, newprofile)
+
+        return root
