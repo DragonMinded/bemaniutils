@@ -5,6 +5,10 @@ include bemani/frontend/static/*.css
 include bemani/frontend/static/*.js
 include bemani/frontend/static/*.gif
 include bemani/frontend/static/*.png
+include bemani/frontend/static/default/*.css
+include bemani/frontend/static/default/*.js
+include bemani/frontend/static/default/*.gif
+include bemani/frontend/static/default/*.png
 include bemani/frontend/static/components/*.js
 include bemani/frontend/static/controllers/*.js
 include bemani/frontend/static/controllers/admin/*.js

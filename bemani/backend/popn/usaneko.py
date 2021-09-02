@@ -235,7 +235,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
                     subnode.add_child(Node.u8('clear_type', ach.data.get_int('clear_type')))
                     subnode.add_child(Node.u8('clear_rank', ach.data.get_int('clear_rank')))
 
-        for area_id in range(1, 17):
+        for area_id in range(0, 16):
             area = Node.void('area')
             root.add_child(area)
             area.add_child(Node.s16('area_id', area_id))
@@ -243,7 +243,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             area.add_child(Node.s16('medal_id', area_id))
             area.add_child(Node.bool('is_limit', False))
 
-        for choco_id in range(1, 6):
+        for choco_id in range(0, 5):
             choco = Node.void('choco')
             root.add_child(choco)
             choco.add_child(Node.s16('choco_id', choco_id))
@@ -807,7 +807,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         account.add_child(Node.s32('chocolate_pass_cnt', profile.get_int('chocolate_pass_cnt')))
         account.add_child(Node.s32('chocolate_hon_cnt', profile.get_int('chocolate_hon_cnt')))
         account.add_child(Node.s16_array('teacher_setting', profile.get_int_array('teacher_setting', 10, [-1] * 10)))
-        account.add_child(Node.bool('welcom_pack', profile.get_bool('welcome_pack')))
+        account.add_child(Node.bool('welcom_pack', False))  # Set to true to grant extra stage no matter what.
         account.add_child(Node.s32('ranking_node', profile.get_int('ranking_node')))
         account.add_child(Node.s32('chara_ranking_kind_id', profile.get_int('chara_ranking_kind_id')))
         account.add_child(Node.s8('navi_evolution_flg', profile.get_int('navi_evolution_flg')))
@@ -1110,44 +1110,6 @@ class PopnMusicUsaNeko(PopnMusicBase):
             mission.add_child(Node.u32('gauge_point', points))
             mission.add_child(Node.u32('mission_comp', complete))
 
-        # Scores
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
-        for score in scores:
-            # Skip any scores for chart types we don't support
-            if score.chart not in [
-                self.CHART_TYPE_EASY,
-                self.CHART_TYPE_NORMAL,
-                self.CHART_TYPE_HYPER,
-                self.CHART_TYPE_EX,
-            ]:
-                continue
-
-            music = Node.void('music')
-            root.add_child(music)
-            music.add_child(Node.s16('music_num', score.id))
-            music.add_child(Node.u8('sheet_num', {
-                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
-                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
-                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
-                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
-            }[score.chart]))
-            music.add_child(Node.s32('score', score.points))
-            music.add_child(Node.u8('clear_type', {
-                self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
-                self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
-                self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
-                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
-            }[score.data.get_int('medal')]))
-            music.add_child(Node.u8('clear_rank', self.__score_to_rank(score.points)))
-            music.add_child(Node.s16('cnt', score.plays))
-
         # Player netvs section
         netvs = Node.void('netvs')
         root.add_child(netvs)
@@ -1183,9 +1145,6 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
-
-        # Set that we've seen this profile
-        newprofile.replace_bool('welcome_pack', True)
 
         account = request.child('account')
         if account is not None:
