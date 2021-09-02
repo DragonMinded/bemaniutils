@@ -497,13 +497,13 @@ class PopnMusicEclale(PopnMusicBase):
         # Account stuff
         account = Node.void('account')
         root.add_child(account)
-        account.add_child(Node.string('g_pm_id', self.format_extid(profile.extid)))  # Eclale formats on its own
+        account.add_child(Node.string('g_pm_id', self.format_extid(profile.extid)))
         account.add_child(Node.string('name', profile.get_str('name', 'なし')))
         account.add_child(Node.s8('tutorial', profile.get_int('tutorial')))
         account.add_child(Node.s16('area_id', profile.get_int('area_id')))
         account.add_child(Node.s16('lumina', profile.get_int('lumina', 300)))
         account.add_child(Node.s16('read_news', profile.get_int('read_news')))
-        account.add_child(Node.bool('welcom_pack', profile.get_bool('welcom_pack')))
+        account.add_child(Node.bool('welcom_pack', False))  # Set this to true to grant extra stage no matter what.
         account.add_child(Node.s16_array('medal_set', profile.get_int_array('medal_set', 4)))
         account.add_child(Node.s16_array('nice', profile.get_int_array('nice', 30, [-1] * 30)))
         account.add_child(Node.s16_array('favorite_chara', profile.get_int_array('favorite_chara', 20, [-1] * 20)))
@@ -687,9 +687,6 @@ class PopnMusicEclale(PopnMusicBase):
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
-
-        # Set that we've seen this profile
-        newprofile.replace_bool('welcom_pack', True)
 
         account = request.child('account')
         if account is not None:
