@@ -3,7 +3,7 @@ import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 
 from bemani.common import Model, ValidatedDict, Profile, PlayStatistics, GameConstants, Time
-from bemani.data import Config, Data, UserID, RemoteUser
+from bemani.data import Config, Data, Machine, UserID, RemoteUser
 
 
 class ProfileCreationException(Exception):
@@ -391,16 +391,25 @@ class Base(ABC):
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         return machine.id
 
+    def get_machine(self) -> Machine:
+        return self.data.local.machine.get_machine(self.config.machine.pcbid)
+
     def update_machine_name(self, newname: Optional[str]) -> None:
         if newname is None:
             return
-        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        machine = self.get_machine()
         machine.name = newname
         self.data.local.machine.put_machine(machine)
 
     def update_machine_data(self, newdata: Dict[str, Any]) -> None:
-        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        machine = self.get_machine()
         machine.data.update(newdata)
+        self.data.local.machine.put_machine(machine)
+
+    def update_machine(self, newmachine: Machine) -> None:
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        machine.name = newmachine.name
+        machine.data = newmachine.data
         self.data.local.machine.put_machine(machine)
 
     def get_game_config(self) -> ValidatedDict:

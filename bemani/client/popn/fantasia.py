@@ -84,7 +84,7 @@ class PopnMusicFantasiaClient(BaseClient):
             'jubeat_phase',
             'public_phase',
             'kac_phase',
-            'local_matching',
+            'local_matching_enable',
             'n_matching_sec',
             'l_matching_sec',
             'is_check_cpu',
@@ -101,22 +101,18 @@ class PopnMusicFantasiaClient(BaseClient):
         up_ranking = resp.child('game').child('up_ranking')
         ng_illust = resp.child('game').child('ng_illust')
 
-        for nodepair in [
-            ('sel_ranking', sel_ranking, 's16'),
-            ('up_ranking', up_ranking, 's16'),
-            ('ng_illust', ng_illust, 's32'),
+        for name, node, dtype, length in [
+            ('sel_ranking', sel_ranking, 's16', 10),
+            ('up_ranking', up_ranking, 's16', 10),
+            ('ng_illust', ng_illust, 's32', 64),
         ]:
-            name = nodepair[0]
-            node = nodepair[1]
-            dtype = nodepair[2]
-
             if node is None:
                 raise Exception(f'Missing node \'{name}\' in response!')
             if node.data_type != dtype:
                 raise Exception(f'Node \'{name}\' has wrong data type!')
             if not node.is_array:
                 raise Exception(f'Node \'{name}\' is not array!')
-            if len(node.value) != 10:
+            if len(node.value) != length:
                 raise Exception(f'Node \'{name}\' is wrong array length!')
 
     def verify_playerdata_get(self, ref_id: str, msg_type: str) -> Optional[Dict[str, Any]]:
