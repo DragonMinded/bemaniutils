@@ -41,12 +41,12 @@ def parse_psmap(data: bytes, offset: str, rootname: str, *, verbose: bool = Fals
             chunk = data[base:(base + 24)]
             base = base + 24
 
-            (nodetype, mandatory, outoffset, width, nameptr, defaultptr) = struct.unpack('<BBHIQQ', chunk)
+            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack('<BBHIQQ', chunk)
         else:  # 32 bit
             chunk = data[base:(base + 16)]
             base = base + 16
 
-            (nodetype, mandatory, outoffset, width, nameptr, defaultptr) = struct.unpack('<BBHIII', chunk)
+            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack('<BBHIII', chunk)
 
         if nodetype == 0xFF or nodetype == 0x00:  # if nodetype is 0 then we probably read garbage
             # End of nodes, see if we should exit
@@ -68,19 +68,26 @@ def parse_psmap(data: bytes, offset: str, rootname: str, *, verbose: bool = Fals
             pass
 
         # Grab the default
-        if defaultptr != 0:
-            defaultptr = pe.virtual_to_physical(defaultptr)
+        if default != 0:
+            try:
+                defaultptr = pe.virtual_to_physical(default)
+            except Exception:
+                defaultptr = 0
 
         if verbose:
             space = "    " * len(saved_root)
             print(
-                f"{space}Node offset: {hex(readbase)}{os.linesep}"
-                f"{space}  Type: {hex(nodetype)}{os.linesep}"
-                f"{space}  Mandatory: {'yes' if mandatory != 0 else 'no'}{os.linesep}"
-                f"{space}  Name: {name}{os.linesep}"
-                f"{space}  Parse Offset: {outoffset}{os.linesep}"
-                f"{space}  Data Width: {width}{os.linesep}"
-                f"{space}  Default Pointer: {'null' if defaultptr == 0 else hex(defaultptr)}",
+                f"{space}Node offset: {hex(readbase)}{os.linesep}" +
+                f"{space}  Type: {hex(nodetype)}{os.linesep}" +
+                f"{space}  Mandatory: {'yes' if mandatory != 0 else 'no'}{os.linesep}" +
+                f"{space}  Name: {name}{os.linesep}" +
+                f"{space}  Parse Offset: {outoffset}{os.linesep}" +
+                f"{space}  Data Width: {width}{os.linesep}" +
+                (
+                    f"{space}  Data Pointer: {'null' if defaultptr == 0 else hex(defaultptr)}"
+                    if nodetype == 0x01 else
+                    f"{space}  Default: {default}"
+                ),
                 file=sys.stderr,
             )
 
