@@ -678,12 +678,12 @@ class PopnMusicLapistoria(PopnMusicBase):
         return newprofile
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
-        # Circular import, ugh
-        from bemani.backend.popn.eclale import PopnMusicEclale
+        # TODO: Validate this now that it's been moved.
+        root = Node.void('playerdata')
 
-        root = Node.void('player23')
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
         root.add_child(Node.s16('chara', profile.get_int('chara', -1)))
+        root.add_child(Node.s32('option', profile.get_int('option', 0)))
         root.add_child(Node.s8('result', 1))
 
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
@@ -707,25 +707,27 @@ class PopnMusicLapistoria(PopnMusicBase):
             root.add_child(music)
             music.add_child(Node.s16('music_num', score.id))
             music.add_child(Node.u8('sheet_num', {
-                self.CHART_TYPE_EASY: PopnMusicEclale.GAME_CHART_TYPE_EASY,
-                self.CHART_TYPE_NORMAL: PopnMusicEclale.GAME_CHART_TYPE_NORMAL,
-                self.CHART_TYPE_HYPER: PopnMusicEclale.GAME_CHART_TYPE_HYPER,
-                self.CHART_TYPE_EX: PopnMusicEclale.GAME_CHART_TYPE_EX,
+                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
+                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
+                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
+                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
             }[score.chart]))
-            music.add_child(Node.s32('score', points))
-            music.add_child(Node.u8('clear_type', {
-                self.PLAY_MEDAL_CIRCLE_FAILED: PopnMusicEclale.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                self.PLAY_MEDAL_DIAMOND_FAILED: PopnMusicEclale.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                self.PLAY_MEDAL_STAR_FAILED: PopnMusicEclale.GAME_PLAY_MEDAL_STAR_FAILED,
-                self.PLAY_MEDAL_EASY_CLEAR: PopnMusicEclale.GAME_PLAY_MEDAL_EASY_CLEAR,
-                self.PLAY_MEDAL_CIRCLE_CLEARED: PopnMusicEclale.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                self.PLAY_MEDAL_DIAMOND_CLEARED: PopnMusicEclale.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                self.PLAY_MEDAL_STAR_CLEARED: PopnMusicEclale.GAME_PLAY_MEDAL_STAR_CLEARED,
-                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: PopnMusicEclale.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: PopnMusicEclale.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                self.PLAY_MEDAL_STAR_FULL_COMBO: PopnMusicEclale.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                self.PLAY_MEDAL_PERFECT: PopnMusicEclale.GAME_PLAY_MEDAL_PERFECT,
-            }[medal]))
             music.add_child(Node.s16('cnt', score.plays))
+            music.add_child(Node.s32('score', 0))
+            music.add_child(Node.u8('clear_type', 0))
+            music.add_child(Node.s32('old_score', points))
+            music.add_child(Node.u8('old_clear_type', {
+                self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
+                self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
+                self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
+                self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
+                self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
+                self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
+                self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
+                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
+                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
+                self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
+                self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
+            }[medal]))
 
         return root

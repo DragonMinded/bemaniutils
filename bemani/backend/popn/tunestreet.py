@@ -253,8 +253,6 @@ class PopnMusicTuneStreet(PopnMusicBase):
                 continue
 
             # Format actual score, according to DB chart position
-            points = score.points
-
             hiscore_index = (score.id * 7) + {
                 self.CHART_TYPE_5_BUTTON: self.GAME_CHART_TYPE_5_BUTTON_POSITION,
                 self.CHART_TYPE_OLD_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -266,7 +264,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
             }[score.chart]
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
-            hiscore_value = points << hiscore_bit_pos
+            hiscore_value = score.points << hiscore_bit_pos
             hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
             hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
             hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
@@ -347,34 +345,6 @@ class PopnMusicTuneStreet(PopnMusicBase):
         root.add_child(Node.binary('b', bytes(binary_profile)))
         root.add_child(Node.binary('hiscore', bytes(hiscore_array)))
         root.add_child(Node.binary('town', bytes(binary_town)))
-
-        return root
-
-    def format_conversion(self, userid: UserID, profile: Profile) -> Node:
-        root = Node.void('playerdata')
-
-        root.add_child(Node.string('name', profile.get_str('name', 'なし')))
-        root.add_child(Node.s16('chara', profile.get_int('chara', -1)))
-        root.add_child(Node.s32('option', profile.get_int('option', 0)))
-        root.add_child(Node.u8('version', 0))
-        root.add_child(Node.u8('kind', 0))
-        root.add_child(Node.u8('season', 0))
-
-        medals = [0] * (self.GAME_MAX_MUSIC_ID)
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
-        for score in scores:
-            if score.id > self.GAME_MAX_MUSIC_ID:
-                continue
-
-            # Skip any scores for chart types we don't support
-            if score.chart in [
-                self.CHART_TYPE_EASY,
-            ]:
-                continue
-
-            flags = self.__format_flags_for_score(score)
-            medals[score.id] = medals[score.id] | flags
-        root.add_child(Node.u16_array('clear_medal', medals))
 
         return root
 
@@ -556,9 +526,6 @@ class PopnMusicTuneStreet(PopnMusicBase):
     def handle_game_active_request(self, request: Node) -> Node:
         # Update the name of this cab for admin purposes
         self.update_machine_name(request.attribute('shop_name'))
-        return Node.void('game')
-
-    def handle_game_taxphase_request(self, request: Node) -> Node:
         return Node.void('game')
 
     def handle_playerdata_expire_request(self, request: Node) -> Node:

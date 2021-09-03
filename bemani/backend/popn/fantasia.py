@@ -163,9 +163,7 @@ class PopnMusicFantasia(PopnMusicBase):
             ]:
                 continue
 
-            points = score.points
             clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
-
             hiscore_index = (score.id * 4) + {
                 self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                 self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -174,7 +172,7 @@ class PopnMusicFantasia(PopnMusicBase):
             }[score.chart]
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
-            hiscore_value = points << hiscore_bit_pos
+            hiscore_value = score.points << hiscore_bit_pos
             hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
             hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
             hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
@@ -476,9 +474,7 @@ class PopnMusicFantasia(PopnMusicBase):
                 ]:
                     continue
 
-                points = score.points
                 clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
-
                 hiscore_index = (score.id * 4) + {
                     self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                     self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -487,7 +483,7 @@ class PopnMusicFantasia(PopnMusicBase):
                 }[score.chart]
                 hiscore_byte_pos = int((hiscore_index * 17) / 8)
                 hiscore_bit_pos = int((hiscore_index * 17) % 8)
-                hiscore_value = points << hiscore_bit_pos
+                hiscore_value = score.points << hiscore_bit_pos
                 hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
                 hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
                 hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)

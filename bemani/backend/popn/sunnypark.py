@@ -7,7 +7,7 @@ from bemani.backend.popn.fantasia import PopnMusicFantasia
 
 from bemani.backend.base import Status
 from bemani.common import Profile, VersionConstants, ID
-from bemani.data import UserID, Link
+from bemani.data import UserID, Link, Score
 from bemani.protocol import Node
 
 
@@ -45,6 +45,28 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
     def previous_version(self) -> Optional[PopnMusicBase]:
         return PopnMusicFantasia(self.data, self.config, self.model)
+
+    def __format_medal_for_score(self, score: Score) -> int:
+        medal = {
+            self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
+            self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
+            self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
+            self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,  # Map approximately
+            self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
+            self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
+            self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
+            self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
+            self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
+            self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
+            self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
+        }[score.data.get_int('medal')]
+        medal_pos = {
+            self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
+            self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
+            self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
+            self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
+        }[score.chart]
+        return (medal << (medal_pos * 4))
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('playerdata')
@@ -124,28 +146,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
             ]:
                 continue
 
-            points = score.points
-            medal = {
-                self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
-                self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,  # Map approximately
-                self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
-                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
-            }[score.data.get_int('medal')]
-            medal_pos = {
-                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
-                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
-                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
-                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
-            }[score.chart]
-            clear_medal[score.id] = clear_medal[score.id] | (medal << (medal_pos * 4))
-
+            clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
             hiscore_index = (score.id * 4) + {
                 self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                 self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -154,7 +155,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
             }[score.chart]
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
-            hiscore_value = points << hiscore_bit_pos
+            hiscore_value = score.points << hiscore_bit_pos
             hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
             hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
             hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
@@ -283,15 +284,17 @@ class PopnMusicSunnyPark(PopnMusicBase):
         return root
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
-        # Circular import, ugh
-        from bemani.backend.popn.lapistoria import PopnMusicLapistoria
-
+        # TODO: Validate this now that it's been moved.
         root = Node.void('playerdata')
 
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
         root.add_child(Node.s16('chara', profile.get_int('chara', -1)))
         root.add_child(Node.s32('option', profile.get_int('option', 0)))
-        root.add_child(Node.s8('result', 1))
+        root.add_child(Node.u8('version', 0))
+        root.add_child(Node.u8('kind', 0))
+        root.add_child(Node.u8('season', 0))
+
+        clear_medal = [0] * self.GAME_MAX_MUSIC_ID
 
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
         for score in scores:
@@ -307,35 +310,9 @@ class PopnMusicSunnyPark(PopnMusicBase):
             ]:
                 continue
 
-            points = score.points
-            medal = score.data.get_int('medal')
+            clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
 
-            music = Node.void('music')
-            root.add_child(music)
-            music.add_child(Node.s16('music_num', score.id))
-            music.add_child(Node.u8('sheet_num', {
-                self.CHART_TYPE_EASY: PopnMusicLapistoria.GAME_CHART_TYPE_EASY,
-                self.CHART_TYPE_NORMAL: PopnMusicLapistoria.GAME_CHART_TYPE_NORMAL,
-                self.CHART_TYPE_HYPER: PopnMusicLapistoria.GAME_CHART_TYPE_HYPER,
-                self.CHART_TYPE_EX: PopnMusicLapistoria.GAME_CHART_TYPE_EX,
-            }[score.chart]))
-            music.add_child(Node.s16('cnt', score.plays))
-            music.add_child(Node.s32('score', 0))
-            music.add_child(Node.u8('clear_type', 0))
-            music.add_child(Node.s32('old_score', points))
-            music.add_child(Node.u8('old_clear_type', {
-                self.PLAY_MEDAL_CIRCLE_FAILED: PopnMusicLapistoria.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                self.PLAY_MEDAL_DIAMOND_FAILED: PopnMusicLapistoria.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                self.PLAY_MEDAL_STAR_FAILED: PopnMusicLapistoria.GAME_PLAY_MEDAL_STAR_FAILED,
-                self.PLAY_MEDAL_EASY_CLEAR: PopnMusicLapistoria.GAME_PLAY_MEDAL_EASY_CLEAR,
-                self.PLAY_MEDAL_CIRCLE_CLEARED: PopnMusicLapistoria.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                self.PLAY_MEDAL_DIAMOND_CLEARED: PopnMusicLapistoria.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                self.PLAY_MEDAL_STAR_CLEARED: PopnMusicLapistoria.GAME_PLAY_MEDAL_STAR_CLEARED,
-                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: PopnMusicLapistoria.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: PopnMusicLapistoria.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                self.PLAY_MEDAL_STAR_FULL_COMBO: PopnMusicLapistoria.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                self.PLAY_MEDAL_PERFECT: PopnMusicLapistoria.GAME_PLAY_MEDAL_PERFECT,
-            }[medal]))
+        root.add_child(Node.u16_array('clear_medal', clear_medal))
 
         return root
 
@@ -601,28 +578,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
                     ]:
                         continue
 
-                    points = score.points
-                    medal = {
-                        self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                        self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                        self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
-                        self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,  # Map approximately
-                        self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                        self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                        self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
-                        self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                        self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                        self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                        self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
-                    }[score.data.get_int('medal')]
-                    medal_pos = {
-                        self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
-                        self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
-                        self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
-                        self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
-                    }[score.chart]
-                    clear_medal[score.id] = clear_medal[score.id] | (medal << (medal_pos * 4))
-
+                    clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
                     hiscore_index = (score.id * 4) + {
                         self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                         self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -631,7 +587,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
                     }[score.chart]
                     hiscore_byte_pos = int((hiscore_index * 17) / 8)
                     hiscore_bit_pos = int((hiscore_index * 17) % 8)
-                    hiscore_value = points << hiscore_bit_pos
+                    hiscore_value = score.points << hiscore_bit_pos
                     hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
                     hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
                     hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)

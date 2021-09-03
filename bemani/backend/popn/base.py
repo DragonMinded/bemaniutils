@@ -96,7 +96,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             profile = oldversion.get_profile(userid)
             if profile is None:
                 return None
-            return oldversion.format_conversion(userid, profile)
+            return self.format_conversion(userid, profile)
         elif load_mode == self.NEW_PROFILE_ONLY:
             # Trying to import from current version
             profile = self.get_profile(userid)
@@ -111,7 +111,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             oldversion = self.previous_version()
             oldprofile = oldversion.get_profile(userid)
             if oldprofile is not None:
-                return oldversion.format_conversion(userid, oldprofile)
+                return self.format_conversion(userid, oldprofile)
             return None
         else:
             # Unknown value
