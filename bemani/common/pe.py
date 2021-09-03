@@ -501,6 +501,8 @@ def assign(registers: Registers, memory: Memory, size: int, loc: str, value: int
             data = struct.pack("<H", value)
         elif size == 4:
             data = struct.pack("<I", value)
+        elif size == 8:
+            data = struct.pack("<Q", value)
         else:
             raise Exception(f"Unsupported size {size} for memory assign!")
         memory.store(address, data)
@@ -668,6 +670,8 @@ def fetch(registers: Registers, memory: Memory, size: int, loc: str) -> int:
             return struct.unpack("<H", memory.load(address, size))[0]
         elif size == 4:
             return struct.unpack("<I", memory.load(address, size))[0]
+        elif size == 8:
+            return struct.unpack("<Q", memory.load(address, size))[0]
         else:
             raise Exception(f"Unsupported size {size} for memory fetch!")
 
@@ -679,6 +683,8 @@ def fetch(registers: Registers, memory: Memory, size: int, loc: str) -> int:
             return immediate & 0xFFFF
         if size == 4:
             return immediate & 0xFFFFFFFF
+        if size == 8:
+            return immediate
         raise Exception(f"Unsupported size {size} for immediate fetch!")
 
     if loc == "rax":
