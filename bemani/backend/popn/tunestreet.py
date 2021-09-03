@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.stubs import PopnMusicSengokuRetsuden
@@ -57,7 +57,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
     # Highest song ID we can represent
     GAME_MAX_MUSIC_ID = 1045
 
-    def previous_version(self) -> Optional[PopnMusicBase]:
+    def previous_version(self) -> PopnMusicBase:
         return PopnMusicSengokuRetsuden(self.data, self.config, self.model)
 
     @classmethod
@@ -534,7 +534,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return newprofile
 
-    def handle_game_get_request(self, request: Node) -> Optional[Node]:
+    def handle_game_get_request(self, request: Node) -> Node:
         game_config = self.get_game_config()
         game_phase = game_config.get_int('game_phase')
         town_phase = game_config.get_int('town_phase')
@@ -553,21 +553,21 @@ class PopnMusicTuneStreet(PopnMusicBase):
         root.set_attribute('netvs_phase', '0')  # Net taisen mode phase, maximum 18 (no lobby support).
         return root
 
-    def handle_game_active_request(self, request: Node) -> Optional[Node]:
+    def handle_game_active_request(self, request: Node) -> Node:
         # Update the name of this cab for admin purposes
         self.update_machine_name(request.attribute('shop_name'))
         return Node.void('game')
 
-    def handle_game_taxphase_request(self, request: Node) -> Optional[Node]:
+    def handle_game_taxphase_request(self, request: Node) -> Node:
         return Node.void('game')
 
-    def handle_playerdata_expire_request(self, request: Node) -> Optional[Node]:
+    def handle_playerdata_expire_request(self, request: Node) -> Node:
         return Node.void('playerdata')
 
-    def handle_playerdata_logout_request(self, request: Node) -> Optional[Node]:
+    def handle_playerdata_logout_request(self, request: Node) -> Node:
         return Node.void('playerdata')
 
-    def handle_playerdata_get_request(self, request: Node) -> Optional[Node]:
+    def handle_playerdata_get_request(self, request: Node) -> Node:
         modelstring = request.attribute('model')
         refid = request.attribute('ref_id')
         root = self.get_profile_by_refid(
@@ -579,7 +579,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
             root.set_attribute('status', str(Status.NO_PROFILE))
         return root
 
-    def handle_playerdata_town_request(self, request: Node) -> Optional[Node]:
+    def handle_playerdata_town_request(self, request: Node) -> Node:
         refid = request.attribute('ref_id')
         root = Node.void('playerdata')
 
@@ -619,7 +619,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return root
 
-    def handle_playerdata_new_request(self, request: Node) -> Optional[Node]:
+    def handle_playerdata_new_request(self, request: Node) -> Node:
         refid = request.attribute('ref_id')
         name = request.attribute('name')
         root = self.new_profile_by_refid(refid, name)
@@ -628,7 +628,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
             root.set_attribute('status', str(Status.NO_PROFILE))
         return root
 
-    def handle_playerdata_set_request(self, request: Node) -> Optional[Node]:
+    def handle_playerdata_set_request(self, request: Node) -> Node:
         refid = request.attribute('ref_id')
 
         root = Node.void('playerdata')
@@ -646,3 +646,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
             self.put_profile(userid, newprofile)
 
         return root
+
+    def handle_lobby_request(self, request: Node) -> Node:
+        # Stub out the entire lobby service
+        return Node.void('lobby')
