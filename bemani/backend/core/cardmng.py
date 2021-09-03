@@ -38,12 +38,14 @@ class CardManagerHandler(Base):
             # Special handling for looking up whether the previous game's profile existed. If we
             # don't do this then some games won't present the user with a migration.
             bound = self.has_profile(userid)
+            expired = False
             if bound is False:
                 if modelstring is not None:
                     model = Model.from_modelstring(modelstring)
                     oldgame = Base.create(self.data, self.config, model, self.model)
                     if oldgame is not None:
                         bound = oldgame.has_profile(userid)
+                        expired = self.supports_expired_profiles()
 
             refid = self.data.local.user.get_refid(self.game, self.version, userid)
             paseli_enabled = self.supports_paseli() and self.config.paseli.enabled
@@ -61,8 +63,8 @@ class CardManagerHandler(Base):
             root.set_attribute('binded', '1' if bound else '0')
 
             # Whether this version of the profile is expired (was converted to newer version). We support forwards
-            # and backwards compatibility so we always set this to 0.
-            root.set_attribute('expired', '0')
+            # and backwards compatibility so some games will always set this to 0.
+            root.set_attribute('expired', '1' if expired else '0')
 
             # Whether to allow paseli, as enabled by the operator and arcade owner.
             root.set_attribute('ecflag', '1' if paseli_enabled else '0')

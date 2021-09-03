@@ -48,6 +48,13 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return None
 
+    def supports_expired_profiles(self) -> bool:
+        """
+        Pop'n Music in particular requires non-expired profiles to do conversions
+        properly.
+        """
+        return False
+
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,

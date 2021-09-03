@@ -228,6 +228,13 @@ class Base(ABC):
         """
         return True
 
+    def supports_expired_profiles(self) -> bool:
+        """
+        Override this in your subclass if your game or series requires non-expired profiles
+        in order to correctly present migrations to the user.
+        """
+        return True
+
     def bind_profile(self, userid: UserID) -> None:
         """
         Handling binding the user's profile to this version on this server.
