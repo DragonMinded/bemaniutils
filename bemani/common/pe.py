@@ -26,7 +26,7 @@ class Memory:
 
 
 class Registers:
-    def __init__(self) -> None:
+    def __init__(self, stack: int) -> None:
         self.rax = 0
         self.rbx = 0
         self.rcx = 0
@@ -34,7 +34,7 @@ class Registers:
         self.rsi = 0
         self.rdi = 0
         self.rbp = 0
-        self.rsp = 0xFFFFFFFF
+        self.rsp = stack
 
         self.zf = False
         self.sf = False
@@ -95,7 +95,7 @@ class PEFile:
             def vprint(*args: Any, **kwargs: Any) -> None:
                 pass
 
-        registers = Registers()
+        registers = Registers(0xFFFFFFFFFFFFFFFF if self.is_64bit() else 0xFFFFFFFF)
         memory = Memory()
         formatter = Formatter(FormatterSyntax.NASM)  # type: ignore
 
