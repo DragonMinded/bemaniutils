@@ -128,6 +128,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
     def __construct_common_info(self, root: Node) -> None:
         # Event phases
+        # TODO: Hook event mode settings up to the front end.
         phases = {
             # Default song phase availability (0-11)
             0: 11,
@@ -734,7 +735,6 @@ class PopnMusicUsaNeko(PopnMusicBase):
         return Node.void('player24')
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
-        # TODO: Validate this now that it's been moved.
         root = Node.void('player24')
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
         root.add_child(Node.s16('chara', profile.get_int('chara', -1)))

@@ -51,7 +51,7 @@ class PopnMusicLapistoria(PopnMusicBase):
                 0: 0,
                 # Unknown event
                 1: 0,
-                # Pop'n Aura, max 10 (remov all aura requirements)
+                # Pop'n Aura, max 10 (remove all aura requirements)
                 2: 10,
                 # Story
                 3: 1,
@@ -424,7 +424,6 @@ class PopnMusicLapistoria(PopnMusicBase):
         netvs.add_child(Node.s8_array('set_recommend', [0, 0, 0]))
         netvs.add_child(Node.u32('netvs_play_cnt', 0))
         for dialog in [0, 1, 2, 3, 4, 5]:
-            # TODO: Configure this, maybe?
             netvs.add_child(Node.string('dialog', f'dialog#{dialog}'))
 
         # Set up config
@@ -678,7 +677,6 @@ class PopnMusicLapistoria(PopnMusicBase):
         return newprofile
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
-        # TODO: Validate this now that it's been moved.
         root = Node.void('playerdata')
 
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))

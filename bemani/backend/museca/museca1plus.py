@@ -182,7 +182,6 @@ class Museca1Plus(
             for evtid in museca_plus_events:
                 enable_event(evtid)
 
-        # TODO: Add the campaign events to the webui so players can enable them in their profile.
         # List of known event IDs:
             # 56,   # Generator grafica icon <print 1 in musicdb>
             # 83,   # Paseli Light Start
