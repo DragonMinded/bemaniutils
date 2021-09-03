@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.fantasia import PopnMusicFantasia
@@ -45,6 +45,36 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicFantasia(self.data, self.config, self.model)
+
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'ints': [
+                {
+                    'name': 'Event Phase',
+                    'tip': 'Event phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'event_phase',
+                    'values': {
+                        0: 'No event',
+                        1: 'Pop\'n Walker Phase 1',
+                        2: 'Pop\'n Walker Phase 2',
+                        3: 'Pop\'n Walker Phase 3',
+                        # Phase 4 turns off Pop'n Walker but does not enable
+                        # Wai Wai Pop'n Zoo so I've left it out.
+                        # Phase 5 appears to be identical to phase 6 below.
+                        6: 'Wai Wai Pop\'n Zoo Phase 1: Elephants',
+                        # Phase 7 appears to be identical to phase 8 below.
+                        8: 'Wai Wai Pop\'n Zoo Phase 2: Dog',
+                        9: 'Wai Wai Pop\'n Zoo Phase 3: Alpaca',
+                        10: 'Wai Wai Pop\'n Zoo Phase 4: Cow',
+                    }
+                },
+            ]
+        }
 
     def __format_medal_for_score(self, score: Score) -> int:
         medal = {
@@ -236,6 +266,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         saucer.add_child(Node.u32('clear_norma', 0))
         saucer.add_child(Node.u32('clear_norma_add', 0))
 
+        # Wai Wai Pop'n Zoo event
         zoo_dict = profile.get_dict('zoo')
         zoo = Node.void('zoo')
         root.add_child(zoo)
@@ -243,6 +274,16 @@ class PopnMusicSunnyPark(PopnMusicBase):
         zoo.add_child(Node.s32_array('music_list', zoo_dict.get_int_array('music_list', 2)))
         zoo.add_child(Node.s8_array('today_play_flag', zoo_dict.get_int_array('today_play_flag', 4)))
 
+        # Pop'n Walker event
+        personal_event_dict = profile.get_dict('personal_event')
+        personal_event = Node.void('personal_event')
+        root.add_child(personal_event)
+        personal_event.add_child(Node.s16_array('pos', personal_event_dict.get_int_array('pos', 2)))
+        personal_event.add_child(Node.s16('point', personal_event_dict.get_int('point')))
+        personal_event.add_child(Node.u32_array('walk_data', personal_event_dict.get_int_array('walk_data', 128)))
+        personal_event.add_child(Node.u32_array('event_data', personal_event_dict.get_int_array('event_data', 4)))
+
+        # We don't support triple journey, so this is stubbed out.
         triple = Node.void('triple_journey')
         root.add_child(triple)
         triple.add_child(Node.s32('music_list', -1))
@@ -283,7 +324,6 @@ class PopnMusicSunnyPark(PopnMusicBase):
         return root
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
-        # TODO: Validate this now that it's been moved.
         root = Node.void('playerdata')
 
         root.add_child(Node.string('name', profile.get_str('name', 'なし')))
@@ -348,6 +388,15 @@ class PopnMusicSunnyPark(PopnMusicBase):
             zoo_dict.replace_int_array('music_list', 2, zoo_node.child_value('music_list'))
             zoo_dict.replace_int_array('today_play_flag', 4, zoo_node.child_value('today_play_flag'))
         newprofile.replace_dict('zoo', zoo_dict)
+
+        personal_event_dict = newprofile.get_dict('personal_event')
+        personal_event_node = request.child('personal_event')
+        if personal_event_node is not None:
+            personal_event_dict.replace_int_array('pos', 2, personal_event_node.child_value('pos'))
+            personal_event_dict.replace_int('point', personal_event_node.child_value('point'))
+            personal_event_dict.replace_int_array('walk_data', 128, personal_event_node.child_value('walk_data'))
+            personal_event_dict.replace_int_array('event_data', 4, personal_event_node.child_value('event_data'))
+        newprofile.replace_dict('personal_event', personal_event_dict)
 
         avatar_dict = newprofile.get_dict('avatar')
         avatar_dict.replace_int('hair', request.child_value('hair'))
@@ -416,12 +465,14 @@ class PopnMusicSunnyPark(PopnMusicBase):
         return newprofile
 
     def handle_game_get_request(self, request: Node) -> Node:
-        # TODO: Hook these up to config so we can change this
+        game_config = self.get_game_config()
+        event_phase = game_config.get_int('event_phase')
+
         root = Node.void('game')
         root.add_child(Node.s32('ir_phase', 0))
         root.add_child(Node.s32('music_open_phase', 8))
         root.add_child(Node.s32('collabo_phase', 8))
-        root.add_child(Node.s32('personal_event_phase', 10))
+        root.add_child(Node.s32('personal_event_phase', event_phase))
         root.add_child(Node.s32('shop_event_phase', 6))
         root.add_child(Node.s32('netvs_phase', 0))
         root.add_child(Node.s32('card_phase', 9))
@@ -437,7 +488,10 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
     def handle_game_active_request(self, request: Node) -> Node:
         # Update the name of this cab for admin purposes
-        self.update_machine_name(request.child_value('shop_name'))
+        machine = self.get_machine()
+        machine.name = request.child_value('shop_name') or machine.name
+        machine.data.replace_int('pref', request.child_value('pref'))
+        self.update_machine(machine)
         return Node.void('game')
 
     def handle_game_taxphase_request(self, request: Node) -> Node:
@@ -482,14 +536,35 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
     def handle_playerdata_set_request(self, request: Node) -> Node:
         refid = request.attribute('ref_id')
+        machine = self.get_machine()
 
         root = Node.void('playerdata')
-        root.add_child(Node.s8('pref', -1))
+        root.add_child(Node.s8('pref', machine.data.get_int('pref', -1)))
         if refid is None:
+            root.add_child(Node.string('name', ''))
+            root.add_child(Node.s8('get_coupon_cnt', -1))
+            root.add_child(Node.s16('chara', -1))
+            root.add_child(Node.u8('hair', 0))
+            root.add_child(Node.u8('face', 0))
+            root.add_child(Node.u8('body', 0))
+            root.add_child(Node.u8('effect', 0))
+            root.add_child(Node.u8('object', 0))
+            root.add_child(Node.u8('comment_1', 0))
+            root.add_child(Node.u8('comment_2', 0))
             return root
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
+            root.add_child(Node.string('name', ''))
+            root.add_child(Node.s8('get_coupon_cnt', -1))
+            root.add_child(Node.s16('chara', -1))
+            root.add_child(Node.u8('hair', 0))
+            root.add_child(Node.u8('face', 0))
+            root.add_child(Node.u8('body', 0))
+            root.add_child(Node.u8('effect', 0))
+            root.add_child(Node.u8('object', 0))
+            root.add_child(Node.u8('comment_1', 0))
+            root.add_child(Node.u8('comment_2', 0))
             return root
 
         oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
@@ -497,7 +572,18 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
         if newprofile is not None:
             self.put_profile(userid, newprofile)
+            avatar_dict = newprofile.get_dict('avatar')
+
             root.add_child(Node.string('name', newprofile['name']))
+            root.add_child(Node.s8('get_coupon_cnt', -1))
+            root.add_child(Node.s16('chara', newprofile.get_int('chara', -1)))
+            root.add_child(Node.u8('hair', avatar_dict.get_int('hair', 0)))
+            root.add_child(Node.u8('face', avatar_dict.get_int('face', 0)))
+            root.add_child(Node.u8('body', avatar_dict.get_int('body', 0)))
+            root.add_child(Node.u8('effect', avatar_dict.get_int('effect', 0)))
+            root.add_child(Node.u8('object', avatar_dict.get_int('object', 0)))
+            root.add_child(Node.u8('comment_1', avatar_dict.get_int_array('comment', 2)[0]))
+            root.add_child(Node.u8('comment_2', avatar_dict.get_int_array('comment', 2)[1]))
 
         return root
 
