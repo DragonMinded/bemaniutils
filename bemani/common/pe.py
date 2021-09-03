@@ -120,6 +120,18 @@ class PEFile:
                 result = fetch(registers, memory, size, src)
                 assign(registers, memory, size, dest, result)
 
+            elif mnemonic == "add":
+                dest = formatter.format_operand(inst, 0)
+                amt = formatter.format_operand(inst, 1)
+
+                vprint(f"add {dest}, {amt}")
+
+                size = get_size(amt) or get_size(dest)
+                if size is None:
+                    raise Exception(f"Could not determine size of {mnemonic} operation!")
+                result = fetch(registers, memory, size, dest) + fetch(registers, memory, size, amt)
+                assign(registers, memory, size, dest, result)
+
             elif mnemonic == "sub":
                 dest = formatter.format_operand(inst, 0)
                 amt = formatter.format_operand(inst, 1)
@@ -130,6 +142,25 @@ class PEFile:
                 if size is None:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
                 result = fetch(registers, memory, size, dest) - fetch(registers, memory, size, amt)
+                assign(registers, memory, size, dest, result)
+
+            elif mnemonic == "imul":
+                dest = formatter.format_operand(inst, 0)
+                mult = formatter.format_operand(inst, 1)
+                try:
+                    const = formatter.format_operand(inst, 2)
+                    vprint(f"imul {dest}, {mult}, {const}")
+                except Exception:
+                    const = None
+                    vprint(f"imul {dest}, {mult}")
+
+                size = get_size(amt) or get_size(dest) or (get_size(const) if const is not None else None)
+                if size is None:
+                    raise Exception(f"Could not determine size of {mnemonic} operation!")
+                if const is None:
+                    result = fetch(registers, memory, size, dest) * fetch(registers, memory, size, mult)
+                else:
+                    result = fetch(registers, memory, size, mult) * get_value(const)
                 assign(registers, memory, size, dest, result)
 
             elif mnemonic == "push":
@@ -276,6 +307,18 @@ class PEFile:
                     insts = [i for i in decoder]
                     loc = 0
 
+            elif mnemonic == "and":
+                dest = formatter.format_operand(inst, 0)
+                src = formatter.format_operand(inst, 1)
+
+                vprint(f"and {dest}, {src}")
+
+                size = get_size(src) or get_size(dest)
+                if size is None:
+                    raise Exception(f"Could not determine size of {mnemonic} operation!")
+                result = fetch(registers, memory, size, dest) & fetch(registers, memory, size, src)
+                assign(registers, memory, size, dest, result)
+
             elif mnemonic == "or":
                 dest = formatter.format_operand(inst, 0)
                 src = formatter.format_operand(inst, 1)
@@ -344,6 +387,9 @@ def sanitize(indirect: str) -> str:
     if indirect[:5] == "near ":
         indirect = indirect[5:]
 
+    if indirect[:4] == "rel ":
+        indirect = indirect[4:]
+
     if indirect[:6] == "short ":
         indirect = indirect[6:]
 
@@ -374,11 +420,13 @@ def get_address(registers: Registers, indirect: str) -> Optional[int]:
     indirect = sanitize(indirect)
 
     if indirect[0] == "[" and indirect[-1] == "]":
-        indirect = indirect[1:-1]
+        indirect = sanitize(indirect[1:-1])
 
         adjust = 0
         if '+' in indirect:
             indirect, const = indirect.split('+', 1)
+            indirect = sanitize(indirect)
+            const = sanitize(const)
 
             if const[-1] == 'h':
                 adjust = int(const[:-1], 16)
@@ -386,6 +434,8 @@ def get_address(registers: Registers, indirect: str) -> Optional[int]:
                 raise Exception(f"Unsupported constant adjustment to indirect address {indirect}")
         elif '-' in indirect:
             indirect, const = indirect.split('-', 1)
+            indirect = sanitize(indirect)
+            const = sanitize(const)
 
             if const[-1] == 'h':
                 adjust = -int(const[:-1], 16)
