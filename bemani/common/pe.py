@@ -37,6 +37,7 @@ class Registers:
         self.rsp = 0xFFFFFFFF
 
         self.zf = False
+        self.sf = False
 
 
 class PEFile:
@@ -165,7 +166,16 @@ class PEFile:
                 if size is None:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
                 result = fetch(registers, memory, size, op1) & fetch(registers, memory, size, op2)
+
                 registers.zf = result == 0
+                if size == 1:
+                    registers.sf = (result & 0x80) != 0
+                if size == 2:
+                    registers.sf = (result & 0x8000) != 0
+                if size == 4:
+                    registers.sf = (result & 0x80000000) != 0
+                if size == 8:
+                    registers.sf = (result & 0x8000000000000000) != 0
 
             elif mnemonic == "jne":
                 dest = formatter.format_operand(inst, 0)
@@ -173,6 +183,66 @@ class PEFile:
                 vprint(f"jnz {dest}")
 
                 if not registers.zf:
+                    destination = get_value(dest)
+                    if destination is None:
+                        raise Exception(f"Jumping to unsupported destination {dest}")
+
+                    dest_off = self.virtual_to_physical(destination)
+                    if dest_off == end:
+                        loc = len(insts)
+                    elif dest_off < start or dest_off > end:
+                        raise Exception(f"Jumping to {hex(destination)} which is outside of our evaluation range!")
+                    else:
+                        decoder = Decoder(64 if self.is_64bit() else 32, self.data[dest_off:end], ip=self.physical_to_virtual(dest_off))
+                        insts = [i for i in decoder]
+                        loc = 0
+
+            elif mnemonic == "je":
+                dest = formatter.format_operand(inst, 0)
+
+                vprint(f"jz {dest}")
+
+                if registers.zf:
+                    destination = get_value(dest)
+                    if destination is None:
+                        raise Exception(f"Jumping to unsupported destination {dest}")
+
+                    dest_off = self.virtual_to_physical(destination)
+                    if dest_off == end:
+                        loc = len(insts)
+                    elif dest_off < start or dest_off > end:
+                        raise Exception(f"Jumping to {hex(destination)} which is outside of our evaluation range!")
+                    else:
+                        decoder = Decoder(64 if self.is_64bit() else 32, self.data[dest_off:end], ip=self.physical_to_virtual(dest_off))
+                        insts = [i for i in decoder]
+                        loc = 0
+
+            elif mnemonic == "jns":
+                dest = formatter.format_operand(inst, 0)
+
+                vprint(f"jns {dest}")
+
+                if not registers.sf:
+                    destination = get_value(dest)
+                    if destination is None:
+                        raise Exception(f"Jumping to unsupported destination {dest}")
+
+                    dest_off = self.virtual_to_physical(destination)
+                    if dest_off == end:
+                        loc = len(insts)
+                    elif dest_off < start or dest_off > end:
+                        raise Exception(f"Jumping to {hex(destination)} which is outside of our evaluation range!")
+                    else:
+                        decoder = Decoder(64 if self.is_64bit() else 32, self.data[dest_off:end], ip=self.physical_to_virtual(dest_off))
+                        insts = [i for i in decoder]
+                        loc = 0
+
+            elif mnemonic == "js":
+                dest = formatter.format_operand(inst, 0)
+
+                vprint(f"js {dest}")
+
+                if registers.sf:
                     destination = get_value(dest)
                     if destination is None:
                         raise Exception(f"Jumping to unsupported destination {dest}")
@@ -228,6 +298,20 @@ class PEFile:
                 if size is None:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
                 result = fetch(registers, memory, size, dest) ^ fetch(registers, memory, size, src)
+                assign(registers, memory, size, dest, result)
+
+            elif mnemonic == "lea":
+                dest = formatter.format_operand(inst, 0)
+                src = formatter.format_operand(inst, 1)
+
+                vprint(f"lea {dest}, {src}")
+
+                size = get_size(src) or get_size(dest)
+                if size is None:
+                    raise Exception(f"Could not determine size of {mnemonic} operation!")
+                result = get_address(registers, src)
+                if result is None:
+                    raise Exception(f"Could not compute effective address for {mnemonic} operation!")
                 assign(registers, memory, size, dest, result)
 
             else:
@@ -290,13 +374,60 @@ def get_address(registers: Registers, indirect: str) -> Optional[int]:
     indirect = sanitize(indirect)
 
     if indirect[0] == "[" and indirect[-1] == "]":
-        val = indirect[1:-1]
+        indirect = indirect[1:-1]
 
-        if val[-1] == 'h':
-            return int(val[:-1], 16)
+        adjust = 0
+        if '+' in indirect:
+            indirect, const = indirect.split('+', 1)
 
-        if val in {"rsp", "esp", "sp", "spl"}:
-            return registers.rsp
+            if const[-1] == 'h':
+                adjust = int(const[:-1], 16)
+            else:
+                raise Exception(f"Unsupported constant adjustment to indirect address {indirect}")
+        elif '-' in indirect:
+            indirect, const = indirect.split('-', 1)
+
+            if const[-1] == 'h':
+                adjust = -int(const[:-1], 16)
+            else:
+                raise Exception(f"Unsupported constant adjustment to indirect address {indirect}")
+
+        if indirect[-1] == 'h':
+            return int(indirect[:-1], 16) + adjust
+
+        # Register-based indirect modes.
+        if indirect == "rsp":
+            return registers.rsp + adjust
+        if indirect == "esp":
+            return (registers.rsp & 0xFFFFFFFF) + adjust
+        if indirect == "sp":
+            return (registers.rsp & 0xFFFF) + adjust
+        if indirect == "spl":
+            return (registers.rsp & 0xFF) + adjust
+        if indirect == "rbp":
+            return registers.rbp + adjust
+        if indirect == "ebp":
+            return (registers.rbp & 0xFFFFFFFF) + adjust
+        if indirect == "bp":
+            return (registers.rbp & 0xFFFF) + adjust
+        if indirect == "bp":
+            return (registers.rbp & 0xFF) + adjust
+        if indirect == "rsi":
+            return registers.rsi + adjust
+        if indirect == "esi":
+            return (registers.rsi & 0xFFFFFFFF) + adjust
+        if indirect == "si":
+            return (registers.rsi & 0xFFFF) + adjust
+        if indirect == "si":
+            return (registers.rsi & 0xFF) + adjust
+        if indirect == "rdi":
+            return registers.rdi + adjust
+        if indirect == "edi":
+            return (registers.rdi & 0xFFFFFFFF) + adjust
+        if indirect == "di":
+            return (registers.rdi & 0xFFFF) + adjust
+        if indirect == "di":
+            return (registers.rdi & 0xFF) + adjust
 
         raise Exception(f"Unsupported indirect address {indirect}!")
     return None
