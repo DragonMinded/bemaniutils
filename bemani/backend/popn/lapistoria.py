@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.sunnypark import PopnMusicSunnyPark
@@ -38,286 +38,269 @@ class PopnMusicLapistoria(PopnMusicBase):
     # Max valud music ID for conversions and stuff
     GAME_MAX_MUSIC_ID = 1422
 
-    def previous_version(self) -> Optional[PopnMusicBase]:
+    def previous_version(self) -> PopnMusicBase:
         return PopnMusicSunnyPark(self.data, self.config, self.model)
 
-    def handle_info22_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_info22_common_request(self, request: Node) -> Node:
+        # TODO: Hook these up to config so we can change this
+        phases = {
+            # Unknown event (0-16)
+            0: 0,
+            # Unknown event (0-11)
+            1: 0,
+            # Pop'n Aura, max (0-11) (remove all aura requirements)
+            2: 11,
+            # Story (0-24)
+            3: 1,
+            # BEMANI ruins Discovery! (0-2)
+            4: 0,
+            # Unknown event, something to do with net taisen (0-2)
+            5: 0,
+            # Unknown event (0-1)
+            6: 0,
+            # Unknown event (0-1)
+            7: 0,
+            # Unknown event (0-1)
+            8: 0,
+            # Unknown event (0-11)
+            9: 0,
+            # Unknown event (0-2)
+            10: 0,
+            # Unknown event (0-3)
+            11: 0,
+            # Unknown event (0-1)
+            12: 0,
+            # Unknown event (0-2)
+            13: 0,
+            # Unknown event (0-4)
+            14: 0,
+            # Unknown event (0-2)
+            15: 0,
+            # Unknown event (0-2)
+            16: 0,
+            # Unknown event (0-12)
+            17: 0,
+            # Unknown event (0-2)
+            18: 0,
+            # Unknown event (0-7)
+            19: 0,
+        }
 
-        if method == 'common':
-            # TODO: Hook these up to config so we can change this
-            phases = {
-                # Unknown event
-                0: 0,
-                # Unknown event
-                1: 0,
-                # Pop'n Aura, max 10 (remove all aura requirements)
-                2: 10,
-                # Story
-                3: 1,
-                # BEMANI ruins Discovery!
-                4: 0,
-                # Unknown event
-                5: 0,
-                # Unknown event
-                6: 0,
-                # Unknown event
-                7: 0,
-                # Unknown event
-                8: 0,
-                # Unknown event
-                9: 0,
-                # Unknown event
-                10: 0,
-                # Unknown event
-                11: 0,
-                # Unknown event
-                12: 0,
-                # Unknown event
-                13: 0,
-                # Unknown event
-                14: 0,
-                # Unknown event
-                15: 0,
-                # Unknown event
-                16: 0,
-                # Unknown event
-                17: 0,
-                # Unknown event
-                18: 0,
-                # Unknown event
-                19: 0,
-            }
-            stories = list(range(173))
+        root = Node.void('info22')
+        for phaseid in phases:
+            phase = Node.void('phase')
+            root.add_child(phase)
+            phase.add_child(Node.s16('event_id', phaseid))
+            phase.add_child(Node.s16('phase', phases[phaseid]))
 
-            root = Node.void('info22')
-            for phaseid in phases:
-                phase = Node.void('phase')
-                root.add_child(phase)
-                phase.add_child(Node.s16('event_id', phaseid))
-                phase.add_child(Node.s16('phase', phases[phaseid]))
+        for storyid in range(173):
+            story = Node.void('story')
+            root.add_child(story)
+            story.add_child(Node.u32('story_id', storyid))
+            story.add_child(Node.bool('is_limited', False))
+            story.add_child(Node.u64('limit_date', 0))
 
-            for storyid in stories:
-                story = Node.void('story')
-                root.add_child(story)
-                story.add_child(Node.u32('story_id', storyid))
-                story.add_child(Node.bool('is_limited', False))
-                story.add_child(Node.u64('limit_date', 0))
+        return root
 
-            return root
+    def handle_pcb22_boot_request(self, request: Node) -> Node:
+        return Node.void('pcb22')
 
-        # Invalid method
-        return None
+    def handle_pcb22_error_request(self, request: Node) -> Node:
+        return Node.void('pcb22')
 
-    def handle_pcb22_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_pcb22_write_request(self, request: Node) -> Node:
+        # Update the name of this cab for admin purposes
+        self.update_machine_name(request.child_value('pcb_setting/name'))
+        return Node.void('pcb22')
 
-        if method == 'boot':
-            return Node.void('pcb22')
-        elif method == 'error':
-            return Node.void('pcb22')
-        elif method == 'write':
-            # Update the name of this cab for admin purposes
-            self.update_machine_name(request.child_value('pcb_setting/name'))
-            return Node.void('pcb22')
-
-        # Invalid method
-        return None
-
-    def handle_lobby22_request(self, request: Node) -> Optional[Node]:
+    def handle_lobby22_request(self, request: Node) -> Node:
         # Stub out the entire lobby22 service
         return Node.void('lobby22')
 
-    def handle_player22_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
-
-        if method == 'read':
-            refid = request.child_value('ref_id')
-            # Pop'n Music 22 doesn't send a modelstring to load old profiles,
-            # it just expects us to know. So always look for old profiles in
-            # Pop'n 22 land.
-            root = self.get_profile_by_refid(refid, self.OLD_PROFILE_FALLTHROUGH)
-            if root is None:
-                root = Node.void('player22')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'new':
-            refid = request.child_value('ref_id')
-            name = request.child_value('name')
-            root = self.new_profile_by_refid(refid, name)
-            if root is None:
-                root = Node.void('player22')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'start':
-            return Node.void('player22')
-
-        elif method == 'logout':
-            return Node.void('player22')
-
-        elif method == 'write':
-            refid = request.child_value('ref_id')
-
+    def handle_player22_read_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+        # Pop'n Music 22 doesn't send a modelstring to load old profiles,
+        # it just expects us to know. So always look for old profiles in
+        # Pop'n 22 land.
+        root = self.get_profile_by_refid(refid, self.OLD_PROFILE_FALLTHROUGH)
+        if root is None:
             root = Node.void('player22')
-            if refid is None:
-                return root
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                return root
-
-            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
-            newprofile = self.unformat_profile(userid, request, oldprofile)
-
-            if newprofile is not None:
-                self.put_profile(userid, newprofile)
-
-            return root
-
-        elif method == 'friend':
-            refid = request.attribute('ref_id')
-            no = int(request.attribute('no', '-1'))
-
+    def handle_player22_new_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+        name = request.child_value('name')
+        root = self.new_profile_by_refid(refid, name)
+        if root is None:
             root = Node.void('player22')
-            if no < 0:
-                root.add_child(Node.s8('result', 2))
-                return root
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            # Look up our own user ID based on the RefID provided.
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                root.add_child(Node.s8('result', 2))
-                return root
+    def handle_player22_start_request(self, request: Node) -> Node:
+        return Node.void('player22')
 
-            # Grab the links that we care about.
-            links = self.data.local.user.get_links(self.game, self.version, userid)
-            profiles: Dict[UserID, Profile] = {}
-            rivals: List[Link] = []
-            for link in links:
-                if link.type != 'rival':
-                    continue
+    def handle_player22_logout_request(self, request: Node) -> Node:
+        return Node.void('player22')
 
-                other_profile = self.get_profile(link.other_userid)
-                if other_profile is None:
-                    continue
-                profiles[link.other_userid] = other_profile
-                rivals.append(link)
+    def handle_player22_write_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
 
-            # Somehow requested an invalid profile.
-            if no >= len(rivals):
-                root.add_child(Node.s8('result', 2))
-                return root
-            rivalid = links[no].other_userid
-            rivalprofile = profiles[rivalid]
-            scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
-
-            # First, output general profile info.
-            friend = Node.void('friend')
-            root.add_child(friend)
-            friend.add_child(Node.s16('no', no))
-            friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.extid)))
-            friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
-            friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
-            # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
-            # ranking numbers disappear and the player icon show a questionmark.
-            friend.add_child(Node.s8('is_open', 1))
-
-            for score in scores:
-                # Skip any scores for chart types we don't support
-                if score.chart not in [
-                    self.CHART_TYPE_EASY,
-                    self.CHART_TYPE_NORMAL,
-                    self.CHART_TYPE_HYPER,
-                    self.CHART_TYPE_EX,
-                ]:
-                    continue
-
-                points = score.points
-                medal = score.data.get_int('medal')
-
-                music = Node.void('music')
-                friend.add_child(music)
-                music.set_attribute('music_num', str(score.id))
-                music.set_attribute('sheet_num', str({
-                    self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
-                    self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
-                    self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
-                    self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
-                }[score.chart]))
-                music.set_attribute('score', str(points))
-                music.set_attribute('clearmedal', str({
-                    self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                    self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                    self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
-                    self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
-                    self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                    self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                    self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
-                    self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                    self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                    self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                    self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
-                }[medal]))
-
+        root = Node.void('player22')
+        if refid is None:
             return root
 
-        elif method == 'conversion':
-            refid = request.child_value('ref_id')
-            name = request.child_value('name')
-            chara = request.child_value('chara')
-            root = self.new_profile_by_refid(refid, name, chara)
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
             return root
 
-        elif method == 'write_music':
-            refid = request.child_value('ref_id')
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
+        newprofile = self.unformat_profile(userid, request, oldprofile)
 
-            root = Node.void('player22')
-            if refid is None:
-                return root
+        if newprofile is not None:
+            self.put_profile(userid, newprofile)
 
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                return root
+        return root
 
-            songid = request.child_value('music_num')
-            chart = {
-                self.GAME_CHART_TYPE_EASY: self.CHART_TYPE_EASY,
-                self.GAME_CHART_TYPE_NORMAL: self.CHART_TYPE_NORMAL,
-                self.GAME_CHART_TYPE_HYPER: self.CHART_TYPE_HYPER,
-                self.GAME_CHART_TYPE_EX: self.CHART_TYPE_EX,
-            }[request.child_value('sheet_num')]
-            medal = request.child_value('clearmedal')
-            points = request.child_value('score')
-            combo = request.child_value('combo')
-            stats = {
-                'cool': request.child_value('cool'),
-                'great': request.child_value('great'),
-                'good': request.child_value('good'),
-                'bad': request.child_value('bad')
-            }
-            medal = {
-                self.GAME_PLAY_MEDAL_CIRCLE_FAILED: self.PLAY_MEDAL_CIRCLE_FAILED,
-                self.GAME_PLAY_MEDAL_DIAMOND_FAILED: self.PLAY_MEDAL_DIAMOND_FAILED,
-                self.GAME_PLAY_MEDAL_STAR_FAILED: self.PLAY_MEDAL_STAR_FAILED,
-                self.GAME_PLAY_MEDAL_EASY_CLEAR: self.PLAY_MEDAL_EASY_CLEAR,
-                self.GAME_PLAY_MEDAL_CIRCLE_CLEARED: self.PLAY_MEDAL_CIRCLE_CLEARED,
-                self.GAME_PLAY_MEDAL_DIAMOND_CLEARED: self.PLAY_MEDAL_DIAMOND_CLEARED,
-                self.GAME_PLAY_MEDAL_STAR_CLEARED: self.PLAY_MEDAL_STAR_CLEARED,
-                self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO: self.PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO: self.PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                self.GAME_PLAY_MEDAL_STAR_FULL_COMBO: self.PLAY_MEDAL_STAR_FULL_COMBO,
-                self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
-            }[medal]
-            self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
+    def handle_player22_friend_request(self, request: Node) -> Node:
+        refid = request.attribute('ref_id')
+        no = int(request.attribute('no', '-1'))
+
+        root = Node.void('player22')
+        if no < 0:
+            root.add_child(Node.s8('result', 2))
             return root
 
-        # Invalid method
-        return None
+        # Look up our own user ID based on the RefID provided.
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            root.add_child(Node.s8('result', 2))
+            return root
+
+        # Grab the links that we care about.
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        profiles: Dict[UserID, Profile] = {}
+        rivals: List[Link] = []
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            other_profile = self.get_profile(link.other_userid)
+            if other_profile is None:
+                continue
+            profiles[link.other_userid] = other_profile
+            rivals.append(link)
+
+        # Somehow requested an invalid profile.
+        if no >= len(rivals):
+            root.add_child(Node.s8('result', 2))
+            return root
+        rivalid = links[no].other_userid
+        rivalprofile = profiles[rivalid]
+        scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+
+        # First, output general profile info.
+        friend = Node.void('friend')
+        root.add_child(friend)
+        friend.add_child(Node.s16('no', no))
+        friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.extid)))
+        friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
+        friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+        # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
+        # ranking numbers disappear and the player icon show a questionmark.
+        friend.add_child(Node.s8('is_open', 1))
+
+        for score in scores:
+            # Skip any scores for chart types we don't support
+            if score.chart not in [
+                self.CHART_TYPE_EASY,
+                self.CHART_TYPE_NORMAL,
+                self.CHART_TYPE_HYPER,
+                self.CHART_TYPE_EX,
+            ]:
+                continue
+
+            points = score.points
+            medal = score.data.get_int('medal')
+
+            music = Node.void('music')
+            friend.add_child(music)
+            music.set_attribute('music_num', str(score.id))
+            music.set_attribute('sheet_num', str({
+                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
+                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
+                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
+                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
+            }[score.chart]))
+            music.set_attribute('score', str(points))
+            music.set_attribute('clearmedal', str({
+                self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
+                self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
+                self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
+                self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
+                self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
+                self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
+                self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
+                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
+                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
+                self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
+                self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
+            }[medal]))
+
+        return root
+
+    def handle_player22_conversion_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+        name = request.child_value('name')
+        chara = request.child_value('chara')
+        root = self.new_profile_by_refid(refid, name, chara)
+        if root is None:
+            root = Node.void('playerdata')
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
+
+    def handle_player22_write_music_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+
+        root = Node.void('player22')
+        if refid is None:
+            return root
+
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            return root
+
+        songid = request.child_value('music_num')
+        chart = {
+            self.GAME_CHART_TYPE_EASY: self.CHART_TYPE_EASY,
+            self.GAME_CHART_TYPE_NORMAL: self.CHART_TYPE_NORMAL,
+            self.GAME_CHART_TYPE_HYPER: self.CHART_TYPE_HYPER,
+            self.GAME_CHART_TYPE_EX: self.CHART_TYPE_EX,
+        }[request.child_value('sheet_num')]
+        medal = request.child_value('clearmedal')
+        points = request.child_value('score')
+        combo = request.child_value('combo')
+        stats = {
+            'cool': request.child_value('cool'),
+            'great': request.child_value('great'),
+            'good': request.child_value('good'),
+            'bad': request.child_value('bad')
+        }
+        medal = {
+            self.GAME_PLAY_MEDAL_CIRCLE_FAILED: self.PLAY_MEDAL_CIRCLE_FAILED,
+            self.GAME_PLAY_MEDAL_DIAMOND_FAILED: self.PLAY_MEDAL_DIAMOND_FAILED,
+            self.GAME_PLAY_MEDAL_STAR_FAILED: self.PLAY_MEDAL_STAR_FAILED,
+            self.GAME_PLAY_MEDAL_EASY_CLEAR: self.PLAY_MEDAL_EASY_CLEAR,
+            self.GAME_PLAY_MEDAL_CIRCLE_CLEARED: self.PLAY_MEDAL_CIRCLE_CLEARED,
+            self.GAME_PLAY_MEDAL_DIAMOND_CLEARED: self.PLAY_MEDAL_DIAMOND_CLEARED,
+            self.GAME_PLAY_MEDAL_STAR_CLEARED: self.PLAY_MEDAL_STAR_CLEARED,
+            self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO: self.PLAY_MEDAL_CIRCLE_FULL_COMBO,
+            self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO: self.PLAY_MEDAL_DIAMOND_FULL_COMBO,
+            self.GAME_PLAY_MEDAL_STAR_FULL_COMBO: self.PLAY_MEDAL_STAR_FULL_COMBO,
+            self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
+        }[medal]
+        self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
+        return root
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('player22')

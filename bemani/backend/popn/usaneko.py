@@ -48,7 +48,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID = 1704
 
-    def previous_version(self) -> Optional[PopnMusicBase]:
+    def previous_version(self) -> PopnMusicBase:
         return PopnMusicEclale(self.data, self.config, self.model)
 
     def extra_services(self) -> List[str]:
@@ -111,7 +111,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             return self.GAME_PLAY_RANK_AAA
         return self.GAME_PLAY_RANK_S
 
-    def handle_lobby24_request(self, request: Node) -> Optional[Node]:
+    def handle_lobby24_request(self, request: Node) -> Node:
         # Stub out the entire lobby24 service
         return Node.void('lobby24')
 
