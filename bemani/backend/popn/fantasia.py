@@ -65,7 +65,7 @@ class PopnMusicFantasia(PopnMusicBase):
                     }
                 },
                 {
-                    'name': 'Soreyuke! pop\'n quest Event Phase',
+                    'name': 'Pop\'n Quest Event Phase',
                     'tip': 'Event phase for all players.',
                     'category': 'game_config',
                     'setting': 'event_phase',
