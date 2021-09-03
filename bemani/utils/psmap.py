@@ -9,8 +9,7 @@ from bemani.protocol import Node
 from bemani.utils.responsegen import generate_lines
 
 
-def parse_psmap(data: bytes, offset: str, rootname: str, *, verbose: bool = False) -> Node:
-    pe = PEFile(data=data)
+def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False) -> Node:
     root = Node.void(rootname)
     base = int(offset, 16)
 
@@ -24,8 +23,8 @@ def parse_psmap(data: bytes, offset: str, rootname: str, *, verbose: bool = Fals
 
         # Now, grab bytes until we're null-terminated
         bytestring = []
-        while data[offset] != 0:
-            bytestring.append(data[offset])
+        while pe.data[offset] != 0:
+            bytestring.append(pe.data[offset])
             offset = offset + 1
 
         # Its shift-jis encoded, so decode it now
@@ -38,12 +37,12 @@ def parse_psmap(data: bytes, offset: str, rootname: str, *, verbose: bool = Fals
     while True:
         readbase = base
         if pe.is_64bit():  # 64 bit
-            chunk = data[base:(base + 24)]
+            chunk = pe.data[base:(base + 24)]
             base = base + 24
 
             (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack('<BBHIQQ', chunk)
         else:  # 32 bit
-            chunk = data[base:(base + 16)]
+            chunk = pe.data[base:(base + 16)]
             base = base + 16
 
             (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack('<BBHIII', chunk)
@@ -238,6 +237,24 @@ def main() -> None:
         default="root",
     )
     parser.add_argument(
+        "--emulate-start",
+        help=(
+            "Hex offset where we should start emulating x86/x64 code to reconstuct a dynamic psmap structure. "
+            "This can be specified as either a raw offset into the DLL or as a virtual offset."
+        ),
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--emulate-end",
+        help=(
+            "Hex offset where we should finish emulating x86/x64 code to reconstuct a dynamic psmap structure. "
+            "This can be specified as either a raw offset into the DLL or as a virtual offset."
+        ),
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         "--verbose",
         help="Display verbose parsing info.",
         action="store_true",
@@ -249,7 +266,16 @@ def main() -> None:
     data = fp.read()
     fp.close()
 
-    layout = parse_psmap(data, args.offset, args.root, verbose=args.verbose)
+    pe = PEFile(data=data)
+
+    # If asked, attempt to emulate code which dynamically constructs a psmap structure.
+    if args.emulate_start and args.emulate_end:
+        start = int(args.emulate_start, 16)
+        end = int(args.emulate_end, 16)
+        pe.emulate_code(start, end, verbose=args.verbose)
+
+    layout = parse_psmap(pe, args.offset, args.root, verbose=args.verbose)
+
     # Walk through, outputting each node and attaching it to its parent
     code = '\n'.join(generate_lines(layout, {}))
 
