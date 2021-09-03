@@ -294,7 +294,7 @@ class BaseClient:
 
             if binded != 1:
                 raise Exception(f'Card \'{card_id}\' returned invalid binded value \'{binded}\'')
-            if newflag != 1:
+            if newflag != 0:
                 raise Exception(f'Card \'{card_id}\' returned invalid newflag value \'{newflag}\'')
             if ecflag != (1 if paseli_enabled else 0):
                 raise Exception(f'Card \'{card_id}\' returned invalid ecflag value \'{newflag}\'')

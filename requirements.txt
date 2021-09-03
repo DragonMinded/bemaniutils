@@ -25,3 +25,4 @@ jaconv
 pefile
 pillow
 discord_webhook
+iced-x86

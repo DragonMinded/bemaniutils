@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Dict, List, Optional
+from typing import Any, Dict, List
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.tunestreet import PopnMusicTuneStreet
@@ -43,8 +43,43 @@ class PopnMusicFantasia(PopnMusicBase):
     # Maximum music ID for this game
     GAME_MAX_MUSIC_ID = 1150
 
-    def previous_version(self) -> Optional[PopnMusicBase]:
+    def previous_version(self) -> PopnMusicBase:
         return PopnMusicTuneStreet(self.data, self.config, self.model)
+
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'ints': [
+                {
+                    'name': 'Game Phase',
+                    'tip': 'Game unlock phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'game_phase',
+                    'values': {
+                        0: 'NO PHASE',
+                        1: 'SECRET DATA RELEASE',
+                        2: 'MAX: ALL DATA RELEASE',
+                    }
+                },
+                {
+                    'name': 'Pop\'n Quest Event Phase',
+                    'tip': 'Event phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'event_phase',
+                    'values': {
+                        0: 'No event',
+                        1: 'Phase 1',
+                        2: 'Phase 2',
+                        3: 'Phase 3',
+                        4: 'Phase 4',
+                        5: 'Phase MAX',
+                    }
+                },
+            ]
+        }
 
     def __format_medal_for_score(self, score: Score) -> int:
         medal = {
@@ -109,6 +144,7 @@ class PopnMusicFantasia(PopnMusicBase):
         player_card.add_child(Node.s32('get_frame', player_card_dict.get_int('get_frame')))
         player_card.add_child(Node.s32('get_base', player_card_dict.get_int('get_base')))
         player_card.add_child(Node.s32_array('get_seal', player_card_dict.get_int_array('get_seal', 2)))
+        player_card.add_child(Node.s8('is_open', 1))
 
         # Player card EX section
         player_card_ex = Node.void('player_card_ex')
@@ -163,9 +199,7 @@ class PopnMusicFantasia(PopnMusicBase):
             ]:
                 continue
 
-            points = score.points
             clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
-
             hiscore_index = (score.id * 4) + {
                 self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                 self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -174,7 +208,7 @@ class PopnMusicFantasia(PopnMusicBase):
             }[score.chart]
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
-            hiscore_value = points << hiscore_bit_pos
+            hiscore_value = score.points << hiscore_bit_pos
             hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
             hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
             hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
@@ -203,7 +237,6 @@ class PopnMusicFantasia(PopnMusicBase):
         netvs.add_child(Node.s8_array('set_recommend', [0, 0, 0]))
         netvs.add_child(Node.s8_array('jewelry', [0] * 15))
         for dialog in [0, 1, 2, 3, 4, 5]:
-            # TODO: Configure this, maybe?
             netvs.add_child(Node.string('dialog', f'dialog#{dialog}'))
 
         sp_data = Node.void('sp_data')
@@ -215,17 +248,18 @@ class PopnMusicFantasia(PopnMusicBase):
         reflec_data.add_child(Node.s8_array('reflec', profile.get_int_array('reflec', 2)))
 
         # Navigate section
-        navigate_dict = profile.get_dict('navigate')
-        navigate = Node.void('navigate')
-        root.add_child(navigate)
-        navigate.add_child(Node.s8('genre', navigate_dict.get_int('genre')))
-        navigate.add_child(Node.s8('image', navigate_dict.get_int('image')))
-        navigate.add_child(Node.s8('level', navigate_dict.get_int('level')))
-        navigate.add_child(Node.s8('ojama', navigate_dict.get_int('ojama')))
-        navigate.add_child(Node.s16('limit_num', navigate_dict.get_int('limit_num')))
-        navigate.add_child(Node.s8('button', navigate_dict.get_int('button')))
-        navigate.add_child(Node.s8('life', navigate_dict.get_int('life')))
-        navigate.add_child(Node.s16('progress', navigate_dict.get_int('progress')))
+        for i in range(3):
+            navigate_dict = profile.get_dict(f'navigate_{i}')
+            navigate = Node.void('navigate')
+            root.add_child(navigate)
+            navigate.add_child(Node.s8('genre', navigate_dict.get_int('genre', -1)))
+            navigate.add_child(Node.s8('image', navigate_dict.get_int('image', -1)))
+            navigate.add_child(Node.s8('level', navigate_dict.get_int('level', -1)))
+            navigate.add_child(Node.s8('ojama', navigate_dict.get_int('ojama', -1)))
+            navigate.add_child(Node.s16('limit_num', navigate_dict.get_int('limit_num', -1)))
+            navigate.add_child(Node.s8('button', navigate_dict.get_int('button', -1)))
+            navigate.add_child(Node.s8('life', navigate_dict.get_int('life', -1)))
+            navigate.add_child(Node.s16('progress', navigate_dict.get_int('progress', -1)))
 
         return root
 
@@ -240,6 +274,7 @@ class PopnMusicFantasia(PopnMusicBase):
         root.add_child(Node.u8('season', 0))
 
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
+        hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
 
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
         for score in scores:
@@ -256,8 +291,21 @@ class PopnMusicFantasia(PopnMusicBase):
                 continue
 
             clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
+            hiscore_index = (score.id * 4) + {
+                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
+                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
+                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
+                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
+            }[score.chart]
+            hiscore_byte_pos = int((hiscore_index * 17) / 8)
+            hiscore_bit_pos = int((hiscore_index * 17) % 8)
+            hiscore_value = score.points << hiscore_bit_pos
+            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
 
         root.add_child(Node.u16_array('clear_medal', clear_medal))
+        root.add_child(Node.binary('hiscore', bytes(hiscore_array)))
 
         return root
 
@@ -319,18 +367,23 @@ class PopnMusicFantasia(PopnMusicBase):
         newprofile.replace_dict('player_card', player_card_dict)
 
         # Extract navigate stuff
-        navigate_dict = newprofile.get_dict('navigate')
-        navigate = request.child('navigate')
-        if navigate is not None:
-            navigate_dict.replace_int('genre', navigate.child_value('genre'))
-            navigate_dict.replace_int('image', navigate.child_value('image'))
-            navigate_dict.replace_int('level', navigate.child_value('level'))
-            navigate_dict.replace_int('ojama', navigate.child_value('ojama'))
-            navigate_dict.replace_int('limit_num', navigate.child_value('limit_num'))
-            navigate_dict.replace_int('button', navigate.child_value('button'))
-            navigate_dict.replace_int('life', navigate.child_value('life'))
-            navigate_dict.replace_int('progress', navigate.child_value('progress'))
-        newprofile.replace_dict('navigate', navigate_dict)
+        nav_id = 0
+        for navigate in request.children:
+            if navigate.name == 'navigate':
+                navigate_dict = newprofile.get_dict(f'navigate_{nav_id}')
+                navigate_dict.replace_int('genre', navigate.child_value('genre'))
+                navigate_dict.replace_int('image', navigate.child_value('image'))
+                navigate_dict.replace_int('level', navigate.child_value('level'))
+                navigate_dict.replace_int('ojama', navigate.child_value('ojama'))
+                navigate_dict.replace_int('limit_num', navigate.child_value('limit_num'))
+                navigate_dict.replace_int('button', navigate.child_value('button'))
+                navigate_dict.replace_int('life', navigate.child_value('life'))
+                navigate_dict.replace_int('progress', navigate.child_value('progress'))
+                newprofile.replace_dict(f'navigate_{nav_id}', navigate_dict)
+                nav_id += 1
+
+            if nav_id >= 3:
+                break
 
         # Extract scores
         for node in request.children:
@@ -360,188 +413,223 @@ class PopnMusicFantasia(PopnMusicBase):
 
         return newprofile
 
-    def handle_playerdata_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_playerdata_expire_request(self, request: Node) -> Node:
+        return Node.void('playerdata')
 
-        if method == 'expire':
-            return Node.void('playerdata')
+    def handle_playerdata_logout_request(self, request: Node) -> Node:
+        return Node.void('playerdata')
 
-        elif method == 'logout':
-            return Node.void('playerdata')
-
-        elif method == 'get':
-            modelstring = request.attribute('model')
-            refid = request.child_value('ref_id')
-            root = self.get_profile_by_refid(
-                refid,
-                self.NEW_PROFILE_ONLY if modelstring is None else self.OLD_PROFILE_ONLY,
-            )
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'conversion':
-            refid = request.child_value('ref_id')
-            name = request.child_value('name')
-            chara = request.child_value('chara')
-            root = self.new_profile_by_refid(refid, name, chara)
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'new':
-            refid = request.child_value('ref_id')
-            name = request.child_value('name')
-            root = self.new_profile_by_refid(refid, name)
-            if root is None:
-                root = Node.void('playerdata')
-                root.set_attribute('status', str(Status.NO_PROFILE))
-            return root
-
-        elif method == 'set':
-            refid = request.attribute('ref_id')
-
+    def handle_playerdata_get_request(self, request: Node) -> Node:
+        modelstring = request.attribute('model')
+        refid = request.child_value('ref_id')
+        root = self.get_profile_by_refid(
+            refid,
+            self.NEW_PROFILE_ONLY if modelstring is None else self.OLD_PROFILE_ONLY,
+        )
+        if root is None:
             root = Node.void('playerdata')
-            root.add_child(Node.s8('pref', -1))
-            if refid is None:
-                return root
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                return root
+    def handle_playerdata_conversion_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+        name = request.child_value('name')
+        chara = request.child_value('chara')
+        root = self.new_profile_by_refid(refid, name, chara)
+        if root is None:
+            root = Node.void('playerdata')
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
-            newprofile = self.unformat_profile(userid, request, oldprofile)
+    def handle_playerdata_new_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+        name = request.child_value('name')
+        root = self.new_profile_by_refid(refid, name)
+        if root is None:
+            root = Node.void('playerdata')
+            root.set_attribute('status', str(Status.NO_PROFILE))
+        return root
 
-            if newprofile is not None:
-                self.put_profile(userid, newprofile)
-                root.add_child(Node.string('name', newprofile['name']))
+    def handle_playerdata_set_request(self, request: Node) -> Node:
+        refid = request.attribute('ref_id')
+        machine = self.get_machine()
 
+        root = Node.void('playerdata')
+        root.add_child(Node.s8('pref', machine.data.get_int('pref', -1)))
+
+        if refid is None:
+            root.add_child(Node.string('name', ''))
+            root.add_child(Node.s16('chara', -1))
+            root.add_child(Node.u8('frame', 0))
+            root.add_child(Node.u8('base', 0))
+            root.add_child(Node.u8('seal_1', 0))
+            root.add_child(Node.u8('seal_2', 0))
+            root.add_child(Node.u8('title_1', 0))
+            root.add_child(Node.u8('title_2', 0))
+            root.add_child(Node.s16('recommend_1', -1))
+            root.add_child(Node.s16('recommend_2', -1))
+            root.add_child(Node.s16('recommend_3', -1))
+            root.add_child(Node.string('message', ''))
             return root
 
-        elif method == 'friend':
-            refid = request.attribute('ref_id')
-            root = Node.void('playerdata')
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            root.add_child(Node.string('name', ''))
+            root.add_child(Node.s16('chara', -1))
+            root.add_child(Node.u8('frame', 0))
+            root.add_child(Node.u8('base', 0))
+            root.add_child(Node.u8('seal_1', 0))
+            root.add_child(Node.u8('seal_2', 0))
+            root.add_child(Node.u8('title_1', 0))
+            root.add_child(Node.u8('title_2', 0))
+            root.add_child(Node.s16('recommend_1', -1))
+            root.add_child(Node.s16('recommend_2', -1))
+            root.add_child(Node.s16('recommend_3', -1))
+            root.add_child(Node.string('message', ''))
+            return root
 
-            # Look up our own user ID based on the RefID provided.
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is None:
-                root.set_attribute('status', str(Status.NO_PROFILE))
-                return root
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
+        newprofile = self.unformat_profile(userid, request, oldprofile)
 
-            # Grab the links that we care about.
-            links = self.data.local.user.get_links(self.game, self.version, userid)
-            profiles: Dict[UserID, Profile] = {}
-            rivals: List[Link] = []
-            for link in links:
-                if link.type != 'rival':
+        if newprofile is not None:
+            player_card_dict = newprofile.get_dict('player_card')
+
+            self.put_profile(userid, newprofile)
+            root.add_child(Node.string('name', newprofile.get_str('name', 'なし')))
+            root.add_child(Node.s16('chara', newprofile.get_int('chara', -1)))
+            root.add_child(Node.u8('frame', player_card_dict.get_int('frame')))
+            root.add_child(Node.u8('base', player_card_dict.get_int('base')))
+            root.add_child(Node.u8('seal_1', player_card_dict.get_int_array('seal', 2)[0]))
+            root.add_child(Node.u8('seal_2', player_card_dict.get_int_array('seal', 2)[1]))
+            root.add_child(Node.u8('title_1', player_card_dict.get_int_array('title', 2, [0, 1])[0]))
+            root.add_child(Node.u8('title_2', player_card_dict.get_int_array('title', 2, [0, 1])[1]))
+            root.add_child(Node.s16('recommend_1', -1))
+            root.add_child(Node.s16('recommend_2', -1))
+            root.add_child(Node.s16('recommend_3', -1))
+            root.add_child(Node.string('message', ''))
+
+        return root
+
+    def handle_playerdata_friend_request(self, request: Node) -> Node:
+        refid = request.attribute('ref_id')
+        root = Node.void('playerdata')
+
+        # Look up our own user ID based on the RefID provided.
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            root.set_attribute('status', str(Status.NO_PROFILE))
+            return root
+
+        # Grab the links that we care about.
+        links = self.data.local.user.get_links(self.game, self.version, userid)
+        profiles: Dict[UserID, Profile] = {}
+        rivals: List[Link] = []
+        for link in links:
+            if link.type != 'rival':
+                continue
+
+            other_profile = self.get_profile(link.other_userid)
+            if other_profile is None:
+                continue
+            profiles[link.other_userid] = other_profile
+            rivals.append(link)
+
+        for rival in links[:2]:
+            rivalid = rival.other_userid
+            rivalprofile = profiles[rivalid]
+            scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+
+            # First, output general profile info.
+            friend = Node.void('friend')
+            root.add_child(friend)
+
+            # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
+            # ranking numbers disappear and the player icon show a questionmark.
+            friend.add_child(Node.s8('open', 1))
+
+            # Set up some sane defaults.
+            friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
+            friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.extid)))
+            friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+
+            # Perform hiscore/medal conversion.
+            hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
+            clear_medal = [0] * self.GAME_MAX_MUSIC_ID
+            for score in scores:
+                if score.id > self.GAME_MAX_MUSIC_ID:
                     continue
 
-                other_profile = self.get_profile(link.other_userid)
-                if other_profile is None:
+                # Skip any scores for chart types we don't support
+                if score.chart not in [
+                    self.CHART_TYPE_EASY,
+                    self.CHART_TYPE_NORMAL,
+                    self.CHART_TYPE_HYPER,
+                    self.CHART_TYPE_EX,
+                ]:
                     continue
-                profiles[link.other_userid] = other_profile
-                rivals.append(link)
 
-            for rival in links[:2]:
-                rivalid = rival.other_userid
-                rivalprofile = profiles[rivalid]
-                scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+                clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
+                hiscore_index = (score.id * 4) + {
+                    self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
+                    self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
+                    self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
+                    self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
+                }[score.chart]
+                hiscore_byte_pos = int((hiscore_index * 17) / 8)
+                hiscore_bit_pos = int((hiscore_index * 17) % 8)
+                hiscore_value = score.points << hiscore_bit_pos
+                hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+                hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+                hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
 
-                # First, output general profile info.
-                friend = Node.void('friend')
-                root.add_child(friend)
+            hiscore = bytes(hiscore_array)
+            friend.add_child(Node.u16_array('clear_medal', clear_medal))
+            friend.add_child(Node.binary('hiscore', hiscore))
 
-                # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
-                # ranking numbers disappear and the player icon show a questionmark.
-                friend.add_child(Node.s8('open', 1))
+            # Note that if we ever support internet ranking mode, there's an 'ir_hiscore' node here as well.
 
-                # Set up some sane defaults.
-                friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
-                friend.add_child(Node.string('g_pm_id', ID.format_extid(rivalprofile.extid)))
-                friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+            # Also note that if we support lobbies, there's a few extra nodes in each friend for current lobby
+            # that they're in as well as previous lobby logs.
 
-                # Perform hiscore/medal conversion.
-                hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
-                clear_medal = [0] * self.GAME_MAX_MUSIC_ID
-                for score in scores:
-                    if score.id > self.GAME_MAX_MUSIC_ID:
-                        continue
+        return root
 
-                    # Skip any scores for chart types we don't support
-                    if score.chart not in [
-                        self.CHART_TYPE_EASY,
-                        self.CHART_TYPE_NORMAL,
-                        self.CHART_TYPE_HYPER,
-                        self.CHART_TYPE_EX,
-                    ]:
-                        continue
+    def handle_game_get_request(self, request: Node) -> Node:
+        game_config = self.get_game_config()
+        game_phase = game_config.get_int('game_phase')
+        event_phase = game_config.get_int('event_phase')
 
-                    points = score.points
-                    clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
+        root = Node.void('game')
+        root.add_child(Node.s32('game_phase', game_phase))
+        root.add_child(Node.s32('ir_phase', 0))
+        root.add_child(Node.s32('event_phase', event_phase))
+        root.add_child(Node.s32('netvs_phase', 0))  # Net taisen mode, we don't support lobbies.
+        root.add_child(Node.s32('card_phase', 6))
+        root.add_child(Node.s32('illust_phase', 2))
+        root.add_child(Node.s32('psp_phase', 5))  # Unlock songs from Pop'n Music Portable.
+        root.add_child(Node.s32('other_phase', 1))
+        root.add_child(Node.s32('jubeat_phase', 1))
+        root.add_child(Node.s32('public_phase', 3))
+        root.add_child(Node.s32('kac_phase', 2))
+        root.add_child(Node.s32('local_matching_enable', 1))
+        root.add_child(Node.s32('n_matching_sec', 60))
+        root.add_child(Node.s32('l_matching_sec', 60))
+        root.add_child(Node.s32('is_check_cpu', 0))
+        root.add_child(Node.s32('week_no', 0))
+        root.add_child(Node.s32('team_day', 0))
+        root.add_child(Node.s32_array('ng_illust', [-1] * 64))
+        root.add_child(Node.s16_array('sel_ranking', [-1] * 10))
+        root.add_child(Node.s16_array('up_ranking', [-1] * 10))
 
-                    hiscore_index = (score.id * 4) + {
-                        self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
-                        self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
-                        self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER_POSITION,
-                        self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX_POSITION,
-                    }[score.chart]
-                    hiscore_byte_pos = int((hiscore_index * 17) / 8)
-                    hiscore_bit_pos = int((hiscore_index * 17) % 8)
-                    hiscore_value = points << hiscore_bit_pos
-                    hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
-                    hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
-                    hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
+        return root
 
-                hiscore = bytes(hiscore_array)
-                friend.add_child(Node.u16_array('clear_medal', clear_medal))
-                friend.add_child(Node.binary('hiscore', hiscore))
+    def handle_game_active_request(self, request: Node) -> Node:
+        # Update the name of this cab for admin purposes. Also store the prefecture.
+        machine = self.get_machine()
+        machine.name = request.child_value('shop_name') or machine.name
+        machine.data.replace_int('pref', request.child_value('pref'))
+        self.update_machine(machine)
+        return Node.void('game')
 
-            return root
-
-        # Invalid method
-        return None
-
-    def handle_game_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
-
-        if method == 'get':
-            # TODO: Hook these up to config so we can change this
-            root = Node.void('game')
-            root.add_child(Node.s32('game_phase', 2))
-            root.add_child(Node.s32('ir_phase', 0))
-            root.add_child(Node.s32('event_phase', 5))
-            root.add_child(Node.s32('netvs_phase', 0))
-            root.add_child(Node.s32('card_phase', 6))
-            root.add_child(Node.s32('illust_phase', 2))
-            root.add_child(Node.s32('psp_phase', 5))
-            root.add_child(Node.s32('other_phase', 1))
-            root.add_child(Node.s32('jubeat_phase', 1))
-            root.add_child(Node.s32('public_phase', 3))
-            root.add_child(Node.s32('kac_phase', 2))
-            root.add_child(Node.s32('local_matching', 1))
-            root.add_child(Node.s32('n_matching_sec', 60))
-            root.add_child(Node.s32('l_matching_sec', 60))
-            root.add_child(Node.s32('is_check_cpu', 0))
-            root.add_child(Node.s32('week_no', 0))
-            root.add_child(Node.s32_array('ng_illust', [0] * 10))
-            root.add_child(Node.s16_array('sel_ranking', [-1] * 10))
-            root.add_child(Node.s16_array('up_ranking', [-1] * 10))
-            return root
-
-        if method == 'active':
-            # Update the name of this cab for admin purposes
-            self.update_machine_name(request.child_value('shop_name'))
-            return Node.void('game')
-
-        if method == 'taxphase':
-            return Node.void('game')
-
-        # Invalid method
-        return None
-
-    def handle_lobby_request(self, request: Node) -> Optional[Node]:
+    def handle_lobby_request(self, request: Node) -> Node:
         # Stub out the entire lobby service
         return Node.void('lobby')

@@ -43,6 +43,7 @@ class PopnMusicEclale(PopnMusicBase):
 
     def __construct_common_info(self, root: Node) -> None:
         # Event phases
+        # TODO: Hook event mode settings up to the front end.
         phases = {
             # Unknown event (0-16)
             0: 16,
@@ -442,6 +443,7 @@ class PopnMusicEclale(PopnMusicBase):
         root.add_child(Node.s16('chara', profile.get_int('chara', -1)))
         root.add_child(Node.s8('result', 1))
 
+        # Scores
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
         for score in scores:
             # Skip any scores for chart types we don't support
@@ -453,9 +455,6 @@ class PopnMusicEclale(PopnMusicBase):
             ]:
                 continue
 
-            points = score.points
-            medal = score.data.get_int('medal')
-
             music = Node.void('music')
             root.add_child(music)
             music.add_child(Node.s16('music_num', score.id))
@@ -465,7 +464,7 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
             }[score.chart]))
-            music.add_child(Node.s32('score', points))
+            music.add_child(Node.s32('score', score.points))
             music.add_child(Node.u8('clear_type', {
                 self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
                 self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
@@ -478,7 +477,7 @@ class PopnMusicEclale(PopnMusicBase):
                 self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
                 self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
                 self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
-            }[medal]))
+            }[score.data.get_int('medal')]))
             music.add_child(Node.s16('cnt', score.plays))
 
         return root

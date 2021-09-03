@@ -128,6 +128,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
 
     def __construct_common_info(self, root: Node) -> None:
         # Event phases
+        # TODO: Hook event mode settings up to the front end.
         phases = {
             # Default song phase availability (0-11)
             0: 11,
