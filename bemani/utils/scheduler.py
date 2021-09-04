@@ -5,6 +5,7 @@ from bemani.backend.popn import PopnMusicFactory
 from bemani.backend.jubeat import JubeatFactory
 from bemani.backend.iidx import IIDXFactory
 from bemani.backend.bishi import BishiBashiFactory
+from bemani.backend.mga import MetalGearArcadeFactory
 from bemani.backend.ddr import DDRFactory
 from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
@@ -13,6 +14,7 @@ from bemani.frontend.popn import PopnMusicCache
 from bemani.frontend.iidx import IIDXCache
 from bemani.frontend.jubeat import JubeatCache
 from bemani.frontend.bishi import BishiBashiCache
+from bemani.frontend.mga import MetalGearArcadeCache
 from bemani.frontend.ddr import DDRCache
 from bemani.frontend.sdvx import SoundVoltexCache
 from bemani.frontend.reflec import ReflecBeatCache
@@ -40,6 +42,9 @@ def run_scheduled_work(config: Config) -> None:
     if GameConstants.BISHI_BASHI in config.support:
         enabled_factories.append(BishiBashiFactory)
         enabled_caches.append(BishiBashiCache)
+    if GameConstants.MGA in config.support:
+        enabled_factories.append(MetalGearArcadeFactory)
+        enabled_caches.append(MetalGearArcadeCache)
     if GameConstants.DDR in config.support:
         enabled_factories.append(DDRFactory)
         enabled_caches.append(DDRCache)

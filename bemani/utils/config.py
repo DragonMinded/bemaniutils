@@ -9,6 +9,7 @@ from bemani.backend.ddr import DDRFactory
 from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
 from bemani.backend.museca import MusecaFactory
+from bemani.backend.mga import MetalGearArcadeFactory
 from bemani.common import GameConstants
 from bemani.data import Config, Data
 
@@ -42,3 +43,5 @@ def register_games(config: Config) -> None:
         ReflecBeatFactory.register_all()
     if GameConstants.MUSECA in config.support:
         MusecaFactory.register_all()
+    if GameConstants.MGA in config.support:
+        MetalGearArcadeFactory.register_all()

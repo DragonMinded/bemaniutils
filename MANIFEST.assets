@@ -19,6 +19,7 @@ include bemani/frontend/static/controllers/iidx/*.js
 include bemani/frontend/static/controllers/popn/*.js
 include bemani/frontend/static/controllers/jubeat/*.js
 include bemani/frontend/static/controllers/bishi/*.js
+include bemani/frontend/static/controllers/mga/*.js
 include bemani/frontend/static/controllers/ddr/*.js
 include bemani/frontend/static/controllers/reflec/*.js
 include bemani/frontend/static/controllers/sdvx/*.js

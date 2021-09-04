@@ -33,6 +33,7 @@ def format_machine(machine: Machine) -> Dict[str, Any]:
             GameConstants.DDR: 'DDR',
             GameConstants.IIDX: 'IIDX',
             GameConstants.JUBEAT: 'Jubeat',
+            GameConstants.MGA: 'Metal Gear Arcade',
             GameConstants.MUSECA: 'MÚSECA',
             GameConstants.POPN_MUSIC: 'Pop\'n Music',
             GameConstants.REFLEC_BEAT: 'Reflec Beat',

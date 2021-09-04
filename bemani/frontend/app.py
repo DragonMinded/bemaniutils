@@ -335,6 +335,35 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
+    if GameConstants.MGA in g.config.support:
+        # Metal Gear Arcade pages
+        mga_entries = []
+        if len([p for p in profiles if p[0] == GameConstants.MGA]) > 0:
+            mga_entries.extend([
+                {
+                    'label': 'Game Options',
+                    'uri': url_for('mga_pages.viewsettings'),
+                },
+                {
+                    'label': 'Personal Profile',
+                    'uri': url_for('mga_pages.viewplayer', userid=g.userID),
+                },
+            ])
+        mga_entries.extend([
+            {
+                'label': 'All Players',
+                'uri': url_for('mga_pages.viewplayers'),
+            },
+        ])
+        pages.append(
+            {
+                'label': 'Metal Gear Arcade',
+                'entries': mga_entries,
+                'base_uri': app.blueprints['mga_pages'].url_prefix,
+                'gamecode': GameConstants.MGA,
+            },
+        )
+
     if GameConstants.DDR in g.config.support:
         # DDR pages
         ddr_entries = []

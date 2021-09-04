@@ -14,6 +14,7 @@ class GameConstants(Enum):
     DDR: Final[str] = 'ddr'
     IIDX: Final[str] = 'iidx'
     JUBEAT: Final[str] = 'jubeat'
+    MGA: Final[str] = 'mga'
     MUSECA: Final[str] = 'museca'
     POPN_MUSIC: Final[str] = 'pnm'
     REFLEC_BEAT: Final[str] = 'reflec'
@@ -88,6 +89,8 @@ class VersionConstants:
     JUBEAT_QUBELL: Final[int] = 11
     JUBEAT_CLAN: Final[int] = 12
     JUBEAT_FESTO: Final[int] = 13
+
+    MGA: Final[int] = 1
 
     MUSECA: Final[int] = 1
     MUSECA_1_PLUS: Final[int] = 2

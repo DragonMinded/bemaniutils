@@ -222,7 +222,7 @@ BEMANI games boot and supports full profile and events for Beatmania IIDX 20-26,
 Pop'n Music 19-24, Jubeat Saucer, Saucer Fulfill, Prop, Qubell and Clan, Sound Voltex
 1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace, MÚSECA 1,
 MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper, Volzza
-1 and Volzza 2, and finally The\*BishiBashi.
+1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi.
 
 Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with a Python
