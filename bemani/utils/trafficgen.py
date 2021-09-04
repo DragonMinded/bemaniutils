@@ -94,6 +94,12 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             pcbid,
             config,
         )
+    if game == 'pnm-peace':
+        return PopnMusicUsaNekoClient(
+            proto,
+            pcbid,
+            config,
+        )
     if game == 'jubeat-saucer':
         return JubeatSaucerClient(
             proto,
@@ -322,6 +328,12 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             'old_profile_model': "M39:J:B:A",
             'avs': "2.15.8 r6631",
         },
+        'pnm-peace': {
+            'name': "Pop'n Music peace",
+            'model': "M39:J:B:A:2020092800",
+            'old_profile_model': "M39:J:B:A",
+            'avs': "2.15.8 r6631",
+        },
         'jubeat-saucer': {
             'name': "Jubeat Saucer",
             'model': "L44:J:A:A:2014012802",
@@ -534,6 +546,7 @@ def main() -> None:
         'pnm-22': 'pnm-lapistoria',
         'pnm-23': 'pnm-eclale',
         'pnm-24': 'pnm-usaneko',
+        'pnm-25': 'pnm-peace',
         'iidx-20': 'iidx-tricoro',
         'iidx-21': 'iidx-spada',
         'iidx-22': 'iidx-pendual',

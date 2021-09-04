@@ -126,10 +126,10 @@ class PopnMusicUsaNeko(PopnMusicBase):
         self.update_machine_name(request.child_value('pcb_setting/name'))
         return Node.void('pcb24')
 
-    def __construct_common_info(self, root: Node) -> None:
+    def get_phases(self) -> Dict[int, int]:
         # Event phases
         # TODO: Hook event mode settings up to the front end.
-        phases = {
+        return {
             # Default song phase availability (0-11)
             0: 11,
             # Unknown event (0-2)
@@ -160,11 +160,12 @@ class PopnMusicUsaNeko(PopnMusicBase):
             13: 1,
         }
 
-        for phaseid in phases:
+    def __construct_common_info(self, root: Node) -> None:
+        for phaseid in self.get_phases():
             phase = Node.void('phase')
             root.add_child(phase)
             phase.add_child(Node.s16('event_id', phaseid))
-            phase.add_child(Node.s16('phase', phases[phaseid]))
+            phase.add_child(Node.s16('phase', self.get_phases()[phaseid]))
 
         # Gather course informatino and course ranking for users.
         course_infos, achievements, profiles = Parallel.execute([
