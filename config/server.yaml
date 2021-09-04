@@ -50,7 +50,9 @@ paseli:
 support:
     # Bishi Bashi frontend/backend enabled.
     bishi: True
-    # DDR frontend/backend enabled.
+    # Metal Gear Arcade frontend/backend enabled
+    mga: True
+    # DDR frontend/backend enabled
     ddr: True
     # IIDX frontend/backend enabled.
     iidx: True
