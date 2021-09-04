@@ -314,3 +314,10 @@ class BroadcastConstants(Enum):
     FASTS: Final[str] = 'Fast'
     GRADE: Final[str] = 'Grade'
     RATE: Final[str] = 'Score Rate'
+
+    # Added for Pnm
+    PLAYER_NAME: Final[str] = 'Player Name'
+    SCORE: Final[str] = 'Your Score'
+    COOLS: Final[str] = 'Cools'
+    COMBO: Final[str] = 'Combo'
+    MEDAL: Final[str] = 'Medal'

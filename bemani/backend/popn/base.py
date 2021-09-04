@@ -3,7 +3,7 @@ from typing import Dict, Optional, Sequence
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import Profile, ValidatedDict, Time, GameConstants, DBConstants
+from bemani.common import Profile, ValidatedDict, Time, GameConstants, DBConstants, BroadcastConstants
 from bemani.data import UserID, Achievement, ScoreSaveException
 from bemani.protocol import Node
 
@@ -289,3 +289,47 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
             # We saved successfully
             break
+
+    def broadcast_score(self, userid: int, songid: int, chart: int, medal: int, points: int, combo: int, stats: Dict[str,int]) -> None:
+        # Generate scorecard
+        profile = self.get_profile(userid)
+        song = self.data.local.music.get_song(self.game, self.version, songid, chart)
+
+        card_medal = {
+            self.PLAY_MEDAL_CIRCLE_FAILED: 'Failed',
+            self.PLAY_MEDAL_DIAMOND_FAILED: 'Failed',
+            self.PLAY_MEDAL_STAR_FAILED: 'Failed',
+            self.PLAY_MEDAL_EASY_CLEAR: 'Cleared',
+            self.PLAY_MEDAL_CIRCLE_CLEARED: 'Cleared',
+            self.PLAY_MEDAL_DIAMOND_CLEARED: 'Cleared',
+            self.PLAY_MEDAL_STAR_CLEARED: 'Cleared',
+            self.PLAY_MEDAL_CIRCLE_FULL_COMBO: 'Full Combo',
+            self.PLAY_MEDAL_DIAMOND_FULL_COMBO: 'Full Combo',
+            self.PLAY_MEDAL_STAR_FULL_COMBO: 'Full Combo',
+            self.PLAY_MEDAL_PERFECT: 'Perfect',
+        }[medal]
+
+        card_chart = {
+            self.CHART_TYPE_EASY: 'Easy',
+            self.CHART_TYPE_NORMAL: 'Normal',
+            self.CHART_TYPE_HYPER: 'Hyper',
+            self.CHART_TYPE_EX: 'Ex',
+        }[chart]
+
+        # Construct the dictionary for the broadcast
+        card_data = {
+            BroadcastConstants.PLAYER_NAME: profile.get_str('name', 'なし'),
+            BroadcastConstants.SONG_NAME: song.name,
+            BroadcastConstants.ARTIST_NAME: song.artist,
+            BroadcastConstants.DIFFICULTY: card_chart,
+            BroadcastConstants.SCORE: points,
+            BroadcastConstants.MEDAL: card_medal,
+            BroadcastConstants.COOLS: stats['cool'],
+            BroadcastConstants.GREATS: stats['great'],
+            BroadcastConstants.GOODS: stats['good'],
+            BroadcastConstants.BADS: stats['bad'],
+            BroadcastConstants.COMBO: combo,
+        }
+
+        # Try to broadcast out the score to our webhook(s)
+        self.data.triggers.broadcast_score(card_data, self.game, song)

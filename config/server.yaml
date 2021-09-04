@@ -40,7 +40,8 @@ webhooks:
     discord:
         iidx: 
         - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
-
+        pnm: 
+        - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
 paseli:
     # Whether PASELI is enabled on the network.
     enabled: True

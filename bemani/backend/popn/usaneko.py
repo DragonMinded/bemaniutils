@@ -686,6 +686,10 @@ class PopnMusicUsaNeko(PopnMusicBase):
             self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
         }[medal]
         self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
+
+        if request.child_value('is_image_store') == 1:
+            self.broadcast_score(userid, songid, chart, medal, combo, stats)
+
         return root
 
     def handle_player24_start_request(self, request: Node) -> Node:
@@ -922,7 +926,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         # eAmuse account link
         eaappli = Node.void('eaappli')
         root.add_child(eaappli)
-        eaappli.add_child(Node.s8('relation', -1))
+        eaappli.add_child(Node.s8('relation', 1))
 
         # Player info
         info = Node.void('info')
