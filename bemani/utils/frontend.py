@@ -1,4 +1,5 @@
 import argparse
+
 from bemani.common import GameConstants
 from bemani.frontend import app, config  # noqa: F401
 from bemani.frontend.account import account_pages
