@@ -83,6 +83,14 @@ class PopnMusicLapistoria(PopnMusicBase):
                     },
                 },
             ],
+            'bools': [
+                {
+                    'name': 'Force Song Unlock',
+                    'tip': 'Force unlock all songs.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_songs',
+                },
+            ],
         }
 
     def handle_info22_common_request(self, request: Node) -> Node:
@@ -658,6 +666,17 @@ class PopnMusicLapistoria(PopnMusicBase):
         customize.add_child(Node.u16('comment_1', customize_dict.get_int('comment_1')))
         customize.add_child(Node.u16('comment_2', customize_dict.get_int('comment_2')))
 
+        game_config = self.get_game_config()
+        if game_config.get_bool('force_unlock_songs'):
+            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            for song in songs:
+                item = Node.void('item')
+                root.add_child(item)
+                item.add_child(Node.u8('type', 0))
+                item.add_child(Node.u16('id', song.id))
+                item.add_child(Node.u16('param', 15))
+                item.add_child(Node.bool('is_new', False))
+
         # Set up achievements
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for achievement in achievements:
@@ -674,6 +693,10 @@ class PopnMusicLapistoria(PopnMusicBase):
                 # 5, 24
                 # 6, 24
                 # 7, 4158
+
+                if game_config.get_bool('force_unlock_songs') and itemtype == 0:
+                    # We already sent song unlocks in the force unlock section above.
+                    continue
 
                 item = Node.void('item')
                 root.add_child(item)
@@ -806,6 +829,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         self.update_play_statistics(userid)
 
         # Extract achievements
+        game_config = self.get_game_config()
         for node in request.children:
             if node.name == 'item':
                 if not node.child_value('is_new'):
@@ -815,6 +839,10 @@ class PopnMusicLapistoria(PopnMusicBase):
                 itemid = node.child_value('id')
                 itemtype = node.child_value('type')
                 param = node.child_value('param')
+
+                if game_config.get_bool('force_unlock_songs') and itemtype == 0:
+                    # If we enabled force song unlocks, don't save songs to the profile.
+                    continue
 
                 self.data.local.user.put_achievement(
                     self.game,
