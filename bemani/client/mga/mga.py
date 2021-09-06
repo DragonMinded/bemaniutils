@@ -210,7 +210,7 @@ class MetalGearArcadeClient(BaseClient):
             b'',
             b'',
             b'',
-            b'',   
+            b'',
         ]
 
         if msg_type == 'new':
@@ -235,13 +235,13 @@ class MetalGearArcadeClient(BaseClient):
         data.add_child(record)
         d = Node.string('d', base64.b64encode(b','.join(profiledata)).decode('ascii'))
         record.add_child(d)
-        d.add_child(Node.string('bin1', ''))        
+        d.add_child(Node.string('bin1', ''))
         d = Node.string('d', base64.b64encode(b','.join(outfitdata)).decode('ascii'))
         record.add_child(d)
-        d.add_child(Node.string('bin1', ''))        
+        d.add_child(Node.string('bin1', ''))
         d = Node.string('d', base64.b64encode(b','.join(weapondata)).decode('ascii'))
         record.add_child(d)
-        d.add_child(Node.string('bin1', ''))        
+        d.add_child(Node.string('bin1', ''))
         d = Node.string('d', base64.b64encode(b','.join(mainruledata)).decode('ascii'))
         record.add_child(d)
         d.add_child(Node.string('bin1', ''))

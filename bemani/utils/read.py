@@ -968,7 +968,7 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
-        
+
         elif self.version == VersionConstants.POPN_MUSIC_PEACE:
             # Based on M39:J:A:A:2020092800
 

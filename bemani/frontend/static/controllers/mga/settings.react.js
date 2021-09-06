@@ -66,93 +66,22 @@ var settings_view = React.createClass({
                         <input
                             type="text"
                             className="inline"
-                            maxlength="6"
-                            size="6"
+                            maxlength="8"
+                            size="8"
                             autofocus="true"
                             ref={c => (this.focus_element = c)}
                             value={this.state.new_name}
                             onChange={function(event) {
-								var rawvalue = event.target.value;
-                                var value = "";
-                                // Nasty conversion to change typing into wide text
-                                for (var i = 0; i < rawvalue.length; i++) {
-                                    var c = rawvalue.charCodeAt(i);
-                                    if (c >= '0'.charCodeAt(0) && c <= '9'.charCodeAt(0)) {
-                                        c = 0xFF10 + (c - '0'.charCodeAt(0));
-                                    } else if(c >= 'A'.charCodeAt(0) && c <= 'Z'.charCodeAt(0)) {
-                                        c = 0xFF21 + (c - 'A'.charCodeAt(0));
-                                    } else if(c >= 'a'.charCodeAt(0) && c <= 'z'.charCodeAt(0)) {
-                                        c = 0xFF41 + (c - 'a'.charCodeAt(0));
-                                    } else if(c == '@'.charCodeAt(0)) {
-                                        c = 0xFF20;
-                                    } else if(c == ' '.charCodeAt(0)) {
-                                        c = 0x3000;
-                                    } else if(c == '~'.charCodeAt(0)) {
-                                        c = 0x301C;
-                                    } else if(c == '-'.charCodeAt(0)) {
-                                        c = 0x2212;
-                                    } else if(c == '!'.charCodeAt(0)) {
-                                        c = 0xFF01;
-                                    } else if(c == '#'.charCodeAt(0)) {
-                                        c = 0xFF03;
-                                    } else if(c == '$'.charCodeAt(0)) {
-                                        c = 0xFF04;
-                                    } else if(c == '%'.charCodeAt(0)) {
-                                        c = 0xFF04;
-                                    } else if(c == '&'.charCodeAt(0)) {
-                                        c = 0xFF06;
-                                    } else if(c == '('.charCodeAt(0)) {
-                                        c = 0xFF08;
-                                    } else if(c == ')'.charCodeAt(0)) {
-                                        c = 0xFF09;
-                                    } else if(c == '*'.charCodeAt(0)) {
-                                        c = 0xFF0A;
-                                    } else if(c == '+'.charCodeAt(0)) {
-                                        c = 0xFF0B;
-                                    } else if(c == '/'.charCodeAt(0)) {
-                                        c = 0xFF0F;
-                                    } else if(c == '<'.charCodeAt(0)) {
-                                        c = 0xFF1C;
-                                    } else if(c == '='.charCodeAt(0)) {
-                                        c = 0xFF1D;
-                                    } else if(c == '>'.charCodeAt(0)) {
-                                        c = 0xFF1E;
-                                    } else if(c == '?'.charCodeAt(0)) {
-                                        c = 0xFF1F;
-                                    }
-                                    value = value + String.fromCharCode(c);
-                                }
+								var value = event.target.value;
                                 var nameRegex = new RegExp(
                                     "^[" +
-                                    "\uFF20-\uFF3A" + // widetext A-Z, @
-                                    "\uFF41-\uFF5A" + // widetext a-z (will be uppercased in backend)
-                                    "\uFF10-\uFF19" + // widetext 0-9
-                                    "\u3041-\u308D\u308F\u3092\u3093" + // hiragana
-                                    "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC" + // katakana
-                                    "\u3000" + // widetext blank space
-                                    "\u301C" + // widetext ~
-                                    "\u30FB" + // widetext middot
-                                    "\u30FC" + // widetext long dash
-                                    "\u2212" + // widetext short dash
-                                    "\u2605" + // widetext heavy star
-                                    "\uFF01" + // widetext !
-                                    "\uFF03" + // widetext #
-                                    "\uFF04" + // widetext $
-                                    "\uFF05" + // widetext %
-                                    "\uFF06" + // widetext &
-                                    "\uFF08" + // widetext (
-                                    "\uFF09" + // widetext )
-                                    "\uFF0A" + // widetext *
-                                    "\uFF0B" + // widetext +
-                                    "\uFF0F" + // widetext /
-                                    "\uFF1C" + // widetext <
-                                    "\uFF1D" + // widetext =
-                                    "\uFF1E" + // widetext >
-                                    "\uFF1F" + // widetext ?
-                                    "\uFFE5" + // widetext Yen symbol
+                                    "a-z" +
+                                    "A-Z" +
+                                    "0-9" +
+                                    "@!?/=():*^[\\]#;\\-_{}$.+" +
                                     "]*$"
                                 );
-                                if (value.length <= 6 && nameRegex.test(value)) {
+                                if (value.length <= 8 && nameRegex.test(value)) {
                                     this.setState({new_name: value});
                                 }
                             }.bind(this)}

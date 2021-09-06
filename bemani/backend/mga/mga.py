@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
 import copy
 import base64
-from typing import Any, Dict, List
+from typing import List
 
 from bemani.backend.mga.base import MetalGearArcadeBase
 from bemani.backend.ess import EventLogHandler

@@ -290,7 +290,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # We saved successfully
             break
 
-    def broadcast_score(self, userid: int, songid: int, chart: int, medal: int, points: int, combo: int, stats: Dict[str,int]) -> None:
+    def broadcast_score(self, userid: int, songid: int, chart: int, medal: int, points: int, combo: int, stats: Dict[str, int]) -> None:
         # Generate scorecard
         profile = self.get_profile(userid)
         song = self.data.local.music.get_song(self.game, self.version, songid, chart)

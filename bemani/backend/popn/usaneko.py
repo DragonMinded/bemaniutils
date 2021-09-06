@@ -161,11 +161,11 @@ class PopnMusicUsaNeko(PopnMusicBase):
         }
 
     def __construct_common_info(self, root: Node) -> None:
-        for phaseid in self.get_phases():
+        for phaseid, phase_value in self.get_phases().items():
             phase = Node.void('phase')
             root.add_child(phase)
             phase.add_child(Node.s16('event_id', phaseid))
-            phase.add_child(Node.s16('phase', self.get_phases()[phaseid]))
+            phase.add_child(Node.s16('phase', phase_value))
 
         # Gather course informatino and course ranking for users.
         course_infos, achievements, profiles = Parallel.execute([

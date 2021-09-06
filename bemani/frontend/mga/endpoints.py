@@ -121,46 +121,15 @@ def updatename() -> Dict[str, Any]:
     profile = g.data.local.user.get_profile(GameConstants.MGA, version, user.id)
     if profile is None:
         raise Exception('Unable to find profile to update!')
-    if len(name) == 0 or len(name) > 6:
+    if len(name) == 0 or len(name) > 8:
         raise Exception('Invalid profile name!')
-
-    # Convert lowercase to uppercase. We allow lowercase widetext in
-    # the JS frontend to allow for Windows IME input of hiragana/katakana.
-    def conv(char: str) -> str:
-        i = ord(char)
-        if i >= 0xFF41 and i <= 0xFF5A:
-            return chr(i - (0xFF41 - 0xFF21))
-        else:
-            return char
-    name = ''.join([conv(a) for a in name])
 
     if re.match(
         "^[" +
-        "\uFF20-\uFF3A" +  # widetext A-Z, @
-        "\uFF10-\uFF19" +  # widetext 0-9
-        "\u3041-\u308D\u308F\u3092\u3093" +  # hiragana
-        "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC" +  # katakana
-        "\u3000" +  # widetext blank space
-        "\u301C" +  # widetext ~
-        "\u30FB" +  # widetext middot
-        "\u30FC" +  # widetext long dash
-        "\u2212" +  # widetext short dash
-        "\u2605" +  # widetext heavy star
-        "\uFF01" +  # widetext !
-        "\uFF03" +  # widetext #
-        "\uFF04" +  # widetext $
-        "\uFF05" +  # widetext %
-        "\uFF06" +  # widetext &
-        "\uFF08" +  # widetext (
-        "\uFF09" +  # widetext )
-        "\uFF0A" +  # widetext *
-        "\uFF0B" +  # widetext +
-        "\uFF0F" +  # widetext /
-        "\uFF1C" +  # widetext <
-        "\uFF1D" +  # widetext =
-        "\uFF1E" +  # widetext >
-        "\uFF1F" +  # widetext ?
-        "\uFFE5" +  # widetext Yen symbol
+        "a-z" +
+        "A-Z" +
+        "0-9" +
+        "@!?/=():*^[\]#;\-_{}$.+" +
         "]*$",
         name,
     ) is None:

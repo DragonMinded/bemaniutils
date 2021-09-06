@@ -33,7 +33,7 @@ class Triggers:
             self.broadcast_score_discord(data, game, song)
 
     def broadcast_score_discord(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
-        if game in [GameConstants.IIDX, GameConstants.POPN_MUSIC] :
+        if game in {GameConstants.IIDX, GameConstants.POPN_MUSIC}:
             now = datetime.now()
 
             webhook = DiscordWebhook(url=self.config.webhooks.discord[game])

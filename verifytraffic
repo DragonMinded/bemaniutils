@@ -40,6 +40,7 @@ declare -a arr=(
     "reflec-4"
     "reflec-5"
     "reflec-6"
+    "mga"
 )
 
 for project in "${arr[@]}"
