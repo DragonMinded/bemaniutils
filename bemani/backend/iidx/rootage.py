@@ -1566,10 +1566,11 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.add_child(nostalgia)
 
         # Ea app features
-        root.add_child(Node.void('bind_eaappli'))
-        pay_per_use = Node.void('pay_per_use')
-        root.add_child(pay_per_use)
-        pay_per_use.set_attribute('item_num', '99')
+        if self.data.triggers.has_broadcast_destination(self.game):
+            root.add_child(Node.void('bind_eaappli'))
+            pay_per_use = Node.void('pay_per_use')
+            root.add_child(pay_per_use)
+            pay_per_use.set_attribute('item_num', '99')
 
         return root
 

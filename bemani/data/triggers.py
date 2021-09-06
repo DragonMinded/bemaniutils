@@ -28,6 +28,14 @@ class Triggers:
             GameConstants.SDVX: 'Sound Voltex',
         }.get(game, 'Unknown')
 
+    def has_broadcast_destination(self, game: GameConstants) -> bool:
+        # For now we only support discord
+        if self.config.webhooks.discord[game] is not None:
+            return True
+
+        # Nothing is hooked up for this game, so there is no destination.
+        return False
+
     def broadcast_score(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         # For now we only support discord
         if self.config.webhooks.discord[game] is not None:

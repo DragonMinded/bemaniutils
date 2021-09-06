@@ -899,7 +899,7 @@ class PopnMusicModernBase(PopnMusicBase, metaclass=ABCMeta):
         # eAmuse account link
         eaappli = Node.void('eaappli')
         root.add_child(eaappli)
-        eaappli.add_child(Node.s8('relation', 1))
+        eaappli.add_child(Node.s8('relation', 1 if self.data.triggers.has_broadcast_destination(self.game) else -1))
 
         # Player info
         info = Node.void('info')

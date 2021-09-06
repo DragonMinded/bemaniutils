@@ -1462,7 +1462,8 @@ class IIDXSpada(IIDXBase):
                 boss1.add_child(Node.binary('durability', boss1_dict.get_bytes('durability')))
 
         # Ea app features
-        root.add_child(Node.void('bind_eaappli'))
+        if self.data.triggers.has_broadcast_destination(self.game):
+            root.add_child(Node.void('bind_eaappli'))
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:

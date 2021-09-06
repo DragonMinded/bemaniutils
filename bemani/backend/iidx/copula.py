@@ -1867,7 +1867,8 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             onemore_data.set_attribute('challenge_num_a', str(onemore_dict.get_int('challenge_num_a')))
 
         # Ea app features
-        root.add_child(Node.void('bind_eaappli'))
+        if self.data.triggers.has_broadcast_destination(self.game):
+            root.add_child(Node.void('bind_eaappli'))
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
