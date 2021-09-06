@@ -2,11 +2,12 @@
 from typing import Dict
 
 from bemani.backend.popn.base import PopnMusicBase
+from bemani.backend.popn.common import PopnMusicModernBase
 from bemani.backend.popn.usaneko import PopnMusicUsaNeko
 from bemani.common import VersionConstants
 
 
-class PopnMusicPeace(PopnMusicUsaNeko):
+class PopnMusicPeace(PopnMusicModernBase):
 
     name = "Pop'n Music peace"
     version = VersionConstants.POPN_MUSIC_PEACE

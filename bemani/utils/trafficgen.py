@@ -27,6 +27,7 @@ from bemani.client.popn import (
     PopnMusicLapistoriaClient,
     PopnMusicEclaleClient,
     PopnMusicUsaNekoClient,
+    PopnMusicPeaceClient,
 )
 from bemani.client.ddr import (
     DDRX2Client,
@@ -96,7 +97,7 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             config,
         )
     if game == 'pnm-peace':
-        return PopnMusicUsaNekoClient(
+        return PopnMusicPeaceClient(
             proto,
             pcbid,
             config,
