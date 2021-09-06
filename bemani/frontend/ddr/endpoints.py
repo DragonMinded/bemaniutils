@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 ddr_pages = Blueprint(
     'ddr_pages',
     __name__,
-    url_prefix='/ddr',
+    url_prefix=f'/{GameConstants.DDR.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

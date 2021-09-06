@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 museca_pages = Blueprint(
     'museca_pages',
     __name__,
-    url_prefix='/museca',
+    url_prefix=f'/{GameConstants.MUSECA.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )
