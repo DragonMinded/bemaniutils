@@ -14,7 +14,7 @@ from bemani.frontend.types import g
 jubeat_pages = Blueprint(
     'jubeat_pages',
     __name__,
-    url_prefix='/jubeat',
+    url_prefix=f'/{GameConstants.JUBEAT.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

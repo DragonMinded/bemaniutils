@@ -18,6 +18,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     game = GameConstants.POPN_MUSIC
 
     # Play medals, as saved into/loaded from the DB
+    PLAY_MEDAL_NO_PLAY = DBConstants.POPN_MUSIC_PLAY_MEDAL_NO_PLAY
     PLAY_MEDAL_CIRCLE_FAILED = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
     PLAY_MEDAL_DIAMOND_FAILED = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
     PLAY_MEDAL_STAR_FAILED = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FAILED
@@ -188,6 +189,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         # Range check medals
         if medal not in [
+            self.PLAY_MEDAL_NO_PLAY,
             self.PLAY_MEDAL_CIRCLE_FAILED,
             self.PLAY_MEDAL_DIAMOND_FAILED,
             self.PLAY_MEDAL_STAR_FAILED,
