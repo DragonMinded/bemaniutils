@@ -276,6 +276,8 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_EX,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             points = score.points
             medal = score.data.get_int('medal')
@@ -363,6 +365,8 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             points = score.points
@@ -453,6 +457,8 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             music = Node.void('music')

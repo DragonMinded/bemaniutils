@@ -166,7 +166,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             phase.add_child(Node.s16('event_id', phaseid))
             phase.add_child(Node.s16('phase', phases[phaseid]))
 
-        # Gather course informatino and course ranking for users.
+        # Gather course information and course ranking for users.
         course_infos, achievements, profiles = Parallel.execute([
             lambda: self.data.local.game.get_all_time_sensitive_settings(self.game, self.version, 'course'),
             lambda: self.data.local.user.get_all_achievements(self.game, self.version),
@@ -554,6 +554,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 self.CHART_TYPE_EX,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             points = score.points
             medal = score.data.get_int('medal')
@@ -615,6 +617,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             music = Node.void('music')
@@ -751,6 +755,8 @@ class PopnMusicUsaNeko(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             music = Node.void('music')

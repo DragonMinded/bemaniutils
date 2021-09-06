@@ -1,12 +1,12 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.sunnypark import PopnMusicSunnyPark
 
 from bemani.backend.base import Status
-from bemani.common import Profile, VersionConstants, ID
+from bemani.common import ValidatedDict, Profile, VersionConstants, ID
 from bemani.data import UserID, Link
 from bemani.protocol import Node
 
@@ -23,6 +23,7 @@ class PopnMusicLapistoria(PopnMusicBase):
     GAME_CHART_TYPE_EX = 3
 
     # Medal type, as returned from the game
+    GAME_PLAY_MEDAL_NO_PLAY = 0
     GAME_PLAY_MEDAL_CIRCLE_FAILED = 1
     GAME_PLAY_MEDAL_DIAMOND_FAILED = 2
     GAME_PLAY_MEDAL_STAR_FAILED = 3
@@ -41,48 +42,93 @@ class PopnMusicLapistoria(PopnMusicBase):
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicSunnyPark(self.data, self.config, self.model)
 
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'ints': [
+                {
+                    'name': 'Story Mode',
+                    'tip': 'Story mode phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'story_phase',
+                    'values': {
+                        0: 'Disabled',
+                        1: 'Phase 1',
+                        2: 'Phase 2',
+                        3: 'Phase 3',
+                        4: 'Phase 4',
+                        5: 'Phase 5',
+                        6: 'Phase 6',
+                        7: 'Phase 7',
+                        8: 'Phase 8',
+                        9: 'Phase 9',
+                        10: 'Phase 10',
+                        11: 'Phase 11',
+                        12: 'Phase 12',
+                        13: 'Phase 13',
+                        14: 'Phase 14',
+                        15: 'Phase 15',
+                        16: 'Phase 16',
+                        17: 'Phase 17',
+                        18: 'Phase 18',
+                        19: 'Phase 19',
+                        20: 'Phase 20',
+                        21: 'Phase 21',
+                        22: 'Phase 22',
+                        23: 'Phase 23',
+                        24: 'Phase 24',
+                    },
+                },
+            ],
+        }
+
     def handle_info22_common_request(self, request: Node) -> Node:
-        # TODO: Hook these up to config so we can change this
+        game_config = self.get_game_config()
+        story_phase = game_config.get_int('story_phase')
+
         phases = {
-            # Unknown event (0-16)
-            0: 0,
-            # Unknown event (0-11)
-            1: 0,
+            # Default song phase availability (0-16)
+            0: 16,
+            # Card phase (0-11)
+            1: 11,
             # Pop'n Aura, max (0-11) (remove all aura requirements)
             2: 11,
             # Story (0-24)
-            3: 1,
-            # BEMANI ruins Discovery! (0-2)
+            3: story_phase,
+            # BEMANI ruins Discovery! 0 = off, 1 = active, 2 = off
             4: 0,
             # Unknown event, something to do with net taisen (0-2)
-            5: 0,
+            5: 2,
             # Unknown event (0-1)
-            6: 0,
+            6: 1,
             # Unknown event (0-1)
-            7: 0,
+            7: 1,
             # Unknown event (0-1)
-            8: 0,
-            # Unknown event (0-11)
-            9: 0,
-            # Unknown event (0-2)
+            8: 1,
+            # Course mode phase (0-11)
+            9: 11,
+            # Pon's Fate Purification Plan, 0 = off, 1 = active, 2 = off
             10: 0,
             # Unknown event (0-3)
-            11: 0,
+            11: 3,
             # Unknown event (0-1)
-            12: 0,
-            # Unknown event (0-2)
-            13: 0,
+            12: 1,
+            # Appears to be unlocks for course mode including KAC stuff.
+            13: 2,
             # Unknown event (0-4)
-            14: 0,
+            14: 4,
             # Unknown event (0-2)
-            15: 0,
+            15: 2,
             # Unknown event (0-2)
-            16: 0,
+            16: 2,
             # Unknown event (0-12)
             17: 0,
             # Unknown event (0-2)
-            18: 0,
-            # Unknown event (0-7)
+            18: 2,
+            # Bemani Summer Diary, 0 = off, 1-6 are phases, 7 = off
             19: 0,
         }
 
@@ -198,6 +244,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         rivalid = links[no].other_userid
         rivalprofile = profiles[rivalid]
         scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+        achievements = self.data.local.user.get_achievements(self.game, self.version, rivalid)
 
         # First, output general profile info.
         friend = Node.void('friend')
@@ -234,6 +281,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             }[score.chart]))
             music.set_attribute('score', str(points))
             music.set_attribute('clearmedal', str({
+                self.PLAY_MEDAL_NO_PLAY: self.GAME_PLAY_MEDAL_NO_PLAY,
                 self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
                 self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
                 self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
@@ -246,6 +294,27 @@ class PopnMusicLapistoria(PopnMusicBase):
                 self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
                 self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
             }[medal]))
+
+        for course in achievements:
+            if course.type == 'course':
+                total_score = course.data.get_int('total_score')
+                clear_medal = course.data.get_int('clear_medal')
+                clear_norma = course.data.get_int('clear_norma')
+                stage1_score = course.data.get_int('stage1_score')
+                stage2_score = course.data.get_int('stage2_score')
+                stage3_score = course.data.get_int('stage3_score')
+                stage4_score = course.data.get_int('stage4_score')
+
+                coursenode = Node.void('course')
+                friend.add_child(coursenode)
+                coursenode.set_attribute('course_id', str(course.id))
+                coursenode.set_attribute('clear_medal', str(clear_medal))
+                coursenode.set_attribute('clear_norma', str(clear_norma))
+                coursenode.set_attribute('stage1_score', str(stage1_score))
+                coursenode.set_attribute('stage2_score', str(stage2_score))
+                coursenode.set_attribute('stage3_score', str(stage3_score))
+                coursenode.set_attribute('stage4_score', str(stage4_score))
+                coursenode.set_attribute('total_score', str(total_score))
 
         return root
 
@@ -287,6 +356,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             'bad': request.child_value('bad')
         }
         medal = {
+            self.GAME_PLAY_MEDAL_NO_PLAY: self.PLAY_MEDAL_NO_PLAY,
             self.GAME_PLAY_MEDAL_CIRCLE_FAILED: self.PLAY_MEDAL_CIRCLE_FAILED,
             self.GAME_PLAY_MEDAL_DIAMOND_FAILED: self.PLAY_MEDAL_DIAMOND_FAILED,
             self.GAME_PLAY_MEDAL_STAR_FAILED: self.PLAY_MEDAL_STAR_FAILED,
@@ -300,6 +370,119 @@ class PopnMusicLapistoria(PopnMusicBase):
             self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
         }[medal]
         self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
+        return root
+
+    def handle_player22_write_course_request(self, request: Node) -> Node:
+        refid = request.child_value('ref_id')
+
+        root = Node.void('player22')
+        if refid is None:
+            return root
+
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            return root
+
+        # Grab info that we want to update
+        total_score = request.child_value('total_score') or 0
+        course_id = request.child_value('course_id')
+        if course_id is not None:
+            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+            pref = request.child_value('pref') or 51
+            profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
+
+            course = self.data.local.user.get_achievement(
+                self.game,
+                self.version,
+                userid,
+                course_id,
+                "course",
+            ) or ValidatedDict({})
+
+            stage_scores: Dict[int, int] = {}
+            for child in request.children:
+                if child.name != 'stage':
+                    continue
+
+                stage = child.child_value('stage')
+                score = child.child_value('score')
+
+                if isinstance(stage, int) and isinstance(score, int):
+                    stage_scores[stage] = score
+
+            # Update the scores if this was a new high score.
+            if total_score > course.get_int('total_score'):
+                course.replace_int('total_score', total_score)
+                course.replace_int('stage1_score', stage_scores.get(0, 0))
+                course.replace_int('stage2_score', stage_scores.get(1, 0))
+                course.replace_int('stage3_score', stage_scores.get(2, 0))
+                course.replace_int('stage4_score', stage_scores.get(3, 0))
+
+                # Only update ojamas used if this was an updated score.
+                course.replace_int('clear_norma', request.child_value('clear_norma'))
+
+                # Only udpate what location and prefecture this was scored in
+                # if we updated our score.
+                course.replace_int('pref', pref)
+                course.replace_int('lid', machine.arcade)
+
+            # Update medal and combo values.
+            course.replace_int('max_combo', max(course.get_int('max_combo'), request.child_value('max_combo')))
+            course.replace_int('clear_medal', max(course.get_int('clear_medal'), request.child_value('clear_medal')))
+
+            # Add one to the play count for this course.
+            course.increment_int('play_cnt')
+
+            self.data.local.user.put_achievement(
+                self.game,
+                self.version,
+                userid,
+                course_id,
+                "course",
+                course,
+            )
+
+            # Now, attempt to calculate ranking for this user for this run.
+            all_courses = self.data.local.user.get_all_achievements(self.game, self.version, course_id, "course")
+            global_ranking = sorted(all_courses, key=lambda entry: entry[1].data.get_int('total_score'), reverse=True)
+            pref_ranking = [c for c in global_ranking if c[1].data.get_int('pref') == pref]
+            local_ranking = [c for c in global_ranking if c[1].data.get_int('lid') == machine.arcade]
+
+            global_rank = len(global_ranking)
+            pref_rank = len(pref_ranking)
+            local_rank = len(local_ranking)
+
+            for i, rank in enumerate(global_ranking):
+                if userid == rank[0]:
+                    global_rank = i + 1
+                    break
+            for i, rank in enumerate(pref_ranking):
+                if userid == rank[0]:
+                    pref_rank = i + 1
+                    break
+            for i, rank in enumerate(local_ranking):
+                if userid == rank[0]:
+                    local_rank = i + 1
+                    break
+
+            # Now, return it all.
+            for rank_type, personal_rank, count in [
+                ('all_ranking', global_rank, len(global_ranking)),
+                ('pref_ranking', pref_rank, len(pref_ranking)),
+                ('location_ranking', local_rank, len(local_ranking)),
+            ]:
+                ranknode = Node.void(rank_type)
+                root.add_child(ranknode)
+                ranknode.add_child(Node.string('name', profile.get_str('name', 'なし')))
+                ranknode.add_child(Node.s16('chara_num', profile.get_int('chara', -1)))
+                ranknode.add_child(Node.s32('stage1_score', stage_scores.get(0, 0)))
+                ranknode.add_child(Node.s32('stage2_score', stage_scores.get(1, 0)))
+                ranknode.add_child(Node.s32('stage3_score', stage_scores.get(2, 0)))
+                ranknode.add_child(Node.s32('stage4_score', stage_scores.get(3, 0)))
+                ranknode.add_child(Node.s32('total_score', total_score))
+                ranknode.add_child(Node.s16('player_count', count))
+                ranknode.add_child(Node.s16('player_rank', personal_rank))
+
         return root
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
@@ -380,6 +563,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             music.add_child(Node.s16('cnt', score.plays))
             music.add_child(Node.s32('score', points))
             music.add_child(Node.u8('clear_type', {
+                self.PLAY_MEDAL_NO_PLAY: self.GAME_PLAY_MEDAL_NO_PLAY,
                 self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
                 self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
                 self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
@@ -481,6 +665,16 @@ class PopnMusicLapistoria(PopnMusicBase):
                 itemtype = achievement.data.get_int('type')
                 param = achievement.data.get_int('param')
 
+                # Maximum for each type is as follows:
+                # 0, 1423 - These are song unlocks as far as I can tell, matches Eclale/UsaNeko.
+                # 1, 2040
+                # 2, 510
+                # 3, 173
+                # 4, 40
+                # 5, 24
+                # 6, 24
+                # 7, 4158
+
                 item = Node.void('item')
                 root.add_child(item)
                 item.add_child(Node.u8('type', itemtype))
@@ -517,6 +711,34 @@ class PopnMusicLapistoria(PopnMusicBase):
                 story.add_child(Node.u16('gauge_point', gauge))
                 story.add_child(Node.bool('is_cleared', cleared))
                 story.add_child(Node.u32('clear_chapter', clear_chapter))
+
+            elif achievement.type == 'course':
+                total_score = achievement.data.get_int('total_score')
+                max_combo = achievement.data.get_int('max_combo')
+                play_cnt = achievement.data.get_int('play_cnt')
+                clear_medal = achievement.data.get_int('clear_medal')
+                clear_norma = achievement.data.get_int('clear_norma')
+                stage1_score = achievement.data.get_int('stage1_score')
+                stage2_score = achievement.data.get_int('stage2_score')
+                stage3_score = achievement.data.get_int('stage3_score')
+                stage4_score = achievement.data.get_int('stage4_score')
+
+                course = Node.void('course')
+                root.add_child(course)
+                course.add_child(Node.s16('course_id', achievement.id))
+                course.add_child(Node.u8('clear_medal', clear_medal))
+                course.add_child(Node.u8('clear_norma', clear_norma))
+                course.add_child(Node.s32('stage1_score', stage1_score))
+                course.add_child(Node.s32('stage2_score', stage2_score))
+                course.add_child(Node.s32('stage3_score', stage3_score))
+                course.add_child(Node.s32('stage4_score', stage4_score))
+                course.add_child(Node.s32('total_score', total_score))
+                course.add_child(Node.s16('max_cmbo', max_combo))  # Yes, it is misspelled.
+                course.add_child(Node.s16('play_cnt', play_cnt))
+                course.add_child(Node.s16('all_rank', 1))  # Unclear what this does.
+
+        # There are also course_rank nodes, but it doesn't appear they get displayed
+        # to the user anywhere.
 
         return root
 
@@ -698,6 +920,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             music.add_child(Node.u8('clear_type', 0))
             music.add_child(Node.s32('old_score', points))
             music.add_child(Node.u8('old_clear_type', {
+                self.PLAY_MEDAL_NO_PLAY: self.GAME_PLAY_MEDAL_NO_PLAY,
                 self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
                 self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
                 self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,

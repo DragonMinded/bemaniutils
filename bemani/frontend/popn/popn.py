@@ -26,7 +26,7 @@ class PopnMusicFrontend(FrontendBase):
         VersionConstants.POPN_MUSIC_TUNE_STREET: 0,
         VersionConstants.POPN_MUSIC_FANTASIA: 2,
         VersionConstants.POPN_MUSIC_SUNNY_PARK: 2,
-        VersionConstants.POPN_MUSIC_LAPISTORIA: 4,
+        VersionConstants.POPN_MUSIC_LAPISTORIA: 2,
         VersionConstants.POPN_MUSIC_ECLALE: 4,
         VersionConstants.POPN_MUSIC_USANEKO: 4,
     }
@@ -40,6 +40,7 @@ class PopnMusicFrontend(FrontendBase):
         formatted_score['combo'] = score.data.get_int('combo', -1)
         formatted_score['medal'] = score.data.get_int('medal')
         formatted_score['status'] = {
+            PopnMusicBase.PLAY_MEDAL_NO_PLAY: "No Play",
             PopnMusicBase.PLAY_MEDAL_CIRCLE_FAILED: "○ Failed",
             PopnMusicBase.PLAY_MEDAL_DIAMOND_FAILED: "◇ Failed",
             PopnMusicBase.PLAY_MEDAL_STAR_FAILED: "☆ Failed",
