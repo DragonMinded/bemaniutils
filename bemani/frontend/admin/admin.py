@@ -246,6 +246,7 @@ def viewmachines() -> Response:
                 GameConstants.DDR.value: 'DDR',
                 GameConstants.IIDX.value: 'IIDX',
                 GameConstants.JUBEAT.value: 'Jubeat',
+                GameConstants.MGA.value: 'Metal Gear Arcade',
                 GameConstants.MUSECA.value: 'MÚSECA',
                 GameConstants.POPN_MUSIC.value: 'Pop\'n Music',
                 GameConstants.REFLEC_BEAT.value: 'Reflec Beat',
