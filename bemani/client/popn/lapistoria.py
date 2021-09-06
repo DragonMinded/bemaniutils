@@ -94,6 +94,7 @@ class PopnMusicLapistoriaClient(BaseClient):
             # Extract and return score data
             medals: Dict[int, List[int]] = {}
             scores: Dict[int, List[int]] = {}
+            courses: Dict[int, Dict[str, int]] = {}
             for child in resp.child('player22').children:
                 if child.name == 'music':
                     songid = child.child_value('music_num')
@@ -108,7 +109,27 @@ class PopnMusicLapistoriaClient(BaseClient):
                         scores[songid] = [0, 0, 0, 0]
                     scores[songid][chart] = points
 
-            return {'medals': medals, 'scores': scores}
+                if child.name == "course":
+                    courseid = child.child_value('course_id')
+                    medal = child.child_value('clear_medal')
+                    combo = child.child_value('max_cmbo')
+                    stage1 = child.child_value('stage1_score')
+                    stage2 = child.child_value('stage2_score')
+                    stage3 = child.child_value('stage3_score')
+                    stage4 = child.child_value('stage4_score')
+                    total = child.child_value('total_score')
+                    courses[courseid] = {
+                        'id': courseid,
+                        'medal': medal,
+                        'combo': combo,
+                        'stage1': stage1,
+                        'stage2': stage2,
+                        'stage3': stage3,
+                        'stage4': stage4,
+                        'total': total,
+                    }
+
+            return {'medals': medals, 'scores': scores, 'courses': courses}
 
         else:
             raise Exception(f'Unrecognized message type \'{msg_type}\'')
@@ -159,6 +180,49 @@ class PopnMusicLapistoriaClient(BaseClient):
         player22.add_child(Node.s16('great', 0))
         player22.add_child(Node.s16('good', 0))
         player22.add_child(Node.s16('bad', 0))
+
+        # Swap with server
+        resp = self.exchange('', call)
+        self.assert_path(resp, "response/player22/@status")
+
+    def verify_player22_write_course(self, ref_id: str, course: Dict[str, int]) -> None:
+        call = self.call_node()
+
+        # Construct node
+        player22 = Node.void('player22')
+        call.add_child(player22)
+        player22.set_attribute('method', 'write_course')
+        player22.add_child(Node.s16('pref', 51))
+        player22.add_child(Node.string('location_id', 'JP-1'))
+        player22.add_child(Node.string('ref_id', ref_id))
+        player22.add_child(Node.string('data_id', ref_id))
+        player22.add_child(Node.string('name', self.NAME))
+        player22.add_child(Node.s16('chara_num', 1543))
+        player22.add_child(Node.s32('play_id', 0))
+        player22.add_child(Node.s16('course_id', course['id']))
+        player22.add_child(Node.s16('stage1_music_num', 148))
+        player22.add_child(Node.u8('stage1_sheet_num', 1))
+        player22.add_child(Node.s16('stage2_music_num', 550))
+        player22.add_child(Node.u8('stage2_sheet_num', 1))
+        player22.add_child(Node.s16('stage3_music_num', 1113))
+        player22.add_child(Node.u8('stage3_sheet_num', 1))
+        player22.add_child(Node.s16('stage4_music_num', 341))
+        player22.add_child(Node.u8('stage4_sheet_num', 1))
+        player22.add_child(Node.u8('norma_type', 2))
+        player22.add_child(Node.s32('norma_1_num', 5))
+        player22.add_child(Node.s32('norma_2_num', 0))
+        player22.add_child(Node.u8('clear_medal', course['medal']))
+        player22.add_child(Node.u8('clear_norma', 2))
+        player22.add_child(Node.s32('total_score', course['total']))
+        player22.add_child(Node.s16('max_combo', course['combo']))
+
+        for stage, music in enumerate([148, 550, 1113, 341]):
+            stagenode = Node.void('stage')
+            player22.add_child(stagenode)
+            stagenode.add_child(Node.u8('stage', stage))
+            stagenode.add_child(Node.s16('music_num', music))
+            stagenode.add_child(Node.u8('sheet_num', 1))
+            stagenode.add_child(Node.s32('score', course[f'stage{stage + 1}']))
 
         # Swap with server
         resp = self.exchange('', call)
@@ -250,6 +314,8 @@ class PopnMusicLapistoriaClient(BaseClient):
                 for i in range(4):
                     if score[i] != 0:
                         raise Exception('Got nonzero scores count on a new card!')
+            for _ in scores['courses']:
+                raise Exception('Got nonzero courses count on a new card!')
 
             for phase in [1, 2]:
                 if phase == 1:
@@ -338,6 +404,29 @@ class PopnMusicLapistoriaClient(BaseClient):
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
+
+            # Write a random course so we know we can retrieve them.
+            course = {
+                'id': random.randint(1, 100),
+                'medal': 2,
+                'combo': random.randint(10, 100),
+                'stage1': random.randint(70000, 100000),
+                'stage2': random.randint(70000, 100000),
+                'stage3': random.randint(70000, 100000),
+                'stage4': random.randint(70000, 100000),
+            }
+            course['total'] = sum(course[f'stage{i + 1}'] for i in range(4))
+            self.verify_player22_write_course(ref_id, course)
+
+            # Now, grab the profile one more time and see that it is there.
+            scores = self.verify_player22_read(ref_id, msg_type='query')
+            if len(scores['courses']) != 1:
+                raise Exception("Did not get a course back after saving!")
+            if course['id'] not in scores['courses']:
+                raise Exception("Did not get expected course back after saving!")
+            for key in ['medal', 'combo', 'stage1', 'stage2', 'stage3', 'stage4', 'total']:
+                if course[key] != scores['courses'][course['id']][key]:
+                    raise Exception(f'Expected a {key} of \'{course[key]}\' but got \'{scores["courses"][course["id"]][key]}\'')
         else:
             print("Skipping score checks for existing card")
 

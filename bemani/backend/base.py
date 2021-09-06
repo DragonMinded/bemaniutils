@@ -1,6 +1,7 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
+from typing_extensions import Final
 
 from bemani.common import Model, ValidatedDict, Profile, PlayStatistics, GameConstants, Time
 from bemani.data import Config, Data, Machine, UserID, RemoteUser
@@ -14,14 +15,14 @@ class Status:
     """
     List of statuses we return to the game for various reasons.
     """
-    SUCCESS = 0
-    NO_PROFILE = 109
-    NOT_ALLOWED = 110
-    NOT_REGISTERED = 112
-    INVALID_PIN = 116
+    SUCCESS: Final[int] = 0
+    NO_PROFILE: Final[int] = 109
+    NOT_ALLOWED: Final[int] = 110
+    NOT_REGISTERED: Final[int] = 112
+    INVALID_PIN: Final[int] = 116
 
 
-class Factory:
+class Factory(ABC):
     """
     The base class every game factory inherits from. Defines a create method
     which should return some game class which can handle packets. Game classes
@@ -29,16 +30,17 @@ class Factory:
     Dispatch will look up in order to handle calls.
     """
 
-    MANAGED_CLASSES: List[Type["Base"]] = []
+    MANAGED_CLASSES: List[Type["Base"]]
 
     @classmethod
+    @abstractmethod
     def register_all(cls) -> None:
         """
         Subclasses of this class should use this function to register themselves
         with Base, using Base.register(). Factories specify the game code that
         they support, which Base will use when routing requests.
         """
-        raise Exception('Override this in subclass!')
+        raise NotImplementedError('Override this in subclass!')
 
     @classmethod
     def run_scheduled_work(cls, data: Data, config: Config) -> None:
@@ -84,6 +86,7 @@ class Factory:
             yield (game.game, game.version, game.get_settings())
 
     @classmethod
+    @abstractmethod
     def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
         """
         Given a modelstring and an optional parent model, return an instantiated game class that can handle a packet.
@@ -102,7 +105,7 @@ class Factory:
             A subclass of Base that hopefully has a handle_<call>_request method on it, for the particular
             call that Dispatch wants to resolve, or None if we can't look up a game.
         """
-        raise Exception('Override this in subclass!')
+        raise NotImplementedError('Override this in subclass!')
 
 
 class Base(ABC):

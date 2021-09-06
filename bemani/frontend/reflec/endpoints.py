@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 reflec_pages = Blueprint(
     'reflec_pages',
     __name__,
-    url_prefix='/reflec',
+    url_prefix=f'/{GameConstants.REFLEC_BEAT.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

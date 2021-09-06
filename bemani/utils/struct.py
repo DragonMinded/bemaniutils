@@ -19,10 +19,9 @@ class LineNumber:
 
 
 class StructPrinter:
-    def __init__(self, data: bytes, default_encoding: str="ascii") -> None:
-        self.data = data
+    def __init__(self, pe: PEFile, default_encoding: str="ascii") -> None:
         self.default_encoding = default_encoding
-        self.pe = PEFile(data)
+        self.pe = pe
 
     def parse_format_spec(self, fmt: str) -> Tuple[str, List[Any]]:
         prefix: str = ""
@@ -164,8 +163,8 @@ class StructPrinter:
                     elif spec == "z":
                         # Null-terminated string
                         bs = b""
-                        while self.data[offset:(offset + 1)] != b"\x00":
-                            bs += self.data[offset:(offset + 1)]
+                        while self.pe.data[offset:(offset + 1)] != b"\x00":
+                            bs += self.pe.data[offset:(offset + 1)]
                             offset += 1
                         # Advance past null byte
                         offset += 1
@@ -176,7 +175,7 @@ class StructPrinter:
                         line.append(bs.decode(self.default_encoding))
                     else:
                         size = struct.calcsize(prefix + spec)
-                        chunk = self.data[offset:(offset + size)]
+                        chunk = self.pe.data[offset:(offset + size)]
                         if spec != 'x':
                             if dohex:
                                 line.append(hex(struct.unpack(prefix + spec, chunk)[0]))
@@ -185,11 +184,11 @@ class StructPrinter:
                         offset += size
                 else:
                     if self.pe.is_64bit():
-                        chunk = self.data[offset:(offset + 8)]
+                        chunk = self.pe.data[offset:(offset + 8)]
                         pointer = struct.unpack(prefix + "Q", chunk)[0]
                         offset += 8
                     else:
-                        chunk = self.data[offset:(offset + 4)]
+                        chunk = self.pe.data[offset:(offset + 4)]
                         pointer = struct.unpack(prefix + "I", chunk)[0]
                         offset += 4
 
@@ -282,6 +281,36 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         default=None,
         required=True,
     )
+    parser.add_argument(
+        "--emulate-code",
+        help=(
+            "Hex offset pair of addresses where we should emulate x86/x64 code to "
+            "reconstuct a dynamic psmap structure, separated by a colon. This can "
+            "be specified as either a raw offset into the DLL or as a virtual offset. "
+            "If multiple sections must be emulated you can specify this multiple times."
+        ),
+        type=str,
+        action='append',
+        default=[],
+    )
+    parser.add_argument(
+        "--emulate-function",
+        help=(
+            "Hex offset address of a function that we should emulate to reconstruct a "
+            "dynamic psmap structure. This can be specified as either a raw offset into "
+            "the DLL or as a virtual offset. If multiple functions must be emulated you "
+            "can specify this multiple times."
+        ),
+        type=str,
+        action='append',
+        default=[],
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Display verbose parsing info.",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
 
     if args.end is None and args.count is None:
@@ -308,7 +337,23 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         else:
             return repr(obj)
 
-    printer = StructPrinter(data, default_encoding=args.encoding)
+    pe = PEFile(data)
+
+    # If asked, attempt to emulate code which dynamically constructs the structure
+    # we're about to parse.
+    if args.emulate_code:
+        for chunk in args.emulate_code:
+            emulate_start, emulate_end = chunk.split(':', 1)
+            start = int(emulate_start, 16)
+            end = int(emulate_end, 16)
+            pe.emulate_code(start, end, verbose=args.verbose)
+
+    if args.emulate_function:
+        for function_address in args.emulate_function:
+            fun = int(function_address, 16)
+            pe.emulate_function(fun, verbose=args.verbose)
+
+    printer = StructPrinter(pe, default_encoding=args.encoding)
     lines = printer.parse_struct(args.start, args.end, args.count, args.format)
     for i, line in enumerate(lines):
         print(", ".join(__str(entry, i) for entry in line))

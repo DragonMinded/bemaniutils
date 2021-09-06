@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 popn_pages = Blueprint(
     'popn_pages',
     __name__,
-    url_prefix='/popn',
+    url_prefix=f'/{GameConstants.POPN_MUSIC.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

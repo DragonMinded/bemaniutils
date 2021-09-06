@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
 import binascii
 import copy
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.lapistoria import PopnMusicLapistoria
@@ -38,7 +38,7 @@ class PopnMusicEclale(PopnMusicBase):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID = 1550
 
-    def previous_version(self) -> Optional[PopnMusicBase]:
+    def previous_version(self) -> PopnMusicBase:
         return PopnMusicLapistoria(self.data, self.config, self.model)
 
     def __construct_common_info(self, root: Node) -> None:
@@ -69,7 +69,7 @@ class PopnMusicEclale(PopnMusicBase):
             10: 4,
             # Unknown event (0-1)
             11: 1,
-            # Possibly global event matching related? (0-1)
+            # Possibly net taisen related? (0-1)
             12: 1,
             # Unknown event (0-4)
             13: 4,
@@ -162,7 +162,7 @@ class PopnMusicEclale(PopnMusicBase):
         self.__construct_common_info(info)
         return info
 
-    def handle_lobby22_request(self, request: Node) -> Optional[Node]:
+    def handle_lobby22_request(self, request: Node) -> Node:
         # Stub out the entire lobby22 service (yes, its lobby22 in Pop'n 23)
         return Node.void('lobby22')
 
@@ -276,6 +276,8 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_EX,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             points = score.points
             medal = score.data.get_int('medal')
@@ -363,6 +365,8 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             points = score.points
@@ -453,6 +457,8 @@ class PopnMusicEclale(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             music = Node.void('music')

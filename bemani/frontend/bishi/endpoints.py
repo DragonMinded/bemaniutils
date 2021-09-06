@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 bishi_pages = Blueprint(
     'bishi_pages',
     __name__,
-    url_prefix='/bishi',
+    url_prefix=f'/{GameConstants.BISHI_BASHI.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

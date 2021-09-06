@@ -238,6 +238,8 @@ class PopnMusicTuneStreet(PopnMusicBase):
                 self.CHART_TYPE_EASY,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             flags = self.__format_flags_for_score(score)
 

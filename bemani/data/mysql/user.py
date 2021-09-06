@@ -633,9 +633,9 @@ class UserData(BaseData):
 
         return [UserID(result['userid']) for result in cursor.fetchall()]
 
-    def get_all_achievements(self, game: GameConstants, version: int) -> List[Tuple[UserID, Achievement]]:
+    def get_all_achievements(self, game: GameConstants, version: int, achievementid: Optional[int] = None, achievementtype: Optional[str] = None) -> List[Tuple[UserID, Achievement]]:
         """
-        Given a game/version, find all achievements for al players.
+        Given a game/version, find all achievements for all players.
 
         Parameters:
             game - Enum value identifier of the game looking up the user.
@@ -649,7 +649,14 @@ class UserData(BaseData):
             "refid.userid AS userid FROM achievement, refid WHERE refid.game = :game AND "
             "refid.version = :version AND refid.refid = achievement.refid"
         )
-        cursor = self.execute(sql, {'game': game.value, 'version': version})
+        params: Dict[str, Any] = {'game': game.value, 'version': version}
+        if achievementtype is not None:
+            sql += " AND achievement.type = :type"
+            params['type'] = achievementtype
+        if achievementid is not None:
+            sql += " AND achievement.id = :id"
+            params['id'] = achievementid
+        cursor = self.execute(sql, params)
 
         achievements = []
         for result in cursor.fetchall():

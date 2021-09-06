@@ -175,6 +175,8 @@ class PopnMusicSunnyPark(PopnMusicBase):
                 self.CHART_TYPE_EX,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
             hiscore_index = (score.id * 4) + {
@@ -347,6 +349,8 @@ class PopnMusicSunnyPark(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
@@ -652,6 +656,8 @@ class PopnMusicSunnyPark(PopnMusicBase):
                     self.CHART_TYPE_HYPER,
                     self.CHART_TYPE_EX,
                 ]:
+                    continue
+                if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                     continue
 
                 clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)

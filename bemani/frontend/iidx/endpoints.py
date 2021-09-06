@@ -14,7 +14,7 @@ from bemani.frontend.types import g
 iidx_pages = Blueprint(
     'iidx_pages',
     __name__,
-    url_prefix='/iidx',
+    url_prefix=f'/{GameConstants.IIDX.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 sdvx_pages = Blueprint(
     'sdvx_pages',
     __name__,
-    url_prefix='/sdvx',
+    url_prefix=f'/{GameConstants.SDVX.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

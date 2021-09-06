@@ -237,22 +237,28 @@ def main() -> None:
         default="root",
     )
     parser.add_argument(
-        "--emulate-start",
+        "--emulate-code",
         help=(
-            "Hex offset where we should start emulating x86/x64 code to reconstuct a dynamic psmap structure. "
-            "This can be specified as either a raw offset into the DLL or as a virtual offset."
+            "Hex offset pair of addresses where we should emulate x86/x64 code to "
+            "reconstuct a dynamic psmap structure, separated by a colon. This can "
+            "be specified as either a raw offset into the DLL or as a virtual offset. "
+            "If multiple sections must be emulated you can specify this multiple times."
         ),
         type=str,
-        default=None,
+        action='append',
+        default=[],
     )
     parser.add_argument(
-        "--emulate-end",
+        "--emulate-function",
         help=(
-            "Hex offset where we should finish emulating x86/x64 code to reconstuct a dynamic psmap structure. "
-            "This can be specified as either a raw offset into the DLL or as a virtual offset."
+            "Hex offset address of a function that we should emulate to reconstruct a "
+            "dynamic psmap structure. This can be specified as either a raw offset into "
+            "the DLL or as a virtual offset. If multiple functions must be emulated you "
+            "can specify this multiple times."
         ),
         type=str,
-        default=None,
+        action='append',
+        default=[],
     )
     parser.add_argument(
         "--verbose",
@@ -269,10 +275,17 @@ def main() -> None:
     pe = PEFile(data=data)
 
     # If asked, attempt to emulate code which dynamically constructs a psmap structure.
-    if args.emulate_start and args.emulate_end:
-        start = int(args.emulate_start, 16)
-        end = int(args.emulate_end, 16)
-        pe.emulate_code(start, end, verbose=args.verbose)
+    if args.emulate_code:
+        for chunk in args.emulate_code:
+            emulate_start, emulate_end = chunk.split(':', 1)
+            start = int(emulate_start, 16)
+            end = int(emulate_end, 16)
+            pe.emulate_code(start, end, verbose=args.verbose)
+
+    if args.emulate_function:
+        for function_address in args.emulate_function:
+            fun = int(function_address, 16)
+            pe.emulate_function(fun, verbose=args.verbose)
 
     layout = parse_psmap(pe, args.offset, args.root, verbose=args.verbose)
 
