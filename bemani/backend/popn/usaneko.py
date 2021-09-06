@@ -693,7 +693,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
         self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
 
         if request.child_value('is_image_store') == 1:
-            self.broadcast_score(userid, songid, chart, medal, combo, stats)
+            self.broadcast_score(userid, songid, chart, medal, points, combo, stats)
 
         return root
 

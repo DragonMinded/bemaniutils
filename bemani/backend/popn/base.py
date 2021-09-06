@@ -292,7 +292,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # We saved successfully
             break
 
-    def broadcast_score(self, userid: int, songid: int, chart: int, medal: int, points: int, combo: int, stats: Dict[str, int]) -> None:
+    def broadcast_score(self, userid: UserID, songid: int, chart: int, medal: int, points: int, combo: int, stats: Dict[str, int]) -> None:
         # Generate scorecard
         profile = self.get_profile(userid)
         song = self.data.local.music.get_song(self.game, self.version, songid, chart)
@@ -324,13 +324,13 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             BroadcastConstants.SONG_NAME: song.name,
             BroadcastConstants.ARTIST_NAME: song.artist,
             BroadcastConstants.DIFFICULTY: card_chart,
-            BroadcastConstants.SCORE: points,
+            BroadcastConstants.SCORE: str(points),
             BroadcastConstants.MEDAL: card_medal,
-            BroadcastConstants.COOLS: stats['cool'],
-            BroadcastConstants.GREATS: stats['great'],
-            BroadcastConstants.GOODS: stats['good'],
-            BroadcastConstants.BADS: stats['bad'],
-            BroadcastConstants.COMBO: combo,
+            BroadcastConstants.COOLS: str(stats['cool']),
+            BroadcastConstants.GREATS: str(stats['great']),
+            BroadcastConstants.GOODS: str(stats['good']),
+            BroadcastConstants.BADS: str(stats['bad']),
+            BroadcastConstants.COMBO: str(combo),
         }
 
         # Try to broadcast out the score to our webhook(s)
