@@ -360,7 +360,7 @@ def navigation() -> Dict[str, Any]:
                 'label': 'Metal Gear Arcade',
                 'entries': mga_entries,
                 'base_uri': app.blueprints['mga_pages'].url_prefix,
-                'gamecode': GameConstants.MGA,
+                'gamecode': GameConstants.MGA.value,
             },
         )
 

@@ -15,7 +15,7 @@ from bemani.frontend.types import g
 mga_pages = Blueprint(
     'mga_pages',
     __name__,
-    url_prefix='/mga',
+    url_prefix=f'/{GameConstants.MGA.value}',
     template_folder=templates_location,
     static_folder=static_location,
 )

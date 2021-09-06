@@ -21,6 +21,7 @@ class Triggers:
             GameConstants.DDR: 'Dance Dance Revolution',
             GameConstants.IIDX: 'Beatmania IIDX',
             GameConstants.JUBEAT: 'Jubeat',
+            GameConstants.MGA: 'Metal Gear Arcade',
             GameConstants.MUSECA: 'MÚSECA',
             GameConstants.POPN_MUSIC: 'Pop\'n Music',
             GameConstants.REFLEC_BEAT: 'Reflec Beat',
