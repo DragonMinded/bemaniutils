@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import copy
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from bemani.backend.ddr import DDRFactory, DDRBase
 from bemani.common import Profile, ValidatedDict, GameConstants, VersionConstants
@@ -10,11 +10,11 @@ from bemani.frontend.base import FrontendBase
 
 class DDRFrontend(FrontendBase):
 
-    game = GameConstants.DDR
+    game: GameConstants = GameConstants.DDR
 
-    version = 0  # We use a virtual version for DDR to tie charts together
+    version: int = 0  # We use a virtual version for DDR to tie charts together
 
-    valid_charts = [
+    valid_charts: List[int] = [
         DDRBase.CHART_SINGLE_BEGINNER,
         DDRBase.CHART_SINGLE_BASIC,
         DDRBase.CHART_SINGLE_DIFFICULT,
@@ -26,9 +26,9 @@ class DDRFrontend(FrontendBase):
         DDRBase.CHART_DOUBLE_CHALLENGE,
     ]
 
-    valid_rival_types = [f'friend_{i}' for i in range(10)]
+    valid_rival_types: List[str] = [f'friend_{i}' for i in range(10)]
 
-    max_active_rivals = {
+    max_active_rivals: Dict[int, int] = {
         VersionConstants.DDR_X2: 1,
         VersionConstants.DDR_X3_VS_2NDMIX: 3,
         VersionConstants.DDR_2013: 3,

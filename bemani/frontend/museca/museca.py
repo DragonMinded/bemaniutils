@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from flask_caching import Cache  # type: ignore
 
@@ -11,9 +11,9 @@ from bemani.frontend.base import FrontendBase
 
 class MusecaFrontend(FrontendBase):
 
-    game = GameConstants.MUSECA
+    game: GameConstants = GameConstants.MUSECA
 
-    valid_charts = [
+    valid_charts: List[int] = [
         MusecaBase.CHART_TYPE_GREEN,
         MusecaBase.CHART_TYPE_ORANGE,
         MusecaBase.CHART_TYPE_RED,

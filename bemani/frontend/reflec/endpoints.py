@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8
 import re
-from typing import Any, Dict
+from typing import Any, Dict, List
+from typing_extensions import Final
 from flask import Blueprint, request, Response, url_for, abort
 
 from bemani.common import ID, GameConstants
@@ -20,7 +21,7 @@ reflec_pages = Blueprint(
     static_folder=static_location,
 )
 
-NO_RIVAL_SUPPORT = [1]
+NO_RIVAL_SUPPORT: Final[List[int]] = [1]
 
 
 @reflec_pages.route('/scores')

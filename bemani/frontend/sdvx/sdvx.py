@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from flask_caching import Cache  # type: ignore
 
@@ -11,9 +11,9 @@ from bemani.frontend.base import FrontendBase
 
 class SoundVoltexFrontend(FrontendBase):
 
-    game = GameConstants.SDVX
+    game: GameConstants = GameConstants.SDVX
 
-    valid_charts = [
+    valid_charts: List[int] = [
         SoundVoltexBase.CHART_TYPE_NOVICE,
         SoundVoltexBase.CHART_TYPE_ADVANCED,
         SoundVoltexBase.CHART_TYPE_EXHAUST,
@@ -21,7 +21,7 @@ class SoundVoltexFrontend(FrontendBase):
         SoundVoltexBase.CHART_TYPE_MAXIMUM,
     ]
 
-    valid_rival_types = [
+    valid_rival_types: List[str] = [
         'rival',
     ]
 

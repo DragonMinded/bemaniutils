@@ -12,7 +12,7 @@ from bemani.frontend.base import FrontendBase
 
 class BishiBashiFrontend(FrontendBase):
 
-    game = GameConstants.BISHI_BASHI
+    game: GameConstants = GameConstants.BISHI_BASHI
 
     def __init__(self, data: Data, config: Config, cache: Cache) -> None:
         super().__init__(data, config, cache)
