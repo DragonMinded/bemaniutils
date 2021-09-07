@@ -4,6 +4,7 @@ from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
+from typing_extensions import Final
 from passlib.hash import pbkdf2_sha512  # type: ignore
 
 from bemani.common import ValidatedDict, Profile, GameConstants, Time
@@ -165,7 +166,7 @@ class AccountCreationException(Exception):
 
 class UserData(BaseData):
 
-    REF_ID_LENGTH = 16
+    REF_ID_LENGTH: Final[int] = 16
 
     def from_cardid(self, cardid: str) -> Optional[UserID]:
         """
