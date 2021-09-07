@@ -13,8 +13,8 @@ from bemani.protocol import Node
 
 class PopnMusicPeace(PopnMusicBase):
 
-    name = "Pop'n Music peace"
-    version = VersionConstants.POPN_MUSIC_PEACE
+    name: str = "Pop'n Music peace"
+    version: int = VersionConstants.POPN_MUSIC_PEACE
 
     # Chart type, as returned from the game
     GAME_CHART_TYPE_EASY = 0
@@ -46,7 +46,7 @@ class PopnMusicPeace(PopnMusicBase):
     GAME_PLAY_RANK_S = 8
 
     # Biggest ID in the music DB
-    GAME_MAX_MUSIC_ID = 1877
+    GAME_MAX_MUSIC_ID: int = 1877
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicUsaNeko(self.data, self.config, self.model)

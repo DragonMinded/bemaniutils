@@ -8,11 +8,10 @@ from bemani.common import VersionConstants
 
 class IIDXBistrover(IIDXBase):
 
-    name = 'Beatmania IIDX BISTROVER'
-    version = VersionConstants.IIDX_BISTROVER
+    name: str = 'Beatmania IIDX BISTROVER'
+    version: int = VersionConstants.IIDX_BISTROVER
+
+    requires_extended_regions: bool = True
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXHeroicVerse(self.data, self.config, self.model)
-
-    def requires_extended_regions(self) -> bool:
-        return True

@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from bemani.backend.jubeat import JubeatFactory, JubeatBase
 from bemani.common import Profile, ValidatedDict, GameConstants, VersionConstants
@@ -9,15 +9,15 @@ from bemani.frontend.base import FrontendBase
 
 class JubeatFrontend(FrontendBase):
 
-    game = GameConstants.JUBEAT
+    game: GameConstants = GameConstants.JUBEAT
 
-    valid_charts = [
+    valid_charts: List[int] = [
         JubeatBase.CHART_TYPE_BASIC,
         JubeatBase.CHART_TYPE_ADVANCED,
         JubeatBase.CHART_TYPE_EXTREME,
     ]
 
-    valid_rival_types = ['rival']
+    valid_rival_types: List[str] = ['rival']
 
     def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from JubeatFactory.all_games()

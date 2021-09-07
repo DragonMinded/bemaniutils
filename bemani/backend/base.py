@@ -132,6 +132,39 @@ class Base(ABC):
     """
     name: str
 
+    @property
+    def extra_services(self) -> List[str]:
+        """
+        A list of extra services that this game needs to advertise.
+        Override in your subclass if you need to advertise extra
+        services for a particular game or series.
+        """
+        return []
+
+    @property
+    def supports_paseli(self) -> bool:
+        """
+        An override so that particular games can disable PASELI support
+        regardless of the server settings. Some games and some regions
+        are buggy with respect to PASELI.
+        """
+        return True
+
+    @property
+    def supports_expired_profiles(self) -> bool:
+        """
+        Override this in your subclass if your game or series requires non-expired profiles
+        in order to correctly present migrations to the user.
+        """
+        return True
+
+    @property
+    def requires_extended_regions(self) -> bool:
+        """
+        Override this in your subclass if your game requires an updated region list.
+        """
+        return False
+
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         self.data = data
         self.config = config
@@ -214,35 +247,6 @@ class Base(ABC):
         for factory in cls.__registered_handlers:
             for game in factory.MANAGED_CLASSES:
                 yield (game.game, game.version, game.get_settings())
-
-    def extra_services(self) -> List[str]:
-        """
-        A list of extra services that this game needs to advertise.
-        Override in your subclass if you need to advertise extra
-        services for a particular game or series.
-        """
-        return []
-
-    def supports_paseli(self) -> bool:
-        """
-        An override so that particular games can disable PASELI support
-        regardless of the server settings. Some games and some regions
-        are buggy with respect to PASELI.
-        """
-        return True
-
-    def supports_expired_profiles(self) -> bool:
-        """
-        Override this in your subclass if your game or series requires non-expired profiles
-        in order to correctly present migrations to the user.
-        """
-        return True
-
-    def requires_extended_regions(self) -> bool:
-        """
-        Override this in your subclass if your game requires an updated region list.
-        """
-        return False
 
     def bind_profile(self, userid: UserID) -> None:
         """
@@ -437,9 +441,9 @@ class Base(ABC):
     def get_machine_region(self) -> int:
         arcade = self.get_arcade()
         if arcade is None:
-            return RegionConstants.db_to_game_region(self.requires_extended_regions(), self.config.server.region)
+            return RegionConstants.db_to_game_region(self.requires_extended_regions, self.config.server.region)
         else:
-            return RegionConstants.db_to_game_region(self.requires_extended_regions(), arcade.region)
+            return RegionConstants.db_to_game_region(self.requires_extended_regions, arcade.region)
 
     def get_game_config(self) -> ValidatedDict:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)

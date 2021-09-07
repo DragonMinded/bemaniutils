@@ -1,8 +1,8 @@
 # vim: set fileencoding=utf-8
-import copy
 import math
 import random
 from typing import Optional, Dict, List, Any, Set, Tuple
+from typing_extensions import Final
 
 from bemani.backend.base import Status
 from bemani.backend.jubeat.common import (
@@ -32,22 +32,22 @@ class JubeatProp(
     JubeatBase,
 ):
 
-    name = 'Jubeat Prop'
-    version = VersionConstants.JUBEAT_PROP
+    name: str = 'Jubeat Prop'
+    version: int = VersionConstants.JUBEAT_PROP
 
-    GAME_COURSE_REQUIREMENT_SCORE = 1
-    GAME_COURSE_REQUIREMENT_FULL_COMBO = 2
-    GAME_COURSE_REQUIREMENT_PERFECT_PERCENT = 3
+    GAME_COURSE_REQUIREMENT_SCORE: Final[int] = 1
+    GAME_COURSE_REQUIREMENT_FULL_COMBO: Final[int] = 2
+    GAME_COURSE_REQUIREMENT_PERFECT_PERCENT: Final[int] = 3
 
-    GAME_COURSE_RATING_FAILED = 1
-    GAME_COURSE_RATING_BRONZE = 2
-    GAME_COURSE_RATING_SILVER = 3
-    GAME_COURSE_RATING_GOLD = 4
+    GAME_COURSE_RATING_FAILED: Final[int] = 1
+    GAME_COURSE_RATING_BRONZE: Final[int] = 2
+    GAME_COURSE_RATING_SILVER: Final[int] = 3
+    GAME_COURSE_RATING_GOLD: Final[int] = 4
 
-    JBOX_EMBLEM_NORMAL = 1
-    JBOX_EMBLEM_PREMIUM = 2
+    JBOX_EMBLEM_NORMAL: Final[int] = 1
+    JBOX_EMBLEM_PREMIUM: Final[int] = 2
 
-    EVENTS = {
+    EVENTS: Dict[int, Dict[str, bool]] = {
         5: {
             'enabled': False,
         },
@@ -1085,7 +1085,7 @@ class JubeatProp(
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         data = request.child('data')
 
         # Grab system information

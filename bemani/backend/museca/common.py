@@ -1,4 +1,3 @@
-
 from bemani.backend.museca.base import MusecaBase
 from bemani.common import ID
 from bemani.protocol import Node

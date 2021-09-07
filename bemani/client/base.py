@@ -1,5 +1,6 @@
 import time
 from typing import Optional, Dict, List, Tuple, Any
+from typing_extensions import Final
 
 from bemani.client.common import random_hex_string
 from bemani.client.protocol import ClientProtocol
@@ -13,13 +14,13 @@ class BaseClient:
     and verify some basic packets that are always expected to work.
     """
 
-    CARD_OK = 0
-    CARD_NEW = 112
-    CARD_BAD_PIN = 116
-    CARD_NOT_ALLOWED = 110
+    CARD_OK: Final[int] = 0
+    CARD_NEW: Final[int] = 112
+    CARD_BAD_PIN: Final[int] = 116
+    CARD_NOT_ALLOWED: Final[int] = 110
 
-    CORRECT_PASSWORD = '1234'
-    WRONG_PASSWORD = '4321'
+    CORRECT_PASSWORD: Final[str] = '1234'
+    WRONG_PASSWORD: Final[str] = '4321'
 
     def __init__(self, proto: ClientProtocol, pcbid: str, config: Dict[str, Any]) -> None:
         self.__proto = proto

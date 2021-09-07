@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Dict, Optional
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -13,25 +14,25 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     Base game class for all Museca version that we support.
     """
 
-    game = GameConstants.MUSECA
+    game: GameConstants = GameConstants.MUSECA
 
-    CHART_TYPE_GREEN = 0
-    CHART_TYPE_ORANGE = 1
-    CHART_TYPE_RED = 2
+    CHART_TYPE_GREEN: Final[int] = 0
+    CHART_TYPE_ORANGE: Final[int] = 1
+    CHART_TYPE_RED: Final[int] = 2
 
-    GRADE_DEATH = DBConstants.MUSECA_GRADE_DEATH
-    GRADE_POOR = DBConstants.MUSECA_GRADE_POOR
-    GRADE_MEDIOCRE = DBConstants.MUSECA_GRADE_MEDIOCRE
-    GRADE_GOOD = DBConstants.MUSECA_GRADE_GOOD
-    GRADE_GREAT = DBConstants.MUSECA_GRADE_GREAT
-    GRADE_EXCELLENT = DBConstants.MUSECA_GRADE_EXCELLENT
-    GRADE_SUPERB = DBConstants.MUSECA_GRADE_SUPERB
-    GRADE_MASTERPIECE = DBConstants.MUSECA_GRADE_MASTERPIECE
-    GRADE_PERFECT = DBConstants.MUSECA_GRADE_PERFECT
+    GRADE_DEATH: Final[int] = DBConstants.MUSECA_GRADE_DEATH
+    GRADE_POOR: Final[int] = DBConstants.MUSECA_GRADE_POOR
+    GRADE_MEDIOCRE: Final[int] = DBConstants.MUSECA_GRADE_MEDIOCRE
+    GRADE_GOOD: Final[int] = DBConstants.MUSECA_GRADE_GOOD
+    GRADE_GREAT: Final[int] = DBConstants.MUSECA_GRADE_GREAT
+    GRADE_EXCELLENT: Final[int] = DBConstants.MUSECA_GRADE_EXCELLENT
+    GRADE_SUPERB: Final[int] = DBConstants.MUSECA_GRADE_SUPERB
+    GRADE_MASTERPIECE: Final[int] = DBConstants.MUSECA_GRADE_MASTERPIECE
+    GRADE_PERFECT: Final[int] = DBConstants.MUSECA_GRADE_PERFECT
 
-    CLEAR_TYPE_FAILED = DBConstants.MUSECA_CLEAR_TYPE_FAILED
-    CLEAR_TYPE_CLEARED = DBConstants.MUSECA_CLEAR_TYPE_CLEARED
-    CLEAR_TYPE_FULL_COMBO = DBConstants.MUSECA_CLEAR_TYPE_FULL_COMBO
+    CLEAR_TYPE_FAILED: Final[int] = DBConstants.MUSECA_CLEAR_TYPE_FAILED
+    CLEAR_TYPE_CLEARED: Final[int] = DBConstants.MUSECA_CLEAR_TYPE_CLEARED
+    CLEAR_TYPE_FULL_COMBO: Final[int] = DBConstants.MUSECA_CLEAR_TYPE_FULL_COMBO
 
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)

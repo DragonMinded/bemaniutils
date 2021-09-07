@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Dict, List, Optional
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -13,26 +14,33 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     Base game class for all Reflec Beat version that we support.
     """
 
-    game = GameConstants.REFLEC_BEAT
+    game: GameConstants = GameConstants.REFLEC_BEAT
 
     # Chart types, as stored in the DB
-    CHART_TYPE_BASIC = 0
-    CHART_TYPE_MEDIUM = 1
-    CHART_TYPE_HARD = 2
-    CHART_TYPE_SPECIAL = 3
+    CHART_TYPE_BASIC: Final[int] = 0
+    CHART_TYPE_MEDIUM: Final[int] = 1
+    CHART_TYPE_HARD: Final[int] = 2
+    CHART_TYPE_SPECIAL: Final[int] = 3
 
     # Clear types, as saved/loaded from the DB
-    CLEAR_TYPE_NO_PLAY = DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY
-    CLEAR_TYPE_FAILED = DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED
-    CLEAR_TYPE_CLEARED = DBConstants.REFLEC_BEAT_CLEAR_TYPE_CLEARED
-    CLEAR_TYPE_HARD_CLEARED = DBConstants.REFLEC_BEAT_CLEAR_TYPE_HARD_CLEARED
-    CLEAR_TYPE_S_HARD_CLEARED = DBConstants.REFLEC_BEAT_CLEAR_TYPE_S_HARD_CLEARED
+    CLEAR_TYPE_NO_PLAY: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY
+    CLEAR_TYPE_FAILED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED
+    CLEAR_TYPE_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_CLEARED
+    CLEAR_TYPE_HARD_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_HARD_CLEARED
+    CLEAR_TYPE_S_HARD_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_S_HARD_CLEARED
 
     # Combo types, as saved/loaded from the DB
-    COMBO_TYPE_NONE = DBConstants.REFLEC_BEAT_COMBO_TYPE_NONE
-    COMBO_TYPE_ALMOST_COMBO = DBConstants.REFLEC_BEAT_COMBO_TYPE_ALMOST_COMBO
-    COMBO_TYPE_FULL_COMBO = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO
-    COMBO_TYPE_FULL_COMBO_ALL_JUST = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
+    COMBO_TYPE_NONE: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_NONE
+    COMBO_TYPE_ALMOST_COMBO: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_ALMOST_COMBO
+    COMBO_TYPE_FULL_COMBO: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO
+    COMBO_TYPE_FULL_COMBO_ALL_JUST: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
+
+    # Return the local2 and lobby2 service so that matching will work on newer
+    # Reflec Beat games.
+    extra_services: List[str] = [
+        'local2',
+        'lobby2',
+    ]
 
     def previous_version(self) -> Optional['ReflecBeatBase']:
         """
@@ -40,16 +48,6 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         be overridden.
         """
         return None
-
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 and lobby2 service so that matching will work on newer
-        Reflec Beat games.
-        """
-        return [
-            'local2',
-            'lobby2',
-        ]
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """

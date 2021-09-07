@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.ddr.stubs import (
@@ -26,7 +26,7 @@ from bemani.data import Config, Data
 
 class DDRFactory(Factory):
 
-    MANAGED_CLASSES = [
+    MANAGED_CLASSES: List[Type[Base]] = [
         DDR1stMix,
         DDR2ndMix,
         DDR4thMix,

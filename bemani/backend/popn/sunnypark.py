@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
-import copy
 from typing import Any, Dict, List
+from typing_extensions import Final
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.fantasia import PopnMusicFantasia
@@ -13,35 +13,35 @@ from bemani.protocol import Node
 
 class PopnMusicSunnyPark(PopnMusicBase):
 
-    name = "Pop'n Music Sunny Park"
-    version = VersionConstants.POPN_MUSIC_SUNNY_PARK
+    name: str = "Pop'n Music Sunny Park"
+    version: int = VersionConstants.POPN_MUSIC_SUNNY_PARK
 
     # Chart type, as returned from the game
-    GAME_CHART_TYPE_EASY = 0
-    GAME_CHART_TYPE_NORMAL = 1
-    GAME_CHART_TYPE_HYPER = 2
-    GAME_CHART_TYPE_EX = 3
+    GAME_CHART_TYPE_EASY: Final[int] = 0
+    GAME_CHART_TYPE_NORMAL: Final[int] = 1
+    GAME_CHART_TYPE_HYPER: Final[int] = 2
+    GAME_CHART_TYPE_EX: Final[int] = 3
 
     # Chart type, as packed into a hiscore binary
-    GAME_CHART_TYPE_EASY_POSITION = 0
-    GAME_CHART_TYPE_NORMAL_POSITION = 1
-    GAME_CHART_TYPE_HYPER_POSITION = 2
-    GAME_CHART_TYPE_EX_POSITION = 3
+    GAME_CHART_TYPE_EASY_POSITION: Final[int] = 0
+    GAME_CHART_TYPE_NORMAL_POSITION: Final[int] = 1
+    GAME_CHART_TYPE_HYPER_POSITION: Final[int] = 2
+    GAME_CHART_TYPE_EX_POSITION: Final[int] = 3
 
     # Medal type, as returned from the game
-    GAME_PLAY_MEDAL_CIRCLE_FAILED = 1
-    GAME_PLAY_MEDAL_DIAMOND_FAILED = 2
-    GAME_PLAY_MEDAL_STAR_FAILED = 3
-    GAME_PLAY_MEDAL_CIRCLE_CLEARED = 5
-    GAME_PLAY_MEDAL_DIAMOND_CLEARED = 6
-    GAME_PLAY_MEDAL_STAR_CLEARED = 7
-    GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO = 9
-    GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO = 10
-    GAME_PLAY_MEDAL_STAR_FULL_COMBO = 11
-    GAME_PLAY_MEDAL_PERFECT = 15
+    GAME_PLAY_MEDAL_CIRCLE_FAILED: Final[int] = 1
+    GAME_PLAY_MEDAL_DIAMOND_FAILED: Final[int] = 2
+    GAME_PLAY_MEDAL_STAR_FAILED: Final[int] = 3
+    GAME_PLAY_MEDAL_CIRCLE_CLEARED: Final[int] = 5
+    GAME_PLAY_MEDAL_DIAMOND_CLEARED: Final[int] = 6
+    GAME_PLAY_MEDAL_STAR_CLEARED: Final[int] = 7
+    GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO: Final[int] = 9
+    GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO: Final[int] = 10
+    GAME_PLAY_MEDAL_STAR_FULL_COMBO: Final[int] = 11
+    GAME_PLAY_MEDAL_PERFECT: Final[int] = 15
 
     # Maximum music ID for this game
-    GAME_MAX_MUSIC_ID = 1350
+    GAME_MAX_MUSIC_ID: Final[int] = 1350
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicFantasia(self.data, self.config, self.model)
@@ -360,7 +360,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         newprofile.replace_int('option', request.child_value('option'))
         newprofile.replace_int('chara', request.child_value('chara'))
         newprofile.replace_int('mode', request.child_value('mode'))

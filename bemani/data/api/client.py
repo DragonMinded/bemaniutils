@@ -1,6 +1,7 @@
 import json
 import requests
 from typing import Tuple, Dict, List, Any, Optional
+from typing_extensions import Final
 
 from bemani.common import APIConstants, GameConstants, VersionConstants, DBConstants, ValidatedDict
 
@@ -34,7 +35,7 @@ class APIClient:
     A client that fully speaks BEMAPI and can pull information from a remote server.
     """
 
-    API_VERSION = 'v1'
+    API_VERSION: Final[str] = 'v1'
 
     def __init__(self, base_uri: str, token: str, allow_stats: bool, allow_scores: bool) -> None:
         self.base_uri = base_uri

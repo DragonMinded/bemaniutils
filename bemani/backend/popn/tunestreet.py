@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
-import copy
 from typing import Dict, Any
+from typing_extensions import Final
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.stubs import PopnMusicSengokuRetsuden
@@ -13,49 +13,49 @@ from bemani.protocol import Node
 
 class PopnMusicTuneStreet(PopnMusicBase):
 
-    name = "Pop'n Music TUNE STREET"
-    version = VersionConstants.POPN_MUSIC_TUNE_STREET
+    name: str = "Pop'n Music TUNE STREET"
+    version: int = VersionConstants.POPN_MUSIC_TUNE_STREET
 
     # Play modes, as reported by profile save from the game
-    GAME_PLAY_MODE_CHALLENGE = 3
-    GAME_PLAY_MODE_CHO_CHALLENGE = 4
-    GAME_PLAY_MODE_TOWN_CHO_CHALLENGE = 15
+    GAME_PLAY_MODE_CHALLENGE: Final[int] = 3
+    GAME_PLAY_MODE_CHO_CHALLENGE: Final[int] = 4
+    GAME_PLAY_MODE_TOWN_CHO_CHALLENGE: Final[int] = 15
 
     # Play flags, as saved into/loaded from the DB
-    GAME_PLAY_FLAG_FAILED = 0
-    GAME_PLAY_FLAG_CLEARED = 1
-    GAME_PLAY_FLAG_FULL_COMBO = 2
-    GAME_PLAY_FLAG_PERFECT_COMBO = 3
+    GAME_PLAY_FLAG_FAILED: Final[int] = 0
+    GAME_PLAY_FLAG_CLEARED: Final[int] = 1
+    GAME_PLAY_FLAG_FULL_COMBO: Final[int] = 2
+    GAME_PLAY_FLAG_PERFECT_COMBO: Final[int] = 3
 
     # Chart type, as reported by profile save from the game
-    GAME_CHART_TYPE_NORMAL = 0
-    GAME_CHART_TYPE_HYPER = 1
-    GAME_CHART_TYPE_5_BUTTON = 2
-    GAME_CHART_TYPE_EX = 3
-    GAME_CHART_TYPE_BATTLE_NORMAL = 4
-    GAME_CHART_TYPE_BATTLE_HYPER = 5
-    GAME_CHART_TYPE_ENJOY_5_BUTTON = 6
-    GAME_CHART_TYPE_ENJOY_9_BUTTON = 7
+    GAME_CHART_TYPE_NORMAL: Final[int] = 0
+    GAME_CHART_TYPE_HYPER: Final[int] = 1
+    GAME_CHART_TYPE_5_BUTTON: Final[int] = 2
+    GAME_CHART_TYPE_EX: Final[int] = 3
+    GAME_CHART_TYPE_BATTLE_NORMAL: Final[int] = 4
+    GAME_CHART_TYPE_BATTLE_HYPER: Final[int] = 5
+    GAME_CHART_TYPE_ENJOY_5_BUTTON: Final[int] = 6
+    GAME_CHART_TYPE_ENJOY_9_BUTTON: Final[int] = 7
 
     # Extra chart types supported by Pop'n 19
-    CHART_TYPE_OLD_NORMAL = 4
-    CHART_TYPE_OLD_HYPER = 5
-    CHART_TYPE_OLD_EX = 6
-    CHART_TYPE_ENJOY_5_BUTTON = 7
-    CHART_TYPE_ENJOY_9_BUTTON = 8
-    CHART_TYPE_5_BUTTON = 9
+    CHART_TYPE_OLD_NORMAL: Final[int] = 4
+    CHART_TYPE_OLD_HYPER: Final[int] = 5
+    CHART_TYPE_OLD_EX: Final[int] = 6
+    CHART_TYPE_ENJOY_5_BUTTON: Final[int] = 7
+    CHART_TYPE_ENJOY_9_BUTTON: Final[int] = 8
+    CHART_TYPE_5_BUTTON: Final[int] = 9
 
     # Chart type, as packed into a hiscore binary
-    GAME_CHART_TYPE_5_BUTTON_POSITION = 0
-    GAME_CHART_TYPE_NORMAL_POSITION = 1
-    GAME_CHART_TYPE_HYPER_POSITION = 2
-    GAME_CHART_TYPE_EX_POSITION = 3
-    GAME_CHART_TYPE_CHO_NORMAL_POSITION = 4
-    GAME_CHART_TYPE_CHO_HYPER_POSITION = 5
-    GAME_CHART_TYPE_CHO_EX_POSITION = 6
+    GAME_CHART_TYPE_5_BUTTON_POSITION: Final[int] = 0
+    GAME_CHART_TYPE_NORMAL_POSITION: Final[int] = 1
+    GAME_CHART_TYPE_HYPER_POSITION: Final[int] = 2
+    GAME_CHART_TYPE_EX_POSITION: Final[int] = 3
+    GAME_CHART_TYPE_CHO_NORMAL_POSITION: Final[int] = 4
+    GAME_CHART_TYPE_CHO_HYPER_POSITION: Final[int] = 5
+    GAME_CHART_TYPE_CHO_EX_POSITION: Final[int] = 6
 
     # Highest song ID we can represent
-    GAME_MAX_MUSIC_ID = 1045
+    GAME_MAX_MUSIC_ID: Final[int] = 1045
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicSengokuRetsuden(self.data, self.config, self.model)
@@ -351,7 +351,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         # Extract the playmode, important for scores later
         playmode = int(request.attribute('play_mode'))

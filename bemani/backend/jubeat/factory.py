@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.jubeat.stubs import (
@@ -22,7 +22,7 @@ from bemani.data import Config, Data
 
 class JubeatFactory(Factory):
 
-    MANAGED_CLASSES = [
+    MANAGED_CLASSES: List[Type[Base]] = [
         Jubeat,
         JubeatRipples,
         JubeatRipplesAppend,

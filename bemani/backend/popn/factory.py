@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.popn.stubs import (
@@ -34,7 +34,7 @@ from bemani.data import Config, Data
 
 class PopnMusicFactory(Factory):
 
-    MANAGED_CLASSES = [
+    MANAGED_CLASSES: List[Type[Base]] = [
         PopnMusic,
         PopnMusic2,
         PopnMusic3,

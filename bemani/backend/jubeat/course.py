@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Any, Dict, List
+from typing_extensions import Final
 
 from bemani.data import UserID
 from bemani.backend.jubeat.base import JubeatBase
@@ -7,14 +8,14 @@ from bemani.backend.jubeat.base import JubeatBase
 
 class JubeatCourse(JubeatBase):
 
-    COURSE_RATING_FAILED = 100
-    COURSE_RATING_BRONZE = 200
-    COURSE_RATING_SILVER = 300
-    COURSE_RATING_GOLD = 400
+    COURSE_RATING_FAILED: Final[int] = 100
+    COURSE_RATING_BRONZE: Final[int] = 200
+    COURSE_RATING_SILVER: Final[int] = 300
+    COURSE_RATING_GOLD: Final[int] = 400
 
-    COURSE_REQUIREMENT_SCORE = 100
-    COURSE_REQUIREMENT_FULL_COMBO = 200
-    COURSE_REQUIREMENT_PERFECT_PERCENT = 300
+    COURSE_REQUIREMENT_SCORE: Final[int] = 100
+    COURSE_REQUIREMENT_FULL_COMBO: Final[int] = 200
+    COURSE_REQUIREMENT_PERFECT_PERCENT: Final[int] = 300
 
     def get_all_courses(self) -> List[Dict[str, Any]]:
         # List of base courses for Saucer Fulfill+ from BemaniWiki

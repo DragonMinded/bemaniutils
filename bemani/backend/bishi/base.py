@@ -13,7 +13,7 @@ class BishiBashiBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     happened.
     """
 
-    game = GameConstants.BISHI_BASHI
+    game: GameConstants = GameConstants.BISHI_BASHI
 
     def previous_version(self) -> Optional['BishiBashiBase']:
         """

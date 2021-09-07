@@ -1,6 +1,7 @@
 import json
 import random
 from typing import Dict, Any, Optional
+from typing_extensions import Final
 
 from bemani.common import Time
 from bemani.data.config import Config
@@ -38,7 +39,7 @@ class _BytesEncoder(json.JSONEncoder):
 
 class BaseData:
 
-    SESSION_LENGTH = 32
+    SESSION_LENGTH: Final[int] = 32
 
     def __init__(self, config: Config, conn: Connection) -> None:
         """

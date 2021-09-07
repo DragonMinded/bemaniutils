@@ -1,7 +1,7 @@
 import copy
 import json
 import traceback
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 from flask import Flask, abort, request, Response
 from functools import wraps
 
@@ -16,7 +16,7 @@ app = Flask(
 )
 config = Config()
 
-SUPPORTED_VERSIONS = ['v1']
+SUPPORTED_VERSIONS: List[str] = ['v1']
 
 
 def jsonify_response(data: Dict[str, Any], code: int=200) -> Response:

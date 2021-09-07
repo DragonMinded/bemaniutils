@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
-import copy
 from typing import Any, Dict, List, Optional, Tuple
+from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
@@ -15,62 +15,67 @@ class SoundVoltexHeavenlyHaven(
     SoundVoltexBase,
 ):
 
-    name = 'SOUND VOLTEX IV HEAVENLY HAVEN'
-    version = VersionConstants.SDVX_HEAVENLY_HAVEN
+    name: str = 'SOUND VOLTEX IV HEAVENLY HAVEN'
+    version: int = VersionConstants.SDVX_HEAVENLY_HAVEN
 
-    GAME_LIMITED_LOCKED = 1
-    GAME_LIMITED_UNLOCKABLE = 2
-    GAME_LIMITED_UNLOCKED = 3
+    GAME_LIMITED_LOCKED: Final[int] = 1
+    GAME_LIMITED_UNLOCKABLE: Final[int] = 2
+    GAME_LIMITED_UNLOCKED: Final[int] = 3
 
-    GAME_CURRENCY_PACKETS = 0
-    GAME_CURRENCY_BLOCKS = 1
+    GAME_CURRENCY_PACKETS: Final[int] = 0
+    GAME_CURRENCY_BLOCKS: Final[int] = 1
 
-    GAME_CATALOG_TYPE_SONG = 0
-    GAME_CATALOG_TYPE_APPEAL_CARD = 1
-    GAME_CATALOG_TYPE_CREW = 4
+    GAME_CATALOG_TYPE_SONG: Final[int] = 0
+    GAME_CATALOG_TYPE_APPEAL_CARD: Final[int] = 1
+    GAME_CATALOG_TYPE_CREW: Final[int] = 4
 
-    GAME_CLEAR_TYPE_NO_PLAY = 0
-    GAME_CLEAR_TYPE_FAILED = 1
-    GAME_CLEAR_TYPE_CLEAR = 2
-    GAME_CLEAR_TYPE_HARD_CLEAR = 3
-    GAME_CLEAR_TYPE_ULTIMATE_CHAIN = 4
-    GAME_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN = 5
+    GAME_CLEAR_TYPE_NO_PLAY: Final[int] = 0
+    GAME_CLEAR_TYPE_FAILED: Final[int] = 1
+    GAME_CLEAR_TYPE_CLEAR: Final[int] = 2
+    GAME_CLEAR_TYPE_HARD_CLEAR: Final[int] = 3
+    GAME_CLEAR_TYPE_ULTIMATE_CHAIN: Final[int] = 4
+    GAME_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[int] = 5
 
-    GAME_GRADE_NO_PLAY = 0
-    GAME_GRADE_D = 1
-    GAME_GRADE_C = 2
-    GAME_GRADE_B = 3
-    GAME_GRADE_A = 4
-    GAME_GRADE_A_PLUS = 5
-    GAME_GRADE_AA = 6
-    GAME_GRADE_AA_PLUS = 7
-    GAME_GRADE_AAA = 8
-    GAME_GRADE_AAA_PLUS = 9
-    GAME_GRADE_S = 10
+    GAME_GRADE_NO_PLAY: Final[int] = 0
+    GAME_GRADE_D: Final[int] = 1
+    GAME_GRADE_C: Final[int] = 2
+    GAME_GRADE_B: Final[int] = 3
+    GAME_GRADE_A: Final[int] = 4
+    GAME_GRADE_A_PLUS: Final[int] = 5
+    GAME_GRADE_AA: Final[int] = 6
+    GAME_GRADE_AA_PLUS: Final[int] = 7
+    GAME_GRADE_AAA: Final[int] = 8
+    GAME_GRADE_AAA_PLUS: Final[int] = 9
+    GAME_GRADE_S: Final[int] = 10
 
-    GAME_SKILL_NAME_ID_LV_01 = 1
-    GAME_SKILL_NAME_ID_LV_02 = 2
-    GAME_SKILL_NAME_ID_LV_03 = 3
-    GAME_SKILL_NAME_ID_LV_04 = 4
-    GAME_SKILL_NAME_ID_LV_05 = 5
-    GAME_SKILL_NAME_ID_LV_06 = 6
-    GAME_SKILL_NAME_ID_LV_07 = 7
-    GAME_SKILL_NAME_ID_LV_08 = 8
-    GAME_SKILL_NAME_ID_LV_09 = 9
-    GAME_SKILL_NAME_ID_LV_10 = 10
-    GAME_SKILL_NAME_ID_LV_11 = 11
-    GAME_SKILL_NAME_ID_LV_INF = 12
-    GAME_SKILL_NAME_ID_KAC_6TH_BODY = 13
-    GAME_SKILL_NAME_ID_KAC_6TH_TECHNOLOGY = 14
-    GAME_SKILL_NAME_ID_KAC_6TH_HEART = 15
-    GAME_SKILL_NAME_ID_TENKAICHI = 16
-    GAME_SKILL_NAME_ID_MUSIC_FESTIVAL = 17
-    GAME_SKILL_NAME_ID_YELLOWTAIL = 18  # For the April Fool's day courses.
-    GAME_SKILL_NAME_ID_BMK2017 = 19
-    GAME_SKILL_NAME_ID_KAC_7TH_TIGER = 20
-    GAME_SKILL_NAME_ID_KAC_7TH_WOLF = 21
-    GAME_SKILL_NAME_ID_RIKKA = 22  # For the course that ran from 1/18/2018-2/18/2018
-    GAME_SKILL_NAME_ID_KAC_8TH = 23
+    GAME_SKILL_NAME_ID_LV_01: Final[int] = 1
+    GAME_SKILL_NAME_ID_LV_02: Final[int] = 2
+    GAME_SKILL_NAME_ID_LV_03: Final[int] = 3
+    GAME_SKILL_NAME_ID_LV_04: Final[int] = 4
+    GAME_SKILL_NAME_ID_LV_05: Final[int] = 5
+    GAME_SKILL_NAME_ID_LV_06: Final[int] = 6
+    GAME_SKILL_NAME_ID_LV_07: Final[int] = 7
+    GAME_SKILL_NAME_ID_LV_08: Final[int] = 8
+    GAME_SKILL_NAME_ID_LV_09: Final[int] = 9
+    GAME_SKILL_NAME_ID_LV_10: Final[int] = 10
+    GAME_SKILL_NAME_ID_LV_11: Final[int] = 11
+    GAME_SKILL_NAME_ID_LV_INF: Final[int] = 12
+    GAME_SKILL_NAME_ID_KAC_6TH_BODY: Final[int] = 13
+    GAME_SKILL_NAME_ID_KAC_6TH_TECHNOLOGY: Final[int] = 14
+    GAME_SKILL_NAME_ID_KAC_6TH_HEART: Final[int] = 15
+    GAME_SKILL_NAME_ID_TENKAICHI: Final[int] = 16
+    GAME_SKILL_NAME_ID_MUSIC_FESTIVAL: Final[int] = 17
+    GAME_SKILL_NAME_ID_YELLOWTAIL: Final[int] = 18  # For the April Fool's day courses.
+    GAME_SKILL_NAME_ID_BMK2017: Final[int] = 19
+    GAME_SKILL_NAME_ID_KAC_7TH_TIGER: Final[int] = 20
+    GAME_SKILL_NAME_ID_KAC_7TH_WOLF: Final[int] = 21
+    GAME_SKILL_NAME_ID_RIKKA: Final[int] = 22  # For the course that ran from 1/18/2018-2/18/2018
+    GAME_SKILL_NAME_ID_KAC_8TH: Final[int] = 23
+
+    # Return the local2 service so that SDVX 4 and above will send certain packets.
+    extra_services: List[str] = [
+        'local2',
+    ]
 
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
@@ -108,14 +113,6 @@ class SoundVoltexHeavenlyHaven(
 
     def previous_version(self) -> Optional[SoundVoltexBase]:
         return SoundVoltexGravityWars(self.data, self.config, self.model)
-
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 service so that SDVX 4 and above will send certain packets.
-        """
-        return [
-            'local2',
-        ]
 
     def __game_to_db_clear_type(self, clear_type: int) -> int:
         return {
@@ -3328,7 +3325,7 @@ class SoundVoltexHeavenlyHaven(
         skill_course = Node.void('skill_course')
         game.add_child(skill_course)
 
-        achievements = self.data.local.user.get_all_achievements(self.game, self.version)
+        achievements = self.data.local.user.get_all_achievements(self.game, self.version, achievementtype="course")
         courserates: Dict[Tuple[int, int], Dict[str, int]] = {}
 
         def getrates(season_id: int, course_id: int) -> Dict[str, int]:
@@ -3342,9 +3339,6 @@ class SoundVoltexHeavenlyHaven(
                 }
 
         for _, achievement in achievements:
-            if achievement.type != 'course':
-                continue
-
             course_id = achievement.id % 100
             season_id = int(achievement.id / 100)
             rate = getrates(season_id, course_id)
@@ -4026,7 +4020,7 @@ class SoundVoltexHeavenlyHaven(
         return game
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value('earned_gamecoin_packet')

@@ -1,5 +1,4 @@
 # vim: set fileencoding=utf-8
-import copy
 from typing import Any, Dict, List, Tuple
 
 from bemani.backend.sdvx.gravitywars import SoundVoltexGravityWars
@@ -4125,7 +4124,7 @@ class SoundVoltexGravityWarsSeason2(
         return game
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value('earned_gamecoin_packet')

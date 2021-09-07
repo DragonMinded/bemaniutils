@@ -7,14 +7,14 @@ from bemani.common import VersionConstants
 
 class Jubeat(JubeatBase):
 
-    name = 'Jubeat'
-    version = VersionConstants.JUBEAT
+    name: str = 'Jubeat'
+    version: int = VersionConstants.JUBEAT
 
 
 class JubeatRipples(JubeatBase):
 
-    name = 'Jubeat Ripples'
-    version = VersionConstants.JUBEAT_RIPPLES
+    name: str = 'Jubeat Ripples'
+    version: int = VersionConstants.JUBEAT_RIPPLES
 
     def previous_version(self) -> Optional[JubeatBase]:
         return Jubeat(self.data, self.config, self.model)
@@ -22,8 +22,8 @@ class JubeatRipples(JubeatBase):
 
 class JubeatRipplesAppend(JubeatBase):
 
-    name = 'Jubeat Ripples Append'
-    version = VersionConstants.JUBEAT_RIPPLES_APPEND
+    name: str = 'Jubeat Ripples Append'
+    version: int = VersionConstants.JUBEAT_RIPPLES_APPEND
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatRipples(self.data, self.config, self.model)
@@ -31,8 +31,8 @@ class JubeatRipplesAppend(JubeatBase):
 
 class JubeatKnit(JubeatBase):
 
-    name = 'Jubeat Knit'
-    version = VersionConstants.JUBEAT_KNIT
+    name: str = 'Jubeat Knit'
+    version: int = VersionConstants.JUBEAT_KNIT
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatRipplesAppend(self.data, self.config, self.model)
@@ -40,8 +40,8 @@ class JubeatKnit(JubeatBase):
 
 class JubeatKnitAppend(JubeatBase):
 
-    name = 'Jubeat Knit Append'
-    version = VersionConstants.JUBEAT_KNIT_APPEND
+    name: str = 'Jubeat Knit Append'
+    version: int = VersionConstants.JUBEAT_KNIT_APPEND
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatKnit(self.data, self.config, self.model)
@@ -49,8 +49,8 @@ class JubeatKnitAppend(JubeatBase):
 
 class JubeatCopious(JubeatBase):
 
-    name = 'Jubeat Copious'
-    version = VersionConstants.JUBEAT_COPIOUS
+    name: str = 'Jubeat Copious'
+    version: int = VersionConstants.JUBEAT_COPIOUS
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatKnitAppend(self.data, self.config, self.model)
@@ -58,8 +58,8 @@ class JubeatCopious(JubeatBase):
 
 class JubeatCopiousAppend(JubeatBase):
 
-    name = 'Jubeat Copious Append'
-    version = VersionConstants.JUBEAT_COPIOUS_APPEND
+    name: str = 'Jubeat Copious Append'
+    version: int = VersionConstants.JUBEAT_COPIOUS_APPEND
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatCopious(self.data, self.config, self.model)

@@ -1,5 +1,4 @@
 # vim: set fileencoding=utf-8
-import copy
 import base64
 from typing import List
 
@@ -15,8 +14,8 @@ class MetalGearArcade(
     MetalGearArcadeBase,
 ):
 
-    name = "Metal Gear Arcade"
-    version = VersionConstants.MGA
+    name: str = "Metal Gear Arcade"
+    version: int = VersionConstants.MGA
 
     def __update_shop_name(self, profiledata: bytes) -> None:
         # Figure out the profile type
@@ -150,7 +149,7 @@ class MetalGearArcade(
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool) -> Profile:
         # Profile save request, data values are base64 encoded.
         # d is a CSV, and bin1 is binary data.
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         strdatas: List[bytes] = []
         bindatas: List[bytes] = []
 

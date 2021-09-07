@@ -1,5 +1,5 @@
-import copy
 from typing import Any, Dict
+from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.museca.base import MusecaBase
@@ -29,29 +29,29 @@ class Museca1(
     MusecaBase,
 ):
 
-    name = "MÚSECA"
-    version = VersionConstants.MUSECA
+    name: str = "MÚSECA"
+    version: int = VersionConstants.MUSECA
 
-    GAME_LIMITED_LOCKED = 1
-    GAME_LIMITED_UNLOCKABLE = 2
-    GAME_LIMITED_UNLOCKED = 3
+    GAME_LIMITED_LOCKED: Final[int] = 1
+    GAME_LIMITED_UNLOCKABLE: Final[int] = 2
+    GAME_LIMITED_UNLOCKED: Final[int] = 3
 
-    GAME_CATALOG_TYPE_SONG = 0
-    GAME_CATALOG_TYPE_GRAFICA = 15
-    GAME_CATALOG_TYPE_MISSION = 16
+    GAME_CATALOG_TYPE_SONG: Final[int] = 0
+    GAME_CATALOG_TYPE_GRAFICA: Final[int] = 15
+    GAME_CATALOG_TYPE_MISSION: Final[int] = 16
 
-    GAME_GRADE_DEATH = 0
-    GAME_GRADE_POOR = 1
-    GAME_GRADE_MEDIOCRE = 2
-    GAME_GRADE_GOOD = 3
-    GAME_GRADE_GREAT = 4
-    GAME_GRADE_EXCELLENT = 5
-    GAME_GRADE_SUPERB = 6
-    GAME_GRADE_MASTERPIECE = 7
+    GAME_GRADE_DEATH: Final[int] = 0
+    GAME_GRADE_POOR: Final[int] = 1
+    GAME_GRADE_MEDIOCRE: Final[int] = 2
+    GAME_GRADE_GOOD: Final[int] = 3
+    GAME_GRADE_GREAT: Final[int] = 4
+    GAME_GRADE_EXCELLENT: Final[int] = 5
+    GAME_GRADE_SUPERB: Final[int] = 6
+    GAME_GRADE_MASTERPIECE: Final[int] = 7
 
-    GAME_CLEAR_TYPE_FAILED = 1
-    GAME_CLEAR_TYPE_CLEARED = 2
-    GAME_CLEAR_TYPE_FULL_COMBO = 4
+    GAME_CLEAR_TYPE_FAILED: Final[int] = 1
+    GAME_CLEAR_TYPE_CLEARED: Final[int] = 2
+    GAME_CLEAR_TYPE_FULL_COMBO: Final[int] = 4
 
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
@@ -280,7 +280,7 @@ class Museca1(
         return game
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value('earned_gamecoin_packet')

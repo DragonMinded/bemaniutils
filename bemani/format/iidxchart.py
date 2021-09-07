@@ -1,5 +1,6 @@
 import struct
 from typing import List, Optional, Tuple
+from typing_extensions import Final
 
 
 class IIDXChart:
@@ -11,7 +12,7 @@ class IIDXChart:
     clear ranks for IIDX.
     """
 
-    CHART_POSITIONS = [1, 0, 2, 7, 6, 8]
+    CHART_POSITIONS: Final[List[int]] = [1, 0, 2, 7, 6, 8]
 
     def __init__(self, data: bytes) -> None:
         self.__bpm_min: Optional[int] = None

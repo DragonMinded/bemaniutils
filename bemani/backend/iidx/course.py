@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Tuple
+from typing_extensions import Final
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.common import ValidatedDict
@@ -8,9 +9,9 @@ from bemani.data import UserID
 
 class IIDXCourse(IIDXBase):
 
-    COURSE_TYPE_SECRET = 'secret_course'
-    COURSE_TYPE_INTERNET_RANKING = 'ir_course'
-    COURSE_TYPE_CLASSIC = 'classic_course'
+    COURSE_TYPE_SECRET: Final[str] = 'secret_course'
+    COURSE_TYPE_INTERNET_RANKING: Final[str] = 'ir_course'
+    COURSE_TYPE_CLASSIC: Final[str] = 'classic_course'
 
     def id_and_chart_from_courseid(self, courseid: int) -> Tuple[int, int]:
         return (int(courseid / 6), courseid % 6)

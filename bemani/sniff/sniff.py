@@ -1,6 +1,7 @@
 import socket
 import struct
 from typing import Any, Dict, List, Optional, Tuple
+from typing_extensions import Final
 
 
 class InvalidPacketException(Exception):
@@ -23,8 +24,8 @@ class TCPStream:
     SYN -> SYNACK -> ACK flow followed by some data followed by a FIN -> FINACK -> ACK
     flow. Luckily, this is exactly what most HTTP requests look like.
     """
-    INBOUND = 'inbound'
-    OUTBOUND = 'outbound'
+    INBOUND: Final[str] = 'inbound'
+    OUTBOUND: Final[str] = 'outbound'
 
     def __init__(self, packet: Dict[str, Any]) -> None:
         """
@@ -196,10 +197,10 @@ class Sniffer:
     A generic python sniffer. Listens to all raw traffic on the machine and parses packets
     down to TCP chunks to be reassembled.
     """
-    RECEIVE_SIZE = 1048576
-    ETH_HEADER_LENGTH = 14
-    IP_HEADER_LENGTH = 20
-    TCP_HEADER_LENGTH = 20
+    RECEIVE_SIZE: Final[int] = 1048576
+    ETH_HEADER_LENGTH: Final[int] = 14
+    IP_HEADER_LENGTH: Final[int] = 20
+    TCP_HEADER_LENGTH: Final[int] = 20
 
     def __init__(self, address: Optional[str]=None, port: Optional[int]=None) -> None:
         """

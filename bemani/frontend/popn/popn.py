@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from bemani.backend.popn import PopnMusicFactory, PopnMusicBase
 from bemani.common import Profile, ValidatedDict, GameConstants, VersionConstants
@@ -9,18 +9,18 @@ from bemani.frontend.base import FrontendBase
 
 class PopnMusicFrontend(FrontendBase):
 
-    game = GameConstants.POPN_MUSIC
+    game: GameConstants = GameConstants.POPN_MUSIC
 
-    valid_charts = [
+    valid_charts: List[int] = [
         PopnMusicBase.CHART_TYPE_EASY,
         PopnMusicBase.CHART_TYPE_NORMAL,
         PopnMusicBase.CHART_TYPE_HYPER,
         PopnMusicBase.CHART_TYPE_EX,
     ]
 
-    valid_rival_types = ['rival']
+    valid_rival_types: List[str] = ['rival']
 
-    max_active_rivals = {
+    max_active_rivals: Dict[int, int] = {
         # Technically there is support for Rivals in Tune Street but I
         # couldn't get it booting anymore to test.
         VersionConstants.POPN_MUSIC_TUNE_STREET: 0,

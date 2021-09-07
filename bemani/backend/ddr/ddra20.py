@@ -10,12 +10,13 @@ class DDRA20(
     DDRBase,
 ):
 
-    name = 'DanceDanceRevolution A20'
-    version = VersionConstants.DDR_A20
+    name: str = 'DanceDanceRevolution A20'
+    version: int = VersionConstants.DDR_A20
 
     def previous_version(self) -> Optional[DDRBase]:
         return DDRAce(self.data, self.config, self.model)
 
+    @property
     def supports_paseli(self) -> bool:
         if self.model.dest != 'J':
             # DDR Ace in USA mode doesn't support PASELI properly.

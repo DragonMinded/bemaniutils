@@ -11,9 +11,9 @@ from bemani.frontend.base import FrontendBase
 
 class IIDXFrontend(FrontendBase):
 
-    game = GameConstants.IIDX
+    game: GameConstants = GameConstants.IIDX
 
-    valid_charts = [
+    valid_charts: List[int] = [
         IIDXBase.CHART_TYPE_N7,
         IIDXBase.CHART_TYPE_H7,
         IIDXBase.CHART_TYPE_A7,
@@ -22,7 +22,7 @@ class IIDXFrontend(FrontendBase):
         IIDXBase.CHART_TYPE_A14,
     ]
 
-    valid_rival_types = [
+    valid_rival_types: List[str] = [
         'sp_rival',
         'dp_rival',
     ]

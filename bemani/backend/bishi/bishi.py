@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
 import binascii
-import copy
 import base64
 from collections import Iterable
 from typing import Any, Dict, List, Sequence, Union
@@ -17,8 +16,8 @@ class TheStarBishiBashi(
     BishiBashiBase,
 ):
 
-    name = "The★BishiBashi"
-    version = VersionConstants.BISHI_BASHI_TSBB
+    name: str = "The★BishiBashi"
+    version: int = VersionConstants.BISHI_BASHI_TSBB
 
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
@@ -324,7 +323,7 @@ class TheStarBishiBashi(
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool) -> Profile:
         # Profile save request, data values are base64 encoded.
         # d is a CSV, and bin1 is binary data.
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         strdatas: List[bytes] = []
         bindatas: List[bytes] = []
 

@@ -7,14 +7,14 @@ from bemani.common import VersionConstants
 
 class IIDX1stStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 1st style & substream'
-    version = VersionConstants.IIDX
+    name: str = 'Beatmania IIDX 1st style & substream'
+    version: int = VersionConstants.IIDX
 
 
 class IIDX2ndStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 2nd style'
-    version = VersionConstants.IIDX_2ND_STYLE
+    name: str = 'Beatmania IIDX 2nd style'
+    version: int = VersionConstants.IIDX_2ND_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX1stStyle(self.data, self.config, self.model)
@@ -22,8 +22,8 @@ class IIDX2ndStyle(IIDXBase):
 
 class IIDX3rdStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 3rd style'
-    version = VersionConstants.IIDX_3RD_STYLE
+    name: str = 'Beatmania IIDX 3rd style'
+    version: int = VersionConstants.IIDX_3RD_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX2ndStyle(self.data, self.config, self.model)
@@ -31,8 +31,8 @@ class IIDX3rdStyle(IIDXBase):
 
 class IIDX4thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 4th style'
-    version = VersionConstants.IIDX_4TH_STYLE
+    name: str = 'Beatmania IIDX 4th style'
+    version: int = VersionConstants.IIDX_4TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX3rdStyle(self.data, self.config, self.model)
@@ -40,8 +40,8 @@ class IIDX4thStyle(IIDXBase):
 
 class IIDX5thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 5th style'
-    version = VersionConstants.IIDX_5TH_STYLE
+    name: str = 'Beatmania IIDX 5th style'
+    version: int = VersionConstants.IIDX_5TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX4thStyle(self.data, self.config, self.model)
@@ -49,8 +49,8 @@ class IIDX5thStyle(IIDXBase):
 
 class IIDX6thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 6th style'
-    version = VersionConstants.IIDX_6TH_STYLE
+    name: str = 'Beatmania IIDX 6th style'
+    version: int = VersionConstants.IIDX_6TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX5thStyle(self.data, self.config, self.model)
@@ -58,8 +58,8 @@ class IIDX6thStyle(IIDXBase):
 
 class IIDX7thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 7th style'
-    version = VersionConstants.IIDX_7TH_STYLE
+    name: str = 'Beatmania IIDX 7th style'
+    version: int = VersionConstants.IIDX_7TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX6thStyle(self.data, self.config, self.model)
@@ -67,8 +67,8 @@ class IIDX7thStyle(IIDXBase):
 
 class IIDX8thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 8th style'
-    version = VersionConstants.IIDX_8TH_STYLE
+    name: str = 'Beatmania IIDX 8th style'
+    version: int = VersionConstants.IIDX_8TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX7thStyle(self.data, self.config, self.model)
@@ -76,8 +76,8 @@ class IIDX8thStyle(IIDXBase):
 
 class IIDX9thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 9th style'
-    version = VersionConstants.IIDX_9TH_STYLE
+    name: str = 'Beatmania IIDX 9th style'
+    version: int = VersionConstants.IIDX_9TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX8thStyle(self.data, self.config, self.model)
@@ -85,8 +85,8 @@ class IIDX9thStyle(IIDXBase):
 
 class IIDX10thStyle(IIDXBase):
 
-    name = 'Beatmania IIDX 10th style'
-    version = VersionConstants.IIDX_10TH_STYLE
+    name: str = 'Beatmania IIDX 10th style'
+    version: int = VersionConstants.IIDX_10TH_STYLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX9thStyle(self.data, self.config, self.model)
@@ -94,8 +94,8 @@ class IIDX10thStyle(IIDXBase):
 
 class IIDXRed(IIDXBase):
 
-    name = 'Beatmania IIDX RED'
-    version = VersionConstants.IIDX_RED
+    name: str = 'Beatmania IIDX RED'
+    version: int = VersionConstants.IIDX_RED
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDX10thStyle(self.data, self.config, self.model)
@@ -103,8 +103,8 @@ class IIDXRed(IIDXBase):
 
 class IIDXHappySky(IIDXBase):
 
-    name = 'Beatmania IIDX HAPPY SKY'
-    version = VersionConstants.IIDX_HAPPY_SKY
+    name: str = 'Beatmania IIDX HAPPY SKY'
+    version: int = VersionConstants.IIDX_HAPPY_SKY
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXRed(self.data, self.config, self.model)
@@ -112,8 +112,8 @@ class IIDXHappySky(IIDXBase):
 
 class IIDXDistorted(IIDXBase):
 
-    name = 'Beatmania IIDX DistorteD'
-    version = VersionConstants.IIDX_DISTORTED
+    name: str = 'Beatmania IIDX DistorteD'
+    version: int = VersionConstants.IIDX_DISTORTED
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXHappySky(self.data, self.config, self.model)
@@ -121,8 +121,8 @@ class IIDXDistorted(IIDXBase):
 
 class IIDXGold(IIDXBase):
 
-    name = 'Beatmania IIDX GOLD'
-    version = VersionConstants.IIDX_GOLD
+    name: str = 'Beatmania IIDX GOLD'
+    version: int = VersionConstants.IIDX_GOLD
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXDistorted(self.data, self.config, self.model)
@@ -130,8 +130,8 @@ class IIDXGold(IIDXBase):
 
 class IIDXDJTroopers(IIDXBase):
 
-    name = 'Beatmania IIDX DJ TROOPERS'
-    version = VersionConstants.IIDX_DJ_TROOPERS
+    name: str = 'Beatmania IIDX DJ TROOPERS'
+    version: int = VersionConstants.IIDX_DJ_TROOPERS
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXGold(self.data, self.config, self.model)
@@ -139,8 +139,8 @@ class IIDXDJTroopers(IIDXBase):
 
 class IIDXEmpress(IIDXBase):
 
-    name = 'Beatmania IIDX EMPRESS'
-    version = VersionConstants.IIDX_EMPRESS
+    name: str = 'Beatmania IIDX EMPRESS'
+    version: int = VersionConstants.IIDX_EMPRESS
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXDJTroopers(self.data, self.config, self.model)
@@ -148,8 +148,8 @@ class IIDXEmpress(IIDXBase):
 
 class IIDXSirius(IIDXBase):
 
-    name = 'Beatmania IIDX SIRIUS'
-    version = VersionConstants.IIDX_SIRIUS
+    name: str = 'Beatmania IIDX SIRIUS'
+    version: int = VersionConstants.IIDX_SIRIUS
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXEmpress(self.data, self.config, self.model)
@@ -157,8 +157,8 @@ class IIDXSirius(IIDXBase):
 
 class IIDXResortAnthem(IIDXBase):
 
-    name = 'Beatmania IIDX Resort Anthem'
-    version = VersionConstants.IIDX_RESORT_ANTHEM
+    name: str = 'Beatmania IIDX Resort Anthem'
+    version: int = VersionConstants.IIDX_RESORT_ANTHEM
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXSirius(self.data, self.config, self.model)
@@ -166,8 +166,8 @@ class IIDXResortAnthem(IIDXBase):
 
 class IIDXLincle(IIDXBase):
 
-    name = 'Beatmania IIDX Lincle'
-    version = VersionConstants.IIDX_LINCLE
+    name: str = 'Beatmania IIDX Lincle'
+    version: int = VersionConstants.IIDX_LINCLE
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXResortAnthem(self.data, self.config, self.model)

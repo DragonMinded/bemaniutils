@@ -8,11 +8,10 @@ from bemani.common import VersionConstants
 
 class IIDXHeroicVerse(IIDXBase):
 
-    name = 'Beatmania IIDX HEROIC VERSE'
-    version = VersionConstants.IIDX_HEROIC_VERSE
+    name: str = 'Beatmania IIDX HEROIC VERSE'
+    version: int = VersionConstants.IIDX_HEROIC_VERSE
+
+    requires_extended_regions: bool = True
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXRootage(self.data, self.config, self.model)
-
-    def requires_extended_regions(self) -> bool:
-        return True

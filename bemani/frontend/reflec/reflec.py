@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from flask_caching import Cache  # type: ignore
 
@@ -11,18 +11,18 @@ from bemani.frontend.base import FrontendBase
 
 class ReflecBeatFrontend(FrontendBase):
 
-    game = GameConstants.REFLEC_BEAT
+    game: GameConstants = GameConstants.REFLEC_BEAT
 
-    version = 0  # We use a virtual version for ReflecBeat to tie charts together
+    version: int = 0  # We use a virtual version for ReflecBeat to tie charts together
 
-    valid_charts = [
+    valid_charts: List[int] = [
         ReflecBeatBase.CHART_TYPE_BASIC,
         ReflecBeatBase.CHART_TYPE_MEDIUM,
         ReflecBeatBase.CHART_TYPE_HARD,
         ReflecBeatBase.CHART_TYPE_SPECIAL,
     ]
 
-    valid_rival_types = [
+    valid_rival_types: List[str] = [
         'rival',
     ]
 

@@ -41,7 +41,7 @@ class CoreHandler(Base):
         root.add_child(item('pcbtracker', url))
         root.add_child(item('pkglist', url))
         root.add_child(item('posevent', url))
-        for srv in self.extra_services():
+        for srv in self.extra_services:
             root.add_child(item(srv, url))
 
         root.add_child(item('ntp', 'ntp://pool.ntp.org/'))
@@ -61,7 +61,7 @@ class CoreHandler(Base):
         """
         # Reports that a machine is booting. Overloaded to enable/disable paseli
         root = Node.void('pcbtracker')
-        root.set_attribute('ecenable', '1' if (self.supports_paseli() and self.config.paseli.enabled) else '0')
+        root.set_attribute('ecenable', '1' if (self.supports_paseli and self.config.paseli.enabled) else '0')
         root.set_attribute('expire', '600')
         return root
 
