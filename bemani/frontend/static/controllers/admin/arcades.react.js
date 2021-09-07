@@ -6,6 +6,7 @@ var card_management = React.createClass({
             new_arcade: {
                 name: '',
                 description: '',
+                region: window.default_region,
                 paseli_enabled: window.paseli_enabled,
                 paseli_infinite: window.paseli_infinite,
                 mask_services_url: window.mask_services_url,
@@ -34,6 +35,7 @@ var card_management = React.createClass({
                     new_arcade: {
                         name: '',
                         description: '',
+                        region: window.default_region,
                         paseli_enabled: window.paseli_enabled,
                         paseli_infinite: window.paseli_infinite,
                         mask_services_url: window.mask_services_url,
@@ -182,6 +184,23 @@ var card_management = React.createClass({
         }
     },
 
+    renderRegion: function(arcade) {
+        if (this.state.editing_arcade && arcade.id == this.state.editing_arcade.id) {
+            return <SelectInt
+                name="region"
+                value={ this.state.editing_arcade.region }
+                choices={ window.regions }
+                onChange={function(choice) {
+                    var arcade = this.state.editing_arcade;
+                    arcade.region = event.target.value;
+                    this.setState({editing_arcade: arcade});
+                }.bind(this)}
+            />;
+        } else {
+            return <span>{ window.regions[arcade.region] }</span>;
+        }
+    },
+
     sortDescription: function(a, b) {
         return a.description.localeCompare(b.description);
     },
@@ -310,6 +329,10 @@ var card_management = React.createClass({
                                     sort: this.sortDescription,
                                 },
                                 {
+                                    name: "Region",
+                                    render: this.renderRegion,
+                                },
+                                {
                                     name: 'Owners',
                                     render: this.renderOwners,
                                 },
@@ -344,6 +367,7 @@ var card_management = React.createClass({
                                 <tr>
                                     <th>Name</th>
                                     <th>Description</th>
+                                    <th>Region</th>
                                     <th>Owners</th>
                                     <th>PASELI Enabled</th>
                                     <th>PASELI Infinite</th>
@@ -373,6 +397,18 @@ var card_management = React.createClass({
                                             onChange={function(event) {
                                                 var arcade = this.state.new_arcade;
                                                 arcade.description = event.target.value;
+                                                this.setState({new_arcade: arcade});
+                                            }.bind(this)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <SelectInt
+                                            name="region"
+                                            value={ this.state.new_arcade.region }
+                                            choices={ window.regions }
+                                            onChange={function(choice) {
+                                                var arcade = this.state.new_arcade;
+                                                arcade.region = event.target.value;
                                                 this.setState({new_arcade: arcade});
                                             }.bind(this)}
                                         />

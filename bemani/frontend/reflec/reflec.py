@@ -5,7 +5,7 @@ from flask_caching import Cache  # type: ignore
 
 from bemani.backend.reflec import ReflecBeatFactory, ReflecBeatBase
 from bemani.common import GameConstants, Profile, ValidatedDict
-from bemani.data import Attempt, Data, Score, Song, UserID
+from bemani.data import Attempt, Data, Config, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
 
@@ -26,7 +26,7 @@ class ReflecBeatFrontend(FrontendBase):
         'rival',
     ]
 
-    def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
+    def __init__(self, data: Data, config: Config, cache: Cache) -> None:
         super().__init__(data, config, cache)
 
     def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:

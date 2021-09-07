@@ -314,12 +314,11 @@ var settings_view = React.createClass({
     },
 
     renderPrefecture: function(player) {
-        regions = this.state.version >= 25 ? Regions2 : Regions;
         return (
             <LabelledSection vertical={true} label="Prefecture">{
                 !this.state.editing_prefecture ?
                     <span>
-                        <span>{regions[player.prefecture]}</span>
+                        <span>{window.regions[player.prefecture]}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_prefecture: true});
@@ -330,7 +329,7 @@ var settings_view = React.createClass({
                         <SelectInt
                             name="prefecture"
                             value={this.state.new_prefecture}
-                            choices={regions}
+                            choices={window.regions}
                             onChange={function(choice) {
                                 this.setState({new_prefecture: choice});
                             }.bind(this)}

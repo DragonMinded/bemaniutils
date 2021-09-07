@@ -3,7 +3,7 @@ from typing import Dict, Tuple, Any, Optional
 from flask import Blueprint, request, Response, render_template, url_for
 
 from bemani.backend.base import Base
-from bemani.common import CardCipher, CardCipherException, GameConstants
+from bemani.common import CardCipher, CardCipherException, GameConstants, RegionConstants
 from bemani.data import Arcade, Machine, User, UserID, News, Event, Server, Client
 from bemani.data.api.client import APIClient, NotAuthorizedAPIException, APIException
 from bemani.frontend.app import adminrequired, jsonify, valid_email, valid_username, valid_pin, render_react
@@ -33,6 +33,7 @@ def format_arcade(arcade: Arcade) -> Dict[str, Any]:
         'id': arcade.id,
         'name': arcade.name,
         'description': arcade.description,
+        'region': arcade.region,
         'paseli_enabled': arcade.data.get_bool('paseli_enabled'),
         'paseli_infinite': arcade.data.get_bool('paseli_infinite'),
         'mask_services_url': arcade.data.get_bool('mask_services_url'),
@@ -128,6 +129,7 @@ def viewsettings() -> Response:
         **{
             'title': 'Network Settings',
             'config': g.config,
+            'region': RegionConstants.LUT,
         },
     ))
 
@@ -213,9 +215,11 @@ def viewarcades() -> Response:
         'admin/arcades.react.js',
         {
             'arcades': [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
+            'regions': RegionConstants.LUT,
             'usernames': g.data.local.user.get_all_usernames(),
             'paseli_enabled': g.config.paseli.enabled,
             'paseli_infinite': g.config.paseli.infinite,
+            'default_region': g.config.server.region,
             'mask_services_url': False,
         },
         {
@@ -402,6 +406,7 @@ def updatearcade() -> Dict[str, Any]:
 
     arcade.name = new_values['name']
     arcade.description = new_values['description']
+    arcade.region = new_values['region']
     arcade.data.replace_bool('paseli_enabled', new_values['paseli_enabled'])
     arcade.data.replace_bool('paseli_infinite', new_values['paseli_infinite'])
     arcade.data.replace_bool('mask_services_url', new_values['mask_services_url'])
@@ -441,6 +446,7 @@ def addarcade() -> Dict[str, Any]:
     g.data.local.machine.create_arcade(
         new_values['name'],
         new_values['description'],
+        new_values['region'],
         {
             'paseli_enabled': new_values['paseli_enabled'],
             'paseli_infinite': new_values['paseli_infinite'],

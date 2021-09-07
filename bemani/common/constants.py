@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 from typing_extensions import Final
 
 
@@ -322,3 +323,206 @@ class BroadcastConstants(Enum):
     COOLS: Final[str] = 'Cools'
     COMBO: Final[str] = 'Combo'
     MEDAL: Final[str] = 'Medal'
+
+
+class _RegionConstants:
+    """
+    Class representing the various region IDs found in all games.
+    """
+
+    # The following are the original enumerations, that still are correct
+    # for new games today.
+    HOKKAIDO: Final[int] = 1
+    AOMORI: Final[int] = 2
+    IWATE: Final[int] = 3
+    MIYAGI: Final[int] = 4
+    AKITA: Final[int] = 5
+    YAMAGATA: Final[int] = 6
+    FUKUSHIMA: Final[int] = 7
+    IBARAKI: Final[int] = 8
+    TOCHIGI: Final[int] = 9
+    GUNMA: Final[int] = 10
+    SAITAMA: Final[int] = 11
+    CHIBA: Final[int] = 12
+    TOKYO: Final[int] = 13
+    KANAGAWA: Final[int] = 14
+    NIIGATA: Final[int] = 15
+    TOYAMA: Final[int] = 16
+    ISHIKAWA: Final[int] = 17
+    FUKUI: Final[int] = 18
+    YAMANASHI: Final[int] = 19
+    NAGANO: Final[int] = 20
+    GIFU: Final[int] = 21
+    SHIZUOKA: Final[int] = 22
+    AICHI: Final[int] = 23
+    MIE: Final[int] = 24
+    SHIGA: Final[int] = 25
+    KYOTO: Final[int] = 26
+    OSAKA: Final[int] = 27
+    HYOGO: Final[int] = 28
+    NARA: Final[int] = 29
+    WAKAYAMA: Final[int] = 30
+    TOTTORI: Final[int] = 31
+    SHIMANE: Final[int] = 32
+    OKAYAMA: Final[int] = 33
+    HIROSHIMA: Final[int] = 34
+    YAMAGUCHI: Final[int] = 35
+    TOKUSHIMA: Final[int] = 36
+    KAGAWA: Final[int] = 37
+    EHIME: Final[int] = 38
+    KOUCHI: Final[int] = 39
+    FUKUOKA: Final[int] = 40
+    SAGA: Final[int] = 41
+    NAGASAKI: Final[int] = 42
+    KUMAMOTO: Final[int] = 43
+    OITA: Final[int] = 44
+    MIYAZAKI: Final[int] = 45
+    KAGOSHIMA: Final[int] = 46
+    OKINAWA: Final[int] = 47
+    HONG_KONG: Final[int] = 48
+    KOREA: Final[int] = 49
+    TAIWAN: Final[int] = 50
+
+    # The following are new additions, replacing the "OLD" values below.
+    THAILAND: Final[int] = 51
+    INDONESIA: Final[int] = 52
+    SINGAPORE: Final[int] = 53
+    PHILLIPINES: Final[int] = 54
+    MACAO: Final[int] = 55
+    USA: Final[int] = 56
+    OTHER: Final[int] = 57
+
+    # Bogus value for europe.
+    EUROPE: Final[int] = 1000
+    NO_MAPPING: Final[int] = 2000
+
+    # Old constant values.
+    OLD_USA: Final[int] = 51
+    OLD_EUROPE: Final[int] = 52
+    OLD_OTHER: Final[int] = 53
+
+    # Min/max valid values for server.
+    MIN: Final[int] = 1
+    MAX: Final[int] = 56
+
+    # This is a really nasty LUT to attempt to make the frontend display
+    # the same regardless of the game in question. This is mostly because
+    # the prefecture/region stored in the profile is editable by IIDX and
+    # I didn't anticipate this ever changing.
+    def db_to_game_region(self, use_new_table: bool, region: int) -> int:
+        if use_new_table:
+            # The new lookup table does not have Europe as an option.
+            if region in {RegionConstants.EUROPE, RegionConstants.NO_MAPPING}:
+                return RegionConstants.OTHER
+
+            # The rest matches what we have already.
+            return region
+        else:
+            # The old lookup table supports most of the values.
+            if region <= RegionConstants.TAIWAN:
+                return region
+
+            # Map the two values that still exist back to their old values.
+            if region == RegionConstants.USA:
+                return RegionConstants.OLD_USA
+            if region == RegionConstants.EUROPE:
+                return RegionConstants.OLD_EUROPE
+
+            # The rest get mapped to other.
+            return RegionConstants.OLD_OTHER
+
+    # This performs the equivalent inverse of the above function. Note that
+    # depending on the game and selection, this is lossy (as in, Europe could
+    # get converted to Other, etc).
+    def game_to_db_region(self, use_new_table: bool, region: int) -> int:
+        if use_new_table:
+            if region == RegionConstants.OTHER:
+                return RegionConstants.NO_MAPPING
+
+            # The new lookup table is correct aside from the above correction.
+            return region
+        else:
+            # The old lookup table supports most of the values.
+            if region <= RegionConstants.TAIWAN:
+                return region
+
+            # Map the three values that might be seen to new DB values.
+            if region == RegionConstants.OLD_USA:
+                return RegionConstants.USA
+            if region == RegionConstants.OLD_EUROPE:
+                return RegionConstants.EUROPE
+            if region == RegionConstants.OLD_OTHER:
+                return RegionConstants.NO_MAPPING
+
+            raise Exception(f"Unexpected value {region} for game region!")
+
+    @property
+    def LUT(cls) -> Dict[int, str]:
+        return {
+            cls.HOKKAIDO: '北海道 (Hokkaido)',
+            cls.AOMORI: '青森県 (Aomori)',
+            cls.IWATE: '岩手県 (Iwate)',
+            cls.MIYAGI: '宮城県 (Miyagi)',
+            cls.AKITA: '秋田県 (Akita)',
+            cls.YAMAGATA: '山形県 (Yamagata)',
+            cls.FUKUSHIMA: '福島県 (Fukushima)',
+            cls.IBARAKI: '茨城県 (Ibaraki)',
+            cls.TOCHIGI: '栃木県 (Tochigi)',
+            cls.GUNMA: '群馬県 (Gunma)',
+            cls.SAITAMA: '埼玉県 (Saitama)',
+            cls.CHIBA: '千葉県 (Chiba)',
+            cls.TOKYO: '東京都 (Tokyo)',
+            cls.KANAGAWA: '神奈川県 (Kanagawa)',
+            cls.NIIGATA: '新潟県 (Niigata)',
+            cls.TOYAMA: '富山県 (Toyama)',
+            cls.ISHIKAWA: '石川県 (Ishikawa)',
+            cls.FUKUI: '福井県 (Fukui)',
+            cls.YAMANASHI: '山梨県 (Yamanashi)',
+            cls.NAGANO: '長野県 (Nagano)',
+            cls.GIFU: '岐阜県 (Gifu)',
+            cls.SHIZUOKA: '静岡県 (Shizuoka)',
+            cls.AICHI: '愛知県 (Aichi)',
+            cls.MIE: '三重県 (Mie)',
+            cls.SHIGA: '滋賀県 (Shiga)',
+            cls.KYOTO: '京都府 (Kyoto)',
+            cls.OSAKA: '大阪府 (Osaka)',
+            cls.HYOGO: '兵庫県 (Hyogo)',
+            cls.NARA: '奈良県 (Nara)',
+            cls.WAKAYAMA: '和歌山県 (Wakayama)',
+            cls.TOTTORI: '鳥取県 (Tottori)',
+            cls.SHIMANE: '島根県 (Shimane)',
+            cls.OKAYAMA: '岡山県 (Okayama)',
+            cls.HIROSHIMA: '広島県 (Hiroshima)',
+            cls.YAMAGUCHI: '山口県 (Yamaguchi)',
+            cls.TOKUSHIMA: '徳島県 (Tokushima)',
+            cls.KAGAWA: '香川県 (Kagawa)',
+            cls.EHIME: '愛媛県 (Ehime)',
+            cls.KOUCHI: '高知県 (Kochi)',
+            cls.FUKUOKA: '福岡県 (Fukuoka)',
+            cls.SAGA: '佐賀県 (Saga)',
+            cls.NAGASAKI: '長崎県 (Nagasaki)',
+            cls.KUMAMOTO: '熊本県 (Kumamoto)',
+            cls.OITA: '大分県 (Oita)',
+            cls.MIYAZAKI: '宮崎県 (Miyazaki)',
+            cls.KAGOSHIMA: '鹿児島県 (Kagoshima)',
+            cls.OKINAWA: '沖縄県 (Okinawa)',
+            cls.HONG_KONG: '香港 (Hong Kong)',
+            cls.KOREA: '韓国 (Korea)',
+            cls.TAIWAN: '台湾 (Taiwan)',
+
+            # The following are different depending on the version of the game,
+            # so we choose the new value.
+            cls.THAILAND: "タイ (Thailand)",
+            cls.INDONESIA: "インドネシア (Indonesia)",
+            cls.SINGAPORE: "シンガポール (Singapore)",
+            cls.PHILLIPINES: "フィリピン (Phillipines)",
+            cls.MACAO: "マカオ (Macao)",
+            cls.USA: "アメリカ (USA)",
+            cls.EUROPE: '欧州 (Europe)',
+            cls.NO_MAPPING: "海外 (Other)",
+        }
+
+
+# This is just so I can use the defined constants inside a LUT
+# without having the LUT itself outside the class.
+RegionConstants = _RegionConstants()

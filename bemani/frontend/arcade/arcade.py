@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from flask import Blueprint, request, Response, abort, url_for
 
 from bemani.backend.base import Base
-from bemani.common import CardCipher, CardCipherException, ValidatedDict, GameConstants
+from bemani.common import CardCipher, CardCipherException, ValidatedDict, GameConstants, RegionConstants
 from bemani.data import Arcade, ArcadeID, Event, Machine
 from bemani.frontend.app import loginrequired, jsonify, render_react, valid_pin
 from bemani.frontend.templates import templates_location
@@ -66,6 +66,7 @@ def format_arcade(arcade: Arcade) -> Dict[str, Any]:
         'name': arcade.name,
         'description': arcade.description,
         'pin': arcade.pin,
+        'region': arcade.region,
         'paseli_enabled': arcade.data.get_bool('paseli_enabled'),
         'paseli_infinite': arcade.data.get_bool('paseli_infinite'),
         'mask_services_url': arcade.data.get_bool('mask_services_url'),
@@ -155,6 +156,7 @@ def viewarcade(arcadeid: int) -> Response:
         'arcade/arcade.react.js',
         {
             'arcade': format_arcade(arcade),
+            'regions': RegionConstants.LUT,
             'machines': machines,
             'game_settings': get_game_settings(arcade),
             'balances': {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
@@ -172,6 +174,7 @@ def viewarcade(arcadeid: int) -> Response:
             'add_balance': url_for('arcade_pages.addbalance', arcadeid=arcadeid),
             'update_balance': url_for('arcade_pages.updatebalance', arcadeid=arcadeid),
             'update_pin': url_for('arcade_pages.updatepin', arcadeid=arcadeid),
+            'update_region': url_for('arcade_pages.updateregion', arcadeid=arcadeid),
             'generatepcbid': url_for('arcade_pages.generatepcbid', arcadeid=arcadeid),
             'updatepcbid': url_for('arcade_pages.updatepcbid', arcadeid=arcadeid),
             'removepcbid': url_for('arcade_pages.removepcbid', arcadeid=arcadeid),
@@ -304,6 +307,34 @@ def updatepin(arcadeid: int) -> Dict[str, Any]:
 
     # Return nothing
     return {'pin': pin}
+
+
+@arcade_pages.route('/<int:arcadeid>/region/update', methods=['POST'])
+@jsonify
+@loginrequired
+def updateregion(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
+    try:
+        region = int(request.get_json()['region'])
+    except Exception:
+        region = 0
+
+    # Make sure the arcade is valid
+    arcade = g.data.local.machine.get_arcade(arcadeid)
+    if arcade is None or g.userID not in arcade.owners:
+        raise Exception('You don\'t own this arcade, refusing to update!')
+
+    if region not in {RegionConstants.EUROPE, RegionConstants.NO_MAPPING} and (region < RegionConstants.MIN or region > RegionConstants.MAX):
+        raise Exception('Invalid region!')
+
+    # Update and save
+    arcade.region = region
+    g.data.local.machine.put_arcade(arcade)
+
+    # Return nothing
+    return {'region': region}
 
 
 @arcade_pages.route('/<int:arcadeid>/pcbids/generate', methods=['POST'])

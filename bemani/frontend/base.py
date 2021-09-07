@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 from flask_caching import Cache  # type: ignore
 
 from bemani.common import GameConstants, Profile, ValidatedDict, ID
-from bemani.data import Data, Score, Attempt, Link, Song, UserID, RemoteUser
+from bemani.data import Data, Config, Score, Attempt, Link, Song, UserID, RemoteUser
 
 
 class FrontendBase(ABC):
@@ -34,7 +34,7 @@ class FrontendBase(ABC):
     """
     valid_rival_types: List[str] = []
 
-    def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
+    def __init__(self, data: Data, config: Config, cache: Cache) -> None:
         self.data = data
         self.config = config
         self.cache = cache

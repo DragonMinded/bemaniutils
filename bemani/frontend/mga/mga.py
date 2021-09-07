@@ -6,7 +6,7 @@ from flask_caching import Cache  # type: ignore
 
 from bemani.backend.mga import MetalGearArcadeFactory
 from bemani.common import Profile, ValidatedDict, ID, GameConstants
-from bemani.data import Data
+from bemani.data import Data, Config
 from bemani.frontend.base import FrontendBase
 
 
@@ -14,7 +14,7 @@ class MetalGearArcadeFrontend(FrontendBase):
 
     game = GameConstants.MGA
 
-    def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
+    def __init__(self, data: Data, config: Config, cache: Cache) -> None:
         super().__init__(data, config, cache)
         self.machines: Dict[int, str] = {}
 
