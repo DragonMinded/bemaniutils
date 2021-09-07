@@ -488,10 +488,10 @@ class UserData(BaseData):
             A dictionary previously stored by a game class if found, or None otherwise.
         """
         sql = (
-            "SELECT refid.refid AS refid, extid.extid AS extid " +
-            "FROM refid, extid " +
+            "SELECT refid.refid AS refid, extid.extid AS extid, profile.data AS data " +
+            "FROM refid, extid, profile " +
             "WHERE refid.userid = :userid AND refid.game = :game AND refid.version = :version AND "
-            "extid.userid = refid.userid AND extid.game = refid.game"
+            "extid.userid = refid.userid AND extid.game = refid.game AND profile.refid = refid.refid"
         )
         cursor = self.execute(sql, {'userid': userid, 'game': game.value, 'version': version})
         if cursor.rowcount != 1:
@@ -499,22 +499,13 @@ class UserData(BaseData):
             return None
 
         result = cursor.fetchone()
-        profile = Profile(
+        return Profile(
             game,
             version,
             result['refid'],
             result['extid'],
+            self.deserialize(result['data']),
         )
-
-        sql = "SELECT data FROM profile WHERE refid = :refid"
-        cursor = self.execute(sql, {'refid': profile.refid})
-        if cursor.rowcount != 1:
-            # Profile doesn't exist
-            return None
-
-        result = cursor.fetchone()
-        profile.update(self.deserialize(result['data']))
-        return profile
 
     def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         """
@@ -530,14 +521,13 @@ class UserData(BaseData):
         Returns:
             A dictionary previously stored by a game class if found, or None otherwise.
         """
-        played = self.get_games_played(userid)
-        versions = [p[1] for p in played if p[0] == game]
-        versions.sort(reverse=True)
+        played = self.get_games_played(userid, game=game)
+        versions = {p[1] for p in played}
 
         if version in versions:
             return self.get_profile(game, version, userid)
         elif len(versions) > 0:
-            return self.get_profile(game, versions[0], userid)
+            return self.get_profile(game, max(versions), userid)
         else:
             return None
 
@@ -555,23 +545,56 @@ class UserData(BaseData):
             A List of tuples containing a userid and a dictionary previously stored by a game class if found,
             or None otherwise.
         """
-        return [
-            (userid, self.get_any_profile(game, version, userid))
-            for userid in userids
-        ]
+        if not userids:
+            return []
+        sql = "SELECT version, userid FROM refid WHERE game = :game AND userid IN :userids"
+        cursor = self.execute(sql, {'game': game.value, 'userids': userids})
+        profilever: Dict[UserID, int] = {}
 
-    def get_games_played(self, userid: UserID) -> List[Tuple[GameConstants, int]]:
+        for result in cursor.fetchall():
+            tuid = UserID(result['userid'])
+            tver = result['version']
+
+            if tuid not in profilever:
+                # Just assign it the first profile we find
+                profilever[tuid] = tver
+            else:
+                # If the profile for this version exists, prioritize it
+                if tver == version:
+                    profilever[tuid] = tver
+
+                # Only update the profile version with the newest game profile if the game
+                # profile for this version doesn't exist.
+                elif profilever[tuid] != version:
+                    profilever[tuid] = max(profilever[tuid], tver)
+
+        result = []
+        for uid in userids:
+            if uid not in profilever:
+                result.append((uid, None))
+            else:
+                result.append((uid, self.get_profile(game, profilever[uid], uid)))
+        return result
+
+    def get_games_played(self, userid: UserID, game: Optional[GameConstants] = None) -> List[Tuple[GameConstants, int]]:
         """
         Given a user ID, look up all game/version combos this user has played.
 
         Parameters:
             userid - Integer user ID, as looked up by one of the above functions.
+            game - An optional game series to constrain search to.
 
         Returns:
             A List of Tuples of game, version for each game/version the user has played.
         """
         sql = "SELECT game, version FROM refid WHERE userid = :userid"
-        cursor = self.execute(sql, {'userid': userid})
+        vals: Dict[str, Any] = {'userid': userid}
+
+        if game is not None:
+            sql += " AND game = :game"
+            vals['game'] = game.value
+
+        cursor = self.execute(sql, vals)
         profiles = []
         for result in cursor.fetchall():
             profiles.append((GameConstants(result['game']), result['version']))
@@ -598,17 +621,16 @@ class UserData(BaseData):
 
         profiles = []
         for result in cursor.fetchall():
-            profile = Profile(
-                game,
-                version,
-                result['refid'],
-                result['extid'],
-            )
-            profile.update(self.deserialize(result['data']))
             profiles.append(
                 (
                     UserID(result['userid']),
-                    profile,
+                    Profile(
+                        game,
+                        version,
+                        result['refid'],
+                        result['extid'],
+                        self.deserialize(result['data']),
+                    )
                 )
             )
 
