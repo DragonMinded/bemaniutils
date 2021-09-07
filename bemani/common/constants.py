@@ -405,6 +405,10 @@ class _RegionConstants:
     MIN: Final[int] = 1
     MAX: Final[int] = 56
 
+    # Min/max valid values for JP prefectures
+    MIN_PREF: Final[int] = 1
+    MAX_PREF: Final[int] = 47
+
     # This is a really nasty LUT to attempt to make the frontend display
     # the same regardless of the game in question. This is mostly because
     # the prefecture/region stored in the profile is editable by IIDX and

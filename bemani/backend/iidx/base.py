@@ -149,7 +149,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         if name is None:
             name = 'なし'
         if pid is None:
-            pid = 51
+            pid = self.get_machine_region()
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         profile = Profile(

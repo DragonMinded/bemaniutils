@@ -268,7 +268,7 @@ class IIDXTricoro(IIDXBase):
             root.set_attribute('cls_opt', '0')
             machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             root.set_attribute('opname', machine.name)
-            root.set_attribute('pid', '51')
+            root.set_attribute('pid', str(self.get_machine_region()))
             return root
 
         if method == 'savename':

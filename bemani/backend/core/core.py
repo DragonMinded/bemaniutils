@@ -2,7 +2,7 @@ import socket
 
 from bemani.backend.base import Base
 from bemani.protocol import Node
-from bemani.common import ID
+from bemani.common import ID, RegionConstants
 
 
 class CoreHandler(Base):
@@ -120,14 +120,58 @@ class CoreHandler(Base):
         which expects to return a bunch of information about the arcade this
         cabinet is in, as well as some settings for URLs and the name of the cab.
         """
-        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        machine = self.get_machine()
+        if machine.arcade is None:
+            region = self.config.server.region
+        else:
+            arcade = self.data.local.machine.get_arcade(machine.arcade)
+            region = arcade.region
+
+        if region == RegionConstants.HONG_KONG:
+            country = "HK"
+            regionstr = ""
+        elif region == RegionConstants.TAIWAN:
+            country = "TW"
+            regionstr = ""
+        elif region == RegionConstants.KOREA:
+            country = "KR"
+            regionstr = ""
+        elif region == RegionConstants.USA:
+            country = "US"
+            regionstr = ""
+        elif region == RegionConstants.THAILAND:
+            country = "TH"
+            regionstr = ""
+        elif region == RegionConstants.INDONESIA:
+            country = "ID"
+            regionstr = ""
+        elif region == RegionConstants.SINGAPORE:
+            country = "SG"
+            regionstr = ""
+        elif region == RegionConstants.PHILLIPINES:
+            country = "PH"
+            regionstr = ""
+        elif region == RegionConstants.MACAO:
+            country = "MO"
+            regionstr = ""
+        elif region >= RegionConstants.MIN_PREF and region <= RegionConstants.MAX_PREF:
+            country = "JP"
+            regionstr = f"JP-{region}"
+        elif region == RegionConstants.EUROPE:
+            # Pick a random country in the "Europe" category.
+            country = "GB"
+            regionstr = ""
+        else:
+            # Pick a random nonsensical code.
+            country = "XX"
+            regionstr = ""
 
         root = Node.void('facility')
         root.set_attribute('expire', '600')
         location = Node.void('location')
-        location.add_child(Node.string('id', ID.format_machine_id(machine.id)))
-        location.add_child(Node.string('country', 'US'))
-        location.add_child(Node.string('region', '.'))
+        location.add_child(Node.string('id', ID.format_machine_id(machine.id, region=country)))
+        location.add_child(Node.string('country', country))
+        location.add_child(Node.string('region', regionstr))
         location.add_child(Node.string('name', machine.name))
         location.add_child(Node.u8('type', 0))
 

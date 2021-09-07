@@ -169,7 +169,7 @@ class DDR2013(
             flag.set_attribute('t', '0')
             flag.set_attribute('s1', '0')
             flag.set_attribute('s2', '0')
-            flag.set_attribute('area', '51')
+            flag.set_attribute('area', str(self.get_machine_region()))
             flag.set_attribute('is_final', '1')
 
         hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS)
@@ -281,7 +281,7 @@ class DDR2013(
         root.add_child(Node.string('seq', ''))
         root.add_child(Node.u32('code', profile.extid))
         root.add_child(Node.string('name', profile.get_str('name')))
-        root.add_child(Node.u8('area', profile.get_int('area', 51)))
+        root.add_child(Node.u8('area', profile.get_int('area', self.get_machine_region())))
         root.add_child(Node.u32('cnt_s', play_stats.get_int('single_plays')))
         root.add_child(Node.u32('cnt_d', play_stats.get_int('double_plays')))
         root.add_child(Node.u32('cnt_b', play_stats.get_int('battle_plays')))  # This could be wrong, its a guess
@@ -416,7 +416,7 @@ class DDR2013(
                 friendnode.set_attribute('up', '0')
                 friendnode.add_child(Node.u32('code', friend.extid))
                 friendnode.add_child(Node.string('name', friend.get_str('name')))
-                friendnode.add_child(Node.u8('area', friend.get_int('area', 51)))
+                friendnode.add_child(Node.u8('area', friend.get_int('area', self.get_machine_region())))
                 friendnode.add_child(Node.u32('exp', play_stats.get_int('exp')))
                 friendnode.add_child(Node.u32('star', friend.get_int('star')))
 

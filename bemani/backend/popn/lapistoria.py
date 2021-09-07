@@ -396,7 +396,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         course_id = request.child_value('course_id')
         if course_id is not None:
             machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
-            pref = request.child_value('pref') or 51
+            pref = request.child_value('pref') or self.get_machine_region()
             profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
 
             course = self.data.local.user.get_achievement(

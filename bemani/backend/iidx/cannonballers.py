@@ -160,6 +160,9 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             ],
         }
 
+    def requires_extended_regions(self) -> bool:
+        return True
+
     def db_to_game_status(self, db_status: int) -> int:
         return {
             self.CLEAR_STATUS_NO_PLAY: self.GAME_CLEAR_STATUS_NO_PLAY,
@@ -303,7 +306,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
 
         root = Node.void('IIDX25shop')
         root.set_attribute('opname', machine_name)
-        root.set_attribute('pid', '51')
+        root.set_attribute('pid', str(self.get_machine_region()))
         root.set_attribute('cls_opt', '1' if close else '0')
         root.set_attribute('hr', str(hour))
         root.set_attribute('mi', str(minute))

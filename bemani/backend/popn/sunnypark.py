@@ -543,7 +543,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         machine = self.get_machine()
 
         root = Node.void('playerdata')
-        root.add_child(Node.s8('pref', machine.data.get_int('pref', -1)))
+        root.add_child(Node.s8('pref', machine.data.get_int('pref', self.get_machine_region())))
         if refid is None:
             root.add_child(Node.string('name', ''))
             root.add_child(Node.s8('get_coupon_cnt', -1))
