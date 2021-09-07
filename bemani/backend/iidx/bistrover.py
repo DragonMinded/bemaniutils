@@ -13,3 +13,6 @@ class IIDXBistrover(IIDXBase):
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXHeroicVerse(self.data, self.config, self.model)
+
+    def requires_extended_regions(self) -> bool:
+        return True

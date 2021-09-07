@@ -99,27 +99,28 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
             all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
-            daily_songs = random.sample(all_songs, 3)
-            data.local.game.put_time_sensitive_settings(
-                cls.game,
-                cls.version,
-                'dailies',
-                {
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'music': daily_songs,
-                },
-            )
-            events.append((
-                'iidx_daily_charts',
-                {
-                    'version': cls.version,
-                    'music': daily_songs,
-                },
-            ))
+            if len(all_songs) >= 3:
+                daily_songs = random.sample(all_songs, 3)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'dailies',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'music': daily_songs,
+                    },
+                )
+                events.append((
+                    'iidx_daily_charts',
+                    {
+                        'version': cls.version,
+                        'music': daily_songs,
+                    },
+                ))
 
-            # Mark that we did some actual work here.
-            data.local.network.mark_scheduled(cls.game, cls.version, 'daily_charts', 'daily')
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'daily_charts', 'daily')
         return events
 
     @classmethod
@@ -159,6 +160,9 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 },
             ],
         }
+
+    def requires_extended_regions(self) -> bool:
+        return True
 
     def db_to_game_status(self, db_status: int) -> int:
         return {
@@ -303,7 +307,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
         root = Node.void('IIDX26shop')
         root.set_attribute('opname', machine_name)
-        root.set_attribute('pid', '51')
+        root.set_attribute('pid', str(self.get_machine_region()))
         root.set_attribute('cls_opt', '1' if close else '0')
         root.set_attribute('hr', str(hour))
         root.set_attribute('mi', str(minute))
@@ -1565,10 +1569,11 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.add_child(nostalgia)
 
         # Ea app features
-        root.add_child(Node.void('bind_eaappli'))
-        pay_per_use = Node.void('pay_per_use')
-        root.add_child(pay_per_use)
-        pay_per_use.set_attribute('item_num', '99')
+        if self.data.triggers.has_broadcast_destination(self.game):
+            root.add_child(Node.void('bind_eaappli'))
+            pay_per_use = Node.void('pay_per_use')
+            root.add_child(pay_per_use)
+            pay_per_use.set_attribute('item_num', '99')
 
         return root
 

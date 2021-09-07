@@ -11,6 +11,7 @@ class PopnMusicPeaceClient(BaseClient):
 
     def verify_pcb24_boot(self, loc: str) -> None:
         call = self.call_node()
+
         # Construct node
         pcb24 = Node.void('pcb24')
         call.add_child(pcb24)

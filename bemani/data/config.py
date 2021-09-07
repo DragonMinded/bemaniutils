@@ -3,7 +3,7 @@ import os
 from sqlalchemy.engine import Engine  # type: ignore
 from typing import Any, Dict, Optional, Set
 
-from bemani.common.constants import GameConstants
+from bemani.common import GameConstants, RegionConstants
 from bemani.data.types import ArcadeID
 
 
@@ -78,6 +78,18 @@ class Server:
     @property
     def pcbid_self_grant_limit(self) -> int:
         return int(self.__config.get('server', {}).get('pcbid_self_grant_limit', 0))
+
+    @property
+    def region(self) -> int:
+        region = int(self.__config.get('server', {}).get('region', RegionConstants.USA))
+        if region in {RegionConstants.EUROPE, RegionConstants.NO_MAPPING}:
+            # Bogus values we support.
+            return region
+        if region < RegionConstants.MIN or region > RegionConstants.MAX:
+            # Pick the original default for the network (USA).
+            return RegionConstants.USA
+        # Region was fine.
+        return region
 
 
 class Client:

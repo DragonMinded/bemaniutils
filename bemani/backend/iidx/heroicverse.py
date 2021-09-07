@@ -13,3 +13,6 @@ class IIDXHeroicVerse(IIDXBase):
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXRootage(self.data, self.config, self.model)
+
+    def requires_extended_regions(self) -> bool:
+        return True

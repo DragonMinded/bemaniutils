@@ -4,8 +4,8 @@ from typing import Any, Dict, Iterator, Optional, Tuple, List
 from flask_caching import Cache  # type: ignore
 
 from bemani.backend.iidx import IIDXFactory, IIDXBase
-from bemani.common import Profile, ValidatedDict, GameConstants
-from bemani.data import Attempt, Data, Score, Song, UserID
+from bemani.common import Profile, ValidatedDict, GameConstants, RegionConstants
+from bemani.data import Attempt, Data, Config, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
 
@@ -27,7 +27,7 @@ class IIDXFrontend(FrontendBase):
         'dp_rival',
     ]
 
-    def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
+    def __init__(self, data: Data, config: Config, cache: Cache) -> None:
         super().__init__(data, config, cache)
         self.machines: Dict[int, str] = {}
 
@@ -189,7 +189,7 @@ class IIDXFrontend(FrontendBase):
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile.update({
             'arcade': "",
-            'prefecture': profile.get_int('pid', 51),
+            'prefecture': RegionConstants.game_to_db_region(profile.version >= 25, profile.get_int('pid', self.config.server.region)),
             'settings': self.format_settings(profile.get_dict('settings')),
             'flags': self.format_flags(profile.get_dict('settings')),
             'sdjp': playstats.get_int('single_dj_points'),

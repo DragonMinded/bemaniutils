@@ -3,8 +3,8 @@ import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 from typing_extensions import Final
 
-from bemani.common import Model, ValidatedDict, Profile, PlayStatistics, GameConstants, Time
-from bemani.data import Config, Data, Machine, UserID, RemoteUser
+from bemani.common import Model, ValidatedDict, Profile, PlayStatistics, GameConstants, RegionConstants, Time
+from bemani.data import Config, Data, Arcade, Machine, UserID, RemoteUser
 
 
 class ProfileCreationException(Exception):
@@ -238,6 +238,12 @@ class Base(ABC):
         """
         return True
 
+    def requires_extended_regions(self) -> bool:
+        """
+        Override this in your subclass if your game requires an updated region list.
+        """
+        return False
+
     def bind_profile(self, userid: UserID) -> None:
         """
         Handling binding the user's profile to this version on this server.
@@ -421,6 +427,19 @@ class Base(ABC):
         machine.name = newmachine.name
         machine.data = newmachine.data
         self.data.local.machine.put_machine(machine)
+
+    def get_arcade(self) -> Optional[Arcade]:
+        machine = self.get_machine()
+        if machine.arcade is None:
+            return None
+        return self.data.local.machine.get_arcade(machine.arcade)
+
+    def get_machine_region(self) -> int:
+        arcade = self.get_arcade()
+        if arcade is None:
+            return RegionConstants.db_to_game_region(self.requires_extended_regions(), self.config.server.region)
+        else:
+            return RegionConstants.db_to_game_region(self.requires_extended_regions(), arcade.region)
 
     def get_game_config(self) -> ValidatedDict:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)

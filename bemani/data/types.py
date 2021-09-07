@@ -144,7 +144,7 @@ class Arcade:
     crediting accounts. Machines belong to either no arcade or a single arcase.
     """
 
-    def __init__(self, arcadeid: ArcadeID, name: str, description: str, pin: str, data: Dict[str, Any], owners: List[UserID]) -> None:
+    def __init__(self, arcadeid: ArcadeID, name: str, description: str, pin: str, region: int, data: Dict[str, Any], owners: List[UserID]) -> None:
         """
         Initialize the arcade instance.
 
@@ -153,6 +153,7 @@ class Arcade:
             name - The name of the arcade.
             description - The description of the arcade.
             pin - An eight digit string representing the PIN used to pull up PASELI info.
+            region - An integer representing the region this arcade is in.
             data - A dictionary of settings for this arcade.
             owners - An list of integers specifying the user IDs of owners for this arcade.
         """
@@ -160,11 +161,12 @@ class Arcade:
         self.name = name
         self.description = description
         self.pin = pin
+        self.region = region
         self.data = ValidatedDict(data)
         self.owners = owners
 
     def __repr__(self) -> str:
-        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, data={self.data}, owners={self.owners})"
+        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, region={self.region}, data={self.data}, owners={self.owners})"
 
 
 class Song:

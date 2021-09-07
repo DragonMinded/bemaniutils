@@ -1,21 +1,27 @@
 # vim: set fileencoding=utf-8
+<<<<<<< HEAD
 import binascii
 import copy
 import random
 from typing import Any, Dict, List, Optional, Tuple
+=======
+from typing import Dict
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
 
 from bemani.backend.popn.base import PopnMusicBase
+from bemani.backend.popn.common import PopnMusicModernBase
 from bemani.backend.popn.usaneko import PopnMusicUsaNeko
 from bemani.common import Time, ID, Profile, ValidatedDict, VersionConstants, Parallel
 from bemani.data import Data, UserID, Achievement, Link
 from bemani.protocol import Node
 
 
-class PopnMusicPeace(PopnMusicBase):
+class PopnMusicPeace(PopnMusicModernBase):
 
     name = "Pop'n Music peace"
     version = VersionConstants.POPN_MUSIC_PEACE
 
+<<<<<<< HEAD
     # Chart type, as returned from the game
     GAME_CHART_TYPE_EASY = 0
     GAME_CHART_TYPE_NORMAL = 1
@@ -45,12 +51,15 @@ class PopnMusicPeace(PopnMusicBase):
     GAME_PLAY_RANK_AAA = 7
     GAME_PLAY_RANK_S = 8
 
+=======
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID = 1877
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicUsaNeko(self.data, self.config, self.model)
 
+<<<<<<< HEAD
     def extra_services(self) -> List[str]:
         """
         Return all of our front-end modifiably settings.
@@ -298,26 +307,48 @@ class PopnMusicPeace(PopnMusicBase):
             1: 4,
             # Holiday Announcement (0-2)
             2: 0, #game_config.get_int('holiday_greeting'),
+=======
+    def get_phases(self) -> Dict[int, int]:
+        # Event phases
+        # TODO: Hook event mode settings up to the front end.
+        return {
+            # Default song phase availability (0-23)
+            0: 23,
+            # Unknown event (0-2)
+            1: 2,
+            # Unknown event (0-2)
+            2: 2,
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
             # Unknown event (0-4)
             3: 4,
             # Unknown event (0-1)
             4: 1,
             # Enable Net Taisen, including win/loss display on song select (0-1)
+<<<<<<< HEAD
             5: 0, #game_config.bool('enable_net_taisen'),
             # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1) [left over from usaneko]
+=======
+            5: 1,
+            # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1)
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
             6: 1,
             # Unknown event (0-1)
             7: 1,
             # Unknown event (0-2)
             8: 2,
             # Daily Mission (0-2)
+<<<<<<< HEAD
             9: 2, #game_config.get_int('daily_mission'),
+=======
+            9: 2,
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
             # NAVI-kun Song phase availability (0-30)
             10: 30,
             # Unknown event (0-1)
             11: 1,
             # Unknown event (0-2)
             12: 2,
+<<<<<<< HEAD
             # Enable Pop'n Peace preview song (0-1) [left over from usaneko]
             13: 1,
             # Stamp Card Rally (0-39)
@@ -330,12 +361,31 @@ class PopnMusicPeace(PopnMusicBase):
             17: 2,
             # Unknown event (0-1)
             18: 1,
+=======
+            # Enable Pop'n Peace preview song (0-1)
+            13: 1,
+            # Unknown event (0-39)
+            14: 39,
+            # Unknown event (0-2)
+            15: 2,
+            # Unknown event (0-3)
+            16: 3,
+            # Unknown event (0-8)
+            17: 8,
+            # Unknown event (0-1)
+            28: 1,
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
             # Unknown event (0-1)
             19: 1,
             # Unknown event (0-13)
             20: 13,
+<<<<<<< HEAD
             # event archive (0-20)
             21: 20, #game_config.get_int('event_archive_phase'),
+=======
+            # Pop'n event archive song phase availability (0-20)
+            21: 20,
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb
             # Unknown event (0-2)
             22: 2,
             # Unknown event (0-1)
@@ -343,6 +393,7 @@ class PopnMusicPeace(PopnMusicBase):
             # Unknown event (0-1)
             24: 1,
         }
+<<<<<<< HEAD
 
         for phaseid in phases:
             phase = Node.void('phase')
@@ -1540,3 +1591,5 @@ class PopnMusicPeace(PopnMusicBase):
         self.update_play_statistics(userid)
 
         return newprofile
+=======
+>>>>>>> c7affef159c268f0f4b5c9f7e500cf88147f87cb

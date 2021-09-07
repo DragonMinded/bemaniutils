@@ -32,6 +32,9 @@ var arcade_management = React.createClass({
             pin: window.arcade.pin,
             editing_pin: false,
             new_pin: '',
+            region: window.arcade.region,
+            editing_region: false,
+            new_region: '',
             paseli_enabled_saving: false,
             paseli_infinite_saving: false,
             mask_services_url_saving: false,
@@ -97,6 +100,21 @@ var arcade_management = React.createClass({
                     pin: response.pin,
                     new_pin: '',
                     editing_pin: false,
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
+    saveRegion: function(event) {
+        AJAX.post(
+            Link.get('update_region'),
+            {region: this.state.new_region},
+            function(response) {
+                this.setState({
+                    region: response.region,
+                    new_region: '',
+                    editing_region: false,
                 });
             }.bind(this)
         );
@@ -296,6 +314,46 @@ var arcade_management = React.createClass({
         );
     },
 
+    renderRegion: function() {
+        return (
+            <LabelledSection vertical={true} label="Region">{
+                !this.state.editing_region ?
+                    <span>
+                        <span>{ window.regions[this.state.region] }</span>
+                        <Edit
+                            onClick={function(event) {
+                                this.setState({editing_region: true, new_region: this.state.region});
+                            }.bind(this)}
+                        />
+                    </span> :
+                    <form className="inline" onSubmit={this.saveRegion}>
+                        <SelectInt
+                            name="region"
+                            value={ this.state.new_region }
+                            choices={ window.regions }
+                            onChange={function(choice) {
+                                this.setState({new_region: event.target.value});
+                            }.bind(this)}
+                        />
+                        <input
+                            type="submit"
+                            value="save"
+                        />
+                        <input
+                            type="button"
+                            value="cancel"
+                            onClick={function(event) {
+                                this.setState({
+                                    new_region: '',
+                                    editing_region: false,
+                                });
+                            }.bind(this)}
+                        />
+                    </form>
+            }</LabelledSection>
+        );
+    },
+
     generateNewMachine: function(event) {
         AJAX.post(
             Link.get('generatepcbid'),
@@ -478,6 +536,7 @@ var arcade_management = React.createClass({
                             <span className="placeholder">no description</span>
                     }</LabelledSection>
                     {this.renderPIN()}
+                    {this.renderRegion()}
                     <LabelledSection vertical={true} label="PASELI Enabled">
                         <span>{ this.state.paseli_enabled ? 'yes' : 'no' }</span>
                         <Toggle onClick={this.togglePaseliEnabled.bind(this)} />

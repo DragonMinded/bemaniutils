@@ -439,6 +439,10 @@ class PopnMusicEclale(PopnMusicBase):
             self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
         }[medal]
         self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
+
+        if request.child_value('is_image_store') == 1:
+            self.broadcast_score(userid, songid, chart, medal, points, combo, stats)
+
         return root
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
@@ -556,6 +560,11 @@ class PopnMusicEclale(PopnMusicBase):
         account.add_child(Node.s16('consecutive_days', statistics.consecutive_days))
         account.add_child(Node.s16('total_days', statistics.total_days))
         account.add_child(Node.s16('interval_day', 0))
+
+        # eAmuse account link
+        eaappli = Node.void('eaappli')
+        root.add_child(eaappli)
+        eaappli.add_child(Node.s8('relation', 1 if self.data.triggers.has_broadcast_destination(self.game) else -1))
 
         # Set up info node
         info = Node.void('info')

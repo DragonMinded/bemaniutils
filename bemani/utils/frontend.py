@@ -9,6 +9,7 @@ from bemani.frontend.home import home_pages
 from bemani.frontend.iidx import iidx_pages
 from bemani.frontend.popn import popn_pages
 from bemani.frontend.bishi import bishi_pages
+from bemani.frontend.mga import mga_pages
 from bemani.frontend.jubeat import jubeat_pages
 from bemani.frontend.ddr import ddr_pages
 from bemani.frontend.sdvx import sdvx_pages
@@ -33,6 +34,8 @@ def register_blueprints() -> None:
         app.register_blueprint(jubeat_pages)
     if GameConstants.BISHI_BASHI in config.support:
         app.register_blueprint(bishi_pages)
+    if GameConstants.MGA in config.support:
+        app.register_blueprint(mga_pages)
     if GameConstants.DDR in config.support:
         app.register_blueprint(ddr_pages)
     if GameConstants.SDVX in config.support:

@@ -5,7 +5,7 @@ from flask_caching import Cache  # type: ignore
 
 from bemani.backend.museca import MusecaFactory, MusecaBase
 from bemani.common import GameConstants, VersionConstants, DBConstants, Profile, ValidatedDict
-from bemani.data import Attempt, Data, Score, Song, UserID
+from bemani.data import Attempt, Data, Config, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
 
@@ -19,7 +19,7 @@ class MusecaFrontend(FrontendBase):
         MusecaBase.CHART_TYPE_RED,
     ]
 
-    def __init__(self, data: Data, config: Dict[str, Any], cache: Cache) -> None:
+    def __init__(self, data: Data, config: Config, cache: Cache) -> None:
         super().__init__(data, config, cache)
 
     def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:

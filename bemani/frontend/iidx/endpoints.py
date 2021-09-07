@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort
 
-from bemani.common import ID, GameConstants
+from bemani.common import ID, GameConstants, RegionConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.iidx.iidx import IIDXFrontend
@@ -326,6 +326,7 @@ def viewsettings() -> Response:
         'iidx/settings.react.js',
         {
             'player': djinfo,
+            'regions': RegionConstants.LUT,
             'versions': {version: name for (game, version, name) in frontend.all_games()},
             'qpros': frontend.get_all_items(versions),
         },
@@ -515,7 +516,7 @@ def updateprefecture() -> Dict[str, Any]:
     profile = g.data.local.user.get_profile(GameConstants.IIDX, version, user.id)
     if profile is None:
         raise Exception('Unable to find profile to update!')
-    profile.replace_int('pid', prefecture)
+    profile.replace_int('pid', RegionConstants.db_to_game_region(version >= 25, prefecture))
     g.data.local.user.put_profile(GameConstants.IIDX, version, user.id, profile)
 
     # Return that we updated

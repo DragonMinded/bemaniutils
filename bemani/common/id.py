@@ -42,11 +42,13 @@ class ID:
         return None
 
     @staticmethod
-    def format_machine_id(machine_id: int) -> str:
+    def format_machine_id(machine_id: int, region: str = 'US') -> str:
         """
         Take a machine ID as an integer, format it as a string.
         """
-        return f'US-{machine_id}'
+        if region not in {'JP', 'KR', 'TW', 'HK', 'US', 'GB', 'IT', 'ES', 'FR', 'PT'}:
+            raise Exception(f'Invalid region {region}!')
+        return f'{region}-{machine_id}'
 
     @staticmethod
     def parse_machine_id(machine_id: str) -> Optional[int]:
@@ -54,7 +56,7 @@ class ID:
         Take a formatted machine ID as a string, returning an int.
         """
         try:
-            if machine_id[:3] == 'US-':
+            if machine_id[:2] in {'JP', 'KR', 'TW', 'HK', 'US', 'GB', 'IT', 'ES', 'FR', 'PT'} and machine_id[2] == '-':
                 return int(machine_id[3:])
         except ValueError:
             pass

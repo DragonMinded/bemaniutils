@@ -99,27 +99,28 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
             all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
-            daily_songs = random.sample(all_songs, 3)
-            data.local.game.put_time_sensitive_settings(
-                cls.game,
-                cls.version,
-                'dailies',
-                {
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'music': daily_songs,
-                },
-            )
-            events.append((
-                'iidx_daily_charts',
-                {
-                    'version': cls.version,
-                    'music': daily_songs,
-                },
-            ))
+            if len(all_songs) >= 3:
+                daily_songs = random.sample(all_songs, 3)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'dailies',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'music': daily_songs,
+                    },
+                )
+                events.append((
+                    'iidx_daily_charts',
+                    {
+                        'version': cls.version,
+                        'music': daily_songs,
+                    },
+                ))
 
-            # Mark that we did some actual work here.
-            data.local.network.mark_scheduled(cls.game, cls.version, 'daily_charts', 'daily')
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'daily_charts', 'daily')
         return events
 
     @classmethod
@@ -302,7 +303,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         root = Node.void('IIDX24shop')
         root.set_attribute('opname', machine_name)
-        root.set_attribute('pid', '51')
+        root.set_attribute('pid', str(self.get_machine_region()))
         root.set_attribute('cls_opt', '1' if close else '0')
         root.set_attribute('hr', str(hour))
         root.set_attribute('mi', str(minute))
@@ -1877,7 +1878,8 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         root.add_child(nostalgia)
 
         # Ea app features
-        root.add_child(Node.void('bind_eaappli'))
+        if self.data.triggers.has_broadcast_destination(self.game):
+            root.add_child(Node.void('bind_eaappli'))
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:

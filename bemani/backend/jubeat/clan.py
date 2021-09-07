@@ -97,29 +97,30 @@ class JubeatClan(
             # these song IDs, so we explicitly exclude them.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
             all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version) if song.id not in cls.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS)
-            daily_songs = random.sample(all_songs, 2)
-            data.local.game.put_time_sensitive_settings(
-                cls.game,
-                cls.version,
-                'fc_challenge',
-                {
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'today': daily_songs[0],
-                    'whim': daily_songs[1],
-                },
-            )
-            events.append((
-                'jubeat_fc_challenge_charts',
-                {
-                    'version': cls.version,
-                    'today': daily_songs[0],
-                    'whim': daily_songs[1],
-                },
-            ))
+            if len(all_songs) >= 2:
+                daily_songs = random.sample(all_songs, 2)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'fc_challenge',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'today': daily_songs[0],
+                        'whim': daily_songs[1],
+                    },
+                )
+                events.append((
+                    'jubeat_fc_challenge_charts',
+                    {
+                        'version': cls.version,
+                        'today': daily_songs[0],
+                        'whim': daily_songs[1],
+                    },
+                ))
 
-            # Mark that we did some actual work here.
-            data.local.network.mark_scheduled(cls.game, cls.version, 'fc_challenge', 'daily')
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'fc_challenge', 'daily')
         return events
 
     def __get_course_list(self) -> List[Dict[str, Any]]:

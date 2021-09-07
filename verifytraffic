@@ -10,7 +10,6 @@ declare -a arr=(
     "pnm-23"
     "pnm-24"
     "pnm-25"
-    "pnm-26"
     "iidx-20"
     "iidx-21"
     "iidx-22"
@@ -42,6 +41,7 @@ declare -a arr=(
     "reflec-4"
     "reflec-5"
     "reflec-6"
+    "mga"
 )
 
 for project in "${arr[@]}"

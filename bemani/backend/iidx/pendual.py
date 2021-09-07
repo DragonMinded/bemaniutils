@@ -96,27 +96,28 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
             all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
-            daily_songs = random.sample(all_songs, 3)
-            data.local.game.put_time_sensitive_settings(
-                cls.game,
-                cls.version,
-                'dailies',
-                {
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'music': daily_songs,
-                },
-            )
-            events.append((
-                'iidx_daily_charts',
-                {
-                    'version': cls.version,
-                    'music': daily_songs,
-                },
-            ))
+            if len(all_songs) >= 3:
+                daily_songs = random.sample(all_songs, 3)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'dailies',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'music': daily_songs,
+                    },
+                )
+                events.append((
+                    'iidx_daily_charts',
+                    {
+                        'version': cls.version,
+                        'music': daily_songs,
+                    },
+                ))
 
-            # Mark that we did some actual work here.
-            data.local.network.mark_scheduled(cls.game, cls.version, 'daily_charts', 'daily')
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'daily_charts', 'daily')
         return events
 
     @classmethod
@@ -163,7 +164,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             root.set_attribute('cls_opt', '0')
             machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             root.set_attribute('opname', machine.name)
-            root.set_attribute('pid', '51')
+            root.set_attribute('pid', str(self.get_machine_region()))
             return root
 
         if method == 'savename':
@@ -1712,7 +1713,8 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         orb_data.set_attribute('rest_orb', str(profile.get_int('orbs')))
 
         # Ea app features
-        root.add_child(Node.void('bind_eaappli'))
+        if self.data.triggers.has_broadcast_destination(self.game):
+            root.add_child(Node.void('bind_eaappli'))
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:

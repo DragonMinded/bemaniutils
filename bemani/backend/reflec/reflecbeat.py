@@ -89,13 +89,13 @@ class ReflecBeat(ReflecBeatBase):
             close = machine.data.get_bool('close')
             hour = machine.data.get_int('hour')
             minute = machine.data.get_int('minute')
-            pref = machine.data.get_int('pref', 51)
+            pref = machine.data.get_int('pref', self.get_machine_region())
         else:
             machine_name = ''
             close = False
             hour = 0
             minute = 0
-            pref = 51
+            pref = self.get_machine_region()
 
         root = Node.void('pcbinfo')
         info = Node.void('info')
@@ -140,7 +140,7 @@ class ReflecBeat(ReflecBeatBase):
 
     def handle_sysinfo_fan_request(self, request: Node) -> Node:
         sysinfo = Node.void('sysinfo')
-        sysinfo.add_child(Node.u8('pref', 51))
+        sysinfo.add_child(Node.u8('pref', self.get_machine_region()))
         sysinfo.add_child(Node.string('lid', request.child_value('lid')))
         return sysinfo
 
