@@ -133,7 +133,7 @@ class PopnMusicUsaNeko(PopnMusicBase):
             # Default song phase availability (0-11)
             0: 11,
             # Unknown event (0-2)
-            1: 2,
+            1: 0, #Same holiday event as peace, will move to front end along with peace's
             # Unknown event (0-2)
             2: 2,
             # Unknown event (0-4)

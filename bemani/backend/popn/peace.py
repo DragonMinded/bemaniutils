@@ -13,7 +13,7 @@ from bemani.protocol import Node
 
 class PopnMusicPeace(PopnMusicBase):
 
-    name = "Pop'n Music Peace"
+    name = "Pop'n Music peace"
     version = VersionConstants.POPN_MUSIC_PEACE
 
     # Chart type, as returned from the game
@@ -48,14 +48,176 @@ class PopnMusicPeace(PopnMusicBase):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID = 1877
 
-    def previous_version(self) -> Optional[PopnMusicBase]:
+    def previous_version(self) -> PopnMusicBase:
         return PopnMusicUsaNeko(self.data, self.config, self.model)
 
     def extra_services(self) -> List[str]:
         """
-        Return the local2 and lobby2 service so that Pop'n Music 24 will
-        send game packets.
+        Return all of our front-end modifiably settings.
         """
+        return {
+            'ints': [
+                {
+                    'name': 'Game Phase',
+                    'tip': 'Game unlock phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'game_phase',
+                    'values': {
+                    # Valid range is 0-23, but there's likely some correlation between the numbers and the music, let's find that before we get carried away.
+                    # Best to just set it to 23 anywya
+                        0: 'NO PHASE',
+
+                        23: 'MAX: ALL DATA RELEASE',
+                    }
+                },
+                {
+                    # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
+                    'name': 'Holiday Greeting',
+                    'tip': 'Changes the payment selection confirmation sound.',
+                    'category': 'game_config',
+                    'setting': 'holiday_greeting',
+                    'values': {
+                        0: 'Okay!',
+                        1: 'Merry Christmas!',
+                        2: 'Happy New Year! (akemashita omedetou)',
+                    }
+                },
+                {
+                    # The following values control the pop'n music event archive.  Setting the flag to the following values has the corresponding effect. 
+                    # Each value will include the events above it, for example setting it to 5 gives you the pop'n 15 event, as well as SP, 12, and 11 events.
+                    # Setting it to 0 disabled the event and skips the entire screen, setting it to 20 makes all of the events available for selection.
+                    # Completing the minigame unlocks the associated content.
+
+                    #  1     pop'n music 11 - pop'n Tourist - The Latest Space Station (station CRUX / m@sumi & chara オクターブ)
+                    #  2     pop'n music 11 - pop'n Tourist - The Southernmost Point of the Universe (ナンキョク / クラゲータ [UPPER] / Kurotou mur.mur.)
+                    #  2     pop'n music 12 Iroha - pop'n Secret Ninja Scroll - Ninja Otasuke Cheat Sheet in Trouble (おたすけ！アン子ちゃん (シノビアンレディーのテーマ 弐) / ARM × 狐夢想 ft.ricono & chara シノビアンコ)
+                    #  3     pop'n music Sunny Park - pop'n Walker - I Love Walking in Happiness Park (ポチコの幸せな日常 (狂犬U`x´UばうわうHARDCORE Remix) / NU-KO remixed by RoughSketch & chara ポチコ)
+                    #  4     pop'n music 12 Iroha - pop'n Secret Ninja Scroll - Ninja Code: April 1st Volume (ハイパーロッケンローレ / エイプリルフールの唄 [UPPER] / AKIRA YAMAOKA)
+                    #  5     pop'n music 15 ADVENTURE - Mimi Nyami Exciting Expedition - Route to Awaken the Soul (Crumble Soul / lapix & chara ナディ)
+                    #  6     pop'n music 20 fantasia - Go for it! pop'n Quest - A Braided Fantasy Song (トランスコア / FLOWER [UPPER] / DJ YOSHITAKA)
+                    #  7     EXTRA (クリアトーン / さようならは言わないけれど / Water Stand & chara 文彦さん (CS10))
+                    #  7     EXTRA part 2 (Popperz Chronicle [UPPER] / pop'n masters & chara MZD (2P))
+                    #  8     pop'n music 15 ADVENTURE - Mimi Nyami Exciting Expedition - A Route with a Faint Bell Sound (BEEF / BEMANI Sound Team "牛")
+                    #  9     pop'n music 13 Carnival - Exciting Pop'n Land - Bunny Magician Attraction (マッシュルームナイト / SOUND HOLIC feat. Nana Takahashi & chara キャロル)
+                    # 10     pop'n music 14 FEVER! - Fever Warrior Pop'n 14 - That Burning Special Attack, again! (ネオクラシカル・へヴィメタル / Aithon [UPPER] / Kozo Nakamura)
+                    # 11     pop'n music Sunny Park - pop'n Walker - Festival Nightfall Park (天鈴少女 / 駄々子 & chara てまり)
+                    # 12     pop'n music 20 fantasia - Go for it! pop'n Quest - A Fantasy Song by the Bladed Warrior (Celsus II / onoken feat.夏川陽子 & chara イリス)
+                    # 13     pop'n music 19 TUNE STREET - Town Mode - A Town Where the Sound of the Brass Band Rings After School (放課後コンチェルティーノ～私だけの部室狂騒曲 / 山本真央樹 & chara まりん)
+                    # 14     pop'n music éclale - pop'n Star Maker - Fun Rag Hour (CARTOON ☆ Rag Hour / OSTER project & chara ほるん)
+                    # 15     pop'n music 13 Carnival - Exciting Pop'n Land - Ghost Piano Attraction (Dracophobia / 上ノ瀬つかさ        )
+                    # 16     pop'n music 14 FEVER! - Fever Warrior Pop'n 15 - That Warrior Defending Peace, again! (爆裂再生！フィーバー戦士ポップン14 / Hommarju feat.BEMANI Sound Team "PON" & chara ポップン14)
+                    # 17     pop'n music 18 Sengoku Retsuden - Aim to Unite the world! pop'n Fuunroku - A Territory with a Glamorous Cultural Flavor (元禄花吹雪 / 泉 陸奥彦)
+                    # 18     pop'n music éclale - pop'n Star Maker - Runaway Guitarist in the Starry Sky (MADSPEED狂信道 [UPPER]         / cosMo@暴走Ultimate)
+                    # 19     pop'n music 17 THE MOVIE - pop'n Film Festival - A Blockbuster Uncovering a Conspiracy in the Peaceful City (夕陽のダンディー / BEMANI Sound Team "劇ダンディーレコード" & chara 一条司令)
+                    # 20     pop'n music lapistoria - Story - God's Forgotten Things (perditus † paradisus [UPPER] / iconoclasm)
+                    'name': 'Event Archive Phase',
+                    'tip': 'Event Archive mini-game phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'event_archive_phase',
+                    'values': {
+                        0: 'Event Archive disabled',
+                        1: 'The Latest Space Station',
+                        2: 'The Southernmost Point of the Universe & Ninja Otasuke Cheat Sheet in Trouble',
+                        3: 'I Love Walking in Happiness Park',
+                        4: 'Ninja Code: April 1st Volume',
+                        5: 'Route to Awaken the Soul',
+                        6: 'A Braided Fantasy Song',
+                        7: 'EXTRA & EXTRA part 2',
+                        8: 'A Route with a Faint Bell Sound',
+                        9: 'Bunny Magician Attraction',
+                        10: 'That Burning Special Attack, again!',
+                        11: 'Festival Nightfall Park',
+                        12: 'A Fantasy Song by the Bladed Warrior',
+                        13: 'A Town Where the Sound of the Brass Band Rings After School',
+                        14: 'Fun Rag Hour',
+                        15: 'Ghost Piano Attraction',
+                        16: 'That Warrior Defending Peace, again!',
+                        17: 'A Territory with a Glamorous Cultural Flavor',
+                        18: 'Runaway Guitarist in the Starry Sky',
+                        19: 'A Blockbuster Uncovering a Conspiracy in the Peaceful City',
+                        20: 'God\'s Forgotten Things',
+                    }
+                },
+                {
+                    # Stamp Rally (0-39)
+                    # This only seems to work on the 2019 build of peace and won't trigger on the 2020 build no matter how hard I try.
+                    # As with the event archive, setting this value also gives all the cards above it, for example: 3 gives you fever, DDR 20th 1 & 2, pop'n 16, and pop'n 15.
+                    # For full info on all of the things that this unlocks, please reference the bemaniwiki page for the stamp rally (Japanese) here:
+                    # https://bemaniwiki.com/index.php?pop%27n%20music%20peace/%A5%DD%A5%C3%A5%D7%A5%F3%A5%BF%A5%A4%A5%E0%A5%C8%A5%EA%A5%C3%A5%D7#stampcard
+
+                    'name': 'Stamp Rally (2019 only)',
+                    'tip': 'Stamp Rally mini-game phase for all players. Stamp rally only works in 2019 peace.',
+                    'category': 'game_config',
+                    'setting': 'event_stamp_rally',
+                    'values': {
+                         0: 'Stamp Rally disabled',
+                         1: 'pop\'n music 16 party / pop\'n music 15 adventure',
+                         2: 'DDR 20th Anniversary / DDR 20th Anniversary vol 2',
+                         3: 'pop\'n 14 FEVER!',
+                         4: 'pop\'n music THE MOVIE',
+                         5: 'pop\'n CS / pop\'n CS vol 2 / pop\'n 13 Carnival / pop\'n 12 iroha / pop\'n 12 iroha vol 2',
+                         6: 'pop\'n 18 sengoku retsuden / pop\'n 19 tunestreet / pop\'n 19 tunestreet vol 2',
+                         7: '8th KAC',
+                         8: 'pop\'n CS vol 3',
+                         9: 'beatmania IIDX / beatmania IIDX vol 2',
+                         10: 'gitadora 20th Anniversary / gitadora 20th Anniversary vol 2',
+                         11: 'Hinabita ♪ / Hinabita ♪ vol 2',
+                         12: 'KONAMI 50th Anniversary',
+                         13: 'pop\'n 20 fantasia',
+                         14: 'pop\'n 11 / pop\'n 11 vol 2',
+                         15: 'pop\'n 10',
+                         16: 'pop\'n 21 sunny park / pop\'n 22 lapistoria / KONAMI 50th vol 2 / pop\'n 10 vol 2 / EXTRA / Stamp',
+                         17: 'pop\'n CS vol 4',
+                         18: 'pop\'n 9',
+                         19: 'pop\'n 5 / pop\'n 5 vol 2',
+                         20: 'pop\'n 4',
+                         21: 'pop\'n CS vol 5',
+                         22: 'pop\'n 8 / pop\'n 8 vol 2',
+                         23: 'pop\'n 23 eclale',
+                         24: 'pop\'n 7 / pop\'n 7 vol 2',
+                         25: 'pop\'n 6',
+                         26: 'pop\'n 6 vol 2',
+                         27: 'pop\'n 24 usaneko',
+                         28: 'EXTRA 2',
+                         29: 'pop\'n 3',
+                         30: 'pop\'n 2 / pop\'n 2 vol 2',
+                         31: 'pop\'n 1',
+                         32: '? / ?? / ???', # [sic]
+                         33: 'Nostalgia',
+                         34: 'Nostalgia vol 2',
+                         35: 'Nostalgia vol 3',
+                         36: 'Automation Paradise',
+                         37: 'EXTRA vol 3',
+                         38: 'EXTRA vol 4',
+                         39: '9th KAC & EXTRA 5',
+                    }
+                },
+            ],
+            'bools': [
+                {
+                    'name': 'Force Song Unlock',
+                    'tip': 'Force unlock all songs.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_songs',
+                },
+                {
+                    'name': 'Force Customization Unlock',
+                    'tip': 'Force unlock all theme and menu customizations.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_customizations',
+                },
+                # Enable Net Taisen, including win/loss display on song select (0-1)
+                {
+                    'name': 'Net Taisen',
+                    'tip': 'Enable Net Taisen, including win/loss display on song select',
+                    'category': 'game_config',
+                    'setting': 'enable_net_taisen',
+                },
+            ],
+        }
+
+    def extra_services(self) -> List[str]:
+        #Return the local2 and lobby2 service so that Pop'n Music 25 will send game packets.
         return [
             'local2',
             'lobby2',
@@ -111,7 +273,7 @@ class PopnMusicPeace(PopnMusicBase):
             return self.GAME_PLAY_RANK_AAA
         return self.GAME_PLAY_RANK_S
 
-    def handle_lobby24_request(self, request: Node) -> Optional[Node]:
+    def handle_lobby24_request(self, request: Node) -> Node:
         # Stub out the entire lobby24 service
         return Node.void('lobby24')
 
@@ -127,57 +289,58 @@ class PopnMusicPeace(PopnMusicBase):
         return Node.void('pcb24')
 
     def __construct_common_info(self, root: Node) -> None:
+        game_config = self.get_game_config()
         # Event phases
         phases = {
             # Default song phase availability (0-23)
             0: 23,
-            # Unknown event
+            # Unknown event (0-4)
             1: 4,
-            # Unknown event
-            2: 2,
-            # Unknown event
+            # Holiday Announcement (0-2)
+            2: 0, #game_config.get_int('holiday_greeting'),
+            # Unknown event (0-4)
             3: 4,
-            # Unknown event
+            # Unknown event (0-1)
             4: 1,
             # Enable Net Taisen, including win/loss display on song select (0-1)
-            5: 0, # ?
-            # Unknown event
+            5: 0, #game_config.bool('enable_net_taisen'),
+            # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1) [left over from usaneko]
             6: 1,
-            # Unknown event
+            # Unknown event (0-1)
             7: 1,
-            # Unknown event
+            # Unknown event (0-2)
             8: 2,
             # Daily Mission (0-2)
-            9: 0,
-            # Unknown event
+            9: 2, #game_config.get_int('daily_mission'),
+            # NAVI-kun Song phase availability (0-30)
             10: 30,
-            # Unknown event
+            # Unknown event (0-1)
             11: 1,
-            # Unknown event
+            # Unknown event (0-2)
             12: 2,
-            # Unknown event
+            # Enable Pop'n Peace preview song (0-1) [left over from usaneko]
             13: 1,
-            # Unknown event
-            14: 39,
-            # Unknown event
+            # Stamp Card Rally (0-39)
+            14: 39, #game_config.get_int('event_stamp_rally'),
+            # Unknown event (0-2)
             15: 2,
-            # Unknown event
+            # Unknown event (0-3) (pop'n time trip not supported in 2020)
             16: 3,
-            # Unknown event
-            17: 8,
-            # Unknown event
+            # Unknown event (0-8) (summer vacation stamp not supported in 2020)
+            17: 2,
+            # Unknown event (0-1)
             18: 1,
-            # Unknown event
+            # Unknown event (0-1)
             19: 1,
-            # Unknown event
+            # Unknown event (0-13)
             20: 13,
-            # Event archive flag
-            21: 20,
-            # Unknown event
+            # event archive (0-20)
+            21: 20, #game_config.get_int('event_archive_phase'),
+            # Unknown event (0-2)
             22: 2,
-            # Unknown event
+            # Unknown event (0-1)
             23: 1,
-            # Unknown event
+            # Unknown event (0-1)
             24: 1,
         }
 
@@ -187,7 +350,7 @@ class PopnMusicPeace(PopnMusicBase):
             phase.add_child(Node.s16('event_id', phaseid))
             phase.add_child(Node.s16('phase', phases[phaseid]))
 
-        # Gather course informatino and course ranking for users.
+        # Gather course information and course ranking for users.
         course_infos, achievements, profiles = Parallel.execute([
             lambda: self.data.local.game.get_all_time_sensitive_settings(self.game, self.version, 'course'),
             lambda: self.data.local.user.get_all_achievements(self.game, self.version),
@@ -257,7 +420,7 @@ class PopnMusicPeace(PopnMusicBase):
                     subnode.add_child(Node.u8('clear_type', ach.data.get_int('clear_type')))
                     subnode.add_child(Node.u8('clear_rank', ach.data.get_int('clear_rank')))
 
-        for area_id in range(1, 17):
+        for area_id in range(0, 16):
             area = Node.void('area')
             root.add_child(area)
             area.add_child(Node.s16('area_id', area_id))
@@ -265,7 +428,7 @@ class PopnMusicPeace(PopnMusicBase):
             area.add_child(Node.s16('medal_id', area_id))
             area.add_child(Node.bool('is_limit', False))
 
-        for choco_id in range(1, 6):
+        for choco_id in range(0, 5):
             choco = Node.void('choco')
             root.add_child(choco)
             choco.add_child(Node.s16('choco_id', choco_id))
@@ -575,6 +738,8 @@ class PopnMusicPeace(PopnMusicBase):
                 self.CHART_TYPE_EX,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             points = score.points
             medal = score.data.get_int('medal')
@@ -636,6 +801,8 @@ class PopnMusicPeace(PopnMusicBase):
                 self.CHART_TYPE_HYPER,
                 self.CHART_TYPE_EX,
             ]:
+                continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
             music = Node.void('music')
@@ -773,6 +940,8 @@ class PopnMusicPeace(PopnMusicBase):
                 self.CHART_TYPE_EX,
             ]:
                 continue
+            if score.data.get_int('medal') == self.PLAY_MEDAL_NO_PLAY:
+                continue
 
             music = Node.void('music')
             root.add_child(music)
@@ -831,7 +1000,7 @@ class PopnMusicPeace(PopnMusicBase):
         account.add_child(Node.s32('chocolate_giri_cnt', profile.get_int('chocolate_giri_cnt')))
         account.add_child(Node.s32('chocolate_kokyu_cnt', profile.get_int('chocolate_kokyu_cnt')))
         account.add_child(Node.s16_array('teacher_setting', profile.get_int_array('teacher_setting', 10, [-1] * 10)))
-        account.add_child(Node.bool('welcom_pack', profile.get_bool('welcome_pack')))
+        account.add_child(Node.bool('welcom_pack', False))  # Set to true to grant extra stage no matter what.
         account.add_child(Node.s32('ranking_node', profile.get_int('ranking_node')))
         account.add_child(Node.s32('start_type', profile.get_int('start_type')))
         account.add_child(Node.s32('chara_ranking_kind_id', profile.get_int('chara_ranking_kind_id')))
@@ -842,23 +1011,32 @@ class PopnMusicPeace(PopnMusicBase):
         account.add_child(Node.s32_array('power_point_list', profile.get_int_array('power_point_list', 20, [-1] * 20)))
 
         # Tutorial handling is all sorts of crazy in UsaNeko. the tutorial flag
-        # is split into two values. The game uses the flag modulo 100 for standard
+        # is split into two values. The game uses the flag modulo 100 for navigation
         # tutorial progress, and the flag divided by 100 for the hold note tutorial.
         # The hold note tutorial will activate the first time you choose a song with
         # hold notes in it, regardless of whether you say yes/no. The total times you
-        # have ever played Pop'n Music also factors in for some screens. The enumerated
-        # values are as follows:
+        # have ever played Pop'n Music also factors in, as the game will only attempt
+        # to offer you the basic "how to play" tutorial screen and song on the playthrough
+        # attempt where the "total_play_cnt" value is 1. The game expects this to be 1-based,
+        # and if you set it to 0 for the first playthorough then it will play a mandatory
+        # cursed tutorial stage on the second profile load using the chart of your last
+        # played song and keysounds of system menu entries. Valid values for each of the
+        # two tutorial values is as follows:
         #
         # Lower values:
-        #   0 - Should not be used, presenting this to the game causes buggy behavior.
-        #   1 - User has not been prompted to choose any tutorials. Prompts the user for the
-        #       menu tutorial. If the user selects "no" then moves the tutorial state to
-        #       "2" at the end of the round. If the user selects "yes" then moves the
-        #       tutorial state to "3" immediately and starts the menu tutorial. If the total
-        #       play count for this user is "1" when this value is hit, the game will bug
-        #       out and play the hold note tutorial and then crash.
+        #   0 - Brand new profile and user has not been prompted to choose any tutorials.
+        #       Prompts the user for the nagivation tutorial. If the user selects "no" then
+        #       moves the tutorial state to "1" at the end of the round. If the user selects
+        #       "yes" then moves the tutorial state to "3" immediately and starts the navigation
+        #       tutorial. If the total play count for this user is "1" when this value is hit,
+        #       the game will offer a basic "how to play" tutorial that can be played or skipped.
+        #   1 - Prompt the user on the mode select screen asking them if they want to see
+        #       the navigation tutorial. If the user selects "no" then moves the tutorial state
+        #       to "2" after the round. If the user selects "yes" then moves the tutorial state
+        #       to "3" immediately. If the total play count for this user is "1" when this value
+        #       is hit, then the game will bug out and play the hold note tutorial and then crash.
         #   2 - Prompt the user on the mode select screen asking them if they want to see
-        #       the menu tutorial. If the user selects "no" then moves the tutorial state
+        #       the navigation tutorial. If the user selects "no" then moves the tutorial state
         #       to "8" immediately. If the user selects "yes" then moves the tutorial state
         #       to "3" immediately. If the total play count for this user is "1" when this value
         #       is hit, then the game will bug out and play the hold note tutorial and then crash.
@@ -872,11 +1050,17 @@ class PopnMusicPeace(PopnMusicBase):
         #   6 - Do nothing, display nothing, but advance the tutorial state to "7" at the
         #       end of the game. It seems that nothing requests this state.
         #   7 - Display guide information prompt on the option select screen. Game moves
-        #       this to "8" after this tutorial has been displayed.
+        #       this to "8" after this tutorial has been displayed. It appears that there is
+        #       code to go to this state instead of "8" when selecting "no" on the navigation
+        #       tutorial prompt but only when the total play count is "1". That crashes the game
+        #       as documented above, so it is not clear how this state was ever reachable.
         #   8 - Do not display any more tutorial stuff, this is a terminal state.
         #
         # Upper values:
-        #   0 - Should not be used, presenting this to the game causes buggy behavior.
+        #   0 - Brand new profile and user has not been asked for the above navigation tutorial
+        #       or shown an optional "how to play" tutorial. The game will advance this to "1"
+        #       after going through the mode and character select screens, but only if the total
+        #       play count is "1".
         #   1 - Hold note tutorial has not been activated yet and will be displayed when
         #       the player chooses a song with hold notes. Game moves this to "2" after this
         #       tutorial has been activated.
@@ -886,7 +1070,8 @@ class PopnMusicPeace(PopnMusicBase):
         #       song on your last stage. Game moves this to "3" after this tutorial has been
         #       displayed.
         #   3 - All hold note tutorials are finished, this is a terminal state.
-        account.add_child(Node.s16('tutorial', profile.get_int('tutorial')))
+        statistics = self.get_play_statistics(userid)
+        account.add_child(Node.s16('tutorial', profile.get_int('tutorial', 100 if statistics.total_plays > 1 else 0)))
 
         # Stuff we never change
         account.add_child(Node.s8('staff', 0))
@@ -907,7 +1092,6 @@ class PopnMusicPeace(PopnMusicBase):
         account.add_child(Node.s16_array('latest_music', last_played))
 
         # Player statistics
-        statistics = self.get_play_statistics(userid)
         account.add_child(Node.s16('total_play_cnt', statistics.total_plays))
         account.add_child(Node.s16('today_play_cnt', statistics.today_plays))
         account.add_child(Node.s16('consecutive_days', statistics.consecutive_days))
@@ -1011,10 +1195,10 @@ class PopnMusicPeace(PopnMusicBase):
                 # seen 8 and 0. Might be what chart is available?
                 #
                 # Item limits are as follows:
-                # 0: 1704
-                # 1: 2201
+                # 0: 1877 - ID is the music ID that the player purchased/unlocked.
+                # 1: 2204 ?
                 # 2: 3
-                # 3: 97
+                # 3: 97 - ID points at a character part that can be purchased on the character screen.
                 # 4: 1
                 # 5: 1
                 # 6: 60
@@ -1082,7 +1266,8 @@ class PopnMusicPeace(PopnMusicBase):
                 fes.add_child(Node.u16('gauge_point', points))
                 fes.add_child(Node.bool('is_cleared', cleared))
 
-        # Handle daily mission
+        # Handle daily mission. Note that we should be presenting 3 random IDs
+        # in the range of 1-228 inclusive, and presenting three new ones per day.
         achievements = self.data.local.user.get_time_based_achievements(
             self.game,
             self.version,
@@ -1091,20 +1276,25 @@ class PopnMusicPeace(PopnMusicBase):
             until=Time.end_of_today(),
         )
         achievements = sorted(achievements, key=lambda a: a.timestamp)
-        daily_missions: Dict[int, ValidatedDict] = {
-            1: ValidatedDict(),
-            2: ValidatedDict(),
-            3: ValidatedDict(),
-        }
+        daily_missions: Dict[int, ValidatedDict] = {}
+
         # Find the newest version of each daily mission completion,
         # since we've sorted by time above. If we haven't started for
-        # today, the defaults will be set so we at least give the game
-        # the right ID.
+        # today, the defaults will be set after this loop so we at least
+        # give the game the right ID.
         for achievement in achievements:
             if achievement.type == 'mission':
                 daily_missions[achievement.id] = achievement.data
 
-        for daily_id, data in daily_missions.items():
+        while len(daily_missions) < 3:
+            new_id = random.randint(1, 228)
+            if new_id not in daily_missions:
+                daily_missions[new_id] = ValidatedDict()
+
+        for i, (daily_id, data) in enumerate(daily_missions.items()):
+            if i >= 3:
+                break
+
             points = data.get_int('points')
             complete = data.get_int('complete')
 
@@ -1113,44 +1303,6 @@ class PopnMusicPeace(PopnMusicBase):
             mission.add_child(Node.u32('mission_id', daily_id))
             mission.add_child(Node.u32('gauge_point', points))
             mission.add_child(Node.u32('mission_comp', complete))
-
-        # Scores
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
-        for score in scores:
-            # Skip any scores for chart types we don't support
-            if score.chart not in [
-                self.CHART_TYPE_EASY,
-                self.CHART_TYPE_NORMAL,
-                self.CHART_TYPE_HYPER,
-                self.CHART_TYPE_EX,
-            ]:
-                continue
-
-            music = Node.void('music')
-            root.add_child(music)
-            music.add_child(Node.s16('music_num', score.id))
-            music.add_child(Node.u8('sheet_num', {
-                self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY,
-                self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL,
-                self.CHART_TYPE_HYPER: self.GAME_CHART_TYPE_HYPER,
-                self.CHART_TYPE_EX: self.GAME_CHART_TYPE_EX,
-            }[score.chart]))
-            music.add_child(Node.s32('score', score.points))
-            music.add_child(Node.u8('clear_type', {
-                self.PLAY_MEDAL_CIRCLE_FAILED: self.GAME_PLAY_MEDAL_CIRCLE_FAILED,
-                self.PLAY_MEDAL_DIAMOND_FAILED: self.GAME_PLAY_MEDAL_DIAMOND_FAILED,
-                self.PLAY_MEDAL_STAR_FAILED: self.GAME_PLAY_MEDAL_STAR_FAILED,
-                self.PLAY_MEDAL_EASY_CLEAR: self.GAME_PLAY_MEDAL_EASY_CLEAR,
-                self.PLAY_MEDAL_CIRCLE_CLEARED: self.GAME_PLAY_MEDAL_CIRCLE_CLEARED,
-                self.PLAY_MEDAL_DIAMOND_CLEARED: self.GAME_PLAY_MEDAL_DIAMOND_CLEARED,
-                self.PLAY_MEDAL_STAR_CLEARED: self.GAME_PLAY_MEDAL_STAR_CLEARED,
-                self.PLAY_MEDAL_CIRCLE_FULL_COMBO: self.GAME_PLAY_MEDAL_CIRCLE_FULL_COMBO,
-                self.PLAY_MEDAL_DIAMOND_FULL_COMBO: self.GAME_PLAY_MEDAL_DIAMOND_FULL_COMBO,
-                self.PLAY_MEDAL_STAR_FULL_COMBO: self.GAME_PLAY_MEDAL_STAR_FULL_COMBO,
-                self.PLAY_MEDAL_PERFECT: self.GAME_PLAY_MEDAL_PERFECT,
-            }[score.data.get_int('medal')]))
-            music.add_child(Node.u8('clear_rank', self.__score_to_rank(score.points)))
-            music.add_child(Node.s16('cnt', score.plays))
 
         # Player netvs section
         netvs = Node.void('netvs')
@@ -1167,15 +1319,15 @@ class PopnMusicPeace(PopnMusicBase):
         netvs.add_child(Node.s8_array('set_recommend', [0] * 3))
         netvs.add_child(Node.u32('netvs_play_cnt', 0))
 
-        # Player customize section
+        # Character customizations
         customize = Node.void('customize')
         root.add_child(customize)
-        customize.add_child(Node.u16('effect_left', 0))
-        customize.add_child(Node.u16('effect_center', 0))
-        customize.add_child(Node.u16('effect_right', 0))
-        customize.add_child(Node.u16('hukidashi', 0))
-        customize.add_child(Node.u16('comment_1', 0))
-        customize.add_child(Node.u16('comment_2', 0))
+        customize.add_child(Node.u16('effect_left', profile.get_int('effect_left')))
+        customize.add_child(Node.u16('effect_center', profile.get_int('effect_center')))
+        customize.add_child(Node.u16('effect_right', profile.get_int('effect_right')))
+        customize.add_child(Node.u16('hukidashi', profile.get_int('hukidashi')))
+        customize.add_child(Node.u16('comment_1', profile.get_int('comment_1')))
+        customize.add_child(Node.u16('comment_2', profile.get_int('comment_2')))
 
         # Stamp stuff
         stamp = Node.void('stamp')
@@ -1188,9 +1340,6 @@ class PopnMusicPeace(PopnMusicBase):
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = copy.deepcopy(oldprofile)
 
-        # Set that we've seen this profile
-        newprofile.replace_bool('welcome_pack', True)
-
         account = request.child('account')
         if account is not None:
             newprofile.replace_int('tutorial', account.child_value('tutorial'))
@@ -1198,7 +1347,6 @@ class PopnMusicPeace(PopnMusicBase):
             newprofile.replace_int('area_id', account.child_value('area_id'))
             newprofile.replace_int('use_navi', account.child_value('use_navi'))
             newprofile.replace_int('ranking_node', account.child_value('ranking_node'))
-            newprofile.replace_int('start_type', account.child_value('start_type'))
             newprofile.replace_int('chara_ranking_kind_id', account.child_value('chara_ranking_kind_id'))
             newprofile.replace_int('navi_evolution_flg', account.child_value('navi_evolution_flg'))
             newprofile.replace_int('ranking_news_last_no', account.child_value('ranking_news_last_no'))
@@ -1263,6 +1411,15 @@ class PopnMusicPeace(PopnMusicBase):
             option_dict.replace_int('judge', option.child_value('judge'))
             option_dict.replace_int('guide_se', option.child_value('guide_se'))
         newprofile.replace_dict('option', option_dict)
+
+        customize = request.child('customize')
+        if customize is not None:
+            newprofile.replace_int('effect_left', customize.child_value('effect_left'))
+            newprofile.replace_int('effect_center', customize.child_value('effect_center'))
+            newprofile.replace_int('effect_right', customize.child_value('effect_right'))
+            newprofile.replace_int('hukidashi', customize.child_value('hukidashi'))
+            newprofile.replace_int('comment_1', customize.child_value('comment_1'))
+            newprofile.replace_int('comment_2', customize.child_value('comment_2'))
 
         navi_data = request.child('navi_data')
         if navi_data is not None:
@@ -1364,6 +1521,21 @@ class PopnMusicPeace(PopnMusicBase):
                         },
                     )
 
+        # Almost all locked songs from usaneko are now unlocked except for one, so let's fix that
+        # TODO: Unlock missing songs and deco from stamp rally after the event ends
+        self.data.local.user.put_achievement(
+            self.game,
+            self.version,
+            userid,
+            1592, #ドーナツホール
+            'item_0',
+            {
+                'param': 0xF,
+                'is_new': False,
+                'get_time': Time.now(),
+            },
+        )
+            
         # Keep track of play statistics
         self.update_play_statistics(userid)
 
