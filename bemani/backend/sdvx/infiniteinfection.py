@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
-import copy
 from typing import Any, Dict, List, Optional
+from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
@@ -15,35 +15,35 @@ class SoundVoltexInfiniteInfection(
     SoundVoltexBase,
 ):
 
-    name = 'SOUND VOLTEX II -infinite infection-'
-    version = VersionConstants.SDVX_INFINITE_INFECTION
+    name: str = 'SOUND VOLTEX II -infinite infection-'
+    version: int = VersionConstants.SDVX_INFINITE_INFECTION
 
-    GAME_LIMITED_LOCKED = 1
-    GAME_LIMITED_UNLOCKABLE = 2
-    GAME_LIMITED_UNLOCKED = 3
+    GAME_LIMITED_LOCKED: Final[int] = 1
+    GAME_LIMITED_UNLOCKABLE: Final[int] = 2
+    GAME_LIMITED_UNLOCKED: Final[int] = 3
 
-    GAME_CURRENCY_PACKETS = 0
-    GAME_CURRENCY_BLOCKS = 1
+    GAME_CURRENCY_PACKETS: Final[int] = 0
+    GAME_CURRENCY_BLOCKS: Final[int] = 1
 
-    GAME_CLEAR_TYPE_NO_CLEAR = 1
-    GAME_CLEAR_TYPE_CLEAR = 2
-    GAME_CLEAR_TYPE_HARD_CLEAR = 5
-    GAME_CLEAR_TYPE_ULTIMATE_CHAIN = 3
-    GAME_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN = 4
+    GAME_CLEAR_TYPE_NO_CLEAR: Final[int] = 1
+    GAME_CLEAR_TYPE_CLEAR: Final[int] = 2
+    GAME_CLEAR_TYPE_HARD_CLEAR: Final[int] = 5
+    GAME_CLEAR_TYPE_ULTIMATE_CHAIN: Final[int] = 3
+    GAME_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[int] = 4
 
-    GAME_GRADE_NO_PLAY = 0
-    GAME_GRADE_D = 1
-    GAME_GRADE_C = 2
-    GAME_GRADE_B = 3
-    GAME_GRADE_A = 4
-    GAME_GRADE_AA = 5
-    GAME_GRADE_AAA = 6
+    GAME_GRADE_NO_PLAY: Final[int] = 0
+    GAME_GRADE_D: Final[int] = 1
+    GAME_GRADE_C: Final[int] = 2
+    GAME_GRADE_B: Final[int] = 3
+    GAME_GRADE_A: Final[int] = 4
+    GAME_GRADE_AA: Final[int] = 5
+    GAME_GRADE_AAA: Final[int] = 6
 
-    GAME_CATALOG_TYPE_SONG = 0
-    GAME_CATALOG_TYPE_APPEAL_CARD = 1
-    GAME_CATALOG_TYPE_SPECIAL_SONG = 2
+    GAME_CATALOG_TYPE_SONG: Final[int] = 0
+    GAME_CATALOG_TYPE_APPEAL_CARD: Final[int] = 1
+    GAME_CATALOG_TYPE_SPECIAL_SONG: Final[int] = 2
 
-    GAME_GAUGE_TYPE_SKILL = 1
+    GAME_GAUGE_TYPE_SKILL: Final[int] = 1
 
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
@@ -2415,7 +2415,7 @@ class SoundVoltexInfiniteInfection(
         return game
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value('earned_gamecoin_packet')

@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Dict, Optional, Sequence
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -15,36 +16,36 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     scores.
     """
 
-    game = GameConstants.POPN_MUSIC
+    game: GameConstants = GameConstants.POPN_MUSIC
 
     # Play medals, as saved into/loaded from the DB
-    PLAY_MEDAL_NO_PLAY = DBConstants.POPN_MUSIC_PLAY_MEDAL_NO_PLAY
-    PLAY_MEDAL_CIRCLE_FAILED = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
-    PLAY_MEDAL_DIAMOND_FAILED = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
-    PLAY_MEDAL_STAR_FAILED = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FAILED
-    PLAY_MEDAL_EASY_CLEAR = DBConstants.POPN_MUSIC_PLAY_MEDAL_EASY_CLEAR
-    PLAY_MEDAL_CIRCLE_CLEARED = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_CLEARED
-    PLAY_MEDAL_DIAMOND_CLEARED = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_CLEARED
-    PLAY_MEDAL_STAR_CLEARED = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_CLEARED
-    PLAY_MEDAL_CIRCLE_FULL_COMBO = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO
-    PLAY_MEDAL_DIAMOND_FULL_COMBO = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FULL_COMBO
-    PLAY_MEDAL_STAR_FULL_COMBO = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FULL_COMBO
-    PLAY_MEDAL_PERFECT = DBConstants.POPN_MUSIC_PLAY_MEDAL_PERFECT
+    PLAY_MEDAL_NO_PLAY: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_NO_PLAY
+    PLAY_MEDAL_CIRCLE_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
+    PLAY_MEDAL_DIAMOND_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
+    PLAY_MEDAL_STAR_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FAILED
+    PLAY_MEDAL_EASY_CLEAR: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_EASY_CLEAR
+    PLAY_MEDAL_CIRCLE_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_CLEARED
+    PLAY_MEDAL_DIAMOND_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_CLEARED
+    PLAY_MEDAL_STAR_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_CLEARED
+    PLAY_MEDAL_CIRCLE_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO
+    PLAY_MEDAL_DIAMOND_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FULL_COMBO
+    PLAY_MEDAL_STAR_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FULL_COMBO
+    PLAY_MEDAL_PERFECT: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_PERFECT
 
     # Chart type, as saved into/loaded from the DB, and returned to game
-    CHART_TYPE_EASY = 0
-    CHART_TYPE_NORMAL = 1
-    CHART_TYPE_HYPER = 2
-    CHART_TYPE_EX = 3
+    CHART_TYPE_EASY: Final[int] = 0
+    CHART_TYPE_NORMAL: Final[int] = 1
+    CHART_TYPE_HYPER: Final[int] = 2
+    CHART_TYPE_EX: Final[int] = 3
 
     # Old profile lookup type, for loading profile by ID
-    NEW_PROFILE_ONLY = 0
-    OLD_PROFILE_ONLY = 1
-    OLD_PROFILE_FALLTHROUGH = 2
+    NEW_PROFILE_ONLY: Final[int] = 0
+    OLD_PROFILE_ONLY: Final[int] = 1
+    OLD_PROFILE_FALLTHROUGH: Final[int] = 2
 
     # Pop'n Music in particular requires non-expired profiles to do conversions
     # properly.
-    supports_expired_profiles = False
+    supports_expired_profiles: bool = False
 
     def previous_version(self) -> Optional['PopnMusicBase']:
         """

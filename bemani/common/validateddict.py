@@ -1,3 +1,4 @@
+import copy
 from typing import Optional, List, Dict, Any
 
 from bemani.common.constants import GameConstants
@@ -25,6 +26,9 @@ class ValidatedDict(dict):
     all of the set functions will verify that the to-be-stored value matches the
     type. If it does not, the value is not updated.
     """
+
+    def clone(self) -> "ValidatedDict":
+        return ValidatedDict(copy.deepcopy(self))
 
     def get_int(self, name: str, default: int=0) -> int:
         """
@@ -455,6 +459,9 @@ class Profile(ValidatedDict):
         self.refid = refid
         self.extid = extid
 
+    def clone(self) -> "Profile":
+        return Profile(self.game, self.version, self. refid, self.extid, copy.deepcopy(self))
+
 
 class PlayStatistics(ValidatedDict):
     """
@@ -488,3 +495,15 @@ class PlayStatistics(ValidatedDict):
         self.first_play_timestamp = first_play_timestamp
         # The timestamp of the very last play session, in seconds.
         self.last_play_timestamp = last_play_timestamp
+
+    def clone(self) -> "PlayStatistics":
+        return PlayStatistics(
+            self.game,
+            self.total_plays,
+            self.today_plays,
+            self.total_days,
+            self.consecutive_days,
+            self.first_play_timestamp,
+            self.last_play_timestamp,
+            copy.deepcopy(self),
+        )

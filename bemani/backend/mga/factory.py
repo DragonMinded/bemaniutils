@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.mga.mga import MetalGearArcade
@@ -8,7 +8,7 @@ from bemani.data import Config, Data
 
 class MetalGearArcadeFactory(Factory):
 
-    MANAGED_CLASSES = [
+    MANAGED_CLASSES: List[Type[Base]] = [
         MetalGearArcade,
     ]
 

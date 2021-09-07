@@ -1,4 +1,3 @@
-import copy
 from typing import Any, Dict, List, Optional
 
 from bemani.backend.reflec.base import ReflecBeatBase
@@ -12,8 +11,8 @@ from bemani.protocol import Node
 
 class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
 
-    name = "REFLEC BEAT VOLZZA 2"
-    version = VersionConstants.REFLEC_BEAT_VOLZZA_2
+    name: str = "REFLEC BEAT VOLZZA 2"
+    version: int = VersionConstants.REFLEC_BEAT_VOLZZA_2
 
     def previous_version(self) -> Optional[ReflecBeatBase]:
         return ReflecBeatVolzza(self.data, self.config, self.model)
@@ -655,7 +654,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         # Save base player profile info
         newprofile.replace_int('lid', ID.parse_machine_id(request.child_value('pdata/account/lid')))

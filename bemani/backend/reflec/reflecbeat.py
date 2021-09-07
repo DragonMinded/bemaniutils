@@ -1,5 +1,5 @@
-import copy
 from typing import Any, Dict, Tuple
+from typing_extensions import Final
 
 from bemani.backend.reflec.base import ReflecBeatBase
 
@@ -10,13 +10,13 @@ from bemani.protocol import Node
 
 class ReflecBeat(ReflecBeatBase):
 
-    name = "REFLEC BEAT"
-    version = VersionConstants.REFLEC_BEAT
+    name: str = "REFLEC BEAT"
+    version: int = VersionConstants.REFLEC_BEAT
 
     # Clear types according to the game
-    GAME_CLEAR_TYPE_NO_PLAY = 0
-    GAME_CLEAR_TYPE_PLAYED = 2
-    GAME_CLEAR_TYPE_FULL_COMBO = 3
+    GAME_CLEAR_TYPE_NO_PLAY: Final[int] = 0
+    GAME_CLEAR_TYPE_PLAYED: Final[int] = 2
+    GAME_CLEAR_TYPE_FULL_COMBO: Final[int] = 3
 
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
@@ -399,7 +399,7 @@ class ReflecBeat(ReflecBeatBase):
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         newprofile.replace_int('lid', ID.parse_machine_id(request.child_value('lid')))
         newprofile.replace_str('name', request.child_value('pdata/base/name'))

@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
-import copy
 import random
 from typing import Any, Dict, List, Optional, Set, Tuple
+from typing_extensions import Final
 
 from bemani.backend.base import Status
 from bemani.backend.jubeat.base import JubeatBase
@@ -30,15 +30,15 @@ class JubeatQubell(
     JubeatBase,
 ):
 
-    name = 'Jubeat Qubell'
-    version = VersionConstants.JUBEAT_QUBELL
+    name: str = 'Jubeat Qubell'
+    version: int = VersionConstants.JUBEAT_QUBELL
 
-    JBOX_EMBLEM_NORMAL = 1
-    JBOX_EMBLEM_PREMIUM = 2
+    JBOX_EMBLEM_NORMAL: Final[int] = 1
+    JBOX_EMBLEM_PREMIUM: Final[int] = 2
 
-    ENABLE_GARNET = False
+    ENABLE_GARNET: Final[bool] = False
 
-    EVENTS = {
+    EVENTS: Dict[int, Dict[str, bool]] = {
         5: {
             'enabled': False,
         },
@@ -921,7 +921,7 @@ class JubeatQubell(
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         data = request.child('data')
 
         # Grab system information

@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
-import copy
 from typing import Dict, List, Optional
+from typing_extensions import Final
 
 from bemani.backend.ddr.base import DDRBase
 from bemani.backend.ddr.ddrx3 import DDRX3
@@ -53,38 +53,38 @@ class DDR2013(
     DDRBase,
 ):
 
-    name = 'DanceDanceRevolution 2013'
-    version = VersionConstants.DDR_2013
+    name: str = 'DanceDanceRevolution 2013'
+    version: int = VersionConstants.DDR_2013
 
-    GAME_STYLE_SINGLE = 0
-    GAME_STYLE_DOUBLE = 1
-    GAME_STYLE_VERSUS = 2
+    GAME_STYLE_SINGLE: Final[int] = 0
+    GAME_STYLE_DOUBLE: Final[int] = 1
+    GAME_STYLE_VERSUS: Final[int] = 2
 
-    GAME_RANK_AAA = 1
-    GAME_RANK_AA = 2
-    GAME_RANK_A = 3
-    GAME_RANK_B = 4
-    GAME_RANK_C = 5
-    GAME_RANK_D = 6
-    GAME_RANK_E = 7
+    GAME_RANK_AAA: Final[int] = 1
+    GAME_RANK_AA: Final[int] = 2
+    GAME_RANK_A: Final[int] = 3
+    GAME_RANK_B: Final[int] = 4
+    GAME_RANK_C: Final[int] = 5
+    GAME_RANK_D: Final[int] = 6
+    GAME_RANK_E: Final[int] = 7
 
-    GAME_CHART_SINGLE_BEGINNER = 0
-    GAME_CHART_SINGLE_BASIC = 1
-    GAME_CHART_SINGLE_DIFFICULT = 2
-    GAME_CHART_SINGLE_EXPERT = 3
-    GAME_CHART_SINGLE_CHALLENGE = 4
-    GAME_CHART_DOUBLE_BASIC = 5
-    GAME_CHART_DOUBLE_DIFFICULT = 6
-    GAME_CHART_DOUBLE_EXPERT = 7
-    GAME_CHART_DOUBLE_CHALLENGE = 8
+    GAME_CHART_SINGLE_BEGINNER: Final[int] = 0
+    GAME_CHART_SINGLE_BASIC: Final[int] = 1
+    GAME_CHART_SINGLE_DIFFICULT: Final[int] = 2
+    GAME_CHART_SINGLE_EXPERT: Final[int] = 3
+    GAME_CHART_SINGLE_CHALLENGE: Final[int] = 4
+    GAME_CHART_DOUBLE_BASIC: Final[int] = 5
+    GAME_CHART_DOUBLE_DIFFICULT: Final[int] = 6
+    GAME_CHART_DOUBLE_EXPERT: Final[int] = 7
+    GAME_CHART_DOUBLE_CHALLENGE: Final[int] = 8
 
-    GAME_HALO_NONE = 0
-    GAME_HALO_GREAT_COMBO = 1
-    GAME_HALO_PERFECT_COMBO = 2
-    GAME_HALO_MARVELOUS_COMBO = 3
-    GAME_HALO_GOOD_COMBO = 4
+    GAME_HALO_NONE: Final[int] = 0
+    GAME_HALO_GREAT_COMBO: Final[int] = 1
+    GAME_HALO_PERFECT_COMBO: Final[int] = 2
+    GAME_HALO_MARVELOUS_COMBO: Final[int] = 3
+    GAME_HALO_GOOD_COMBO: Final[int] = 4
 
-    GAME_MAX_SONGS = 700
+    GAME_MAX_SONGS: Final[int] = 700
 
     def previous_version(self) -> Optional[DDRBase]:
         return DDRX3(self.data, self.config, self.model)
@@ -468,7 +468,7 @@ class DDR2013(
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
         # Grab last node and accessories so we can make decisions based on type

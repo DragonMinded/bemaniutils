@@ -9,8 +9,8 @@ from bemani.common import VersionConstants
 
 class JubeatFesto(JubeatBase):
 
-    name = 'Jubeat Festo'
-    version = VersionConstants.JUBEAT_FESTO
+    name: str = 'Jubeat Festo'
+    version: int = VersionConstants.JUBEAT_FESTO
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatClan(self.data, self.config, self.model)

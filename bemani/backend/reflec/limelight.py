@@ -1,5 +1,5 @@
-import copy
 from typing import Optional, Dict, Any, Tuple
+from typing_extensions import Final
 
 from bemani.backend.reflec.base import ReflecBeatBase
 from bemani.backend.reflec.reflecbeat import ReflecBeat
@@ -11,14 +11,14 @@ from bemani.protocol import Node
 
 class ReflecBeatLimelight(ReflecBeatBase):
 
-    name = "REFLEC BEAT limelight"
-    version = VersionConstants.REFLEC_BEAT_LIMELIGHT
+    name: str = "REFLEC BEAT limelight"
+    version: int = VersionConstants.REFLEC_BEAT_LIMELIGHT
 
     # Clear types according to the game
-    GAME_CLEAR_TYPE_NO_PLAY = 0
-    GAME_CLEAR_TYPE_FAILED = 2
-    GAME_CLEAR_TYPE_CLEARED = 3
-    GAME_CLEAR_TYPE_FULL_COMBO = 4
+    GAME_CLEAR_TYPE_NO_PLAY: Final[int] = 0
+    GAME_CLEAR_TYPE_FAILED: Final[int] = 2
+    GAME_CLEAR_TYPE_CLEARED: Final[int] = 3
+    GAME_CLEAR_TYPE_FULL_COMBO: Final[int] = 4
 
     def previous_version(self) -> Optional[ReflecBeatBase]:
         return ReflecBeat(self.data, self.config, self.model)
@@ -738,7 +738,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         newprofile.replace_int('lid', ID.parse_machine_id(request.child_value('lid')))
         newprofile.replace_str('name', request.child_value('pdata/base/name'))

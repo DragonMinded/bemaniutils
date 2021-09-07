@@ -1,5 +1,4 @@
 # vim: set fileencoding=utf-8
-import copy
 import random
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -29,8 +28,8 @@ class JubeatSaucer(
     JubeatBase,
 ):
 
-    name = 'Jubeat Saucer'
-    version = VersionConstants.JUBEAT_SAUCER
+    name: str = 'Jubeat Saucer'
+    version: int = VersionConstants.JUBEAT_SAUCER
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatCopiousAppend(self.data, self.config, self.model)
@@ -519,7 +518,7 @@ class JubeatSaucer(
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         data = request.child('data')
 
         # Grab player information

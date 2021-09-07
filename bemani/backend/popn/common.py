@@ -1,7 +1,6 @@
 # vim: set fileencoding=utf-8
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import binascii
-import copy
 import random
 from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import Final
@@ -12,7 +11,7 @@ from bemani.data import Data, UserID, Achievement, Link
 from bemani.protocol import Node
 
 
-class PopnMusicModernBase(PopnMusicBase, metaclass=ABCMeta):
+class PopnMusicModernBase(PopnMusicBase, ABC):
 
     # Chart type, as returned from the game
     GAME_CHART_TYPE_EASY: Final[int] = 0
@@ -1119,7 +1118,7 @@ class PopnMusicModernBase(PopnMusicBase, metaclass=ABCMeta):
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
 
         account = request.child('account')
         if account is not None:

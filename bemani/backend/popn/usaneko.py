@@ -9,11 +9,11 @@ from bemani.common import VersionConstants
 
 class PopnMusicUsaNeko(PopnMusicModernBase):
 
-    name = "Pop'n Music うさぎと猫と少年の夢"
-    version = VersionConstants.POPN_MUSIC_USANEKO
+    name: str = "Pop'n Music うさぎと猫と少年の夢"
+    version: int = VersionConstants.POPN_MUSIC_USANEKO
 
     # Biggest ID in the music DB
-    GAME_MAX_MUSIC_ID = 1704
+    GAME_MAX_MUSIC_ID: int = 1704
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicEclale(self.data, self.config, self.model)

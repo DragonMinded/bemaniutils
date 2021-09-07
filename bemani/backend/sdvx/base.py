@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Dict, Optional
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -13,32 +14,32 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     Base game class for all Sound Voltex version that we support.
     """
 
-    game = GameConstants.SDVX
+    game: GameConstants = GameConstants.SDVX
 
-    CLEAR_TYPE_NO_PLAY = DBConstants.SDVX_CLEAR_TYPE_NO_PLAY
-    CLEAR_TYPE_FAILED = DBConstants.SDVX_CLEAR_TYPE_FAILED
-    CLEAR_TYPE_CLEAR = DBConstants.SDVX_CLEAR_TYPE_CLEAR
-    CLEAR_TYPE_HARD_CLEAR = DBConstants.SDVX_CLEAR_TYPE_HARD_CLEAR
-    CLEAR_TYPE_ULTIMATE_CHAIN = DBConstants.SDVX_CLEAR_TYPE_ULTIMATE_CHAIN
-    CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN = DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN
+    CLEAR_TYPE_NO_PLAY: Final[int] = DBConstants.SDVX_CLEAR_TYPE_NO_PLAY
+    CLEAR_TYPE_FAILED: Final[int] = DBConstants.SDVX_CLEAR_TYPE_FAILED
+    CLEAR_TYPE_CLEAR: Final[int] = DBConstants.SDVX_CLEAR_TYPE_CLEAR
+    CLEAR_TYPE_HARD_CLEAR: Final[int] = DBConstants.SDVX_CLEAR_TYPE_HARD_CLEAR
+    CLEAR_TYPE_ULTIMATE_CHAIN: Final[int] = DBConstants.SDVX_CLEAR_TYPE_ULTIMATE_CHAIN
+    CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[int] = DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN
 
-    GRADE_NO_PLAY = DBConstants.SDVX_GRADE_NO_PLAY
-    GRADE_D = DBConstants.SDVX_GRADE_D
-    GRADE_C = DBConstants.SDVX_GRADE_C
-    GRADE_B = DBConstants.SDVX_GRADE_B
-    GRADE_A = DBConstants.SDVX_GRADE_A
-    GRADE_A_PLUS = DBConstants.SDVX_GRADE_A_PLUS
-    GRADE_AA = DBConstants.SDVX_GRADE_AA
-    GRADE_AA_PLUS = DBConstants.SDVX_GRADE_AA_PLUS
-    GRADE_AAA = DBConstants.SDVX_GRADE_AAA
-    GRADE_AAA_PLUS = DBConstants.SDVX_GRADE_AAA_PLUS
-    GRADE_S = DBConstants.SDVX_GRADE_S
+    GRADE_NO_PLAY: Final[int] = DBConstants.SDVX_GRADE_NO_PLAY
+    GRADE_D: Final[int] = DBConstants.SDVX_GRADE_D
+    GRADE_C: Final[int] = DBConstants.SDVX_GRADE_C
+    GRADE_B: Final[int] = DBConstants.SDVX_GRADE_B
+    GRADE_A: Final[int] = DBConstants.SDVX_GRADE_A
+    GRADE_A_PLUS: Final[int] = DBConstants.SDVX_GRADE_A_PLUS
+    GRADE_AA: Final[int] = DBConstants.SDVX_GRADE_AA
+    GRADE_AA_PLUS: Final[int] = DBConstants.SDVX_GRADE_AA_PLUS
+    GRADE_AAA: Final[int] = DBConstants.SDVX_GRADE_AAA
+    GRADE_AAA_PLUS: Final[int] = DBConstants.SDVX_GRADE_AAA_PLUS
+    GRADE_S: Final[int] = DBConstants.SDVX_GRADE_S
 
-    CHART_TYPE_NOVICE = 0
-    CHART_TYPE_ADVANCED = 1
-    CHART_TYPE_EXHAUST = 2
-    CHART_TYPE_INFINITE = 3
-    CHART_TYPE_MAXIMUM = 4
+    CHART_TYPE_NOVICE: Final[int] = 0
+    CHART_TYPE_ADVANCED: Final[int] = 1
+    CHART_TYPE_EXHAUST: Final[int] = 2
+    CHART_TYPE_INFINITE: Final[int] = 3
+    CHART_TYPE_MAXIMUM: Final[int] = 4
 
     def previous_version(self) -> Optional['SoundVoltexBase']:
         """

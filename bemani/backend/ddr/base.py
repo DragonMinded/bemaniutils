@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Optional, List
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -14,42 +15,42 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     profiles based on refid, creating new profiles, looking up and saving scores.
     """
 
-    game = GameConstants.DDR
+    game: GameConstants = GameConstants.DDR
 
-    HALO_NONE = DBConstants.DDR_HALO_NONE
-    HALO_GOOD_FULL_COMBO = DBConstants.DDR_HALO_GOOD_FULL_COMBO
-    HALO_GREAT_FULL_COMBO = DBConstants.DDR_HALO_GREAT_FULL_COMBO
-    HALO_PERFECT_FULL_COMBO = DBConstants.DDR_HALO_PERFECT_FULL_COMBO
-    HALO_MARVELOUS_FULL_COMBO = DBConstants.DDR_HALO_MARVELOUS_FULL_COMBO
+    HALO_NONE: Final[int] = DBConstants.DDR_HALO_NONE
+    HALO_GOOD_FULL_COMBO: Final[int] = DBConstants.DDR_HALO_GOOD_FULL_COMBO
+    HALO_GREAT_FULL_COMBO: Final[int] = DBConstants.DDR_HALO_GREAT_FULL_COMBO
+    HALO_PERFECT_FULL_COMBO: Final[int] = DBConstants.DDR_HALO_PERFECT_FULL_COMBO
+    HALO_MARVELOUS_FULL_COMBO: Final[int] = DBConstants.DDR_HALO_MARVELOUS_FULL_COMBO
 
-    RANK_E = DBConstants.DDR_RANK_E
-    RANK_D = DBConstants.DDR_RANK_D
-    RANK_D_PLUS = DBConstants.DDR_RANK_D_PLUS
-    RANK_C_MINUS = DBConstants.DDR_RANK_C_MINUS
-    RANK_C = DBConstants.DDR_RANK_C
-    RANK_C_PLUS = DBConstants.DDR_RANK_C_PLUS
-    RANK_B_MINUS = DBConstants.DDR_RANK_B_MINUS
-    RANK_B = DBConstants.DDR_RANK_B
-    RANK_B_PLUS = DBConstants.DDR_RANK_B_PLUS
-    RANK_A_MINUS = DBConstants.DDR_RANK_A_MINUS
-    RANK_A = DBConstants.DDR_RANK_A
-    RANK_A_PLUS = DBConstants.DDR_RANK_A_PLUS
-    RANK_AA_MINUS = DBConstants.DDR_RANK_AA_MINUS
-    RANK_AA = DBConstants.DDR_RANK_AA
-    RANK_AA_PLUS = DBConstants.DDR_RANK_AA_PLUS
-    RANK_AAA = DBConstants.DDR_RANK_AAA
+    RANK_E: Final[int] = DBConstants.DDR_RANK_E
+    RANK_D: Final[int] = DBConstants.DDR_RANK_D
+    RANK_D_PLUS: Final[int] = DBConstants.DDR_RANK_D_PLUS
+    RANK_C_MINUS: Final[int] = DBConstants.DDR_RANK_C_MINUS
+    RANK_C: Final[int] = DBConstants.DDR_RANK_C
+    RANK_C_PLUS: Final[int] = DBConstants.DDR_RANK_C_PLUS
+    RANK_B_MINUS: Final[int] = DBConstants.DDR_RANK_B_MINUS
+    RANK_B: Final[int] = DBConstants.DDR_RANK_B
+    RANK_B_PLUS: Final[int] = DBConstants.DDR_RANK_B_PLUS
+    RANK_A_MINUS: Final[int] = DBConstants.DDR_RANK_A_MINUS
+    RANK_A: Final[int] = DBConstants.DDR_RANK_A
+    RANK_A_PLUS: Final[int] = DBConstants.DDR_RANK_A_PLUS
+    RANK_AA_MINUS: Final[int] = DBConstants.DDR_RANK_AA_MINUS
+    RANK_AA: Final[int] = DBConstants.DDR_RANK_AA
+    RANK_AA_PLUS: Final[int] = DBConstants.DDR_RANK_AA_PLUS
+    RANK_AAA: Final[int] = DBConstants.DDR_RANK_AAA
 
     # These constants must agree with read.py for importing charts from the game.
-    CHART_SINGLE_BEGINNER = 0
-    CHART_SINGLE_BASIC = 1
-    CHART_SINGLE_DIFFICULT = 2
-    CHART_SINGLE_EXPERT = 3
-    CHART_SINGLE_CHALLENGE = 4
-    CHART_DOUBLE_BEGINNER = 5
-    CHART_DOUBLE_BASIC = 6
-    CHART_DOUBLE_DIFFICULT = 7
-    CHART_DOUBLE_EXPERT = 8
-    CHART_DOUBLE_CHALLENGE = 9
+    CHART_SINGLE_BEGINNER: Final[int] = 0
+    CHART_SINGLE_BASIC: Final[int] = 1
+    CHART_SINGLE_DIFFICULT: Final[int] = 2
+    CHART_SINGLE_EXPERT: Final[int] = 3
+    CHART_SINGLE_CHALLENGE: Final[int] = 4
+    CHART_DOUBLE_BEGINNER: Final[int] = 5
+    CHART_DOUBLE_BASIC: Final[int] = 6
+    CHART_DOUBLE_DIFFICULT: Final[int] = 7
+    CHART_DOUBLE_EXPERT: Final[int] = 8
+    CHART_DOUBLE_CHALLENGE: Final[int] = 9
 
     # Return the local2 service so that DDR Ace will send certain packets.
     extra_services: List[str] = [

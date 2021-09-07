@@ -11,7 +11,7 @@ class MetalGearArcadeBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     Base game class for Metal Gear Arcade.
     """
 
-    game = GameConstants.MGA
+    game: GameConstants = GameConstants.MGA
 
     def previous_version(self) -> Optional['MetalGearArcadeBase']:
         """

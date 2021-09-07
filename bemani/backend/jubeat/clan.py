@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
-import copy
 import random
 from typing import Any, Dict, List, Optional, Set, Tuple
+from typing_extensions import Final
 
 from bemani.backend.jubeat.base import JubeatBase
 from bemani.backend.jubeat.common import (
@@ -30,16 +30,16 @@ class JubeatClan(
     JubeatBase,
 ):
 
-    name = 'Jubeat Clan'
-    version = VersionConstants.JUBEAT_CLAN
+    name: str = 'Jubeat Clan'
+    version: int = VersionConstants.JUBEAT_CLAN
 
-    JBOX_EMBLEM_NORMAL = 1
-    JBOX_EMBLEM_PREMIUM = 2
+    JBOX_EMBLEM_NORMAL: Final[int] = 1
+    JBOX_EMBLEM_PREMIUM: Final[int] = 2
 
-    EVENT_STATUS_OPEN = 0x1
-    EVENT_STATUS_COMPLETE = 0x2
+    EVENT_STATUS_OPEN: Final[int] = 0x1
+    EVENT_STATUS_COMPLETE: Final[int] = 0x2
 
-    EVENTS = {
+    EVENTS: Dict[int, Dict[str, bool]] = {
         5: {
             'enabled': False,
         },
@@ -60,25 +60,25 @@ class JubeatClan(
         },
     }
 
-    FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS = set(range(80000301, 80000348))
+    FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS: Set[int] = set(range(80000301, 80000348))
 
-    COURSE_STATUS_SEEN = 0x01
-    COURSE_STATUS_PLAYED = 0x02
-    COURSE_STATUS_CLEARED = 0x04
+    COURSE_STATUS_SEEN: Final[int] = 0x01
+    COURSE_STATUS_PLAYED: Final[int] = 0x02
+    COURSE_STATUS_CLEARED: Final[int] = 0x04
 
-    COURSE_TYPE_PERMANENT = 1
-    COURSE_TYPE_TIME_BASED = 2
+    COURSE_TYPE_PERMANENT: Final[int] = 1
+    COURSE_TYPE_TIME_BASED: Final[int] = 2
 
-    COURSE_CLEAR_SCORE = 1
-    COURSE_CLEAR_COMBINED_SCORE = 2
-    COURSE_CLEAR_HAZARD = 3
+    COURSE_CLEAR_SCORE: Final[int] = 1
+    COURSE_CLEAR_COMBINED_SCORE: Final[int] = 2
+    COURSE_CLEAR_HAZARD: Final[int] = 3
 
-    COURSE_HAZARD_EXC1 = 1
-    COURSE_HAZARD_EXC2 = 2
-    COURSE_HAZARD_EXC3 = 3
-    COURSE_HAZARD_FC1 = 4
-    COURSE_HAZARD_FC2 = 5
-    COURSE_HAZARD_FC3 = 6
+    COURSE_HAZARD_EXC1: Final[int] = 1
+    COURSE_HAZARD_EXC2: Final[int] = 2
+    COURSE_HAZARD_EXC3: Final[int] = 3
+    COURSE_HAZARD_FC1: Final[int] = 4
+    COURSE_HAZARD_FC2: Final[int] = 5
+    COURSE_HAZARD_FC3: Final[int] = 6
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatQubell(self.data, self.config, self.model)
@@ -1449,7 +1449,7 @@ class JubeatClan(
             for chart in [0, 1, 2]:
                 entry = achievement.data.get_dict(str(chart))
                 if entry.get_int("value") >= bestentry.get_int("value"):
-                    bestentry = copy.deepcopy(entry)
+                    bestentry = entry.clone()
                     bestentry.replace_int("songid", achievement.id)
                     bestentry.replace_int("chart", chart)
             jubeat_entries.append(bestentry)
@@ -1579,7 +1579,7 @@ class JubeatClan(
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         data = request.child('data')
 
         # Grab system information

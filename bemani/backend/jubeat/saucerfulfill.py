@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
-import copy
 import random
 from typing import Any, Dict, List, Optional, Tuple
+from typing_extensions import Final
 
 from bemani.backend.base import Status
 from bemani.backend.jubeat.base import JubeatBase
@@ -31,17 +31,17 @@ class JubeatSaucerFulfill(
     JubeatBase,
 ):
 
-    name = 'Jubeat Saucer Fulfill'
-    version = VersionConstants.JUBEAT_SAUCER_FULFILL
+    name: str = 'Jubeat Saucer Fulfill'
+    version: int = VersionConstants.JUBEAT_SAUCER_FULFILL
 
-    GAME_COURSE_REQUIREMENT_SCORE = 1
-    GAME_COURSE_REQUIREMENT_FULL_COMBO = 2
-    GAME_COURSE_REQUIREMENT_PERFECT_PERCENT = 3
+    GAME_COURSE_REQUIREMENT_SCORE: Final[int] = 1
+    GAME_COURSE_REQUIREMENT_FULL_COMBO: Final[int] = 2
+    GAME_COURSE_REQUIREMENT_PERFECT_PERCENT: Final[int] = 3
 
-    GAME_COURSE_RATING_FAILED = 1
-    GAME_COURSE_RATING_BRONZE = 2
-    GAME_COURSE_RATING_SILVER = 3
-    GAME_COURSE_RATING_GOLD = 4
+    GAME_COURSE_RATING_FAILED: Final[int] = 1
+    GAME_COURSE_RATING_BRONZE: Final[int] = 2
+    GAME_COURSE_RATING_SILVER: Final[int] = 3
+    GAME_COURSE_RATING_GOLD: Final[int] = 4
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatSaucer(self.data, self.config, self.model)
@@ -600,7 +600,7 @@ class JubeatSaucerFulfill(
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         data = request.child('data')
 
         # Grab player information

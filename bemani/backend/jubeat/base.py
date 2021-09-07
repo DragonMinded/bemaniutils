@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Dict, List, Optional
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -14,27 +15,27 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     profiles based on refid, creating new profiles, looking up and saving scores.
     """
 
-    game = GameConstants.JUBEAT
+    game: GameConstants = GameConstants.JUBEAT
 
-    GAME_FLAG_BIT_PLAYED = 0x1
-    GAME_FLAG_BIT_CLEARED = 0x2
-    GAME_FLAG_BIT_FULL_COMBO = 0x4
-    GAME_FLAG_BIT_EXCELLENT = 0x8
-    GAME_FLAG_BIT_NEARLY_FULL_COMBO = 0x10
-    GAME_FLAG_BIT_NEARLY_EXCELLENT = 0x20
-    GAME_FLAG_BIT_NO_GRAY = 0x40
-    GAME_FLAG_BIT_NO_YELLOW = 0x80
+    GAME_FLAG_BIT_PLAYED: Final[int] = 0x1
+    GAME_FLAG_BIT_CLEARED: Final[int] = 0x2
+    GAME_FLAG_BIT_FULL_COMBO: Final[int] = 0x4
+    GAME_FLAG_BIT_EXCELLENT: Final[int] = 0x8
+    GAME_FLAG_BIT_NEARLY_FULL_COMBO: Final[int] = 0x10
+    GAME_FLAG_BIT_NEARLY_EXCELLENT: Final[int] = 0x20
+    GAME_FLAG_BIT_NO_GRAY: Final[int] = 0x40
+    GAME_FLAG_BIT_NO_YELLOW: Final[int] = 0x80
 
-    PLAY_MEDAL_FAILED = DBConstants.JUBEAT_PLAY_MEDAL_FAILED
-    PLAY_MEDAL_CLEARED = DBConstants.JUBEAT_PLAY_MEDAL_CLEARED
-    PLAY_MEDAL_NEARLY_FULL_COMBO = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_FULL_COMBO
-    PLAY_MEDAL_FULL_COMBO = DBConstants.JUBEAT_PLAY_MEDAL_FULL_COMBO
-    PLAY_MEDAL_NEARLY_EXCELLENT = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_EXCELLENT
-    PLAY_MEDAL_EXCELLENT = DBConstants.JUBEAT_PLAY_MEDAL_EXCELLENT
+    PLAY_MEDAL_FAILED: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_FAILED
+    PLAY_MEDAL_CLEARED: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_CLEARED
+    PLAY_MEDAL_NEARLY_FULL_COMBO: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_FULL_COMBO
+    PLAY_MEDAL_FULL_COMBO: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_FULL_COMBO
+    PLAY_MEDAL_NEARLY_EXCELLENT: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_EXCELLENT
+    PLAY_MEDAL_EXCELLENT: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_EXCELLENT
 
-    CHART_TYPE_BASIC = 0
-    CHART_TYPE_ADVANCED = 1
-    CHART_TYPE_EXTREME = 2
+    CHART_TYPE_BASIC: Final[int] = 0
+    CHART_TYPE_ADVANCED: Final[int] = 1
+    CHART_TYPE_EXTREME: Final[int] = 2
 
     def previous_version(self) -> Optional['JubeatBase']:
         """

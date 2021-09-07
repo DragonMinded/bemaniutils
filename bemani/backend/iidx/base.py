@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8
 import struct
 from typing import Optional, Dict, Any, List, Tuple
+from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -16,64 +17,64 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     scores.
     """
 
-    game = GameConstants.IIDX
+    game: GameConstants = GameConstants.IIDX
 
-    paseli_padding = 15
+    paseli_padding: int = 15
 
-    CLEAR_TYPE_SINGLE = 1
-    CLEAR_TYPE_DOUBLE = 2
+    CLEAR_TYPE_SINGLE: Final[int] = 1
+    CLEAR_TYPE_DOUBLE: Final[int] = 2
 
-    CLEAR_STATUS_NO_PLAY = DBConstants.IIDX_CLEAR_STATUS_NO_PLAY
-    CLEAR_STATUS_FAILED = DBConstants.IIDX_CLEAR_STATUS_FAILED
-    CLEAR_STATUS_ASSIST_CLEAR = DBConstants.IIDX_CLEAR_STATUS_ASSIST_CLEAR
-    CLEAR_STATUS_EASY_CLEAR = DBConstants.IIDX_CLEAR_STATUS_EASY_CLEAR
-    CLEAR_STATUS_CLEAR = DBConstants.IIDX_CLEAR_STATUS_CLEAR
-    CLEAR_STATUS_HARD_CLEAR = DBConstants.IIDX_CLEAR_STATUS_HARD_CLEAR
-    CLEAR_STATUS_EX_HARD_CLEAR = DBConstants.IIDX_CLEAR_STATUS_EX_HARD_CLEAR
-    CLEAR_STATUS_FULL_COMBO = DBConstants.IIDX_CLEAR_STATUS_FULL_COMBO
+    CLEAR_STATUS_NO_PLAY: Final[int] = DBConstants.IIDX_CLEAR_STATUS_NO_PLAY
+    CLEAR_STATUS_FAILED: Final[int] = DBConstants.IIDX_CLEAR_STATUS_FAILED
+    CLEAR_STATUS_ASSIST_CLEAR: Final[int] = DBConstants.IIDX_CLEAR_STATUS_ASSIST_CLEAR
+    CLEAR_STATUS_EASY_CLEAR: Final[int] = DBConstants.IIDX_CLEAR_STATUS_EASY_CLEAR
+    CLEAR_STATUS_CLEAR: Final[int] = DBConstants.IIDX_CLEAR_STATUS_CLEAR
+    CLEAR_STATUS_HARD_CLEAR: Final[int] = DBConstants.IIDX_CLEAR_STATUS_HARD_CLEAR
+    CLEAR_STATUS_EX_HARD_CLEAR: Final[int] = DBConstants.IIDX_CLEAR_STATUS_EX_HARD_CLEAR
+    CLEAR_STATUS_FULL_COMBO: Final[int] = DBConstants.IIDX_CLEAR_STATUS_FULL_COMBO
 
-    CHART_TYPE_N7 = 0
-    CHART_TYPE_H7 = 1
-    CHART_TYPE_A7 = 2
-    CHART_TYPE_N14 = 3
-    CHART_TYPE_H14 = 4
-    CHART_TYPE_A14 = 5
+    CHART_TYPE_N7: Final[int] = 0
+    CHART_TYPE_H7: Final[int] = 1
+    CHART_TYPE_A7: Final[int] = 2
+    CHART_TYPE_N14: Final[int] = 3
+    CHART_TYPE_H14: Final[int] = 4
+    CHART_TYPE_A14: Final[int] = 5
     # Beginner charts only save status
-    CHART_TYPE_B7 = 6
+    CHART_TYPE_B7: Final[int] = 6
 
-    DAN_RANK_7_KYU = DBConstants.IIDX_DAN_RANK_7_KYU
-    DAN_RANK_6_KYU = DBConstants.IIDX_DAN_RANK_6_KYU
-    DAN_RANK_5_KYU = DBConstants.IIDX_DAN_RANK_5_KYU
-    DAN_RANK_4_KYU = DBConstants.IIDX_DAN_RANK_4_KYU
-    DAN_RANK_3_KYU = DBConstants.IIDX_DAN_RANK_3_KYU
-    DAN_RANK_2_KYU = DBConstants.IIDX_DAN_RANK_2_KYU
-    DAN_RANK_1_KYU = DBConstants.IIDX_DAN_RANK_1_KYU
-    DAN_RANK_1_DAN = DBConstants.IIDX_DAN_RANK_1_DAN
-    DAN_RANK_2_DAN = DBConstants.IIDX_DAN_RANK_2_DAN
-    DAN_RANK_3_DAN = DBConstants.IIDX_DAN_RANK_3_DAN
-    DAN_RANK_4_DAN = DBConstants.IIDX_DAN_RANK_4_DAN
-    DAN_RANK_5_DAN = DBConstants.IIDX_DAN_RANK_5_DAN
-    DAN_RANK_6_DAN = DBConstants.IIDX_DAN_RANK_6_DAN
-    DAN_RANK_7_DAN = DBConstants.IIDX_DAN_RANK_7_DAN
-    DAN_RANK_8_DAN = DBConstants.IIDX_DAN_RANK_8_DAN
-    DAN_RANK_9_DAN = DBConstants.IIDX_DAN_RANK_9_DAN
-    DAN_RANK_10_DAN = DBConstants.IIDX_DAN_RANK_10_DAN
-    DAN_RANK_CHUDEN = DBConstants.IIDX_DAN_RANK_CHUDEN
-    DAN_RANK_KAIDEN = DBConstants.IIDX_DAN_RANK_KAIDEN
+    DAN_RANK_7_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_7_KYU
+    DAN_RANK_6_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_6_KYU
+    DAN_RANK_5_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_5_KYU
+    DAN_RANK_4_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_4_KYU
+    DAN_RANK_3_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_3_KYU
+    DAN_RANK_2_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_2_KYU
+    DAN_RANK_1_KYU: Final[int] = DBConstants.IIDX_DAN_RANK_1_KYU
+    DAN_RANK_1_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_1_DAN
+    DAN_RANK_2_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_2_DAN
+    DAN_RANK_3_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_3_DAN
+    DAN_RANK_4_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_4_DAN
+    DAN_RANK_5_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_5_DAN
+    DAN_RANK_6_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_6_DAN
+    DAN_RANK_7_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_7_DAN
+    DAN_RANK_8_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_8_DAN
+    DAN_RANK_9_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_9_DAN
+    DAN_RANK_10_DAN: Final[int] = DBConstants.IIDX_DAN_RANK_10_DAN
+    DAN_RANK_CHUDEN: Final[int] = DBConstants.IIDX_DAN_RANK_CHUDEN
+    DAN_RANK_KAIDEN: Final[int] = DBConstants.IIDX_DAN_RANK_KAIDEN
 
-    DAN_RANKING_SINGLE = 'sgrade'
-    DAN_RANKING_DOUBLE = 'dgrade'
+    DAN_RANKING_SINGLE: Final[str] = 'sgrade'
+    DAN_RANKING_DOUBLE: Final[str] = 'dgrade'
 
-    GHOST_TYPE_NONE = 0
-    GHOST_TYPE_RIVAL = 100
-    GHOST_TYPE_GLOBAL_TOP = 200
-    GHOST_TYPE_GLOBAL_AVERAGE = 300
-    GHOST_TYPE_LOCAL_TOP = 400
-    GHOST_TYPE_LOCAL_AVERAGE = 500
-    GHOST_TYPE_DAN_TOP = 600
-    GHOST_TYPE_DAN_AVERAGE = 700
-    GHOST_TYPE_RIVAL_TOP = 800
-    GHOST_TYPE_RIVAL_AVERAGE = 900
+    GHOST_TYPE_NONE: Final[int] = 0
+    GHOST_TYPE_RIVAL: Final[int] = 100
+    GHOST_TYPE_GLOBAL_TOP: Final[int] = 200
+    GHOST_TYPE_GLOBAL_AVERAGE: Final[int] = 300
+    GHOST_TYPE_LOCAL_TOP: Final[int] = 400
+    GHOST_TYPE_LOCAL_AVERAGE: Final[int] = 500
+    GHOST_TYPE_DAN_TOP: Final[int] = 600
+    GHOST_TYPE_DAN_AVERAGE: Final[int] = 700
+    GHOST_TYPE_RIVAL_TOP: Final[int] = 800
+    GHOST_TYPE_RIVAL_AVERAGE: Final[int] = 900
 
     # Return the local2 service so that Copula and above will send certain packets.
     extra_services: List[str] = [

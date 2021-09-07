@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple
+from typing_extensions import Final
 
 from bemani.backend.reflec.base import ReflecBeatBase
 
@@ -10,20 +11,20 @@ from bemani.protocol import Node
 class ReflecBeatVolzzaBase(ReflecBeatBase):
 
     # Clear types according to the game
-    GAME_CLEAR_TYPE_NO_PLAY = 0
-    GAME_CLEAR_TYPE_EARLY_FAILED = 1
-    GAME_CLEAR_TYPE_FAILED = 2
-    GAME_CLEAR_TYPE_CLEARED = 9
-    GAME_CLEAR_TYPE_HARD_CLEARED = 10
-    GAME_CLEAR_TYPE_S_HARD_CLEARED = 11
+    GAME_CLEAR_TYPE_NO_PLAY: Final[int] = 0
+    GAME_CLEAR_TYPE_EARLY_FAILED: Final[int] = 1
+    GAME_CLEAR_TYPE_FAILED: Final[int] = 2
+    GAME_CLEAR_TYPE_CLEARED: Final[int] = 9
+    GAME_CLEAR_TYPE_HARD_CLEARED: Final[int] = 10
+    GAME_CLEAR_TYPE_S_HARD_CLEARED: Final[int] = 11
 
     # Combo types according to the game (actually a bitmask, where bit 0 is
     # full combo status, and bit 2 is just reflec status). But we don't support
     # saving just reflec without full combo, so we downgrade it.
-    GAME_COMBO_TYPE_NONE = 0
-    GAME_COMBO_TYPE_ALL_JUST = 2
-    GAME_COMBO_TYPE_FULL_COMBO = 1
-    GAME_COMBO_TYPE_FULL_COMBO_ALL_JUST = 3
+    GAME_COMBO_TYPE_NONE: Final[int] = 0
+    GAME_COMBO_TYPE_ALL_JUST: Final[int] = 2
+    GAME_COMBO_TYPE_FULL_COMBO: Final[int] = 1
+    GAME_COMBO_TYPE_FULL_COMBO_ALL_JUST: Final[int] = 3
 
     def _db_to_game_clear_type(self, db_status: int) -> int:
         return {

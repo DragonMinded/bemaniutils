@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from typing import Any, Dict, List, Optional
+from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
@@ -13,35 +14,35 @@ class SoundVoltexGravityWars(
     SoundVoltexBase,
 ):
 
-    name = 'SOUND VOLTEX III GRAVITY WARS'
-    version = VersionConstants.SDVX_GRAVITY_WARS
+    name: str = 'SOUND VOLTEX III GRAVITY WARS'
+    version: int = VersionConstants.SDVX_GRAVITY_WARS
 
-    GAME_LIMITED_LOCKED = 1
-    GAME_LIMITED_UNLOCKABLE = 2
-    GAME_LIMITED_UNLOCKED = 3
+    GAME_LIMITED_LOCKED: Final[int] = 1
+    GAME_LIMITED_UNLOCKABLE: Final[int] = 2
+    GAME_LIMITED_UNLOCKED: Final[int] = 3
 
-    GAME_CURRENCY_PACKETS = 0
-    GAME_CURRENCY_BLOCKS = 1
+    GAME_CURRENCY_PACKETS: Final[int] = 0
+    GAME_CURRENCY_BLOCKS: Final[int] = 1
 
-    GAME_CLEAR_TYPE_NO_CLEAR = 1
-    GAME_CLEAR_TYPE_CLEAR = 2
-    GAME_CLEAR_TYPE_HARD_CLEAR = 3
-    GAME_CLEAR_TYPE_ULTIMATE_CHAIN = 4
-    GAME_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN = 5
+    GAME_CLEAR_TYPE_NO_CLEAR: Final[int] = 1
+    GAME_CLEAR_TYPE_CLEAR: Final[int] = 2
+    GAME_CLEAR_TYPE_HARD_CLEAR: Final[int] = 3
+    GAME_CLEAR_TYPE_ULTIMATE_CHAIN: Final[int] = 4
+    GAME_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[int] = 5
 
-    GAME_GRADE_NO_PLAY = 0
-    GAME_GRADE_D = 1
-    GAME_GRADE_C = 2
-    GAME_GRADE_B = 3
-    GAME_GRADE_A = 4
-    GAME_GRADE_AA = 5
-    GAME_GRADE_AAA = 6
+    GAME_GRADE_NO_PLAY: Final[int] = 0
+    GAME_GRADE_D: Final[int] = 1
+    GAME_GRADE_C: Final[int] = 2
+    GAME_GRADE_B: Final[int] = 3
+    GAME_GRADE_A: Final[int] = 4
+    GAME_GRADE_AA: Final[int] = 5
+    GAME_GRADE_AAA: Final[int] = 6
 
-    GAME_CATALOG_TYPE_SONG = 0
-    GAME_CATALOG_TYPE_APPEAL_CARD = 1
-    GAME_CATALOG_TYPE_CREW = 4
+    GAME_CATALOG_TYPE_SONG: Final[int] = 0
+    GAME_CATALOG_TYPE_APPEAL_CARD: Final[int] = 1
+    GAME_CATALOG_TYPE_CREW: Final[int] = 4
 
-    GAME_GAUGE_TYPE_SKILL = 1
+    GAME_GAUGE_TYPE_SKILL: Final[int] = 1
 
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:

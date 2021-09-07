@@ -1,8 +1,8 @@
 # vim: set fileencoding=utf-8
-import copy
 import random
 import struct
 from typing import Optional, Dict, List, Tuple, Any
+from typing_extensions import Final
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.tricoro import IIDXTricoro
@@ -14,73 +14,73 @@ from bemani.protocol import Node
 
 class IIDXSpada(IIDXBase):
 
-    name = 'Beatmania IIDX SPADA'
-    version = VersionConstants.IIDX_SPADA
+    name: str = 'Beatmania IIDX SPADA'
+    version: int = VersionConstants.IIDX_SPADA
 
-    GAME_CLTYPE_SINGLE = 0
-    GAME_CLTYPE_DOUBLE = 1
+    GAME_CLTYPE_SINGLE: Final[int] = 0
+    GAME_CLTYPE_DOUBLE: Final[int] = 1
 
-    DAN_STAGES_SINGLE = 4
-    DAN_STAGES_DOUBLE = 3
+    DAN_STAGES_SINGLE: Final[int] = 4
+    DAN_STAGES_DOUBLE: Final[int] = 3
 
-    GAME_CLEAR_STATUS_NO_PLAY = 0
-    GAME_CLEAR_STATUS_FAILED = 1
-    GAME_CLEAR_STATUS_ASSIST_CLEAR = 2
-    GAME_CLEAR_STATUS_EASY_CLEAR = 3
-    GAME_CLEAR_STATUS_CLEAR = 4
-    GAME_CLEAR_STATUS_HARD_CLEAR = 5
-    GAME_CLEAR_STATUS_EX_HARD_CLEAR = 6
-    GAME_CLEAR_STATUS_FULL_COMBO = 7
+    GAME_CLEAR_STATUS_NO_PLAY: Final[int] = 0
+    GAME_CLEAR_STATUS_FAILED: Final[int] = 1
+    GAME_CLEAR_STATUS_ASSIST_CLEAR: Final[int] = 2
+    GAME_CLEAR_STATUS_EASY_CLEAR: Final[int] = 3
+    GAME_CLEAR_STATUS_CLEAR: Final[int] = 4
+    GAME_CLEAR_STATUS_HARD_CLEAR: Final[int] = 5
+    GAME_CLEAR_STATUS_EX_HARD_CLEAR: Final[int] = 6
+    GAME_CLEAR_STATUS_FULL_COMBO: Final[int] = 7
 
-    GAME_GHOST_TYPE_RIVAL = 1
-    GAME_GHOST_TYPE_GLOBAL_TOP = 2
-    GAME_GHOST_TYPE_GLOBAL_AVERAGE = 3
-    GAME_GHOST_TYPE_LOCAL_TOP = 4
-    GAME_GHOST_TYPE_LOCAL_AVERAGE = 5
-    GAME_GHOST_TYPE_DAN_TOP = 6
-    GAME_GHOST_TYPE_DAN_AVERAGE = 7
-    GAME_GHOST_TYPE_RIVAL_TOP = 8
-    GAME_GHOST_TYPE_RIVAL_AVERAGE = 9
+    GAME_GHOST_TYPE_RIVAL: Final[int] = 1
+    GAME_GHOST_TYPE_GLOBAL_TOP: Final[int] = 2
+    GAME_GHOST_TYPE_GLOBAL_AVERAGE: Final[int] = 3
+    GAME_GHOST_TYPE_LOCAL_TOP: Final[int] = 4
+    GAME_GHOST_TYPE_LOCAL_AVERAGE: Final[int] = 5
+    GAME_GHOST_TYPE_DAN_TOP: Final[int] = 6
+    GAME_GHOST_TYPE_DAN_AVERAGE: Final[int] = 7
+    GAME_GHOST_TYPE_RIVAL_TOP: Final[int] = 8
+    GAME_GHOST_TYPE_RIVAL_AVERAGE: Final[int] = 9
 
-    GAME_GHOST_LENGTH = 64
+    GAME_GHOST_LENGTH: Final[int] = 64
 
-    GAME_SP_DAN_RANK_7_KYU = 0
-    GAME_SP_DAN_RANK_6_KYU = 1
-    GAME_SP_DAN_RANK_5_KYU = 2
-    GAME_SP_DAN_RANK_4_KYU = 3
-    GAME_SP_DAN_RANK_3_KYU = 4
-    GAME_SP_DAN_RANK_2_KYU = 5
-    GAME_SP_DAN_RANK_1_KYU = 6
-    GAME_SP_DAN_RANK_1_DAN = 7
-    GAME_SP_DAN_RANK_2_DAN = 8
-    GAME_SP_DAN_RANK_3_DAN = 9
-    GAME_SP_DAN_RANK_4_DAN = 10
-    GAME_SP_DAN_RANK_5_DAN = 11
-    GAME_SP_DAN_RANK_6_DAN = 12
-    GAME_SP_DAN_RANK_7_DAN = 13
-    GAME_SP_DAN_RANK_8_DAN = 14
-    GAME_SP_DAN_RANK_9_DAN = 15
-    GAME_SP_DAN_RANK_10_DAN = 16
-    GAME_SP_DAN_RANK_KAIDEN = 17
+    GAME_SP_DAN_RANK_7_KYU: Final[int] = 0
+    GAME_SP_DAN_RANK_6_KYU: Final[int] = 1
+    GAME_SP_DAN_RANK_5_KYU: Final[int] = 2
+    GAME_SP_DAN_RANK_4_KYU: Final[int] = 3
+    GAME_SP_DAN_RANK_3_KYU: Final[int] = 4
+    GAME_SP_DAN_RANK_2_KYU: Final[int] = 5
+    GAME_SP_DAN_RANK_1_KYU: Final[int] = 6
+    GAME_SP_DAN_RANK_1_DAN: Final[int] = 7
+    GAME_SP_DAN_RANK_2_DAN: Final[int] = 8
+    GAME_SP_DAN_RANK_3_DAN: Final[int] = 9
+    GAME_SP_DAN_RANK_4_DAN: Final[int] = 10
+    GAME_SP_DAN_RANK_5_DAN: Final[int] = 11
+    GAME_SP_DAN_RANK_6_DAN: Final[int] = 12
+    GAME_SP_DAN_RANK_7_DAN: Final[int] = 13
+    GAME_SP_DAN_RANK_8_DAN: Final[int] = 14
+    GAME_SP_DAN_RANK_9_DAN: Final[int] = 15
+    GAME_SP_DAN_RANK_10_DAN: Final[int] = 16
+    GAME_SP_DAN_RANK_KAIDEN: Final[int] = 17
 
-    GAME_DP_DAN_RANK_5_KYU = 0
-    GAME_DP_DAN_RANK_4_KYU = 1
-    GAME_DP_DAN_RANK_3_KYU = 2
-    GAME_DP_DAN_RANK_2_KYU = 3
-    GAME_DP_DAN_RANK_1_KYU = 4
-    GAME_DP_DAN_RANK_1_DAN = 5
-    GAME_DP_DAN_RANK_2_DAN = 6
-    GAME_DP_DAN_RANK_3_DAN = 7
-    GAME_DP_DAN_RANK_4_DAN = 8
-    GAME_DP_DAN_RANK_5_DAN = 9
-    GAME_DP_DAN_RANK_6_DAN = 10
-    GAME_DP_DAN_RANK_7_DAN = 11
-    GAME_DP_DAN_RANK_8_DAN = 12
-    GAME_DP_DAN_RANK_9_DAN = 13
-    GAME_DP_DAN_RANK_10_DAN = 14
-    GAME_DP_DAN_RANK_KAIDEN = 15
+    GAME_DP_DAN_RANK_5_KYU: Final[int] = 0
+    GAME_DP_DAN_RANK_4_KYU: Final[int] = 1
+    GAME_DP_DAN_RANK_3_KYU: Final[int] = 2
+    GAME_DP_DAN_RANK_2_KYU: Final[int] = 3
+    GAME_DP_DAN_RANK_1_KYU: Final[int] = 4
+    GAME_DP_DAN_RANK_1_DAN: Final[int] = 5
+    GAME_DP_DAN_RANK_2_DAN: Final[int] = 6
+    GAME_DP_DAN_RANK_3_DAN: Final[int] = 7
+    GAME_DP_DAN_RANK_4_DAN: Final[int] = 8
+    GAME_DP_DAN_RANK_5_DAN: Final[int] = 9
+    GAME_DP_DAN_RANK_6_DAN: Final[int] = 10
+    GAME_DP_DAN_RANK_7_DAN: Final[int] = 11
+    GAME_DP_DAN_RANK_8_DAN: Final[int] = 12
+    GAME_DP_DAN_RANK_9_DAN: Final[int] = 13
+    GAME_DP_DAN_RANK_10_DAN: Final[int] = 14
+    GAME_DP_DAN_RANK_KAIDEN: Final[int] = 15
 
-    FAVORITE_LIST_LENGTH = 20
+    FAVORITE_LIST_LENGTH: Final[int] = 20
 
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXTricoro(self.data, self.config, self.model)
@@ -1467,7 +1467,7 @@ class IIDXSpada(IIDXBase):
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = copy.deepcopy(oldprofile)
+        newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
         # Track play counts

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
 from bemani.backend.iidx.stubs import (
@@ -37,7 +37,7 @@ from bemani.data import Config, Data
 
 class IIDXFactory(Factory):
 
-    MANAGED_CLASSES = [
+    MANAGED_CLASSES: List[Type[Base]] = [
         IIDX1stStyle,
         IIDX2ndStyle,
         IIDX3rdStyle,
