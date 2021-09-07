@@ -3325,7 +3325,7 @@ class SoundVoltexHeavenlyHaven(
         skill_course = Node.void('skill_course')
         game.add_child(skill_course)
 
-        achievements = self.data.local.user.get_all_achievements(self.game, self.version)
+        achievements = self.data.local.user.get_all_achievements(self.game, self.version, achievementtype="course")
         courserates: Dict[Tuple[int, int], Dict[str, int]] = {}
 
         def getrates(season_id: int, course_id: int) -> Dict[str, int]:
@@ -3339,9 +3339,6 @@ class SoundVoltexHeavenlyHaven(
                 }
 
         for _, achievement in achievements:
-            if achievement.type != 'course':
-                continue
-
             course_id = achievement.id % 100
             season_id = int(achievement.id / 100)
             rate = getrates(season_id, course_id)

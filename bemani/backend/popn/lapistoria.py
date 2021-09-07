@@ -451,7 +451,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             )
 
             # Now, attempt to calculate ranking for this user for this run.
-            all_courses = self.data.local.user.get_all_achievements(self.game, self.version, course_id, "course")
+            all_courses = self.data.local.user.get_all_achievements(self.game, self.version, achievementid=course_id, achievementtype="course")
             global_ranking = sorted(all_courses, key=lambda entry: entry[1].data.get_int('total_score'), reverse=True)
             pref_ranking = [c for c in global_ranking if c[1].data.get_int('pref') == pref]
             local_ranking = [c for c in global_ranking if c[1].data.get_int('lid') == machine.arcade]

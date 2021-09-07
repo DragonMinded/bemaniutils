@@ -986,17 +986,9 @@ class IIDXSpada(IIDXBase):
                 )
 
             # Figure out number of players that played this ranking
-            all_achievements = self.data.local.user.get_all_achievements(self.game, self.version)
-            num_players = 0
-            for [_, ach] in all_achievements:
-                if ach.type != index:
-                    continue
-                if ach.id != rank:
-                    continue
-                num_players = num_players + 1
-
+            all_achievements = self.data.local.user.get_all_achievements(self.game, self.version, achievementid=rank, achievementtype=index)
             root = Node.void('IIDX21grade')
-            root.set_attribute('pnum', str(num_players))
+            root.set_attribute('pnum', str(len(all_achievements)))
             return root
 
         # Invalid method
