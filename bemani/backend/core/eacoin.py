@@ -1,4 +1,5 @@
 from typing import Optional
+from typing_extensions import Final
 
 from bemani.backend.base import Base, Status
 from bemani.protocol import Node
@@ -10,14 +11,14 @@ class PASELIHandler(Base):
     A mixin that can be used to provide PASELI services to a game.
     """
 
-    INFINITE_PASELI_AMOUNT = 57300
+    INFINITE_PASELI_AMOUNT: Final[int] = 57300
 
     """
     Override this in your subclass if the particular game/series
     needs a different padding amount to display PASELI transactions
     on the operator menu.
     """
-    paseli_padding = 1
+    paseli_padding: int = 1
 
     def handle_eacoin_request(self, request: Node) -> Optional[Node]:
         """

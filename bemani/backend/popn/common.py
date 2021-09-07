@@ -46,15 +46,12 @@ class PopnMusicModernBase(PopnMusicBase, metaclass=ABCMeta):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID: int
 
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 and lobby2 service so that Pop'n Music 24 will
-        send game packets.
-        """
-        return [
-            'local2',
-            'lobby2',
-        ]
+    # Return the local2 and lobby2 service so that Pop'n Music 24+ will
+    # send game packets.
+    extra_services: List[str] = [
+        'local2',
+        'lobby2',
+    ]
 
     @classmethod
     def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:

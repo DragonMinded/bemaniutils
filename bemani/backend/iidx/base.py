@@ -75,6 +75,11 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     GHOST_TYPE_RIVAL_TOP = 800
     GHOST_TYPE_RIVAL_AVERAGE = 900
 
+    # Return the local2 service so that Copula and above will send certain packets.
+    extra_services: List[str] = [
+        'local2',
+    ]
+
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
@@ -94,14 +99,6 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         be overridden.
         """
         return None
-
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 service so that Copula and above will send certain packets.
-        """
-        return [
-            'local2',
-        ]
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """

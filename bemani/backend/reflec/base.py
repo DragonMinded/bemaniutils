@@ -34,22 +34,19 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     COMBO_TYPE_FULL_COMBO = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO
     COMBO_TYPE_FULL_COMBO_ALL_JUST = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
 
+    # Return the local2 and lobby2 service so that matching will work on newer
+    # Reflec Beat games.
+    extra_services: List[str] = [
+        'local2',
+        'lobby2',
+    ]
+
     def previous_version(self) -> Optional['ReflecBeatBase']:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
         """
         return None
-
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 and lobby2 service so that matching will work on newer
-        Reflec Beat games.
-        """
-        return [
-            'local2',
-            'lobby2',
-        ]
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """

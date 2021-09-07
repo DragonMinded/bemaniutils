@@ -42,19 +42,16 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     OLD_PROFILE_ONLY = 1
     OLD_PROFILE_FALLTHROUGH = 2
 
+    # Pop'n Music in particular requires non-expired profiles to do conversions
+    # properly.
+    supports_expired_profiles = False
+
     def previous_version(self) -> Optional['PopnMusicBase']:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
         """
         return None
-
-    def supports_expired_profiles(self) -> bool:
-        """
-        Pop'n Music in particular requires non-expired profiles to do conversions
-        properly.
-        """
-        return False
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """

@@ -51,6 +51,11 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_DOUBLE_EXPERT = 8
     CHART_DOUBLE_CHALLENGE = 9
 
+    # Return the local2 service so that DDR Ace will send certain packets.
+    extra_services: List[str] = [
+        'local2',
+    ]
+
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
         if model.rev == 'X':
@@ -63,14 +68,6 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         if self.omnimix:
             return DBConstants.OMNIMIX_VERSION_BUMP + self.version
         return self.version
-
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 service so that DDR Ace will send certain packets.
-        """
-        return [
-            'local2',
-        ]
 
     def game_to_db_rank(self, game_rank: int) -> int:
         """

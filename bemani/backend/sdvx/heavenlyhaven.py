@@ -72,6 +72,11 @@ class SoundVoltexHeavenlyHaven(
     GAME_SKILL_NAME_ID_RIKKA = 22  # For the course that ran from 1/18/2018-2/18/2018
     GAME_SKILL_NAME_ID_KAC_8TH = 23
 
+    # Return the local2 service so that SDVX 4 and above will send certain packets.
+    extra_services: List[str] = [
+        'local2',
+    ]
+
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
         """
@@ -108,14 +113,6 @@ class SoundVoltexHeavenlyHaven(
 
     def previous_version(self) -> Optional[SoundVoltexBase]:
         return SoundVoltexGravityWars(self.data, self.config, self.model)
-
-    def extra_services(self) -> List[str]:
-        """
-        Return the local2 service so that SDVX 4 and above will send certain packets.
-        """
-        return [
-            'local2',
-        ]
 
     def __game_to_db_clear_type(self, clear_type: int) -> int:
         return {

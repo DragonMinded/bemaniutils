@@ -104,6 +104,7 @@ class DDRAce(
     def previous_version(self) -> Optional[DDRBase]:
         return DDR2014(self.data, self.config, self.model)
 
+    @property
     def supports_paseli(self) -> bool:
         if self.model.dest != 'J':
             # DDR Ace in USA mode doesn't support PASELI properly.

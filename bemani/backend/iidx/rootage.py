@@ -86,6 +86,8 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
     FAVORITE_LIST_LENGTH = 20
 
+    requires_extended_regions = True
+
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXCannonBallers(self.data, self.config, self.model)
 
@@ -160,9 +162,6 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 },
             ],
         }
-
-    def requires_extended_regions(self) -> bool:
-        return True
 
     def db_to_game_status(self, db_status: int) -> int:
         return {
