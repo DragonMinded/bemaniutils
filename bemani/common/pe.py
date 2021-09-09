@@ -10,6 +10,10 @@ class Memory:
         self.values: Dict[int, int] = {}
         self.defaults: Dict[int, bytes] = {}
 
+    def init(self, min_offset: int, max_offset: int) -> None:
+        for i in range(min_offset + 1, max_offset + 1):
+            self.store(i, self.load(i, 1))
+
     def store(self, offset: int, data: bytes) -> None:
         for i, b in enumerate(data):
             self.values[i + offset] = b
@@ -230,8 +234,17 @@ class PEFile:
                 size = get_size(amt) or get_size(dest)
                 if size is None:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
-                result = fetch(registers, memory, size, dest) + fetch(registers, memory, size, amt)
-                assign(registers, memory, size, dest, result)
+
+                # Special case for adjusting ESP, to make sure our memory contains zeros for reading
+                # out the stack later.
+                if dest == "esp":
+                    before = fetch(registers, memory, size, dest)
+                    after = before + fetch(registers, memory, size, amt)
+                    memory.init(min(before, after), max(before, after))
+                    assign(registers, memory, size, dest, after)
+                else:
+                    result = fetch(registers, memory, size, dest) + fetch(registers, memory, size, amt)
+                    assign(registers, memory, size, dest, result)
 
             elif mnemonic == "sub":
                 dest = formatter.format_operand(inst, 0)
@@ -242,8 +255,17 @@ class PEFile:
                 size = get_size(amt) or get_size(dest)
                 if size is None:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
-                result = fetch(registers, memory, size, dest) - fetch(registers, memory, size, amt)
-                assign(registers, memory, size, dest, result)
+
+                # Special case for adjusting ESP, to make sure our memory contains zeros for reading
+                # out the stack later.
+                if dest == "esp":
+                    before = fetch(registers, memory, size, dest)
+                    after = before - fetch(registers, memory, size, amt)
+                    memory.init(min(before, after), max(before, after))
+                    assign(registers, memory, size, dest, after)
+                else:
+                    result = fetch(registers, memory, size, dest) - fetch(registers, memory, size, amt)
+                    assign(registers, memory, size, dest, result)
 
             elif mnemonic == "imul":
                 dest = formatter.format_operand(inst, 0)
@@ -475,7 +497,7 @@ def get_address(registers: Registers, indirect: str) -> Optional[int]:
             if const[-1] == 'h':
                 adjust = int(const[:-1], 16)
             else:
-                raise Exception(f"Unsupported constant adjustment to indirect address {indirect}")
+                adjust = int(const, 10)
         elif '-' in indirect:
             indirect, const = indirect.split('-', 1)
             indirect = sanitize(indirect)
@@ -484,7 +506,7 @@ def get_address(registers: Registers, indirect: str) -> Optional[int]:
             if const[-1] == 'h':
                 adjust = -int(const[:-1], 16)
             else:
-                raise Exception(f"Unsupported constant adjustment to indirect address {indirect}")
+                adjust = -int(const, 10)
 
         if indirect[-1] == 'h':
             return int(indirect[:-1], 16) + adjust

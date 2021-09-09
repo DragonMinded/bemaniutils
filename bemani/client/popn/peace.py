@@ -41,10 +41,13 @@ class PopnMusicPeaceClient(BaseClient):
     def __verify_common(self, root: str, resp: Node) -> None:
         self.assert_path(resp, f"response/{root}/phase/event_id")
         self.assert_path(resp, f"response/{root}/phase/phase")
-        self.assert_path(resp, f"response/{root}/area/area_id")
-        self.assert_path(resp, f"response/{root}/area/end_date")
-        self.assert_path(resp, f"response/{root}/area/medal_id")
-        self.assert_path(resp, f"response/{root}/area/is_limit")
+
+        # Area stuff is not needed unless enabling events.
+        # self.assert_path(resp, f"response/{root}/area/area_id")
+        # self.assert_path(resp, f"response/{root}/area/end_date")
+        # self.assert_path(resp, f"response/{root}/area/medal_id")
+        # self.assert_path(resp, f"response/{root}/area/is_limit")
+
         self.assert_path(resp, f"response/{root}/choco/choco_id")
         self.assert_path(resp, f"response/{root}/choco/param")
         self.assert_path(resp, f"response/{root}/goods/item_id")

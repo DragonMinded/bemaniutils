@@ -54,6 +54,24 @@ class PopnMusicSunnyPark(PopnMusicBase):
         return {
             'ints': [
                 {
+                    'name': 'Music Open Phase',
+                    'tip': 'Default music phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'music_phase',
+                    'values': {
+                        0: 'No music unlocks',
+                        1: 'Phase 1',
+                        2: 'Phase 2',
+                        3: 'Phase 3',
+                        4: 'Phase 4',
+                        5: 'Phase 5',
+                        6: 'Phase 6',
+                        7: 'Phase 7',
+                        8: 'Phase 8',
+                        9: 'Phase MAX',
+                    }
+                },
+                {
                     'name': 'Event Phase',
                     'tip': 'Event phase for all players.',
                     'category': 'game_config',
@@ -471,10 +489,11 @@ class PopnMusicSunnyPark(PopnMusicBase):
     def handle_game_get_request(self, request: Node) -> Node:
         game_config = self.get_game_config()
         event_phase = game_config.get_int('event_phase')
+        music_phase = game_config.get_int('music_phase')
 
         root = Node.void('game')
         root.add_child(Node.s32('ir_phase', 0))
-        root.add_child(Node.s32('music_open_phase', 8))
+        root.add_child(Node.s32('music_open_phase', music_phase))
         root.add_child(Node.s32('collabo_phase', 8))
         root.add_child(Node.s32('personal_event_phase', event_phase))
         root.add_child(Node.s32('shop_event_phase', 6))

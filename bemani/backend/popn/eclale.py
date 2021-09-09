@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import binascii
-from typing import Dict, List
+from typing import Any, Dict, List
 from typing_extensions import Final
 
 from bemani.backend.popn.base import PopnMusicBase
@@ -41,37 +41,119 @@ class PopnMusicEclale(PopnMusicBase):
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicLapistoria(self.data, self.config, self.model)
 
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'ints': [
+                {
+                    'name': 'Music Open Phase',
+                    'tip': 'Default music phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'music_phase',
+                    'values': {
+                        0: 'No music unlocks',
+                        1: 'Phase 1',
+                        2: 'Phase 2',
+                        3: 'Phase 3',
+                        4: 'Phase 4',
+                        5: 'Phase 5',
+                        6: 'Phase 6',
+                        7: 'Phase 7',
+                        8: 'Phase 8',
+                        9: 'Phase 9',
+                        10: 'Phase 10',
+                        11: 'Phase 11',
+                        12: 'Phase 12',
+                        13: 'Phase 13',
+                        14: 'Phase 14',
+                        15: 'Phase 15',
+                        16: 'Phase MAX',
+                    }
+                },
+                {
+                    'name': 'Additional Music Unlock Phase',
+                    'tip': 'Additional music unlock phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'music_sub_phase',
+                    'values': {
+                        0: 'No additional unlocks',
+                        1: 'Phase 1',
+                        2: 'Phase 2',
+                        3: 'Phase MAX',
+                    },
+                },
+            ],
+            'bools': [
+                {
+                    'name': 'Enable Starmaker Event',
+                    'tip': 'Enable Starmaker event as well as song shop.',
+                    'category': 'game_config',
+                    'setting': 'starmaker_enable',
+                },
+                {
+                    'name': 'Force Song Unlock',
+                    'tip': 'Force unlock all songs.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_songs',
+                },
+            ],
+        }
+
     def __construct_common_info(self, root: Node) -> None:
-        # Event phases
-        # TODO: Hook event mode settings up to the front end.
+        game_config = self.get_game_config()
+        music_phase = game_config.get_int('music_phase')
+        music_sub_phase = game_config.get_int('music_sub_phase')
+
+        # Event phases. Eclale seems to be so basic that there is no way to disable/enable
+        # the starmaker event. It is just baked into the game.
         phases = {
-            # Unknown event (0-16)
-            0: 16,
+            # Music open phase (0-16).
+            # The following songs are unlocked when the phase is at or above the number specified:
+            # 1  - 1470, 1471, 1472
+            # 2  - 1447, 1450, 1454, 1457
+            # 3  - 1477, 1475, 1483
+            # 4  - 1473
+            # 5  - 1480, 1479, 1481
+            # 6  - 1494, 1495
+            # 7  - 1490, 1491
+            # 8  - 1489
+            # 9  - 1502, 1503, 1504, 1505, 1506, 1507
+            # 10 - 1492
+            # 11 - 1508, 1509, 1510, 1511
+            # 12 - 1518
+            # 13 - 1530
+            # 14 - 1543
+            # 15 - 1544
+            # 16 - 1548
+            0: music_phase,
             # Unknown event (0-3)
             1: 3,
             # Unknown event (0-1)
             2: 1,
             # Unknown event (0-2)
             3: 2,
-            # Unknown event (0-1)
+            # Something to do with favorites folder and the favorites button on the 10key (0-1)
             4: 1,
-            # Unknown event (0-2)
-            5: 2,
+            # Looks like something to do with stamp cards, enabled with 1 (0-2)
+            5: 1,
             # Unknown event (0-1)
             6: 1,
             # Unknown event (0-4)
             7: 4,
-            # Unknown event (0-3)
-            8: 3,
+            # Unlock a few more songs (1: 1496, 2: 1474, 3: 1531) (0-3)
+            8: music_sub_phase,
             # Unknown event (0-4)
             9: 4,
             # Unknown event (0-4)
             10: 4,
-            # Unknown event (0-1)
+            # Unknown event, maybe something to do with song categories? (0-1)
             11: 1,
-            # Possibly net taisen related? (0-1)
+            # Enable Net Taisen, including win/loss sort option on music select (0-1)
             12: 1,
-            # Unknown event (0-4)
+            # Enable local and server-side matching when selecting a song (0-4)
             13: 4,
         }
 
@@ -81,13 +163,14 @@ class PopnMusicEclale(PopnMusicBase):
             phase.add_child(Node.s16('event_id', phaseid))
             phase.add_child(Node.s16('phase', phases[phaseid]))
 
-        for areaid in range(1, 50):
-            area = Node.void('area')
-            root.add_child(area)
-            area.add_child(Node.s16('area_id', areaid))
-            area.add_child(Node.u64('end_date', 0))
-            area.add_child(Node.s16('medal_id', areaid))
-            area.add_child(Node.bool('is_limit', False))
+        if game_config.get_bool('starmaker_enable'):
+            for areaid in range(1, 51):
+                area = Node.void('area')
+                root.add_child(area)
+                area.add_child(Node.s16('area_id', areaid))
+                area.add_child(Node.u64('end_date', 0))
+                area.add_child(Node.s16('medal_id', areaid))
+                area.add_child(Node.bool('is_limit', False))
 
         # Calculate most popular characters
         profiles = self.data.remote.user.get_all_profiles(self.game, self.version)
@@ -619,6 +702,17 @@ class PopnMusicEclale(PopnMusicBase):
         custom_cate.add_child(Node.s8('friend_no', -1))
         custom_cate.add_child(Node.s8('score_flg', -1))
 
+        game_config = self.get_game_config()
+        if game_config.get_bool('force_unlock_songs'):
+            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            for song in songs:
+                item = Node.void('item')
+                root.add_child(item)
+                item.add_child(Node.u8('type', 0))
+                item.add_child(Node.u16('id', song.id))
+                item.add_child(Node.u16('param', 15))
+                item.add_child(Node.bool('is_new', False))
+
         # Set up achievements
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for achievement in achievements:
@@ -627,12 +721,16 @@ class PopnMusicEclale(PopnMusicBase):
                 param = achievement.data.get_int('param')
                 is_new = achievement.data.get_bool('is_new')
 
-                item = Node.void('item')
-                root.add_child(item)
                 # Type is the type of unlock/item. Type 0 is song unlock in Eclale.
                 # In this case, the id is the song ID according to the game. Unclear
                 # what the param is supposed to be, but i've seen 8 and 0. Might be
                 # what chart is available?
+                if game_config.get_bool('force_unlock_songs') and itemtype == 0:
+                    # We already sent song unlocks in the force unlock section above.
+                    continue
+
+                item = Node.void('item')
+                root.add_child(item)
                 item.add_child(Node.u8('type', itemtype))
                 item.add_child(Node.u16('id', achievement.id))
                 item.add_child(Node.u16('param', param))
@@ -775,12 +873,17 @@ class PopnMusicEclale(PopnMusicBase):
             newprofile.replace_int('stamp_cnt', stamp.child_value('cnt'))
 
         # Extract achievements
+        game_config = self.get_game_config()
         for node in request.children:
             if node.name == 'item':
                 itemid = node.child_value('id')
                 itemtype = node.child_value('type')
                 param = node.child_value('param')
                 is_new = node.child_value('is_new')
+
+                if game_config.get_bool('force_unlock_songs') and itemtype == 0:
+                    # If we enabled force song unlocks, don't save songs to the profile.
+                    continue
 
                 self.data.local.user.put_achievement(
                     self.game,

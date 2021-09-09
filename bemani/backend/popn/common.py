@@ -119,11 +119,18 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         return Node.void('pcb24')
 
     @abstractmethod
-    def get_phases(self) -> Dict[int, int]:
-        ...
+    def get_common_config(self) -> Tuple[Dict[int, int], bool]:
+        """
+        Return a tuple of configuration options for sending the common node back
+        to the client. The first parameter is a dictionary whose keys are event
+        IDs and values are the event phase number. The second parameter is a bool
+        representing whether or not to send areas.
+        """
 
     def __construct_common_info(self, root: Node) -> None:
-        for phaseid, phase_value in self.get_phases().items():
+        phases, send_areas = self.get_common_config()
+
+        for phaseid, phase_value in phases.items():
             phase = Node.void('phase')
             root.add_child(phase)
             phase.add_child(Node.s16('event_id', phaseid))
@@ -199,13 +206,14 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                     subnode.add_child(Node.u8('clear_type', ach.data.get_int('clear_type')))
                     subnode.add_child(Node.u8('clear_rank', ach.data.get_int('clear_rank')))
 
-        for area_id in range(0, 16):
-            area = Node.void('area')
-            root.add_child(area)
-            area.add_child(Node.s16('area_id', area_id))
-            area.add_child(Node.u64('end_date', 0))
-            area.add_child(Node.s16('medal_id', area_id))
-            area.add_child(Node.bool('is_limit', False))
+        if send_areas:
+            for area_id in range(1, 16):
+                area = Node.void('area')
+                root.add_child(area)
+                area.add_child(Node.s16('area_id', area_id))
+                area.add_child(Node.u64('end_date', 0))
+                area.add_child(Node.s16('medal_id', area_id))
+                area.add_child(Node.bool('is_limit', False))
 
         for choco_id in range(0, 5):
             choco = Node.void('choco')
@@ -958,6 +966,18 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         if 'navi_points' in profile:
             navi_data.add_child(Node.s32_array('raisePoint', profile.get_int_array('navi_points', 5)))
 
+        game_config = self.get_game_config()
+        if game_config.get_bool('force_unlock_songs'):
+            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            for song in songs:
+                item = Node.void('item')
+                root.add_child(item)
+                item.add_child(Node.u8('type', 0))
+                item.add_child(Node.u16('id', song.id))
+                item.add_child(Node.u16('param', 15))
+                item.add_child(Node.bool('is_new', False))
+                item.add_child(Node.u64('get_time', 0))
+
         # Set up achievements
         achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for achievement in achievements:
@@ -967,8 +987,6 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                 is_new = achievement.data.get_bool('is_new')
                 get_time = achievement.data.get_int('get_time')
 
-                item = Node.void('item')
-                root.add_child(item)
                 # Item type can be 0-6 inclusive and is the type of the unlock/item.
                 # Item 0 is music unlocks. In this case, the id is the song ID according
                 # to the game. Unclear what the param is supposed to be, but i've seen
@@ -982,6 +1000,12 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                 # 4: 1
                 # 5: 1
                 # 6: 60
+                if game_config.get_bool('force_unlock_songs') and itemtype == 0:
+                    # We already sent song unlocks in the force unlock section above.
+                    continue
+
+                item = Node.void('item')
+                root.add_child(item)
                 item.add_child(Node.u8('type', itemtype))
                 item.add_child(Node.u16('id', achievement.id))
                 item.add_child(Node.u16('param', param))
@@ -1223,6 +1247,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                     )
 
         # Extract achievements
+        game_config = self.get_game_config()
         for node in request.children:
             if node.name == 'item':
                 itemid = node.child_value('id')
@@ -1230,6 +1255,10 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                 param = node.child_value('param')
                 is_new = node.child_value('is_new')
                 get_time = node.child_value('get_time')
+
+                if game_config.get_bool('force_unlock_songs') and itemtype == 0:
+                    # If we enabled force song unlocks, don't save songs to the profile.
+                    continue
 
                 self.data.local.user.put_achievement(
                     self.game,

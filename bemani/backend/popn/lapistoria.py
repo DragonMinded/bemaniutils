@@ -50,6 +50,31 @@ class PopnMusicLapistoria(PopnMusicBase):
         return {
             'ints': [
                 {
+                    'name': 'Music Open Phase',
+                    'tip': 'Default music phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'music_phase',
+                    'values': {
+                        0: 'No music unlocks',
+                        1: 'Phase 1',
+                        2: 'Phase 2',
+                        3: 'Phase 3',
+                        4: 'Phase 4',
+                        5: 'Phase 5',
+                        6: 'Phase 6',
+                        7: 'Phase 7',
+                        8: 'Phase 8',
+                        9: 'Phase 9',
+                        10: 'Phase 10',
+                        11: 'Phase 11',
+                        12: 'Phase 12',
+                        13: 'Phase 13',
+                        14: 'Phase 14',
+                        15: 'Phase 15',
+                        16: 'Phase MAX',
+                    }
+                },
+                {
                     'name': 'Story Mode',
                     'tip': 'Story mode phase for all players.',
                     'category': 'game_config',
@@ -96,18 +121,57 @@ class PopnMusicLapistoria(PopnMusicBase):
     def handle_info22_common_request(self, request: Node) -> Node:
         game_config = self.get_game_config()
         story_phase = game_config.get_int('story_phase')
+        music_phase = game_config.get_int('music_phase')
 
         phases = {
             # Default song phase availability (0-16)
-            0: 16,
+            # The following songs are unlocked when the phase is at or above the number specified:
+            # 1  - 1340, 1341, 1342, 1343, 1351, 1352
+            # 2  - 1317, 1344, 1345
+            # 3  - 1362, 1363
+            # 4  - 1368
+            # 5  - 1370
+            # 6  - 1379, 1380
+            # 7  - 1385
+            # 8  - 1388
+            # 9  - 1395, 1396, 1397
+            # 10 - 1393
+            # 11 - 1398, 1399
+            # 12 - 1400, 1401
+            # 13 - 1408
+            # 14 - 1414
+            # 15 - 1421
+            # 16 - 1422
+            0: music_phase,
             # Card phase (0-11)
             1: 11,
             # Pop'n Aura, max (0-11) (remove all aura requirements)
             2: 11,
             # Story (0-24)
+            # Note also that depending on the story phase, some songs are also unlocked.
+            # Given the story phase at or above the below phases, the following songs are unlocked:
+            # 1  - 1314, 1328, 1338, 1339
+            # 2  - 1346, 1347, 1361
+            # 3  - 1349, 1364, 1365, 1367
+            # 4  - 1366, 1369
+            # 5  - 1337, 1348
+            # 6  - 1371, 1372, 1373
+            # 7  - 1374
+            # 8  - 1383
+            # 9  - 1336
+            # 10 - 1382
+            # 11 - 1387
+            # 12 - 1386
+            # 15 - 1390
+            # 16 - 1389
+            # 18 - 1391
+            # 19 - 1392
+            # 21 - 1405, 1406, 1407
+            # 22 - 1410, 1411
             3: story_phase,
             # BEMANI ruins Discovery! 0 = off, 1 = active, 2 = off
-            4: 0,
+            # When in phase 1 or 2, the following songs are available for unlock: 1353, 1354, 1355, 1356, 1357, 1358, 1359, 1360
+            4: 2,
             # Unknown event, something to do with net taisen (0-2)
             5: 2,
             # Unknown event (0-1)
@@ -119,10 +183,11 @@ class PopnMusicLapistoria(PopnMusicBase):
             # Course mode phase (0-11)
             9: 11,
             # Pon's Fate Purification Plan, 0 = off, 1 = active, 2 = off
-            10: 0,
+            # When in phase 1 or 2, the following songs are available for unlock: 1375, 1376, 1377, 1378, 1381
+            10: 2,
             # Unknown event (0-3)
             11: 3,
-            # Unknown event (0-1)
+            # Unlock song 1384 (0-1)
             12: 1,
             # Appears to be unlocks for course mode including KAC stuff.
             13: 2,
@@ -133,11 +198,19 @@ class PopnMusicLapistoria(PopnMusicBase):
             # Unknown event (0-2)
             16: 2,
             # Unknown event (0-12)
-            17: 0,
-            # Unknown event (0-2)
+            17: 12,
+            # Kaitou BisCo no yokokujou!! event, 0 = off, 1 = active, 2 = off (0-2)
+            # When in phase 1 or 2, the following songs are available for unlock: 1402, 1403, 1404, 1409
             18: 2,
             # Bemani Summer Diary, 0 = off, 1-6 are phases, 7 = off
-            19: 0,
+            # When the phase is at or above the below phases, the following songs are unlocked:
+            # 1 - 1415
+            # 2 - 1417
+            # 3 - 1416
+            # 4 - 1418
+            # 5 - 1419
+            # 6 - 1420
+            19: 7,
         }
 
         root = Node.void('info22')
