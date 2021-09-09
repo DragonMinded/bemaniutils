@@ -164,7 +164,7 @@ class PopnMusicEclale(PopnMusicBase):
             phase.add_child(Node.s16('phase', phases[phaseid]))
 
         if game_config.get_bool('starmaker_enable'):
-            for areaid in range(51):
+            for areaid in range(1, 51):
                 area = Node.void('area')
                 root.add_child(area)
                 area.add_child(Node.s16('area_id', areaid))
