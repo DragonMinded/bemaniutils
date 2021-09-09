@@ -119,16 +119,17 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         return Node.void('pcb24')
 
     @abstractmethod
-    def get_common_config(self) -> Tuple[Dict[int, int], bool]:
+    def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
         """
         Return a tuple of configuration options for sending the common node back
         to the client. The first parameter is a dictionary whose keys are event
         IDs and values are the event phase number. The second parameter is a bool
-        representing whether or not to send areas.
+        representing whether or not to send areas. The third parameter is the number
+        of deco parts available for purchase.
         """
 
     def __construct_common_info(self, root: Node) -> None:
-        phases, send_areas = self.get_common_config()
+        phases, send_areas, goods_count = self.get_common_config()
 
         for phaseid, phase_value in phases.items():
             phase = Node.void('phase')
@@ -222,7 +223,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
             choco.add_child(Node.s32('param', -1))
 
         # Set up goods, educated guess here.
-        for goods_id in range(97):
+        for goods_id in range(goods_count):
             if goods_id < 15:
                 price = 30
             elif goods_id < 30:
@@ -231,8 +232,10 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                 price = 60
             elif goods_id < 60:
                 price = 80
-            else:
+            elif goods_id < 98:
                 price = 200
+            else:
+                price = 250
             goods = Node.void('goods')
             root.add_child(goods)
             goods.add_child(Node.s32('item_id', goods_id + 1))
@@ -511,7 +514,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         friend.add_child(Node.s16('no', no))
         friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.extid)))  # UsaNeko formats on its own
         friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
-        friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+        friend.add_child(Node.s16('chara_num', rivalprofile.get_int('chara', -1)))
         # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
         # ranking numbers disappear and the player icon show a questionmark.
         friend.add_child(Node.s8('is_open', 1))
@@ -991,15 +994,6 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                 # Item 0 is music unlocks. In this case, the id is the song ID according
                 # to the game. Unclear what the param is supposed to be, but i've seen
                 # seen 8 and 0. Might be what chart is available?
-                #
-                # Item limits are as follows:
-                # 0: 1704 - ID is the music ID that the player purchased/unlocked.
-                # 1: 2201
-                # 2: 3
-                # 3: 97 - ID points at a character part that can be purchased on the character screen.
-                # 4: 1
-                # 5: 1
-                # 6: 60
                 if game_config.get_bool('force_unlock_songs') and itemtype == 0:
                     # We already sent song unlocks in the force unlock section above.
                     continue

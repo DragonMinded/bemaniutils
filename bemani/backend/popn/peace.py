@@ -15,18 +15,27 @@ class PopnMusicPeace(PopnMusicModernBase):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID: int = 1877
 
+    # Item limits are as follows:
+    # 0: 1877 - ID is the music ID that the player purchased/unlocked.
+    # 1: 2284
+    # 2: 3
+    # 3: 133 - ID points at a character part that can be purchased on the character screen.
+    # 4: 1
+    # 5: 1
+    # 6: 60
+
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicUsaNeko(self.data, self.config, self.model)
 
-    def get_common_config(self) -> Tuple[Dict[int, int], bool]:
+    def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
         # Event phases
         # TODO: Hook event mode settings up to the front end.
         return (
             {
                 # Default song phase availability (0-23)
                 0: 23,
-                # Unknown event (0-2)
-                1: 2,
+                # Unknown event (0-4)
+                1: 4,
                 # Unknown event (0-2)
                 2: 2,
                 # Unknown event (0-4)
@@ -60,7 +69,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # Unknown event (0-8)
                 17: 8,
                 # Unknown event (0-1)
-                28: 1,
+                18: 1,
                 # Unknown event (0-1)
                 19: 1,
                 # Unknown event (0-13)
@@ -75,4 +84,5 @@ class PopnMusicPeace(PopnMusicModernBase):
                 24: 1,
             },
             False,
+            133,
         )
