@@ -41,10 +41,12 @@ class PopnMusicEclaleClient(BaseClient):
     def __verify_common(self, root: str, resp: Node) -> None:
         self.assert_path(resp, f"response/{root}/phase/event_id")
         self.assert_path(resp, f"response/{root}/phase/phase")
-        self.assert_path(resp, f"response/{root}/area/area_id")
-        self.assert_path(resp, f"response/{root}/area/end_date")
-        self.assert_path(resp, f"response/{root}/area/medal_id")
-        self.assert_path(resp, f"response/{root}/area/is_limit")
+
+        # The following only need to exist if starmaker is enabled.
+        # self.assert_path(resp, f"response/{root}/area/area_id")
+        # self.assert_path(resp, f"response/{root}/area/end_date")
+        # self.assert_path(resp, f"response/{root}/area/medal_id")
+        # self.assert_path(resp, f"response/{root}/area/is_limit")
 
     def verify_info23_common(self, loc: str) -> None:
         call = self.call_node()
