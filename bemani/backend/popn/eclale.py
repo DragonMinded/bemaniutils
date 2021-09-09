@@ -435,7 +435,7 @@ class PopnMusicEclale(PopnMusicBase):
         friend.add_child(Node.s16('no', no))
         friend.add_child(Node.string('g_pm_id', self.format_extid(rivalprofile.extid)))  # Eclale formats on its own
         friend.add_child(Node.string('name', rivalprofile.get_str('name', 'なし')))
-        friend.add_child(Node.s16('chara', rivalprofile.get_int('chara', -1)))
+        friend.add_child(Node.s16('chara_num', rivalprofile.get_int('chara', -1)))
         # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
         # ranking numbers disappear and the player icon show a questionmark.
         friend.add_child(Node.s8('is_open', 1))

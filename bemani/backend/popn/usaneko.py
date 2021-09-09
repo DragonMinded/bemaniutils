@@ -15,6 +15,15 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID: int = 1704
 
+    # Item limits are as follows:
+    # 0: 1704 - ID is the music ID that the player purchased/unlocked.
+    # 1: 2201
+    # 2: 3
+    # 3: 97 - ID points at a character part that can be purchased on the character screen.
+    # 4: 1
+    # 5: 1
+    # 6: 60
+
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicEclale(self.data, self.config, self.model)
 
@@ -91,7 +100,7 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
             ],
         }
 
-    def get_common_config(self) -> Tuple[Dict[int, int], bool]:
+    def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
         game_config = self.get_game_config()
         music_phase = game_config.get_int('music_phase')
         active_event = game_config.get_int('active_event')
@@ -161,4 +170,5 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                 13: 1,
             },
             navikun_enabled,
+            97,
         )
