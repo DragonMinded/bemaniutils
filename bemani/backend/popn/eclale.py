@@ -721,9 +721,6 @@ class PopnMusicEclale(PopnMusicBase):
                 param = achievement.data.get_int('param')
                 is_new = achievement.data.get_bool('is_new')
 
-                item = Node.void('item')
-                root.add_child(item)
-
                 # Type is the type of unlock/item. Type 0 is song unlock in Eclale.
                 # In this case, the id is the song ID according to the game. Unclear
                 # what the param is supposed to be, but i've seen 8 and 0. Might be
@@ -732,6 +729,8 @@ class PopnMusicEclale(PopnMusicBase):
                     # We already sent song unlocks in the force unlock section above.
                     continue
 
+                item = Node.void('item')
+                root.add_child(item)
                 item.add_child(Node.u8('type', itemtype))
                 item.add_child(Node.u16('id', achievement.id))
                 item.add_child(Node.u16('param', param))
