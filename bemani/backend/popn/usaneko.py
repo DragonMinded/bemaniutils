@@ -55,6 +55,18 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                     }
                 },
                 {
+                    # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
+                    'name': 'Holiday Greeting',
+                    'tip': 'Changes the payment selection confirmation sound.',
+                    'category': 'game_config',
+                    'setting': 'holiday_greeting',
+                    'values': {
+                        0: 'Okay!',
+                        1: 'Merry Christmas!',
+                        2: 'Happy New Year!',
+                    }
+                },
+                {
                     'name': 'Active Event',
                     'tip': 'Active event for all players.',
                     'category': 'game_config',
@@ -103,6 +115,7 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
     def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
         game_config = self.get_game_config()
         music_phase = game_config.get_int('music_phase')
+        holiday_greeting = game_config.get_int('holiday_greeting')
         active_event = game_config.get_int('active_event')
         navikun_phase = game_config.get_int('navikun_phase')
 
@@ -128,8 +141,8 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                 0: music_phase,
                 # Unknown event (0-2)
                 1: 2,
-                # Unknown event (0-2)
-                2: 2,
+                # Holiday Greeting (0-2)
+                2: holiday_greeting,
                 # Unknown event (0-4)
                 3: 4,
                 # Unknown event (0-1)

@@ -1,0 +1,187 @@
+div.container div.section:not(:first-child) {
+    padding-top: 20px;
+    clear: both;
+}
+
+div.container div.floating.right {
+    float: right;
+}
+
+span.separator {
+    font-size: large;
+    font-weight: bold;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+div.labelledsection.horizontal {
+    display: inline-block;
+    margin: 0px;
+}
+
+div.labelledsection.vertical {
+    display: block;
+    margin-bottom: 5px;
+}
+
+div.labelledsection.horizontal:not(:last-child):not(:only-child) {
+    margin-right: 20px;
+}
+
+div.labelledsection div.label {
+    font-weight: bold;
+}
+
+div.labelledsection div.content {
+    margin: 0px;
+    padding-bottom: 0px;
+    font-size: small;
+}
+
+div.labelledsection.centered div.content, div.labelledsection.centered div.label {
+    text-align: center;
+}
+
+div.labelledsection.padded {
+    text-align: center;
+    width: 150px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+div.labelledsection.filled {
+    background-color: #f7f7f7;
+    border: 1px dashed #dddddd;
+}
+
+span.separator {
+    font-size: large;
+    font-weight: bold;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+div.labelledsection.iidx.themeoption select {
+    width: 200px;
+}
+
+div.labelledsection.iidx.qprooption select {
+    width: 300px;
+}
+
+div.labelledsection.ddr.option select {
+    width: 200px;
+}
+
+div.iidx.menuoption label, div.arcade.menuoption label {
+    position: relative;
+    vertical-align: middle;
+    bottom: 3px;
+    font-size: small;
+}
+
+div.iidx.menuoption, div.arcade.menuoption {
+    padding-bottom: 5px;
+}
+
+div.arcade.menuoption label {
+    display: inline-block;
+    min-width: 200px;
+}
+
+div.score span.label {
+    font-size: smaller;
+    font-weight: bold;
+}
+
+div.score span.status {
+    font-size: smaller;
+    font-weight: bold;
+}
+
+div.score span.score {
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+div.score span.grade {
+    font-weight: bold;
+    padding-right: 3px;
+}
+
+div.songname {
+    font-weight: bold;
+    font-size: large;
+}
+
+div.songartist, div.songgenre, div.songdifficulty, div.songplays {
+    font-size: small;
+}
+
+span.file {
+    font-family: monospace;
+}
+
+ul.ownerlist {
+    margin: 0px;
+    padding: 0px;
+}
+
+ul.ownerlist li {
+    margin-left: 25px;
+    margin-right: 10px;
+}
+
+div.card {
+    display: inline-block;
+    font-family: monospace;
+}
+
+div.placeholder, span.placeholder {
+    font-style: italic;
+}
+
+div.timestamp {
+    font-style: italic;
+    font-size: small;
+    padding-bottom: 5px;
+}
+
+span.loading {
+    font-size: small;
+}
+
+span.raised {
+    font-style: italic;
+    font-size: small;
+    font-weight: bold;
+}
+
+dl {
+    margin: 0px;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin: 0px;
+    padding-bottom: 5px;
+}
+
+div.longmessage {
+    margin-bottom: 10px;
+}
+
+div.longmessage pre {
+    border: 1px solid rgba(128, 128, 128, 0.33);
+    background: rgb(232, 232, 232);
+    padding: 5px;
+    margin-bottom: 0px;
+}
+
+span.filter:not(:last-child) {
+    padding-right: 20px;
+}
+

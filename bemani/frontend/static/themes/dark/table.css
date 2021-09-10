@@ -1,0 +1,135 @@
+table.list, table.add {
+    border-collapse: collapse;
+}
+
+thead tr th {
+    cursor: default;
+}
+
+table.add th {
+    text-align: left;
+    padding: 5px;
+}
+
+table.list th {
+    background-color: #192021;
+    font-weight: bold;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+}
+
+table.list th.action {
+    background-color: #808080;
+    border: none;
+}
+
+table.list tbody td, table.add tbody td {
+    padding: 5px;
+    vertical-align: top;
+}
+
+table.list tbody td {
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+}
+
+table td.center {
+    word-break: break-word;
+    text-align: center;
+}
+
+table.list input[type="text"], table.add input[type="text"] {
+    width: 100%;
+}
+
+table.list select, table.add select {
+    width: 100%;
+}
+
+table.list tbody tr:nth-child(odd) td {
+    background-color: #242526;
+}
+
+table.list tbody tr:nth-child(even) td {
+    background-color: #3a3b3c;
+}
+
+table td.subheader {
+    background-color: #e7e7e7 ! important;
+    font-weight: bold;
+}
+
+table tfoot td {
+    padding-top: 5px;
+}
+
+table.records, table.attempts, table.topscores, table.players, table.events {
+    width: 100%;
+}
+
+table.records a, table.attempts a, table.topscores a, table.players a {
+    text-decoration: none;
+}
+
+td.edit {
+    background-color: #808080 ! important;
+    border: none ! important;
+}
+
+td.nochart {
+    background-color: #181818 ! important;
+}
+
+table.list input[type="checkbox"], table.add input[type="checkbox"] {
+    width: 26px;
+    height: 26px;
+    margin: 0px;
+}
+
+table.events div.circle {
+    width: 16px;
+    height: 16px;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-left: 0px;
+    margin-right: 5px;
+    margin-top: 2px;
+    margin-bottom: -2px;
+}
+
+table.events td.details div.inline {
+    display: inline-block;
+    margin-right: 5px;
+}
+
+table.events td.details pre.inline {
+    display: inline-block;
+    margin: 0px;
+}
+
+table.events td.exception div.circle {
+    background-color: rgb(214, 72, 72);
+}
+
+table.events td.unhandled div.circle {
+    background-color: rgb(255, 165, 0);
+}
+
+table.events td.unauthorized div.circle {
+    background-color: rgb(119, 0, 119);
+}
+
+table.events td.scheduled div.circle {
+    background-color: #2d6ccc;
+}
+
+table.events td.pcbevent div.circle {
+    background-color: #26a226;
+}
+
+table.events td.transaction div.circle {
+    background-color: #f9ed00;
+}

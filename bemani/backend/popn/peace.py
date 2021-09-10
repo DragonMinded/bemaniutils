@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.common import PopnMusicModernBase
@@ -27,9 +27,134 @@ class PopnMusicPeace(PopnMusicModernBase):
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicUsaNeko(self.data, self.config, self.model)
 
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'ints': [
+                {
+                    'name': 'Music Open Phase',
+                    'tip': 'Default music phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'music_phase',
+                    'values': {
+                        # The value goes to 23 now, but it starts where usaneko left off at 11
+                        # Unlocks a total of 53 songs
+                        12: 'No music unlocks',
+                        13: 'Phase 1',
+                        14: 'Phase 2',
+                        15: 'Phase 3',
+                        16: 'Phase 4',
+                        17: 'Phase 5',
+                        18: 'Phase 6',
+                        19: 'Phase 7',
+                        20: 'Phase 8',
+                        21: 'Phase 9',
+                        22: 'Phase 10',
+                        23: 'Phase MAX',
+                    }
+                },
+                {
+                    'name': 'NAVI-Kun Event Phase',
+                    'tip': 'NAVI-Kun event phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'navikun_phase',
+                    'values': {
+                        # The value goes to 30 now, but it starts where usaneko left off at 15
+                        # Unlocks a total of 89 songs
+                        15: 'Phase 1',
+                        16: 'Phase 2',
+                        17: 'Phase 3',
+                        18: 'Phase 4',
+                        19: 'Phase 5',
+                        20: 'Phase 6',
+                        21: 'Phase 7',
+                        22: 'Phase 8',
+                        23: 'Phase 9',
+                        24: 'Phase 10',
+                        25: 'Phase 11',
+                        26: 'Phase 12',
+                        27: 'Phase 13',
+                        28: 'Phase 14',
+                        29: 'Phase 15',
+                        30: 'Phase MAX',
+                    },
+                },
+                {
+                    # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
+                    'name': 'Holiday Greeting',
+                    'tip': 'Changes the payment selection confirmation sound.',
+                    'category': 'game_config',
+                    'setting': 'holiday_greeting',
+                    'values': {
+                        0: 'Okay!',
+                        1: 'Merry Christmas!',
+                        2: 'Happy New Year!',
+                    }
+                },
+                {
+                    # The following values control the pop'n music event archive. Setting the flag to the following values has the
+                    # corresponding effect. Each value will include the events above it, for example setting it to 5 gives you the
+                    # pop'n 15 event, as well as SP, 12, and 11 events.  Setting it to 0 disabled the event and skips the entire screen,
+                    #setting it to 20 makes all of the events available for selection. Completing the minigame unlocks the associated content.
+
+                    'name': 'Event Archive Phase',
+                    'tip': 'Event Archive mini-game phase for all players.',
+                    'category': 'game_config',
+                    'setting': 'event_archive_phase',
+                    'values': {
+                        0: 'Event Archive disabled',
+                        1: 'pop\'n music 11 - The Latest Space Station',
+                        2: 'pop\'n music 11 & 12 Iroha - The Southernmost Point of the Universe / Ninja Otasuke Cheat Sheet in Trouble',
+                        3: 'pop\'n music Sunny Park - I Love Walking in Happiness Park',
+                        4: 'pop\'n music 12 Iroha - Ninja Code: April 1st Volume',
+                        5: 'pop\'n music 15 ADVENTURE - Route to Awaken the Soul',
+                        6: 'pop\'n music 20 fantasia - A Braided Fantasy Song',
+                        7: 'EXTRA',
+                        8: 'pop\'n music 15 ADVENTURE - A Route with a Faint Bell Sound',
+                        9: 'pop\'n music 13 Carnival - Bunny Magician Attraction',
+                        10: 'pop\'n music 14 FEVER! - That Burning Special Attack, again!',
+                        11: 'pop\'n music Sunny Park - Festival Nightfall Park',
+                        12: 'pop\'n music 20 fantasia - A Fantasy Song by the Bladed Warrior',
+                        13: 'pop\'n music 19 TUNE STREET - A Town Where the Sound of the Brass Band Rings After School',
+                        14: 'pop\'n music éclale - Fun Rag Hour',
+                        15: 'pop\'n music 13 Carnival - Ghost Piano Attraction',
+                        16: 'pop\'n music 14 FEVER! - That Warrior Defending Peace, again!',
+                        17: 'pop\'n music 18 Sengoku Retsuden - A Territory with a Glamorous Cultural Flavor',
+                        18: 'pop\'n music éclale - Runaway Guitarist in the Starry Sky',
+                        19: 'pop\'n music 17 THE MOVIE - A Blockbuster Uncovering a Conspiracy in the Peaceful City',
+                        20: 'pop\'n music lapistoria - God\'s Forgotten Things',
+                    }
+                },
+            ],
+            'bools': [
+                # Enable Net Taisen, including win/loss display on song select (0-1)
+                {
+                    'name': 'Net Taisen',
+                    'tip': 'Enable Net Taisen, including win/loss display on song select',
+                    'category': 'game_config',
+                    'setting': 'enable_net_taisen',
+                },
+                {
+                    'name': 'Force Song Unlock',
+                    'tip': 'Force unlock all songs.',
+                    'category': 'game_config',
+                    'setting': 'force_unlock_songs',
+                },
+            ],
+        }
+
     def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
+        game_config = self.get_game_config()
+        music_phase = game_config.get_int('music_phase')
+        event_archive_phase = game_config.get_int('event_archive_phase')
+        holiday_greeting = game_config.get_int('holiday_greeting')
+        enable_net_taisen = game_config.get_bool('enable_net_taisen')
+        navikun_phase = game_config.get_int('navikun_phase')
+
         # Event phases
-        # TODO: Hook event mode settings up to the front end.
         return (
             {
                 # Default song phase availability (0-23)
@@ -58,17 +183,17 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # 21 - 1818
                 # 22 - 1825
                 # 23 - 1858, 1857
-                0: 23,
+                0: music_phase,
                 # Unknown event (0-4)
                 1: 4,
-                # Unknown event (0-2)
-                2: 2,
+                # Holiday Greeting (0-2)
+                2: holiday_greeting,
                 # Unknown event (0-4)
                 3: 4,
                 # Unknown event (0-1)
                 4: 1,
                 # Enable Net Taisen, including win/loss display on song select (0-1)
-                5: 1,
+                5: enable_net_taisen,
                 # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1)
                 6: 1,
                 # Unknown event (0-1)
@@ -109,14 +234,14 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # 28 - 1692, 1693, 1694
                 # 29 - 1696, 1697, 1698, 1699, 1700, 1701, 1702
                 # 30 - 1682, 1683, 1684
-                10: 30,
+                10: navikun_phase,
                 # Unknown event (0-1)
                 11: 1,
                 # Unknown event (0-2)
                 12: 2,
                 # Enable Pop'n Peace preview song (0-1)
                 13: 1,
-                # Unknown event (0-39)
+                # Stamp Card Rally (0-39)
                 14: 39,
                 # Unknown event (0-2)
                 15: 2,
@@ -124,11 +249,11 @@ class PopnMusicPeace(PopnMusicModernBase):
                 16: 3,
                 # Unknown event (0-8)
                 17: 8,
-                # Appears to be floor infection (0-1)
+                # FLOOR INFECTION event (0-1)
                 # The following songs are linked to this event:
                 # 1 - 1223, 1224, 1225, 1239, 1240, 1241, 1245, 1247, 1340, 1342, 1394, 1523, 1524, 1525, 1598, 1667, 1668, 1666
                 18: 1,
-                # Appears to be pop'n music × NOSTALGIA kyouenkai (0-1)
+                # pop'n music × NOSTALGIA kyouenkai (0-1)
                 # Setting this to 1 is linked to the song 1695
                 19: 1,
                 # Event archive event (0-13)
@@ -148,7 +273,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # 13 - 1833, 1824
                 20: 13,
                 # Pop'n event archive song phase availability (0-20)
-                21: 20,
+                21: event_archive_phase,
                 # バンめし♪ ふるさとグランプリunlocks (split into two rounds) (0-2)
                 # The following songs are linked to this event:
                 # 1 - 1851, 1852, 1853, 1854

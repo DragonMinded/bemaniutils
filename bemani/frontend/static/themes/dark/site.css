@@ -1,0 +1,274 @@
+body {
+    font-family: Helvetica;
+    color: #b3b3b3;
+    margin: 0px;
+    padding-bottom: 30px;
+    background-color: #121212;
+}
+
+a {
+	color: #878889;
+}
+div.messages {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0px;
+}
+
+div.container {
+    padding-top: 15px;
+    padding-bottom: 0px;
+    padding-left: 30px;
+    padding-right: 30px;
+    margin: 0px;
+}
+
+div.loading {
+    margin-left: 50%;
+    margin-right: 50%;
+    height: 20px;
+}
+
+div.navigation {
+    background-color: whitesmoke;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.tinynav {
+    display: none;
+}
+
+@media only screen and (max-width: 600px) {
+    .tinynav {
+        display: inline-block;
+        width: 100%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+    #nav {
+        display: none;
+    }
+}
+
+@media only screen and (hover: none) {
+    .tinynav {
+        display: inline-block;
+        width: 100%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+    #nav {
+        display: none;
+    }
+}
+
+ul.messages {
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+ul.messages li {
+    padding: 5px;
+    margin-top: 10px;
+    border-radius: 0px;
+    font-size: smaller;
+}
+
+ul.messages div.close {
+    font-size: smaller;
+    text-decoration: none;
+    display: inline-block;
+    color: #000000;
+    float: right;
+    cursor: pointer;
+    margin-right: 3px;
+}
+
+ul.messages li.error {
+    border: 1px solid #e2afb6;
+    background-color: #ffced5;
+}
+
+ul.messages li.warning {
+    border: 1px solid #e6deb4;
+    background-color: #fff7ce;
+}
+
+ul.messages li.success {
+    border: 1px solid #cddcc1;
+    background: #e7ffd4;
+}
+
+ul.messages li.info {
+    border: 1px solid #b0b0d2;
+    background-color: #d0d0ff;
+}
+
+ul.navigation {
+    list-style: none;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0px;
+    background-color: whitesmoke;
+    position: relative;
+    text-align: right;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+ul.navigation li {
+    display: inline-block;
+    padding: 0px;
+}
+
+ul.navigation_sub {
+    display: none;
+    position: absolute;
+    background-color: #e4e4e4;
+    padding: 10px;
+    margin: 0;
+    padding: 0;
+    min-width: 150px;
+    text-align: left;
+}
+
+ul.navigation_sub li {
+    float: none;
+    display: block;
+    position: relative;
+    padding: 0px;
+    margin: 0px;
+}
+
+ul.navigation_sub li a {
+    display: block;
+}
+
+a.cursor {
+    cursor: default;
+}
+
+ul.navigation li:hover ul.navigation_sub {
+    display: block;
+}
+
+ul.navigation li.left {
+    float: left;
+}
+
+ul.navigation div.separator {
+    cursor: default;
+    width: 25px;
+}
+
+ul.navigation li a {
+    border: 0px solid #676767;
+    display: block;
+    text-decoration: none;
+    padding: 10px;
+    color: #676767;
+}
+
+ul.navigation li a:hover {
+    background-color: #d2d2d2;
+}
+
+ul.navigation li a:active {
+    background-color: #d2d2d2;
+}
+
+ul.navigation > li > a.current {
+    border-bottom-width: 1.6px;
+    border-bottom-style: solid;
+    padding-bottom: 8.4px;
+}
+
+ul.navigation > li > ul.navigation_sub > li > a.current {
+    border-left-width: 2px;
+    border-left-style: solid;
+    padding-left: 8px;
+}
+
+h1, h2, h3, h4, h5 {
+    padding-top: 0px;
+    margin-top: 0px;
+}
+
+img.loading {
+    vertical-align: text-bottom;
+}
+
+div.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+button.nav span.alert {
+    padding-left: 5px;
+    color: #459900;
+    font-weight: bold;
+}
+
+div.tooltip span.tooltiptext {
+    visibility: hidden;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+    width: 300px;
+
+    /* Position the tooltip text */
+    position: absolute;
+    top: -5px;
+    left: 105%;
+    z-index: 1;
+}
+
+div.tooltip span.tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 15px;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent #555 transparent transparent;
+}
+
+div.tooltip:hover span.tooltiptext {
+    visibility: visible;
+}
+
+div.pill {
+    display: inline-block;
+    border: 1px solid red;
+    background: pink;
+    border-radius: 5px;
+    padding-left: 10px;
+    margin-left: 10px;
+    padding-right: 10px;
+}
+
+pre {
+    white-space: pre-wrap;
+}
+
+span.sort {
+    float: right;
+}
+
+span.checkbox {
+    padding-right: 5px;
+    cursor: default;
+}
