@@ -15,6 +15,9 @@ class PopnMusicPeace(PopnMusicModernBase):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID: int = 1877
 
+    # Biggest deco part ID in the game
+    GAME_MAX_DECO_ID: int = 133
+
     # Item limits are as follows:
     # 0: 1877 - ID is the music ID that the player purchased/unlocked.
     # 1: 2284
@@ -146,7 +149,7 @@ class PopnMusicPeace(PopnMusicModernBase):
             ],
         }
 
-    def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
+    def get_common_config(self) -> Tuple[Dict[int, int], bool]:
         game_config = self.get_game_config()
         music_phase = game_config.get_int('music_phase')
         event_archive_phase = game_config.get_int('event_archive_phase')
@@ -289,5 +292,4 @@ class PopnMusicPeace(PopnMusicModernBase):
                 24: 1,
             },
             False,
-            133,
         )

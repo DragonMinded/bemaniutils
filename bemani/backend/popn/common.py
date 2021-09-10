@@ -45,6 +45,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
     # Biggest ID in the music DB
     GAME_MAX_MUSIC_ID: int
 
+    # Biggest deco part ID in the game
+    GAME_MAX_DECO_ID: int
+
     # Return the local2 and lobby2 service so that Pop'n Music 24+ will
     # send game packets.
     extra_services: List[str] = [
@@ -119,17 +122,16 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         return Node.void('pcb24')
 
     @abstractmethod
-    def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
+    def get_common_config(self) -> Tuple[Dict[int, int], bool]:
         """
         Return a tuple of configuration options for sending the common node back
         to the client. The first parameter is a dictionary whose keys are event
         IDs and values are the event phase number. The second parameter is a bool
-        representing whether or not to send areas. The third parameter is the number
-        of deco parts available for purchase.
+        representing whether or not to send areas.
         """
 
     def __construct_common_info(self, root: Node) -> None:
-        phases, send_areas, goods_count = self.get_common_config()
+        phases, send_areas = self.get_common_config()
 
         for phaseid, phase_value in phases.items():
             phase = Node.void('phase')
@@ -223,7 +225,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
             choco.add_child(Node.s32('param', -1))
 
         # Set up goods, educated guess here.
-        for goods_id in range(goods_count):
+        for goods_id in range(self.GAME_MAX_DECO_ID):
             if goods_id < 15:
                 price = 30
             elif goods_id < 30:
