@@ -20,6 +20,9 @@ class ReflecBeatLimelight(ReflecBeatBase):
     GAME_CLEAR_TYPE_CLEARED: Final[int] = 3
     GAME_CLEAR_TYPE_FULL_COMBO: Final[int] = 4
 
+    # Reflec Beat Limelight requires non-expired profiles to do conversions properly
+    supports_expired_profiles: bool = False
+
     def previous_version(self) -> Optional[ReflecBeatBase]:
         return ReflecBeat(self.data, self.config, self.model)
 
@@ -539,6 +542,61 @@ class ReflecBeatLimelight(ReflecBeatBase):
         else:
             root.add_child(Node.s32('uid', profile.extid))
         root.add_child(Node.s32('time', Time.now()))
+        return root
+
+    def handle_player_succeed_request(self, request: Node) -> Node:
+        refid = request.child_value('rid')
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is not None:
+            previous_version = self.previous_version()
+            profile = previous_version.get_profile(userid)
+            achievements = self.data.local.user.get_achievements(previous_version.game, previous_version.version, userid)
+            scores = self.data.remote.music.get_scores(previous_version.game, previous_version.version, userid)
+        else:
+            profile = None
+
+        root = Node.void('player')
+
+        if profile is None:
+            root.add_child(Node.string('name', ''))
+            root.add_child(Node.s32('lv', -1))
+            root.add_child(Node.s32('exp', -1))
+            root.add_child(Node.s32('grade', -1))
+            root.add_child(Node.s32('ap', -1))
+
+            root.add_child(Node.void('released'))
+            root.add_child(Node.void('mrecord'))
+        else:
+            root.add_child(Node.string('name', profile.get_str('name')))
+            root.add_child(Node.s32('lv', profile.get_int('lvl')))
+            root.add_child(Node.s32('exp', profile.get_int('exp')))
+            root.add_child(Node.s32('grade', profile.get_int('mg')))  # This is a guess
+            root.add_child(Node.s32('ap', profile.get_int('ap')))
+
+            released = Node.void('released')
+            root.add_child(released)
+            for item in achievements:
+                if item.type != 'item_0':
+                    continue
+
+                released.add_child(Node.s16('i', item.id))
+
+            mrecord = Node.void('mrecord')
+            root.add_child(mrecord)
+            for score in scores:
+                mrec = Node.void('mrec')
+                mrecord.add_child(mrec)
+                mrec.add_child(Node.s32('mid', score.id))
+                mrec.add_child(Node.s32('ctype', score.chart))
+                mrec.add_child(Node.s32('win', score.data.get_dict('stats').get_int('win')))
+                mrec.add_child(Node.s32('lose', score.data.get_dict('stats').get_int('win')))
+                mrec.add_child(Node.s32('draw', score.data.get_dict('stats').get_int('win')))
+                mrec.add_child(Node.s32('score', score.points))
+                mrec.add_child(Node.s32('combo', score.data.get_int('combo')))
+                mrec.add_child(Node.s32('miss', score.data.get_int('miss_count')))
+                mrec.add_child(Node.s32('grade', self.__db_to_game_clear_type(score.data.get_int('clear_type'), score.data.get_int('combo_type'))))
+                mrec.add_child(Node.s32('ap', score.data.get_int('achievement_rate')))
+
         return root
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:

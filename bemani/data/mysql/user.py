@@ -548,7 +548,7 @@ class UserData(BaseData):
         """
         if not userids:
             return []
-        sql = "SELECT version, userid FROM refid WHERE game = :game AND userid IN :userids"
+        sql = "SELECT version, userid FROM refid WHERE game = :game AND userid IN :userids AND refid IN (SELECT refid FROM profile)"
         cursor = self.execute(sql, {'game': game.value, 'userids': userids})
         profilever: Dict[UserID, int] = {}
 
@@ -588,7 +588,7 @@ class UserData(BaseData):
         Returns:
             A List of Tuples of game, version for each game/version the user has played.
         """
-        sql = "SELECT game, version FROM refid WHERE userid = :userid"
+        sql = "SELECT game, version FROM refid WHERE userid = :userid AND refid IN (SELECT refid FROM profile)"
         vals: Dict[str, Any] = {'userid': userid}
 
         if game is not None:

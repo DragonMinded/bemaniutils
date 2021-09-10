@@ -18,6 +18,9 @@ class ReflecBeat(ReflecBeatBase):
     GAME_CLEAR_TYPE_PLAYED: Final[int] = 2
     GAME_CLEAR_TYPE_FULL_COMBO: Final[int] = 3
 
+    # Reflec Beat has no profile succession
+    supports_expired_profiles: bool = False
+
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
         """

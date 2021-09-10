@@ -307,6 +307,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
     )
     parser.add_argument(
         "--verbose",
+        "-v",
         help="Display verbose parsing info.",
         action="store_true",
         default=False,
