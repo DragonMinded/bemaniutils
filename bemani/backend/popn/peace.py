@@ -233,7 +233,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # 28 - 1692, 1693, 1694
                 # 29 - 1696, 1697, 1698, 1699, 1700, 1701, 1702
                 # 30 - 1682, 1683, 1684
-                10: 30,
+                10: navikun_phase,
                 # Unknown event (0-1)
                 11: 1,
                 # Unknown event (0-2)
