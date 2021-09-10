@@ -109,6 +109,14 @@ class PopnMusicLapistoria(PopnMusicBase):
                 },
             ],
             'bools': [
+                # We don't currently support lobbies or anything, so this is commented out until
+                # somebody gets around to implementing it.
+                # {
+                #     'name': 'Net Taisen',
+                #     'tip': 'Enable Net Taisen, including win/loss display on song select',
+                #     'category': 'game_config',
+                #     'setting': 'enable_net_taisen',
+                # },
                 {
                     'name': 'Force Song Unlock',
                     'tip': 'Force unlock all songs.',
@@ -122,6 +130,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         game_config = self.get_game_config()
         story_phase = game_config.get_int('story_phase')
         music_phase = game_config.get_int('music_phase')
+        enable_net_taisen = False  # game_config.get_bool('enable_net_taisen')
 
         phases = {
             # Default song phase availability (0-16)
@@ -173,7 +182,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             # When in phase 1 or 2, the following songs are available for unlock: 1353, 1354, 1355, 1356, 1357, 1358, 1359, 1360
             4: 2,
             # Unknown event, something to do with net taisen (0-2)
-            5: 2,
+            5: 2 if enable_net_taisen else 0,
             # Unknown event (0-1)
             6: 1,
             # Unknown event (0-1)

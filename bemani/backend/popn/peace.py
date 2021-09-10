@@ -98,8 +98,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                     # The following values control the pop'n music event archive. Setting the flag to the following values has the
                     # corresponding effect. Each value will include the events above it, for example setting it to 5 gives you the
                     # pop'n 15 event, as well as SP, 12, and 11 events.  Setting it to 0 disabled the event and skips the entire screen,
-                    #setting it to 20 makes all of the events available for selection. Completing the minigame unlocks the associated content.
-
+                    # setting it to 20 makes all of the events available for selection. Completing the minigame unlocks the associated content.
                     'name': 'Event Archive Phase',
                     'tip': 'Event Archive mini-game phase for all players.',
                     'category': 'game_config',
@@ -130,13 +129,14 @@ class PopnMusicPeace(PopnMusicModernBase):
                 },
             ],
             'bools': [
-                # Enable Net Taisen, including win/loss display on song select (0-1)
-                {
-                    'name': 'Net Taisen',
-                    'tip': 'Enable Net Taisen, including win/loss display on song select',
-                    'category': 'game_config',
-                    'setting': 'enable_net_taisen',
-                },
+                # We don't currently support lobbies or anything, so this is commented out until
+                # somebody gets around to implementing it.
+                # {
+                #     'name': 'Net Taisen',
+                #     'tip': 'Enable Net Taisen, including win/loss display on song select',
+                #     'category': 'game_config',
+                #     'setting': 'enable_net_taisen',
+                # },
                 {
                     'name': 'Force Song Unlock',
                     'tip': 'Force unlock all songs.',
@@ -151,7 +151,7 @@ class PopnMusicPeace(PopnMusicModernBase):
         music_phase = game_config.get_int('music_phase')
         event_archive_phase = game_config.get_int('event_archive_phase')
         holiday_greeting = game_config.get_int('holiday_greeting')
-        enable_net_taisen = game_config.get_bool('enable_net_taisen')
+        enable_net_taisen = False  # game_config.get_bool('enable_net_taisen')
         navikun_phase = game_config.get_int('navikun_phase')
 
         # Event phases
@@ -193,7 +193,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # Unknown event (0-1)
                 4: 1,
                 # Enable Net Taisen, including win/loss display on song select (0-1)
-                5: enable_net_taisen,
+                5: 1 if enable_net_taisen else 0,
                 # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1)
                 6: 1,
                 # Unknown event (0-1)

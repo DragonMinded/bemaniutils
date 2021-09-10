@@ -93,6 +93,14 @@ class PopnMusicEclale(PopnMusicBase):
                     'category': 'game_config',
                     'setting': 'starmaker_enable',
                 },
+                # We don't currently support lobbies or anything, so this is commented out until
+                # somebody gets around to implementing it.
+                # {
+                #     'name': 'Net Taisen',
+                #     'tip': 'Enable Net Taisen, including win/loss display on song select',
+                #     'category': 'game_config',
+                #     'setting': 'enable_net_taisen',
+                # },
                 {
                     'name': 'Force Song Unlock',
                     'tip': 'Force unlock all songs.',
@@ -106,6 +114,7 @@ class PopnMusicEclale(PopnMusicBase):
         game_config = self.get_game_config()
         music_phase = game_config.get_int('music_phase')
         music_sub_phase = game_config.get_int('music_sub_phase')
+        enable_net_taisen = False  # game_config.get_bool('enable_net_taisen')
 
         # Event phases. Eclale seems to be so basic that there is no way to disable/enable
         # the starmaker event. It is just baked into the game.
@@ -152,7 +161,7 @@ class PopnMusicEclale(PopnMusicBase):
             # Unknown event, maybe something to do with song categories? (0-1)
             11: 1,
             # Enable Net Taisen, including win/loss sort option on music select (0-1)
-            12: 1,
+            12: 1 if enable_net_taisen else 0,
             # Enable local and server-side matching when selecting a song (0-4)
             13: 4,
         }
