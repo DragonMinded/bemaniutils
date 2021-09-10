@@ -1,0 +1,130 @@
+form.inline {
+    margin: 0px;
+}
+
+form.inline label {
+    display: block;
+}
+
+form.inline label.inline {
+    display: inline-block;
+}
+
+form.inline div.row {
+    padding-bottom: 5px;
+}
+
+form.inline select {
+    vertical-align: bottom;
+    margin-right: 5px;
+}
+
+input.inline {
+    margin-right: 5px;
+}
+
+button::-moz-focus-inner, input::-moz-focus-inner {
+    border:0;
+    padding:0;
+}
+
+form div.action {
+    margin-top: 5px;
+}
+
+option.placeholder {
+    font-style: italic;
+}
+
+div.buttons {
+    padding-top:5px;
+}
+
+input[type="submit"] {
+    border: 1px solid #cddcc1;
+    background: #49B979;
+    margin-right: 5px;
+}
+
+input[type="button"], button.nav, button.toggle, button.edit, button.add, button.viewmore, button.btn-default {
+    border: 1px solid #dadada;
+	color: #b0b1b2;
+    background: #282828;
+    margin-right: 5px;
+}
+
+input[type="submit"], input[type="button"], button {
+    border-radius: 0px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+    cursor: pointer;
+}
+
+input[type="text"], input[type="password"], textarea {
+    border: 1px solid #dadada;
+    padding: 4px;
+    border-radius: 0px;
+	background-color: #b3b4b5;
+}
+
+select {
+    border: 1px solid #dadada;
+    padding: 4px 4px 3px 4px;
+    border-radius: 0px;
+	background: #dadada;
+}
+
+input[type="button"] {
+    margin-right: 5px;
+}
+
+button.toggle:not(:last-child):not(:only-child), button.edit:not(:last-child):not(:only-child), button.delete:not(:last-child):not(:only-child), button.add:not(:last-child):not(:only-child), button.nav:not(:last-child):not(:only-child) {
+    margin-right: 5px;
+}
+
+span + button.edit, span + button.toggle, span + button.delete, span + button.add,
+div + button.edit, div + button.toggle, div + button.delete, div + button.add {
+    margin-left: 15px;
+    background-color: #282828;
+	color: #b3b3b3;
+}
+
+button.nav {
+    margin-bottom: 5px;
+    margin-right: 0px;
+    border: 1px solid #dadada;
+    background-color: #282828;
+}
+
+button.prev::before {
+    content: "\2190";
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+button.next::after {
+    content: "\2192";
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+button.active {
+    text-shadow: 0.33px 0.33px #000000;
+    border: 1px solid #999999;
+}
+
+button {
+	color: #b3b3b3;
+	background-color: #282828;
+}
+
+button.delete {
+    border: 1px solid #d6caca;
+    background: #B94949;
+}
+
+.popn-nav button, .settings-nav button {
+    height: 32px;
+}
