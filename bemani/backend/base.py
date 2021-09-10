@@ -447,14 +447,22 @@ class Base(ABC):
 
     def get_game_config(self) -> ValidatedDict:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+
+        # If this machine belongs to an arcade, use its settings. If the settings aren't present,
+        # default to the game's defaults.
         if machine.arcade is not None:
             settings = self.data.local.machine.get_settings(machine.arcade, self.game, self.version, 'game_config')
-        else:
-            settings = None
+            if settings is None:
+                settings = ValidatedDict()
+            return settings
 
-        if settings is None:
-            settings = ValidatedDict()
-        return settings
+        # If this machine does not belong to an arcade, use the server-wide settings. If the settings
+        # aren't present, default ot the game's default.
+        else:
+            settings = self.data.local.machine.get_settings(self.data.local.machine.DEFAULT_SETTINGS_ARCADE, self.game, self.version, 'game_config')
+            if settings is None:
+                settings = ValidatedDict()
+            return settings
 
     def get_play_statistics(self, userid: UserID) -> PlayStatistics:
         """

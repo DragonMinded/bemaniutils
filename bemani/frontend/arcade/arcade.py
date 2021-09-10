@@ -6,6 +6,7 @@ from bemani.backend.base import Base
 from bemani.common import CardCipher, CardCipherException, ValidatedDict, GameConstants, RegionConstants
 from bemani.data import Arcade, ArcadeID, Event, Machine
 from bemani.frontend.app import loginrequired, jsonify, render_react, valid_pin
+from bemani.frontend.gamesettings import get_game_settings
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
@@ -85,60 +86,6 @@ def format_event(event: Event) -> Dict[str, Any]:
     }
 
 
-def get_game_settings(arcade: Arcade) -> List[Dict[str, Any]]:
-    game_lut: Dict[GameConstants, Dict[int, str]] = {}
-    settings_lut: Dict[GameConstants, Dict[int, Dict[str, Any]]] = {}
-    all_settings = []
-
-    for (game, version, name) in Base.all_games():
-        if game not in game_lut:
-            game_lut[game] = {}
-            settings_lut[game] = {}
-        game_lut[game][version] = name
-        settings_lut[game][version] = {}
-
-    for (game, version, settings) in Base.all_settings():
-        if not settings:
-            continue
-
-        # First, set up the basics
-        game_settings: Dict[str, Any] = {
-            'game': game.value,
-            'version': version,
-            'name': game_lut[game][version],
-            'bools': [],
-            'ints': [],
-            'strs': [],
-            'longstrs': [],
-        }
-
-        # Now, look up the current setting for each returned setting
-        for setting_type, setting_unpacker in [
-            ('bools', "get_bool"),
-            ('ints', "get_int"),
-            ('strs', "get_str"),
-            ('longstrs', "get_str"),
-        ]:
-            for setting in settings.get(setting_type, []):
-                if setting['category'] not in settings_lut[game][version]:
-                    cached_setting = g.data.local.machine.get_settings(arcade.id, game, version, setting['category'])
-                    if cached_setting is None:
-                        cached_setting = ValidatedDict()
-                    settings_lut[game][version][setting['category']] = cached_setting
-
-                current_settings = settings_lut[game][version][setting['category']]
-                setting['value'] = getattr(current_settings, setting_unpacker)(setting['setting'])
-                game_settings[setting_type].append(setting)
-
-        # Now, include it!
-        all_settings.append(game_settings)
-
-    return sorted(
-        all_settings,
-        key=lambda setting: (setting['game'], setting['version']),
-    )
-
-
 @arcade_pages.route('/<int:arcadeid>')
 @loginrequired
 def viewarcade(arcadeid: int) -> Response:
@@ -158,7 +105,7 @@ def viewarcade(arcadeid: int) -> Response:
             'arcade': format_arcade(arcade),
             'regions': RegionConstants.LUT,
             'machines': machines,
-            'game_settings': get_game_settings(arcade),
+            'game_settings': get_game_settings(g.data, arcadeid),
             'balances': {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
             'users': {user.id: user.username for user in g.data.local.user.get_all_users()},
             'events': [format_event(event) for event in g.data.local.network.get_events(arcadeid=arcadeid, event='paseli_transaction')],
@@ -526,7 +473,7 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
             new_value = game_setting['value']
 
             # Update the value
-            current_settings = g.data.local.machine.get_settings(arcade.id, game, version, category)
+            current_settings = g.data.local.machine.get_settings(arcadeid, game, version, category)
             if current_settings is None:
                 current_settings = ValidatedDict()
 
@@ -538,7 +485,7 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
     # Return the updated value
     return {
         'game_settings': [
-            gs for gs in get_game_settings(arcade)
+            gs for gs in get_game_settings(g.data, arcadeid)
             if gs['game'] == game.value and gs['version'] == version
         ][0],
     }

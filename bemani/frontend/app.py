@@ -727,6 +727,10 @@ def navigation() -> Dict[str, Any]:
                         'uri': url_for('admin_pages.viewmachines'),
                     },
                     {
+                        'label': 'Game Settings',
+                        'uri': url_for('admin_pages.viewgamesettings'),
+                    },
+                    {
                         'label': 'Cards',
                         'uri': url_for('admin_pages.viewcards'),
                     },
