@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from flask import Blueprint, request, Response, abort, url_for
 
 from bemani.backend.base import Base
