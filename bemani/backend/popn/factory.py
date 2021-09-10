@@ -81,6 +81,7 @@ class PopnMusicFactory(Factory):
                 return VersionConstants.POPN_MUSIC_USANEKO
             if date >= 2018101700:
                 return VersionConstants.POPN_MUSIC_PEACE
+            return None
 
         if model.gamecode == 'G15':
             return PopnMusicAdventure(data, config, model)

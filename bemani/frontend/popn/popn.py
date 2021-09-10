@@ -29,7 +29,6 @@ class PopnMusicFrontend(FrontendBase):
         VersionConstants.POPN_MUSIC_LAPISTORIA: 2,
         VersionConstants.POPN_MUSIC_ECLALE: 4,
         VersionConstants.POPN_MUSIC_USANEKO: 4,
-        VersionConstants.POPN_MUSIC_PEACE: 4,
     }
 
     def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
