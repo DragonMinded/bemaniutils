@@ -262,6 +262,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--verbose",
+        "-v",
         help="Display verbose parsing info.",
         action="store_true",
         default=False,

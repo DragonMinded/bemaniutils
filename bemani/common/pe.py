@@ -28,8 +28,8 @@ class Memory:
             else:
                 # Attempt to return the default.
                 for virtual_start in self.defaults:
-                    if offset >= virtual_start and offset < (virtual_start + len(self.defaults[virtual_start])):
-                        data.append(self.defaults[virtual_start][offset - virtual_start])
+                    if i >= virtual_start and i < (virtual_start + len(self.defaults[virtual_start])):
+                        data.append(self.defaults[virtual_start][i - virtual_start])
                         break
                 else:
                     # Nothing here, return initialized RAM.
@@ -224,6 +224,19 @@ class PEFile:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
                 result = fetch(registers, memory, size, src)
                 assign(registers, memory, size, dest, result)
+
+            elif mnemonic == "movzx":
+                dest = formatter.format_operand(inst, 0)
+                src = formatter.format_operand(inst, 1)
+
+                vprint(f"movzx {dest}, {src}")
+
+                srcsize = get_size(src)
+                dstsize = get_size(dest)
+                if srcsize is None or dstsize is None:
+                    raise Exception(f"Could not determine size of {mnemonic} operation!")
+                result = fetch(registers, memory, srcsize, src)
+                assign(registers, memory, dstsize, dest, result)
 
             elif mnemonic == "add":
                 dest = formatter.format_operand(inst, 0)
