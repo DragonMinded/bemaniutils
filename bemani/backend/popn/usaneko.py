@@ -55,29 +55,6 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                     }
                 },
                 {
-                    # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
-                    'name': 'Holiday Greeting',
-                    'tip': 'Changes the payment selection confirmation sound.',
-                    'category': 'game_config',
-                    'setting': 'holiday_greeting',
-                    'values': {
-                        0: 'Okay!',
-                        1: 'Merry Christmas!',
-                        2: 'Happy New Year!',
-                    }
-                },
-                {
-                    'name': 'Active Event',
-                    'tip': 'Active event for all players.',
-                    'category': 'game_config',
-                    'setting': 'active_event',
-                    'values': {
-                        0: 'No event',
-                        1: 'NAVI-Kun event',
-                        2: 'Daily Mission event',
-                    },
-                },
-                {
                     'name': 'NAVI-Kun Event Phase',
                     'tip': 'NAVI-Kun event phase for all players.',
                     'category': 'game_config',
@@ -101,8 +78,39 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                         15: 'Phase MAX',
                     },
                 },
+                {
+                    # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
+                    'name': 'Holiday Greeting',
+                    'tip': 'Changes the payment selection confirmation sound.',
+                    'category': 'game_config',
+                    'setting': 'holiday_greeting',
+                    'values': {
+                        0: 'Okay!',
+                        1: 'Merry Christmas!',
+                        2: 'Happy New Year!',
+                    }
+                },
+                {
+                    'name': 'Active Event',
+                    'tip': 'Active event for all players.',
+                    'category': 'game_config',
+                    'setting': 'active_event',
+                    'values': {
+                        0: 'No event',
+                        1: 'NAVI-Kun event',
+                        2: 'Daily Mission event',
+                    },
+                },
             ],
             'bools': [
+                # We don't currently support lobbies or anything, so this is commented out until
+                # somebody gets around to implementing it.
+                # {
+                #     'name': 'Net Taisen',
+                #     'tip': 'Enable Net Taisen, including win/loss display on song select',
+                #     'category': 'game_config',
+                #     'setting': 'enable_net_taisen',
+                # },
                 {
                     'name': 'Force Song Unlock',
                     'tip': 'Force unlock all songs.',
@@ -118,6 +126,7 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
         holiday_greeting = game_config.get_int('holiday_greeting')
         active_event = game_config.get_int('active_event')
         navikun_phase = game_config.get_int('navikun_phase')
+        enable_net_taisen = False  # game_config.get_bool('enable_net_taisen')
 
         navikun_enabled = active_event == 1
         daily_mission_enabled = active_event == 2
@@ -148,7 +157,7 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                 # Unknown event (0-1)
                 4: 1,
                 # Enable Net Taisen, including win/loss display on song select (0-1)
-                5: 1,
+                5: 1 if enable_net_taisen else 0,
                 # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1)
                 6: 1,
                 # Unknown event (0-1)
