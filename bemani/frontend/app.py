@@ -263,7 +263,7 @@ def jinja2_any(lval: Optional[List[Any]], pull: str, equals: str) -> bool:
 
 
 def jinja2_theme(filename: str) -> str:
-    return url_for('static', filename=f"{config.theme}/{filename}")
+    return url_for('static', filename=f"themes/{config.theme}/{filename}")
 
 
 @app.context_processor
