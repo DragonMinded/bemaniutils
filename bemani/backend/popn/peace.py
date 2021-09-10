@@ -33,15 +33,15 @@ class PopnMusicPeace(PopnMusicModernBase):
         Return all of our front-end modifiably settings.
         """
         return {
-           'ints': [
+            'ints': [
                 {
                     'name': 'Music Open Phase',
                     'tip': 'Default music phase for all players.',
                     'category': 'game_config',
                     'setting': 'music_phase',
                     'values': {
-                    # The value goes to 23 now, but it starts where usaneko left off at 11
-                    # Unlocks a total of 53 songs
+                        # The value goes to 23 now, but it starts where usaneko left off at 11
+                        # Unlocks a total of 53 songs
                         12: 'No music unlocks',
                         13: 'Phase 1',
                         14: 'Phase 2',
@@ -57,24 +57,13 @@ class PopnMusicPeace(PopnMusicModernBase):
                     }
                 },
                 {
-                    'name': 'Active Event',
-                    'tip': 'Active event for all players.',
-                    'category': 'game_config',
-                    'setting': 'active_event',
-                    'values': {
-                        0: 'No event',
-                        1: 'NAVI-Kun event',
-                        2: 'Daily Mission event',
-                    },
-                },
-                {
                     'name': 'NAVI-Kun Event Phase',
                     'tip': 'NAVI-Kun event phase for all players.',
                     'category': 'game_config',
                     'setting': 'navikun_phase',
                     'values': {
-                    # The value goes to 30 now, but it starts where usaneko left off at 15
-                    # Unlocks a total of 89 songs
+                        # The value goes to 30 now, but it starts where usaneko left off at 15
+                        # Unlocks a total of 89 songs
                         15: 'Phase 1',
                         16: 'Phase 2',
                         17: 'Phase 3',
@@ -106,59 +95,36 @@ class PopnMusicPeace(PopnMusicModernBase):
                     }
                 },
                 {
-                    # The following values control the pop'n music event archive.  Setting the flag to the following values has the corresponding effect. 
+                    # The following values control the pop'n music event archive.  Setting the flag to the following values has the corresponding effect.
                     # Each value will include the events above it, for example setting it to 5 gives you the pop'n 15 event, as well as SP, 12, and 11 events.
                     # Setting it to 0 disabled the event and skips the entire screen, setting it to 20 makes all of the events available for selection.
                     # Completing the minigame unlocks the associated content.
-
-                    #  1     pop'n music 11 - pop'n Tourist - The Latest Space Station (station CRUX / m@sumi & chara オクターブ)
-                    #  2     pop'n music 11 - pop'n Tourist - The Southernmost Point of the Universe (ナンキョク / クラゲータ [UPPER] / Kurotou mur.mur.)
-                    #  2     pop'n music 12 Iroha - pop'n Secret Ninja Scroll - Ninja Otasuke Cheat Sheet in Trouble (おたすけ！アン子ちゃん (シノビアンレディーのテーマ 弐) / ARM × 狐夢想 ft.ricono & chara シノビアンコ)
-                    #  3     pop'n music Sunny Park - pop'n Walker - I Love Walking in Happiness Park (ポチコの幸せな日常 (狂犬U`x´UばうわうHARDCORE Remix) / NU-KO remixed by RoughSketch & chara ポチコ)
-                    #  4     pop'n music 12 Iroha - pop'n Secret Ninja Scroll - Ninja Code: April 1st Volume (ハイパーロッケンローレ / エイプリルフールの唄 [UPPER] / AKIRA YAMAOKA)
-                    #  5     pop'n music 15 ADVENTURE - Mimi Nyami Exciting Expedition - Route to Awaken the Soul (Crumble Soul / lapix & chara ナディ)
-                    #  6     pop'n music 20 fantasia - Go for it! pop'n Quest - A Braided Fantasy Song (トランスコア / FLOWER [UPPER] / DJ YOSHITAKA)
-                    #  7     EXTRA (クリアトーン / さようならは言わないけれど / Water Stand & chara 文彦さん (CS10))
-                    #  7     EXTRA part 2 (Popperz Chronicle [UPPER] / pop'n masters & chara MZD (2P))
-                    #  8     pop'n music 15 ADVENTURE - Mimi Nyami Exciting Expedition - A Route with a Faint Bell Sound (BEEF / BEMANI Sound Team "牛")
-                    #  9     pop'n music 13 Carnival - Exciting Pop'n Land - Bunny Magician Attraction (マッシュルームナイト / SOUND HOLIC feat. Nana Takahashi & chara キャロル)
-                    # 10     pop'n music 14 FEVER! - Fever Warrior Pop'n 14 - That Burning Special Attack, again! (ネオクラシカル・へヴィメタル / Aithon [UPPER] / Kozo Nakamura)
-                    # 11     pop'n music Sunny Park - pop'n Walker - Festival Nightfall Park (天鈴少女 / 駄々子 & chara てまり)
-                    # 12     pop'n music 20 fantasia - Go for it! pop'n Quest - A Fantasy Song by the Bladed Warrior (Celsus II / onoken feat.夏川陽子 & chara イリス)
-                    # 13     pop'n music 19 TUNE STREET - Town Mode - A Town Where the Sound of the Brass Band Rings After School (放課後コンチェルティーノ～私だけの部室狂騒曲 / 山本真央樹 & chara まりん)
-                    # 14     pop'n music eclale - pop'n Star Maker - Fun Rag Hour (CARTOON ☆ Rag Hour / OSTER project & chara ほるん)
-                    # 15     pop'n music 13 Carnival - Exciting Pop'n Land - Ghost Piano Attraction (Dracophobia / 上ノ瀬つかさ        )
-                    # 16     pop'n music 14 FEVER! - Fever Warrior Pop'n 15 - That Warrior Defending Peace, again! (爆裂再生！フィーバー戦士ポップン14 / Hommarju feat.BEMANI Sound Team "PON" & chara ポップン14)
-                    # 17     pop'n music 18 Sengoku Retsuden - Aim to Unite the world! pop'n Fuunroku - A Territory with a Glamorous Cultural Flavor (元禄花吹雪 / 泉 陸奥彦)
-                    # 18     pop'n music eclale - pop'n Star Maker - Runaway Guitarist in the Starry Sky (MADSPEED狂信道 [UPPER]         / cosMo@暴走Ultimate)
-                    # 19     pop'n music 17 THE MOVIE - pop'n Film Festival - A Blockbuster Uncovering a Conspiracy in the Peaceful City (夕陽のダンディー / BEMANI Sound Team "劇ダンディーレコード" & chara 一条司令)
-                    # 20     pop'n music lapistoria - Story - God's Forgotten Things (perditus † paradisus [UPPER] / iconoclasm)
                     'name': 'Event Archive Phase',
                     'tip': 'Event Archive mini-game phase for all players.',
                     'category': 'game_config',
                     'setting': 'event_archive_phase',
                     'values': {
                         0: 'Event Archive disabled',
-                        1: 'The Latest Space Station',
-                        2: 'The Southernmost Point of the Universe & Ninja Otasuke Cheat Sheet in Trouble',
-                        3: 'I Love Walking in Happiness Park',
-                        4: 'Ninja Code: April 1st Volume',
-                        5: 'Route to Awaken the Soul',
-                        6: 'A Braided Fantasy Song',
-                        7: 'EXTRA & EXTRA part 2',
-                        8: 'A Route with a Faint Bell Sound',
-                        9: 'Bunny Magician Attraction',
-                        10: 'That Burning Special Attack, again!',
-                        11: 'Festival Nightfall Park',
-                        12: 'A Fantasy Song by the Bladed Warrior',
-                        13: 'A Town Where the Sound of the Brass Band Rings After School',
-                        14: 'Fun Rag Hour',
-                        15: 'Ghost Piano Attraction',
-                        16: 'That Warrior Defending Peace, again!',
-                        17: 'A Territory with a Glamorous Cultural Flavor',
-                        18: 'Runaway Guitarist in the Starry Sky',
-                        19: 'A Blockbuster Uncovering a Conspiracy in the Peaceful City',
-                        20: 'God\'s Forgotten Things',
+                        1: 'pop\'n music 11 - The Latest Space Station',
+                        2: 'pop\'n music 11 & 12 Iroha - The Southernmost Point of the Universe / Ninja Otasuke Cheat Sheet in Trouble',
+                        3: 'pop\'n music Sunny Park - I Love Walking in Happiness Park',
+                        4: 'pop\'n music 12 Iroha - Ninja Code: April 1st Volume',
+                        5: 'pop\'n music 15 ADVENTURE - Route to Awaken the Soul',
+                        6: 'pop\'n music 20 fantasia - A Braided Fantasy Song',
+                        7: 'EXTRA',
+                        8: 'pop\'n music 15 ADVENTURE - A Route with a Faint Bell Sound',
+                        9: 'pop\'n music 13 Carnival - Bunny Magician Attraction',
+                        10: 'pop\'n music 14 FEVER! - That Burning Special Attack, again!',
+                        11: 'pop\'n music Sunny Park - Festival Nightfall Park',
+                        12: 'pop\'n music 20 fantasia - A Fantasy Song by the Bladed Warrior',
+                        13: 'pop\'n music 19 TUNE STREET - A Town Where the Sound of the Brass Band Rings After School',
+                        14: 'pop\'n music éclale - Fun Rag Hour',
+                        15: 'pop\'n music 13 Carnival - Ghost Piano Attraction',
+                        16: 'pop\'n music 14 FEVER! - That Warrior Defending Peace, again!',
+                        17: 'pop\'n music 18 Sengoku Retsuden - A Territory with a Glamorous Cultural Flavor',
+                        18: 'pop\'n music éclale - Runaway Guitarist in the Starry Sky',
+                        19: 'pop\'n music 17 THE MOVIE - A Blockbuster Uncovering a Conspiracy in the Peaceful City',
+                        20: 'pop\'n music lapistoria - God\'s Forgotten Things',
                     }
                 },
             ],
@@ -182,13 +148,10 @@ class PopnMusicPeace(PopnMusicModernBase):
     def get_common_config(self) -> Tuple[Dict[int, int], bool, int]:
         game_config = self.get_game_config()
         music_phase = game_config.get_int('music_phase')
-        active_event = game_config.get_int('active_event')
         event_archive_phase = game_config.get_int('event_archive_phase')
         holiday_greeting = game_config.get_int('holiday_greeting')
         enable_net_taisen = game_config.get_bool('enable_net_taisen')
 
-        navikun_enabled = active_event == 1
-        daily_mission_enabled = active_event == 2
         # Event phases
         return (
             {
@@ -228,7 +191,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # Unknown event (0-1)
                 4: 1,
                 # Enable Net Taisen, including win/loss display on song select (0-1)
-                5: 1,
+                5: enable_net_taisen,
                 # Enable NAVI-kun shunkyoku toujou, allows song 1608 to be unlocked (0-1)
                 6: 1,
                 # Unknown event (0-1)
@@ -323,6 +286,6 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # 1 - 1845, 1846, 1847
                 24: 1,
             },
-            navikun_enabled,
+            False,
             133,
         )
