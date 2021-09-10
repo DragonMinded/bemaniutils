@@ -16,7 +16,7 @@ table.list th {
     font-weight: bold;
     padding: 10px;
     text-align: left;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #6a6a6a;
 }
 
 table.list th.action {
@@ -30,7 +30,7 @@ table.list tbody td, table.add tbody td {
 }
 
 table.list tbody td {
-    border: 1px solid #e0e0e0;
+    border: 1px solid #6a6a6a;
     padding: 10px;
 }
 
