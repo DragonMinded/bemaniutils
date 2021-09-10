@@ -3,10 +3,11 @@ from typing import Dict, Tuple, Any, Optional
 from flask import Blueprint, request, Response, render_template, url_for
 
 from bemani.backend.base import Base
-from bemani.common import CardCipher, CardCipherException, GameConstants, RegionConstants
+from bemani.common import CardCipher, CardCipherException, GameConstants, RegionConstants, ValidatedDict
 from bemani.data import Arcade, Machine, User, UserID, News, Event, Server, Client
 from bemani.data.api.client import APIClient, NotAuthorizedAPIException, APIException
 from bemani.frontend.app import adminrequired, jsonify, valid_email, valid_username, valid_pin, render_react
+from bemani.frontend.gamesettings import get_game_settings
 from bemani.frontend.iidx.iidx import IIDXFrontend
 from bemani.frontend.jubeat.jubeat import JubeatFrontend
 from bemani.frontend.popn.popn import PopnMusicFrontend
@@ -316,6 +317,21 @@ def viewnews() -> Response:
             'removenews': url_for('admin_pages.removenews'),
             'addnews': url_for('admin_pages.addnews'),
             'updatenews': url_for('admin_pages.updatenews'),
+        },
+    )
+
+
+@admin_pages.route('/gamesettings')
+@adminrequired
+def viewgamesettings() -> Response:
+    return render_react(
+        'Game Settings',
+        'admin/gamesettings.react.js',
+        {
+            'game_settings': get_game_settings(g.data, g.data.local.machine.DEFAULT_SETTINGS_ARCADE),
+        },
+        {
+            'update_settings': url_for('admin_pages.updatesettings'),
         },
     )
 
@@ -1080,4 +1096,45 @@ def updatenews() -> Dict[str, Any]:
 
     return {
         'news': [format_news(news) for news in g.data.local.network.get_all_news()],
+    }
+
+
+@admin_pages.route('/gamesettings/update', methods=['POST'])
+@jsonify
+@adminrequired
+def updatesettings() -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = g.data.local.machine.DEFAULT_SETTINGS_ARCADE
+
+    game = GameConstants(request.get_json()['game'])
+    version = request.get_json()['version']
+
+    for setting_type, update_function in [
+        ('bools', 'replace_bool'),
+        ('ints', 'replace_int'),
+        ('strs', 'replace_str'),
+        ('longstrs', 'replace_str'),
+    ]:
+        for game_setting in request.get_json()[setting_type]:
+            # Grab the value to update
+            category = game_setting['category']
+            setting = game_setting['setting']
+            new_value = game_setting['value']
+
+            # Update the value
+            current_settings = g.data.local.machine.get_settings(arcadeid, game, version, category)
+            if current_settings is None:
+                current_settings = ValidatedDict()
+
+            getattr(current_settings, update_function)(setting, new_value)
+
+            # Save it back
+            g.data.local.machine.put_settings(arcadeid, game, version, category, current_settings)
+
+    # Return the updated value
+    return {
+        'game_settings': [
+            gs for gs in get_game_settings(g.data, arcadeid)
+            if gs['game'] == game.value and gs['version'] == version
+        ][0],
     }
