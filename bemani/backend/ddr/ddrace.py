@@ -578,7 +578,13 @@ class DDRAce(
         response.add_child(Node.string('shoparea', ''))
 
     def __handle_inheritance(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
-        response.add_child(Node.s32('InheritanceStatus', 0))
+        if userid is not None:
+            previous_version = self.previous_version()
+            profile = previous_version.get_profile(userid)
+        else:
+            profile = None
+
+        response.add_child(Node.s32('InheritanceStatus', 1 if profile is not None else 0))
 
     def __handle_ghostload(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         ghostid = requestdata.child_value('ghostid')
@@ -713,9 +719,22 @@ class DDRAce(
 
                         if ptype == "COMMON":
                             # Return basic profile options
+                            name = profile.get_str('name')
+                            area = profile.get_int('area', self.get_machine_region())
+                            if name == "":
+                                # This is a bogus profile created by the first login, substitute the
+                                # previous version values so that profile succession works.
+                                previous_version = self.previous_version()
+                                old_profile = previous_version.get_profile(userid)
+                                if old_profile is not None:
+                                    name = old_profile.get_str('name')
+                                    area = old_profile.get_int('area', self.get_machine_region())
+                                else:
+                                    area = self.get_machine_region()
+
                             common = usergamedata[ptype]['strdata'].split(b',')
-                            common[self.GAME_COMMON_NAME_OFFSET] = profile.get_str('name').encode('ascii')
-                            common[self.GAME_COMMON_AREA_OFFSET] = acehex(profile.get_int('area')).encode('ascii')
+                            common[self.GAME_COMMON_NAME_OFFSET] = name.encode('ascii')
+                            common[self.GAME_COMMON_AREA_OFFSET] = acehex(area).encode('ascii')
                             common[self.GAME_COMMON_WEIGHT_DISPLAY_OFFSET] = b'1' if profile.get_bool('workout_mode') else b'0'
                             common[self.GAME_COMMON_WEIGHT_OFFSET] = str(float(profile.get_int('weight')) / 10.0).encode('ascii')
                             common[self.GAME_COMMON_CHARACTER_OFFSET] = acehex(profile.get_int('character')).encode('ascii')
