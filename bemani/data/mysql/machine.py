@@ -2,6 +2,7 @@ from sqlalchemy import Table, Column, UniqueConstraint  # type: ignore
 from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
+from typing_extensions import Final
 
 from bemani.common import GameConstants, ValidatedDict
 from bemani.data.mysql.base import BaseData, metadata
@@ -79,6 +80,10 @@ class ArcadeCreationException(Exception):
 
 
 class MachineData(BaseData):
+
+    # This relies on the fact that arcadeid in the arcade_settings table is auto-increment
+    # and thus will start at 1.
+    DEFAULT_SETTINGS_ARCADE: Final[ArcadeID] = ArcadeID(-1)
 
     def from_port(self, port: int) -> Optional[str]:
         """
