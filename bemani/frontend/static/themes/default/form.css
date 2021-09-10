@@ -42,14 +42,13 @@ div.buttons {
 
 input[type="submit"] {
     border: 1px solid #cddcc1;
-    background: #49B979;
+    background: #e7ffd4;
     margin-right: 5px;
 }
 
 input[type="button"], button.nav, button.toggle, button.edit, button.add, button.viewmore, button.btn-default {
     border: 1px solid #dadada;
-	color: #b0b1b2;
-    background: #282828;
+    background: #f8f8f8;
     margin-right: 5px;
 }
 
@@ -66,7 +65,6 @@ input[type="text"], input[type="password"], textarea {
     border: 1px solid #dadada;
     padding: 4px;
     border-radius: 0px;
-	background-color: #b3b4b5;
 }
 
 select {
@@ -86,15 +84,13 @@ button.toggle:not(:last-child):not(:only-child), button.edit:not(:last-child):no
 span + button.edit, span + button.toggle, span + button.delete, span + button.add,
 div + button.edit, div + button.toggle, div + button.delete, div + button.add {
     margin-left: 15px;
-    background-color: #282828;
-	color: #b3b3b3;
 }
 
 button.nav {
     margin-bottom: 5px;
     margin-right: 0px;
     border: 1px solid #dadada;
-    background-color: #282828;
+    background: #f8f8f8;
 }
 
 button.prev::before {
@@ -114,14 +110,9 @@ button.active {
     border: 1px solid #999999;
 }
 
-button {
-	color: #b3b3b3;
-	background-color: #282828;
-}
-
 button.delete {
     border: 1px solid #d6caca;
-    background: #B94949;
+    background: #ffe4e4;
 }
 
 .popn-nav button, .settings-nav button {

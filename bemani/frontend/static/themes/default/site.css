@@ -1,14 +1,9 @@
 body {
     font-family: Helvetica;
-    color: #b3b3b3;
     margin: 0px;
     padding-bottom: 30px;
-    background-color: #121212;
 }
 
-a {
-	color: #878889;
-}
 div.messages {
     padding-top: 0px;
     padding-bottom: 0px;
