@@ -971,12 +971,12 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
 
         game_config = self.get_game_config()
         if game_config.get_bool('force_unlock_songs'):
-            songs = self.data.local.music.get_all_songs(self.game, self.version)
+            songs = {song.id for song in self.data.local.music.get_all_songs(self.game, self.version)}
             for song in songs:
                 item = Node.void('item')
                 root.add_child(item)
                 item.add_child(Node.u8('type', 0))
-                item.add_child(Node.u16('id', song.id))
+                item.add_child(Node.u16('id', song))
                 item.add_child(Node.u16('param', 15))
                 item.add_child(Node.bool('is_new', False))
                 item.add_child(Node.u64('get_time', 0))
