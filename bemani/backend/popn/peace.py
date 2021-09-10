@@ -95,10 +95,11 @@ class PopnMusicPeace(PopnMusicModernBase):
                     }
                 },
                 {
-                    # The following values control the pop'n music event archive.  Setting the flag to the following values has the corresponding effect.
-                    # Each value will include the events above it, for example setting it to 5 gives you the pop'n 15 event, as well as SP, 12, and 11 events.
-                    # Setting it to 0 disabled the event and skips the entire screen, setting it to 20 makes all of the events available for selection.
-                    # Completing the minigame unlocks the associated content.
+                    # The following values control the pop'n music event archive. Setting the flag to the following values has the
+                    # corresponding effect. Each value will include the events above it, for example setting it to 5 gives you the
+                    # pop'n 15 event, as well as SP, 12, and 11 events.  Setting it to 0 disabled the event and skips the entire screen,
+                    #setting it to 20 makes all of the events available for selection. Completing the minigame unlocks the associated content.
+
                     'name': 'Event Archive Phase',
                     'tip': 'Event Archive mini-game phase for all players.',
                     'category': 'game_config',
@@ -251,7 +252,7 @@ class PopnMusicPeace(PopnMusicModernBase):
                 # The following songs are linked to this event:
                 # 1 - 1223, 1224, 1225, 1239, 1240, 1241, 1245, 1247, 1340, 1342, 1394, 1523, 1524, 1525, 1598, 1667, 1668, 1666
                 18: 1,
-                # pop'n music × NOSTALGIA kyouenka
+                # pop'n music × NOSTALGIA kyouenkai (0-1)
                 # Setting this to 1 is linked to the song 1695
                 19: 1,
                 # Event archive event (0-13)
