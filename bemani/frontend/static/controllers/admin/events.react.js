@@ -10,6 +10,7 @@ var possible_events = [
     'pcbevent',
     'paseli_transaction',
     'pnm_course',
+    'ddr_profile_purge',
 ];
 
 var event_names = {
@@ -22,6 +23,7 @@ var event_names = {
     'pnm_course': 'Pop\'n Music Course',
     'pcbevent': 'PCB Events',
     'paseli_transaction': 'PASELI Transactions',
+    'ddr_profile_purge': 'DDR Ace Profile Purge',
 };
 
 var mergehandler = new MergeManager(function(evt) { return evt.id; }, MergeManager.MERGE_POLICY_DROP);
@@ -176,6 +178,8 @@ var audit_events = React.createClass({
                                     return <PASELITransactionEvent event={event} users={this.state.users} arcades={this.state.arcades} />;
                                 } else if(event.type == 'pnm_course') {
                                     return <PopnMusicCourseEvent event={event} versions={this.state.pnmversions} songs={this.state.pnmsongs} />;
+                                } else if(event.type == 'ddr_profile_purge') {
+                                    return <DDRProfilePurge event={event} users={this.state.users} />;
                                 } else {
                                     return <UnknownEvent event={event} />;
                                 }

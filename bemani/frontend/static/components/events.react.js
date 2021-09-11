@@ -341,3 +341,40 @@ var PopnMusicCourseEvent = React.createClass({
         );
     },
 });
+
+var DDRProfilePurge = React.createClass({
+    render: function() {
+        var event = this.props.event;
+        var username = null;
+        var user = null;
+        if (this.props.users) {
+            if (this.props.users[event.data.userid]) {
+                username = this.props.users[event.data.userid];
+            }
+            if (username == null) {
+                user = <span className="placeholder">anonymous account</span>;
+            } else {
+                user = <span>{username}</span>;
+            }
+        }
+
+        return (
+            <tr key={event.id}>
+                <td><Timestamp timestamp={event.timestamp} /></td>
+                <td className="profilepurge">
+                    <div className="circle" />
+                    DDR Ace Profile Purge
+                </td>
+                <td className="details">
+                    { user ?
+                        <div>
+                            <div className="inline">User:</div>
+                            <div className="inline"><a href={Link.get('viewuser', event.data.userid)}>{user}</a></div>
+                        </div> : null
+                    }
+                    <div>Orphaned DDR Ace account was purged from the network.</div>
+                </td>
+            </tr>
+        );
+    },
+});

@@ -1,13 +1,13 @@
 # vim: set fileencoding=utf-8
 import base64
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.ddr.base import DDRBase
 from bemani.backend.ddr.ddr2014 import DDR2014
 from bemani.common import Profile, ValidatedDict, VersionConstants, CardCipher, Time, ID, intish
-from bemani.data import Achievement, Machine, Score, UserID
+from bemani.data import Data, Achievement, Machine, Score, UserID
 from bemani.protocol import Node
 
 
@@ -104,6 +104,37 @@ class DDRAce(
 
     def previous_version(self) -> Optional[DDRBase]:
         return DDR2014(self.data, self.config, self.model)
+
+    @classmethod
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
+        # DDR Ace has a weird bug where it sends a profile save for a blank
+        # profile before reading it back when creating a new profile. If there
+        # is no profile on read-back, it errors out, and it also uses the name
+        # and area ID as the takeover/succession data if the user had previous
+        # data on an old game. However, if for some reason the user cancels out
+        # of the name entry, loses power or disconnects from the network at the
+        # right time, then the profile exists in a broken state forever until they
+        # edit it on the front-end. As a work-around to this, we remember the last
+        # time each profile was written to, and we look up profiles that are older
+        # than a few minutes (the maximum possible time for DDR Ace to write back
+        # a new profile after creating a blank one) and have blank names and delete
+        # them in order to keep the profiles on the network in sane order. This
+        # should normally never delete any profiles.
+        profiles = data.local.user.get_all_profiles(cls.game, cls.version)
+        several_minutes_ago = Time.now() - (Time.SECONDS_IN_MINUTE * 5)
+        events = []
+
+        for userid, profile in profiles:
+            if profile.get_str('name') == "" and profile.get_int('write_time') < several_minutes_ago:
+                data.local.user.delete_profile(cls.game, cls.version, userid)
+                events.append((
+                    'ddr_profile_purge',
+                    {
+                        'userid': userid,
+                    },
+                ))
+
+        return events
 
     @property
     def supports_paseli(self) -> bool:
@@ -681,6 +712,7 @@ class DDRAce(
                 }
 
             profile.replace_dict('usergamedata', usergamedata)
+            profile.replace_int('write_time', Time.now())
             self.put_profile(userid, profile)
 
         playerdata.add_child(Node.s32('result', 0))

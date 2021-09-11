@@ -724,6 +724,21 @@ class UserData(BaseData):
         if profile.extid == 0:
             profile.extid = self.get_extid(game, version, userid)
 
+    def delete_profile(self, game: GameConstants, version: int, userid: UserID) -> None:
+        """
+        Given a game/version/userid, delete any associated profile.
+
+        Parameters:
+            game - Enum value identifier of the game looking up the user.
+            version - Integer version of the game looking up the user.
+            userid - Integer user ID, as looked up by one of the above functions.
+        """
+        refid = self.get_refid(game, version, userid)
+
+        # Delete profile JSON to unlink the profile for this game/version.
+        sql = "DELETE FROM profile WHERE refid = :refid LIMIT 1"
+        self.execute(sql, {'refid': refid})
+
     def get_achievement(self, game: GameConstants, version: int, userid: UserID, achievementid: int, achievementtype: str) -> Optional[ValidatedDict]:
         """
         Given a game/version/userid and achievement id/type, find that achievement.

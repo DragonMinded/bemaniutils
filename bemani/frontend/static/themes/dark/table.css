@@ -133,3 +133,7 @@ table.events td.pcbevent div.circle {
 table.events td.transaction div.circle {
     background-color: #f9ed00;
 }
+
+table.events td.profilepurge div.circle {
+    background-color: rgb(214, 72, 72);
+}
