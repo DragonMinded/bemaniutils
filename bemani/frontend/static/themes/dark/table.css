@@ -16,11 +16,11 @@ table.list th {
     font-weight: bold;
     padding: 10px;
     text-align: left;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #6a6a6a;
 }
 
 table.list th.action {
-    background-color: #808080;
+    background-color: #b3b4b5;
     border: none;
 }
 
@@ -30,7 +30,7 @@ table.list tbody td, table.add tbody td {
 }
 
 table.list tbody td {
-    border: 1px solid #e0e0e0;
+    border: 1px solid #6a6a6a;
     padding: 10px;
 }
 
@@ -56,7 +56,7 @@ table.list tbody tr:nth-child(even) td {
 }
 
 table td.subheader {
-    background-color: #e7e7e7 ! important;
+    background-color: #b3b4b5 ! important;
     font-weight: bold;
 }
 
@@ -73,7 +73,7 @@ table.records a, table.attempts a, table.topscores a, table.players a {
 }
 
 td.edit {
-    background-color: #808080 ! important;
+    background-color: #b3b4b5 ! important;
     border: none ! important;
 }
 
@@ -85,6 +85,10 @@ table.list input[type="checkbox"], table.add input[type="checkbox"] {
     width: 26px;
     height: 26px;
     margin: 0px;
+}
+
+td.subheader {
+    color: 121212;
 }
 
 table.events div.circle {
