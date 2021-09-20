@@ -266,6 +266,7 @@ class PlacedClip(PlacedObject):
         if actual_frame is None:
             print(f"WARNING: Non-integer frame {frame} to setInvisibleUntil function!")
             return
+        actual_frame += self.frameOffset - 1
         self.visible = False
         if actual_frame <= 0:
             actual_frame = 1
