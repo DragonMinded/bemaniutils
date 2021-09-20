@@ -1428,11 +1428,15 @@ class AFPRenderer(VerboseOutput):
 
         # Make sure to set the requested frame if it isn't set by an external force.
         if clip.requested_frame is None:
-            if not clip.playing or clip.finished or only_dirty:
+            if not clip.playing or only_dirty or (clip.finished and clip is self.__root):
                 # We aren't playing this clip because its either paused or finished,
                 # or it isn't dirty and we're doing dirty updates only. So, we don't
                 # need to advance to any frame.
                 clip.requested_frame = clip.frame
+            elif clip.finished:
+                # Rewind the clip to the beginning, loop it.
+                clip.rewind()
+                clip.requested_frame = clip.frame + 1
             else:
                 # We need to do as many things as we need to get to the next frame.
                 clip.requested_frame = clip.frame + 1
