@@ -272,6 +272,7 @@ class PlacedClip(PlacedObject):
         if actual_frame > len(self.source.frames):
             actual_frame = len(self.source.frames)
         self.visible_frame = actual_frame
+        self.__check_visible()
 
     @property
     def frameOffset(self) -> int:
@@ -435,16 +436,76 @@ class AEPLib:
             print(f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!")
             return UNDEFINED
 
-    def deepGotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
-        # I don't know how this differs from regular gotoAndPlay.
+    def gotoAndStop(self, thisptr: Any, frame: Any) -> Any:
+        # This appears to be a wrapper to allow calling gotoAndStop on clips.
         try:
-            meth = getattr(thisptr, 'gotoAndPlay')
+            meth = getattr(thisptr, 'gotoAndStop')
 
             # Call it, set the return on the stack.
             return meth(frame)
         except AttributeError:
             # Function does not exist!
+            print(f"WARNING: Tried to call gotoAndStop({frame}) on {thisptr} but that method doesn't exist!")
+            return UNDEFINED
+
+    def deepGotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
+        # This is identical to regular gotoAndPlay, however it also recursively
+        # goes through and sets all child clips playing as well.
+        try:
+            meth = getattr(thisptr, 'gotoAndPlay')
+
+            # Call it, set the return on the stack.
+            retval = meth(frame)
+
+            # Recursively go through any children of "thisptr" and call play
+            # on them as well.
+            def play_children(obj: Any) -> None:
+                if isinstance(obj, PlacedClip):
+                    obj.play()
+                    for child in obj.placed_objects:
+                        play_children(child)
+
+            play_children(thisptr)
+            return retval
+        except AttributeError:
+            # Function does not exist!
             print(f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!")
+            return UNDEFINED
+
+    def deepGotoAndStop(self, thisptr: Any, frame: Any) -> Any:
+        # This is identical to regular gotoAndStop, however it also recursively
+        # goes through and sets all child clips stopped as well.
+        try:
+            meth = getattr(thisptr, 'gotoAndStop')
+
+            # Call it, set the return on the stack.
+            retval = meth(frame)
+
+            # Recursively go through any children of "thisptr" and call stop
+            # on them as well.
+            def stop_children(obj: Any) -> None:
+                if isinstance(obj, PlacedClip):
+                    obj.stop()
+                    for child in obj.placed_objects:
+                        stop_children(child)
+
+            stop_children(thisptr)
+            return retval
+        except AttributeError:
+            # Function does not exist!
+            print(f"WARNING: Tried to call gotoAndStop({frame}) on {thisptr} but that method doesn't exist!")
+            return UNDEFINED
+
+    def play(self, thisptr: Any) -> Any:
+        # This appears to be a wrapper to allow calling play on clips.
+        try:
+            meth = getattr(thisptr, 'play')
+
+            # Call it, set the return on the stack.
+            return meth()
+        except AttributeError:
+            # Function does not exist!
+            print(f"WARNING: Tried to call play() on {thisptr} but that method doesn't exist!")
             return UNDEFINED
 
     def stop(self, thisptr: Any) -> Any:
