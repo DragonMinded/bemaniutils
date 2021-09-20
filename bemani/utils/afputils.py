@@ -354,7 +354,7 @@ def parse_afp(afp: str, bsi: str, *, decompile_bytecode: bool=False, verbose: bo
     return 0
 
 
-def decompile_afp(afp: str, bsi: str, output_dir: str, *, decompile_bytecode: bool=False, verbose: bool=False) -> int:
+def decompile_afp(afp: str, bsi: str, output_dir: str, *, verbose: bool=False) -> int:
     # First, load the AFP and BSI files
     with open(afp, "rb") as bafp:
         with open(bsi, "rb") as bbsi:
@@ -1227,7 +1227,7 @@ def main() -> int:
     elif args.action == "parseafp":
         return parse_afp(args.afp, args.bsi, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
     elif args.action == "decompile":
-        return decompile_afp(args.afp, args.bsi, args.directory, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
+        return decompile_afp(args.afp, args.bsi, args.directory, verbose=args.verbose)
     elif args.action == "parsegeo":
         return parse_geo(args.geo, verbose=args.verbose)
     elif args.action == "list":
