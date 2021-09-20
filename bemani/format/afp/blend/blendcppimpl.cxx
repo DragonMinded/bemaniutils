@@ -196,6 +196,24 @@ extern "C"
         };
     }
 
+    intcolor_t blend_overlay(
+        intcolor_t dest,
+        intcolor_t src
+    ) {
+        // "Overlay" blend mode. Various games use the DX equation Src * Dst + Dst * Src. It appears that
+        // jubeat uses the alternative formula Src * Dst + Dst * (1 - As).
+
+        // Calculate final color blending.
+        double src_alpha = src.a / 255.0;
+        double src_remainder = 1.0 - src_alpha;
+        return (intcolor_t){
+            clamp((255 * (2.0 * (dest.r / 255.0) * (src.r / 255.0) * src_alpha)) + (dest.r * src_remainder)),
+            clamp((255 * (2.0 * (dest.g / 255.0) * (src.g / 255.0) * src_alpha)) + (dest.g * src_remainder)),
+            clamp((255 * (2.0 * (dest.b / 255.0) * (src.b / 255.0) * src_alpha)) + (dest.b * src_remainder)),
+            dest.a,
+        };
+    }
+
     intcolor_t blend_mask_create(
         intcolor_t dest,
         intcolor_t src
@@ -247,15 +265,16 @@ extern "C"
         // premultiply by alpha, but the GL/DX equation is max(Src * As, Dst * 1).
         // TODO: blend mode 6, which is "darken" blending according to SWF references. Jubeat does not
         // premultiply by alpha, but the GL/DX equation is min(Src * As, Dst * 1).
-        // TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
-        // that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
-        // TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
-        // Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
         if (blendfunc == 8) {
             return blend_addition(dest_color, src_color);
         }
         if (blendfunc == 9 || blendfunc == 70) {
             return blend_subtraction(dest_color, src_color);
+        }
+        // TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
+        // that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
+        if (blendfunc == 13) {
+            return blend_overlay(dest_color, src_color);
         }
         if (blendfunc == 256) {
             return blend_mask_combine(dest_color, src_color);

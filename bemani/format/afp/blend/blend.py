@@ -121,6 +121,26 @@ def blend_multiply(
     )
 
 
+def blend_overlay(
+    # RGBA color tuple representing what's already at the dest.
+    dest: Sequence[int],
+    # RGBA color tuple representing the source we want to blend to the dest.
+    src: Sequence[int],
+) -> Sequence[int]:
+    # "Overlay" blend mode. Various games use the DX equation Src * Dst + Dst * Src. It appears that
+    # jubeat uses the alternative formula Src * Dst + Dst * (1 - As).
+
+    # Calculate final color blending.
+    src_alpha = src[3] / 255.0
+    src_remainder = 1.0 - src_alpha
+    return (
+        clamp((255 * (2.0 * (dest[0] / 255.0) * (src[0] / 255.0) * src_alpha)) + (dest[0] * src_remainder)),
+        clamp((255 * (2.0 * (dest[1] / 255.0) * (src[1] / 255.0) * src_alpha)) + (dest[1] * src_remainder)),
+        clamp((255 * (2.0 * (dest[2] / 255.0) * (src[2] / 255.0) * src_alpha)) + (dest[2] * src_remainder)),
+        dest[3],
+    )
+
+
 def blend_mask_create(
     # RGBA color tuple representing what's already at the dest.
     dest: Sequence[int],
@@ -175,14 +195,14 @@ def blend_point(
     # premultiply by alpha, but the GL/DX equation is max(Src * As, Dst * 1).
     # TODO: blend mode 6, which is "darken" blending according to SWF references. Jubeat does not
     # premultiply by alpha, but the GL/DX equation is min(Src * As, Dst * 1).
-    # TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
-    # that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
-    # TODO: blend mode 13, which is "overlay" according to SWF references. The equation seems to be
-    # Src * Dst + Dst * Src but Jubeat thinks it should be Src * Dst + Dst * (1 - As).
     elif blendfunc == 8:
         return blend_addition(dest_color, src_color)
     elif blendfunc == 9 or blendfunc == 70:
         return blend_subtraction(dest_color, src_color)
+    # TODO: blend mode 10, which is "invert" according to SWF references. The only game I could find
+    # that implemented this had equation Src * (1 - Dst) + Dst * (1 - As).
+    if blendfunc == 13:
+        return blend_overlay(dest_color, src_color)
     # TODO: blend mode 75, which is not in the SWF spec and appears to have the equation
     # Src * (1 - Dst) + Dst * (1 - Src).
     elif blendfunc == 256:
@@ -440,7 +460,7 @@ def affine_composite(
         return img
 
     # Warn if we have an unsupported blend.
-    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 13, 70, 256, 257}:
         print(f"WARNING: Unsupported blend {blendfunc}")
         return img
 
@@ -656,7 +676,7 @@ def perspective_composite(
     aa_mode: int = AAMode.SSAA_ONLY,
 ) -> Image.Image:
     # Warn if we have an unsupported blend.
-    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 13, 70, 256, 257}:
         print(f"WARNING: Unsupported blend {blendfunc}")
         return img
 

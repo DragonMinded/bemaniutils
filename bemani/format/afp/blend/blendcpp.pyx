@@ -59,6 +59,10 @@ def affine_composite(
     single_threaded: bool = False,
     aa_mode: int = AAMode.SSAA_OR_BILINEAR,
 ) -> Image.Image:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 13, 70, 256, 257}:
+        print(f"WARNING: Unsupported blend {blendfunc}")
+        return img
+
     # Calculate the inverse so we can map canvas space back to texture space.
     try:
         inverse = transform.inverse()
@@ -66,10 +70,6 @@ def affine_composite(
         # If this happens, that means one of the scaling factors was zero, making
         # this object invisible. We can ignore this since the object should not
         # be drawn.
-        return img
-
-    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
-        print(f"WARNING: Unsupported blend {blendfunc}")
         return img
 
     # These are calculated properties and caching them outside of the loop
@@ -166,7 +166,7 @@ def perspective_composite(
     single_threaded: bool = False,
     aa_mode: int = AAMode.SSAA_ONLY,
 ) -> Image.Image:
-    if blendfunc not in {0, 1, 2, 3, 8, 9, 70, 256, 257}:
+    if blendfunc not in {0, 1, 2, 3, 8, 9, 13, 70, 256, 257}:
         print(f"WARNING: Unsupported blend {blendfunc}")
         return img
 
