@@ -601,14 +601,14 @@ class AFPRenderer(VerboseOutput):
         }
         registers: List[Any] = [UNDEFINED] * 256
 
-        self.vprint(f"{prefix}Bytecode engine starting.")
+        self.vprint(f"{prefix}Bytecode engine starting.", component="bytecode")
 
         while location < len(bytecode.actions):
             action = bytecode.actions[location]
 
             if action.opcode == AP2Action.END:
                 # End the execution.
-                self.vprint(f"{prefix}  Ending bytecode execution.")
+                self.vprint(f"{prefix}  Ending bytecode execution.", component="bytecode")
                 break
             elif action.opcode == AP2Action.GET_VARIABLE:
                 varname = stack.pop()
@@ -627,7 +627,7 @@ class AFPRenderer(VerboseOutput):
                 if not hasattr(obj, attribute):
                     print(f"WARNING: Tried to set attribute {attribute} on {obj} but that attribute doesn't exist!")
                 else:
-                    self.vprint(f"{prefix}  Setting attribute {attribute} on {obj} to {set_value}")
+                    self.vprint(f"{prefix}  Setting attribute {attribute} on {obj} to {set_value}", component="bytecode")
                     setattr(obj, attribute, set_value)
             elif action.opcode == AP2Action.CALL_METHOD:
                 # Grab the method name.
@@ -646,7 +646,7 @@ class AFPRenderer(VerboseOutput):
 
                 # Look up the python function we're calling.
                 try:
-                    self.vprint(f"{prefix}  Calling method {methname}({', '.join(repr(s) for s in params)}) on {obj}")
+                    self.vprint(f"{prefix}  Calling method {methname}({', '.join(repr(s) for s in params)}) on {obj}", component="bytecode")
                     meth = getattr(obj, methname)
 
                     # Call it, set the return on the stack.
@@ -669,7 +669,7 @@ class AFPRenderer(VerboseOutput):
 
                 # Look up the python function we're calling.
                 try:
-                    self.vprint(f"{prefix}  Calling global function {funcname}({', '.join(repr(s) for s in params)})")
+                    self.vprint(f"{prefix}  Calling global function {funcname}({', '.join(repr(s) for s in params)})", component="bytecode")
                     func = getattr(globalobj, funcname)
 
                     # Call it, set the return on the stack.
@@ -720,13 +720,13 @@ class AFPRenderer(VerboseOutput):
             # Next opcode!
             location += 1
 
-        self.vprint(f"{prefix}Bytecode engine finished.")
+        self.vprint(f"{prefix}Bytecode engine finished.", component="bytecode")
 
     def __place(self, tag: Tag, operating_clip: PlacedClip, prefix: str = "") -> Tuple[Optional[PlacedClip], bool]:
         # "Place" a tag on the screen. Most of the time, this means performing the action of the tag,
         # such as defining a shape (registering it with our shape list) or adding/removing an object.
         if isinstance(tag, AP2ShapeTag):
-            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}")
+            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}", component="tags")
 
             if tag.reference not in self.shapes:
                 raise Exception(f"Cannot find shape reference {tag.reference}!")
@@ -743,7 +743,7 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2ImageTag):
-            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}")
+            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}", component="tags")
 
             if tag.reference not in self.textures:
                 raise Exception(f"Cannot find texture reference {tag.reference}!")
@@ -757,7 +757,7 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2DefineSpriteTag):
-            self.vprint(f"{prefix}    Loading Sprite into object slot {tag.id}")
+            self.vprint(f"{prefix}    Loading Sprite into object slot {tag.id}", component="tags")
 
             # Register a new clip that we might reference to execute.
             self.__registered_objects[tag.id] = RegisteredClip(tag.id, tag.frames, tag.tags, tag.labels)
@@ -786,7 +786,7 @@ class AFPRenderer(VerboseOutput):
 
                         if tag.source_tag_id is not None and tag.source_tag_id != obj.source.tag_id:
                             # This completely updates the pointed-at object.
-                            self.vprint(f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}")
+                            self.vprint(f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}", component="tags")
 
                             newobj = self.__registered_objects[tag.source_tag_id]
                             if isinstance(newobj, RegisteredShape):
@@ -858,7 +858,7 @@ class AFPRenderer(VerboseOutput):
                                 raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
                         else:
                             # As far as I can tell, pretty much only color and matrix stuff can be updated.
-                            self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}")
+                            self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}", component="tags")
                             obj.mult_color = new_mult_color
                             obj.add_color = new_add_color
                             obj.transform = new_transform
@@ -875,7 +875,7 @@ class AFPRenderer(VerboseOutput):
                     raise Exception("Cannot place a tag with no source ID and no update flags!")
 
                 if tag.source_tag_id in self.__registered_objects:
-                    self.vprint(f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}")
+                    self.vprint(f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}", component="tags")
 
                     newobj = self.__registered_objects[tag.source_tag_id]
                     if isinstance(newobj, RegisteredShape):
@@ -962,7 +962,7 @@ class AFPRenderer(VerboseOutput):
                 raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
 
         elif isinstance(tag, AP2RemoveObjectTag):
-            self.vprint(f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}")
+            self.vprint(f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}", component="tags")
 
             if tag.object_id != 0:
                 # Remove the identified object by object ID and depth.
@@ -1000,7 +1000,7 @@ class AFPRenderer(VerboseOutput):
             return None, True
 
         elif isinstance(tag, AP2DoActionTag):
-            self.vprint(f"{prefix}    Execution action tag.")
+            self.vprint(f"{prefix}    Execution action tag.", component="tags")
             self.__execute_bytecode(tag.bytecode, operating_clip, prefix=prefix + "      ")
 
             # Didn't place a new clip.
@@ -1029,7 +1029,7 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2PlaceCameraTag):
-            self.vprint(f"{prefix}    Place camera tag.")
+            self.vprint(f"{prefix}    Place camera tag.", component="tags")
             self.__camera = PlacedCamera(
                 tag.center,
                 tag.focal_length,
@@ -1131,10 +1131,10 @@ class AFPRenderer(VerboseOutput):
         prefix: str="",
     ) -> Image.Image:
         if not renderable.visible:
-            self.vprint(f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}")
+            self.vprint(f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}", component="render")
             return img
 
-        self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}")
+        self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}", component="render")
 
         # Compute the affine transformation matrix for this object.
         transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_origin))
@@ -1360,7 +1360,7 @@ class AFPRenderer(VerboseOutput):
         return False
 
     def __process_tags(self, clip: PlacedClip, only_dirty: bool, prefix: str = "  ") -> bool:
-        self.vprint(f"{prefix}Handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}")
+        self.vprint(f"{prefix}Handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}", component="tags")
 
         # Track whether anything in ourselves or our children changes during this processing.
         changed = False
@@ -1385,7 +1385,7 @@ class AFPRenderer(VerboseOutput):
                     print("WARNING: Root clip was rewound, its possible this animation plays forever!")
                 clip.rewind()
 
-            self.vprint(f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}")
+            self.vprint(f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}", component="tags")
 
             # Clips that are part of our own placed objects which we should handle.
             child_clips = [c for c in clip.placed_objects if isinstance(c, PlacedClip)]
@@ -1399,7 +1399,7 @@ class AFPRenderer(VerboseOutput):
                 # See if we have any orphans that need to be placed before this frame will work.
                 for unplayed_tag in clip.unplayed_tags:
                     if unplayed_tag < frame.start_tag_offset:
-                        self.vprint(f"{prefix}  Including orphaned tag {unplayed_tag} in frame evaluation")
+                        self.vprint(f"{prefix}  Including orphaned tag {unplayed_tag} in frame evaluation", component="tags")
                         played_tags.add(unplayed_tag)
                         orphans.append(clip.source.tags[unplayed_tag])
 
@@ -1413,7 +1413,7 @@ class AFPRenderer(VerboseOutput):
                 tags = orphans + clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
                 for tagno, tag in enumerate(tags):
                     # Perform the action of this tag.
-                    self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}")
+                    self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}", component="tags")
                     new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
                     changed = changed or clip_changed
 
@@ -1434,7 +1434,7 @@ class AFPRenderer(VerboseOutput):
                 clip.requested_frame = None
                 break
 
-        self.vprint(f"{prefix}Finished handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}")
+        self.vprint(f"{prefix}Finished handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}", component="tags")
 
         # Return if anything was modified.
         return changed
@@ -1635,7 +1635,7 @@ class AFPRenderer(VerboseOutput):
         try:
             while root_clip.playing and not root_clip.finished:
                 # Create a new image to render into.
-                self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
+                self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)}", component="core")
 
                 # Go through all registered clips, place all needed tags.
                 changed = self.__process_tags(root_clip, False)
@@ -1658,7 +1658,7 @@ class AFPRenderer(VerboseOutput):
                 # If we're only rendering some frames, don't bother to do the draw operations
                 # if we aren't going to return the frame.
                 if only_frames and (frameno + 1) not in only_frames:
-                    self.vprint(f"Skipped rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
+                    self.vprint(f"Skipped rendering frame {frameno + 1}/{len(root_clip.source.frames)}", component="core")
                     last_rendered_frame = None
                     frameno += 1
                     continue
@@ -1680,11 +1680,11 @@ class AFPRenderer(VerboseOutput):
                     )
                 else:
                     # Nothing changed, make a copy of the previous render.
-                    self.vprint("  Using previous frame render")
+                    self.vprint("  Using previous frame render", component="core")
                     curimage = last_rendered_frame.copy()
 
                 # Return that frame, advance our bookkeeping.
-                self.vprint(f"Finished rendering frame {frameno + 1}/{len(root_clip.source.frames)}")
+                self.vprint(f"Finished rendering frame {frameno + 1}/{len(root_clip.source.frames)}", component="core")
                 last_rendered_frame = curimage
                 frameno += 1
                 yield curimage

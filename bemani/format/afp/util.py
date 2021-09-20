@@ -50,6 +50,8 @@ class TrackedCoverageManager:
 
 class TrackedCoverage:
     def __init__(self) -> None:
+        super().__init__()
+
         self.coverage: List[bool] = []
         self._tracking: bool = False
 
@@ -138,12 +140,17 @@ class VerboseOutputManager:
 
 
 class VerboseOutput:
-    def __init__(self) -> None:
+    def __init__(self, components: List[str] = []) -> None:
+        super().__init__()
+
         self.verbose: bool = False
+        self.components: List[str] = components or []
 
     def debugging(self, verbose: bool) -> VerboseOutputManager:
         return VerboseOutputManager(self, verbose)
 
     def vprint(self, *args: Any, **kwargs: Any) -> None:
-        if self.verbose:
+        should_print = self.verbose or (kwargs.get('component', None) in self.components)
+        kwargs = {k: v for k, v in kwargs.items() if k != 'component'}
+        if should_print:
             print(*args, **kwargs, file=sys.stderr)

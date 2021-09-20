@@ -446,7 +446,7 @@ class AP2DefineEditTextTag(Tag):
         }
 
 
-class SWF(TrackedCoverage, VerboseOutput):
+class SWF(VerboseOutput, TrackedCoverage):
     def __init__(
         self,
         name: str,
@@ -554,7 +554,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             # The data directly follows, no pointer.
             offset_ptr = 2
 
-        self.vprint(f"{prefix}    Flags: {hex(flags)}, ByteCode Actual Offset: {hex(offset_ptr)}")
+        self.vprint(f"{prefix}    Flags: {hex(flags)}, ByteCode Actual Offset: {hex(offset_ptr)}", component="bytecode")
 
         # Actually parse out the opcodes:
         actions: List[AP2Action] = []
@@ -568,7 +568,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             if opcode in AP2Action.actions_without_params():
                 # Simple opcodes need no parsing, they can go directly onto the stack.
-                self.vprint(f"{prefix}      {lineno}: {action_name}")
+                self.vprint(f"{prefix}      {lineno}: {action_name}", component="bytecode")
                 offset_ptr += 1
                 actions.append(AP2Action(lineno, opcode))
             elif opcode == AP2Action.DEFINE_FUNCTION2:
@@ -583,13 +583,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                     funcname = self.__get_string(funcname_offset)
                 offset_ptr += 10 + (3 * bytecode_offset)
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname or '<anonymous function>'}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Flags: {hex(function_flags)}, Name: {funcname or '<anonymous function>'}, ByteCode Offset: {hex(bytecode_offset)}, ByteCode Length: {hex(bytecode_count)}", component="bytecode")
 
                 # No name for this chunk, it will only ever be decompiled and printed in the context of another
                 # chunk.
                 function = self.__parse_bytecode(None, datachunk[offset_ptr:(offset_ptr + bytecode_count)], string_offsets=string_offsets, prefix=prefix + "    ")
 
-                self.vprint(f"{prefix}      END_{action_name}")
+                self.vprint(f"{prefix}      END_{action_name}", component="bytecode")
 
                 actions.append(DefineFunction2Action(lineno, funcname, function_flags, function))
                 offset_ptr += bytecode_count
@@ -597,7 +597,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name}")
+                self.vprint(f"{prefix}      {lineno}: {action_name}", component="bytecode")
 
                 objects: List[Any] = []
 
@@ -608,44 +608,44 @@ class SWF(TrackedCoverage, VerboseOutput):
                     if obj_to_create == 0x0:
                         # Integer "0" object.
                         objects.append(0)
-                        self.vprint(f"{prefix}        INTEGER: 0")
+                        self.vprint(f"{prefix}        INTEGER: 0", component="bytecode")
                     elif obj_to_create == 0x1:
                         # Float object, represented internally as a double.
                         fval = struct.unpack(">f", datachunk[offset_ptr:(offset_ptr + 4)])[0]
                         objects.append(fval)
                         offset_ptr += 4
 
-                        self.vprint(f"{prefix}        FLOAT: {fval}")
+                        self.vprint(f"{prefix}        FLOAT: {fval}", component="bytecode")
                     elif obj_to_create == 0x2:
                         # Null pointer object.
                         objects.append(NULL)
-                        self.vprint(f"{prefix}        NULL")
+                        self.vprint(f"{prefix}        NULL", component="bytecode")
                     elif obj_to_create == 0x3:
                         # Undefined constant.
                         objects.append(UNDEFINED)
-                        self.vprint(f"{prefix}        UNDEFINED")
+                        self.vprint(f"{prefix}        UNDEFINED", component="bytecode")
                     elif obj_to_create == 0x4:
                         # Register value.
                         regno = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
                         objects.append(Register(regno))
                         offset_ptr += 1
 
-                        self.vprint(f"{prefix}        REGISTER NO: {regno}")
+                        self.vprint(f"{prefix}        REGISTER NO: {regno}", component="bytecode")
                     elif obj_to_create == 0x5:
                         # Boolean "TRUE" object.
                         objects.append(True)
-                        self.vprint(f"{prefix}        BOOLEAN: True")
+                        self.vprint(f"{prefix}        BOOLEAN: True", component="bytecode")
                     elif obj_to_create == 0x6:
                         # Boolean "FALSE" object.
                         objects.append(False)
-                        self.vprint(f"{prefix}        BOOLEAN: False")
+                        self.vprint(f"{prefix}        BOOLEAN: False", component="bytecode")
                     elif obj_to_create == 0x7:
                         # Integer object.
                         ival = struct.unpack(">i", datachunk[offset_ptr:(offset_ptr + 4)])[0]
                         objects.append(ival)
                         offset_ptr += 4
 
-                        self.vprint(f"{prefix}        INTEGER: {ival}")
+                        self.vprint(f"{prefix}        INTEGER: {ival}", component="bytecode")
                     elif obj_to_create == 0x8:
                         # String constant object.
                         const_offset = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0]
@@ -653,7 +653,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(const)
                         offset_ptr += 1
 
-                        self.vprint(f"{prefix}        STRING CONST: {const}")
+                        self.vprint(f"{prefix}        STRING CONST: {const}", component="bytecode")
                     elif obj_to_create == 0x9:
                         # String constant, but with 16 bits for the offset. Probably not used except
                         # on the largest files.
@@ -662,39 +662,39 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(const)
                         offset_ptr += 2
 
-                        self.vprint(f"{prefix}        STRING CONST: {const}")
+                        self.vprint(f"{prefix}        STRING CONST: {const}", component="bytecode")
                     elif obj_to_create == 0xa:
                         # NaN constant.
                         objects.append(float("nan"))
-                        self.vprint(f"{prefix}        NAN")
+                        self.vprint(f"{prefix}        NAN", component="bytecode")
                     elif obj_to_create == 0xb:
                         # Infinity constant.
                         objects.append(float("inf"))
-                        self.vprint(f"{prefix}        INFINITY")
+                        self.vprint(f"{prefix}        INFINITY", component="bytecode")
                     elif obj_to_create == 0xc:
                         # Pointer to "this" object, whatever currently is executing the bytecode.
                         objects.append(THIS)
-                        self.vprint(f"{prefix}        POINTER TO THIS")
+                        self.vprint(f"{prefix}        POINTER TO THIS", component="bytecode")
                     elif obj_to_create == 0xd:
                         # Pointer to "root" object, which is the movieclip this bytecode exists in.
                         objects.append(ROOT)
-                        self.vprint(f"{prefix}        POINTER TO ROOT")
+                        self.vprint(f"{prefix}        POINTER TO ROOT", component="bytecode")
                     elif obj_to_create == 0xe:
                         # Pointer to "parent" object, whatever currently is executing the bytecode.
                         # This seems to be the parent of the movie clip, or the current movieclip
                         # if that isn't set.
                         objects.append(PARENT)
-                        self.vprint(f"{prefix}        POINTER TO PARENT")
+                        self.vprint(f"{prefix}        POINTER TO PARENT", component="bytecode")
                     elif obj_to_create == 0xf:
                         # Current movie clip.
                         objects.append(CLIP)
-                        self.vprint(f"{prefix}        POINTER TO CURRENT MOVIECLIP")
+                        self.vprint(f"{prefix}        POINTER TO CURRENT MOVIECLIP", component="bytecode")
                     elif obj_to_create == 0x10:
                         # Property constant with no alias.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x100
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     elif obj_to_create == 0x11:
                         # Property constant referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
@@ -703,7 +703,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 2
-                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     elif obj_to_create == 0x12:
                         # Same as above, but with allowance for a 16-bit constant offset.
                         propertyval, reference = struct.unpack(">BH", datachunk[offset_ptr:(offset_ptr + 3)])
@@ -712,13 +712,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 3
-                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        PROPERTY CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     elif obj_to_create == 0x13:
                         # Class property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x300
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        CLASS CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        CLASS CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     elif obj_to_create == 0x14:
                         # Class property constant with alias.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
@@ -727,7 +727,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 2
-                        self.vprint(f"{prefix}        CLASS CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        CLASS CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     # One would expect 0x15 to be identical to 0x12 but for class properties instead. However, it appears
                     # that this has been omitted from game binaries.
                     elif obj_to_create == 0x16:
@@ -735,7 +735,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x400
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        FUNC CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        FUNC CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     elif obj_to_create == 0x17:
                         # Func property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
@@ -744,14 +744,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 2
-                        self.vprint(f"{prefix}        FUNC CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        FUNC CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     # Same comment with 0x15 applies here with 0x18.
                     elif obj_to_create == 0x19:
                         # Other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x200
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        OTHER CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        OTHER CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     elif obj_to_create == 0x1a:
                         # Other property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
@@ -760,14 +760,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 2
-                        self.vprint(f"{prefix}        OTHER CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        OTHER CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     # Same comment with 0x15 and 0x18 applies here with 0x1b.
                     elif obj_to_create == 0x1c:
                         # Event property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x500
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        EVENT CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        EVENT CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     elif obj_to_create == 0x1d:
                         # Event property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
@@ -776,14 +776,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 2
-                        self.vprint(f"{prefix}        EVENT CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        EVENT CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     # Same comment with 0x15, 0x18 and 0x1b applies here with 0x1e.
                     elif obj_to_create == 0x1f:
                         # Key constants.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x600
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        KEY CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        KEY CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     elif obj_to_create == 0x20:
                         # Key property name referencing a string table entry.
                         propertyval, reference = struct.unpack(">BB", datachunk[offset_ptr:(offset_ptr + 2)])
@@ -792,22 +792,22 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(StringConstant(propertyval, referenceval))
 
                         offset_ptr += 2
-                        self.vprint(f"{prefix}        KEY CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}")
+                        self.vprint(f"{prefix}        KEY CONST NAME: {StringConstant.property_to_name(propertyval)}, ALIAS: {referenceval}", component="bytecode")
                     # Same comment with 0x15, 0x18, 0x1b and 0x1e applies here with 0x21.
                     elif obj_to_create == 0x22:
                         # Pointer to global object.
                         objects.append(GLOBAL)
-                        self.vprint(f"{prefix}        POINTER TO GLOBAL OBJECT")
+                        self.vprint(f"{prefix}        POINTER TO GLOBAL OBJECT", component="bytecode")
                     elif obj_to_create == 0x23:
                         # Negative infinity.
                         objects.append(float("-inf"))
-                        self.vprint(f"{prefix}        -INFINITY")
+                        self.vprint(f"{prefix}        -INFINITY", component="bytecode")
                     elif obj_to_create == 0x24:
                         # Some other property name.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x700
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        ETC2 CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        ETC2 CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x25 and 0x26 are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x24.
                     elif obj_to_create == 0x27:
@@ -815,7 +815,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x800
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        ORGFUNC2 CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        ORGFUNC2 CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x28 and 0x29 are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x27.
                     elif obj_to_create == 0x2a:
@@ -823,7 +823,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0x900
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        ETCFUNC2 CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        ETCFUNC2 CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x2b and 0x2c are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x2a.
                     elif obj_to_create == 0x2d:
@@ -831,7 +831,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xa00
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        EVENT2 CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        EVENT2 CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x2e and 0x2f are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x2d.
                     elif obj_to_create == 0x30:
@@ -839,7 +839,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xb00
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        EVENT METHOD CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        EVENT METHOD CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x31 and 0x32 are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x30.
                     elif obj_to_create == 0x33:
@@ -848,13 +848,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(int64)
                         offset_ptr += 8
 
-                        self.vprint(f"{prefix}        INTEGER: {int64}")
+                        self.vprint(f"{prefix}        INTEGER: {int64}", component="bytecode")
                     elif obj_to_create == 0x34:
                         # Some other property names.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xc00
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        GENERIC CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        GENERIC CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x35 and 0x36 are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x34.
                     elif obj_to_create == 0x37:
@@ -863,13 +863,13 @@ class SWF(TrackedCoverage, VerboseOutput):
                         objects.append(ival)
                         offset_ptr += 1
 
-                        self.vprint(f"{prefix}        INTEGER: {ival}")
+                        self.vprint(f"{prefix}        INTEGER: {ival}", component="bytecode")
                     elif obj_to_create == 0x38:
                         # Some other property names.
                         propertyval = struct.unpack(">B", datachunk[offset_ptr:(offset_ptr + 1)])[0] + 0xd00
                         objects.append(StringConstant(propertyval))
                         offset_ptr += 1
-                        self.vprint(f"{prefix}        GENERIC2 CONST NAME: {StringConstant.property_to_name(propertyval)}")
+                        self.vprint(f"{prefix}        GENERIC2 CONST NAME: {StringConstant.property_to_name(propertyval)}", component="bytecode")
                     # Possibly in newer binaries, 0x39 and 0x3a are implemented as 8-bit and 16-bit alias pointer
                     # versions of 0x38.
                     else:
@@ -877,14 +877,14 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     obj_count -= 1
 
-                self.vprint(f"{prefix}      END_{action_name}")
+                self.vprint(f"{prefix}      END_{action_name}", component="bytecode")
 
                 actions.append(PushAction(lineno, objects))
             elif opcode == AP2Action.INIT_REGISTER:
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name}")
+                self.vprint(f"{prefix}      {lineno}: {action_name}", component="bytecode")
 
                 init_registers: List[Register] = []
                 while obj_count > 0:
@@ -893,15 +893,15 @@ class SWF(TrackedCoverage, VerboseOutput):
                     offset_ptr += 1
                     obj_count -= 1
 
-                    self.vprint(f"{prefix}        REGISTER NO: {register_no}")
-                self.vprint(f"{prefix}      END_{action_name}")
+                    self.vprint(f"{prefix}        REGISTER NO: {register_no}", component="bytecode")
+                self.vprint(f"{prefix}      END_{action_name}", component="bytecode")
 
                 actions.append(InitRegisterAction(lineno, init_registers))
             elif opcode == AP2Action.STORE_REGISTER:
                 obj_count = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name}")
+                self.vprint(f"{prefix}      {lineno}: {action_name}", component="bytecode")
 
                 store_registers: List[Register] = []
                 while obj_count > 0:
@@ -910,17 +910,17 @@ class SWF(TrackedCoverage, VerboseOutput):
                     offset_ptr += 1
                     obj_count -= 1
 
-                    self.vprint(f"{prefix}        REGISTER NO: {register_no}")
-                self.vprint(f"{prefix}      END_{action_name}")
+                    self.vprint(f"{prefix}        REGISTER NO: {register_no}", component="bytecode")
+                self.vprint(f"{prefix}      END_{action_name}", component="bytecode")
 
                 actions.append(StoreRegisterAction(lineno, store_registers, preserve_stack=True))
             elif opcode == AP2Action.STORE_REGISTER2:
                 register_no = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name}")
-                self.vprint(f"{prefix}        REGISTER NO: {register_no}")
-                self.vprint(f"{prefix}      END_{action_name}")
+                self.vprint(f"{prefix}      {lineno}: {action_name}", component="bytecode")
+                self.vprint(f"{prefix}        REGISTER NO: {register_no}", component="bytecode")
+                self.vprint(f"{prefix}      END_{action_name}", component="bytecode")
 
                 actions.append(StoreRegisterAction(lineno, [Register(register_no)], preserve_stack=False))
             elif opcode == AP2Action.IF:
@@ -928,21 +928,21 @@ class SWF(TrackedCoverage, VerboseOutput):
                 jump_if_true_offset += (lineno + 3)
                 offset_ptr += 3
 
-                self.vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}")
+                self.vprint(f"{prefix}      {lineno}: Offset If True: {jump_if_true_offset}", component="bytecode")
                 actions.append(IfAction(lineno, IfAction.COMP_IS_TRUE, jump_if_true_offset))
             elif opcode == AP2Action.IF2:
                 if2_type, jump_if_true_offset = struct.unpack(">Bh", datachunk[(offset_ptr + 1):(offset_ptr + 4)])
                 jump_if_true_offset += (lineno + 4)
                 offset_ptr += 4
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} {IfAction.comparison_to_str(if2_type)}, Offset If True: {jump_if_true_offset}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} {IfAction.comparison_to_str(if2_type)}, Offset If True: {jump_if_true_offset}", component="bytecode")
                 actions.append(IfAction(lineno, if2_type, jump_if_true_offset))
             elif opcode == AP2Action.JUMP:
                 jump_offset = struct.unpack(">h", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
                 jump_offset += (lineno + 3)
                 offset_ptr += 3
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Offset: {jump_offset}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Offset: {jump_offset}", component="bytecode")
                 actions.append(JumpAction(lineno, jump_offset))
             elif opcode == AP2Action.WITH:
                 skip_offset = struct.unpack(">H", datachunk[(offset_ptr + 1):(offset_ptr + 3)])[0]
@@ -952,31 +952,31 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # represents...
                 unknown_data = datachunk[offset_ptr:(offset_ptr + skip_offset)]
                 offset_ptr += skip_offset
-                self.vprint(f"{prefix}      {lineno}: {action_name} Unknown Data Length: {skip_offset}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Unknown Data Length: {skip_offset}", component="bytecode")
                 actions.append(WithAction(lineno, unknown_data))
             elif opcode == AP2Action.ADD_NUM_VARIABLE:
                 amount_to_add = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Add Value: {amount_to_add}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Add Value: {amount_to_add}", component="bytecode")
                 actions.append(AddNumVariableAction(lineno, amount_to_add))
             elif opcode == AP2Action.GET_URL2:
                 get_url_action = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} URL Action: {get_url_action >> 6}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} URL Action: {get_url_action >> 6}", component="bytecode")
                 actions.append(GetURL2Action(lineno, get_url_action >> 6))
             elif opcode == AP2Action.START_DRAG:
                 constraint = struct.unpack(">b", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
                 offset_ptr += 2
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Constrain Mouse: {'yes' if constraint > 0 else ('no' if constraint == 0 else 'check stack')}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Constrain Mouse: {'yes' if constraint > 0 else ('no' if constraint == 0 else 'check stack')}", component="bytecode")
                 actions.append(StartDragAction(lineno, constrain=True if constraint > 0 else (False if constraint == 0 else None)))
             elif opcode == AP2Action.ADD_NUM_REGISTER:
                 register_no, amount_to_add = struct.unpack(">Bb", datachunk[(offset_ptr + 1):(offset_ptr + 3)])
                 offset_ptr += 3
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} Register No: {register_no}, Add Value: {amount_to_add}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} Register No: {register_no}, Add Value: {amount_to_add}", component="bytecode")
                 actions.append(AddNumRegisterAction(lineno, Register(register_no), amount_to_add))
             elif opcode == AP2Action.GOTO_FRAME2:
                 flags = struct.unpack(">B", datachunk[(offset_ptr + 1):(offset_ptr + 2)])[0]
@@ -994,7 +994,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 else:
                     additional_frames = 0
 
-                self.vprint(f"{prefix}      {lineno}: {action_name} AND {post} Additional Frames: {additional_frames}")
+                self.vprint(f"{prefix}      {lineno}: {action_name} AND {post} Additional Frames: {additional_frames}", component="bytecode")
                 actions.append(GotoFrame2Action(lineno, additional_frames, stop=bool(flags & 0x1)))
             else:
                 raise Exception(f"Can't advance, no handler for opcode {opcode} ({hex(opcode)})!")
@@ -1023,7 +1023,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             # I'm not sure what the unknown value is. It doesn't seem to be parsed by either BishiBashi or Jubeat
             # when I've looked, but it does appear to be non-zero sometimes in Pop'n Music animations.
             shape_reference = f"{self.exported_name}_shape{shape_id}"
-            self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, Unknown: {unknown}")
+            self.vprint(f"{prefix}    Tag ID: {shape_id}, AFP Reference: {shape_reference}, Unknown: {unknown}", component="tags")
 
             return AP2ShapeTag(shape_id, shape_reference)
         elif tagid == AP2Tag.AP2_DEFINE_SPRITE:
@@ -1038,7 +1038,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 subtags_offset = struct.unpack("<I", ap2data[(dataoffset + 4):(dataoffset + 8)])[0] + dataoffset
                 self.add_coverage(dataoffset + 4, 4)
 
-            self.vprint(f"{prefix}    Tag ID: {sprite_id}")
+            self.vprint(f"{prefix}    Tag ID: {sprite_id}", component="tags")
             tags, frames, labels = self.__parse_tags(ap2_version, afp_version, ap2data, subtags_offset, sprite_id, prefix="      " + prefix)
 
             return AP2DefineSpriteTag(sprite_id, tags, frames, labels)
@@ -1051,7 +1051,8 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             self.vprint(
                 f"{prefix}    Tag ID: {font_id}, Unknown: {unk}, Font Name: {fontname}, "
-                f"XML Prefix: {xml_prefix}, Text Index Entries: {text_index_count}, Height Entries: {height_count}"
+                f"XML Prefix: {xml_prefix}, Text Index Entries: {text_index_count}, Height Entries: {height_count}",
+                component="tags",
             )
 
             text_indexes: List[int] = []
@@ -1061,7 +1062,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 text_indexes.append(entry_value)
                 self.add_coverage(entry_offset, 2)
 
-                self.vprint(f"{prefix}      Text Index: {i}: {entry_value} ({chr(entry_value)})")
+                self.vprint(f"{prefix}      Text Index: {i}: {entry_value} ({chr(entry_value)})", component="tags")
 
             heights: List[int] = []
             for i in range(height_count):
@@ -1070,7 +1071,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 heights.append(entry_value)
                 self.add_coverage(entry_offset, 2)
 
-                self.vprint(f"{prefix}      Height: {entry_value}")
+                self.vprint(f"{prefix}      Height: {entry_value}", component="tags")
 
             return AP2DefineFontTag(font_id, fontname, xml_prefix, heights, text_indexes)
         elif tagid == AP2Tag.AP2_DO_ACTION:
@@ -1098,7 +1099,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             else:
                 unhandled_flags = flags
 
-            self.vprint(f"{prefix}    Flags: {hex(flags)}, Object ID: {object_id}, Depth: {depth}")
+            self.vprint(f"{prefix}    Flags: {hex(flags)}, Object ID: {object_id}, Depth: {depth}", component="tags")
             unrecognized_options = False
 
             if flags & 0x2:
@@ -1107,7 +1108,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 src_tag_id = struct.unpack("<H", datachunk[running_pointer:(running_pointer + 2)])[0]
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
-                self.vprint(f"{prefix}    Source Tag ID: {src_tag_id}")
+                self.vprint(f"{prefix}    Source Tag ID: {src_tag_id}", component="tags")
             else:
                 src_tag_id = None
 
@@ -1118,7 +1119,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
 
-                self.vprint(f"{prefix}    Frame Label ID: {label_name}")
+                self.vprint(f"{prefix}    Frame Label ID: {label_name}", component="tags")
 
             movie_name = None
             if flags & 0x20:
@@ -1128,7 +1129,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 2)
                 movie_name = self.__get_string(nameoffset)
                 running_pointer += 2
-                self.vprint(f"{prefix}    Movie Name: {movie_name}")
+                self.vprint(f"{prefix}    Movie Name: {movie_name}", component="tags")
 
             if flags & 0x40:
                 unhandled_flags &= ~0x40
@@ -1136,7 +1137,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 2)
                 running_pointer += 2
                 unrecognized_options = True
-                self.vprint(f"{prefix}    Unk3: {hex(unk3)}")
+                self.vprint(f"{prefix}    Unk3: {hex(unk3)}", component="tags")
 
             if flags & 0x20000:
                 # Has blend component.
@@ -1144,7 +1145,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 blend = struct.unpack("<B", datachunk[running_pointer:(running_pointer + 1)])[0]
                 self.add_coverage(dataoffset + running_pointer, 1)
                 running_pointer += 1
-                self.vprint(f"{prefix}    Blend: {hex(blend)}")
+                self.vprint(f"{prefix}    Blend: {hex(blend)}", component="tags")
             else:
                 blend = None
 
@@ -1171,7 +1172,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.d = float(d_int) / 1024.0
                 scale_set = True
 
-                self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
+                self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}", component="tags")
 
             if flags & 0x200:
                 # Has rotate component.
@@ -1184,7 +1185,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.c = float(c_int) / 1024.0
                 rotate_set = True
 
-                self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
+                self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}", component="tags")
 
             if flags & 0x400:
                 # Has translate component.
@@ -1196,7 +1197,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.tx = float(tx_int) / 20.0
                 transform.ty = float(ty_int) / 20.0
 
-                self.vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
+                self.vprint(f"{prefix}    Transform Matrix TX: {transform.tx}, TY: {transform.ty}", component="tags")
 
             # Handle object colors
             multcolor = Color(1.0, 1.0, 1.0, 1.0)
@@ -1215,7 +1216,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 multcolor.g = float(g) / 255.0
                 multcolor.b = float(b) / 255.0
                 multcolor.a = float(a) / 255.0
-                self.vprint(f"{prefix}    Mult Color: {multcolor}")
+                self.vprint(f"{prefix}    Mult Color: {multcolor}", component="tags")
                 multdisplayed = True
 
             if flags & 0x1000:
@@ -1229,7 +1230,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 addcolor.g = float(g) / 255.0
                 addcolor.b = float(b) / 255.0
                 addcolor.a = float(a) / 255.0
-                self.vprint(f"{prefix}    Add Color: {addcolor}")
+                self.vprint(f"{prefix}    Add Color: {addcolor}", component="tags")
                 adddisplayed = True
 
             if flags & 0x2000:
@@ -1243,7 +1244,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 multcolor.g = float((rgba >> 16) & 0xFF) / 255.0
                 multcolor.b = float((rgba >> 8) & 0xFF) / 255.0
                 multcolor.a = float(rgba & 0xFF) / 255.0
-                self.vprint(f"{prefix}    Mult Color: {multcolor}")
+                self.vprint(f"{prefix}    Mult Color: {multcolor}", component="tags")
                 multdisplayed = True
 
             if flags & 0x4000:
@@ -1257,16 +1258,16 @@ class SWF(TrackedCoverage, VerboseOutput):
                 addcolor.g = float((rgba >> 16) & 0xFF) / 255.0
                 addcolor.b = float((rgba >> 8) & 0xFF) / 255.0
                 addcolor.a = float(rgba & 0xFF) / 255.0
-                self.vprint(f"{prefix}    Add Color: {addcolor}")
+                self.vprint(f"{prefix}    Add Color: {addcolor}", component="tags")
                 adddisplayed = True
 
             # For easier debugging, display the default color when the color
             # is being used.
             if flags & 0x8:
                 if not multdisplayed:
-                    self.vprint(f"{prefix}    Mult Color: {multcolor}")
+                    self.vprint(f"{prefix}    Mult Color: {multcolor}", component="tags")
                 if not adddisplayed:
-                    self.vprint(f"{prefix}    Add Color: {addcolor}")
+                    self.vprint(f"{prefix}    Add Color: {addcolor}", component="tags")
 
             bytecodes: Dict[int, List[ByteCode]] = {}
             if flags & 0x80:
@@ -1292,7 +1293,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     for i, bytecode_offset in enumerate(bytecode_offsets[:-1]):
                         beginning_to_end[bytecode_offset] = bytecode_offsets[i + 1]
 
-                    self.vprint(f"{prefix}    Event Triggers, Count: {count}")
+                    self.vprint(f"{prefix}    Event Triggers, Count: {count}", component="tags")
                     for evt in range(count):
                         evt_offset = running_pointer + 12 + (evt * 8)
                         evt_flags, _, keycode, bytecode_offset = struct.unpack("<IBBH", datachunk[evt_offset:(evt_offset + 8)])
@@ -1331,7 +1332,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         bytecode_offset += evt_offset
                         bytecode_length = beginning_to_end[bytecode_offset] - bytecode_offset
 
-                        self.vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, ByteCode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}")
+                        self.vprint(f"{prefix}      Flags: {hex(evt_flags)} ({', '.join(events)}), KeyCode: {hex(keycode)}, ByteCode Offset: {hex(dataoffset + bytecode_offset)}, Length: {bytecode_length}", component="tags")
                         bytecode = self.__parse_bytecode(f"on_tag_{object_id}_event", datachunk[bytecode_offset:(bytecode_offset + bytecode_length)], prefix=prefix + "    ")
                         self.add_coverage(dataoffset + bytecode_offset, bytecode_length)
 
@@ -1354,7 +1355,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # all in the range of 0-7, corresponding to some sort of filter. They get sizes
                 # looked up and I presume there's data following this corresponding to those sizes.
                 # I don't know however as I've not encountered data with this bit.
-                self.vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {filter_size}")
+                self.vprint(f"{prefix}    Unknown Filter data Count: {count}, Size: {filter_size}", component="tags")
 
             rotation_origin = Point(0.0, 0.0, 0.0)
             rotation_origin_set = False
@@ -1371,7 +1372,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 rotation_origin.y = float(y) / 20.0
                 rotation_origin_set = True
 
-                self.vprint(f"{prefix}    Rotation XY Origin: {rotation_origin.x}, {rotation_origin.y}")
+                self.vprint(f"{prefix}    Rotation XY Origin: {rotation_origin.x}, {rotation_origin.y}", component="tags")
 
             if flags & 0x200000000:
                 # This is Z rotation origin.
@@ -1383,7 +1384,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 rotation_origin.z = float(z_int) / 20.0
                 rotation_origin_set = True
 
-                self.vprint(f"{prefix}    Rotation Z Origin: {rotation_origin.z}")
+                self.vprint(f"{prefix}    Rotation Z Origin: {rotation_origin.z}", component="tags")
 
             if flags & 0x2000000:
                 # Same as above, but initializing to 0, 0, 0 instead of from data.
@@ -1394,7 +1395,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 rotation_origin.z = 0.0
                 rotation_origin_set = True
 
-                self.vprint(f"{prefix}    Rotation XYZ Origin: {rotation_origin.x}, {rotation_origin.y}, {rotation_origin.z}")
+                self.vprint(f"{prefix}    Rotation XYZ Origin: {rotation_origin.x}, {rotation_origin.y}, {rotation_origin.z}", component="tags")
 
             if flags & 0x40000:
                 # This appears in newer IIDX to be an alternative method for populating
@@ -1417,7 +1418,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     transform.d = float(d_int) / 32768.0
                     scale_set = True
 
-                    self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}")
+                    self.vprint(f"{prefix}    Transform Matrix A: {transform.a}, D: {transform.d}", component="tags")
 
             if flags & 0x80000:
                 # This appears in newer IIDX to be an alternative method for populating
@@ -1431,7 +1432,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.c = float(c_int) / 32768.0
                 rotate_set = True
 
-                self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}")
+                self.vprint(f"{prefix}    Transform Matrix B: {transform.b}, C: {transform.c}", component="tags")
 
             if flags & 0x100000:
                 # TODO: Some unknown short.
@@ -1441,7 +1442,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 2
                 unrecognized_options = True
 
-                self.vprint(f"{prefix}    Unk 4: {unk_4}")
+                self.vprint(f"{prefix}    Unk 4: {unk_4}", component="tags")
 
             # Due to possible misalignment, we need to realign.
             misalignment = running_pointer & 3
@@ -1459,7 +1460,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 transform.tz = tz_int / 20.0
 
-                self.vprint(f"{prefix}    Translate Z offset: {transform.tz}")
+                self.vprint(f"{prefix}    Translate Z offset: {transform.tz}", component="tags")
 
             if flags & 0x10000000:
                 # This is a 3x3 grid of initializers for a 3D transform matrix. It appears that
@@ -1488,7 +1489,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.a32 = floats[7]
                 transform.a33 = floats[8]
 
-                self.vprint(f"{prefix}    3D Transform Matrix: {', '.join(str(f) for f in floats)}")
+                self.vprint(f"{prefix}    3D Transform Matrix: {', '.join(str(f) for f in floats)}", component="tags")
 
             if flags & 0x20000000:
                 # TODO: Again, absolutely no idea, gets passed into a function and I don't see how its used.
@@ -1498,7 +1499,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 4
                 unrecognized_options = True
 
-                self.vprint(f"{prefix}    Unknown Data: {unk_a}, {unk_b}, {unk_c}")
+                self.vprint(f"{prefix}    Unknown Data: {unk_a}, {unk_b}, {unk_c}", component="tags")
 
             if flags & 0x400000000:
                 # There's some serious hanky-panky going on here. The first 4 bytes are a bitmask,
@@ -1512,7 +1513,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
 
-                self.vprint(f"{prefix}    Unknown Data Flags: {hex(bitmask)}")
+                self.vprint(f"{prefix}    Unknown Data Flags: {hex(bitmask)}", component="tags")
 
                 # I have no idea what any of this is either, so I am duplicating game logic in the
                 # hopes that someday it makes sense.
@@ -1534,7 +1535,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                             2
                         )
 
-                        self.vprint(f"{prefix}      WTF: {hex(unk_flags)}, {unk_size}, {chunk_size}")
+                        self.vprint(f"{prefix}      WTF: {hex(unk_flags)}, {unk_size}, {chunk_size}", component="tags")
 
                         # Skip past data.
                         running_pointer += chunk_size
@@ -1549,7 +1550,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 8
                 unrecognized_options = True
 
-                self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}")
+                self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}", component="tags")
 
             if flags & 0x2000000000:
                 # I have no idea what this is, but the two shorts that it pulls out are assigned
@@ -1560,7 +1561,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 running_pointer += 6
                 unrecognized_options = True
 
-                self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}")
+                self.vprint(f"{prefix}    Unknown New Data: {unk1}, {unk2}, {unk3}", component="tags")
 
             # Due to possible misalignment, we need to realign.
             misalignment = running_pointer & 3
@@ -1577,10 +1578,10 @@ class SWF(TrackedCoverage, VerboseOutput):
 
             # This flag states whether we are creating a new object on this depth, or updating one.
             if flags & 0x1:
-                self.vprint(f"{prefix}    Update object request")
+                self.vprint(f"{prefix}    Update object request", component="tags")
                 update_request = True
             else:
-                self.vprint(f"{prefix}    Create object request")
+                self.vprint(f"{prefix}    Create object request", component="tags")
                 update_request = False
 
             if flags & 0x18000004:
@@ -1588,25 +1589,25 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # added perspective to the format, they also just made setting the TZ or the
                 # 3x3 transform portion of a 4x4 matrix equivalent. So if those exist, this
                 # implicitly is enabled.
-                self.vprint(f"{prefix}    Use transform matrix")
+                self.vprint(f"{prefix}    Use transform matrix", component="tags")
                 projection = AP2PlaceObjectTag.PROJECTION_AFFINE
                 transform_information = True
             else:
-                self.vprint(f"{prefix}    Ignore transform matrix")
+                self.vprint(f"{prefix}    Ignore transform matrix", component="tags")
                 transform_information = False
 
             if flags & 0x8:
-                self.vprint(f"{prefix}    Use color information")
+                self.vprint(f"{prefix}    Use color information", component="tags")
                 color_information = True
             else:
-                self.vprint(f"{prefix}    Ignore color information")
+                self.vprint(f"{prefix}    Ignore color information", component="tags")
                 color_information = False
 
             if flags & 0x4000000:
-                self.vprint(f"{prefix}    Use 3D transform system")
+                self.vprint(f"{prefix}    Use 3D transform system", component="tags")
                 projection = AP2PlaceObjectTag.PROJECTION_PERSPECTIVE
             else:
-                self.vprint(f"{prefix}    Use 2D transform system")
+                self.vprint(f"{prefix}    Use 2D transform system", component="tags")
 
                 # Unset any previously set 3D transforms. Files shouldn't include both 3D
                 # transforms AND the old 2D transform flag, but let's respect that bit.
@@ -1618,7 +1619,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 transform.a33 = 1.0
                 transform.a43 = 0.0
 
-            self.vprint(f"{prefix}    Final transform: {transform}")
+            self.vprint(f"{prefix}    Final transform: {transform}", component="tags")
 
             if unhandled_flags != 0:
                 raise Exception(f"Did not handle {hex(unhandled_flags)} flag bits!")
@@ -1648,7 +1649,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 raise Exception(f"Invalid shape size {size}")
 
             object_id, depth = struct.unpack("<HH", ap2data[dataoffset:(dataoffset + 4)])
-            self.vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}")
+            self.vprint(f"{prefix}    Object ID: {object_id}, Depth: {depth}", component="tags")
             self.add_coverage(dataoffset, 4)
 
             return AP2RemoveObjectTag(object_id, depth)
@@ -1669,7 +1670,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # is or does. I don't see any references to it being used in the tag loader.
                 pass
 
-            self.vprint(f"{prefix}    Tag ID: {text_id}, Count of Entries: {text_data_count}, Count of Sub Entries: {sub_data_total_count}")
+            self.vprint(f"{prefix}    Tag ID: {text_id}, Count of Entries: {text_data_count}, Count of Sub Entries: {sub_data_total_count}", component="tags")
             lines: List[AP2TextLine] = []
             for i in range(text_data_count):
                 chunk_data_offset = dataoffset + text_data_offset + (20 * i)
@@ -1697,7 +1698,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     float((rgba >> 24) & 0xFF) / 255.0,
                 )
 
-                self.vprint(f"{prefix}      Font Tag: {font_tag}, Font Height: {font_height}, X: {xpos}, Y: {ypos}, Count of Sub-Entries: {sub_data_count}, Color: {color}")
+                self.vprint(f"{prefix}      Font Tag: {font_tag}, Font Height: {font_height}, X: {xpos}, Y: {ypos}, Count of Sub-Entries: {sub_data_count}, Color: {color}", component="tags")
 
                 base_offset = dataoffset + (sub_data_offset * 4) + sub_data_base_offset
                 offsets: List[AP2TextChar] = []
@@ -1712,7 +1713,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     entry_width = round(float(xoff) / 20.0, 5)
                     offsets.append(AP2TextChar(font_text_index, entry_width))
 
-                    self.vprint(f"{prefix}        Font Text Index: {font_text_index}, X: {xpos}, Width: {entry_width}")
+                    self.vprint(f"{prefix}        Font Text Index: {font_text_index}, X: {xpos}, Width: {entry_width}", component="tags")
 
                     # Make room for next character.
                     xpos = round(xpos + entry_width, 5)
@@ -1741,16 +1742,16 @@ class SWF(TrackedCoverage, VerboseOutput):
             rgba, f1, f2, f3, f4, variable_name_offset, default_text_offset = struct.unpack("<IiiiiHH", ap2data[(dataoffset + 20):(dataoffset + 44)])
             self.add_coverage(dataoffset + 20, 24)
 
-            self.vprint(f"{prefix}    Tag ID: {edit_text_id}, Font Tag: {defined_font_tag_id}, Height Selection: {font_height}, Flags: {hex(flags)}")
+            self.vprint(f"{prefix}    Tag ID: {edit_text_id}, Font Tag: {defined_font_tag_id}, Height Selection: {font_height}, Flags: {hex(flags)}", component="tags")
 
             unk_string2 = self.__get_string(unk_str2_offset) or None
-            self.vprint(f"{prefix}      Unk String: {unk_string2}")
+            self.vprint(f"{prefix}      Unk String: {unk_string2}", component="tags")
 
             rect = Rectangle(f1 / 20.0, f2 / 20.0, f3 / 20.0, f4 / 20.0)
-            self.vprint(f"{prefix}      Rectangle: {rect}")
+            self.vprint(f"{prefix}      Rectangle: {rect}", component="tags")
 
             variable_name = self.__get_string(variable_name_offset) or None
-            self.vprint(f"{prefix}      Variable Name: {variable_name}")
+            self.vprint(f"{prefix}      Variable Name: {variable_name}", component="tags")
 
             color = Color(
                 r=(rgba & 0xFF) / 255.0,
@@ -1758,9 +1759,9 @@ class SWF(TrackedCoverage, VerboseOutput):
                 b=((rgba >> 16) & 0xFF) / 255.0,
                 a=((rgba >> 24) & 0xFF) / 255.0,
             )
-            self.vprint(f"{prefix}      Text Color: {color}")
+            self.vprint(f"{prefix}      Text Color: {color}", component="tags")
 
-            self.vprint(f"{prefix}      Unk1: {unk1}, Unk2: {unk2}, Unk3: {unk3}, Unk4: {unk4}")
+            self.vprint(f"{prefix}      Unk1: {unk1}, Unk2: {unk2}, Unk3: {unk3}, Unk4: {unk4}", component="tags")
 
             # flags & 0x20 means something with offset 16-18.
             # flags & 0x200 is unk str below is a HTML tag.
@@ -1768,7 +1769,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             if flags & 0x80:
                 # Has some sort of string pointer.
                 default_text = self.__get_string(default_text_offset) or None
-                self.vprint(f"{prefix}      Default Text: {default_text}")
+                self.vprint(f"{prefix}      Default Text: {default_text}", component="tags")
             else:
                 default_text = None
 
@@ -1780,7 +1781,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             _0x2c_offset, _0x2e_offset, another_offset = struct.unpack("<HHH", ap2data[(dataoffset + 44):(dataoffset + 50)])
             self.add_coverage(dataoffset + 44, 6)
 
-            self.vprint(f"{prefix}    Tag ID: {define_shape_id}, Unk1: {unk1}, Unk2: {unk2}, Count1: {_0x2c_count}, Count2: {_0x2e_count}, Another Count: {another_count}")
+            self.vprint(f"{prefix}    Tag ID: {define_shape_id}, Unk1: {unk1}, Unk2: {unk2}, Count1: {_0x2c_count}, Count2: {_0x2e_count}, Another Count: {another_count}", component="tags")
 
             for label, off, sz in [("0x2c", _0x2c_offset, _0x2c_count), ("0x2e", _0x2e_offset, _0x2e_count)]:
                 for i in range(sz):
@@ -1793,7 +1794,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     self.add_coverage(chunk_offset, 4)
                     chunk_offset += 4
 
-                    self.vprint(f"{prefix}      {label} Flags: {hex(flags)}, Unk3: {unk3}, Unk4-1: {(unk4 >> 2) & 0x3}, Unk4-2: {(unk4 & 0x3)}")
+                    self.vprint(f"{prefix}      {label} Flags: {hex(flags)}, Unk3: {unk3}, Unk4-1: {(unk4 >> 2) & 0x3}, Unk4-2: {(unk4 & 0x3)}", component="tags")
 
                     unprocessed_flags = flags
                     if flags & 0x1:
@@ -1806,7 +1807,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         # subtracted from the first value, and that is multiplied by some percentage, and then the
                         # second value is added back in.
 
-                        self.vprint(f"{prefix}        Unknown Int1: {int1}, Int2: {int2}")
+                        self.vprint(f"{prefix}        Unknown Int1: {int1}, Int2: {int2}", component="tags")
 
                     if flags & 0x12:
                         intval, src_ptr = struct.unpack("<HH", ap2data[chunk_offset:(chunk_offset + 4)])
@@ -1814,7 +1815,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                         chunk_offset += 4
                         unprocessed_flags &= ~0x12
 
-                        self.vprint(f"{prefix}        Unknown Float: {float(intval) / 20.0}, Source Bitmap ID: {src_ptr}")
+                        self.vprint(f"{prefix}        Unknown Float: {float(intval) / 20.0}, Source Bitmap ID: {src_ptr}", component="tags")
 
                     if flags & 0x4:
                         rgba1, rgba2 = struct.unpack("<II", ap2data[chunk_offset:(chunk_offset + 8)])
@@ -1836,7 +1837,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                             a=((rgba2 >> 24) & 0xFF) / 255.0,
                         )
 
-                        self.vprint(f"{prefix}        Start Color: {color1}, End Color: {color2}")
+                        self.vprint(f"{prefix}        Start Color: {color1}, End Color: {color2}", component="tags")
 
                     if flags & 0x8:
                         a1, d1, a2, d2, b1, c1, b2, c2, tx1, ty1, tx2, ty2 = struct.unpack("<IIIIIIIIIIII", ap2data[chunk_offset:(chunk_offset + 48)])
@@ -1862,7 +1863,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                             ty=ty2,
                         )
 
-                        self.vprint(f"{prefix}        Start Matrix: {matrix1}, End Matrix: {matrix2}")
+                        self.vprint(f"{prefix}        Start Matrix: {matrix1}, End Matrix: {matrix2}", component="tags")
 
                     if flags & 0x20:
                         # TODO: This is kinda complicated and I don't see any data using it yet, looks like it
@@ -1891,7 +1892,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 f3 = float(i3) / 20.0
                 f4 = float(i4) / 20.0
 
-                self.vprint(f"{prefix}      Unk5: {unk5}, Unk6: {unk6}, F1: {f1}, F2: {f2}, F3: {f3}, F4: {f4}, ABC: {a} {b} {c}, Count: {some_count}")
+                self.vprint(f"{prefix}      Unk5: {unk5}, Unk6: {unk6}, F1: {f1}, F2: {f2}, F3: {f3}, F4: {f4}, ABC: {a} {b} {c}, Count: {some_count}", component="tags")
 
                 for _ in range(some_count):
                     shorts = struct.unpack("<HHHHHHHH", ap2data[chunk_offset:(chunk_offset + 16)])
@@ -1907,14 +1908,14 @@ class SWF(TrackedCoverage, VerboseOutput):
                     fv7 = float(shorts[2] + i3 + shorts[6]) / 20.0
                     fv8 = float(shorts[3] + i4 + shorts[7]) / 20.0
 
-                    self.vprint(f"{prefix}        Floats: {fv1} {fv2} {fv3} {fv4} {fv5} {fv6} {fv7} {fv8}")
+                    self.vprint(f"{prefix}        Floats: {fv1} {fv2} {fv3} {fv4} {fv5} {fv6} {fv7} {fv8}", component="tags")
 
             return AP2DefineMorphShapeTag(define_shape_id)
         elif tagid == AP2Tag.AP2_DEFINE_BUTTON:
             flags, button_id, source_tags_count, bytecode_count = struct.unpack("<HHHH", ap2data[dataoffset:(dataoffset + 8)])
             self.add_coverage(dataoffset, 8)
 
-            self.vprint(f"{prefix}    Tag ID: {button_id}, Flags: {hex(flags)}, Source Tags Count: {source_tags_count}, Unknown Count: {bytecode_count}")
+            self.vprint(f"{prefix}    Tag ID: {button_id}, Flags: {hex(flags)}, Source Tags Count: {source_tags_count}, Unknown Count: {bytecode_count}", component="tags")
             running_offset = dataoffset + 8
 
             for _ in range(source_tags_count):
@@ -1929,7 +1930,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 chunk_offset += 8
                 rest_of_bitmask = status_bitmask & (~(0x20 + 0x100 + 0x200 + 0x400 + 0x800 + 0x1000 + 0x2000 + 0x4000 + 0x8000))
 
-                self.vprint(f"{prefix}      Offset: {hex(loc)}, Flags: {hex(status_bitmask)}, Source Flags: {hex(rest_of_bitmask)}, Depth: {depth}, Source Tag ID: {src_tag_id}")
+                self.vprint(f"{prefix}      Offset: {hex(loc)}, Flags: {hex(status_bitmask)}, Source Flags: {hex(rest_of_bitmask)}, Depth: {depth}, Source Tag ID: {src_tag_id}", component="tags")
 
                 # Parse the bitmask
                 if status_bitmask & 0x20:
@@ -1937,7 +1938,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     blend = struct.unpack("<B", ap2data[chunk_offset:(chunk_offset + 1)])[0]
                     self.add_coverage(chunk_offset, 4)
                     chunk_offset += 4
-                    self.vprint(f"{prefix}        Blend: {hex(blend)}")
+                    self.vprint(f"{prefix}        Blend: {hex(blend)}", component="tags")
                 else:
                     blend = None
 
@@ -1951,7 +1952,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     transform.a = float(a_int) / 1024.0
                     transform.d = float(d_int) / 1024.0
-                    self.vprint(f"{prefix}        Transform Matrix A: {transform.a}, D: {transform.d}")
+                    self.vprint(f"{prefix}        Transform Matrix A: {transform.a}, D: {transform.d}", component="tags")
 
                 if status_bitmask & 0x200:
                     # Parse rotate component of matrix.
@@ -1961,7 +1962,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     transform.b = float(b_int) / 1024.0
                     transform.c = float(c_int) / 1024.0
-                    self.vprint(f"{prefix}        Transform Matrix B: {transform.b}, C: {transform.c}")
+                    self.vprint(f"{prefix}        Transform Matrix B: {transform.b}, C: {transform.c}", component="tags")
 
                 if status_bitmask & 0x400:
                     # Parse transpose component of matrix.
@@ -1971,7 +1972,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                     transform.tx = float(tx_int) / 20.0
                     transform.ty = float(ty_int) / 20.0
-                    self.vprint(f"{prefix}        Transform Matrix TX: {transform.tx}, TY: {transform.ty}")
+                    self.vprint(f"{prefix}        Transform Matrix TX: {transform.tx}, TY: {transform.ty}", component="tags")
 
                 # Handle object colors
                 multcolor = Color(1.0, 1.0, 1.0, 1.0)
@@ -1987,7 +1988,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     multcolor.g = float(g) / 255.0
                     multcolor.b = float(b) / 255.0
                     multcolor.a = float(a) / 255.0
-                    self.vprint(f"{prefix}        Mult Color: {multcolor}")
+                    self.vprint(f"{prefix}        Mult Color: {multcolor}", component="tags")
 
                 if flags & 0x1000:
                     # Additive color present.
@@ -1999,7 +2000,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     addcolor.g = float(g) / 255.0
                     addcolor.b = float(b) / 255.0
                     addcolor.a = float(a) / 255.0
-                    self.vprint(f"{prefix}        Add Color: {addcolor}")
+                    self.vprint(f"{prefix}        Add Color: {addcolor}", component="tags")
 
                 if flags & 0x2000:
                     # Multiplicative color present, smaller integers.
@@ -2011,7 +2012,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     multcolor.g = float((rgba >> 16) & 0xFF) / 255.0
                     multcolor.b = float((rgba >> 8) & 0xFF) / 255.0
                     multcolor.a = float(rgba & 0xFF) / 255.0
-                    self.vprint(f"{prefix}        Mult Color: {multcolor}")
+                    self.vprint(f"{prefix}        Mult Color: {multcolor}", component="tags")
 
                 if flags & 0x4000:
                     # Additive color present, smaller integers.
@@ -2023,7 +2024,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     addcolor.g = float((rgba >> 16) & 0xFF) / 255.0
                     addcolor.b = float((rgba >> 8) & 0xFF) / 255.0
                     addcolor.a = float(rgba & 0xFF) / 255.0
-                    self.vprint(f"{prefix}        Add Color: {addcolor}")
+                    self.vprint(f"{prefix}        Add Color: {addcolor}", component="tags")
 
                 if flags & 0x8000:
                     # Some sort of filter data? Not sure what this is either. Needs more investigation
@@ -2037,7 +2038,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                     # all in the range of 0-7, corresponding to some sort of filter. They get sizes
                     # looked up and I presume there's data following this corresponding to those sizes.
                     # I don't know however as I've not encountered data with this bit.
-                    self.vprint(f"{prefix}        Unknown Filter data Count: {count}, Size: {filter_size}")
+                    self.vprint(f"{prefix}        Unknown Filter data Count: {count}, Size: {filter_size}", component="tags")
 
             for _ in range(bytecode_count):
                 loc = struct.unpack("<H", ap2data[running_offset:(running_offset + 2)])[0]
@@ -2052,7 +2053,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # but we don't know the length. The game just parses until it hits the end of the buffer or
                 # an END tag.
 
-                self.vprint(f"{prefix}      Offset: {hex(loc)}, Bytecode Bitmask: {hex(status_bitmask)}, Keycode: {keycode}")
+                self.vprint(f"{prefix}      Offset: {hex(loc)}, Bytecode Bitmask: {hex(status_bitmask)}, Keycode: {keycode}", component="tags")
                 raise Exception("TODO: Need to examine this section further if I find data with it!")
 
             # Looks like sound data is either there for 4 button statuses or not there.
@@ -2070,7 +2071,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 unk1, sound_source_tag = struct.unpack("<HH", ap2data[chunk_offset:(chunk_offset + 4)])
                 self.add_coverage(chunk_offset, 4)
 
-                self.vprint(f"{prefix}      Offset: {hex(loc)}, Sound Unk1: {unk1}, Source Tag ID: {sound_source_tag}")
+                self.vprint(f"{prefix}      Offset: {hex(loc)}, Sound Unk1: {unk1}, Source Tag ID: {sound_source_tag}", component="tags")
                 raise Exception("TODO: Need to examine this section further if I find data with it!")
 
             return AP2DefineButtonTag(button_id)
@@ -2079,7 +2080,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.add_coverage(dataoffset, 4)
             running_data_ptr = dataoffset + 4
 
-            self.vprint(f"{prefix}    Flags: {hex(flags)}, Camera ID: {camera_id}")
+            self.vprint(f"{prefix}    Flags: {hex(flags)}, Camera ID: {camera_id}", component="tags")
 
             center = None
             if flags & 0x1:
@@ -2089,7 +2090,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 # This is the camera's X/Y/Z position in the scene, looking "down" at the canvas.
                 center = Point(i1 / 20.0, i2 / 20.0, i3 / 20.0)
-                self.vprint(f"{prefix}      Camera Center: {center}")
+                self.vprint(f"{prefix}      Camera Center: {center}", component="tags")
 
             focal_length = 0.0
             if flags & 0x2:
@@ -2100,7 +2101,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # This is the focal length of the camera, used to construct the FOV.
                 focal_length = i4 / 20.0
 
-                self.vprint(f"{prefix}      Focal Length: {focal_length}")
+                self.vprint(f"{prefix}      Focal Length: {focal_length}", component="tags")
 
             if dataoffset + size != running_data_ptr:
                 raise Exception(f"Failed to parse {dataoffset + size - running_data_ptr} bytes of data!")
@@ -2117,11 +2118,11 @@ class SWF(TrackedCoverage, VerboseOutput):
                 # This looks like we prepend "SWFA-" to the file name.
                 image_str = f"SWFA-{image_str}"
 
-            self.vprint(f"{prefix}    Tag ID: {image_id}, Flags: {hex(flags)}, String: {image_str}")
+            self.vprint(f"{prefix}    Tag ID: {image_id}, Flags: {hex(flags)}, String: {image_str}", component="tags")
 
             return AP2ImageTag(image_id, image_str)
         else:
-            self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}")
+            self.vprint(f"Unknown tag {hex(tagid)} with data {ap2data[dataoffset:(dataoffset + size)]!r}", component="tags")
             raise Exception(f"Unimplemented tag {hex(tagid)}!")
 
     def __parse_tags(
@@ -2147,7 +2148,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         # First, parse frames.
         frames: List[Frame] = []
         tag_to_frame: Dict[int, str] = {}
-        self.vprint(f"{prefix}Number of Frames: {frame_count}")
+        self.vprint(f"{prefix}Number of Frames: {frame_count}", component="tags")
         for i in range(frame_count):
             frame_info = struct.unpack("<I", ap2data[frame_offset:(frame_offset + 4)])[0]
             self.add_coverage(frame_offset, 4)
@@ -2156,7 +2157,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             num_tags_to_play = (frame_info >> 20) & 0xFFF
             frames.append(Frame(start_tag_offset, num_tags_to_play))
 
-            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_offset}, Count: {num_tags_to_play}")
+            self.vprint(f"{prefix}  Frame Start Tag: {start_tag_offset}, Count: {num_tags_to_play}", component="tags")
             for j in range(num_tags_to_play):
                 if start_tag_offset + j in tag_to_frame:
                     raise Exception("Logic error!")
@@ -2165,7 +2166,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # Now, parse regular tags.
         tags: List[Tag] = []
-        self.vprint(f"{prefix}Number of Tags: {tags_count}")
+        self.vprint(f"{prefix}Number of Tags: {tags_count}", component="tags")
         for i in range(tags_count):
             tag = struct.unpack("<I", ap2data[tags_offset:(tags_offset + 4)])[0]
             self.add_coverage(tags_offset, 4)
@@ -2176,12 +2177,12 @@ class SWF(TrackedCoverage, VerboseOutput):
             if size > 0x200000:
                 raise Exception(f"Invalid tag size {size} ({hex(size)})")
 
-            self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}")
+            self.vprint(f"{prefix}  Tag: {hex(tagid)} ({AP2Tag.tag_to_name(tagid)}), Size: {hex(size)}, Offset: {hex(tags_offset + 4)}", component="tags")
             tags.append(self.__parse_tag(ap2_version, afp_version, ap2data, tagid, size, tags_offset + 4, sprite, tag_to_frame.get(i, 'orphan'), prefix=prefix))
             tags_offset += ((size + 3) & 0xFFFFFFFC) + 4  # Skip past tag header and data, rounding to the nearest 4 bytes.
 
         # Finally, parse frame labels
-        self.vprint(f"{prefix}Number of Frame Labels: {name_reference_count}, Flags: {hex(name_reference_flags)}")
+        self.vprint(f"{prefix}Number of Frame Labels: {name_reference_count}, Flags: {hex(name_reference_flags)}", component="tags")
         labels: Dict[str, int] = {}
         for _ in range(name_reference_count):
             frameno, stringoffset = struct.unpack("<HH", ap2data[name_reference_offset:(name_reference_offset + 4)])
@@ -2189,7 +2190,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.add_coverage(name_reference_offset, 4)
             labels[strval] = frameno
 
-            self.vprint(f"{prefix}  Frame Number: {frameno}, Name: {strval}")
+            self.vprint(f"{prefix}  Frame Number: {frameno}, Name: {strval}", component="tags")
             name_reference_offset += 4
 
         return tags, frames, labels
@@ -2342,25 +2343,25 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # Get exported SWF name.
         self.exported_name = self.__get_string(nameoffset)
-        self.vprint(f"{os.linesep}AFP name: {self.name}")
-        self.vprint(f"Container Version: {hex(self.container_version)}")
-        self.vprint(f"Version: {hex(self.data_version)}")
-        self.vprint(f"Exported Name: {self.exported_name}")
-        self.vprint(f"SWF Flags: {hex(flags)}")
+        self.vprint(f"{os.linesep}AFP name: {self.name}", component="core")
+        self.vprint(f"Container Version: {hex(self.container_version)}", component="core")
+        self.vprint(f"Version: {hex(self.data_version)}", component="core")
+        self.vprint(f"Exported Name: {self.exported_name}", component="core")
+        self.vprint(f"SWF Flags: {hex(flags)}", component="core")
         if flags & 0x1:
-            self.vprint(f"  0x1: Movie background color: {self.color}")
+            self.vprint(f"  0x1: Movie background color: {self.color}", component="core")
         else:
-            self.vprint("  0x1: No movie background color")
+            self.vprint("  0x1: No movie background color", component="core")
         if flags & 0x2:
-            self.vprint("  0x2: FPS is an integer")
+            self.vprint("  0x2: FPS is an integer", component="core")
         else:
-            self.vprint("  0x2: FPS is a float")
+            self.vprint("  0x2: FPS is a float", component="core")
         if flags & 0x4:
-            self.vprint("  0x4: Imported tag initializer section present")
+            self.vprint("  0x4: Imported tag initializer section present", component="core")
         else:
-            self.vprint("  0x4: Imported tag initializer section not present")
-        self.vprint(f"Dimensions: {int(self.location.width)}x{int(self.location.height)}")
-        self.vprint(f"Requested FPS: {self.fps}")
+            self.vprint("  0x4: Imported tag initializer section not present", component="core")
+        self.vprint(f"Dimensions: {int(self.location.width)}x{int(self.location.height)}", component="core")
+        self.vprint(f"Requested FPS: {self.fps}", component="core")
 
         # Exported assets
         num_exported_assets = struct.unpack("<H", data[32:34])[0]
@@ -2370,7 +2371,7 @@ class SWF(TrackedCoverage, VerboseOutput):
 
         # Parse exported asset tag names and their tag IDs.
         self.exported_tags = {}
-        self.vprint(f"Number of Exported Tags: {num_exported_assets}")
+        self.vprint(f"Number of Exported Tags: {num_exported_assets}", component="tags")
         for assetno in range(num_exported_assets):
             asset_tag_id, asset_string_offset = struct.unpack("<HH", data[asset_offset:(asset_offset + 4)])
             self.add_coverage(asset_offset, 4)
@@ -2379,7 +2380,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             asset_name = self.__get_string(asset_string_offset)
             self.exported_tags[asset_name] = asset_tag_id
 
-            self.vprint(f"  {assetno}: Tag Name: {asset_name}, Tag ID: {asset_tag_id}")
+            self.vprint(f"  {assetno}: Tag Name: {asset_name}, Tag ID: {asset_tag_id}", component="tags")
 
         # Tag sections
         tags_offset = struct.unpack("<I", data[36:40])[0]
@@ -2393,7 +2394,7 @@ class SWF(TrackedCoverage, VerboseOutput):
         self.add_coverage(34, 2)
         self.add_coverage(44, 4)
 
-        self.vprint(f"Number of Imported Tags: {imported_tags_count}")
+        self.vprint(f"Number of Imported Tags: {imported_tags_count}", component="tags")
         self.imported_tags = {}
         for _ in range(imported_tags_count):
             # First grab the SWF this is importing from, and the number of assets being imported.
@@ -2401,7 +2402,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             self.add_coverage(imported_tags_offset, 4)
 
             swf_name = self.__get_string(swf_name_offset)
-            self.vprint(f"  Source SWF: {swf_name}")
+            self.vprint(f"  Source SWF: {swf_name}", component="tags")
 
             # Now, grab the actual asset names being imported.
             for _ in range(count):
@@ -2411,7 +2412,7 @@ class SWF(TrackedCoverage, VerboseOutput):
                 asset_name = self.__get_string(asset_name_offset)
                 self.imported_tags[asset_id_no] = NamedTagReference(swf_name=swf_name, tag_name=asset_name)
 
-                self.vprint(f"    Tag ID: {asset_id_no}, Requested Asset: {asset_name}")
+                self.vprint(f"    Tag ID: {asset_id_no}, Requested Asset: {asset_name}", component="tags")
 
                 imported_tags_data_offset += 4
 
@@ -2424,7 +2425,7 @@ class SWF(TrackedCoverage, VerboseOutput):
             unk1, length = struct.unpack("<HH", data[imported_tag_initializers_offset:(imported_tag_initializers_offset + 4)])
             self.add_coverage(imported_tag_initializers_offset, 4)
 
-            self.vprint(f"Imported Tag Initializer Offset: {hex(imported_tag_initializers_offset)}, Length: {length}")
+            self.vprint(f"Imported Tag Initializer Offset: {hex(imported_tag_initializers_offset)}, Length: {length}", component="tags")
 
             for i in range(length):
                 item_offset = imported_tag_initializers_offset + 4 + (i * 12)
@@ -2433,11 +2434,11 @@ class SWF(TrackedCoverage, VerboseOutput):
 
                 bytecode: Optional[ByteCode] = None
                 if action_bytecode_length != 0:
-                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, ByteCode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}")
+                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, ByteCode Offset: {hex(action_bytecode_offset + imported_tag_initializers_offset)}", component="tags")
                     bytecode_data = data[(action_bytecode_offset + imported_tag_initializers_offset):(action_bytecode_offset + imported_tag_initializers_offset + action_bytecode_length)]
                     bytecode = self.__parse_bytecode(f"on_import_tag_{tag_id}", bytecode_data)
                 else:
-                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No ByteCode Present")
+                    self.vprint(f"  Tag ID: {tag_id}, Frame: {frame}, No ByteCode Present", component="tags")
 
                 # Add it to the frame's instructions
                 if frame >= len(self.frames):
