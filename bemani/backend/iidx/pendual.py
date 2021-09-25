@@ -134,10 +134,10 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                     'setting': 'global_shop_ranking',
                 },
                 {
-                    'name': 'Events In Omnimix',
-                    'tip': 'Allow events to be enabled at all for Omnimix.',
+                    'name': 'Enable Coca-ColaXBEMANI Event',
+                    'tip': 'Enables the IIDX BLUE Gorgia Coffee Coke event.',
                     'category': 'game_config',
-                    'setting': 'omnimix_events_enabled',
+                    'setting': 'ccxbm_enable',
                 },
             ],
             'ints': [
@@ -151,6 +151,18 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                         1: 'Swap Present/Future',
                         2: 'Force Present',
                         3: 'Force Future',
+                    }
+                },
+                {
+                    'name': 'Event Phase',
+                    'tip': 'Sets the machine event phase.',
+                    'category': 'game_config',
+                    'setting': 'event_phase',
+                    'values': {
+                        0: 'No Event',
+                        1: 'Chrono Seeker',
+                        #2: 'Qpronicle Chord', TODO: Finish this event
+                        3: '-Densetsu renkin- PENDUAL TALISMAN',
                     }
                 },
             ],
@@ -878,7 +890,6 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             root = Node.void('IIDX22pc')
             root.set_attribute('expire', '600')
 
-            # TODO: Hook all of these up to config options I guess?
             ir = Node.void('ir')
             root.add_child(ir)
             ir.set_attribute('beat', '2')
@@ -889,27 +900,22 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
             limit = Node.void('limit')
             root.add_child(limit)
-            limit.set_attribute('phase', '24')
+            limit.set_attribute('phase', '21')
 
             # See if we configured event overrides
             if self.machine_joined_arcade():
                 game_config = self.get_game_config()
                 timeshift_override = game_config.get_int('cycle_config')
-                omni_events = game_config.get_bool('omnimix_events_enabled')
+                ccxbm_on = game_config.get_bool('ccxbm_enable')
             else:
                 # If we aren't in an arcade, we turn off events
                 timeshift_override = 0
-                omni_events = False
+                ccxbm_on = False
 
-            if self.omnimix and (not omni_events):
-                boss_phase = 0
-            else:
-                # TODO: Figure out what these map to
-                boss_phase = 0
-
+            #events
             boss = Node.void('boss')
             root.add_child(boss)
-            boss.set_attribute('phase', str(boss_phase))
+            boss.set_attribute('phase', str(game_config.get_int('event_phase')))
 
             chrono_diver = Node.void('chrono_diver')
             root.add_child(chrono_diver)
@@ -917,18 +923,17 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
             qpronicle_chord = Node.void('qpronicle_chord')
             root.add_child(qpronicle_chord)
-            qpronicle_chord.set_attribute('phase', '2')
+            qpronicle_chord.set_attribute('phase', '3')
 
             common_cd_event = Node.void('common_cd_event')
             root.add_child(common_cd_event)
-            common_cd_event.set_attribute('open_list', '3')
+            common_cd_event.set_attribute('open_list', str(3))
 
             pre_play = Node.void('pre_play')
             root.add_child(pre_play)
             pre_play.set_attribute('phase', '3')
 
-            vip_black_pass = Node.void('vip_pass_black')
-            root.add_child(vip_black_pass)
+            root.add_child(Node.void('vip_pass_black'))
 
             # Course definitions
             courses: List[Dict[str, Any]] = [
@@ -1184,6 +1189,35 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 common_timeshift_phase.set_attribute('phase', '1')
             elif timeshift_override == 3:
                 common_timeshift_phase.set_attribute('phase', '2')
+
+            root.add_child(Node.void('eaappli_expert'))
+
+            cc_collabo_event = Node.void('cc_collabo_event')
+            root.add_child(cc_collabo_event)
+            if ccxbm_on:
+                cc_collabo_event.set_attribute('phase', "1")
+                root.add_child(Node.void('cc_collabo_license'))
+            else:
+                cc_collabo_event.set_attribute('phase', "0")
+
+            tohoisfumo = Node.void('toho_remix')
+            root.add_child(tohoisfumo)
+            tohoisfumo.set_attribute('phase', "2")
+
+            cm = Node.void("cm")
+            root.add_child(cm)
+            cm.set_attribute('compo', 'cm_event3')
+            cm.set_attribute('folder', 'cm_event3')
+            cm.set_attribute('id', "0")
+
+            #Ranking details in title screen
+            rankingcharts = []
+            for (mid, plays) in self.data.local.music.get_hit_chart(self.game, self.music_version, 20):
+                rankingcharts.append(mid)
+            root.add_child(Node.u16_array('monthly_mranking', rankingcharts))
+            root.add_child(Node.u16_array('total_mranking', rankingcharts))
+            ##need to add in the top 20 rankings for month and total network
+            #TODO: Make these separate in the future
 
             return root
 
@@ -1707,6 +1741,172 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         # Ea app features
         if self.data.triggers.has_broadcast_destination(self.game):
             root.add_child(Node.void('bind_eaappli'))
+
+        #cokeXBEMANI event details
+        cxb_music = Node.void('cc_collabo_music')
+        root.add_child(cxb_music)
+        cxb_music.set_attribute('music_list', "1")
+        #TODO: Find the proper music_list number
+
+        cxb_data = Node.void('cc_collabo_data')
+        root.add_child(cxb_data)
+        cxb_data.set_attribute('customize_list', "1")
+        cxb_data.set_attribute('new_get_customize', "3")
+        cxb_data.set_attribute('new_open_music', "1")
+        cxb_data.set_attribute('new_consume_drink', "3")
+        #TODO: Find the event values. This is what enables the Coke frames and skins
+
+        #beatstream collab
+        bst_col = Node.void('beatstream_collabo')
+        root.add_child(bst_col)
+        bst_col.set_attribute('music_list', "1")
+
+        #SOUND HOLIC Event
+        soundhoic = Node.void('sound_holic')
+        root.add_child(soundhoic)
+        soundhoic.set_attribute('music_list', "1")
+        soundhoic.set_attribute('announce_list', "1")
+
+        #sandglass event details
+        time_sandglass = Node.void('time_sandglass')
+        root.add_child(time_sandglass)
+        time_sandglass.set_attribute('item_num', "99")
+        #TODO: Make these purchasable from the WEBUI using paseli. Game will send ``timesandglass_consume`` to subtract from account
+
+        present_time_sandglass = Node.void('present_time_sandglass')
+        root.add_child(present_time_sandglass)
+        present_time_sandglass.set_attribute('item_num', "99")
+        #TODO: Same as above.
+
+        pointsdict = profile.get_dict('point_events') #used for summer, dcat, and pyramid
+        #destiny event
+        dcat = Node.void('destiny_catharsis')
+        root.add_child(dcat)
+        dcat.set_attribute('music_bit', str(pointsdict.get_int('dcat_pts', 0)))
+
+        #BEMANI SUMMER 2015 Event
+        bsum = Node.void('bemani_summer_collabo')
+        root.add_child(bsum)
+        bsum.set_attribute('music_bit', str(pointsdict.get_int('summer_pts', 0)))
+
+        #Chrono Diver event (yaaaay!)
+        diverdict = profile.get_dict('diver_dict')
+        cdive = Node.void('chrono_diver')
+        root.add_child(cdive)
+        cdive.set_attribute('play_count', str(diverdict.get_int('play_count', 0)))
+        cdive.set_attribute('present_unlock', str(diverdict.get_int('present_unlock', 0)))
+        cdive.set_attribute('future_unlock', str(diverdict.get_int('future_unlock', 0)))
+        cdive.set_attribute('success_count_0_n', str(diverdict.get_int('success_count_0_n', 0)))
+        cdive.set_attribute('success_count_0_h', str(diverdict.get_int('success_count_0_h', 0)))
+        cdive.set_attribute('success_count_0_a', str(diverdict.get_int('success_count_0_a', 0)))
+        cdive.set_attribute('success_count_1_n', str(diverdict.get_int('success_count_1_n', 0)))
+        cdive.set_attribute('success_count_1_h', str(diverdict.get_int('success_count_1_h', 0)))
+        cdive.set_attribute('success_count_1_a', str(diverdict.get_int('success_count_1_a', 0)))
+        cdive.set_attribute('success_count_2_n', str(diverdict.get_int('success_count_2_n', 0)))
+        cdive.set_attribute('success_count_2_h', str(diverdict.get_int('success_count_2_h', 0)))
+        cdive.set_attribute('success_count_2_a', str(diverdict.get_int('success_count_2_a', 0)))
+        cdive.set_attribute('success_count_3_n', str(diverdict.get_int('success_count_3_n', 0)))
+        cdive.set_attribute('success_count_3_h', str(diverdict.get_int('success_count_3_h', 0)))
+        cdive.set_attribute('success_count_3_a', str(diverdict.get_int('success_count_3_a', 0)))
+        cdive.set_attribute('story_list', str(diverdict.get_int('story_list', 0)))
+
+        #konami pyramid scheme
+        pyramid = Node.void('pyramid')
+        root.add_child(pyramid)
+        pyramid.set_attribute('music_list', "1")
+        pyramid.set_attribute('item_list', "1")
+        pyramid.set_attribute('statue_0', str(0))
+        pyramid.set_attribute('statue_1', str(0))
+        pyramid.set_attribute('statue_2', str(0))
+        #TODO: Figure out how to actually send this data. 
+        # I assume the event needs to be enabled properly
+        # as the game only sends generic points
+
+        #reflec beat collaboration
+        reflec = Node.void('reflec_collabo')
+        refdict = profile.get_dict('reflec_collab')
+        root.add_child(reflec)
+        reflec.set_attribute('collabo_phase', "2")
+        reflec.set_attribute('phase1_iidx_play', "0")
+        reflec.set_attribute('phase2_iidx_play', "0")
+        reflec.set_attribute('phase1_reflec_play', "0")
+        reflec.set_attribute('phase2_reflec_play', "0")
+        reflec.set_attribute('phase1_music_list', "0")
+        reflec.set_attribute('phase2_music_list', "0")
+        reflec.set_attribute('phase1_iidx_item', str(refdict.get_int('phase1_item', 0)))
+        reflec.set_attribute('phase2_iidx_item', str(refdict.get_int('phase2_item', 0)))
+        reflec.set_attribute('phase1_reflec_item', "0")
+        reflec.set_attribute('phase2_reflec_item', "0")
+        #TODO: Add in Reflec Beat profile in the future
+
+        #old event details
+        oldevent = Node.void('old_linked_event')
+        root.add_child(oldevent)
+        oldevent.set_attribute('gakuen_list', "1")
+        oldevent.set_attribute('baseball_list', "1")
+        oldevent.set_attribute('tricolette_list', "1")
+        oldevent.set_attribute('cafedetran_list', "1")
+        #TODO: Add in profile from previous versions
+
+        #chrono chaser event
+        chaser = Node.void('chaser')
+        root.add_child(chaser)
+        chaser.set_attribute('phase', "1")
+        chaser.set_attribute('attack', "0")
+        chaser.set_attribute('exist_age', "0")
+        chaser.set_attribute('summon_gate', "0")
+        chaser.set_attribute('success', "0")
+        chaser.set_attribute('failed', "0")
+        chaser.set_attribute('damage_point', "0")
+        chaser.set_attribute('boss_hp', "0")
+        #TODO: Finish this event
+
+        #boss event 3 - pendual tailsman
+        be3 = Node.void('boss_event_3')
+        bossdict = profile.get_dict('bosse3_dict')
+        root.add_child(be3)
+        be3.set_attribute('music_list', "1")
+        be3.set_attribute('bonus_point', str(bossdict.get_int('points')))
+
+        ##qpronicle details
+        #TODO: Finish this event
+        #phase3 love
+        love = Node.void('qpronicle_love')
+        #root.add_child(love)
+        love.set_attribute('music_list', "1")
+
+        #phase3
+        phase3 = Node.void('qpronicle_phase3')
+        #root.add_child(phase3)
+        phase3.set_attribute('stairs_num', "0")
+        phase3.set_attribute('flame_list', "0")
+        phase3.set_attribute('lane_list', "0")
+        phase3.set_attribute('map0_select', "0")
+        phase3.set_attribute('map1_select', "0")
+        phase3.set_attribute('map2_select', "0")
+        phase3.set_attribute('map3_select', "0")
+        phase3.set_attribute('map4_select', "0")
+        phase3.set_attribute('map5_select', "0")
+        phase3.set_attribute('map6_select', "0")
+        phase3.set_attribute('is_love_scene_skip', "0")
+
+        #main event nodes
+        chord = Node.void('qpronicle_chord')
+        chorddict = profile.get_dict('chord_dict')
+        root.add_child(chord)
+        chord.set_attribute('is_first_select_map', str(chorddict.get_int('is_first_select_map', 0)))
+        chord.set_attribute('is_login_bonus', "0")
+        chord.set_attribute('last_select_map', str(chorddict.get_int('last_select_map', 0)))
+        chord.set_attribute('patona_leader', str(chorddict.get_int('patona_leader', 0)))
+        chord.set_attribute('patona_sub_1', str(chorddict.get_int('patona_sub_1', 0)))
+        chord.set_attribute('patona_sub_2', str(chorddict.get_int('patona_sub_2', 0)))
+        chord.set_attribute('rare_enemy_damage1', str(chorddict.get_int('rare_enemy_damage1', 0)))
+        chord.set_attribute('rare_enemy_damage2', str(chorddict.get_int('rare_enemy_damage2', 0)))
+        chord.set_attribute('rare_enemy_damage3', str(chorddict.get_int('rare_enemy_damage3', 0)))
+        chord.set_attribute('rare_enemy_damage4', str(chorddict.get_int('rare_enemy_damage4', 0)))
+        chord.set_attribute('rare_enemy_damage5', str(chorddict.get_int('rare_enemy_damage5', 0)))
+        chord.set_attribute('story_view_list', str(chorddict.get_int('story_view_list', 0)))
+
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
@@ -1908,6 +2108,62 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             if orb_data.child_value('use_vip_pass'):
                 orbs = 0
             newprofile.replace_int('orbs', orbs)
+
+        #chrono diver saving
+        diverdict = newprofile.get_dict('diver_dict')
+        diverreq = request.child('chrono_diver')
+        if diverreq is not None:
+            diverdict.replace_int('future_unlock', int(diverreq.attribute('future_unlock')))
+            diverdict.replace_int('play_count', int(diverreq.attribute('play_count')))
+            diverdict.replace_int('present_unlock', int(diverreq.attribute('present_unlock')))
+            diverdict.replace_int('story_list', int(diverreq.attribute('story_list')))
+            diverdict.replace_int('success_count_0_a', int(diverreq.attribute('success_count_0_a')))
+            diverdict.replace_int('success_count_0_h', int(diverreq.attribute('success_count_0_h')))
+            diverdict.replace_int('success_count_0_n', int(diverreq.attribute('success_count_0_n')))
+            diverdict.replace_int('success_count_1_a', int(diverreq.attribute('success_count_1_a')))
+            diverdict.replace_int('success_count_1_h', int(diverreq.attribute('success_count_1_h')))
+            diverdict.replace_int('success_count_1_n', int(diverreq.attribute('success_count_1_n')))
+            diverdict.replace_int('success_count_2_a', int(diverreq.attribute('success_count_2_a')))
+            diverdict.replace_int('success_count_2_h', int(diverreq.attribute('success_count_2_h')))
+            diverdict.replace_int('success_count_2_n', int(diverreq.attribute('success_count_2_n')))
+            diverdict.replace_int('success_count_3_a', int(diverreq.attribute('success_count_3_a')))
+            diverdict.replace_int('success_count_3_h', int(diverreq.attribute('success_count_3_h')))
+            diverdict.replace_int('success_count_3_n', int(diverreq.attribute('success_count_3_n')))
+            newprofile.replace_dict('diver_dict', diverdict)
+
+        reflecdict = newprofile.get_dict('reflec_collab')
+        reflecreq = request.child('reflec_collabo')
+        if reflecreq is not None:
+            reflecdict.replace_int("phase1_item", int(reflecreq.attribute('phase1_iidx_item')))
+            reflecdict.replace_int("phase2_item", int(reflecreq.attribute('phase2_iidx_item')))
+            newprofile.replace_dict('reflec_collab', reflecdict)
+
+        #boss event pendual tailsman points
+        bossdict = newprofile.get_dict('bosse3_dict')
+        bossreq = request.child('boss_event_3')
+        if bossreq is not None:
+            oldpoints = bossdict.get_int('points', 0)
+            newpoints = int(bossreq.attribute('add_bonus_point')) + oldpoints
+            bossdict.replace_int('points', newpoints)
+            newprofile.replace_dict('bosse3_dict', bossdict)
+
+        #Qpronicle Chord saving
+        chorddict = newprofile.get_dict('chord_dict')
+        chordreq = request.child('qpronicle_chord')
+        if chordreq is not None:
+            chorddict.replace_int('is_first_select_map', int(chordreq.attribute('is_first_select_map')))
+            chorddict.replace_int('is_use_login_bonus', int(chordreq.attribute('is_use_login_bonus')))
+            chorddict.replace_int('last_select_map', int(chordreq.attribute('last_select_map')))
+            chorddict.replace_int('patona_leader', int(chordreq.attribute('patona_leader')))
+            chorddict.replace_int('patona_sub_1', int(chordreq.attribute('patona_sub_1')))
+            chorddict.replace_int('patona_sub_2', int(chordreq.attribute('patona_sub_2')))
+            chorddict.replace_int('rare_enemy_damage1', int(chordreq.attribute('rare_enemy_damage1')))
+            chorddict.replace_int('rare_enemy_damage2', int(chordreq.attribute('rare_enemy_damage2')))
+            chorddict.replace_int('rare_enemy_damage3', int(chordreq.attribute('rare_enemy_damage3')))
+            chorddict.replace_int('rare_enemy_damage4', int(chordreq.attribute('rare_enemy_damage4')))
+            chorddict.replace_int('rare_enemy_damage5', int(chordreq.attribute('rare_enemy_damage5')))
+            chorddict.replace_int('story_view_list', int(chordreq.attribute('story_view_list')))
+            newprofile.replace_dict('chord_dict', chorddict)
 
         # Keep track of play statistics across all mixes
         self.update_play_statistics(userid, play_stats)
