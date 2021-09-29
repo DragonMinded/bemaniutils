@@ -679,7 +679,10 @@ def render_path(
                 else:
                     raise Exception("Invalid image specified as background!")
 
-        background = adjust_background_loop(background, background_loop_start, background_loop_end, background_loop_offset)
+        if background:
+            background = adjust_background_loop(background, background_loop_start, background_loop_end, background_loop_offset)
+        else:
+            raise Exception("Did not find any background images to load!")
     else:
         background = None
 
