@@ -139,6 +139,12 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                     'category': 'game_config',
                     'setting': 'ccxbm_enable',
                 },
+                {
+                    'name': 'Events In Omnimix',
+                    'tip': 'Allow events to be enabled at all for Omnimix.',
+                    'category': 'game_config',
+                    'setting': 'omnimix_events_enabled',
+                },
             ],
             'ints': [
                 {
@@ -907,15 +913,25 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 game_config = self.get_game_config()
                 timeshift_override = game_config.get_int('cycle_config')
                 ccxbm_on = game_config.get_bool('ccxbm_enable')
+                omni_events = game_config.get_bool('omnimix_events_enabled')
             else:
                 # If we aren't in an arcade, we turn off events
                 timeshift_override = 0
                 ccxbm_on = False
+                omni_events = False
+
+            frontendphase = game_config.get_int('event_phase')
+            if self.omnimix and (not omni_events):
+                phase = 0
+            elif self.omnimix and omni_events:
+                phase = frontendphase
+            elif not self.omnimix:
+                phase = frontendphase
 
             #events
             boss = Node.void('boss')
             root.add_child(boss)
-            boss.set_attribute('phase', str(game_config.get_int('event_phase')))
+            boss.set_attribute('phase', str(phase))
 
             chrono_diver = Node.void('chrono_diver')
             root.add_child(chrono_diver)
@@ -927,7 +943,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
             common_cd_event = Node.void('common_cd_event')
             root.add_child(common_cd_event)
-            common_cd_event.set_attribute('open_list', str(3))
+            common_cd_event.set_attribute('open_list', "3")
 
             pre_play = Node.void('pre_play')
             root.add_child(pre_play)
@@ -1746,7 +1762,6 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         cxb_music = Node.void('cc_collabo_music')
         root.add_child(cxb_music)
         cxb_music.set_attribute('music_list', "1")
-        #TODO: Find the proper music_list number
 
         cxb_data = Node.void('cc_collabo_data')
         root.add_child(cxb_data)
@@ -1789,7 +1804,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.add_child(bsum)
         bsum.set_attribute('music_bit', str(pointsdict.get_int('summer_pts', 0)))
 
-        #Chrono Diver event (yaaaay!)
+        #Chrono Diver event
         diverdict = profile.get_dict('diver_dict')
         cdive = Node.void('chrono_diver')
         root.add_child(cdive)
@@ -1810,18 +1825,6 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         cdive.set_attribute('success_count_3_a', str(diverdict.get_int('success_count_3_a', 0)))
         cdive.set_attribute('story_list', str(diverdict.get_int('story_list', 0)))
 
-        #konami pyramid scheme
-        pyramid = Node.void('pyramid')
-        root.add_child(pyramid)
-        pyramid.set_attribute('music_list', "1")
-        pyramid.set_attribute('item_list', "1")
-        pyramid.set_attribute('statue_0', str(0))
-        pyramid.set_attribute('statue_1', str(0))
-        pyramid.set_attribute('statue_2', str(0))
-        #TODO: Figure out how to actually send this data. 
-        # I assume the event needs to be enabled properly
-        # as the game only sends generic points
-
         #reflec beat collaboration
         reflec = Node.void('reflec_collabo')
         refdict = profile.get_dict('reflec_collab')
@@ -1839,73 +1842,12 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         reflec.set_attribute('phase2_reflec_item', "0")
         #TODO: Add in Reflec Beat profile in the future
 
-        #old event details
-        oldevent = Node.void('old_linked_event')
-        root.add_child(oldevent)
-        oldevent.set_attribute('gakuen_list', "1")
-        oldevent.set_attribute('baseball_list', "1")
-        oldevent.set_attribute('tricolette_list', "1")
-        oldevent.set_attribute('cafedetran_list', "1")
-        #TODO: Add in profile from previous versions
-
-        #chrono chaser event
-        chaser = Node.void('chaser')
-        root.add_child(chaser)
-        chaser.set_attribute('phase', "1")
-        chaser.set_attribute('attack', "0")
-        chaser.set_attribute('exist_age', "0")
-        chaser.set_attribute('summon_gate', "0")
-        chaser.set_attribute('success', "0")
-        chaser.set_attribute('failed', "0")
-        chaser.set_attribute('damage_point', "0")
-        chaser.set_attribute('boss_hp', "0")
-        #TODO: Finish this event
-
         #boss event 3 - pendual tailsman
         be3 = Node.void('boss_event_3')
         bossdict = profile.get_dict('bosse3_dict')
         root.add_child(be3)
         be3.set_attribute('music_list', "1")
         be3.set_attribute('bonus_point', str(bossdict.get_int('points')))
-
-        ##qpronicle details
-        #TODO: Finish this event
-        #phase3 love
-        love = Node.void('qpronicle_love')
-        #root.add_child(love)
-        love.set_attribute('music_list', "1")
-
-        #phase3
-        phase3 = Node.void('qpronicle_phase3')
-        #root.add_child(phase3)
-        phase3.set_attribute('stairs_num', "0")
-        phase3.set_attribute('flame_list', "0")
-        phase3.set_attribute('lane_list', "0")
-        phase3.set_attribute('map0_select', "0")
-        phase3.set_attribute('map1_select', "0")
-        phase3.set_attribute('map2_select', "0")
-        phase3.set_attribute('map3_select', "0")
-        phase3.set_attribute('map4_select', "0")
-        phase3.set_attribute('map5_select', "0")
-        phase3.set_attribute('map6_select', "0")
-        phase3.set_attribute('is_love_scene_skip', "0")
-
-        #main event nodes
-        chord = Node.void('qpronicle_chord')
-        chorddict = profile.get_dict('chord_dict')
-        root.add_child(chord)
-        chord.set_attribute('is_first_select_map', str(chorddict.get_int('is_first_select_map', 0)))
-        chord.set_attribute('is_login_bonus', "0")
-        chord.set_attribute('last_select_map', str(chorddict.get_int('last_select_map', 0)))
-        chord.set_attribute('patona_leader', str(chorddict.get_int('patona_leader', 0)))
-        chord.set_attribute('patona_sub_1', str(chorddict.get_int('patona_sub_1', 0)))
-        chord.set_attribute('patona_sub_2', str(chorddict.get_int('patona_sub_2', 0)))
-        chord.set_attribute('rare_enemy_damage1', str(chorddict.get_int('rare_enemy_damage1', 0)))
-        chord.set_attribute('rare_enemy_damage2', str(chorddict.get_int('rare_enemy_damage2', 0)))
-        chord.set_attribute('rare_enemy_damage3', str(chorddict.get_int('rare_enemy_damage3', 0)))
-        chord.set_attribute('rare_enemy_damage4', str(chorddict.get_int('rare_enemy_damage4', 0)))
-        chord.set_attribute('rare_enemy_damage5', str(chorddict.get_int('rare_enemy_damage5', 0)))
-        chord.set_attribute('story_view_list', str(chorddict.get_int('story_view_list', 0)))
 
         return root
 
