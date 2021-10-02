@@ -1,6 +1,6 @@
 import os
 
-import alembic.config  # type: ignore
+import alembic.config
 from alembic.migration import MigrationContext  # type: ignore
 from alembic.autogenerate import compare_metadata  # type: ignore
 from sqlalchemy import create_engine  # type: ignore
@@ -153,7 +153,7 @@ class Data:
         ]
         alembicArgs.extend(args)
         os.chdir(base_dir)
-        alembic.config.main(argv=alembicArgs)
+        alembic.config.main(argv=alembicArgs)  # type: ignore
 
     def create(self) -> None:
         """
