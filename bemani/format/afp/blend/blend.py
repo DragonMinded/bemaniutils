@@ -131,12 +131,10 @@ def blend_overlay(
     # jubeat uses the alternative formula Src * Dst + Dst * (1 - As).
 
     # Calculate final color blending.
-    src_alpha = src[3] / 255.0
-    src_remainder = 1.0 - src_alpha
     return (
-        clamp((255 * (2.0 * (dest[0] / 255.0) * (src[0] / 255.0) * src_alpha)) + (dest[0] * src_remainder)),
-        clamp((255 * (2.0 * (dest[1] / 255.0) * (src[1] / 255.0) * src_alpha)) + (dest[1] * src_remainder)),
-        clamp((255 * (2.0 * (dest[2] / 255.0) * (src[2] / 255.0) * src_alpha)) + (dest[2] * src_remainder)),
+        clamp((255 * (2.0 * (dest[0] / 255.0) * (src[0] / 255.0)))),
+        clamp((255 * (2.0 * (dest[1] / 255.0) * (src[1] / 255.0)))),
+        clamp((255 * (2.0 * (dest[2] / 255.0) * (src[2] / 255.0)))),
         dest[3],
     )
 

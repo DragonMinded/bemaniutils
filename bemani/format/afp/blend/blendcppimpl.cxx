@@ -204,12 +204,10 @@ extern "C"
         // jubeat uses the alternative formula Src * Dst + Dst * (1 - As).
 
         // Calculate final color blending.
-        double src_alpha = src.a / 255.0;
-        double src_remainder = 1.0 - src_alpha;
         return (intcolor_t){
-            clamp((255 * (2.0 * (dest.r / 255.0) * (src.r / 255.0) * src_alpha)) + (dest.r * src_remainder)),
-            clamp((255 * (2.0 * (dest.g / 255.0) * (src.g / 255.0) * src_alpha)) + (dest.g * src_remainder)),
-            clamp((255 * (2.0 * (dest.b / 255.0) * (src.b / 255.0) * src_alpha)) + (dest.b * src_remainder)),
+            clamp((255 * (2.0 * (dest.r / 255.0) * (src.r / 255.0)))),
+            clamp((255 * (2.0 * (dest.g / 255.0) * (src.g / 255.0)))),
+            clamp((255 * (2.0 * (dest.b / 255.0) * (src.b / 255.0)))),
             dest.a,
         };
     }
