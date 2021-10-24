@@ -422,7 +422,7 @@ class BinaryDecoder:
                         # Need to convert this from encoding to standard string.
                         # Also, need to lob off the trailing null.
                         try:
-                            val = val[:-1].decode(self.encoding)
+                            val = val[:-1].decode(self.encoding, 'replace')
                         except UnicodeDecodeError:
                             # Nothing we can do here
                             pass

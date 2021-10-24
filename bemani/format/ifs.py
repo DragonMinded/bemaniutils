@@ -196,6 +196,11 @@ class IFS:
                         name = subchild.attribute('name')
                         if name is None:
                             raise Exception(f"Texture entry {subchild} has no name!")
+                        if ' ' in name:
+                            # Certain files that were corrupted on create or copy
+                            # seem to have spaces in the name which shouldn't be
+                            # allowed. Lob them off.
+                            name = name[:name.find(' ')]
                         md5sum = hashlib.md5(name.encode(encoding)).hexdigest()
                         oldname = os.path.join(texdir, md5sum)
                         newname = os.path.join(texdir, name)
