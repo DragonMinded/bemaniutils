@@ -1646,6 +1646,7 @@ class AFPRenderer(VerboseOutput):
 
         # If we have a background image, add it to the root clip.
         background_object = RegisteredImage(-1, "INVALID_REFERENCE_NAME")
+        background_container: Optional[PlacedImage] = None
         background_frames = 0
 
         if background_image:
@@ -1670,20 +1671,19 @@ class AFPRenderer(VerboseOutput):
                 self.textures[name] = background_image[background_frame].convert("RGBA")
 
             # Place an instance of this background on the root clip.
-            root_clip.placed_objects.append(
-                PlacedImage(
-                    -1,
-                    -1,
-                    Point.identity(),
-                    background_matrix,
-                    AP2PlaceObjectTag.PROJECTION_AFFINE,
-                    Color(1.0, 1.0, 1.0, 1.0),
-                    Color(0.0, 0.0, 0.0, 0.0),
-                    0,
-                    None,
-                    background_object
-                ),
+            background_container = PlacedImage(
+                -1,
+                -1,
+                Point.identity(),
+                background_matrix,
+                AP2PlaceObjectTag.PROJECTION_AFFINE,
+                Color(1.0, 1.0, 1.0, 1.0),
+                Color(0.0, 0.0, 0.0, 0.0),
+                0,
+                None,
+                background_object
             )
+            root_clip.placed_objects.append(background_container)
 
         # Create the root mask for where to draw the root clip.
         movie_mask = Image.new("RGBA", (resized_width, resized_height), color=(255, 0, 0, 255))
@@ -1709,7 +1709,17 @@ class AFPRenderer(VerboseOutput):
                     changed = self.__process_tags(root_clip, True) or changed
 
                 # Calculate a new background frame if needed.
-                if background_frames > 0:
+                if background_container is not None and background_frames > 0:
+                    # First, make sure we're still placed in the root clip, which can be undone
+                    # if it is rewound.
+                    for obj in root_clip.placed_objects:
+                        if obj is background_container:
+                            break
+                    else:
+                        self.vprint("Root clip was rewound, re-placing background image on clip.")
+                        root_clip.placed_objects.append(background_container)
+
+                    # Now, update the background image if we need to.
                     background_frame = frameno % background_frames
                     name = f"{swf.exported_name}_inserted_background_{background_frame}"
                     if background_object.reference != name:
