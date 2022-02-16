@@ -3818,6 +3818,11 @@ class SoundVoltexHeavenlyHaven(
             grade = request.child_value('gr')
             score = request.child_value('sc')
 
+            # Do not update the course achievement when old score is greater.
+            old = self.data.local.user.get_achievement(self.game, self.version, userid, (season_id * 100) + course_id, 'course')
+            if old is not None and old.get_int('score') > score:
+                return Node.void('game')
+
             self.data.local.user.put_achievement(
                 self.game,
                 self.version,

@@ -501,6 +501,11 @@ class SoundVoltexGravityWars(
             achievement_rate = request.child_value('ar')
             season_id = request.child_value('ssnid')
 
+            # Do not update the course achievement when old achievement rate is greater.
+            old = self.data.local.user.get_achievement(self.game, self.version, userid, (season_id * 100) + course_id, 'course')
+            if old is not None and old.get_int('achievement_rate') > achievement_rate:
+                return Node.void('game_3')
+
             self.data.local.user.put_achievement(
                 self.game,
                 self.version,
