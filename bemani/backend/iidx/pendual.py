@@ -167,7 +167,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                     'values': {
                         0: 'No Event',
                         1: 'Chrono Seeker',
-                        #2: 'Qpronicle Chord', TODO: Finish this event
+                        # 2: 'Qpronicle Chord', TODO: Finish this event
                         3: '-Densetsu renkin- PENDUAL TALISMAN',
                     }
                 },
@@ -928,7 +928,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             elif not self.omnimix:
                 phase = frontendphase
 
-            #events
+            # events
             boss = Node.void('boss')
             root.add_child(boss)
             boss.set_attribute('phase', str(phase))
@@ -1226,14 +1226,14 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             cm.set_attribute('folder', 'cm_event3')
             cm.set_attribute('id', "0")
 
-            #Ranking details in title screen
+            # Ranking details in title screen
             rankingcharts = []
             for (mid, plays) in self.data.local.music.get_hit_chart(self.game, self.music_version, 20):
                 rankingcharts.append(mid)
             root.add_child(Node.u16_array('monthly_mranking', rankingcharts))
             root.add_child(Node.u16_array('total_mranking', rankingcharts))
-            ##need to add in the top 20 rankings for month and total network
-            #TODO: Make these separate in the future
+            # need to add in the top 20 rankings for month and total network
+            # TODO: Make these separate in the future
 
             return root
 
@@ -1758,7 +1758,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         if self.data.triggers.has_broadcast_destination(self.game):
             root.add_child(Node.void('bind_eaappli'))
 
-        #cokeXBEMANI event details
+        # cokeXBEMANI event details
         cxb_music = Node.void('cc_collabo_music')
         root.add_child(cxb_music)
         cxb_music.set_attribute('music_list', "1")
@@ -1769,42 +1769,42 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         cxb_data.set_attribute('new_get_customize', "3")
         cxb_data.set_attribute('new_open_music', "1")
         cxb_data.set_attribute('new_consume_drink', "3")
-        #TODO: Find the event values. This is what enables the Coke frames and skins
+        # TODO: Find the event values. This is what enables the Coke frames and skins
 
-        #beatstream collab
+        # beatstream collab
         bst_col = Node.void('beatstream_collabo')
         root.add_child(bst_col)
         bst_col.set_attribute('music_list', "1")
 
-        #SOUND HOLIC Event
+        # SOUND HOLIC Event
         soundhoic = Node.void('sound_holic')
         root.add_child(soundhoic)
         soundhoic.set_attribute('music_list', "1")
         soundhoic.set_attribute('announce_list', "1")
 
-        #sandglass event details
+        # sandglass event details
         time_sandglass = Node.void('time_sandglass')
         root.add_child(time_sandglass)
         time_sandglass.set_attribute('item_num', "99")
-        #TODO: Make these purchasable from the WEBUI using paseli. Game will send ``timesandglass_consume`` to subtract from account
+        # TODO: Make these purchasable from the WEBUI using paseli. Game will send ``timesandglass_consume`` to subtract from account
 
         present_time_sandglass = Node.void('present_time_sandglass')
         root.add_child(present_time_sandglass)
         present_time_sandglass.set_attribute('item_num', "99")
-        #TODO: Same as above.
+        # TODO: Same as above.
 
-        pointsdict = profile.get_dict('point_events') #used for summer, dcat, and pyramid
-        #destiny event
+        pointsdict = profile.get_dict('point_events')  # used for summer, dcat, and pyramid
+        # destiny event
         dcat = Node.void('destiny_catharsis')
         root.add_child(dcat)
         dcat.set_attribute('music_bit', str(pointsdict.get_int('dcat_pts', 0)))
 
-        #BEMANI SUMMER 2015 Event
+        # BEMANI SUMMER 2015 Event
         bsum = Node.void('bemani_summer_collabo')
         root.add_child(bsum)
         bsum.set_attribute('music_bit', str(pointsdict.get_int('summer_pts', 0)))
 
-        #Chrono Diver event
+        # Chrono Diver event
         diverdict = profile.get_dict('diver_dict')
         cdive = Node.void('chrono_diver')
         root.add_child(cdive)
@@ -1825,7 +1825,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         cdive.set_attribute('success_count_3_a', str(diverdict.get_int('success_count_3_a', 0)))
         cdive.set_attribute('story_list', str(diverdict.get_int('story_list', 0)))
 
-        #reflec beat collaboration
+        # reflec beat collaboration
         reflec = Node.void('reflec_collabo')
         refdict = profile.get_dict('reflec_collab')
         root.add_child(reflec)
@@ -1840,9 +1840,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         reflec.set_attribute('phase2_iidx_item', str(refdict.get_int('phase2_item', 0)))
         reflec.set_attribute('phase1_reflec_item', "0")
         reflec.set_attribute('phase2_reflec_item', "0")
-        #TODO: Add in Reflec Beat profile in the future
+        # TODO: Add in Reflec Beat profile in the future
 
-        #boss event 3 - pendual tailsman
+        # boss event 3 - pendual tailsman
         be3 = Node.void('boss_event_3')
         bossdict = profile.get_dict('bosse3_dict')
         root.add_child(be3)
@@ -2051,7 +2051,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 orbs = 0
             newprofile.replace_int('orbs', orbs)
 
-        #chrono diver saving
+        # chrono diver saving
         diverdict = newprofile.get_dict('diver_dict')
         diverreq = request.child('chrono_diver')
         if diverreq is not None:
@@ -2080,7 +2080,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             reflecdict.replace_int("phase2_item", int(reflecreq.attribute('phase2_iidx_item')))
             newprofile.replace_dict('reflec_collab', reflecdict)
 
-        #boss event pendual tailsman points
+        # boss event pendual tailsman points
         bossdict = newprofile.get_dict('bosse3_dict')
         bossreq = request.child('boss_event_3')
         if bossreq is not None:
@@ -2089,7 +2089,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             bossdict.replace_int('points', newpoints)
             newprofile.replace_dict('bosse3_dict', bossdict)
 
-        #Qpronicle Chord saving
+        # Qpronicle Chord saving
         chorddict = newprofile.get_dict('chord_dict')
         chordreq = request.child('qpronicle_chord')
         if chordreq is not None:
