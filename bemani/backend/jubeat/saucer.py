@@ -135,18 +135,7 @@ class JubeatSaucer(
         player = data.child('player')
         extid = player.child_value('jid')
         mdata_ver = player.child_value('mdata_ver')  # Game requests mdata 3 times per profile for some reason
-        if mdata_ver != 1:
-            root = Node.void('gametop')
-            datanode = Node.void('data')
-            root.add_child(datanode)
-            player = Node.void('player')
-            datanode.add_child(player)
-            player.add_child(Node.s32('jid', extid))
-            playdata = Node.void('playdata')
-            player.add_child(playdata)
-            playdata.set_attribute('count', '0')
-            return root
-        root = self.get_scores_by_extid(extid)
+        root = self.get_scores_by_extid(extid, mdata_ver)
         if root is None:
             root = Node.void('gametop')
             root.set_attribute('status', str(Status.NO_PROFILE))
@@ -156,7 +145,8 @@ class JubeatSaucer(
         data = request.child('data')
         player = data.child('player')
         extid = player.child_value('rival')
-        root = self.get_scores_by_extid(extid)
+        mdata_ver = player.child_value('mdata_ver')
+        root = self.get_scores_by_extid(extid, mdata_ver)
         if root is None:
             root = Node.void('gametop')
             root.set_attribute('status', str(Status.NO_PROFILE))
@@ -657,8 +647,14 @@ class JubeatSaucer(
 
         return newprofile
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
-
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score], mdata_ver: Optional[int]) -> Node:
+        if mdata_ver is None:
+            mdata_ver = 1
+        min_music_id, max_music_id = {
+            1: (0, 60000000),
+            2: (60000000, 90009999),
+            3: (90009999, 1000000000),
+        }.get(mdata_ver)
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
@@ -712,6 +708,8 @@ class JubeatSaucer(
             music.replace_dict(str(score.id), data)
 
         for scoreid in music:
+            if int(scoreid) >= max_music_id or int(scoreid) <= min_music_id:
+                continue
             scoredata = music[scoreid]
             musicdata = Node.void('musicdata')
             playdata.add_child(musicdata)

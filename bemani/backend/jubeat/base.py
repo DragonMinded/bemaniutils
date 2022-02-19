@@ -64,7 +64,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void('gametop')
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score], mdata_ver: Optional[int]) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
@@ -133,7 +133,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         return self.format_profile(userid, profile)
 
-    def get_scores_by_extid(self, extid: Optional[int]) -> Optional[Node]:
+    def get_scores_by_extid(self, extid: Optional[int], mdata_ver: Optional[int]) -> Optional[Node]:
         """
         Given an ExtID, return a formatted score node. Similar rationale to
         get_profile_by_refid.
@@ -148,7 +148,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         profile = self.get_profile(userid)
         if profile is None:
             return None
-        return self.format_scores(userid, profile, scores)
+        return self.format_scores(userid, profile, scores, mdata_ver)
 
     def update_score(
         self,

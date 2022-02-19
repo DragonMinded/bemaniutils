@@ -1,4 +1,5 @@
 from bemani.data.config import Config
+from bemani.data.cache import cached
 from bemani.data.data import Data, DBCreateException
 from bemani.data.exceptions import ScoreSaveException
 from bemani.data.types import User, Achievement, Machine, Arcade, Score, Attempt, News, Link, Song, Event, Server, Client, UserID, ArcadeID
@@ -27,4 +28,5 @@ __all__ = [
     "ArcadeID",
     "RemoteUser",
     "Triggers",
+    "cached",
 ]

@@ -7,6 +7,7 @@ from bemani.data.mysql.user import UserData
 from bemani.data.mysql.music import MusicData
 from bemani.data.remoteuser import RemoteUser
 from bemani.data.types import UserID, Score, Song
+from bemani.data import cached
 
 
 class GlobalMusicData(BaseGlobalData):
@@ -500,6 +501,7 @@ class GlobalMusicData(BaseGlobalData):
 
         return topscore
 
+    @cached(lifetime=5)
     def get_scores(
         self,
         game: GameConstants,
@@ -729,6 +731,7 @@ class GlobalMusicData(BaseGlobalData):
 
         return finalscores
 
+    @cached(lifetime=30)
     def get_all_records(
         self,
         game: GameConstants,

@@ -5,6 +5,7 @@ from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
 from bemani.common import GameConstants, Time
+from bemani.data import cached
 from bemani.data.exceptions import ScoreSaveException
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import Score, Attempt, Song, UserID
@@ -691,6 +692,7 @@ class MusicData(BaseData):
 
         return scores
 
+    @cached(lifetime=30)
     def get_all_records(
         self,
         game: GameConstants,
