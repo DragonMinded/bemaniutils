@@ -43,9 +43,9 @@ def main() -> None:
             root = root + '/'
         root = os.path.realpath(root)
 
-        fp = open(args.file, 'rb')
-        data = fp.read()
-        fp.close()
+        rfp = open(args.file, 'rb')
+        data = rfp.read()
+        rfp.close()
 
         twodx = TwoDX(data)
 
@@ -54,13 +54,13 @@ def main() -> None:
             realfn = os.path.join(root, fn)
             dirof = os.path.dirname(realfn)
             os.makedirs(dirof, exist_ok=True)
-            with open(realfn, 'wb') as fp:
-                fp.write(twodx.read_file(fn))
+            with open(realfn, 'wb') as wfp:
+                wfp.write(twodx.read_file(fn))
     elif len(args.wavfile) > 0:
         try:
-            fp = open(args.file, 'rb')
-            data = fp.read()
-            fp.close()
+            rfp = open(args.file, 'rb')
+            data = rfp.read()
+            rfp.close()
 
             twodx = TwoDX(data)
         except FileNotFoundError:
@@ -71,15 +71,15 @@ def main() -> None:
                 twodx.set_name(os.path.splitext(os.path.basename(args.file))[0])
 
         for fn in args.wavfile:
-            fp = open(fn, 'rb')
-            data = fp.read()
-            fp.close()
+            rfp = open(fn, 'rb')
+            data = rfp.read()
+            rfp.close()
 
             twodx.write_file(os.path.basename(fn), data)
 
-        fp = open(args.file, 'wb')
-        fp.write(twodx.get_new_data())
-        fp.close()
+        wfp = open(args.file, 'wb')
+        wfp.write(twodx.get_new_data())
+        wfp.close()
     else:
         raise Exception("Please provide either a directory to extract to, or a wav file to build into a 2dx file!")
 

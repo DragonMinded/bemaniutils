@@ -206,12 +206,12 @@ class PEFile:
                 else:
                     raise JumpException(destination, f"Jumping to {hex(destination)} which is outside of our evaluation range!")
 
-        formatter = Formatter(FormatterSyntax.NASM)  # type: ignore
+        formatter = Formatter(FormatterSyntax.NASM)
 
         while loc < len(chunk):
             inst = chunk[loc]
             loc = loc + 1
-            mnemonic = formatter.format_mnemonic(inst, FormatMnemonicOptions.NO_PREFIXES)  # type: ignore
+            mnemonic = formatter.format_mnemonic(inst, FormatMnemonicOptions.NO_PREFIXES)
 
             if mnemonic == "mov":
                 dest = formatter.format_operand(inst, 0)

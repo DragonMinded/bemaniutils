@@ -22,9 +22,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    fp = open(args.infile, 'rb')
-    data = fp.read()
-    fp.close()
+    rfp = open(args.infile, 'rb')
+    data = rfp.read()
+    rfp.close()
 
     db = IIDXMusicDB(data)
     if args.hide_leggendarias:
@@ -38,9 +38,9 @@ def main() -> None:
                 song.folder = 0x5C
 
     print('Generating new database file...')
-    fp = open(args.outfile, 'wb')
-    fp.write(db.get_new_db())
-    fp.close()
+    wfp = open(args.outfile, 'wb')
+    wfp.write(db.get_new_db())
+    wfp.close()
 
 
 if __name__ == '__main__':

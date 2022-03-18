@@ -1228,7 +1228,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
             # Ranking details in title screen
             rankingcharts = []
-            for (mid, plays) in self.data.local.music.get_hit_chart(self.game, self.music_version, 20):
+            for (mid, _plays) in self.data.local.music.get_hit_chart(self.game, self.music_version, 20):
                 rankingcharts.append(mid)
             root.add_child(Node.u16_array('monthly_mranking', rankingcharts))
             root.add_child(Node.u16_array('total_mranking', rankingcharts))

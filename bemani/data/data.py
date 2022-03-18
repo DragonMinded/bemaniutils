@@ -1,7 +1,7 @@
 import os
 
 import alembic.config
-from alembic.migration import MigrationContext  # type: ignore
+from alembic.migration import MigrationContext
 from alembic.autogenerate import compare_metadata  # type: ignore
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.orm import scoped_session  # type: ignore

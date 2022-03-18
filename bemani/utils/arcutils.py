@@ -30,9 +30,9 @@ def main() -> None:
         root = root + '/'
     root = os.path.realpath(root)
 
-    fp = open(args.file, 'rb')
-    data = fp.read()
-    fp.close()
+    rfp = open(args.file, 'rb')
+    data = rfp.read()
+    rfp.close()
 
     arc = ARC(data)
     for fn in arc.filenames:
@@ -43,8 +43,8 @@ def main() -> None:
             realfn = os.path.join(root, fn)
             dirof = os.path.dirname(realfn)
             os.makedirs(dirof, exist_ok=True)
-            with open(realfn, 'wb') as fp:
-                fp.write(arc.read_file(fn))
+            with open(realfn, 'wb') as wfp:
+                wfp.write(arc.read_file(fn))
 
 
 if __name__ == '__main__':
