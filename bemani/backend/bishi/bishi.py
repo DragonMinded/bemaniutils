@@ -1,7 +1,12 @@
 # vim: set fileencoding=utf-8
 import binascii
 import base64
-from collections import Iterable
+try:
+    # Python <= 3.9
+    from collections import Iterable
+except ImportError:
+    # Python > 3.9
+    from collections.abc import Iterable
 from typing import Any, Dict, List, Sequence, Union
 
 from bemani.backend.bishi.base import BishiBashiBase
