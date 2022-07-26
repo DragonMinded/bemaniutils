@@ -291,6 +291,14 @@ class PlacedClip(PlacedObject):
             actual_frame = len(self.source.frames) - 1
         self.requested_frame = actual_frame + 1
 
+    @property
+    def _visible(self) -> int:
+        return 1 if self.visible else 0
+
+    @_visible.setter
+    def _visible(self, val: Any) -> None:
+        self.visible = val != 0
+
 
 class PlacedImage(PlacedObject):
     # An image that occupies its parent clip at some depth. Placed by an AP2PlaceObjectTag
@@ -711,7 +719,7 @@ class AFPRenderer(VerboseOutput):
                 obj = stack.pop()
 
                 if not hasattr(obj, attribute):
-                    print(f"WARNING: Tried to set attribute {attribute} on {obj} but that attribute doesn't exist!")
+                    print(f"WARNING: Tried to set attribute {attribute} on {obj} to {set_value} but that attribute doesn't exist!")
                 else:
                     self.vprint(f"{prefix}  Setting attribute {attribute} on {obj} to {set_value}", component="bytecode")
                     setattr(obj, attribute, set_value)
