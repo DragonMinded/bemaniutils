@@ -369,6 +369,30 @@ class Global:
         print(f"WARNING: Could not find object at depth {depth}!")
         return UNDEFINED
 
+    def deepGotoAndPlay(self, frame: Any) -> Any:
+        # This is identical to regular gotoAndPlay, however it also recursively
+        # goes through and sets all child clips playing as well.
+        try:
+            meth = getattr(self.clip, 'gotoAndPlay')
+
+            # Call it, set the return on the stack.
+            retval = meth(frame)
+
+            # Recursively go through any children of "clip" and call play
+            # on them as well.
+            def play_children(obj: Any) -> None:
+                if isinstance(obj, PlacedClip):
+                    obj.play()
+                    for child in obj.placed_objects:
+                        play_children(child)
+
+            play_children(self.clip)
+            return retval
+        except AttributeError:
+            # Function does not exist!
+            print(f"WARNING: Tried to call gotoAndPlay({frame}) on {self.clip} but that method doesn't exist!")
+            return UNDEFINED
+
     def __find_parent(self, parent: PlacedClip, child: PlacedClip) -> Optional[PlacedClip]:
         for obj in parent.placed_objects:
             if obj is child:
