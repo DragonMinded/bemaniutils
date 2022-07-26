@@ -567,6 +567,8 @@ def render_path(
     background_loop_start: Optional[int] = None,
     background_loop_end: Optional[int] = None,
     background_loop_offset: Optional[int] = None,
+    override_width: Optional[int] = None,
+    override_height: Optional[int] = None,
     force_width: Optional[int] = None,
     force_height: Optional[int] = None,
     force_aspect_ratio: Optional[str] = None,
@@ -688,8 +690,16 @@ def render_path(
 
     # Calculate the size of the animation so we can apply scaling options.
     swf_location = renderer.compute_path_location(path)
-    requested_width = force_width if force_width is not None else swf_location.width
-    requested_height = force_height if force_height is not None else swf_location.height
+    if override_width is not None:
+        actual_width = float(override_width)
+    else:
+        actual_width = swf_location.width
+    if override_height is not None:
+        actual_height = float(override_height)
+    else:
+        actual_height = swf_location.height
+    requested_width = force_width if force_width is not None else actual_width
+    requested_height = force_height if force_height is not None else actual_height
 
     # Allow overriding the aspect ratio.
     if force_aspect_ratio:
@@ -702,20 +712,20 @@ def render_path(
             raise Exception("Ratio must only include positive numbers!")
 
         actual_ratio = rx / ry
-        swf_ratio = swf_location.width / swf_location.height
+        swf_ratio = actual_width / actual_height
 
         if abs(swf_ratio - actual_ratio) > 0.0001:
-            new_width = actual_ratio * swf_location.height
-            new_height = swf_location.width / actual_ratio
+            new_width = actual_ratio * actual_height
+            new_height = actual_width / actual_ratio
 
-            if new_width < swf_location.width and new_height < swf_location.height:
+            if new_width < actual_width and new_height < actual_height:
                 raise Exception("Impossible aspect ratio!")
-            if new_width > swf_location.width and new_height > swf_location.height:
+            if new_width > actual_width and new_height > actual_height:
                 raise Exception("Impossible aspect ratio!")
 
             # We know that one is larger and one is smaller, pick the larger.
             # This way we always stretch instead of shrinking.
-            if new_width > swf_location.width:
+            if new_width > actual_width:
                 requested_width = new_width
             else:
                 requested_height = new_height
@@ -726,10 +736,10 @@ def render_path(
 
     # Calculate the overall view matrix based on the requested width/height.
     transform = Matrix.affine(
-        a=requested_width / swf_location.width,
+        a=requested_width / actual_width,
         b=0.0,
         c=0.0,
-        d=requested_height / swf_location.height,
+        d=requested_height / actual_height,
         tx=0.0,
         ty=0.0,
     )
@@ -760,6 +770,8 @@ def render_path(
                 only_depths=requested_depths,
                 only_frames=requested_frames,
                 movie_transform=transform,
+                overridden_width=override_width,
+                overridden_height=override_height,
             )
         ):
             if show_progress:
@@ -1148,6 +1160,24 @@ def main() -> int:
         ),
     )
     render_parser.add_argument(
+        "--override-width",
+        type=int,
+        default=None,
+        help=(
+            "Override the specified the width of the rendered animation to a specific pixel value, such as 640 or 800. Note that this performs "
+            "no scaling whatsoever. It simply overrides the animation's root canvas size."
+        ),
+    )
+    render_parser.add_argument(
+        "--override-height",
+        type=int,
+        default=None,
+        help=(
+            "Override the specified the height of the rendered animation to a specific pixel value, such as 640 or 800. Note that this performs "
+            "no scaling whatsoever. It simply overrides the animation's root canvas size."
+        ),
+    )
+    render_parser.add_argument(
         "--force-aspect-ratio",
         type=str,
         default=None,
@@ -1247,6 +1277,8 @@ def main() -> int:
             background_loop_start=args.background_loop_start,
             background_loop_end=args.background_loop_end,
             background_loop_offset=args.background_loop_offset,
+            override_width=args.override_width,
+            override_height=args.override_height,
             force_width=args.force_width,
             force_height=args.force_height,
             force_aspect_ratio=args.force_aspect_ratio,

@@ -191,6 +191,10 @@ class PlacedClip(PlacedObject):
         self.requested_frame: Optional[int] = None
         self.visible_frame: int = -1
 
+        # Root clip resizing, which we don't really support.
+        self.__width = 0
+        self.__height = 0
+
     @property
     def source(self) -> RegisteredClip:
         return self.__source
@@ -298,6 +302,30 @@ class PlacedClip(PlacedObject):
     @_visible.setter
     def _visible(self, val: Any) -> None:
         self.visible = val != 0
+
+    @property
+    def _width(self) -> int:
+        calculated_width = self.__width
+        for obj in self.placed_objects:
+            if isinstance(obj, PlacedClip):
+                calculated_width = max(calculated_width, obj._width)
+        return calculated_width
+
+    @_width.setter
+    def _width(self, val: Any) -> None:
+        self.__width = val
+
+    @property
+    def _height(self) -> int:
+        calculated_height = self.__height
+        for obj in self.placed_objects:
+            if isinstance(obj, PlacedClip):
+                calculated_height = max(calculated_height, obj._height)
+        return calculated_height
+
+    @_height.setter
+    def _height(self, val: Any) -> None:
+        self.__height = val
 
 
 class PlacedImage(PlacedObject):
@@ -612,6 +640,8 @@ class AFPRenderer(VerboseOutput):
         only_depths: Optional[List[int]] = None,
         only_frames: Optional[List[int]] = None,
         movie_transform: Matrix = Matrix.identity(),
+        overridden_width: Optional[float] = None,
+        overridden_height: Optional[float] = None,
         verbose: bool = False,
     ) -> Generator[Image.Image, None, None]:
         # Given a path to a SWF root animation, attempt to render it to a list of frames.
@@ -620,7 +650,7 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    yield from self.__render(swf, only_depths, only_frames, movie_transform, background_image)
+                    yield from self.__render(swf, only_depths, only_frames, movie_transform, background_image, overridden_width, overridden_height)
                     return
 
         raise Exception(f'{path} not found in registered SWFs!')
@@ -1642,6 +1672,8 @@ class AFPRenderer(VerboseOutput):
         only_frames: Optional[List[int]],
         movie_transform: Matrix,
         background_image: Optional[List[Image.Image]],
+        overridden_width: Optional[float],
+        overridden_height: Optional[float],
     ) -> Generator[Image.Image, None, None]:
         # First, let's attempt to resolve imports.
         self.__registered_objects = self.__handle_imports(swf)
@@ -1651,10 +1683,14 @@ class AFPRenderer(VerboseOutput):
         frameno: int = 0
 
         # Calculate actual size based on given movie transform.
-        resized_width, resized_height, _ = movie_transform.multiply_point(Point(swf.location.width, swf.location.height)).as_tuple()
+        actual_width = overridden_width or swf.location.width
+        actual_height = overridden_height or swf.location.height
+        resized_width, resized_height, _ = movie_transform.multiply_point(Point(actual_width, actual_height)).as_tuple()
 
-        # TODO: If the location top/left is nonzero, we need move the root transform
-        # so that the correct viewport is rendered.
+        if round(swf.location.top, 2) != 0.0 or round(swf.location.left, 2) != 0.0:
+            # TODO: If the location top/left is nonzero, we need move the root transform
+            # so that the correct viewport is rendered.
+            print("WARNING: Root clip requested to play not in top-left corner!")
 
         # Create a root clip for the movie to play.
         root_clip = PlacedClip(
@@ -1674,6 +1710,10 @@ class AFPRenderer(VerboseOutput):
                 swf.labels,
             ),
         )
+        root_clip._width = int(actual_width)
+        root_clip._height = int(actual_height)
+        last_width = actual_width
+        last_height = actual_height
         self.__root = root_clip
 
         # If we have a background image, add it to the root clip.
@@ -1686,10 +1726,10 @@ class AFPRenderer(VerboseOutput):
             imgwidth = background_image[0].width
             imgheight = background_image[0].height
             background_matrix = Matrix.affine(
-                a=swf.location.width / imgwidth,
+                a=actual_width / imgwidth,
                 b=0,
                 c=0,
-                d=swf.location.height / imgheight,
+                d=actual_height / imgheight,
                 tx=0,
                 ty=0,
             )
@@ -1772,6 +1812,12 @@ class AFPRenderer(VerboseOutput):
                     continue
 
                 if changed or last_rendered_frame is None:
+                    if last_width != root_clip._width or last_height != root_clip._height:
+                        last_width = root_clip._width
+                        last_height = root_clip._height
+                        if root_clip._width > actual_width or root_clip._height > actual_height:
+                            print(f"WARNING: Root clip requested to resize to {last_width}x{last_height} which overflows root canvas!")
+
                     # Now, render out the placed objects.
                     color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
                     curimage = Image.new("RGBA", (resized_width, resized_height), color=color.as_tuple())
