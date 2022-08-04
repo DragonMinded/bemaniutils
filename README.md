@@ -143,6 +143,13 @@ A utility for patching IIDX music database files. Note that this currently can o
 apply a "hide leggendarias from normal folders" patch, although its probable that it
 can be extended for other uses.
 
+## jsx
+
+A utility which takes the existing JSX files in the repository and builds them for
+you. This is offered purely as a way to serve JSX files in a production setup from
+nginx or similar instead of compiling them on-the-fly when they are requested. You
+can use this to lower cold-start load times of your frontend.
+
 ## proxy
 
 A utility to MITM an eAmuse session. Point a game at the port this listens on, and
