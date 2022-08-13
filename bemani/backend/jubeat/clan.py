@@ -814,6 +814,7 @@ class JubeatClan(
         all_music_matching = Node.void('all_music_matching')
         info.add_child(all_music_matching)
         all_music_matching.add_child(Node.bool('is_available', True))
+
         team = Node.void('team')
         all_music_matching.add_child(team)
         team.add_child(Node.s32('default_flag', 0))
