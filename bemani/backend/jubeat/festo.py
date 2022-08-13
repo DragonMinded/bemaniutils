@@ -7,6 +7,7 @@ from bemani.backend.jubeat.base import JubeatBase
 from bemani.backend.jubeat.common import (
     JubeatDemodataGetNewsHandler,
     JubeatGametopGetMeetingHandler,
+    JubeatLobbyCheckHandler,
     JubeatLoggerReportHandler,
 )
 from bemani.backend.jubeat.clan import JubeatClan
@@ -21,6 +22,7 @@ class JubeatFesto(
     JubeatDemodataGetNewsHandler,
     JubeatGametopGetMeetingHandler,
     JubeatLoggerReportHandler,
+    JubeatLobbyCheckHandler,
     JubeatBase
 ):
 
