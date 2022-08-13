@@ -2,7 +2,7 @@
 import copy
 from typing import Any, Dict, Iterator, Tuple
 
-from flask_caching import Cache  # type: ignore
+from flask_caching import Cache
 
 from bemani.backend.bishi import BishiBashiFactory
 from bemani.common import Profile, ValidatedDict, ID, GameConstants

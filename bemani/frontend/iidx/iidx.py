@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
 from typing import Any, Dict, Iterator, Optional, Tuple, List
 
-from flask_caching import Cache  # type: ignore
+from flask_caching import Cache
 
 from bemani.backend.iidx import IIDXFactory, IIDXBase
 from bemani.common import Profile, ValidatedDict, GameConstants, RegionConstants

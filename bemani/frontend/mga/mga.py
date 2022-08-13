@@ -2,7 +2,7 @@
 import copy
 from typing import Any, Dict, Iterator, Tuple
 
-from flask_caching import Cache  # type: ignore
+from flask_caching import Cache
 
 from bemani.backend.mga import MetalGearArcadeFactory
 from bemani.common import Profile, ValidatedDict, ID, GameConstants

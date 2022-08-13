@@ -4,7 +4,7 @@ import traceback
 from typing import Callable, Dict, Any, Optional, List
 from react.jsx import JSXTransformer  # type: ignore
 from flask import Flask, flash, request, redirect, Response, url_for, render_template, got_request_exception, jsonify as flask_jsonify
-from flask_caching import Cache  # type: ignore
+from flask_caching import Cache
 from functools import wraps
 
 from bemani.common import AESCipher, GameConstants

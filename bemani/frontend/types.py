@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from flask.ctx import _AppCtxGlobals
-    from flask_caching import Cache  # type: ignore
+    from flask_caching import Cache
 
     from bemani.data import Config, Data, UserID
 

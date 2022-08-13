@@ -15,7 +15,7 @@ types-Werkzeug
 types-Flask
 types-freezegun
 types-python-dateutil
-flake8
+flake8==4.0.1
 typed-ast
 freezegun
 pyreact

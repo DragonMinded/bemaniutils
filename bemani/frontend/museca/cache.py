@@ -1,4 +1,4 @@
-from flask_caching import Cache  # type: ignore
+from flask_caching import Cache
 
 from bemani.data import Config, Data
 from bemani.frontend.app import app

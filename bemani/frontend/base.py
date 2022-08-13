@@ -1,9 +1,9 @@
 # vim: set fileencoding=utf-8
 import copy
 from abc import ABC
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, cast
 
-from flask_caching import Cache  # type: ignore
+from flask_caching import Cache
 
 from bemani.common import GameConstants, Profile, ValidatedDict, ID
 from bemani.data import Data, Config, Score, Attempt, Link, Song, UserID, RemoteUser
@@ -108,7 +108,8 @@ class FrontendBase(ABC):
         if not force_db_load:
             cached_songs = self.cache.get(f'{self.game.value}.sorted_songs')
             if cached_songs is not None:
-                return cached_songs
+                # Not sure why mypy insists that this is a str instead of Any.
+                return cast(Dict[int, Dict[str, Any]], cached_songs)
 
         # Find all songs in the game, process notecounts and difficulties
         songs: Dict[int, Dict[str, Any]] = {}
