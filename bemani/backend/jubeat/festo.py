@@ -2,13 +2,21 @@
 from typing import Dict, List, Optional
 
 from bemani.backend.jubeat.base import JubeatBase
+from bemani.backend.jubeat.common import (
+    JubeatDemodataGetNewsHandler,
+    JubeatLoggerReportHandler,
+)
 from bemani.backend.jubeat.clan import JubeatClan
 
 from bemani.common import VersionConstants
 from bemani.protocol import Node
 
 
-class JubeatFesto(JubeatBase):
+class JubeatFesto(
+    JubeatDemodataGetNewsHandler,
+    JubeatLoggerReportHandler,
+    JubeatBase
+):
 
     name: str = 'Jubeat Festo'
     version: int = VersionConstants.JUBEAT_FESTO
@@ -128,25 +136,28 @@ class JubeatFesto(JubeatBase):
             ],
         ))
 
+        # Mapping of what music is allowed by default, if this is set to all 0's
+        # then the game will crash because it can't figure out what default song
+        # to choose for new player sort.
         info.add_child(Node.s32_array(
             'white_music_list',
             [
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
             ],
         ))
 
@@ -347,17 +358,6 @@ class JubeatFesto(JubeatBase):
                 0, 0, 0, 0,
             ],
         ))
-
-        return root
-
-    def handle_demodata_get_news_request(self, request: Node) -> Node:
-        root = Node.void('demodata')
-        data = Node.void('data')
-        root.add_child(data)
-
-        officialnews = Node.void('officialnews')
-        data.add_child(officialnews)
-        officialnews.set_attribute('count', '0')
 
         return root
 
