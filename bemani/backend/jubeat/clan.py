@@ -1105,7 +1105,6 @@ class JubeatClan(
         return Node.void('gameend')
 
     def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
-
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
