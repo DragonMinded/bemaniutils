@@ -1999,8 +1999,8 @@ class JubeatFesto(
 
         # Figure out if we've played these songs
         start_time, end_time = self.data.local.network.get_schedule_duration('daily')
-        today_attempts = self.data.local.music.get_all_attempts(self.game, self.version, userid, entry.get_int('today', -1), timelimit=start_time)
-        whim_attempts = self.data.local.music.get_all_attempts(self.game, self.version, userid, entry.get_int('whim', -1), timelimit=start_time)
+        today_attempts = self.data.local.music.get_all_attempts(self.game, self.music_version, userid, entry.get_int('today', -1), timelimit=start_time)
+        whim_attempts = self.data.local.music.get_all_attempts(self.game, self.music_version, userid, entry.get_int('whim', -1), timelimit=start_time)
 
         # Full combo challenge and whim challenge
         fc_challenge = Node.void('fc_challenge')
