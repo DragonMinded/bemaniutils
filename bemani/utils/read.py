@@ -1344,6 +1344,27 @@ class ImportJubeat(ImportBase):
             songid = int(music_entry.find('music_id').text)
             bpm_min = float(music_entry.find('bpm_min').text)
             bpm_max = float(music_entry.find('bpm_max').text)
+            earliest_version = 0
+            version = int(music_entry.find('version').text.strip(), 16)
+            while not version & 1:
+                version >>= 1
+                earliest_version += 1
+            # Since this is actually 1 to 1, I'm only adding this for clarity rather than necessity
+            version_to_db_constant = {
+                1: VersionConstants.JUBEAT,
+                2: VersionConstants.JUBEAT_RIPPLES,
+                3: VersionConstants.JUBEAT_RIPPLES_APPEND,
+                4: VersionConstants.JUBEAT_KNIT,
+                5: VersionConstants.JUBEAT_KNIT_APPEND,
+                6: VersionConstants.JUBEAT_COPIOUS,
+                7: VersionConstants.JUBEAT_COPIOUS_APPEND,
+                8: VersionConstants.JUBEAT_SAUCER,
+                9: VersionConstants.JUBEAT_SAUCER_FULFILL,
+                10: VersionConstants.JUBEAT_PROP,
+                11: VersionConstants.JUBEAT_QUBELL,
+                12: VersionConstants.JUBEAT_CLAN,
+                13: VersionConstants.JUBEAT_FESTO,
+            }
             if bpm_max > 0 and bpm_min < 0:
                 bpm_min = bpm_max
             difficulties = [
@@ -1370,6 +1391,7 @@ class ImportJubeat(ImportBase):
                     'advanced': difficulties[1],
                     'extreme': difficulties[2],
                 },
+                'version': version_to_db_constant.get(earliest_version),
             })
 
         emblems: List[Dict[str, Any]] = []
