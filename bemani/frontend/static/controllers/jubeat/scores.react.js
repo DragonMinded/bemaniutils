@@ -64,6 +64,18 @@ var network_scores = React.createClass({
                 </div>
                 <div>
                     <span className="status">{score.status}</span>
+                    <br/>
+                    <span className="bolder">Stats:</span>
+                    <br/>
+                    {score.stats.perfect}
+                    <span> / </span>
+                    {score.stats.great}
+                    <span> / </span>
+                    {score.stats.good}
+                    <span> / </span>
+                    {score.stats.poor}
+                    <span> / </span>
+                    {score.stats.miss}
                 </div>
             </div>
         );
@@ -77,8 +89,8 @@ var network_scores = React.createClass({
                         <tr>
                             { window.shownames ? <th>Name</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>
@@ -103,7 +115,7 @@ var network_scores = React.createClass({
                                         <div>
                                             <Timestamp timestamp={attempt.timestamp} />
                                             { window.shownewrecords && attempt.raised ?
-                                                <span className="raised">new high score!</span> :
+                                                <span className="bolder">New High Score!</span> :
                                                 null
                                             }
                                         </div>

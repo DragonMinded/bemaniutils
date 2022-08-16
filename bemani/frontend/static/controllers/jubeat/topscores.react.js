@@ -124,6 +124,26 @@ var top_scores = React.createClass({
                                 name: 'Combo',
                                 render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
                             },
+                            {
+                                name: 'Perfect',
+                                render: function(topscore) { return topscore.stats.perfect }
+                            },
+                            {
+                                name: 'Great',
+                                render: function(topscore) { return topscore.stats.great }
+                            },
+                            {
+                                name: 'Good',
+                                render: function(topscore) { return topscore.stats.good }
+                            },
+                            {
+                                name: 'Poor',
+                                render: function(topscore) { return topscore.stats.poor }
+                            },
+                            {
+                                name: 'Miss',
+                                render: function(topscore) { return topscore.stats.miss }
+                            },
                         ]}
                         defaultsort='Score'
                         rows={this.state.topscores[chart]}

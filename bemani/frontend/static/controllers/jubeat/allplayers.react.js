@@ -69,6 +69,33 @@ var all_players = React.createClass({
                                 }.bind(this),
                                 reverse: true,
                             },
+                            {
+                                name: 'Jubility',
+                                render: function(userid) {
+                                    var player = this.state.players[userid];
+                                    if (player.common_jubility != 0 || player.pick_up_jubility != 0) {
+                                        return (player.common_jubility + player.pick_up_jubility).toFixed(1);
+                                    } else if (player.jubility != 0) {
+                                        return player.jubility / 100
+                                    } else {
+                                        return 0
+                                    }
+                                }.bind(this),
+                                sort: function(aid, bid) {
+                                    var a = this.state.players[aid];
+                                    var b = this.state.players[bid];
+                                    if (a.common_jubility != 0 || a.pick_up_jubility != 0)
+                                        var ajub = a.common_jubility+a.pick_up_jubility;
+                                    else
+                                        var ajub = a.jubility / 100;
+                                    if (b.common_jubility != 0 || b.pick_up_jubility != 0)
+                                        var bjub = b.common_jubility+b.pick_up_jubility;
+                                    else
+                                        var bjub = b.jubility / 100;
+                                    return ajub-bjub;
+                                }.bind(this),
+                                reverse: true,
+                            },
                         ]}
                         rows={Object.keys(this.state.players)}
                         paginate={10}
