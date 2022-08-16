@@ -911,14 +911,13 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         else:
             # If we aren't in an arcade, we turn off events
             timeshift_override = 0
+            event_phase = 0
             ccxbm_on = False
             omni_events = False
 
         if self.omnimix and (not omni_events):
             phase = 0
-        elif self.omnimix and omni_events or not self.omnimix:
-            phase = event_phase
-        elif not self.omnimix:
+        else:
             phase = event_phase
 
         # events
