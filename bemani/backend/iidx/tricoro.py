@@ -192,6 +192,8 @@ class IIDXTricoro(IIDXBase):
             }[db_dan]
         elif cltype == self.GAME_CLTYPE_DOUBLE:
             return {
+                self.DAN_RANK_7_KYU: self.GAME_DP_DAN_RANK_5_KYU,
+                self.DAN_RANK_6_KYU: self.GAME_DP_DAN_RANK_5_KYU,
                 self.DAN_RANK_5_KYU: self.GAME_DP_DAN_RANK_5_KYU,
                 self.DAN_RANK_4_KYU: self.GAME_DP_DAN_RANK_4_KYU,
                 self.DAN_RANK_3_KYU: self.GAME_DP_DAN_RANK_3_KYU,
@@ -260,266 +262,326 @@ class IIDXTricoro(IIDXBase):
         else:
             raise Exception('Invalid cltype!')
 
-    def handle_shop_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+    def handle_shop_getname_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('shop')
+        root.set_attribute('cls_opt', '0')
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        root.set_attribute('opname', machine.name)
+        root.set_attribute('pid', str(self.get_machine_region()))
+        return root
 
-        if method == 'getname':
-            root = Node.void('shop')
-            root.set_attribute('cls_opt', '0')
-            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
-            root.set_attribute('opname', machine.name)
-            root.set_attribute('pid', str(self.get_machine_region()))
+    def handle_shop_savename_request(self, request: Node) -> Optional[Node]:
+        self.update_machine_name(request.attribute('opname'))
+        root = Node.void('shop')
+        return root
+
+    def handle_shop_sentinfo_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('shop')
+        return root
+
+    def handle_shop_getconvention_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('shop')
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        if machine.arcade is not None:
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
+        else:
+            course = None
+
+        if course is None:
+            course = ValidatedDict()
+
+        root.set_attribute('music_0', str(course.get_int('music_0', 20032)))
+        root.set_attribute('music_1', str(course.get_int('music_1', 20009)))
+        root.set_attribute('music_2', str(course.get_int('music_2', 20015)))
+        root.set_attribute('music_3', str(course.get_int('music_3', 20064)))
+        root.add_child(Node.bool('valid', course.get_bool('valid')))
+        return root
+
+    def handle_shop_setconvention_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('shop')
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        if machine.arcade is not None:
+            course = ValidatedDict()
+            course.replace_int('music_0', request.child_value('music_0'))
+            course.replace_int('music_1', request.child_value('music_1'))
+            course.replace_int('music_2', request.child_value('music_2'))
+            course.replace_int('music_3', request.child_value('music_3'))
+            course.replace_bool('valid', request.child_value('valid'))
+            self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, 'shop_course', course)
+
+        return root
+
+    def handle_ranking_getranker_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('ranking')
+        chart = int(request.attribute('clid'))
+        if chart not in [
+            self.CHART_TYPE_N7,
+            self.CHART_TYPE_H7,
+            self.CHART_TYPE_A7,
+            self.CHART_TYPE_N14,
+            self.CHART_TYPE_H14,
+            self.CHART_TYPE_A14,
+        ]:
+            # Chart type 6 is presumably beginner mode, but it crashes the game
             return root
 
-        if method == 'savename':
-            self.update_machine_name(request.attribute('opname'))
-            root = Node.void('shop')
+        machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
+        if machine.arcade is not None:
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
+        else:
+            course = None
+
+        if course is None:
+            course = ValidatedDict()
+
+        if not course.get_bool('valid'):
+            # Shop course not enabled or not present
             return root
 
-        if method == 'sentinfo':
-            root = Node.void('shop')
-            return root
+        convention = Node.void('convention')
+        root.add_child(convention)
+        convention.set_attribute('clid', str(chart))
+        convention.set_attribute('update_date', str(Time.now() * 1000))
 
-        if method == 'getconvention':
-            root = Node.void('shop')
-            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
-            if machine.arcade is not None:
-                course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
+        # Grab all scores for each of the four songs, filter out people who haven't
+        # set us as their arcade and then return the top 20 scores (adding all 4 songs).
+        songids = [
+            course.get_int('music_0'),
+            course.get_int('music_1'),
+            course.get_int('music_2'),
+            course.get_int('music_3'),
+        ]
+
+        totalscores: Dict[UserID, int] = {}
+        profiles: Dict[UserID, Profile] = {}
+        for songid in songids:
+            scores = self.data.local.music.get_all_scores(
+                self.game,
+                self.music_version,
+                songid=songid,
+                songchart=chart,
+            )
+
+            for score in scores:
+                if score[0] not in totalscores:
+                    totalscores[score[0]] = 0
+                    profile = self.get_any_profile(score[0])
+                    if profile is None:
+                        profile = Profile(self.game, self.version, "", 0)
+                    profiles[score[0]] = profile
+
+                totalscores[score[0]] += score[1].points
+
+        topscores = sorted(
+            [
+                (totalscores[userid], profiles[userid])
+                for userid in totalscores
+                if self.user_joined_arcade(machine, profiles[userid])
+            ],
+            key=lambda tup: tup[0],
+            reverse=True,
+        )[:20]
+
+        rank = 0
+        for topscore in topscores:
+            rank = rank + 1
+
+            detail = Node.void('detail')
+            convention.add_child(detail)
+            detail.set_attribute('name', topscore[1].get_str('name'))
+            detail.set_attribute('rank', str(rank))
+            detail.set_attribute('score', str(topscore[0]))
+            detail.set_attribute('pid', str(topscore[1].get_int('pid')))
+
+            qpro = topscore[1].get_dict('qpro')
+            detail.set_attribute('head', str(qpro.get_int('head')))
+            detail.set_attribute('hair', str(qpro.get_int('hair')))
+            detail.set_attribute('face', str(qpro.get_int('face')))
+            detail.set_attribute('body', str(qpro.get_int('body')))
+            detail.set_attribute('hand', str(qpro.get_int('hand')))
+
+        return root
+
+    def handle_music_crate_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('music')
+        attempts = self.get_clear_rates()
+
+        all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
+        for song in all_songs:
+            clears = []
+            fcs = []
+
+            for chart in [0, 1, 2, 3, 4, 5]:
+                placed = False
+                if song in attempts and chart in attempts[song]:
+                    values = attempts[song][chart]
+                    if values['total'] > 0:
+                        clears.append(int((100 * values['clears']) / values['total']))
+                        fcs.append(int((100 * values['fcs']) / values['total']))
+                        placed = True
+                if not placed:
+                    clears.append(101)
+                    fcs.append(101)
+
+            clearnode = Node.u8_array('c', clears + fcs)
+            clearnode.set_attribute('mid', str(song))
+            root.add_child(clearnode)
+
+        return root
+
+    def handle_music_getrank_request(self, request: Node) -> Optional[Node]:
+        cltype = int(request.attribute('cltype'))
+
+        root = Node.void('music')
+        style = Node.void('style')
+        root.add_child(style)
+        style.set_attribute('type', str(cltype))
+
+        for rivalid in [-1, 0, 1, 2, 3, 4]:
+            if rivalid == -1:
+                attr = 'iidxid'
             else:
-                course = None
+                attr = f'iidxid{rivalid}'
 
-            if course is None:
-                course = ValidatedDict()
+            try:
+                extid = int(request.attribute(attr))
+            except Exception:
+                # Invalid extid
+                continue
 
-            root.set_attribute('music_0', str(course.get_int('music_0', 20032)))
-            root.set_attribute('music_1', str(course.get_int('music_1', 20009)))
-            root.set_attribute('music_2', str(course.get_int('music_2', 20015)))
-            root.set_attribute('music_3', str(course.get_int('music_3', 20064)))
-            root.add_child(Node.bool('valid', course.get_bool('valid')))
-            return root
+            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            if userid is not None:
+                scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
-        if method == 'setconvention':
-            root = Node.void('shop')
+                # Grab score data for user/rival
+                scoredata = self.make_score_struct(
+                    scores,
+                    self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
+                    rivalid,
+                )
+                for s in scoredata:
+                    root.add_child(Node.s16_array('m', s))
+
+                # Grab most played for user/rival
+                most_played = [
+                    play[0] for play in
+                    self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
+                ]
+                if len(most_played) < 20:
+                    most_played.extend([0] * (20 - len(most_played)))
+                best = Node.u16_array('best', most_played)
+                best.set_attribute('rno', str(rivalid))
+                root.add_child(best)
+
+                if rivalid == -1:
+                    # Grab beginner statuses for user only
+                    beginnerdata = self.make_beginner_struct(scores)
+                    for b in beginnerdata:
+                        root.add_child(Node.u16_array('b', b))
+
+        return root
+
+    def handle_music_reg_request(self, request: Node) -> Optional[Node]:
+        extid = int(request.attribute('iidxid'))
+        musicid = int(request.attribute('mid'))
+        chart = int(request.attribute('clid'))
+        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+
+        # See if we need to report global or shop scores
+        if self.machine_joined_arcade():
+            game_config = self.get_game_config()
+            global_scores = game_config.get_bool('global_shop_ranking')
             machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
-            if machine.arcade is not None:
-                course = ValidatedDict()
-                course.replace_int('music_0', request.child_value('music_0'))
-                course.replace_int('music_1', request.child_value('music_1'))
-                course.replace_int('music_2', request.child_value('music_2'))
-                course.replace_int('music_3', request.child_value('music_3'))
-                course.replace_bool('valid', request.child_value('valid'))
-                self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, 'shop_course', course)
+        else:
+            # If we aren't in an arcade, we can only show global scores
+            global_scores = True
+            machine = None
 
-            return root
+        # First, determine our current ranking before saving the new score
+        all_scores = sorted(
+            self.data.remote.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart),
+            key=lambda s: (s[1].points, s[1].timestamp),
+            reverse=True,
+        )
+        all_players = {
+            uid: prof for (uid, prof) in
+            self.get_any_profiles([s[0] for s in all_scores])
+        }
 
-        # Invalid method
-        return None
-
-    def handle_ranking_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
-
-        if method == 'getranker':
-            root = Node.void('ranking')
-            chart = int(request.attribute('clid'))
-            if chart not in [
-                self.CHART_TYPE_N7,
-                self.CHART_TYPE_H7,
-                self.CHART_TYPE_A7,
-                self.CHART_TYPE_N14,
-                self.CHART_TYPE_H14,
-                self.CHART_TYPE_A14,
-            ]:
-                # Chart type 6 is presumably beginner mode, but it crashes the game
-                return root
-
-            machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
-            if machine.arcade is not None:
-                course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, 'shop_course')
-            else:
-                course = None
-
-            if course is None:
-                course = ValidatedDict()
-
-            if not course.get_bool('valid'):
-                # Shop course not enabled or not present
-                return root
-
-            convention = Node.void('convention')
-            root.add_child(convention)
-            convention.set_attribute('clid', str(chart))
-            convention.set_attribute('update_date', str(Time.now() * 1000))
-
-            # Grab all scores for each of the four songs, filter out people who haven't
-            # set us as their arcade and then return the top 20 scores (adding all 4 songs).
-            songids = [
-                course.get_int('music_0'),
-                course.get_int('music_1'),
-                course.get_int('music_2'),
-                course.get_int('music_3'),
+        if not global_scores:
+            all_scores = [
+                score for score in all_scores
+                if (
+                    score[0] == userid or
+                    self.user_joined_arcade(machine, all_players[score[0]])
+                )
             ]
 
-            totalscores: Dict[UserID, int] = {}
-            profiles: Dict[UserID, Profile] = {}
-            for songid in songids:
-                scores = self.data.local.music.get_all_scores(
-                    self.game,
-                    self.music_version,
-                    songid=songid,
-                    songchart=chart,
-                )
+        # Find our actual index
+        oldindex = None
+        for i in range(len(all_scores)):
+            if all_scores[i][0] == userid:
+                oldindex = i
+                break
 
-                for score in scores:
-                    if score[0] not in totalscores:
-                        totalscores[score[0]] = 0
-                        profile = self.get_any_profile(score[0])
-                        if profile is None:
-                            profile = Profile(self.game, self.version, "", 0)
-                        profiles[score[0]] = profile
+        if userid is not None:
+            clear_status = self.game_to_db_status(int(request.attribute('cflg')))
+            pgreats = int(request.attribute('pgnum'))
+            greats = int(request.attribute('gnum'))
+            miss_count = int(request.attribute('mnum'))
+            ghost = request.child_value('ghost')
+            shopid = ID.parse_machine_id(request.attribute('shopconvid'))
 
-                    totalscores[score[0]] += score[1].points
+            self.update_score(
+                userid,
+                musicid,
+                chart,
+                clear_status,
+                pgreats,
+                greats,
+                miss_count,
+                ghost,
+                shopid,
+            )
 
-            topscores = sorted(
-                [
-                    (totalscores[userid], profiles[userid])
-                    for userid in totalscores
-                    if self.user_joined_arcade(machine, profiles[userid])
-                ],
-                key=lambda tup: tup[0],
-                reverse=True,
-            )[:20]
+        # Calculate and return statistics about this song
+        root = Node.void('music')
+        root.set_attribute('clid', request.attribute('clid'))
+        root.set_attribute('mid', request.attribute('mid'))
 
-            rank = 0
-            for topscore in topscores:
-                rank = rank + 1
+        attempts = self.get_clear_rates(musicid, chart)
+        count = attempts[musicid][chart]['total']
+        clear = attempts[musicid][chart]['clears']
+        full_combo = attempts[musicid][chart]['fcs']
 
-                detail = Node.void('detail')
-                convention.add_child(detail)
-                detail.set_attribute('name', topscore[1].get_str('name'))
-                detail.set_attribute('rank', str(rank))
-                detail.set_attribute('score', str(topscore[0]))
-                detail.set_attribute('pid', str(topscore[1].get_int('pid')))
+        if count > 0:
+            root.set_attribute('crate', str(int((100 * clear) / count)))
+            root.set_attribute('frate', str(int((100 * full_combo) / count)))
+        else:
+            root.set_attribute('crate', '0')
+            root.set_attribute('frate', '0')
 
-                qpro = topscore[1].get_dict('qpro')
-                detail.set_attribute('head', str(qpro.get_int('head')))
-                detail.set_attribute('hair', str(qpro.get_int('hair')))
-                detail.set_attribute('face', str(qpro.get_int('face')))
-                detail.set_attribute('body', str(qpro.get_int('body')))
-                detail.set_attribute('hand', str(qpro.get_int('hand')))
+        if userid is not None:
+            # Shop ranking
+            shopdata = Node.void('shopdata')
+            root.add_child(shopdata)
+            shopdata.set_attribute('rank', '-1' if oldindex is None else str(oldindex + 1))
 
-            return root
+            # Grab the rank of some other players on this song
+            ranklist = Node.void('ranklist')
+            root.add_child(ranklist)
 
-        # Invalid method
-        return None
-
-    def handle_music_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
-
-        if method == 'crate':
-            root = Node.void('music')
-            attempts = self.get_clear_rates()
-
-            all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
-            for song in all_songs:
-                clears = []
-                fcs = []
-
-                for chart in [0, 1, 2, 3, 4, 5]:
-                    placed = False
-                    if song in attempts and chart in attempts[song]:
-                        values = attempts[song][chart]
-                        if values['total'] > 0:
-                            clears.append(int((100 * values['clears']) / values['total']))
-                            fcs.append(int((100 * values['fcs']) / values['total']))
-                            placed = True
-                    if not placed:
-                        clears.append(101)
-                        fcs.append(101)
-
-                clearnode = Node.u8_array('c', clears + fcs)
-                clearnode.set_attribute('mid', str(song))
-                root.add_child(clearnode)
-
-            return root
-
-        if method == 'getrank':
-            cltype = int(request.attribute('cltype'))
-
-            root = Node.void('music')
-            style = Node.void('style')
-            root.add_child(style)
-            style.set_attribute('type', str(cltype))
-
-            for rivalid in [-1, 0, 1, 2, 3, 4]:
-                if rivalid == -1:
-                    attr = 'iidxid'
-                else:
-                    attr = f'iidxid{rivalid}'
-
-                try:
-                    extid = int(request.attribute(attr))
-                except Exception:
-                    # Invalid extid
-                    continue
-
-                userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-                if userid is not None:
-                    scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
-
-                    # Grab score data for user/rival
-                    scoredata = self.make_score_struct(
-                        scores,
-                        self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
-                        rivalid,
-                    )
-                    for s in scoredata:
-                        root.add_child(Node.s16_array('m', s))
-
-                    # Grab most played for user/rival
-                    most_played = [
-                        play[0] for play in
-                        self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
-                    ]
-                    if len(most_played) < 20:
-                        most_played.extend([0] * (20 - len(most_played)))
-                    best = Node.u16_array('best', most_played)
-                    best.set_attribute('rno', str(rivalid))
-                    root.add_child(best)
-
-                    if rivalid == -1:
-                        # Grab beginner statuses for user only
-                        beginnerdata = self.make_beginner_struct(scores)
-                        for b in beginnerdata:
-                            root.add_child(Node.u16_array('b', b))
-
-            return root
-
-        if method == 'reg':
-            extid = int(request.attribute('iidxid'))
-            musicid = int(request.attribute('mid'))
-            chart = int(request.attribute('clid'))
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-
-            # See if we need to report global or shop scores
-            if self.machine_joined_arcade():
-                game_config = self.get_game_config()
-                global_scores = game_config.get_bool('global_shop_ranking')
-                machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
-            else:
-                # If we aren't in an arcade, we can only show global scores
-                global_scores = True
-                machine = None
-
-            # First, determine our current ranking before saving the new score
             all_scores = sorted(
                 self.data.remote.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart),
                 key=lambda s: (s[1].points, s[1].timestamp),
                 reverse=True,
             )
-            all_players = {
-                uid: prof for (uid, prof) in
-                self.get_any_profiles([s[0] for s in all_scores])
-            }
+            missing_players = [
+                uid for (uid, _) in all_scores
+                if uid not in all_players
+            ]
+            for (uid, prof) in self.get_any_profiles(missing_players):
+                all_players[uid] = prof
 
             if not global_scores:
                 all_scores = [
@@ -531,444 +593,353 @@ class IIDXTricoro(IIDXBase):
                 ]
 
             # Find our actual index
-            oldindex = None
+            ourindex = None
             for i in range(len(all_scores)):
                 if all_scores[i][0] == userid:
-                    oldindex = i
+                    ourindex = i
                     break
+            if ourindex is None:
+                raise Exception('Cannot find our own score after saving to DB!')
+            start = ourindex - 4
+            end = ourindex + 4
+            if start < 0:
+                start = 0
+            if end >= len(all_scores):
+                end = len(all_scores) - 1
+            relevant_scores = all_scores[start:(end + 1)]
 
-            if userid is not None:
-                clear_status = self.game_to_db_status(int(request.attribute('cflg')))
-                pgreats = int(request.attribute('pgnum'))
-                greats = int(request.attribute('gnum'))
-                miss_count = int(request.attribute('mnum'))
-                ghost = request.child_value('ghost')
-                shopid = ID.parse_machine_id(request.attribute('shopconvid'))
+            record_num = start + 1
+            for score in relevant_scores:
+                profile = all_players[score[0]]
 
-                self.update_score(
-                    userid,
-                    musicid,
-                    chart,
-                    clear_status,
-                    pgreats,
-                    greats,
-                    miss_count,
-                    ghost,
-                    shopid,
-                )
+                data = Node.void('data')
+                ranklist.add_child(data)
+                data.set_attribute('iidx_id', str(profile.extid))
+                data.set_attribute('name', profile.get_str('name'))
 
-            # Calculate and return statistics about this song
-            root = Node.void('music')
-            root.set_attribute('clid', request.attribute('clid'))
-            root.set_attribute('mid', request.attribute('mid'))
+                machine_name = ''
+                if 'shop_location' in profile:
+                    shop_id = profile.get_int('shop_location')
+                    machine = self.get_machine_by_id(shop_id)
+                    if machine is not None:
+                        machine_name = machine.name
+                data.set_attribute('opname', machine_name)
+                data.set_attribute('rnum', str(record_num))
+                data.set_attribute('score', str(score[1].points))
+                data.set_attribute('clflg', str(self.db_to_game_status(score[1].data.get_int('clear_status'))))
+                data.set_attribute('pid', str(profile.get_int('pid')))
+                data.set_attribute('myFlg', '1' if score[0] == userid else '0')
 
-            attempts = self.get_clear_rates(musicid, chart)
-            count = attempts[musicid][chart]['total']
-            clear = attempts[musicid][chart]['clears']
-            full_combo = attempts[musicid][chart]['fcs']
+                data.set_attribute('sgrade', str(
+                    self.db_to_game_rank(profile.get_int(self.DAN_RANKING_SINGLE, -1), self.GAME_CLTYPE_SINGLE),
+                ))
+                data.set_attribute('dgrade', str(
+                    self.db_to_game_rank(profile.get_int(self.DAN_RANKING_DOUBLE, -1), self.GAME_CLTYPE_DOUBLE),
+                ))
 
-            if count > 0:
-                root.set_attribute('crate', str(int((100 * clear) / count)))
-                root.set_attribute('frate', str(int((100 * full_combo) / count)))
-            else:
-                root.set_attribute('crate', '0')
-                root.set_attribute('frate', '0')
+                qpro = profile.get_dict('qpro')
+                data.set_attribute('head', str(qpro.get_int('head')))
+                data.set_attribute('hair', str(qpro.get_int('hair')))
+                data.set_attribute('face', str(qpro.get_int('face')))
+                data.set_attribute('body', str(qpro.get_int('body')))
+                data.set_attribute('hand', str(qpro.get_int('hand')))
 
-            if userid is not None:
-                # Shop ranking
-                shopdata = Node.void('shopdata')
-                root.add_child(shopdata)
-                shopdata.set_attribute('rank', '-1' if oldindex is None else str(oldindex + 1))
+                record_num = record_num + 1
 
-                # Grab the rank of some other players on this song
-                ranklist = Node.void('ranklist')
-                root.add_child(ranklist)
+        return root
 
-                all_scores = sorted(
-                    self.data.remote.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart),
-                    key=lambda s: (s[1].points, s[1].timestamp),
-                    reverse=True,
-                )
-                missing_players = [
-                    uid for (uid, _) in all_scores
-                    if uid not in all_players
-                ]
-                for (uid, prof) in self.get_any_profiles(missing_players):
-                    all_players[uid] = prof
+    def handle_music_breg_request(self, request: Node) -> Optional[Node]:
+        extid = int(request.attribute('iidxid'))
+        musicid = int(request.attribute('mid'))
+        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
 
-                if not global_scores:
-                    all_scores = [
-                        score for score in all_scores
-                        if (
-                            score[0] == userid or
-                            self.user_joined_arcade(machine, all_players[score[0]])
-                        )
-                    ]
-
-                # Find our actual index
-                ourindex = None
-                for i in range(len(all_scores)):
-                    if all_scores[i][0] == userid:
-                        ourindex = i
-                        break
-                if ourindex is None:
-                    raise Exception('Cannot find our own score after saving to DB!')
-                start = ourindex - 4
-                end = ourindex + 4
-                if start < 0:
-                    start = 0
-                if end >= len(all_scores):
-                    end = len(all_scores) - 1
-                relevant_scores = all_scores[start:(end + 1)]
-
-                record_num = start + 1
-                for score in relevant_scores:
-                    profile = all_players[score[0]]
-
-                    data = Node.void('data')
-                    ranklist.add_child(data)
-                    data.set_attribute('iidx_id', str(profile.extid))
-                    data.set_attribute('name', profile.get_str('name'))
-
-                    machine_name = ''
-                    if 'shop_location' in profile:
-                        shop_id = profile.get_int('shop_location')
-                        machine = self.get_machine_by_id(shop_id)
-                        if machine is not None:
-                            machine_name = machine.name
-                    data.set_attribute('opname', machine_name)
-                    data.set_attribute('rnum', str(record_num))
-                    data.set_attribute('score', str(score[1].points))
-                    data.set_attribute('clflg', str(self.db_to_game_status(score[1].data.get_int('clear_status'))))
-                    data.set_attribute('pid', str(profile.get_int('pid')))
-                    data.set_attribute('myFlg', '1' if score[0] == userid else '0')
-
-                    data.set_attribute('sgrade', str(
-                        self.db_to_game_rank(profile.get_int(self.DAN_RANKING_SINGLE, -1), self.GAME_CLTYPE_SINGLE),
-                    ))
-                    data.set_attribute('dgrade', str(
-                        self.db_to_game_rank(profile.get_int(self.DAN_RANKING_DOUBLE, -1), self.GAME_CLTYPE_DOUBLE),
-                    ))
-
-                    qpro = profile.get_dict('qpro')
-                    data.set_attribute('head', str(qpro.get_int('head')))
-                    data.set_attribute('hair', str(qpro.get_int('hair')))
-                    data.set_attribute('face', str(qpro.get_int('face')))
-                    data.set_attribute('body', str(qpro.get_int('body')))
-                    data.set_attribute('hand', str(qpro.get_int('hand')))
-
-                    record_num = record_num + 1
-
-            return root
-
-        if method == 'breg':
-            extid = int(request.attribute('iidxid'))
-            musicid = int(request.attribute('mid'))
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-
-            if userid is not None:
-                clear_status = self.game_to_db_status(int(request.attribute('cflg')))
-                pgreats = int(request.attribute('pgnum'))
-                greats = int(request.attribute('gnum'))
-
-                self.update_score(
-                    userid,
-                    musicid,
-                    self.CHART_TYPE_B7,
-                    clear_status,
-                    pgreats,
-                    greats,
-                    -1,
-                    b'',
-                    None,
-                )
-
-            # Return nothing.
-            root = Node.void('music')
-            return root
-
-        if method == 'play':
-            musicid = int(request.attribute('mid'))
-            chart = int(request.attribute('clid'))
+        if userid is not None:
             clear_status = self.game_to_db_status(int(request.attribute('cflg')))
+            pgreats = int(request.attribute('pgnum'))
+            greats = int(request.attribute('gnum'))
 
             self.update_score(
-                None,  # No userid since its anonymous
+                userid,
                 musicid,
-                chart,
+                self.CHART_TYPE_B7,
                 clear_status,
-                0,  # No ex score
-                0,  # No ex score
-                0,  # No miss count
-                None,  # No ghost
-                None,  # No shop for this user
+                pgreats,
+                greats,
+                -1,
+                b'',
+                None,
             )
 
-            # Calculate and return statistics about this song
-            root = Node.void('music')
-            root.set_attribute('clid', request.attribute('clid'))
-            root.set_attribute('mid', request.attribute('mid'))
+        # Return nothing.
+        root = Node.void('music')
+        return root
 
-            attempts = self.get_clear_rates(musicid, chart)
-            count = attempts[musicid][chart]['total']
-            clear = attempts[musicid][chart]['clears']
-            full_combo = attempts[musicid][chart]['fcs']
+    def handle_music_play_request(self, request: Node) -> Optional[Node]:
+        musicid = int(request.attribute('mid'))
+        chart = int(request.attribute('clid'))
+        clear_status = self.game_to_db_status(int(request.attribute('cflg')))
 
-            if count > 0:
-                root.set_attribute('crate', str(int((100 * clear) / count)))
-                root.set_attribute('frate', str(int((100 * full_combo) / count)))
-            else:
-                root.set_attribute('crate', '0')
-                root.set_attribute('frate', '0')
+        self.update_score(
+            None,  # No userid since its anonymous
+            musicid,
+            chart,
+            clear_status,
+            0,  # No ex score
+            0,  # No ex score
+            0,  # No miss count
+            None,  # No ghost
+            None,  # No shop for this user
+        )
 
-            return root
+        # Calculate and return statistics about this song
+        root = Node.void('music')
+        root.set_attribute('clid', request.attribute('clid'))
+        root.set_attribute('mid', request.attribute('mid'))
 
-        if method == 'appoint':
-            musicid = int(request.attribute('mid'))
-            chart = int(request.attribute('clid'))
-            ghost_type = int(request.attribute('ctype'))
-            extid = int(request.attribute('iidxid'))
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        attempts = self.get_clear_rates(musicid, chart)
+        count = attempts[musicid][chart]['total']
+        clear = attempts[musicid][chart]['clears']
+        full_combo = attempts[musicid][chart]['fcs']
 
-            root = Node.void('music')
+        if count > 0:
+            root.set_attribute('crate', str(int((100 * clear) / count)))
+            root.set_attribute('frate', str(int((100 * full_combo) / count)))
+        else:
+            root.set_attribute('crate', '0')
+            root.set_attribute('frate', '0')
 
-            if userid is not None:
-                # Try to look up previous ghost for user
-                my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
-                if my_score is not None:
-                    mydata = Node.binary('mydata', my_score.data.get_bytes('ghost'))
-                    mydata.set_attribute('score', str(my_score.points))
-                    root.add_child(mydata)
+        return root
 
-                ghost_score = self.get_ghost(
-                    {
-                        self.GAME_GHOST_TYPE_RIVAL: self.GHOST_TYPE_RIVAL,
-                        self.GAME_GHOST_TYPE_GLOBAL_TOP: self.GHOST_TYPE_GLOBAL_TOP,
-                        self.GAME_GHOST_TYPE_GLOBAL_AVERAGE: self.GHOST_TYPE_GLOBAL_AVERAGE,
-                        self.GAME_GHOST_TYPE_LOCAL_TOP: self.GHOST_TYPE_LOCAL_TOP,
-                        self.GAME_GHOST_TYPE_LOCAL_AVERAGE: self.GHOST_TYPE_LOCAL_AVERAGE,
-                        self.GAME_GHOST_TYPE_DAN_TOP: self.GHOST_TYPE_DAN_TOP,
-                        self.GAME_GHOST_TYPE_DAN_AVERAGE: self.GHOST_TYPE_DAN_AVERAGE,
-                        self.GAME_GHOST_TYPE_RIVAL_TOP: self.GHOST_TYPE_RIVAL_TOP,
-                        self.GAME_GHOST_TYPE_RIVAL_AVERAGE: self.GHOST_TYPE_RIVAL_AVERAGE,
-                    }.get(ghost_type, self.GHOST_TYPE_NONE),
-                    request.attribute('subtype'),
-                    self.GAME_GHOST_LENGTH,
-                    musicid,
-                    chart,
-                    userid,
-                )
+    def handle_music_appoint_request(self, request: Node) -> Optional[Node]:
+        musicid = int(request.attribute('mid'))
+        chart = int(request.attribute('clid'))
+        ghost_type = int(request.attribute('ctype'))
+        extid = int(request.attribute('iidxid'))
+        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
 
-                # Add ghost score if we support it
-                if ghost_score is not None:
-                    sdata = Node.binary('sdata', ghost_score['ghost'])
-                    sdata.set_attribute('score', str(ghost_score['score']))
-                    if 'name' in ghost_score:
-                        sdata.set_attribute('name', ghost_score['name'])
-                    if 'pid' in ghost_score:
-                        sdata.set_attribute('pid', str(ghost_score['pid']))
-                    if 'extid' in ghost_score:
-                        sdata.set_attribute('riidxid', str(ghost_score['extid']))
-                    root.add_child(sdata)
+        root = Node.void('music')
 
-            return root
+        if userid is not None:
+            # Try to look up previous ghost for user
+            my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
+            if my_score is not None:
+                mydata = Node.binary('mydata', my_score.data.get_bytes('ghost'))
+                mydata.set_attribute('score', str(my_score.points))
+                root.add_child(mydata)
 
-        # Invalid method
-        return None
+            ghost_score = self.get_ghost(
+                {
+                    self.GAME_GHOST_TYPE_RIVAL: self.GHOST_TYPE_RIVAL,
+                    self.GAME_GHOST_TYPE_GLOBAL_TOP: self.GHOST_TYPE_GLOBAL_TOP,
+                    self.GAME_GHOST_TYPE_GLOBAL_AVERAGE: self.GHOST_TYPE_GLOBAL_AVERAGE,
+                    self.GAME_GHOST_TYPE_LOCAL_TOP: self.GHOST_TYPE_LOCAL_TOP,
+                    self.GAME_GHOST_TYPE_LOCAL_AVERAGE: self.GHOST_TYPE_LOCAL_AVERAGE,
+                    self.GAME_GHOST_TYPE_DAN_TOP: self.GHOST_TYPE_DAN_TOP,
+                    self.GAME_GHOST_TYPE_DAN_AVERAGE: self.GHOST_TYPE_DAN_AVERAGE,
+                    self.GAME_GHOST_TYPE_RIVAL_TOP: self.GHOST_TYPE_RIVAL_TOP,
+                    self.GAME_GHOST_TYPE_RIVAL_AVERAGE: self.GHOST_TYPE_RIVAL_AVERAGE,
+                }.get(ghost_type, self.GHOST_TYPE_NONE),
+                request.attribute('subtype'),
+                self.GAME_GHOST_LENGTH,
+                musicid,
+                chart,
+                userid,
+            )
 
-    def handle_pc_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
+            # Add ghost score if we support it
+            if ghost_score is not None:
+                sdata = Node.binary('sdata', ghost_score['ghost'])
+                sdata.set_attribute('score', str(ghost_score['score']))
+                if 'name' in ghost_score:
+                    sdata.set_attribute('name', ghost_score['name'])
+                if 'pid' in ghost_score:
+                    sdata.set_attribute('pid', str(ghost_score['pid']))
+                if 'extid' in ghost_score:
+                    sdata.set_attribute('riidxid', str(ghost_score['extid']))
+                root.add_child(sdata)
 
-        if method == 'common':
+        return root
+
+    def handle_pc_common_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('pc')
+        root.set_attribute('expire', '600')
+
+        # TODO: Hook all of these up to config options I guess?
+        ir = Node.void('ir')
+        root.add_child(ir)
+        ir.set_attribute('beat', '2')
+
+        limit = Node.void('limit')
+        root.add_child(limit)
+        limit.set_attribute('phase', '24')
+
+        # See if we configured event overrides
+        if self.machine_joined_arcade():
+            game_config = self.get_game_config()
+            omni_events = game_config.get_bool('omnimix_events_enabled')
+        else:
+            # If we aren't in an arcade, we turn off events
+            omni_events = False
+
+        if self.omnimix and (not omni_events):
+            boss_phase = 0
+        else:
+            # TODO: Figure out what these map to
+            boss_phase = 0
+
+        boss = Node.void('boss')
+        root.add_child(boss)
+        boss.set_attribute('phase', str(boss_phase))
+
+        red = Node.void('red')
+        root.add_child(red)
+        red.set_attribute('phase', '0')
+
+        yellow = Node.void('yellow')
+        root.add_child(yellow)
+        yellow.set_attribute('phase', '0')
+
+        medal = Node.void('medal')
+        root.add_child(medal)
+        medal.set_attribute('phase', '1')
+
+        cafe = Node.void('cafe')
+        root.add_child(cafe)
+        cafe.set_attribute('open', '1')
+
+        tricolettepark = Node.void('tricolettepark')
+        root.add_child(tricolettepark)
+        tricolettepark.set_attribute('open', '0')
+
+        return root
+
+    def handle_pc_delete_request(self, request: Node) -> Optional[Node]:
+        return Node.void('pc')
+
+    def handle_pc_playstart_request(self, request: Node) -> Optional[Node]:
+        return Node.void('pc')
+
+    def handle_pc_playend_request(self, request: Node) -> Optional[Node]:
+        return Node.void('pc')
+
+    def handle_pc_oldget_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('rid')
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is not None:
+            oldversion = self.previous_version()
+            profile = oldversion.get_profile(userid)
+        else:
+            profile = None
+
+        root = Node.void('pc')
+        root.set_attribute('status', '1' if profile is None else '0')
+        return root
+
+    def handle_pc_getname_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('rid')
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is not None:
+            oldversion = self.previous_version()
+            profile = oldversion.get_profile(userid)
+        else:
+            profile = None
+        if profile is None:
+            raise Exception(
+                'Should not get here if we have no profile, we should ' +
+                'have returned \'1\' in the \'oldget\' method above ' +
+                'which should tell the game not to present a migration.'
+            )
+
+        root = Node.void('pc')
+        root.set_attribute('name', profile.get_str('name'))
+        root.set_attribute('idstr', ID.format_extid(profile.extid))
+        root.set_attribute('pid', str(profile.get_int('pid')))
+        return root
+
+    def handle_pc_reg_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('rid')
+        name = request.attribute('name')
+        pid = int(request.attribute('pid'))
+        profile = self.new_profile_by_refid(refid, name, pid)
+
+        root = Node.void('pc')
+        if profile is not None:
+            root.set_attribute('id', str(profile.extid))
+            root.set_attribute('id_str', ID.format_extid(profile.extid))
+        return root
+
+    def handle_pc_get_request(self, request: Node) -> Optional[Node]:
+        refid = request.attribute('rid')
+        root = self.get_profile_by_refid(refid)
+        if root is None:
             root = Node.void('pc')
-            root.set_attribute('expire', '600')
+        return root
 
-            # TODO: Hook all of these up to config options I guess?
-            ir = Node.void('ir')
-            root.add_child(ir)
-            ir.set_attribute('beat', '2')
+    def handle_pc_save_request(self, request: Node) -> Optional[Node]:
+        extid = int(request.attribute('iidxid'))
+        self.put_profile_by_extid(extid, request)
 
-            limit = Node.void('limit')
-            root.add_child(limit)
-            limit.set_attribute('phase', '24')
+        root = Node.void('pc')
+        return root
 
-            # See if we configured event overrides
-            if self.machine_joined_arcade():
-                game_config = self.get_game_config()
-                omni_events = game_config.get_bool('omnimix_events_enabled')
-            else:
-                # If we aren't in an arcade, we turn off events
-                omni_events = False
+    def handle_pc_visit_request(self, request: Node) -> Optional[Node]:
+        root = Node.void('pc')
+        root.set_attribute('anum', '0')
+        root.set_attribute('snum', '0')
+        root.set_attribute('pnum', '0')
+        root.set_attribute('aflg', '0')
+        root.set_attribute('sflg', '0')
+        root.set_attribute('pflg', '0')
+        return root
 
-            if self.omnimix and (not omni_events):
-                boss_phase = 0
-            else:
-                # TODO: Figure out what these map to
-                boss_phase = 0
+    def handle_pc_shopregister_request(self, request: Node) -> Optional[Node]:
+        extid = int(request.child_value('iidx_id'))
+        location = ID.parse_machine_id(request.child_value('location_id'))
 
-            boss = Node.void('boss')
-            root.add_child(boss)
-            boss.set_attribute('phase', str(boss_phase))
-
-            red = Node.void('red')
-            root.add_child(red)
-            red.set_attribute('phase', '0')
-
-            yellow = Node.void('yellow')
-            root.add_child(yellow)
-            yellow.set_attribute('phase', '0')
-
-            medal = Node.void('medal')
-            root.add_child(medal)
-            medal.set_attribute('phase', '1')
-
-            cafe = Node.void('cafe')
-            root.add_child(cafe)
-            cafe.set_attribute('open', '1')
-
-            tricolettepark = Node.void('tricolettepark')
-            root.add_child(tricolettepark)
-            tricolettepark.set_attribute('open', '0')
-
-            return root
-
-        if method == 'delete':
-            return Node.void('pc')
-
-        if method == 'playstart':
-            return Node.void('pc')
-
-        if method == 'playend':
-            return Node.void('pc')
-
-        if method == 'oldget':
-            refid = request.attribute('rid')
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is not None:
-                oldversion = self.previous_version()
-                profile = oldversion.get_profile(userid)
-            else:
-                profile = None
-
-            root = Node.void('pc')
-            root.set_attribute('status', '1' if profile is None else '0')
-            return root
-
-        if method == 'getname':
-            refid = request.attribute('rid')
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-            if userid is not None:
-                oldversion = self.previous_version()
-                profile = oldversion.get_profile(userid)
-            else:
-                profile = None
+        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        if userid is not None:
+            profile = self.get_profile(userid)
             if profile is None:
-                raise Exception(
-                    'Should not get here if we have no profile, we should ' +
-                    'have returned \'1\' in the \'oldget\' method above ' +
-                    'which should tell the game not to present a migration.'
-                )
+                profile = Profile(self.game, self.version, "", extid)
+            profile.replace_int('shop_location', location)
+            self.put_profile(userid, profile)
 
-            root = Node.void('pc')
-            root.set_attribute('name', profile.get_str('name'))
-            root.set_attribute('idstr', ID.format_extid(profile.extid))
-            root.set_attribute('pid', str(profile.get_int('pid')))
-            return root
+        root = Node.void('pc')
+        return root
 
-        if method == 'reg':
-            refid = request.attribute('rid')
-            name = request.attribute('name')
-            pid = int(request.attribute('pid'))
-            profile = self.new_profile_by_refid(refid, name, pid)
+    def handle_grade_raised_request(self, request: Node) -> Optional[Node]:
+        extid = int(request.attribute('iidxid'))
+        cltype = int(request.attribute('gtype'))
+        rank = self.game_to_db_rank(int(request.attribute('gid')), cltype)
+        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        if userid is not None:
+            percent = int(request.attribute('achi'))
+            stages_cleared = int(request.attribute('cflg'))
+            if cltype == self.GAME_CLTYPE_SINGLE:
+                max_stages = self.DAN_STAGES_SINGLE
+            else:
+                max_stages = self.DAN_STAGES_DOUBLE
+            cleared = stages_cleared == max_stages
 
-            root = Node.void('pc')
-            if profile is not None:
-                root.set_attribute('id', str(profile.extid))
-                root.set_attribute('id_str', ID.format_extid(profile.extid))
-            return root
+            if cltype == self.GAME_CLTYPE_SINGLE:
+                index = self.DAN_RANKING_SINGLE
+            else:
+                index = self.DAN_RANKING_DOUBLE
 
-        if method == 'get':
-            refid = request.attribute('rid')
-            root = self.get_profile_by_refid(refid)
-            if root is None:
-                root = Node.void('pc')
-            return root
+            self.update_rank(
+                userid,
+                index,
+                rank,
+                percent,
+                cleared,
+                stages_cleared,
+            )
 
-        if method == 'save':
-            extid = int(request.attribute('iidxid'))
-            self.put_profile_by_extid(extid, request)
-
-            root = Node.void('pc')
-            return root
-
-        if method == 'visit':
-            root = Node.void('pc')
-            root.set_attribute('anum', '0')
-            root.set_attribute('snum', '0')
-            root.set_attribute('pnum', '0')
-            root.set_attribute('aflg', '0')
-            root.set_attribute('sflg', '0')
-            root.set_attribute('pflg', '0')
-            return root
-
-        if method == 'shopregister':
-            extid = int(request.child_value('iidx_id'))
-            location = ID.parse_machine_id(request.child_value('location_id'))
-
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-            if userid is not None:
-                profile = self.get_profile(userid)
-                if profile is None:
-                    profile = Profile(self.game, self.version, "", extid)
-                profile.replace_int('shop_location', location)
-                self.put_profile(userid, profile)
-
-            root = Node.void('pc')
-            return root
-
-        # Invalid method
-        return None
-
-    def handle_grade_request(self, request: Node) -> Optional[Node]:
-        method = request.attribute('method')
-
-        if method == 'raised':
-            extid = int(request.attribute('iidxid'))
-            cltype = int(request.attribute('gtype'))
-            rank = self.game_to_db_rank(int(request.attribute('gid')), cltype)
-
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-            if userid is not None:
-                percent = int(request.attribute('achi'))
-                stages_cleared = int(request.attribute('cflg'))
-                if cltype == self.GAME_CLTYPE_SINGLE:
-                    max_stages = self.DAN_STAGES_SINGLE
-                else:
-                    max_stages = self.DAN_STAGES_DOUBLE
-                cleared = stages_cleared == max_stages
-
-                if cltype == self.GAME_CLTYPE_SINGLE:
-                    index = self.DAN_RANKING_SINGLE
-                else:
-                    index = self.DAN_RANKING_DOUBLE
-
-                self.update_rank(
-                    userid,
-                    index,
-                    rank,
-                    percent,
-                    cleared,
-                    stages_cleared,
-                )
-
-            # Figure out number of players that played this ranking
-            all_achievements = self.data.local.user.get_all_achievements(self.game, self.version, achievementid=rank, achievementtype=index)
-            root = Node.void('grade')
-            root.set_attribute('pnum', str(len(all_achievements)))
-            return root
-
-        # Invalid method
-        return None
+        # Figure out number of players that played this ranking
+        all_achievements = self.data.local.user.get_all_achievements(self.game, self.version, achievementid=rank, achievementtype=index)
+        root = Node.void('grade')
+        root.set_attribute('pnum', str(len(all_achievements)))
+        return root
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = Node.void('pc')
