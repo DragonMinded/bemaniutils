@@ -189,7 +189,7 @@ class JubeatSaucer(
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
-        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version')))
+        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version') and not profile.get_bool('saved')))
 
         # Not saved, but loaded
         info.add_child(Node.s32('mtg_entry_cnt', 123))
@@ -519,6 +519,7 @@ class JubeatSaucer(
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
+        newprofile.replace_bool('saved', True)
         data = request.child('data')
 
         # Grab player information
