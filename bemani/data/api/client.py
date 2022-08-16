@@ -150,6 +150,7 @@ class APIClient:
                 VersionConstants.JUBEAT_PROP: '6',
                 VersionConstants.JUBEAT_QUBELL: '7',
                 VersionConstants.JUBEAT_CLAN: '8',
+                VersionConstants.JUBEAT_FESTO: '9',
             },
             GameConstants.MUSECA: {
                 VersionConstants.MUSECA: '1',

@@ -89,6 +89,7 @@ class RecordsObject(BaseObject):
             'status': status,
             'combo': record.data.get_int('combo', -1),
             'ghost': ghost,
+            'music_rate': record.data.get_int('music_rate'),
         }
 
     def __format_museca_record(self, record: Score) -> Dict[str, Any]:
