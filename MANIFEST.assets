@@ -21,3 +21,4 @@ include bemani/frontend/static/controllers/ddr/*.js
 include bemani/frontend/static/controllers/reflec/*.js
 include bemani/frontend/static/controllers/sdvx/*.js
 include bemani/frontend/static/controllers/museca/*.js
+include bemani/frontend/static/emblems/*.png
