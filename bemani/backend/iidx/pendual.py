@@ -83,6 +83,14 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
     FAVORITE_LIST_LENGTH: Final[int] = 20
 
+    GAME_CHART_TYPE_N7: Final[int] = 0
+    GAME_CHART_TYPE_H7: Final[int] = 1
+    GAME_CHART_TYPE_A7: Final[int] = 2
+    GAME_CHART_TYPE_N14: Final[int] = 3
+    GAME_CHART_TYPE_H14: Final[int] = 4
+    GAME_CHART_TYPE_A14: Final[int] = 5
+    GAME_CHART_TYPE_B7: Final[int] = 6
+
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXSpada(self.data, self.config, self.model)
 
@@ -174,7 +182,18 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             ],
         }
 
-    def handle_IIDX22shop_getname_request(self, request: Node) -> Optional[Node]:
+    def game_to_db_chart(self, db_chart: int) -> int:
+        return {
+            self.GAME_CHART_TYPE_B7: self.CHART_TYPE_B7,
+            self.GAME_CHART_TYPE_N7: self.CHART_TYPE_N7,
+            self.GAME_CHART_TYPE_H7: self.CHART_TYPE_H7,
+            self.GAME_CHART_TYPE_A7: self.CHART_TYPE_A7,
+            self.GAME_CHART_TYPE_N14: self.CHART_TYPE_N14,
+            self.GAME_CHART_TYPE_H14: self.CHART_TYPE_H14,
+            self.GAME_CHART_TYPE_A14: self.CHART_TYPE_A14,
+        }[db_chart]
+
+    def handle_IIDX22shop_getname_request(self, request: Node) -> Node:
         root = Node.void('IIDX22shop')
         root.set_attribute('cls_opt', '0')
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
@@ -182,16 +201,16 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.set_attribute('pid', str(self.get_machine_region()))
         return root
 
-    def handle_IIDX22shop_savename_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22shop_savename_request(self, request: Node) -> Node:
         self.update_machine_name(request.attribute('opname'))
         root = Node.void('IIDX22shop')
         return root
 
-    def handle_IIDX22shop_sentinfo_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22shop_sentinfo_request(self, request: Node) -> Node:
         root = Node.void('IIDX22shop')
         return root
 
-    def handle_IIDX22shop_getconvention_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22shop_getconvention_request(self, request: Node) -> Node:
         root = Node.void('IIDX22shop')
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
@@ -209,7 +228,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.add_child(Node.bool('valid', course.get_bool('valid')))
         return root
 
-    def handle_IIDX22shop_setconvention_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22shop_setconvention_request(self, request: Node) -> Node:
         root = Node.void('IIDX22shop')
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
@@ -223,9 +242,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22ranking_getranker_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22ranking_getranker_request(self, request: Node) -> Node:
         root = Node.void('IIDX22ranking')
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         if chart not in [
             self.CHART_TYPE_N7,
             self.CHART_TYPE_H7,
@@ -314,10 +333,10 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22ranking_entry_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22ranking_entry_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         courseid = int(request.attribute('coid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         course_type = int(request.attribute('regist_type'))
         clear_status = self.game_to_db_status(int(request.attribute('clr')))
         pgreats = int(request.attribute('pgnum'))
@@ -472,7 +491,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         else:
             raise Exception('Invalid cltype!')
 
-    def handle_IIDX22music_crate_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22music_crate_request(self, request: Node) -> Node:
         root = Node.void('IIDX22music')
         attempts = self.get_clear_rates()
 
@@ -499,7 +518,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22music_getrank_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22music_getrank_request(self, request: Node) -> Node:
         cltype = int(request.attribute('cltype'))
 
         root = Node.void('IIDX22music')
@@ -550,10 +569,10 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22music_reg_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22music_reg_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
 
         # See if we need to report global or shop scores
@@ -719,7 +738,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22music_breg_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22music_breg_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         musicid = int(request.attribute('mid'))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
@@ -745,9 +764,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root = Node.void('IIDX22music')
         return root
 
-    def handle_IIDX22music_play_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22music_play_request(self, request: Node) -> Node:
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         clear_status = self.game_to_db_status(int(request.attribute('cflg')))
 
         self.update_score(
@@ -781,9 +800,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22music_appoint_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22music_appoint_request(self, request: Node) -> Node:
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         ghost_type = int(request.attribute('ctype'))
         extid = int(request.attribute('iidxid'))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
@@ -831,7 +850,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22grade_raised_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22grade_raised_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         cltype = int(request.attribute('gtype'))
         rank = self.game_to_db_rank(int(request.attribute('gid')), cltype)
@@ -866,7 +885,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.set_attribute('pnum', str(len(all_achievements)))
         return root
 
-    def handle_IIDX22pc_common_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_common_request(self, request: Node) -> Node:
         root = Node.void('IIDX22pc')
         root.set_attribute('expire', '600')
 
@@ -883,24 +902,24 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         limit.set_attribute('phase', '21')
 
         # See if we configured event overrides
-        game_config = self.get_game_config()
         if self.machine_joined_arcade():
+            game_config = self.get_game_config()
             timeshift_override = game_config.get_int('cycle_config')
             ccxbm_on = game_config.get_bool('ccxbm_enable')
             omni_events = game_config.get_bool('omnimix_events_enabled')
+            event_phase = game_config.get_int('event_phase')
         else:
             # If we aren't in an arcade, we turn off events
             timeshift_override = 0
             ccxbm_on = False
             omni_events = False
 
-        frontendphase = game_config.get_int('event_phase')
         if self.omnimix and (not omni_events):
             phase = 0
-        elif self.omnimix and omni_events:
-            phase = frontendphase
+        elif self.omnimix and omni_events or not self.omnimix:
+            phase = event_phase
         elif not self.omnimix:
-            phase = frontendphase
+            phase = event_phase
 
         # events
         boss = Node.void('boss')
@@ -1211,16 +1230,16 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def handle_IIDX22pc_delete_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_delete_request(self, request: Node) -> Node:
         return Node.void('IIDX22pc')
 
-    def handle_IIDX22pc_playstart_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_playstart_request(self, request: Node) -> Node:
         return Node.void('IIDX22pc')
 
-    def handle_IIDX22pc_playend_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_playend_request(self, request: Node) -> Node:
         return Node.void('IIDX22pc')
 
-    def handle_IIDX22pc_oldget_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_oldget_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
@@ -1233,7 +1252,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.set_attribute('status', '1' if profile is None else '0')
         return root
 
-    def handle_IIDX22pc_getname_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_getname_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
@@ -1254,7 +1273,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.set_attribute('pid', str(profile.get_int('pid')))
         return root
 
-    def handle_IIDX22pc_takeover_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_takeover_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         name = request.attribute('name')
         pid = int(request.attribute('pid'))
@@ -1265,7 +1284,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             root.set_attribute('id', str(newprofile.extid))
         return root
 
-    def handle_IIDX22pc_reg_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_reg_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         name = request.attribute('name')
         pid = int(request.attribute('pid'))
@@ -1277,21 +1296,21 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             root.set_attribute('id_str', ID.format_extid(profile.extid))
         return root
 
-    def handle_IIDX22pc_get_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_get_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         root = self.get_profile_by_refid(refid)
         if root is None:
             root = Node.void('IIDX22pc')
         return root
 
-    def handle_IIDX22pc_save_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_save_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         self.put_profile_by_extid(extid, request)
 
         root = Node.void('IIDX22pc')
         return root
 
-    def handle_IIDX22pc_visit_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_visit_request(self, request: Node) -> Node:
         root = Node.void('IIDX22pc')
         root.set_attribute('anum', '0')
         root.set_attribute('pnum', '0')
@@ -1301,7 +1320,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root.set_attribute('snum', '0')
         return root
 
-    def handle_IIDX22pc_shopregister_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX22pc_shopregister_request(self, request: Node) -> Node:
         extid = int(request.child_value('iidx_id'))
         location = ID.parse_machine_id(request.child_value('location_id'))
 
@@ -1361,7 +1380,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, 'NO PLAY')
         now_clear_string = clear_map.get(now_clear, 'NO PLAY')
         # let's get the song info first
-        song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get('notecount', 0)
         # Construct the dictionary for the broadcast
         card_data = {

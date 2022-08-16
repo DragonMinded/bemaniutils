@@ -82,6 +82,14 @@ class IIDXSpada(IIDXBase):
 
     FAVORITE_LIST_LENGTH: Final[int] = 20
 
+    GAME_CHART_TYPE_N7: Final[int] = 0
+    GAME_CHART_TYPE_H7: Final[int] = 1
+    GAME_CHART_TYPE_A7: Final[int] = 2
+    GAME_CHART_TYPE_N14: Final[int] = 3
+    GAME_CHART_TYPE_H14: Final[int] = 4
+    GAME_CHART_TYPE_A14: Final[int] = 5
+    GAME_CHART_TYPE_B7: Final[int] = 6
+
     def previous_version(self) -> Optional[IIDXBase]:
         return IIDXTricoro(self.data, self.config, self.model)
 
@@ -263,7 +271,18 @@ class IIDXSpada(IIDXBase):
         else:
             raise Exception('Invalid cltype!')
 
-    def handle_IIDX21shop_getname_request(self, request: Node) -> Optional[Node]:
+    def game_to_db_chart(self, db_chart: int) -> int:
+        return {
+            self.GAME_CHART_TYPE_B7: self.CHART_TYPE_B7,
+            self.GAME_CHART_TYPE_N7: self.CHART_TYPE_N7,
+            self.GAME_CHART_TYPE_H7: self.CHART_TYPE_H7,
+            self.GAME_CHART_TYPE_A7: self.CHART_TYPE_A7,
+            self.GAME_CHART_TYPE_N14: self.CHART_TYPE_N14,
+            self.GAME_CHART_TYPE_H14: self.CHART_TYPE_H14,
+            self.GAME_CHART_TYPE_A14: self.CHART_TYPE_A14,
+        }[db_chart]
+
+    def handle_IIDX21shop_getname_request(self, request: Node) -> Node:
         root = Node.void('IIDX21shop')
         root.set_attribute('cls_opt', '0')
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
@@ -271,16 +290,16 @@ class IIDXSpada(IIDXBase):
         root.set_attribute('pid', str(self.get_machine_region()))
         return root
 
-    def handle_IIDX21shop_savename_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21shop_savename_request(self, request: Node) -> Node:
         self.update_machine_name(request.attribute('opname'))
         root = Node.void('IIDX21shop')
         return root
 
-    def handle_IIDX21shop_sentinfo_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21shop_sentinfo_request(self, request: Node) -> Node:
         root = Node.void('IIDX21shop')
         return root
 
-    def handle_IIDX21shop_getconvention_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21shop_getconvention_request(self, request: Node) -> Node:
         root = Node.void('IIDX21shop')
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
@@ -298,7 +317,7 @@ class IIDXSpada(IIDXBase):
         root.add_child(Node.bool('valid', course.get_bool('valid')))
         return root
 
-    def handle_IIDX21shop_setconvention_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21shop_setconvention_request(self, request: Node) -> Node:
         root = Node.void('IIDX21shop')
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
@@ -312,9 +331,9 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21ranking_getranker_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21ranking_getranker_request(self, request: Node) -> Node:
         root = Node.void('IIDX21ranking')
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         if chart not in [
             self.CHART_TYPE_N7,
             self.CHART_TYPE_H7,
@@ -403,7 +422,7 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21music_crate_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21music_crate_request(self, request: Node) -> Node:
         root = Node.void('IIDX21music')
         attempts = self.get_clear_rates()
 
@@ -430,7 +449,7 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21music_getrank_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21music_getrank_request(self, request: Node) -> Node:
         cltype = int(request.attribute('cltype'))
 
         root = Node.void('IIDX21music')
@@ -481,10 +500,10 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21music_reg_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21music_reg_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
 
         # See if we need to report global or shop scores
@@ -650,7 +669,7 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21music_breg_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21music_breg_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         musicid = int(request.attribute('mid'))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
@@ -676,9 +695,9 @@ class IIDXSpada(IIDXBase):
         root = Node.void('IIDX21music')
         return root
 
-    def handle_IIDX21music_play_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21music_play_request(self, request: Node) -> Node:
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         clear_status = self.game_to_db_status(int(request.attribute('cflg')))
 
         self.update_score(
@@ -712,9 +731,9 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21music_appoint_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21music_appoint_request(self, request: Node) -> Node:
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         ghost_type = int(request.attribute('ctype'))
         extid = int(request.attribute('iidxid'))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
@@ -762,7 +781,7 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21pc_common_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_common_request(self, request: Node) -> Node:
         root = Node.void('IIDX21pc')
         root.set_attribute('expire', '600')
 
@@ -826,16 +845,16 @@ class IIDXSpada(IIDXBase):
 
         return root
 
-    def handle_IIDX21pc_delete_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_delete_request(self, request: Node) -> Node:
         return Node.void('IIDX21pc')
 
-    def handle_IIDX21pc_playstart_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_playstart_request(self, request: Node) -> Node:
         return Node.void('IIDX21pc')
 
-    def handle_IIDX21pc_playend_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_playend_request(self, request: Node) -> Node:
         return Node.void('IIDX21pc')
 
-    def handle_IIDX21pc_oldget_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_oldget_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
@@ -848,7 +867,7 @@ class IIDXSpada(IIDXBase):
         root.set_attribute('status', '1' if profile is None else '0')
         return root
 
-    def handle_IIDX21pc_getname_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_getname_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
@@ -869,7 +888,7 @@ class IIDXSpada(IIDXBase):
         root.set_attribute('pid', str(profile.get_int('pid')))
         return root
 
-    def handle_IIDX21pc_takeover_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_takeover_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         name = request.attribute('name')
         pid = int(request.attribute('pid'))
@@ -880,7 +899,7 @@ class IIDXSpada(IIDXBase):
             root.set_attribute('id', str(newprofile.extid))
         return root
 
-    def handle_IIDX21pc_reg_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_reg_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         name = request.attribute('name')
         pid = int(request.attribute('pid'))
@@ -892,21 +911,21 @@ class IIDXSpada(IIDXBase):
             root.set_attribute('id_str', ID.format_extid(profile.extid))
         return root
 
-    def handle_IIDX21pc_get_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_get_request(self, request: Node) -> Node:
         refid = request.attribute('rid')
         root = self.get_profile_by_refid(refid)
         if root is None:
             root = Node.void('IIDX21pc')
         return root
 
-    def handle_IIDX21pc_save_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_save_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         self.put_profile_by_extid(extid, request)
 
         root = Node.void('IIDX21pc')
         return root
 
-    def handle_IIDX21pc_visit_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_visit_request(self, request: Node) -> Node:
         root = Node.void('IIDX21pc')
         root.set_attribute('anum', '0')
         root.set_attribute('pnum', '0')
@@ -916,7 +935,7 @@ class IIDXSpada(IIDXBase):
         root.set_attribute('snum', '0')
         return root
 
-    def handle_IIDX21pc_shopregister_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21pc_shopregister_request(self, request: Node) -> Node:
         extid = int(request.child_value('iidx_id'))
         location = ID.parse_machine_id(request.child_value('location_id'))
 
@@ -931,7 +950,7 @@ class IIDXSpada(IIDXBase):
         root = Node.void('IIDX21pc')
         return root
 
-    def handle_IIDX21grade_raised_request(self, request: Node) -> Optional[Node]:
+    def handle_IIDX21grade_raised_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         cltype = int(request.attribute('gtype'))
         rank = self.game_to_db_rank(int(request.attribute('gid')), cltype)
@@ -1011,7 +1030,7 @@ class IIDXSpada(IIDXBase):
         best_clear_string = clear_map.get(best_clear, 'NO PLAY')
         now_clear_string = clear_map.get(now_clear, 'NO PLAY')
         # let's get the song info first
-        song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get('notecount', 0)
         # Construct the dictionary for the broadcast
         card_data = {
