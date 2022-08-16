@@ -46,7 +46,6 @@ class JubeatFesto(
         6: {
             'enabled': False,
         },
-        # Something to do with maintenance mode?
         15: {
             'enabled': True,
         },
@@ -61,31 +60,7 @@ class JubeatFesto(
         },
         101: {
             'enabled': False,
-        },
-        102: {
-            'enabled': False,
-        },
-        103: {
-            'enabled': False,
-        },
-        104: {
-            'enabled': False,
-        },
-        105: {
-            'enabled': False,
-        },
-        106: {
-            'enabled': False,
-        },
-        107: {
-            'enabled': False,
-        },
-        108: {
-            'enabled': False,
-        },
-        109: {
-            'enabled': False,
-        },
+        }
     }
 
     COURSE_STATUS_SEEN: Final[int] = 0x01
@@ -150,9 +125,13 @@ class JubeatFesto(
         """
         events: List[Tuple[str, Dict[str, Any]]] = []
         if data.local.network.should_schedule(cls.game, cls.version, 'fc_challenge', 'daily'):
-            # Generate a new list of two FC challenge songs.
+            # Generate a new list of two FC challenge songs. Skip a particular song range since these are all a single song ID.
+            # Jubeat Clan has an unlock event where you have to play different charts for the same song, and the charts are
+            # loaded in based on the cabinet's prefecture. So, no matter where you are, you will only see one song within this
+            # range, but it will be a different ID depending on the prefecture set in settings. This means its not safe to send
+            # these song IDs, so we explicitly exclude them.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
-            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version) if song.id not in cls.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS)
             if len(all_songs) >= 2:
                 daily_songs = random.sample(all_songs, 2)
                 data.local.game.put_time_sensitive_settings(
@@ -1551,6 +1530,10 @@ class JubeatFesto(
         # Unsupported stamp rally event, since this poorly undocumented.
         info.add_child(Node.void('stamp'))
 
+        info.add_child(Node.void('department'))
+        info.add_child(Node.void('team_battle'))
+        info.add_child(Node.void('emo_list'))
+        info.add_child(Node.void('tip_list'))
         return info
 
     def handle_shopinfo_regist_request(self, request: Node) -> Node:
@@ -1640,6 +1623,30 @@ class JubeatFesto(
 
         return root
 
+    def handle_demodata_get_info_request(self, request: Node) -> Node:
+        root = Node.void('demodata')
+        data = Node.void('data')
+        root.add_child(data)
+        officialnews = Node.void('officialnews')
+        officialnews.set_attribute('count', '0')
+        data.add_child(officialnews)
+
+        return root
+
+    def handle_demodata_get_jbox_list_request(self, request: Node) -> Node:
+        root = Node.void('demodata')
+        return root
+
+    def handle_jbox_get_agreement_request(self, request: Node) -> Node:
+        root = Node.void('jbox')
+        root.add_child(Node.bool('is_agreement', True))
+        return root
+
+    def handle_jbox_get_list_request(self, request: Node) -> Node:
+        root = Node.void('jbox')
+        root.add_child(Node.void('selection_list'))
+        return root
+
     def handle_recommend_get_recommend_request(self, request: Node) -> Node:
         recommend = Node.void('recommend')
         data = Node.void('data')
@@ -1650,8 +1657,6 @@ class JubeatFesto(
         music_list = Node.void('music_list')
         player.add_child(music_list)
 
-        # TODO: Might be a way to figure out who plays what song and then offer
-        # recommendations based on that. There should be 12 songs returned here.
         recommended_songs: List[Song] = []
         for i, song in enumerate(recommended_songs):
             music = Node.void('music')
@@ -1692,18 +1697,8 @@ class JubeatFesto(
         data = request.child('data')
         player = data.child('player')
         extid = player.child_value('jid')
-        mdata_ver = player.child_value('mdata_ver')  # Game requests mdata 3 times per profile for some reason
-        if mdata_ver != 1:
-            root = Node.void('gametop')
-            datanode = Node.void('data')
-            root.add_child(datanode)
-            player = Node.void('player')
-            datanode.add_child(player)
-            player.add_child(Node.s32('jid', extid))
-            playdata = Node.void('mdata_list')
-            player.add_child(playdata)
-            return root
-        root = self.get_scores_by_extid(extid)
+        mdata_ver = player.child_value('mdata_ver')  # Which page does the game want?
+        root = self.get_scores_by_extid(extid, mdata_ver)
         if root is None:
             root = Node.void('gametop')
             root.set_attribute('status', str(Status.NO_PROFILE))
@@ -1816,9 +1811,18 @@ class JubeatFesto(
             data[f'{prefix}_ghost'] = ghost
 
             # Save it back
-            music.replace_dict(str(score.id), data)
+            if score.id in self.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS:
+                # Mirror it to every version so the score shows up regardless of
+                # prefecture setting.
+                for prefecture_id in self.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS:
+                    music.replace_dict(str(prefecture_id), data)
+            else:
+                # Regular copy.
+                music.replace_dict(str(score.id), data)
 
         for scoreid in music:
+            if int(scoreid) >= max_music_id or int(scoreid) <= min_music_id:
+                continue
             scoredata = music.get_dict(scoreid)
             musicdata = Node.void('musicdata')
             playdata.add_child(musicdata)
@@ -1900,9 +1904,6 @@ class JubeatFesto(
         info.add_child(Node.s32('match_cnt', profile.get_int('match_cnt')))
         info.add_child(Node.s32('beat_cnt', profile.get_int('beat_cnt')))
         info.add_child(Node.s32('mynews_cnt', profile.get_int('mynews_cnt')))
-        info.add_child(Node.s32('mtg_entry_cnt', profile.get_int('mtg_entry_cnt')))
-        info.add_child(Node.s32('mtg_hold_cnt', profile.get_int('mtg_hold_cnt')))
-        info.add_child(Node.u8('mtg_result', profile.get_int('mtg_result')))
         info.add_child(Node.s32('bonus_tune_points', profile.get_int('bonus_tune_points')))
         info.add_child(Node.bool('is_bonus_tune_played', profile.get_bool('is_bonus_tune_played')))
 
@@ -1919,6 +1920,7 @@ class JubeatFesto(
         last.add_child(Node.string('areaname', lastdict.get_str('areaname')))
         last.add_child(Node.s32('music_id', lastdict.get_int('music_id')))
         last.add_child(Node.s8('seq_id', lastdict.get_int('seq_id')))
+        last.add_child(Node.string('seq_edit_id', '12345678'))
         last.add_child(Node.s8('sort', lastdict.get_int('sort')))
         last.add_child(Node.s8('category', lastdict.get_int('category')))
         last.add_child(Node.s8('expert_option', lastdict.get_int('expert_option')))
@@ -1984,6 +1986,8 @@ class JubeatFesto(
             if rivalcount >= 3:
                 break
 
+        rivallist.set_attribute('count', str(rivalcount))
+
         lab_edit_seq = Node.void('lab_edit_seq')
         player.add_child(lab_edit_seq)
         lab_edit_seq.set_attribute('count', '0')
@@ -1995,12 +1999,8 @@ class JubeatFesto(
 
         # Figure out if we've played these songs
         start_time, end_time = self.data.local.network.get_schedule_duration('daily')
-        today_attempts = self.data.local.music.get_all_attempts(
-            self.game, self.music_version, userid, entry.get_int('today', -1), timelimit=start_time
-        )
-        whim_attempts = self.data.local.music.get_all_attempts(
-            self.game, self.music_version, userid, entry.get_int('whim', -1), timelimit=start_time
-        )
+        today_attempts = self.data.local.music.get_all_attempts(self.game, self.version, userid, entry.get_int('today', -1), timelimit=start_time)
+        whim_attempts = self.data.local.music.get_all_attempts(self.game, self.version, userid, entry.get_int('whim', -1), timelimit=start_time)
 
         # Full combo challenge and whim challenge
         fc_challenge = Node.void('fc_challenge')
@@ -2040,18 +2040,6 @@ class JubeatFesto(
                 event_completion[achievement.id] = achievement.data.get_bool('is_completed')
             if achievement.type == 'course':
                 course_completion[achievement.id] = achievement.data
-
-        for eventid, eventdata in self.EVENTS.items():
-            # There are two significant bits here, bit 0 and bit 1, I think the first
-            # one is whether the event is started, second is if its finished?
-            event = Node.void('event')
-            event_info.add_child(event)
-            event.set_attribute('type', str(eventid))
-
-            state = 0x0
-            state |= self.EVENT_STATUS_OPEN if eventdata['enabled'] else 0
-            state |= self.EVENT_STATUS_COMPLETE if event_completion.get(eventid, False) else 0
-            event.add_child(Node.u8('state', state))
 
         # JBox stuff
         jbox = Node.void('jbox')
@@ -2099,12 +2087,9 @@ class JubeatFesto(
         # Gift list, maybe from other players?
         gift_list = Node.void('gift_list')
         player.add_child(gift_list)
-        # If we had gifts, they look like this. This is incomplete, however,
-        # because I never bothered to find the virtual function to decode "detail".
-        # Note that detail is only necessary if you don't want to give reason/id,
-        # so its gotta be some hacked-on override.
-        #     <gift reason="??" id="??">
-        #         <detail>??</detail>
+        # If we had gifts, they look like this:
+        #     <gift reason="??" kind="??">
+        #         <id __type="s32">??</id>
         #     </gift>
 
         # Birthday event?
@@ -2117,16 +2102,26 @@ class JubeatFesto(
         question_list = Node.void('question_list')
         player.add_child(question_list)
 
-        emo_list = Node.void('emo_list')
-        player.add_child(emo_list)
+        # Union Battle
+        union_battle = Node.void('union_battle')
+        player.add_child(union_battle)
+        union_battle.set_attribute('id', "0")
+        union_battle.add_child(Node.s32("power", 0))
 
         # Some server node
         server = Node.void('server')
         player.add_child(server)
 
-        # Course List Progress
-        course_list = Node.void('course_list')
-        player.add_child(course_list)
+        # Another unknown gift list?
+        eamuse_gift_list = Node.void('eamuse_gift_list')
+        player.add_child(eamuse_gift_list)
+
+        category_list = Node.void('category_list')
+        player.add_child(category_list)
+
+        # Clan Course List Progress
+        clan_course_list = Node.void('course_list')
+        player.add_child(clan_course_list)
 
         # Each course that we have completed has one of the following nodes.
         for course in self.__get_course_list():
@@ -2136,10 +2131,10 @@ class JubeatFesto(
             status |= self.COURSE_STATUS_PLAYED if status_dict.get_bool('played') else 0
             status |= self.COURSE_STATUS_CLEARED if status_dict.get_bool('cleared') else 0
 
-            coursenode = Node.void('course')
-            course_list.add_child(coursenode)
-            coursenode.set_attribute('id', str(course['id']))
-            coursenode.add_child(Node.s8('status', status))
+            clan_course = Node.void('course')
+            clan_course_list.add_child(clan_course)
+            clan_course.set_attribute('id', str(course['id']))
+            clan_course.add_child(Node.s8('status', status))
 
         # For some reason, this is on the course list node this time around.
         category_list = Node.void('category_list')
@@ -2153,7 +2148,6 @@ class JubeatFesto(
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
         player.add_child(fill_in_category)
-
         normal = Node.void('normal')
         fill_in_category.add_child(normal)
         normal.add_child(
@@ -2422,7 +2416,6 @@ class JubeatFesto(
         jubility = player.child('jubility')
         if jubility is not None:
             target_music = jubility.child('target_music')
-
             # Pick up jubility stuff
             hot_music_list = target_music.child('hot_music_list')
             pick_up_chart = ValidatedDict()
@@ -2458,7 +2451,6 @@ class JubeatFesto(
                     'value': value,
                 }
                 common_chart.replace_dict(f'{music_id}_{chart}', entry)
-
             # Save it back
             newprofile.replace_dict('common_chart', common_chart)
             newprofile.replace_float('common_jubility', float(other_music_list.attribute('param')) / 10)
