@@ -1,0 +1,53 @@
+#! /usr/bin/env python3
+
+import xml.etree.ElementTree as ET
+from PIL import Image
+import json
+import os
+import argparse
+from bemani.frontend.static import static_location
+# TODO: move this code to normal read script maybe. 
+
+parser = parser = argparse.ArgumentParser(description='Import emblem textures from jubeat data')
+parser.add_argument(
+    '--xml',
+    dest='xml',
+    action='store',
+    type=str,
+    help='The game XML file to read, for applicable games.',
+)
+
+parser.add_argument(
+    '--assets',
+    dest='assets',
+    action='store',
+    type=str,
+    help='The game sound assets directory, for applicable games.',
+)
+args = parser.parse_args()
+
+for root, dirs, files in os.walk(f'{args.assets}'):
+    for filename in files:
+        filepath=os.path.join(root, filename)
+        outdir = os.path.join(os.getcwd(), f'{static_location}/emblems')
+        outname = os.path.splitext(filename)[0]
+        outfile = outdir + "/%s.png" % outname
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        if os.path.exists(outfile):
+            continue
+        print(outfile)
+
+        # This is the image parsing section. Basically raw pixel data starting on byte 34 of the tex file.
+        rawData = open(filepath, 'rb').read()
+        imgSize = (512,512)# the image size
+        img = Image.frombytes('RGBA', imgSize, rawData[0x34:])
+        img.save(outfile)
+
+with open(args.xml, 'rb') as xmlhandle:
+    xmldata = xmlhandle.read().decode('shift_jisx0213')
+root = ET.fromstring(xmldata)
+
+for emblem in root.find('emblem_list'):
+    emblem.find('texname').text = emblem.find('texname').text.replace('.tex', '.png')
+    os.rename(f'{static_location}/emblems/{emblem.find("texname").text}', f'{static_location}/emblems/{emblem.find("index").text}.png')
