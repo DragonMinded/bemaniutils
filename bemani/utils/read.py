@@ -1302,26 +1302,48 @@ class ImportJubeat(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        actual_version = {
-            'saucer': VersionConstants.JUBEAT_SAUCER,
-            'saucer-fulfill': VersionConstants.JUBEAT_SAUCER_FULFILL,
-            'prop': VersionConstants.JUBEAT_PROP,
-            'qubell': VersionConstants.JUBEAT_QUBELL,
-            'clan': VersionConstants.JUBEAT_CLAN,
-            'all': None,  # Special case for importing metadata
-        }.get(version, -1)
+        if version in ['saucer', 'saucer-fulfill', 'prop', 'qubell', 'clan', 'festo']:
+            actual_version = {
+                'saucer': VersionConstants.JUBEAT_SAUCER,
+                'saucer-fulfill': VersionConstants.JUBEAT_SAUCER_FULFILL,
+                'prop': VersionConstants.JUBEAT_PROP,
+                'qubell': VersionConstants.JUBEAT_QUBELL,
+                'clan': VersionConstants.JUBEAT_CLAN,
+                'festo': VersionConstants.JUBEAT_FESTO,
+            }.get(version, -1)
+        elif version in ['omni-prop', 'omni-qubell', 'omni-clan', 'omni-festo']:
+            actual_version = {
+                'omni-prop': VersionConstants.JUBEAT_PROP,
+                'omni-qubell': VersionConstants.JUBEAT_QUBELL,
+                'omni-clan': VersionConstants.JUBEAT_CLAN,
+                'omni-festo': VersionConstants.JUBEAT_FESTO,
+            }.get(version, -1) + DBConstants.OMNIMIX_VERSION_BUMP
+
+        elif version == 'all':
+            actual_version = None
 
         if actual_version in [
             None,
+            VersionConstants.JUBEAT_FESTO,
+            VersionConstants.JUBEAT_FESTO + DBConstants.OMNIMIX_VERSION_BUMP,
+        ]:
+            # jubeat festo adds in separation of normal and hard mode scores.
+            # This adds a duplicate of each chart so that we show separated scores.
+            self.charts = [0, 1, 2, 3, 4, 5]
+        elif actual_version in [
             VersionConstants.JUBEAT_SAUCER,
             VersionConstants.JUBEAT_SAUCER_FULFILL,
             VersionConstants.JUBEAT_PROP,
             VersionConstants.JUBEAT_QUBELL,
             VersionConstants.JUBEAT_CLAN,
+            VersionConstants.JUBEAT_PROP + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.JUBEAT_QUBELL + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.JUBEAT_CLAN + DBConstants.OMNIMIX_VERSION_BUMP,
         ]:
             self.charts = [0, 1, 2]
+
         else:
-            raise Exception("Unsupported Jubeat version, expected one of the following: saucer, saucer-fulfill, prop, qubell, clan!")
+            raise Exception("Unsupported Jubeat version, expected one of the following: saucer, saucer-fulfill, prop, omni-prop, qubell, omni-qubell, clan, omni-clan, festo, omni-festo!")
 
         super().__init__(config, GameConstants.JUBEAT, actual_version, no_combine, update)
 
@@ -1367,15 +1389,23 @@ class ImportJubeat(ImportBase):
             }
             if bpm_max > 0 and bpm_min < 0:
                 bpm_min = bpm_max
-            difficulties = [
-                int(music_entry.find('level_bsc').text),
-                int(music_entry.find('level_adv').text),
-                int(music_entry.find('level_ext').text),
-            ]
+            if music_entry.find('detail_level_bsc') is not None:
+                difficulties = [
+                    float(music_entry.find('detail_level_bsc').text),
+                    float(music_entry.find('detail_level_adv').text),
+                    float(music_entry.find('detail_level_ext').text),
+                ]
+            else:
+                difficulties = [
+                    float(music_entry.find('level_bsc').text),
+                    float(music_entry.find('level_adv').text),
+                    float(music_entry.find('level_ext').text),
+                ]
             genre = "other"
-            for possible_genre in music_entry.find('genre'):
-                if int(possible_genre.text) != 0:
-                    genre = str(possible_genre.tag)
+            if music_entry.find('genre') is not None:  # Qubell extend music_info doesn't have this field
+                for possible_genre in music_entry.find('genre'):
+                    if int(possible_genre.text) != 0:
+                        genre = str(possible_genre.tag)
 
             songs.append({
                 'id': songid,
@@ -1399,6 +1429,7 @@ class ImportJubeat(ImportBase):
             VersionConstants.JUBEAT_PROP,
             VersionConstants.JUBEAT_QUBELL,
             VersionConstants.JUBEAT_CLAN,
+            VersionConstants.JUBEAT_FESTO,
         }:
             for emblem_entry in root.find('emblem_list') or []:
                 print(emblem_entry)
@@ -1447,15 +1478,15 @@ class ImportJubeat(ImportBase):
                     'artist': song.artist,
                     'genre': song.genre,
                     'version': song.data.get_int('version'),
-                    'bpm_min': song.data.get_int('bpm_min'),
-                    'bpm_max': song.data.get_int('bpm_max'),
+                    'bpm_min': song.data.get_float('bpm_min'),
+                    'bpm_max': song.data.get_float('bpm_max'),
                     'difficulty': {
-                        'basic': 0,
-                        'advanced': 0,
-                        'extreme': 0,
+                        'basic': 0.0,
+                        'advanced': 0.0,
+                        'extreme': 0.0,
                     },
                 }
-            lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_int('difficulty')
+            lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_float('difficulty')
 
         # Reassemble the data
         reassembled_songs = [val for _, val in lut.items()]
@@ -1465,6 +1496,7 @@ class ImportJubeat(ImportBase):
             VersionConstants.JUBEAT_PROP,
             VersionConstants.JUBEAT_QUBELL,
             VersionConstants.JUBEAT_CLAN,
+            VersionConstants.JUBEAT_FESTO,
         }:
             game = self.remote_game(server, token)
             for item in game.get_items(self.game, self.version):
@@ -1479,6 +1511,36 @@ class ImportJubeat(ImportBase):
                     })
 
         return reassembled_songs, emblems
+
+    def __revivals(self, songid: int, chart: int) -> Optional[int]:
+        old_id = self.get_music_id_for_song(songid, chart)
+        if old_id is not None:
+            return old_id
+
+        # In qubell and clan omnimix, PPAP and Bonjour the world are placed
+        # at this arbitrary songid since they weren't assigned one originally
+        # In jubeat festo, these songs were given proper songids so we need to account for this
+        legacy_to_modern_map = {
+            71000001: 70000124,  # PPAP
+            71000002: 70000154,  # Bonjour the world
+            50000020: 80000037,  # 千本桜 was removed and then revived in clan
+            60000063: 70000100,  # Khamen break sdvx had the first id for prop(never released officially)
+        }
+        modern_to_legacy_map = {v: k for k, v in legacy_to_modern_map.items()}
+
+        legacy_songid = legacy_to_modern_map.get(songid)
+        if legacy_songid is not None:
+            old_id = self.get_music_id_for_song(legacy_songid, chart)
+            if old_id is not None:
+                return old_id
+
+        modern_songid = modern_to_legacy_map.get(songid)
+        if modern_songid is not None:
+            old_id = self.get_music_id_for_song(modern_songid, chart)
+            if old_id is not None:
+                return old_id
+        # Failed, so create a new one
+        return None
 
     def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
         if self.version is None:
@@ -1499,22 +1561,40 @@ class ImportJubeat(ImportBase):
 
             self.start_batch()
             for chart in self.charts:
-                # First, try to find in the DB from another version
-                old_id = self.get_music_id_for_song(songid, chart)
-                if self.no_combine or old_id is None:
-                    # Insert original
-                    print(f"New entry for {songid} chart {chart}")
-                    next_id = self.get_next_music_id()
+                if(chart <= 2):
+                    # First, try to find in the DB from another version
+                    old_id = self.__revivals(songid, chart)
+                    if self.no_combine or old_id is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = old_id
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart]],
+                        'bpm_min': song['bpm_min'],
+                        'bpm_max': song['bpm_max'],
+                        'version': song['version'],
+                    }
                 else:
-                    # Insert pointing at same ID so scores transfer
-                    print(f"Reused entry for {songid} chart {chart}")
-                    next_id = old_id
-                data = {
-                    'difficulty': song['difficulty'][chart_map[chart]],
-                    'bpm_min': song['bpm_min'],
-                    'bpm_max': song['bpm_max'],
-                    'version': song['version'],
-                }
+                    # First, try to find in the DB from another version
+                    old_id = self.__revivals(songid, chart)
+                    if self.no_combine or old_id is None:
+                        # Insert original
+                        print(f"New entry for {songid} chart {chart}")
+                        next_id = self.get_next_music_id()
+                    else:
+                        # Insert pointing at same ID so scores transfer
+                        print(f"Reused entry for {songid} chart {chart}")
+                        next_id = old_id
+                    data = {
+                        'difficulty': song['difficulty'][chart_map[chart - 3]],
+                        'bpm_min': song['bpm_min'],
+                        'bpm_max': song['bpm_max'],
+                        'version': song['version'],
+                    }
                 self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
             self.finish_batch()
 
