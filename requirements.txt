@@ -14,6 +14,7 @@ types-PyYAML
 types-Werkzeug
 types-Flask
 types-freezegun
+types-python-dateutil
 flake8
 typed-ast
 freezegun

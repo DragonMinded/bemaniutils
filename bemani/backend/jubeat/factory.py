@@ -16,6 +16,7 @@ from bemani.backend.jubeat.prop import JubeatProp
 from bemani.backend.jubeat.qubell import JubeatQubell
 from bemani.backend.jubeat.clan import JubeatClan
 from bemani.backend.jubeat.festo import JubeatFesto
+from bemani.backend.jubeat.avenue import JubeatAvenue
 from bemani.common import Model
 from bemani.data import Config, Data
 
@@ -36,6 +37,7 @@ class JubeatFactory(Factory):
         JubeatQubell,
         JubeatClan,
         JubeatFesto,
+        JubeatAvenue,
     ]
 
     @classmethod
@@ -73,8 +75,10 @@ class JubeatFactory(Factory):
                 return JubeatQubell(data, config, model)
             if model.version >= 2017062600 and model.version < 2018090500:
                 return JubeatClan(data, config, model)
-            if model.version >= 2018090500:
+            if model.version >= 2018090500 and model.version < 2022080300:
                 return JubeatFesto(data, config, model)
+            if model.version >= 2022080300:
+                return JubeatAvenue(data, config, model)
 
         # Unknown game version
         return None

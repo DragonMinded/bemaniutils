@@ -90,6 +90,7 @@ class VersionConstants:
     JUBEAT_QUBELL: Final[int] = 11
     JUBEAT_CLAN: Final[int] = 12
     JUBEAT_FESTO: Final[int] = 13
+    JUBEAT_AVENUE: Final[int] = 14
 
     MGA: Final[int] = 1
 
