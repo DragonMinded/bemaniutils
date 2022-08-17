@@ -86,6 +86,14 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
     FAVORITE_LIST_LENGTH: Final[int] = 20
 
+    GAME_CHART_TYPE_N7: Final[int] = 0
+    GAME_CHART_TYPE_H7: Final[int] = 1
+    GAME_CHART_TYPE_A7: Final[int] = 2
+    GAME_CHART_TYPE_N14: Final[int] = 3
+    GAME_CHART_TYPE_H14: Final[int] = 4
+    GAME_CHART_TYPE_A14: Final[int] = 5
+    GAME_CHART_TYPE_B7: Final[int] = 6
+
     requires_extended_regions = True
 
     def previous_version(self) -> Optional[IIDXBase]:
@@ -291,6 +299,17 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         else:
             raise Exception('Invalid cltype!')
 
+    def game_to_db_chart(self, db_chart: int) -> int:
+        return {
+            self.GAME_CHART_TYPE_B7: self.CHART_TYPE_B7,
+            self.GAME_CHART_TYPE_N7: self.CHART_TYPE_N7,
+            self.GAME_CHART_TYPE_H7: self.CHART_TYPE_H7,
+            self.GAME_CHART_TYPE_A7: self.CHART_TYPE_A7,
+            self.GAME_CHART_TYPE_N14: self.CHART_TYPE_N14,
+            self.GAME_CHART_TYPE_H14: self.CHART_TYPE_H14,
+            self.GAME_CHART_TYPE_A14: self.CHART_TYPE_A14,
+        }[db_chart]
+
     def handle_IIDX26shop_getname_request(self, request: Node) -> Node:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine is not None:
@@ -450,7 +469,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
     def handle_IIDX26music_appoint_request(self, request: Node) -> Node:
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         ghost_type = int(request.attribute('ctype'))
         extid = int(request.attribute('iidxid'))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
@@ -526,7 +545,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
     def handle_IIDX26music_reg_request(self, request: Node) -> Node:
         extid = int(request.attribute('iidxid'))
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
 
         # See if we need to report global or shop scores
@@ -693,7 +712,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
     def handle_IIDX26music_play_request(self, request: Node) -> Node:
         musicid = int(request.attribute('mid'))
-        chart = int(request.attribute('clid'))
+        chart = self.game_to_db_chart(int(request.attribute('clid')))
         clear_status = self.game_to_db_status(int(request.attribute('cflg')))
 
         self.update_score(
@@ -1015,7 +1034,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, 'NO PLAY')
         now_clear_string = clear_map.get(now_clear, 'NO PLAY')
         # let's get the song info first
-        song = self.data.local.music.get_song(self.game, self.music_version, music_id, class_id)
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get('notecount', 0)
         # Construct the dictionary for the broadcast
         card_data = {
