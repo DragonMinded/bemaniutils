@@ -500,6 +500,18 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         raise Exception('Implement in specific game class!')
 
+    def game_to_db_chart(self, game_chart: int) -> int:
+        """
+        Given a game's chart for a song, return the chart as defined above.
+        """
+        raise Exception('Implement in sub-class!')
+
+    def db_to_game_chart(self, db_chart: int) -> int:
+        """
+        Given a chart as defined above, return the game's chart constant.
+        """
+        raise Exception('Implement in sub-class!')
+
     def make_score_struct(self, scores: List[Score], cltype: int, index: int) -> List[List[int]]:
         scorestruct: Dict[int, List[int]] = {}
 
