@@ -40,6 +40,12 @@ var network_scores = React.createClass({
                 return 'Advanced';
             case 2:
                 return 'Extreme';
+            case 0:
+                return 'Hard Mode Basic';
+            case 1:
+                return 'Hard Mode Advanced';
+            case 2:
+                return 'Hard Mode Extreme';
             default:
                 return 'u broke it';
         }
@@ -53,6 +59,8 @@ var network_scores = React.createClass({
                     <span className="score">{score.points}</span>
                     <span className="label">Combo</span>
                     <span className="score">{score.combo < 0 ? '-' : score.combo}</span>
+                    <span className="label">Music Rate</span>
+                    <span className="score">{score.music_rate < 0 ? '-' : score.music_rate}</span>
                 </div>
                 <div>
                     <span className="status">{score.status}</span>
@@ -80,6 +88,12 @@ var network_scores = React.createClass({
                                 return null;
                             }
 
+                            var diff = window.songs[attempt.songid].difficulties[attempt.chart];
+                            var new_rating = (
+                                window.songs[attempt.songid].difficulties[3] > 0 ||
+                                window.songs[attempt.songid].difficulties[4] > 0 ||
+                                window.songs[attempt.songid].difficulties[5] > 0
+                            );
                             return (
                                 <tr>
                                     { window.shownames ? <td><a href={Link.get('player', attempt.userid)}>{
@@ -107,7 +121,7 @@ var network_scores = React.createClass({
                                             }</a>
                                         </div>
                                         <div>
-                                            <span>{window.songs[attempt.songid].difficulties[attempt.chart]}★</span>
+                                            <span>{diff >= 9 && new_rating ? diff.toFixed(1) : diff.toFixed(0)}★</span>
                                         </div>
                                     </td>
                                     <td>{ this.renderScore(attempt) }</td>
