@@ -194,7 +194,7 @@ def viewtopscores(musicid: int) -> Response:
                 artist = details.artist
                 genre = details.genre
                 if category < version:
-                    category = version;
+                    category = version
                 if difficulties[chart] == 0.0:
                     difficulties[chart] = details.data.get_float('difficulty', 13)
                     if difficulties[chart] >= 13.0:

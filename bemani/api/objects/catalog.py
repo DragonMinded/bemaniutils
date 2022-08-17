@@ -35,9 +35,38 @@ class CatalogObject(BaseObject):
         }
 
     def __format_jubeat_song(self, song: Song) -> Dict[str, Any]:
+        # Map a default if the user hasn't imported the version DB. This is a nasty
+        # hack but we don't want to break existing installations.
+        defaultcategory = {
+            1: VersionConstants.JUBEAT,
+            2: VersionConstants.JUBEAT_RIPPLES,
+            3: VersionConstants.JUBEAT_KNIT,
+            4: VersionConstants.JUBEAT_COPIOUS,
+            5: VersionConstants.JUBEAT_SAUCER,
+            6: VersionConstants.JUBEAT_PROP,
+            7: VersionConstants.JUBEAT_QUBELL,
+            8: VersionConstants.JUBEAT_CLAN,
+            9: VersionConstants.JUBEAT_FESTO
+        }.get(int(song.id / 10000000), VersionConstants.JUBEAT)
+        # Map the category to the version numbers defined on BEMAPI.
+        categorymapping = {
+            VersionConstants.JUBEAT: '1',
+            VersionConstants.JUBEAT_RIPPLES: '2',
+            VersionConstants.JUBEAT_RIPPLES_APPEND: '2a',
+            VersionConstants.JUBEAT_KNIT: '3',
+            VersionConstants.JUBEAT_KNIT_APPEND: '3a',
+            VersionConstants.JUBEAT_COPIOUS: '4',
+            VersionConstants.JUBEAT_COPIOUS_APPEND: '4a',
+            VersionConstants.JUBEAT_SAUCER: '5',
+            VersionConstants.JUBEAT_SAUCER_FULFILL: '5a',
+            VersionConstants.JUBEAT_PROP: '6',
+            VersionConstants.JUBEAT_QUBELL: '7',
+            VersionConstants.JUBEAT_CLAN: '8',
+            VersionConstants.JUBEAT_FESTO: '9',
+        }
         return {
             'difficulty': song.data.get_int('difficulty'),
-            'category': song.data.get_int('version'),
+            'category': categorymapping.get(song.data.get_int('version', defaultcategory), '1'),
             'bpm_min': song.data.get_int('bpm_min'),
             'bpm_max': song.data.get_int('bpm_max'),
         }
