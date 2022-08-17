@@ -549,7 +549,7 @@ class JubeatQubell(
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
-        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version') and not profile.get_bool('saved')))
+        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version')))
 
         # Not saved, but loaded
         info.add_child(Node.s32('mtg_entry_cnt', 123))
@@ -643,8 +643,8 @@ class JubeatQubell(
 
         # Figure out if we've played these songs
         start_time, end_time = self.data.local.network.get_schedule_duration('daily')
-        today_attempts = self.data.local.music.get_all_attempts(self.game, self.version, userid, entry.get_int('today', -1), timelimit=start_time)
-        whim_attempts = self.data.local.music.get_all_attempts(self.game, self.version, userid, entry.get_int('whim', -1), timelimit=start_time)
+        today_attempts = self.data.local.music.get_all_attempts(self.game, self.music_version, userid, entry.get_int('today', -1), timelimit=start_time)
+        whim_attempts = self.data.local.music.get_all_attempts(self.game, self.music_version, userid, entry.get_int('whim', -1), timelimit=start_time)
 
         fc_challenge = Node.void('fc_challenge')
         player.add_child(fc_challenge)
@@ -925,7 +925,6 @@ class JubeatQubell(
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
-        newprofile.replace_bool('saved', True)
         data = request.child('data')
 
         # Grab system information
