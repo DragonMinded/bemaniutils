@@ -923,6 +923,7 @@ class GlobalMusicData(BaseGlobalData):
                 'bpm_min': int(data['bpm_min']),
                 'bpm_max': int(data['bpm_max']),
                 'difficulty': int(data['difficulty']),
+                'version': int(data.get('category', int(songid / 10000000))),
             },
         )
 

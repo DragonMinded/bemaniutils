@@ -80,6 +80,21 @@ class JubeatFrontend(FrontendBase):
         formatted_song['bpm_min'] = song.data.get_int('bpm_min', 120)
         formatted_song['bpm_max'] = song.data.get_int('bpm_max', 120)
         formatted_song['difficulties'] = difficulties
+        formatted_song['version'] = {
+            VersionConstants.JUBEAT: 1,
+            VersionConstants.JUBEAT_RIPPLES: 2,
+            VersionConstants.JUBEAT_RIPPLES_APPEND: 2,
+            VersionConstants.JUBEAT_KNIT: 3,
+            VersionConstants.JUBEAT_KNIT_APPEND: 3,
+            VersionConstants.JUBEAT_COPIOUS: 4,
+            VersionConstants.JUBEAT_COPIOUS_APPEND: 4,
+            VersionConstants.JUBEAT_SAUCER: 5,
+            VersionConstants.JUBEAT_SAUCER_FULFILL: 5,
+            VersionConstants.JUBEAT_PROP: 6,
+            VersionConstants.JUBEAT_QUBELL: 7,
+            VersionConstants.JUBEAT_CLAN: 8,
+            VersionConstants.JUBEAT_FESTO: 9,
+        }.get(song.data.get_int('version', 1), 1)
         return formatted_song
 
     def merge_song(self, existing: Dict[str, Any], new: Song) -> Dict[str, Any]:

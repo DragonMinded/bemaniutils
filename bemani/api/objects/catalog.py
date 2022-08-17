@@ -37,6 +37,7 @@ class CatalogObject(BaseObject):
     def __format_jubeat_song(self, song: Song) -> Dict[str, Any]:
         return {
             'difficulty': song.data.get_int('difficulty'),
+            'category': song.data.get_int('version'),
             'bpm_min': song.data.get_int('bpm_min'),
             'bpm_max': song.data.get_int('bpm_max'),
         }

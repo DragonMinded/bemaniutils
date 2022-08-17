@@ -1384,6 +1384,7 @@ class ImportJubeat(ImportBase):
                 'title': None,
                 'artist': None,
                 'genre': genre,
+                'version': version_to_db_constant.get(earliest_version),
                 'bpm_min': bpm_min,
                 'bpm_max': bpm_max,
                 'difficulty': {
@@ -1391,7 +1392,6 @@ class ImportJubeat(ImportBase):
                     'advanced': difficulties[1],
                     'extreme': difficulties[2],
                 },
-                'version': version_to_db_constant.get(earliest_version),
             })
 
         emblems: List[Dict[str, Any]] = []
@@ -1446,6 +1446,7 @@ class ImportJubeat(ImportBase):
                     'title': song.name,
                     'artist': song.artist,
                     'genre': song.genre,
+                    'version': song.data.get_int('version'),
                     'bpm_min': song.data.get_int('bpm_min'),
                     'bpm_max': song.data.get_int('bpm_max'),
                     'difficulty': {
@@ -1512,6 +1513,7 @@ class ImportJubeat(ImportBase):
                     'difficulty': song['difficulty'][chart_map[chart]],
                     'bpm_min': song['bpm_min'],
                     'bpm_max': song['bpm_max'],
+                    'version': song['version'],
                 }
                 self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
             self.finish_batch()

@@ -129,7 +129,11 @@ var network_records = React.createClass({
 
     renderBySeries: function() {
         var songids = Object.keys(this.state.songs).sort(function(a, b) {
-            return parseInt(b) - parseInt(a);
+            if (this.state.songs[a].version == this.state.songs[b].version) {
+                return parseInt(b) - parseInt(a);
+            } else {
+                return this.state.songs[b].version - this.state.songs[a].version;
+            }
         }.bind(this));
         if (window.filterempty) {
             songids = songids.filter(function(songid) {
@@ -139,7 +143,7 @@ var network_records = React.createClass({
         var lastSeries = 0;
         var lastSeries = 0;
         for (var i = 0; i < songids.length; i++) {
-            var curSeries = Math.floor(songids[i] / 10000000);
+            var curSeries = this.state.songs[songids[i]].version;
             if (curSeries != lastSeries) {
                 lastSeries = curSeries;
                 songids.splice(i, 0, curSeries);
