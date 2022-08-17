@@ -913,6 +913,33 @@ class GlobalMusicData(BaseGlobalData):
         genre: Optional[str],
         data: Dict[str, Any],
     ) -> Song:
+        defaultcategory = {
+            1: VersionConstants.JUBEAT,
+            2: VersionConstants.JUBEAT_RIPPLES,
+            3: VersionConstants.JUBEAT_KNIT,
+            4: VersionConstants.JUBEAT_COPIOUS,
+            5: VersionConstants.JUBEAT_SAUCER,
+            6: VersionConstants.JUBEAT_PROP,
+            7: VersionConstants.JUBEAT_QUBELL,
+            8: VersionConstants.JUBEAT_CLAN,
+            9: VersionConstants.JUBEAT_FESTO
+        }.get(int(songid / 10000000), VersionConstants.JUBEAT)
+        # Map the category to the version numbers defined on BEMAPI.
+        categorymapping = {
+            '1': VersionConstants.JUBEAT,
+            '2': VersionConstants.JUBEAT_RIPPLES,
+            '2a': VersionConstants.JUBEAT_RIPPLES_APPEND,
+            '3': VersionConstants.JUBEAT_KNIT,
+            '3a': VersionConstants.JUBEAT_KNIT_APPEND,
+            '4': VersionConstants.JUBEAT_COPIOUS,
+            '4a': VersionConstants.JUBEAT_COPIOUS_APPEND,
+            '5': VersionConstants.JUBEAT_SAUCER,
+            '5a': VersionConstants.JUBEAT_SAUCER_FULFILL,
+            '6': VersionConstants.JUBEAT_PROP,
+            '7': VersionConstants.JUBEAT_QUBELL,
+            '8': VersionConstants.JUBEAT_CLAN,
+            '9': VersionConstants.JUBEAT_FESTO,
+        }
         return Song(
             game=GameConstants.JUBEAT,
             version=version,
@@ -925,7 +952,7 @@ class GlobalMusicData(BaseGlobalData):
                 'bpm_min': int(data['bpm_min']),
                 'bpm_max': int(data['bpm_max']),
                 'difficulty': int(data['difficulty']),
-                'version': int(data.get('category', int(songid / 10000000))),
+                'version': categorymapping.get(data.get('category', '0'), defaultcategory),
             },
         )
 
