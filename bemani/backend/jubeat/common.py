@@ -42,7 +42,7 @@ class JubeatDemodataGetHitchartHandler(JubeatBase):
         data.add_child(hitchart_lic)
         hitchart_lic.set_attribute('count', '0')
 
-        songs = self.data.local.music.get_hit_chart(self.game, self.version, 10)
+        songs = self.data.local.music.get_hit_chart(self.game, self.music_version, 10)
         hitchart_org = Node.void('hitchart_org')
         data.add_child(hitchart_org)
         hitchart_org.set_attribute('count', str(len(songs)))

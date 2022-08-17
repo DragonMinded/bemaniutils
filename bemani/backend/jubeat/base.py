@@ -4,8 +4,8 @@ from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import DBConstants, GameConstants, ValidatedDict, Profile
-from bemani.data import Score, UserID
+from bemani.common import DBConstants, GameConstants, ValidatedDict, Model, Profile
+from bemani.data import Data, Score, UserID, Config
 from bemani.protocol import Node
 
 
@@ -39,6 +39,19 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_TYPE_HARD_BASIC: Final[int] = 3
     CHART_TYPE_HARD_ADVANCED: Final[int] = 4
     CHART_TYPE_HARD_EXTREME: Final[int] = 5
+
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
+        super().__init__(data, config, model)
+        if model.rev == 'X' or model.rev == 'Y':
+            self.omnimix = True
+        else:
+            self.omnimix = False
+
+    @property
+    def music_version(self) -> int:
+        if self.omnimix:
+            return DBConstants.OMNIMIX_VERSION_BUMP + self.version
+        return self.version
 
     def previous_version(self) -> Optional['JubeatBase']:
         """
@@ -145,7 +158,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         if scores is None:
             return None
         profile = self.get_profile(userid)
@@ -184,7 +197,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         oldscore = self.data.local.music.get_score(
             self.game,
-            self.version,
+            self.music_version,
             userid,
             songid,
             chart,
@@ -246,7 +259,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Write the new score back
         self.data.local.music.put_score(
             self.game,
-            self.version,
+            self.music_version,
             userid,
             songid,
             chart,
@@ -260,7 +273,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Save the history of this score too
         self.data.local.music.put_attempt(
             self.game,
-            self.version,
+            self.music_version,
             userid,
             songid,
             chart,
