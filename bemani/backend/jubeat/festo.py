@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import random
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 from typing_extensions import Final
 
 from bemani.backend.jubeat.base import JubeatBase
@@ -14,7 +14,7 @@ from bemani.backend.jubeat.clan import JubeatClan
 
 from bemani.backend.base import Status
 from bemani.common import Profile, ValidatedDict, VersionConstants
-from bemani.data import UserID, Score, Song
+from bemani.data import Data, UserID, Score, Song
 from bemani.protocol import Node
 
 
@@ -94,6 +94,42 @@ class JubeatFesto(
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatClan(self.data, self.config, self.model)
+
+    @classmethod
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
+        """
+        Insert daily FC challenges into the DB.
+        """
+        events = []
+        if data.local.network.should_schedule(cls.game, cls.version, 'fc_challenge', 'daily'):
+            # Generate a new list of two FC challenge songs.
+            start_time, end_time = data.local.network.get_schedule_duration('daily')
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
+            if len(all_songs) >= 2:
+                daily_songs = random.sample(all_songs, 2)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'fc_challenge',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'today': daily_songs[0],
+                        'whim': daily_songs[1],
+                    },
+                )
+                events.append((
+                    'jubeat_fc_challenge_charts',
+                    {
+                        'version': cls.version,
+                        'today': daily_songs[0],
+                        'whim': daily_songs[1],
+                    },
+                ))
+
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'fc_challenge', 'daily')
+        return events
 
     def __get_course_list(self) -> List[Dict[str, Any]]:
         return [
@@ -492,6 +528,7 @@ class JubeatFesto(
             fc_cnt = data.get_int_array('fc_cnt', 3)
             ex_cnt = data.get_int_array('ex_cnt', 3)
             points = data.get_int_array('points', 3)
+            music_rate = data.get_int_array('music_rate', 3)
 
             # Replace data for this chart type
             play_cnt[score.chart] = score.plays
@@ -499,6 +536,7 @@ class JubeatFesto(
             fc_cnt[score.chart] = score.data.get_int('full_combo_count')
             ex_cnt[score.chart] = score.data.get_int('excellent_count')
             points[score.chart] = score.points
+            music_rate[score.chart] = score.data.get_int('music_rate')
 
             # Format the clear flags
             clear_flags[score.chart] = self.GAME_FLAG_BIT_PLAYED
@@ -516,6 +554,7 @@ class JubeatFesto(
             data.replace_int_array('fc_cnt', 3, fc_cnt)
             data.replace_int_array('ex_cnt', 3, ex_cnt)
             data.replace_int_array('points', 3, points)
+            data.replace_int_array('music_rate', 3, music_rate)
 
             # Update the ghost (untyped)
             ghost = data.get('ghost', [None, None, None])
@@ -540,6 +579,7 @@ class JubeatFesto(
             normalnode.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('ex_cnt', 3)))
             normalnode.add_child(Node.s32_array('score', scoredata.get_int_array('points', 3)))
             normalnode.add_child(Node.s8_array('clear', scoredata.get_int_array('clear_flags', 3)))
+            normalnode.add_child(Node.s32_array('music_rate', scoredata.get_int_array('music_rate', 3)))
 
             for i, ghost in enumerate(scoredata.get('ghost', [None, None, None])):
                 if ghost is None:
