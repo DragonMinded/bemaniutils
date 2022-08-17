@@ -999,6 +999,8 @@ class JubeatClan(
         music_list = Node.void('music_list')
         player.add_child(music_list)
 
+        # TODO: Might be a way to figure out who plays what song and then offer
+        # recommendations based on that. There should be 12 songs returned here.
         recommended_songs: List[Song] = []
         for i, song in enumerate(recommended_songs):
             music = Node.void('music')

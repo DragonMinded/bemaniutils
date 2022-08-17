@@ -16,7 +16,7 @@ from bemani.backend.jubeat.common import (
 from bemani.backend.jubeat.prop import JubeatProp
 
 from bemani.common import Profile, ValidatedDict, VersionConstants
-from bemani.data import Data, Score, UserID
+from bemani.data import Data, Score, Song, UserID
 from bemani.protocol import Node
 
 
@@ -398,15 +398,18 @@ class JubeatQubell(
 
         player = Node.void('player')
         data.add_child(player)
-        player.add_child(Node.void('music_list'))
-        # Music list should contain nodes like this (12 of them
-        # in total for a recommended list). If it isn't provided,
-        # the game will substitute a default. The order valid range
-        # is 0-11 inclusive (12 total).
-        # <music order="order">
-        #     <music_id __type="s32">id</music_id>
-        #     <seq __type="s8">chart</seq>
-        # </music>
+        music_list = Node.void('music_list')
+        player.add_child(music_list)
+
+        # TODO: Might be a way to figure out who plays what song and then offer
+        # recommendations based on that. There should be 12 songs returned here.
+        recommended_songs: List[Song] = []
+        for i, song in enumerate(recommended_songs):
+            music = Node.void('music')
+            music_list.add_child(music)
+            music.set_attribute('order', str(i))
+            music.add_child(Node.s32('music_id', song.id))
+            music.add_child(Node.s8('seq', song.chart))
 
         return recommend
 

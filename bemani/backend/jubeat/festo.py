@@ -14,7 +14,7 @@ from bemani.backend.jubeat.clan import JubeatClan
 
 from bemani.backend.base import Status
 from bemani.common import Profile, ValidatedDict, VersionConstants
-from bemani.data import UserID, Score
+from bemani.data import UserID, Score, Song
 from bemani.protocol import Node
 
 
@@ -409,6 +409,28 @@ class JubeatFesto(
         data.add_child(self.__get_global_info())
 
         return shopinfo
+
+    def handle_recommend_get_recommend_request(self, request: Node) -> Node:
+        recommend = Node.void('recommend')
+        data = Node.void('data')
+        recommend.add_child(data)
+
+        player = Node.void('player')
+        data.add_child(player)
+        music_list = Node.void('music_list')
+        player.add_child(music_list)
+
+        # TODO: Might be a way to figure out who plays what song and then offer
+        # recommendations based on that. There should be 12 songs returned here.
+        recommended_songs: List[Song] = []
+        for i, song in enumerate(recommended_songs):
+            music = Node.void('music')
+            music_list.add_child(music)
+            music.set_attribute('order', str(i))
+            music.add_child(Node.s32('music_id', song.id))
+            music.add_child(Node.s8('seq', song.chart))
+
+        return recommend
 
     def handle_gametop_regist_request(self, request: Node) -> Node:
         data = request.child('data')
