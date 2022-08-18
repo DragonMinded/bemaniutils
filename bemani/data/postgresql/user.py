@@ -192,7 +192,7 @@ class UserData(BaseData):
         Returns:
             User ID as an integer if found, or None if not.
         """
-        sql = "SELECT id FROM user WHERE username = :username"
+        sql = "SELECT id FROM \"user\" WHERE username = :username"
         cursor = self.execute(sql, {'username': username})
         if cursor.rowcount != 1:
             # Couldn't find this username
@@ -276,7 +276,7 @@ class UserData(BaseData):
         Returns:
             A User object if found, or None otherwise.
         """
-        sql = "SELECT username, email, admin FROM user WHERE id = :userid"
+        sql = "SELECT username, email, admin FROM \"user\" WHERE id = :userid"
         cursor = self.execute(sql, {'userid': userid})
         if cursor.rowcount != 1:
             # User doesn't exist, but we have a reference?
@@ -292,7 +292,7 @@ class UserData(BaseData):
         Returns:
             A list of User objects representing all users.
         """
-        sql = "SELECT id, username, email, admin FROM user"
+        sql = "SELECT id, username, email, admin FROM \"user\""
         cursor = self.execute(sql)
         return [
             User(UserID(result['id']), result['username'], result['email'], result['admin'] == 1)
@@ -309,7 +309,7 @@ class UserData(BaseData):
         Returns:
             A list of strings representing usernames.
         """
-        sql = "SELECT username FROM user WHERE username is not null"
+        sql = "SELECT username FROM \"user\" WHERE username is not null"
         cursor = self.execute(sql)
         return [res['username'] for res in cursor.fetchall()]
 
@@ -387,7 +387,7 @@ class UserData(BaseData):
         Parameters:
             user - A user, which has optional values set.
         """
-        sql = "UPDATE user SET username = :username, email = :email, admin = :admin WHERE id = :userid"
+        sql = "UPDATE \"user\" SET username = :username, email = :email, admin = :admin WHERE id = :userid"
         self.execute(
             sql,
             {
@@ -409,7 +409,7 @@ class UserData(BaseData):
         Returns:
             True if PIN is valid, False otherwise.
         """
-        sql = "SELECT pin FROM user WHERE id = :userid"
+        sql = "SELECT pin FROM \"user\" WHERE id = :userid"
         cursor = self.execute(sql, {'userid': userid})
         if cursor.rowcount != 1:
             # User doesn't exist, but we have a reference?
@@ -426,7 +426,7 @@ class UserData(BaseData):
             userid - Integer user ID, as looked up by one of the above functions.
             pin - 4 digit string returned by the game for PIN entry.
         """
-        sql = "UPDATE user SET pin = :pin WHERE id = :userid"
+        sql = "UPDATE \"user\" SET pin = :pin WHERE id = :userid"
         self.execute(sql, {'pin': pin, 'userid': userid})
 
     def validate_password(self, userid: UserID, password: str) -> bool:
@@ -440,7 +440,7 @@ class UserData(BaseData):
         Returns:
             True if password is valid, False otherwise.
         """
-        sql = "SELECT password FROM user WHERE id = :userid"
+        sql = "SELECT password FROM \"user\" WHERE id = :userid"
         cursor = self.execute(sql, {'userid': userid})
         if cursor.rowcount != 1:
             # User doesn't exist, but we have a reference?
@@ -464,7 +464,7 @@ class UserData(BaseData):
             password - String, plaintext password that will be hashed
         """
         passhash = pbkdf2_sha512.hash(password)
-        sql = "UPDATE user SET password = :hash WHERE id = :userid"
+        sql = "UPDATE \"user\" SET password = :hash WHERE id = :userid"
         self.execute(sql, {'hash': passhash, 'userid': userid})
 
     def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
@@ -1230,7 +1230,7 @@ class UserData(BaseData):
             A User ID if creation was successful, or None otherwise.
         """
         # First, create a user account
-        sql = "INSERT INTO user (pin, admin) VALUES (:pin, 0)"
+        sql = "INSERT INTO \"user\" (pin, admin) VALUES (:pin, 0)"
         cursor = self.execute(sql, {'pin': pin})
         if cursor.rowcount != 1:
             return None

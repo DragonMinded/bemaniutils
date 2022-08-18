@@ -93,6 +93,9 @@ class BaseData:
         if data is None:
             return {}
 
+        # posgtresql会直接返回可以用的json对象，所以不用这个方法了
+        return data
+
         def fix(jd: Any) -> Any:
             if type(jd) == dict:
                 # Fix each element in the dictionary.

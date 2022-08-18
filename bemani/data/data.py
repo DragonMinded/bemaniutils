@@ -125,13 +125,13 @@ class Data:
 
     @classmethod
     def sqlalchemy_url(cls, config: Config) -> str:
-        return f"postgresql://{config.database.user}:{config.database.password}@{config.database.address}/{config.database.database}?client_encoding=utf8"
+        return f"postgresql+psycopg2://{config.database.user}:{config.database.password}@{config.database.address}/{config.database.database}"
 
     @classmethod
     def create_engine(cls, config: Config) -> Engine:
         return create_engine(
             Data.sqlalchemy_url(config),
-            pool_recycle=3600,
+            pool_recycle=3600
         )
 
     @compiles(CreateColumn, 'postgresql')
