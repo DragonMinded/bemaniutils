@@ -18,8 +18,7 @@ client = Table(
     Column('id', Integer, nullable=False, primary_key=True),
     Column('timestamp', Integer, nullable=False, index=True),
     Column('name', String(255), nullable=False),
-    Column('token', String(36), nullable=False),
-    mysql_charset='utf8mb4',
+    Column('token', String(36), nullable=False)
 )
 
 """
@@ -33,8 +32,7 @@ server = Table(
     Column('timestamp', Integer, nullable=False, index=True),
     Column('uri', String(1024), nullable=False),
     Column('token', String(64), nullable=False),
-    Column('config', Integer, nullable=False),
-    mysql_charset='utf8mb4',
+    Column('config', Integer, nullable=False)
 )
 
 

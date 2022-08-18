@@ -18,8 +18,7 @@ game_settings = Table(
     Column('game', String(32), nullable=False),
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'userid', name='game_userid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'userid', name='game_userid')
 )
 
 """
@@ -33,8 +32,7 @@ catalog = Table(
     Column('id', Integer, nullable=False),
     Column('type', String(64), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'id', 'type', name='game_version_id_type'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'id', 'type', name='game_version_id_type')
 )
 
 """
@@ -50,8 +48,7 @@ series_achievement = Table(
     Column('id', Integer, nullable=False),
     Column('type', String(64), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'userid', 'id', 'type', name='game_userid_id_type'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'userid', 'id', 'type', name='game_userid_id_type')
 )
 
 """
@@ -67,8 +64,7 @@ time_sensitive_settings = Table(
     Column('start_time', Integer, nullable=False, index=True),
     Column('end_time', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'name', 'start_time', name='game_version_name_start_time'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'name', 'start_time', name='game_version_name_start_time')
 )
 
 

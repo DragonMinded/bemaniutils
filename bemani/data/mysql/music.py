@@ -30,8 +30,7 @@ score = Table(
     Column('update', Integer, nullable=False, index=True),
     Column('lid', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('userid', 'musicid', name='userid_musicid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('userid', 'musicid', name='userid_musicid')
 )
 
 """
@@ -50,8 +49,7 @@ score_history = Table(
     Column('lid', Integer, nullable=False, index=True),
     Column('new_record', Integer, nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('userid', 'musicid', 'timestamp', name='userid_musicid_timestamp'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('userid', 'musicid', 'timestamp', name='userid_musicid_timestamp')
 )
 
 """
@@ -75,8 +73,7 @@ music = Table(
     Column('artist', String(255)),
     Column('genre', String(255)),
     Column('data', JSON),
-    UniqueConstraint('songid', 'chart', 'game', 'version', name='songid_chart_game_version'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('songid', 'chart', 'game', 'version', name='songid_chart_game_version')
 )
 
 

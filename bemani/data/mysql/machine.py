@@ -25,8 +25,7 @@ machine = Table(
     Column('port', Integer, nullable=False, unique=True),
     Column('game', String(20)),
     Column('version', Integer),
-    Column('data', JSON),
-    mysql_charset='utf8mb4',
+    Column('data', JSON)
 )
 
 """
@@ -41,8 +40,7 @@ arcade = Table(
     Column('description', String(255), nullable=False),
     Column('pin', String(8), nullable=False),
     Column('pref', Integer, nullable=False),
-    Column('data', JSON),
-    mysql_charset='utf8mb4',
+    Column('data', JSON)
 )
 
 """
@@ -53,8 +51,7 @@ arcade_owner = Table(
     metadata,
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('arcadeid', Integer, nullable=False),
-    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid')
 )
 
 """
@@ -70,8 +67,7 @@ arcade_settings = Table(
     Column('version', Integer, nullable=False),
     Column('type', String(64), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('arcadeid', 'game', 'version', 'type', name='arcadeid_game_version_type'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('arcadeid', 'game', 'version', 'type', name='arcadeid_game_version_type')
 )
 
 

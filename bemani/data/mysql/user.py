@@ -27,8 +27,7 @@ user = Table(
     Column('username', String(255), unique=True),
     Column('password', String(255)),
     Column('email', String(255)),
-    Column('admin', Integer),
-    mysql_charset='utf8mb4',
+    Column('admin', Integer)
 )
 
 """
@@ -41,8 +40,7 @@ card = Table(
     'card',
     metadata,
     Column('id', String(16), nullable=False, unique=True),
-    Column('userid', BigInteger(unsigned=True), nullable=False, index=True),
-    mysql_charset='utf8mb4',
+    Column('userid', BigInteger(unsigned=True), nullable=False, index=True)
 )
 
 """
@@ -55,8 +53,7 @@ extid = Table(
     Column('game', String(32), nullable=False),
     Column('extid', Integer, nullable=False, unique=True),
     Column('userid', BigInteger(unsigned=True), nullable=False),
-    UniqueConstraint('game', 'userid', name='game_userid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'userid', name='game_userid')
 )
 
 """
@@ -75,8 +72,7 @@ refid = Table(
     Column('version', Integer, nullable=False),
     Column('refid', String(16), nullable=False, unique=True),
     Column('userid', BigInteger(unsigned=True), nullable=False),
-    UniqueConstraint('game', 'version', 'userid', name='game_version_userid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'userid', name='game_version_userid')
 )
 
 """
@@ -86,8 +82,7 @@ profile = Table(
     'profile',
     metadata,
     Column('refid', String(16), nullable=False, unique=True),
-    Column('data', JSON, nullable=False),
-    mysql_charset='utf8mb4',
+    Column('data', JSON, nullable=False)
 )
 
 """
@@ -103,8 +98,7 @@ achievement = Table(
     Column('id', Integer, nullable=False),
     Column('type', String(64), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('refid', 'id', 'type', name='refid_id_type'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('refid', 'id', 'type', name='refid_id_type')
 )
 
 """
@@ -123,8 +117,7 @@ time_based_achievement = Table(
     Column('type', String(64), nullable=False),
     Column('timestamp', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('refid', 'id', 'type', 'timestamp', name='refid_id_type_timestamp'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('refid', 'id', 'type', 'timestamp', name='refid_id_type_timestamp')
 )
 
 """
@@ -137,8 +130,7 @@ balance = Table(
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('arcadeid', Integer, nullable=False),
     Column('balance', Integer, nullable=False),
-    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid')
 )
 
 """
@@ -155,8 +147,7 @@ link = Table(
     Column('type', String(64), nullable=False),
     Column('other_userid', BigInteger(unsigned=True), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'userid', 'type', 'other_userid', name='game_version_userid_type_other_uuserid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'userid', 'type', 'other_userid', name='game_version_userid_type_other_uuserid')
 )
 
 

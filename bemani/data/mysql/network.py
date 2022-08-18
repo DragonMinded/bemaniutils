@@ -17,8 +17,7 @@ news = Table(
     Column('id', Integer, nullable=False, primary_key=True),
     Column('timestamp', Integer, nullable=False, index=True),
     Column('title', String(255), nullable=False),
-    Column('body', Text, nullable=False),
-    mysql_charset='utf8mb4',
+    Column('body', Text, nullable=False)
 )
 
 """
@@ -34,8 +33,7 @@ scheduled_work = Table(
     Column('schedule', String(32), nullable=False),
     Column('year', Integer),
     Column('day', Integer),
-    UniqueConstraint('game', 'version', 'name', 'schedule', name='game_version_name_schedule'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'name', 'schedule', name='game_version_name_schedule')
 )
 
 """
@@ -51,8 +49,7 @@ audit = Table(
     Column('userid', BigInteger(unsigned=True), index=True),
     Column('arcadeid', Integer, index=True),
     Column('type', String(64), nullable=False, index=True),
-    Column('data', JSON, nullable=False),
-    mysql_charset='utf8mb4',
+    Column('data', JSON, nullable=False)
 )
 
 

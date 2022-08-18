@@ -23,8 +23,7 @@ playsession = Table(
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('time', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'userid', name='game_version_userid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'userid', name='game_version_userid')
 )
 
 """
@@ -39,8 +38,7 @@ lobby = Table(
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('time', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'userid', name='game_version_userid'),
-    mysql_charset='utf8mb4',
+    UniqueConstraint('game', 'version', 'userid', name='game_version_userid')
 )
 
 

@@ -24,8 +24,7 @@ session = Table(
     Column('id', Integer, nullable=False),
     Column('type', String(32), nullable=False),
     Column('session', String(32), nullable=False, unique=True),
-    Column('expiration', Integer),
-    mysql_charset='utf8mb4',
+    Column('expiration', Integer)
 )
 
 
