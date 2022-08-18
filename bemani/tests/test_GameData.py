@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import Mock
 
 from bemani.common import GameConstants
-from bemani.data.mysql.game import GameData
+from bemani.data.postgresql.game import GameData
 from bemani.tests.helpers import FakeCursor
 
 

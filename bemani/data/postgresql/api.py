@@ -4,7 +4,7 @@ from sqlalchemy.types import String, Integer  # type: ignore
 from typing import Any, Dict, List, Optional
 
 from bemani.common import Time
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.interfaces import APIProviderInterface
 from bemani.data.types import Client, Server
 

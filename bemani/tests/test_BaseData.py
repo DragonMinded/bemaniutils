@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import Mock
 
-from bemani.data.mysql.base import BaseData
+from bemani.data.postgresql.base import BaseData
 
 
 class TestBaseData(unittest.TestCase):

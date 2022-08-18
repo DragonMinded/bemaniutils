@@ -4,7 +4,7 @@ from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
 from bemani.common import GameConstants, Time
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.types import News, Event, UserID, ArcadeID
 
 """

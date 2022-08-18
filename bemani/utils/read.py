@@ -21,8 +21,8 @@ from bemani.data import Config, Server, Song
 from bemani.data.interfaces import APIProviderInterface
 from bemani.data.api.music import GlobalMusicData
 from bemani.data.api.game import GlobalGameData
-from bemani.data.mysql.music import MusicData
-from bemani.data.mysql.user import UserData
+from bemani.data.postgresql.music import MusicData
+from bemani.data.postgresql.user import UserData
 from bemani.utils.config import load_config
 
 

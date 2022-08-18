@@ -6,7 +6,7 @@ from typing import Optional, Dict, List, Tuple, Any
 
 from bemani.common import GameConstants, Time
 from bemani.data.exceptions import ScoreSaveException
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.types import Score, Attempt, Song, UserID
 
 """

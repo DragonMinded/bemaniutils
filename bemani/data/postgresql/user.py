@@ -8,7 +8,7 @@ from typing_extensions import Final
 from passlib.hash import pbkdf2_sha512  # type: ignore
 
 from bemani.common import ValidatedDict, Profile, GameConstants, Time
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.remoteuser import RemoteUser
 from bemani.data.types import User, Achievement, Link, UserID, ArcadeID
 
@@ -53,7 +53,7 @@ extid = Table(
     Column('game', String(32), nullable=False),
     Column('extid', Integer, nullable=False, unique=True),
     Column('userid', BigInteger(unsigned=True), nullable=False),
-    UniqueConstraint('game', 'userid', name='game_userid')
+    UniqueConstraint('game', 'userid', name='extid_game_userid')
 )
 
 """
@@ -130,7 +130,7 @@ balance = Table(
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('arcadeid', Integer, nullable=False),
     Column('balance', Integer, nullable=False),
-    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid')
+    UniqueConstraint('userid', 'arcadeid', name='balance_userid_arcadeid')
 )
 
 """

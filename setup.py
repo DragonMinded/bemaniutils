@@ -197,7 +197,7 @@ setup(
         'bemani.common',
         'bemani.data',
         'bemani.data.api',
-        'bemani.data.mysql',
+        'bemani.data.postgresql',
         'bemani.protocol',
 
         # Wrapper scripts, utilities and associated code.

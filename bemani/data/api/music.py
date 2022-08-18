@@ -3,8 +3,8 @@ from typing import List, Optional, Dict, Any, Tuple, Set
 from bemani.common import APIConstants, GameConstants, VersionConstants, DBConstants, Parallel
 from bemani.data.interfaces import APIProviderInterface
 from bemani.data.api.base import BaseGlobalData
-from bemani.data.mysql.user import UserData
-from bemani.data.mysql.music import MusicData
+from bemani.data.postgresql.user import UserData
+from bemani.data.postgresql.music import MusicData
 from bemani.data.remoteuser import RemoteUser
 from bemani.data.types import UserID, Score, Song
 

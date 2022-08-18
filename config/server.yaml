@@ -37,7 +37,7 @@ server:
     # for details on acceptible values. The range of accepted values is 1-56 matching
     # the 56 normal regions found in RegionConstants, and 1000 for "Europe" and
     # 2000 for "Other".
-    region: 56
+    region: 26
 
 # Webhook URLs. These allow for game scores from games with scorecard support to be broadcasted to outside services.
 # Delete this to disable this support.

@@ -3,7 +3,7 @@ from typing import List, Tuple, Optional
 from bemani.common import APIConstants, GameConstants, Profile, Parallel
 from bemani.data.interfaces import APIProviderInterface
 from bemani.data.api.base import BaseGlobalData
-from bemani.data.mysql.user import UserData
+from bemani.data.postgresql.user import UserData
 from bemani.data.remoteuser import RemoteUser
 from bemani.data.types import UserID
 

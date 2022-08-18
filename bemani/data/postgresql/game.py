@@ -4,7 +4,7 @@ from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Any, Dict, List, Optional
 
 from bemani.common import GameConstants, ValidatedDict, Time
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.types import Achievement, Item, UserID
 
 """
@@ -18,7 +18,7 @@ game_settings = Table(
     Column('game', String(32), nullable=False),
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'userid', name='game_userid')
+    UniqueConstraint('game', 'userid', name='gs_game_userid')
 )
 
 """

@@ -5,7 +5,7 @@ from typing import Optional, Dict, List, Tuple, Any
 from typing_extensions import Final
 
 from bemani.common import GameConstants, ValidatedDict
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.types import Machine, Arcade, UserID, ArcadeID
 
 """
@@ -51,7 +51,7 @@ arcade_owner = Table(
     metadata,
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('arcadeid', Integer, nullable=False),
-    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid')
+    UniqueConstraint('userid', 'arcadeid', name='arcade_userid_arcadeid')
 )
 
 """

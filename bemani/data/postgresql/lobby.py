@@ -6,7 +6,7 @@ from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
 from bemani.common import GameConstants, ValidatedDict, Time
-from bemani.data.mysql.base import BaseData, metadata
+from bemani.data.postgresql.base import BaseData, metadata
 from bemani.data.types import UserID
 
 """
@@ -23,7 +23,7 @@ playsession = Table(
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('time', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'userid', name='game_version_userid')
+    UniqueConstraint('game', 'version', 'userid', name='ps_game_version_userid')
 )
 
 """
@@ -38,7 +38,7 @@ lobby = Table(
     Column('userid', BigInteger(unsigned=True), nullable=False),
     Column('time', Integer, nullable=False, index=True),
     Column('data', JSON, nullable=False),
-    UniqueConstraint('game', 'version', 'userid', name='game_version_userid')
+    UniqueConstraint('game', 'version', 'userid', name='lobby_game_version_userid')
 )
 
 

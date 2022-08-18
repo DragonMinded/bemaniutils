@@ -16,14 +16,14 @@ from bemani.data.api.user import GlobalUserData
 from bemani.data.api.game import GlobalGameData
 from bemani.data.api.music import GlobalMusicData
 from bemani.data.config import Config
-from bemani.data.mysql.base import metadata
-from bemani.data.mysql.user import UserData
-from bemani.data.mysql.music import MusicData
-from bemani.data.mysql.machine import MachineData
-from bemani.data.mysql.game import GameData
-from bemani.data.mysql.network import NetworkData
-from bemani.data.mysql.lobby import LobbyData
-from bemani.data.mysql.api import APIData
+from bemani.data.postgresql.base import metadata
+from bemani.data.postgresql.user import UserData
+from bemani.data.postgresql.music import MusicData
+from bemani.data.postgresql.machine import MachineData
+from bemani.data.postgresql.game import GameData
+from bemani.data.postgresql.network import NetworkData
+from bemani.data.postgresql.lobby import LobbyData
+from bemani.data.postgresql.api import APIData
 from bemani.data.triggers import Triggers
 
 

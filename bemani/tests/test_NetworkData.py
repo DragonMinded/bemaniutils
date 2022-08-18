@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from freezegun import freeze_time
 
 from bemani.common import GameConstants
-from bemani.data.mysql.network import NetworkData
+from bemani.data.postgresql.network import NetworkData
 from bemani.tests.helpers import FakeCursor
 
 
