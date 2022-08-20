@@ -41,6 +41,15 @@ class CoreHandler(Base):
         root.add_child(item('pcbtracker', url))
         root.add_child(item('pkglist', url))
         root.add_child(item('posevent', url))
+        root.add_child(item('userdata', url))
+        root.add_child(item('userid', url))
+        root.add_child(item('numbering', url))
+        root.add_child(item('local2', url))
+        root.add_child(item('lobby2', url))
+        root.add_child(item('netlog', url))
+        root.add_child(item('sidmgr', url))
+        root.add_child(item('globby', url))
+
         for srv in self.extra_services:
             root.add_child(item(srv, url))
 
