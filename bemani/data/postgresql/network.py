@@ -129,7 +129,7 @@ class NetworkData(BaseData):
         Parameters:
             newsid - Integer specifying news ID.
         """
-        sql = "DELETE FROM news WHERE id = :id LIMIT 1"
+        sql = "DELETE FROM news WHERE id = :id"
         self.execute(sql, {'id': newsid})
 
     def get_schedule_duration(self, schedule: str) -> Tuple[int, int]:

@@ -138,17 +138,17 @@ class MusicData(BaseData):
         if new_record:
             # We want to update the timestamp/location to now if its a new record.
             sql = (
-                "INSERT INTO `score` (`userid`, `musicid`, `points`, `data`, `timestamp`, `update`, `lid`) " +
+                "INSERT INTO \"score\" (\"userid\", \"musicid\", \"points\", \"data\", \"timestamp\", \"update\", \"lid\") " +
                 "VALUES (:userid, :musicid, :points, :data, :timestamp, :update, :location) " +
                 "ON DUPLICATE KEY UPDATE data = VALUES(data), points = VALUES(points), " +
-                "timestamp = VALUES(timestamp), `update` = VALUES(`update`), lid = VALUES(lid)"
+                "timestamp = VALUES(timestamp), \"update\" = VALUES(\"update\"), lid = VALUES(lid)"
             )
         else:
             # We only want to add the timestamp if it is new.
             sql = (
-                "INSERT INTO `score` (`userid`, `musicid`, `points`, `data`, `timestamp`, `update`, `lid`) " +
+                "INSERT INTO \"score\" (\"userid\", \"musicid\", \"points\", \"data\", \"timestamp\", \"update\", \"lid\") " +
                 "VALUES (:userid, :musicid, :points, :data, :timestamp, :update, :location) " +
-                "ON DUPLICATE KEY UPDATE data = VALUES(data), points = VALUES(points), `update` = VALUES(`update`)"
+                "ON DUPLICATE KEY UPDATE data = VALUES(data), points = VALUES(points), \"update\" = VALUES(\"update\")"
             )
         self.execute(
             sql,
@@ -200,7 +200,7 @@ class MusicData(BaseData):
 
         # Add to score history
         sql = (
-            "INSERT INTO `score_history` (userid, musicid, timestamp, lid, new_record, points, data) " +
+            "INSERT INTO \"score_history\" (userid, musicid, timestamp, lid, new_record, points, data) " +
             "VALUES (:userid, :musicid, :timestamp, :location, :new_record, :points, :data)"
         )
         try:
@@ -236,7 +236,7 @@ class MusicData(BaseData):
             The optional data stored by the game previously, or None if no score exists.
         """
         sql = (
-            "SELECT music.songid AS songid, music.chart AS chart, score.id AS scorekey, score.timestamp AS timestamp, score.update AS `update`, score.lid AS lid, " +
+            "SELECT music.songid AS songid, music.chart AS chart, score.id AS scorekey, score.timestamp AS timestamp, score.update AS \"update\", score.lid AS lid, " +
             "(select COUNT(score_history.timestamp) FROM score_history WHERE score_history.musicid = music.id AND score_history.userid = :userid) AS plays, " +
             "score.points AS points, score.data AS data FROM score, music WHERE score.userid = :userid AND score.musicid = music.id " +
             "AND music.game = :game AND music.version = :version AND music.songid = :songid AND music.chart = :songchart"
@@ -281,7 +281,7 @@ class MusicData(BaseData):
             The optional data stored by the game previously, or None if no score exists.
         """
         sql = (
-            "SELECT music.songid AS songid, music.chart AS chart, score.id AS scorekey, score.timestamp AS timestamp, score.update AS `update`, " +
+            "SELECT music.songid AS songid, music.chart AS chart, score.id AS scorekey, score.timestamp AS timestamp, score.update AS \"update\", " +
             "score.userid AS userid, score.lid AS lid, " +
             "(select COUNT(score_history.timestamp) FROM score_history WHERE score_history.musicid = music.id AND score_history.userid = score.userid) AS plays, " +
             "score.points AS points, score.data AS data FROM score, music WHERE score.id = :scorekey AND score.musicid = music.id " +
@@ -335,7 +335,7 @@ class MusicData(BaseData):
             A list of Score objects representing all high scores for a game.
         """
         sql = (
-            "SELECT music.songid AS songid, music.chart AS chart, score.id AS scorekey, score.timestamp AS timestamp, score.update AS `update`, score.lid AS lid, " +
+            "SELECT music.songid AS songid, music.chart AS chart, score.id AS scorekey, score.timestamp AS timestamp, score.update AS \"update\", score.lid AS lid, " +
             "(select COUNT(score_history.timestamp) FROM score_history WHERE score_history.musicid = music.id AND score_history.userid = :userid) AS plays, " +
             "score.points AS points, score.data AS data FROM score, music WHERE score.userid = :userid AND score.musicid = music.id " +
             "AND music.game = :game AND music.version = :version"
@@ -643,7 +643,7 @@ class MusicData(BaseData):
 
         # Finally, construct the full query
         sql = (
-            "SELECT ({}) AS songid, ({}) AS chart, id AS scorekey, points, timestamp, `update`, lid, data, userid, ({}) AS plays "
+            "SELECT ({}) AS songid, ({}) AS chart, id AS scorekey, points, timestamp, \"update\", lid, data, userid, ({}) AS plays "
             "FROM score WHERE musicid IN ({})"
         ).format(songidquery, chartquery, playselect, innerselect)
 
@@ -760,7 +760,7 @@ class MusicData(BaseData):
         # Now, join it up against the score and music table to grab the info we need
         sql = (
             "SELECT ({}) AS songid, ({}) AS chart, score.points AS points, score.userid AS userid, score.id AS scorekey, score.data AS data, " +
-            "score.timestamp AS timestamp, score.update AS `update`, " +
+            "score.timestamp AS timestamp, score.update AS \"update\", " +
             "score.lid AS lid, (select COUNT(score_history.timestamp) FROM score_history WHERE score_history.musicid = score.musicid) AS plays " +
             "FROM score, ({}) records WHERE records.userid = score.userid AND records.musicid = score.musicid"
         ).format(songidquery, chartquery, records_sql)

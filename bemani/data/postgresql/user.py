@@ -377,7 +377,7 @@ class UserData(BaseData):
             userid - Integer user ID, as looked up by one of the above functions.
             cardid - 16-digit card ID to remove.
         """
-        sql = "DELETE FROM card WHERE id = :cardid AND userid = :userid LIMIT 1"
+        sql = "DELETE FROM card WHERE id = :cardid AND userid = :userid"
         self.execute(sql, {'cardid': cardid, 'userid': userid})
 
     def put_user(self, user: User) -> None:
@@ -727,7 +727,7 @@ class UserData(BaseData):
         refid = self.get_refid(game, version, userid)
 
         # Delete profile JSON to unlink the profile for this game/version.
-        sql = "DELETE FROM profile WHERE refid = :refid LIMIT 1"
+        sql = "DELETE FROM profile WHERE refid = :refid"
         self.execute(sql, {'refid': refid})
 
     def get_achievement(self, game: GameConstants, version: int, userid: UserID, achievementid: int, achievementtype: str) -> Optional[ValidatedDict]:

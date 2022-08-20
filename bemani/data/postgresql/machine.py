@@ -216,7 +216,7 @@ class MachineData(BaseData):
         """
         # Update machine name based on game
         sql = (
-            "UPDATE `machine` SET name = :name, description = :description, arcadeid = :arcadeid, " +
+            "UPDATE machine SET name = :name, description = :description, arcadeid = :arcadeid, " +
             "port = :port, game = :game, version = :version, data = :data WHERE pcbid = :pcbid LIMIT 1"
         )
         self.execute(
@@ -268,7 +268,7 @@ class MachineData(BaseData):
             # Add new machine
             try:
                 sql = (
-                    "INSERT INTO `machine` (pcbid, name, description, port, arcadeid) " +
+                    "INSERT INTO machine (pcbid, name, description, port, arcadeid) " +
                     "VALUES (:pcbid, :name, :description, :port, :arcadeid)"
                 )
                 self.execute(sql, {'pcbid': pcbid, 'name': name, 'description': description, 'port': port, 'arcadeid': arcade})
@@ -287,7 +287,7 @@ class MachineData(BaseData):
         Parameters:
             pcbid - The PCBID as returned from a game.
         """
-        sql = "DELETE FROM `machine` WHERE pcbid = :pcbid LIMIT 1"
+        sql = "DELETE FROM machine WHERE pcbid = :pcbid LIMIT 1"
         self.execute(sql, {'pcbid': pcbid})
 
     def create_arcade(self, name: str, description: str, region: int, data: Dict[str, Any], owners: List[UserID]) -> Arcade:
@@ -363,7 +363,7 @@ class MachineData(BaseData):
         """
         # Update machine name based on game
         sql = (
-            "UPDATE `arcade` " +
+            "UPDATE arcade " +
             "SET name = :name, description = :desc, pin = :pin, pref = :pref, data = :data " +
             "WHERE id = :arcadeid"
         )
@@ -378,7 +378,7 @@ class MachineData(BaseData):
                 'arcadeid': arcade.id,
             },
         )
-        sql = "DELETE FROM `arcade_owner` WHERE arcadeid = :arcadeid"
+        sql = "DELETE FROM arcade_owner WHERE arcadeid = :arcadeid"
         self.execute(sql, {'arcadeid': arcade.id})
         for owner in arcade.owners:
             sql = "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
@@ -392,11 +392,11 @@ class MachineData(BaseData):
         Parameters:
             arcadeid - Integer specifying the arcade to delete.
         """
-        sql = "DELETE FROM `arcade` WHERE id = :arcadeid LIMIT 1"
+        sql = "DELETE FROM arcade WHERE id = :arcadeid"
         self.execute(sql, {'arcadeid': arcadeid})
-        sql = "DELETE FROM `arcade_owner` WHERE arcadeid = :arcadeid"
+        sql = "DELETE FROM arcade_owner WHERE arcadeid = :arcadeid"
         self.execute(sql, {'arcadeid': arcadeid})
-        sql = "UPDATE `machine` SET arcadeid = NULL WHERE arcadeid = :arcadeid"
+        sql = "UPDATE machine SET arcadeid = NULL WHERE arcadeid = :arcadeid"
         self.execute(sql, {'arcadeid': arcadeid})
 
     def get_all_arcades(self) -> List[Arcade]:

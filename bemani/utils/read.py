@@ -98,7 +98,7 @@ class ImportBase:
         return GlobalGameData(api)
 
     def get_next_music_id(self) -> int:
-        cursor = self.execute("SELECT MAX(id) AS next_id FROM `music`")
+        cursor = self.execute("SELECT MAX(id) AS next_id FROM music")
         result = cursor.fetchone()
         try:
             return result['next_id'] + 1
@@ -113,12 +113,12 @@ class ImportBase:
                 raise Exception('Cannot get music ID for song when operating on all versions!')
             version = self.version
             sql = (
-                "SELECT id FROM `music` WHERE songid = :songid AND chart = :chart AND game = :game AND version != :version"
+                "SELECT id FROM music WHERE songid = :songid AND chart = :chart AND game = :game AND version != :version"
             )
         else:
             # Specific version lookup
             sql = (
-                "SELECT id FROM `music` WHERE songid = :songid AND chart = :chart AND game = :game AND version = :version"
+                "SELECT id FROM music WHERE songid = :songid AND chart = :chart AND game = :game AND version = :version"
             )
 
         cursor = self.execute(sql, {'songid': songid, 'chart': chart, 'game': self.game.value, 'version': version})
@@ -155,7 +155,7 @@ class ImportBase:
         else:
             frags.append("version = :version")
 
-        sql = "SELECT id FROM `music` WHERE " + " AND ".join(frags)
+        sql = "SELECT id FROM music WHERE " + " AND ".join(frags)
         cursor = self.execute(sql, {'title': title, 'artist': artist, 'genre': genre, 'chart': chart, 'game': self.game.value, 'version': version})
         if cursor.rowcount != 0:
             result = cursor.fetchone()
@@ -183,7 +183,7 @@ class ImportBase:
             jsondata = json.dumps(data)
         try:
             sql = (
-                "INSERT INTO `music` (id, songid, chart, game, version, name, artist, genre, data) " +
+                "INSERT INTO music (id, songid, chart, game, version, name, artist, genre, data) " +
                 "VALUES (:id, :songid, :chart, :game, :version, :name, :artist, :genre, :data)"
             )
             self.execute(
@@ -234,7 +234,7 @@ class ImportBase:
             updates.append("genre = :genre")
         if len(updates) == 0:
             return
-        sql = f"UPDATE `music` SET {', '.join(updates)} WHERE songid = :songid AND chart = :chart AND game = :game"
+        sql = f"UPDATE music SET {', '.join(updates)} WHERE songid = :songid AND chart = :chart AND game = :game"
         if version is not None:
             sql = sql + " AND version = :version"
         self.execute(
@@ -277,7 +277,7 @@ class ImportBase:
             updates.append("genre = :genre")
         if len(updates) == 0:
             return
-        sql = f"UPDATE `music` SET {', '.join(updates)} WHERE id = :musicid AND game = :game"
+        sql = f"UPDATE music SET {', '.join(updates)} WHERE id = :musicid AND game = :game"
         if version is not None:
             sql = sql + " AND version = :version"
         self.execute(
@@ -305,7 +305,7 @@ class ImportBase:
             jsondata = json.dumps(data)
         try:
             sql = (
-                "INSERT INTO `catalog` (game, version, type, id, data) " +
+                "INSERT INTO catalog (game, version, type, id, data) " +
                 "VALUES (:game, :version, :type, :id, :data)"
             )
             self.execute(
@@ -322,7 +322,7 @@ class ImportBase:
             if self.update:
                 print("Entry already existed, so updating information!")
                 sql = (
-                    "UPDATE `catalog` SET data = :data WHERE " +
+                    "UPDATE catalog SET data = :data WHERE " +
                     "game = :game AND version = :version AND type = :type AND id = :id"
                 )
                 self.execute(
