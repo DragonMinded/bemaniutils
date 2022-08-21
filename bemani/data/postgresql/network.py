@@ -86,7 +86,7 @@ class NetworkData(BaseData):
         """
         sql = "INSERT INTO news (timestamp, title, body) VALUES (:timestamp, :title, :body)"
         cursor = self.execute(sql, {'timestamp': Time.now(), 'title': title, 'body': body})
-        return cursor.lastrowid
+        return cursor.lastrowid + 1
 
     def get_news(self, newsid: int) -> Optional[News]:
         """
@@ -197,7 +197,7 @@ class NetworkData(BaseData):
             sql = (
                 "INSERT INTO scheduled_work (game, version, name, schedule, year, day) " +
                 "VALUES (:game, :version, :name, :schedule, :year, :day) " +
-                "ON DUPLICATE KEY UPDATE year=VALUES(year), day=VALUES(day)"
+                "ON CONFLICT ON CONSTRAINT game_version_name_schedule DO UPDATE SET year=EXCLUDED.year, day=EXCLUDED.day"
             )
             self.execute(
                 sql,
@@ -216,7 +216,7 @@ class NetworkData(BaseData):
             sql = (
                 "INSERT INTO scheduled_work (game, version, name, schedule, day) " +
                 "VALUES (:game, :version, :name, :schedule, :day) " +
-                "ON DUPLICATE KEY UPDATE day=VALUES(day)"
+                "ON CONFLICT ON CONSTRAINT game_version_name_schedule DO UPDATE SET day=EXCLUDED.day"
             )
             self.execute(
                 sql,

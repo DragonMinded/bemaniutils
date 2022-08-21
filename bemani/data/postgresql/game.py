@@ -109,7 +109,7 @@ class GameData(BaseData):
         sql = (
             "INSERT INTO game_settings (game, userid, data) " +
             "VALUES (:game, :userid, :data) " +
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT gs_game_userid DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(sql, {'game': game.value, 'userid': userid, 'data': self.serialize(settings)})
 
@@ -183,7 +183,7 @@ class GameData(BaseData):
         sql = (
             "INSERT INTO series_achievement (game, userid, id, type, data) " +
             "VALUES (:game, :userid, :id, :type, :data) " +
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT game_userid_id_type DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(sql, {'game': game.value, 'userid': userid, 'id': achievementid, 'type': achievementtype, 'data': self.serialize(data)})
 
@@ -300,7 +300,7 @@ class GameData(BaseData):
         sql = (
             "INSERT INTO time_sensitive_settings (game, version, name, start_time, end_time, data) "
             "VALUES (:game, :version, :name, :start_time, :end_time, :data) "
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT game_version_name_start_time DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(
             sql,

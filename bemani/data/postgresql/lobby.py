@@ -138,7 +138,7 @@ class LobbyData(BaseData):
         sql = (
             "INSERT INTO playsession (game, version, userid, time, data) " +
             "VALUES (:game, :version, :userid, :time, :data) " +
-            "ON DUPLICATE KEY UPDATE time=VALUES(time), data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT ps_game_version_userid DO UPDATE SET time=EXCLUDED.time, data=EXCLUDED.data"
         )
         self.execute(
             sql,
@@ -268,7 +268,7 @@ class LobbyData(BaseData):
         sql = (
             "INSERT INTO lobby (game, version, userid, time, data) " +
             "VALUES (:game, :version, :userid, :time, :data) " +
-            "ON DUPLICATE KEY UPDATE time=VALUES(time), data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT lobby_game_version_userid DO UPDATE SET time=EXCLUDED.time, data=EXCLUDED.data"
         )
         self.execute(
             sql,

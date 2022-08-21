@@ -89,7 +89,7 @@ class APIData(APIProviderInterface, BaseData):
                 'token': str(uuid.uuid4()),
             },
         )
-        return cursor.lastrowid
+        return cursor.lastrowid + 1
 
     def get_client(self, clientid: int) -> Optional[Client]:
         """
@@ -132,7 +132,7 @@ class APIData(APIProviderInterface, BaseData):
         Parameters:
             clientid - Integer specifying client ID.
         """
-        sql = "DELETE FROM client WHERE id = :id LIMIT 1"
+        sql = "DELETE FROM client WHERE id = :id"
         self.execute(sql, {'id': clientid})
 
     def get_all_servers(self) -> List[Server]:
@@ -178,7 +178,7 @@ class APIData(APIProviderInterface, BaseData):
                 'token': token,
             },
         )
-        return cursor.lastrowid
+        return cursor.lastrowid + 1
 
     def get_server(self, serverid: int) -> Optional[Server]:
         """
@@ -230,5 +230,5 @@ class APIData(APIProviderInterface, BaseData):
         Parameters:
             serverid - Integer specifying server ID.
         """
-        sql = "DELETE FROM server WHERE id = :id LIMIT 1"
+        sql = "DELETE FROM server WHERE id = :id"
         self.execute(sql, {'id': serverid})

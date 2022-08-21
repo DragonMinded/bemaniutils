@@ -140,15 +140,17 @@ class MusicData(BaseData):
             sql = (
                 "INSERT INTO \"score\" (\"userid\", \"musicid\", \"points\", \"data\", \"timestamp\", \"update\", \"lid\") " +
                 "VALUES (:userid, :musicid, :points, :data, :timestamp, :update, :location) " +
-                "ON DUPLICATE KEY UPDATE data = VALUES(data), points = VALUES(points), " +
-                "timestamp = VALUES(timestamp), \"update\" = VALUES(\"update\"), lid = VALUES(lid)"
+                "ON CONFLICT ON CONSTRAINT userid_musicid" +
+                " DO UPDATE SET data = EXCLUDED.data, points = EXCLUDED.points, " +
+                "timestamp = EXCLUDED.timestamp, \"update\" = EXCLUDED.\"update\", lid = EXCLUDED.lid"
             )
         else:
             # We only want to add the timestamp if it is new.
             sql = (
                 "INSERT INTO \"score\" (\"userid\", \"musicid\", \"points\", \"data\", \"timestamp\", \"update\", \"lid\") " +
                 "VALUES (:userid, :musicid, :points, :data, :timestamp, :update, :location) " +
-                "ON DUPLICATE KEY UPDATE data = VALUES(data), points = VALUES(points), \"update\" = VALUES(\"update\")"
+                "ON CONFLICT ON CONSTRAINT userid_musicid " +
+                "DO UPDATE SET data = EXCLUDED.data, points = EXCLUDED.points, \"update\" = EXCLUDED.\"update\""
             )
         self.execute(
             sql,

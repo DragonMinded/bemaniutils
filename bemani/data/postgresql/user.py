@@ -704,7 +704,7 @@ class UserData(BaseData):
         sql = (
             "INSERT INTO profile (refid, data) " +
             "VALUES (:refid, :json) " +
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT profile_refid_key DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(sql, {'refid': refid, 'json': self.serialize(profile)})
 
@@ -806,7 +806,7 @@ class UserData(BaseData):
         sql = (
             "INSERT INTO achievement (refid, id, type, data) " +
             "VALUES (:refid, :id, :type, :data) " +
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT refid_id_type DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(sql, {'refid': refid, 'id': achievementid, 'type': achievementtype, 'data': self.serialize(data)})
 
@@ -1012,7 +1012,7 @@ class UserData(BaseData):
         sql = (
             "INSERT INTO link (game, version, userid, type, other_userid, data) "
             "VALUES (:game, :version, :userid, :type, :other_userid, :data) "
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT game_version_userid_type_other_uuserid DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(sql, {'game': game.value, 'version': version, 'userid': userid, 'type': linktype, 'other_userid': other_userid, 'data': self.serialize(data)})
 
@@ -1065,7 +1065,7 @@ class UserData(BaseData):
         """
         sql = (
             "INSERT INTO balance (userid, arcadeid, balance) VALUES (:userid, :arcadeid, :delta) "
-            "ON DUPLICATE KEY UPDATE balance = balance + :delta"
+            "ON CONFLICT ON CONSTRAINT balance_userid_arcadeid DO UPDATE SET balance = balance + :delta"
         )
         self.execute(sql, {'delta': delta, 'userid': userid, 'arcadeid': arcadeid})
         newbalance = self.get_balance(userid, arcadeid)
@@ -1234,7 +1234,7 @@ class UserData(BaseData):
         cursor = self.execute(sql, {'pin': pin})
         if cursor.rowcount != 1:
             return None
-        userid = cursor.lastrowid
+        userid = cursor.lastrowid + 1
 
         # Now, insert the card, tying it to the account
         sql = "INSERT INTO card (id, userid) VALUES (:cardid, :userid)"

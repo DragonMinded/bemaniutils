@@ -217,7 +217,7 @@ class MachineData(BaseData):
         # Update machine name based on game
         sql = (
             "UPDATE machine SET name = :name, description = :description, arcadeid = :arcadeid, " +
-            "port = :port, game = :game, version = :version, data = :data WHERE pcbid = :pcbid LIMIT 1"
+            "port = :port, game = :game, version = :version, data = :data WHERE pcbid = :pcbid"
         )
         self.execute(
             sql,
@@ -287,7 +287,7 @@ class MachineData(BaseData):
         Parameters:
             pcbid - The PCBID as returned from a game.
         """
-        sql = "DELETE FROM machine WHERE pcbid = :pcbid LIMIT 1"
+        sql = "DELETE FROM machine WHERE pcbid = :pcbid"
         self.execute(sql, {'pcbid': pcbid})
 
     def create_arcade(self, name: str, description: str, region: int, data: Dict[str, Any], owners: List[UserID]) -> Arcade:
@@ -312,7 +312,7 @@ class MachineData(BaseData):
         )
         if cursor.rowcount != 1:
             raise ArcadeCreationException('Failed to create arcade!')
-        arcadeid = cursor.lastrowid
+        arcadeid = cursor.lastrowid + 1
         for owner in owners:
             sql = "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
             self.execute(sql, {'userid': owner, 'arcadeid': arcadeid})
@@ -467,7 +467,7 @@ class MachineData(BaseData):
         sql = (
             "INSERT INTO arcade_settings (arcadeid, game, version, type, data) " +
             "VALUES (:id, :game, :version, :type, :data) "
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
+            "ON CONFLICT ON CONSTRAINT arcadeid_game_version_type DO UPDATE SET data=EXCLUDED.data"
         )
         self.execute(sql, {'id': arcadeid, 'game': game.value, 'version': version, 'type': setting, 'data': self.serialize(data)})
 
