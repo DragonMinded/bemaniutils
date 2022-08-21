@@ -1433,7 +1433,7 @@ class SoundVoltexExceedGear(
             chart = track.child_value('music_type')
             points = track.child_value('score')
             combo = track.child_value('max_chain')
-            clear_type = self.__game_to_db_clear_type(track.child_value('claer_type'))
+            clear_type = self.__game_to_db_clear_type(track.child_value('clear_type'))
             grade = self.__game_to_db_grade(track.child_value('score_grade'))
             stats = {
                 'exscore': track.child_value('exscore'),
