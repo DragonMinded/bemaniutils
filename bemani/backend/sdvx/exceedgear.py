@@ -1740,23 +1740,18 @@ class SoundVoltexExceedGear(
 
         # New course saving items add in 2022021400
         if request.child('course') is not None:
-            for child in request.child('course').children:
-                if child.name != 'info':  # NOTE: 不一定是这个名字，有问题要修改
-                    continue
+            course = request.child('course')
+            season_id = course.child_value('ssnid')
+            course_id = course.child_value('crsid')
+            clear_type = course.child_value('ct')
+            achievement_rate = course.child_value('ar')
+            grade = course.child_value('gr')
+            score = course.child_value('sc')
 
-                season_id = child.child_value('ssnid')
-                course_id = child.child_value('crsid')
-                clear_type = child.child_value('ct')
-                achievement_rate = child.child_value('ar')
-                grade = child.child_value('gr')
-                score = child.child_value('sc')
-
-                # Do not update the course achievement when old score is greater.
-                old = self.data.local.user.get_achievement(self.game, self.version, userid,
-                                                           (season_id * 100) + course_id, 'course')
-                if old is not None and old.get_int('score') > score:
-                    continue
-
+            # Do not update the course achievement when old score is greater.
+            old = self.data.local.user.get_achievement(self.game, self.version, userid,
+                                                       (season_id * 100) + course_id, 'course')
+            if old is not None and old.get_int('score') < score:
                 self.data.local.user.put_achievement(
                     self.game,
                     self.version,
