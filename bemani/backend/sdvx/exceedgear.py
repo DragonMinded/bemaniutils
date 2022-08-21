@@ -1252,7 +1252,7 @@ class SoundVoltexExceedGear(
 
         return game
 
-    def handle_game_sv6_load_requests(self, request: Node) -> Node:
+    def handle_game_sv6_load_request(self, request: Node) -> Node:
         refid = request.child_value('refid')
         root = self.get_profile_by_refid(refid)
         if root is not None:
@@ -1427,34 +1427,36 @@ class SoundVoltexExceedGear(
         # Doesn't matter if userid is None here, that's an anonymous score
         # This is new saving format for 20210831
         if request.child('track') is not None:
-            for child in request.child('track').children:
-                musicid = child.child_value('music_id')
-                chart = child.child_value('music_type')
-                points = child.child_value('score')
-                combo = child.child_value('max_chain')
-                clear_type = self.__game_to_db_clear_type(child.child_value('claer_type'))
-                grade = self.__game_to_db_grade(child.child_value('score_grade'))
-                stats = {
-                    'exscore': child.child_value('exscore'),
-                    'btn_rate': child.child_value('btn_rate'),
-                    'long_rate': child.child_value('long_rate'),
-                    'vol_rate': child.child_value('vol_rate'),
-                    'critical': child.child_value('critical'),
-                    'near': child.child_value('near'),
-                    'error': child.child_value('error'),
-                }
+            track = request.child('track')
 
-                # Save the score
-                self.update_score(
-                    userid,
-                    musicid,
-                    chart,
-                    points,
-                    clear_type,
-                    grade,
-                    combo,
-                    stats,
-                )
+            musicid = track.child_value('music_id')
+            chart = track.child_value('music_type')
+            points = track.child_value('score')
+            combo = track.child_value('max_chain')
+            clear_type = self.__game_to_db_clear_type(track.child_value('claer_type'))
+            grade = self.__game_to_db_grade(track.child_value('score_grade'))
+            stats = {
+                'exscore': track.child_value('exscore'),
+                'btn_rate': track.child_value('btn_rate'),
+                'long_rate': track.child_value('long_rate'),
+                'vol_rate': track.child_value('vol_rate'),
+                'critical': track.child_value('critical'),
+                'near': track.child_value('near'),
+                'error': track.child_value('error'),
+            }
+
+            # Save the score
+            self.update_score(
+                userid,
+                musicid,
+                chart,
+                points,
+                clear_type,
+                grade,
+                combo,
+                stats,
+            )
+
         else:
             musicid = request.child_value('music_id')
             chart = request.child_value('music_type')
