@@ -1342,6 +1342,7 @@ class SoundVoltexExceedGear(
                         0,  # 18: Another medal, perhaps old score medal?
                         0,  # 19: Another grade, perhaps old score grade?
                         0,  # 20: Any value
+                        0,  # 21. Any value
                     ],
                 ),
             )
