@@ -1065,7 +1065,7 @@ class UserData(BaseData):
         """
         sql = (
             "INSERT INTO balance (userid, arcadeid, balance) VALUES (:userid, :arcadeid, :delta) "
-            "ON CONFLICT ON CONSTRAINT balance_userid_arcadeid DO UPDATE SET balance = balance + :delta"
+            "ON CONFLICT ON CONSTRAINT balance_userid_arcadeid DO UPDATE SET balance = balance.balance + :delta"
         )
         self.execute(sql, {'delta': delta, 'userid': userid, 'arcadeid': arcadeid})
         newbalance = self.get_balance(userid, arcadeid)
