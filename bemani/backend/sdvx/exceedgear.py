@@ -1607,6 +1607,7 @@ class SoundVoltexExceedGear(
             achievement_rate = request.child_value('ar')
             grade = request.child_value('gr')
             score = request.child_value('sc')
+            exscore = request.child_value('ex')
 
             # Do not update the course achievement when old score is greater.
             old = self.data.local.user.get_achievement(self.game, self.version, userid, (season_id * 100) + course_id,
@@ -1625,6 +1626,7 @@ class SoundVoltexExceedGear(
                     'achievement_rate': achievement_rate,
                     'score': score,
                     'grade': grade,
+                    'exscore': exscore,
                 },
             )
 
@@ -1748,6 +1750,7 @@ class SoundVoltexExceedGear(
             achievement_rate = course.child_value('ar')
             grade = course.child_value('gr')
             score = course.child_value('sc')
+            exscore = course.child_value('ex')
 
             # Do not update the course achievement when old score is greater.
             old = self.data.local.user.get_achievement(self.game, self.version, userid,
@@ -1764,6 +1767,7 @@ class SoundVoltexExceedGear(
                         'achievement_rate': achievement_rate,
                         'score': score,
                         'grade': grade,
+                        'exscore': exscore,
                     },
                 )
 
@@ -1934,6 +1938,7 @@ class SoundVoltexExceedGear(
             skill.add_child(course_node)
             course_node.add_child(Node.s16('ssnid', season_id))
             course_node.add_child(Node.s16('crsid', course_id))
+            course_node.add_child(Node.s32('ex',course.data.get_int('exscore')))
             course_node.add_child(Node.s32('sc', course.data.get_int('score')))
             course_node.add_child(Node.s16('ct', course.data.get_int('clear_type')))
             course_node.add_child(Node.s16('gr', course.data.get_int('grade')))
