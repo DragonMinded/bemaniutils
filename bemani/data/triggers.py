@@ -1,3 +1,5 @@
+import asyncio
+import concurrent.futures
 from datetime import datetime
 from discord_webhook import DiscordWebhook, DiscordEmbed  # type: ignore
 from typing import Dict
@@ -11,8 +13,10 @@ class Triggers:
     """
     Class for broadcasting data to some outside service
     """
+
     def __init__(self, config: Config) -> None:
         self.config = config
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
     def __gameconst_to_series(self, game: GameConstants) -> str:
         return {
@@ -39,7 +43,7 @@ class Triggers:
     def broadcast_score(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         # For now we only support discord
         if self.config.webhooks.discord[game] is not None:
-            self.broadcast_score_discord(data, game, song)
+            self.executor.submit(self.broadcast_score_discord, data, game, song)
 
     def broadcast_score_discord(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         if game in {GameConstants.IIDX, GameConstants.POPN_MUSIC, GameConstants.SDVX}:
@@ -54,7 +58,8 @@ class Triggers:
             scoreembed.set_author(name=self.config.name, url=song_url)
             for item, value in data.items():
                 inline = True
-                if item in {BroadcastConstants.DJ_NAME, BroadcastConstants.PLAYER_NAME, BroadcastConstants.SONG_NAME, BroadcastConstants.ARTIST_NAME, BroadcastConstants.PLAY_STATS_HEADER}:
+                if item in {BroadcastConstants.DJ_NAME, BroadcastConstants.PLAYER_NAME, BroadcastConstants.SONG_NAME,
+                            BroadcastConstants.ARTIST_NAME, BroadcastConstants.PLAY_STATS_HEADER}:
                     inline = False
                 scoreembed.add_embed_field(name=item.value, value=value, inline=inline)
             webhook.add_embed(scoreembed)
