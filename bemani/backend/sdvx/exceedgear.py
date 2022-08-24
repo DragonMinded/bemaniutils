@@ -3,7 +3,7 @@ from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
-from bemani.common import VersionConstants, Time, ID, Profile
+from bemani.common import VersionConstants, Time, ID, Profile, BroadcastConstants
 from bemani.data import UserID, Score
 from bemani.protocol import Node
 
@@ -1418,12 +1418,41 @@ class SoundVoltexExceedGear(
         return Node.void('game')
 
     def handle_game_sv6_save_m_request(self, request: Node) -> Node:
+        clear_map = {
+            self.CLEAR_TYPE_NO_PLAY: 'NO PLAY',
+            self.CLEAR_TYPE_HARD_CLEAR: 'HARD CLEAR',
+            self.CLEAR_TYPE_CLEAR: 'CLEAR',
+            self.CLEAR_TYPE_FAILED: 'FAILED',
+            self.CLEAR_TYPE_ULTIMATE_CHAIN: 'ULTIMATE CHAIN',
+            self.CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: '⭐PUC⭐',
+        }
+        grade_map = {
+            self.GAME_GRADE_NO_PLAY: 'NO PLAY',
+            self.GAME_GRADE_D: 'D',
+            self.GAME_GRADE_C: 'C',
+            self.GAME_GRADE_B: 'B',
+            self.GAME_GRADE_A: 'A',
+            self.GAME_GRADE_A_PLUS: 'A+',
+            self.GAME_GRADE_AA: 'AA',
+            self.GAME_GRADE_AA_PLUS: 'AA+',
+            self.GAME_GRADE_AAA: 'AAA',
+            self.GAME_GRADE_AAA_PLUS: 'AAA+',
+            self.GAME_GRADE_S: 'S'
+        }
         refid = request.child_value('refid')
 
         if refid is not None:
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         else:
             userid = None
+
+        # Construct the dictionary for the broadcast
+        card_data = {}
+        song = None
+
+        if userid is not None:
+            profile = self.get_profile(userid)
+            card_data[BroadcastConstants.PLAYER_NAME] = profile.get_str('name')
 
         # Doesn't matter if userid is None here, that's an anonymous score
         # This is new saving format for 20210831
@@ -1445,6 +1474,20 @@ class SoundVoltexExceedGear(
                 'near': track.child_value('near'),
                 'error': track.child_value('error'),
             }
+
+            song = self.data.local.music.get_song(self.game, self.version, musicid, chart)
+            card_data[BroadcastConstants.SONG_NAME] = song.name
+            card_data[BroadcastConstants.ARTIST_NAME] = song.artist
+            card_data[BroadcastConstants.DIFFICULTY] = song.data.get('difficulty', 0)
+            card_data[BroadcastConstants.SCORE] = points
+            card_data[BroadcastConstants.EXSCORE] = track.child_value('exscore')
+            card_data[BroadcastConstants.GRADE] = grade_map.get(track.child_value('score_grade'), 'NO PLAY')
+            card_data[BroadcastConstants.CLEAR_STATUS] = clear_map.get(track.child_value('clear_type'), 'NO PLAY')
+            card_data[BroadcastConstants.PLAY_STATS_HEADER] = '⭐'
+            card_data[BroadcastConstants.CRITICAL] = stats.get('critical')
+            card_data[BroadcastConstants.NEAR] = stats.get('near')
+            card_data[BroadcastConstants.ERROR] = stats.get('error')
+            card_data[BroadcastConstants.MAX_CHAIN] = combo
 
             # Save the score
             self.update_score(
@@ -1475,6 +1518,20 @@ class SoundVoltexExceedGear(
                 'error': request.child_value('error'),
             }
 
+            song = self.data.local.music.get_song(self.game, self.version, musicid, chart)
+            card_data[BroadcastConstants.SONG_NAME] = song.name
+            card_data[BroadcastConstants.ARTIST_NAME] = song.artist
+            card_data[BroadcastConstants.DIFFICULTY] = song.data.get('difficulty', 0)
+            card_data[BroadcastConstants.SCORE] = points
+            card_data[BroadcastConstants.EXSCORE] = request.child_value('exscore')
+            card_data[BroadcastConstants.GRADE] = grade_map.get(request.child_value('score_grade'), 'NO PLAY')
+            card_data[BroadcastConstants.CLEAR_STATUS] = clear_map.get(request.child_value('clear_type'), 'NO PLAY')
+            card_data[BroadcastConstants.PLAY_STATS_HEADER] = '⭐'
+            card_data[BroadcastConstants.CRITICAL] = stats.get('critical')
+            card_data[BroadcastConstants.NEAR] = stats.get('near')
+            card_data[BroadcastConstants.ERROR] = stats.get('error')
+            card_data[BroadcastConstants.MAX_CHAIN] = combo
+
             # Save the score
             self.update_score(
                 userid,
@@ -1486,6 +1543,8 @@ class SoundVoltexExceedGear(
                 combo,
                 stats,
             )
+
+        self.data.triggers.broadcast_score(card_data, self.game, song)
 
         return Node.void('game')
 
@@ -1938,7 +1997,7 @@ class SoundVoltexExceedGear(
             skill.add_child(course_node)
             course_node.add_child(Node.s16('ssnid', season_id))
             course_node.add_child(Node.s16('crsid', course_id))
-            course_node.add_child(Node.s32('ex',course.data.get_int('exscore')))
+            course_node.add_child(Node.s32('ex', course.data.get_int('exscore')))
             course_node.add_child(Node.s32('sc', course.data.get_int('score')))
             course_node.add_child(Node.s16('ct', course.data.get_int('clear_type')))
             course_node.add_child(Node.s16('gr', course.data.get_int('grade')))

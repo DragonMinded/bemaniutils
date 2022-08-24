@@ -326,6 +326,12 @@ class BroadcastConstants(Enum):
     COMBO: Final[str] = 'Combo'
     MEDAL: Final[str] = 'Medal'
 
+    # SDVX
+    MAX_CHAIN: Final[str] = 'Max Chain'
+    CRITICAL: Final[str] = 'Critical'
+    NEAR: Final[str] = 'Near'
+    ERROR: Final[str] = 'Error'
+
 
 class _RegionConstants:
     """
