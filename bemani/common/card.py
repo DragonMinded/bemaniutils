@@ -203,7 +203,7 @@ class CardCipher:
     def __type_from_cardid(cardid: str) -> int:
         if cardid[:2].upper() == 'E0':
             return 1
-        if cardid[:2].upper() == '01':
+        if cardid[:2].upper() in ['01', '02', '03', '04', '05', '06', '07', '08', '09']:
             return 2
         raise CardCipherException('Unrecognized card type')
 

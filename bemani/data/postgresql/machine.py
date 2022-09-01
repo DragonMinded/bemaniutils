@@ -299,7 +299,8 @@ class MachineData(BaseData):
         """
         sql = (
             "INSERT INTO arcade (name, description, pref, data, pin) " +
-            "VALUES (:name, :desc, :pref, :data, '00000000')"
+            "VALUES (:name, :desc, :pref, :data, '00000000')" +
+            "RETURNING id"
         )
         cursor = self.execute(
             sql,
@@ -312,7 +313,7 @@ class MachineData(BaseData):
         )
         if cursor.rowcount != 1:
             raise ArcadeCreationException('Failed to create arcade!')
-        arcadeid = cursor.lastrowid + 1
+        arcadeid = cursor.fetchone()[0]
         for owner in owners:
             sql = "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
             self.execute(sql, {'userid': owner, 'arcadeid': arcadeid})

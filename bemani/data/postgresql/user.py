@@ -1230,11 +1230,11 @@ class UserData(BaseData):
             A User ID if creation was successful, or None otherwise.
         """
         # First, create a user account
-        sql = "INSERT INTO \"user\" (pin, admin) VALUES (:pin, 0)"
+        sql = "INSERT INTO \"user\" (pin, admin) VALUES (:pin, 0) RETURNING id"
         cursor = self.execute(sql, {'pin': pin})
         if cursor.rowcount != 1:
             return None
-        userid = cursor.lastrowid + 1
+        userid = cursor.fetchone()[0]
 
         # Now, insert the card, tying it to the account
         sql = "INSERT INTO card (id, userid) VALUES (:cardid, :userid)"

@@ -80,7 +80,7 @@ class APIData(APIProviderInterface, BaseData):
         Returns:
             The ID of the newly created client.
         """
-        sql = "INSERT INTO client (timestamp, name, token) VALUES (:timestamp, :name, :token)"
+        sql = "INSERT INTO client (timestamp, name, token) VALUES (:timestamp, :name, :token) RETURNING id"
         cursor = self.execute(
             sql,
             {
@@ -89,7 +89,8 @@ class APIData(APIProviderInterface, BaseData):
                 'token': str(uuid.uuid4()),
             },
         )
-        return cursor.lastrowid + 1
+
+        return cursor.fetchone()[0]
 
     def get_client(self, clientid: int) -> Optional[Client]:
         """
@@ -169,7 +170,7 @@ class APIData(APIProviderInterface, BaseData):
         Returns:
             The ID of the newly created server.
         """
-        sql = "INSERT INTO server (timestamp, uri, token, config) VALUES (:timestamp, :uri, :token, 0)"
+        sql = "INSERT INTO server (timestamp, uri, token, config) VALUES (:timestamp, :uri, :token, 0) RETURNING id"
         cursor = self.execute(
             sql,
             {
@@ -178,7 +179,7 @@ class APIData(APIProviderInterface, BaseData):
                 'token': token,
             },
         )
-        return cursor.lastrowid + 1
+        return cursor.fetchone()[0]
 
     def get_server(self, serverid: int) -> Optional[Server]:
         """
