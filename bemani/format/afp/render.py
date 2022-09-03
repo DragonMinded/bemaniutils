@@ -1099,7 +1099,7 @@ class AFPRenderer(VerboseOutput):
                 # Get rid of the objects that we're removing from the master list.
                 operating_clip.placed_objects = [
                     obj for obj in operating_clip.placed_objects
-                    if not(obj.object_id == tag.object_id and obj.depth == tag.depth)
+                    if not (obj.object_id == tag.object_id and obj.depth == tag.depth)
                 ]
             else:
                 # Remove the last placed object at this depth. The placed objects list isn't
