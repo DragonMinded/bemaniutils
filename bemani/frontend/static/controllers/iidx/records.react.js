@@ -1,7 +1,7 @@
 /*** @jsx React.DOM */
 
 var valid_sorts = ['series', 'name', 'popularity'];
-var valid_charts = ['SPN', 'SPH', 'SPA', 'DPN', 'DPH', 'DPA'];
+var valid_charts = ['SPB', 'SPN', 'SPH', 'SPA', 'SPL', 'DPN', 'DPH', 'DPA', 'DPL'];
 var valid_mixes = Object.keys(window.versions).map(function(mix) {
     return (parseInt(mix) - 1).toString();
 });
@@ -18,6 +18,7 @@ var sort_names = {
     'grade': 'Grade',
     'clear': 'Clear Lamp',
 };
+var chart_map = [6, 0, 1, 2, 7, 3, 4, 5, 9]
 
 var HighScore = React.createClass({
     render: function() {
@@ -220,12 +221,15 @@ var network_records = React.createClass({
                                     return (
                                         <tr key={songid.toString()}>
                                             <td className="subheader">{ this.state.versions[songid] }</td>
+                                            <td className="subheader">SPB</td>
                                             <td className="subheader">SPN</td>
                                             <td className="subheader">SPH</td>
                                             <td className="subheader">SPA</td>
+                                            <td className="subheader">SPL</td>
                                             <td className="subheader">DPN</td>
                                             <td className="subheader">DPH</td>
                                             <td className="subheader">DPA</td>
+                                            <td className="subheader">DPL</td>
                                         </tr>
                                     );
                                 } else {
@@ -246,18 +250,36 @@ var network_records = React.createClass({
                                                     <div className="songgenre">{ this.state.songs[songid].genre }</div>
                                                 </a>
                                                 <div className="songdifficulties">
+                                                    <span>SP </span>
+                                                    {this.renderDifficulty(songid, 6)}
+                                                    <span> / </span>
                                                     {this.renderDifficulty(songid, 0)}
                                                     <span> / </span>
                                                     {this.renderDifficulty(songid, 1)}
                                                     <span> / </span>
                                                     {this.renderDifficulty(songid, 2)}
                                                     <span> / </span>
+                                                    {this.renderDifficulty(songid, 7)}
+                                                    <span> / </span>
+                                                </div>
+                                                <div classname="songdifficulties">
+                                                    <span>DP </span>
                                                     {this.renderDifficulty(songid, 3)}
                                                     <span> / </span>
                                                     {this.renderDifficulty(songid, 4)}
                                                     <span> / </span>
                                                     {this.renderDifficulty(songid, 5)}
+                                                    <span> / </span>
+                                                    {this.renderDifficulty(songid, 9)}
                                                 </div>
+                                            </td>
+                                            <td className={difficulties[6] > 0 ? "" : "nochart"}>
+                                                <HighScore
+                                                    players={this.state.players}
+                                                    songid={songid}
+                                                    chart={6}
+                                                    score={records[6]}
+                                                />
                                             </td>
                                             <td className={difficulties[0] > 0 ? "" : "nochart"}>
                                                 <HighScore
@@ -283,6 +305,14 @@ var network_records = React.createClass({
                                                     score={records[2]}
                                                 />
                                             </td>
+                                            <td className={difficulties[7] > 0 ? "" : "nochart"}>
+                                                <HighScore
+                                                    players={this.state.players}
+                                                    songid={songid}
+                                                    chart={7}
+                                                    score={records[7]}
+                                                />
+                                            </td>
                                             <td className={difficulties[3] > 0 ? "" : "nochart"}>
                                                 <HighScore
                                                     players={this.state.players}
@@ -305,6 +335,14 @@ var network_records = React.createClass({
                                                     songid={songid}
                                                     chart={5}
                                                     score={records[5]}
+                                                />
+                                            </td>
+                                            <td className={difficulties[9] > 0 ? "" : "nochart"}>
+                                                <HighScore
+                                                    players={this.state.players}
+                                                    songid={songid}
+                                                    chart={9}
+                                                    score={records[9]}
                                                 />
                                             </td>
                                         </tr>
@@ -368,8 +406,8 @@ var network_records = React.createClass({
             var bs = 0;
 
             // Fill in record for current chart only if it exists
-            if (ar) { ac = ar[this.state.subtab]; }
-            if (br) { bc = br[this.state.subtab]; }
+            if (ar) { ac = ar[window.chart_map[this.state.subtab]]; }
+            if (br) { bc = br[window.chart_map[this.state.subtab]]; }
 
             // Get the lamp only if the current chart exisrts
             if (ac) { as = ac.points; }
@@ -425,8 +463,8 @@ var network_records = React.createClass({
             var bl = 0;
 
             // Fill in record for current chart only if it exists
-            if (ar) { ac = ar[this.state.subtab]; }
-            if (br) { bc = br[this.state.subtab]; }
+            if (ar) { ac = ar[window.chart_map[this.state.subtab]]; }
+            if (br) { bc = br[window.chart_map[this.state.subtab]]; }
 
             // Get the lamp only if the current chart exisrts
             if (ac) { al = ac.lamp; }
@@ -473,12 +511,15 @@ var network_records = React.createClass({
                 <thead>
                     <tr>
                         <th className="subheader">Song</th>
+                        <th className="subheader">SPB</th>
                         <th className="subheader">SPN</th>
                         <th className="subheader">SPH</th>
                         <th className="subheader">SPA</th>
+                        <th className="subheader">SPL</th>
                         <th className="subheader">DPN</th>
                         <th className="subheader">DPH</th>
                         <th className="subheader">DPA</th>
+                        <th className="subheader">DPL</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -505,19 +546,37 @@ var network_records = React.createClass({
                                         </a>
                                     </div>
                                     <div className="songdifficulties">
+                                        <span>SP </span>
+                                        {this.renderDifficulty(songid, 6)}
+                                        <span> / </span>
                                         {this.renderDifficulty(songid, 0)}
                                         <span> / </span>
                                         {this.renderDifficulty(songid, 1)}
                                         <span> / </span>
                                         {this.renderDifficulty(songid, 2)}
                                         <span> / </span>
+                                        {this.renderDifficulty(songid, 7)}
+                                        <span> / </span>
+                                    </div>
+                                    <div classname="songdifficulties">
+                                        <span>DP </span>
                                         {this.renderDifficulty(songid, 3)}
                                         <span> / </span>
                                         {this.renderDifficulty(songid, 4)}
                                         <span> / </span>
                                         {this.renderDifficulty(songid, 5)}
+                                        <span> / </span>
+                                        {this.renderDifficulty(songid, 9)}
                                     </div>
                                     { showplays ? <div className="songplays">#{index + 1} - {plays}{plays == 1 ? ' play' : ' plays'}</div> : null }
+                                </td>
+                                <td className={difficulties[6] > 0 ? "" : "nochart"}>
+                                    <HighScore
+                                        players={this.state.players}
+                                        songid={songid}
+                                        chart={6}
+                                        score={records[6]}
+                                    />
                                 </td>
                                 <td className={difficulties[0] > 0 ? "" : "nochart"}>
                                     <HighScore
@@ -543,6 +602,14 @@ var network_records = React.createClass({
                                         score={records[2]}
                                     />
                                 </td>
+                                <td className={difficulties[7] > 0 ? "" : "nochart"}>
+                                    <HighScore
+                                        players={this.state.players}
+                                        songid={songid}
+                                        chart={7}
+                                        score={records[7]}
+                                    />
+                                </td>
                                 <td className={difficulties[3] > 0 ? "" : "nochart"}>
                                     <HighScore
                                         players={this.state.players}
@@ -565,6 +632,14 @@ var network_records = React.createClass({
                                         songid={songid}
                                         chart={5}
                                         score={records[5]}
+                                    />
+                                </td>
+                                <td className={difficulties[9] > 0 ? "" : "nochart"}>
+                                    <HighScore
+                                        players={this.state.players}
+                                        songid={songid}
+                                        chart={9}
+                                        score={records[9]}
                                     />
                                 </td>
                             </tr>

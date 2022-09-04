@@ -1561,7 +1561,7 @@ class ImportJubeat(ImportBase):
 
             self.start_batch()
             for chart in self.charts:
-                if(chart <= 2):
+                if (chart <= 2):
                     # First, try to find in the DB from another version
                     old_id = self.__revivals(songid, chart)
                     if self.no_combine or old_id is None:
@@ -1661,7 +1661,7 @@ class ImportIIDX(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        if version in ['20', '21', '22', '23', '24', '25', '26']:
+        if version in ['20', '21', '22', '23', '24', '25', '26', '27', '28']:
             actual_version = {
                 '20': VersionConstants.IIDX_TRICORO,
                 '21': VersionConstants.IIDX_SPADA,
@@ -1670,9 +1670,11 @@ class ImportIIDX(ImportBase):
                 '24': VersionConstants.IIDX_SINOBUZ,
                 '25': VersionConstants.IIDX_CANNON_BALLERS,
                 '26': VersionConstants.IIDX_ROOTAGE,
+                '27': VersionConstants.IIDX_HEROIC_VERSE,
+                '28': VersionConstants.IIDX_BISTROVER,
             }[version]
             self.charts = [0, 1, 2, 3, 4, 5, 6]
-        elif version in ['omni-20', 'omni-21', 'omni-22', 'omni-23', 'omni-24', 'omni-25', 'omni-26']:
+        elif version in ['omni-20', 'omni-21', 'omni-22', 'omni-23', 'omni-24', 'omni-25', 'omni-26', 'omni-27', 'omni-28']:
             actual_version = {
                 'omni-20': VersionConstants.IIDX_TRICORO,
                 'omni-21': VersionConstants.IIDX_SPADA,
@@ -1681,13 +1683,15 @@ class ImportIIDX(ImportBase):
                 'omni-24': VersionConstants.IIDX_SINOBUZ,
                 'omni-25': VersionConstants.IIDX_CANNON_BALLERS,
                 'omni-26': VersionConstants.IIDX_ROOTAGE,
+                'omni-27': VersionConstants.IIDX_HEROIC_VERSE,
+                'omni-28': VersionConstants.IIDX_BISTROVER,
             }[version] + DBConstants.OMNIMIX_VERSION_BUMP
             self.charts = [0, 1, 2, 3, 4, 5, 6]
         elif version == 'all':
             actual_version = None
             self.charts = [0, 1, 2, 3, 4, 5, 6]
         else:
-            raise Exception("Unsupported IIDX version, expected one of the following: 20, 21, 22, 23, 24, 25, 26, omni-20, omni-21, omni-22, omni-23, omni-24, omni-25, omni-26!")
+            raise Exception("Unsupported IIDX version, expected one of the following: 20, 21, 22, 23, 24, 25, 26, 27, 28, omni-20, omni-21, omni-22, omni-23, omni-24, omni-25, omni-26, omni-27, omni-28!")
 
         super().__init__(config, GameConstants.IIDX, actual_version, no_combine, update)
 
@@ -1697,11 +1701,16 @@ class ImportIIDX(ImportBase):
             for filename in filenames:
                 songid, extension = os.path.splitext(filename)
                 if extension == '.1' or extension == '.ifs':
-                    try:
-                        files[int(songid)] = os.path.join(directory, os.path.join(dirpath, filename))
-                    except ValueError:
-                        # Invalid file
-                        pass
+                    if filename != '12030-p0.ifs':  # for some reason POODLE SPL/DPL is stored in 12030.ifs so this file should not be read.
+                        if '-p0' in songid:         # prefer -p0 since that one extends the chart to include the SPL/DPL charts
+                            songid = songid.replace('-p0', '')
+                        if songid + '-p0' + extension in filenames:
+                            filename = songid + '-p0' + extension
+                        try:
+                            files[int(songid)] = os.path.join(directory, os.path.join(dirpath, filename))
+                        except ValueError:
+                            # Invalid file
+                            pass
 
             for dirname in dirnames:
                 files.update(self.__gather_sound_files(os.path.join(directory, dirname)))
@@ -1752,6 +1761,7 @@ class ImportIIDX(ImportBase):
             21258: 16102,
             21262: 16101,
             21220: 14100,
+            27115: 28100,  # Fucking Fire Beat
         }
         # Some charts were changed, and others kept the same on these
         if chart in [0, 1, 2]:
@@ -1763,44 +1773,8 @@ class ImportIIDX(ImportBase):
             if old_id is not None:
                 return old_id
 
-        modern_to_legacy_map = {
-            23066: 4213,
-            22068: 9203,
-            22052: 10203,
-            22039: 12201,
-            21201: 12204,
-            21064: 12206,
-            23077: 13215,
-            22025: 14202,
-            21068: 14210,
-            22069: 14211,
-            23070: 14214,
-            23069: 15202,
-            21063: 15204,
-            21065: 15205,
-            22028: 15207,
-            22049: 15208,
-            22043: 15209,
-            23060: 15211,
-            21062: 15215,
-            21067: 16207,
-            23062: 16209,
-            21066: 16212,
-            23030: 22096,
-            23051: 22097,
-            11101: 21214,
-            14101: 21221,
-            15104: 21225,
-            15102: 21226,
-            15101: 21231,
-            15103: 21237,
-            16105: 21240,
-            16104: 21242,
-            16103: 21253,
-            16102: 21258,
-            16101: 21262,
-            14100: 21220,
-        }
+        modern_to_legacy_map = {v: k for k, v in legacy_to_modern_map.items()}
+
         # Some charts were changed, and others kept the same on tehse
         if chart in [0, 1, 2]:
             modern_to_legacy_map[23065] = 9206
@@ -1810,6 +1784,79 @@ class ImportIIDX(ImportBase):
             old_id = self.get_music_id_for_song(modern_songid, chart)
             if old_id is not None:
                 return old_id
+
+legg_map = {
+    1017: 1100, 4005: 4100,
+    4001: 4101, 5014: 5100,
+    11032: 11100, 11012: 11101,
+    12002: 12100, 12016: 12101,
+    13010: 13100, 13038: 13101,
+    14009: 14100, 14046: 14101,
+    14022: 14102, 15023: 15101,
+    15007: 15102, 15061: 15103,
+    15004: 15104, 15045: 15105,
+    16050: 16101, 16045: 16102,
+    16031: 16103, 16015: 16104,
+    16002: 16105, 17060: 17101,
+    17028: 17102, 18025: 18100,
+    18011: 18103, 19063: 19100,
+    20100: 20103, 20039: 20104,
+    20068: 20105, 20024: 20106,
+    20019: 20107, 21012: 21100,
+    21059: 21101, 21069: 21102,
+    21073: 21103, 21052: 21104,
+    21048: 21105, 21050: 21106,
+    21029: 21107, 21089: 21108,
+    1005: 21204, 4020: 21205,
+    5007: 21206, 6013: 21207,
+    7038: 21208, 8023: 21209,
+    8024: 21210, 9001: 21211,
+    9051: 21212, 9033: 21213,
+    11028: 21215, 12010: 21216,
+    12052: 21217, 12053: 21218,
+    12054: 21219, 23054: 23100,
+    14053: 21222, 15000: 21223,
+    15001: 21224, 23031: 23101,
+    15014: 21227, 24041: 24100,
+    15015: 21228, 15016: 21229,
+    15020: 21230, 23070: 23102,
+    15025: 21232, 15026: 21233,
+    15032: 21234, 15041: 21235,
+    15054: 21236, 24011: 24101,
+    16000: 21238, 16001: 21239,
+    16011: 21241, 16016: 21243,
+    16017: 21244, 16018: 21245,
+    16020: 21246, 16021: 21247,
+    16022: 21248, 16024: 21249,
+    16025: 21250, 16028: 21251,
+    16030: 21252, 14012: 21264,
+    16034: 21254, 16038: 21255,
+    16040: 21256, 16042: 21257,
+    16047: 21259, 16049: 21260,
+    15005: 21261, 15008: 21263,
+    22008: 22101, 22013: 22102,
+    22024: 22103, 22027: 22104,
+    22031: 22105, 22089: 22106,
+    22006: 22107,
+}
+
+        # HV and above remove song ids for leggendaria charts and move them
+        if chart == 7 or chart == 9:
+            old_legg_id = legg_map.get(songid)
+            old_chart = 2 if chart == 7 else 5
+            if old_legg_id is not None:
+                old_id = self.get_music_id_for_song(old_legg_id, old_chart)
+                if old_id is not None:
+                    return old_id
+
+        if chart == 2 or chart == 5:
+            source_to_legg = {value: key for (key, value) in legg_map.items()}
+            old_legg_id = source_to_legg.get(songid)
+            old_chart = 7 if chart == 2 else 9
+            if old_legg_id is not None:
+                old_id = self.get_music_id_for_song(old_legg_id, old_chart)
+                if old_id is not None:
+                    return old_id
 
         # Failed, so create a new one
         return None
@@ -1850,7 +1897,7 @@ class ImportIIDX(ImportBase):
             musicdb = IIDXMusicDB(binarydata)
             for song in musicdb.songs:
                 bpm = (0, 0)
-                notecounts = [0, 0, 0, 0, 0, 0]
+                notecounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
                 if song.id in self.BANNED_CHARTS:
                     continue
@@ -1885,30 +1932,66 @@ class ImportIIDX(ImportBase):
                             print(f"Could not find chart information for song {song.id}!")
                     else:
                         print(f"No chart information because chart for song {song.id} is missing!")
-                songs.append({
-                    'id': song.id,
-                    'title': song.title,
-                    'artist': song.artist,
-                    'genre': song.genre,
-                    'bpm_min': bpm[0],
-                    'bpm_max': bpm[1],
-                    'difficulty': {
-                        'spn': song.difficulties[0],
-                        'sph': song.difficulties[1],
-                        'spa': song.difficulties[2],
-                        'dpn': song.difficulties[3],
-                        'dph': song.difficulties[4],
-                        'dpa': song.difficulties[5],
-                    },
-                    'notecount': {
-                        'spn': notecounts[0],
-                        'sph': notecounts[1],
-                        'spa': notecounts[2],
-                        'dpn': notecounts[3],
-                        'dph': notecounts[4],
-                        'dpa': notecounts[5],
-                    },
-                })
+                if self.version < VersionConstants.IIDX_HEROIC_VERSE or \
+                    (self.version < (VersionConstants.IIDX_HEROIC_VERSE + DBConstants.OMNIMIX_VERSION_BUMP) and
+                        self.version > DBConstants.OMNIMIX_VERSION_BUMP):
+                    songs.append({
+                        'id': song.id,
+                        'title': song.title,
+                        'artist': song.artist,
+                        'genre': song.genre,
+                        'bpm_min': bpm[0],
+                        'bpm_max': bpm[1],
+                        'difficulty': {
+                            'spn': song.difficulties[0],
+                            'sph': song.difficulties[1],
+                            'spa': song.difficulties[2],
+                            'dpn': song.difficulties[3],
+                            'dph': song.difficulties[4],
+                            'dpa': song.difficulties[5],
+                        },
+                        'notecount': {
+                            'spn': notecounts[0],
+                            'sph': notecounts[1],
+                            'spa': notecounts[2],
+                            'dpn': notecounts[3],
+                            'dph': notecounts[4],
+                            'dpa': notecounts[5],
+                        },
+                    })
+                else:
+                    songs.append({
+                        'id': song.id,
+                        'title': song.title,
+                        'artist': song.artist,
+                        'genre': song.genre,
+                        'bpm_min': bpm[0],
+                        'bpm_max': bpm[1],
+                        'difficulty': {
+                            'spn': song.difficulties[0],
+                            'sph': song.difficulties[1],
+                            'spa': song.difficulties[2],
+                            'dpn': song.difficulties[3],
+                            'dph': song.difficulties[4],
+                            'dpa': song.difficulties[5],
+                            'spb': song.difficulties[6],
+                            'spl': song.difficulties[7],
+                            'dpb': song.difficulties[8],
+                            'dpl': song.difficulties[9],
+                        },
+                        'notecount': {
+                            'spn': notecounts[0],
+                            'sph': notecounts[1],
+                            'spa': notecounts[2],
+                            'dpn': notecounts[3],
+                            'dph': notecounts[4],
+                            'dpa': notecounts[5],
+                            'spb': notecounts[6],
+                            'spl': notecounts[7],
+                            'dpb': notecounts[8],
+                            'dpl': notecounts[9],
+                        },
+                    })
 
         qpros: List[Dict[str, Any]] = []
         if self.version == VersionConstants.IIDX_TRICORO:
@@ -2001,7 +2084,7 @@ class ImportIIDX(ImportBase):
                 'I'  # string containing id and name of the part
             )
         if self.version == VersionConstants.IIDX_CANNON_BALLERS:
-            # Based on LDJ:J:A:A:2018091900
+            # Based on LDJ:J:B:A:2018091900
             stride = 16
             qp_head_offset = 0x2339E0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 231         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -2020,7 +2103,7 @@ class ImportIIDX(ImportBase):
                 'Q'  # string containing id and name of the part
             )
         if self.version == VersionConstants.IIDX_ROOTAGE:
-            # Based on LDJ:J:A:A:2019090200
+            # Based on LDJ:J:B:A:2019090200
             stride = 16
             qp_head_offset = 0x5065F0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
             qp_head_length = 259         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
@@ -2032,6 +2115,44 @@ class ImportIIDX(ImportBase):
             qp_hand_length = 287
             qp_body_offset = 0x50A620
             qp_body_length = 304
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'Q'  # filename
+                'Q'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_HEROIC_VERSE:
+            # Based on LDJ:J:B:A:2020092900
+            stride = 16
+            qp_head_offset = 0x82E6B0    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 290         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0x82F8D0
+            qp_hair_length = 312
+            qp_face_offset = 0x82AFB0
+            qp_face_length = 215
+            qp_hand_offset = 0x82BD20
+            qp_hand_length = 321
+            qp_body_offset = 0x82D130
+            qp_body_length = 344
+            filename_offset = 0
+            qpro_id_offset = 1
+            packedfmt = (
+                'Q'  # filename
+                'Q'  # string containing id and name of the part
+            )
+        if self.version == VersionConstants.IIDX_BISTROVER:
+            # Based on LDJ:J:B:A:2021091500
+            stride = 16
+            qp_head_offset = 0xB03C40    # qpro body parts are stored in 5 separate arrays in the game data, since there can be collision in
+            qp_head_length = 312         # the qpro id numbers, it's best to store them as separate types in the catalog as well.
+            qp_hair_offset = 0xB04FC0
+            qp_hair_length = 328
+            qp_face_offset = 0xB06440
+            qp_face_length = 231
+            qp_hand_offset = 0xB072B0
+            qp_hand_length = 342
+            qp_body_offset = 0xB02570
+            qp_body_length = 365
             filename_offset = 0
             qpro_id_offset = 1
             packedfmt = (
@@ -2095,6 +2216,10 @@ class ImportIIDX(ImportBase):
             3: 'dpn',
             4: 'dph',
             5: 'dpa',
+            6: 'spb',
+            7: 'spl',
+            8: 'dpb',
+            9: 'dpl',
         }
 
         # Format it the way we expect
@@ -2120,6 +2245,10 @@ class ImportIIDX(ImportBase):
                         'dpn': 0,
                         'dph': 0,
                         'dpa': 0,
+                        'spb': 0,
+                        'spl': 0,
+                        'dpb': 0,
+                        'dpl': 0,
                     },
                     'notecount': {
                         'spn': 0,
@@ -2128,6 +2257,10 @@ class ImportIIDX(ImportBase):
                         'dpn': 0,
                         'dph': 0,
                         'dpa': 0,
+                        'spb': 0,
+                        'spl': 0,
+                        'dpb': 0,
+                        'dpl': 0,
                     },
                 }
             if song.chart in chart_map:
@@ -2160,11 +2293,17 @@ class ImportIIDX(ImportBase):
             3: 'dpn',
             4: 'dph',
             5: 'dpa',
+            6: 'spb',
+            7: 'spl',
+            8: 'dpb',
+            9: 'dpl',
         }
         for song in songs:
             self.start_batch()
             for chart in self.charts:
-                if chart == 6:
+                if chart == 6 and (self.version < VersionConstants.IIDX_HEROIC_VERSE or
+                                   (self.version < (VersionConstants.IIDX_HEROIC_VERSE + DBConstants.OMNIMIX_VERSION_BUMP) and
+                                    self.version > DBConstants.OMNIMIX_VERSION_BUMP)):
                     # Beginner chart
                     songdata: Dict[str, Any] = {}
                 else:

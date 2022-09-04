@@ -183,12 +183,12 @@ def viewtopscores(musicid: int) -> Response:
     name = None
     artist = None
     genre = None
-    difficulties = [0, 0, 0, 0, 0, 0]
-    notecounts = [0, 0, 0, 0, 0, 0]
+    difficulties = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    notecounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     for version in versions:
         for omniadd in [0, 10000]:
-            for chart in [0, 1, 2, 3, 4, 5]:
+            for chart in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
                 details = g.data.local.music.get_song(GameConstants.IIDX, version + omniadd, musicid, chart)
                 if details is not None:
                     name = details.name
