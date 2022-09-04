@@ -85,6 +85,12 @@ class IIDXMusicDB:
         elif data[4] == 0x1A:
             offset = 0xD300
             leap = 0x344
+        elif data[4] == 0x1B:
+            offset = 0xDAD0
+            leap = 0x52C
+        elif data[4] == 0x1C:
+            offset = 0xE2A0
+            leap = 0x52C
 
         if sig[0] != b"IIDX":
             raise Exception(f"Invalid signature '{sig[0]}' found!")
@@ -100,36 +106,69 @@ class IIDXMusicDB:
         # Load songs
         while True:
             try:
-                songdata = struct.unpack_from(
-                    "<64s64s64s64s24xB7xBBBBBB162xH",
-                    data,
-                    offset,
-                )
+                if data[4] < 0x1B:
+                    songdata = struct.unpack_from(
+                        "<64s64s64s64s24xB7x6B162xH",
+                        data,
+                        offset,
+                    )
+                else:
+                    # Heroic Verse and above have a completely different structure for song entries
+                    songdata = struct.unpack_from(
+                        "<64s64s64s64s24xB7x10B646xH",
+                        data,
+                        offset,
+                    )
             except struct.error:
                 # Out of input!
                 break
 
             songoffset = offset
             offset = offset + leap
-            song = IIDXSong(
-                songdata[11],
-                parse_string(songdata[0]),
-                parse_string(songdata[1]),
-                parse_string(songdata[2]),
-                parse_string(songdata[3]),
-                [
-                    songdata[5],
-                    songdata[6],
-                    songdata[7],
-                    songdata[8],
-                    songdata[9],
-                    songdata[10],
-                ],
-                songdata[4],
-            )
+            if data[4] < 0x1B:
+                song = IIDXSong(
+                    songdata[11],
+                    parse_string(songdata[0]),
+                    parse_string(songdata[1]),
+                    parse_string(songdata[2]),
+                    parse_string(songdata[3]),
+                    [
+                        songdata[5],
+                        songdata[6],
+                        songdata[7],
+                        songdata[8],
+                        songdata[9],
+                        songdata[10],
+                    ],
+                    songdata[4],
+                )
+            else:
+                song = IIDXSong(
+                    songdata[15],
+                    parse_string(songdata[0]),
+                    parse_string(songdata[1]),
+                    parse_string(songdata[2]),
+                    parse_string(songdata[3]),
+                    [
+                        songdata[6],
+                        songdata[7],
+                        songdata[8],
+                        songdata[11],
+                        songdata[12],
+                        songdata[13],
+                        songdata[5],
+                        songdata[9],
+                        songdata[10],
+                        songdata[14],
+                    ],
+                    songdata[4],
+                )
             if song.artist == "event_data" and song.genre == "event_data":
                 continue
-            self.__songs[songdata[11]] = (song, songoffset)
+            if data[4] < 0x1B:
+                self.__songs[songdata[11]] = (song, songoffset)
+            else:
+                self.__songs[songdata[15]] = (song, songoffset)
 
     @property
     def songs(self) -> List[IIDXSong]:

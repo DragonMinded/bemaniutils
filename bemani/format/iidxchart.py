@@ -12,12 +12,12 @@ class IIDXChart:
     clear ranks for IIDX.
     """
 
-    CHART_POSITIONS: Final[List[int]] = [1, 0, 2, 7, 6, 8]
+    CHART_POSITIONS: Final[List[int]] = [1, 0, 2, 7, 6, 8, 3, 4, 9, 10]
 
     def __init__(self, data: bytes) -> None:
         self.__bpm_min: Optional[int] = None
         self.__bpm_max: Optional[int] = None
-        self.__note_counts = [0, 0, 0, 0, 0, 0]
+        self.__note_counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.__parse_charts(data)
 
     def __parse_header(self, data: bytes) -> List[Tuple[int, int]]:
@@ -30,7 +30,7 @@ class IIDXChart:
     def __parse_charts(self, data: bytes) -> None:
         header = self.__parse_header(data)
 
-        for chart in [0, 1, 2, 3, 4, 5]:
+        for chart in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
             offset, length = header[self.CHART_POSITIONS[chart]]
             chartdata = data[offset : (offset + length)]
             position = 0

@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var valid_charts = ['SPN', 'SPH', 'SPA', 'DPN', 'DPH', 'DPA'].filter(function(val, index) {
+var valid_charts = ['SPN', 'SPH', 'SPA', 'DPN', 'DPH', 'DPA', 'SPB', 'SPL', 'DPB', 'DPL'].filter(function(val, index) {
     return window.difficulties[index] > 0;
 });
 var pagenav = new History(valid_charts);
@@ -8,7 +8,7 @@ var pagenav = new History(valid_charts);
 var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
-        var newscores = [[], [], [], [], [], []];
+        var newscores = [[], [], [], [], [], [], [], [], [], []];
         topscores.map(function(score) {
             newscores[score.chart].push(score);
         }.bind(this));
@@ -76,18 +76,26 @@ var top_scores = createReactClass({
 
     convertChart: function(chart) {
         switch(chart) {
+            case 'SPB':
+                return 6;
             case 'SPN':
                 return 0;
             case 'SPH':
                 return 1;
             case 'SPA':
                 return 2;
+            case 'SPL':
+                return 7;
+            case 'DPB':  // No charts with this but if there were...
+                return 8;
             case 'DPN':
                 return 3;
             case 'DPH':
                 return 4;
             case 'DPA':
-                return 5
+                return 5;
+            case 'DPL':
+                return 9;
             default:
                 return null;
         }
