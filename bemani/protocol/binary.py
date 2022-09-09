@@ -483,7 +483,7 @@ class BinaryEncoder:
     A class capable of taking a Node tree and encoding it into a binary format.
     """
 
-    def __init__(self, tree: Node, encoding: str) -> None:
+    def __init__(self, tree: Node, encoding: str, compressed: bool=True) -> None:
         """
         Initialize the object.
 
@@ -498,6 +498,7 @@ class BinaryEncoder:
         self.__body: List[int] = []
         self.__body_len = 0
         self.executed = False
+        self.compressed = compressed
 
         # Generate the characer LUT
         self.char_lut: Dict[str, int] = {}
@@ -512,6 +513,22 @@ class BinaryEncoder:
         Parameters:
             name - A string name which should be encoded as a node name
         """
+        if not self.compressed:
+            encoded = name.encode(self.encoding)
+            length = len(encoded)
+
+            if length > BinaryEncoding.NAME_MAX_DECOMPRESSED:
+                raise BinaryEncodingException("Node name length over decompressed limit")
+
+            if length < 64:
+                self.stream.write_int(length + 0x3f)
+            else:
+                length += 0x7fbf
+                self.stream.write_int((length >> 8) & 0xff)
+                self.stream.write_int(length & 0xff)
+            self.stream.write_blob(encoded)
+            return
+
         def char_to_bin(ch: str) -> str:
             index = self.char_lut[ch]
             val = bin(index)[2:]
@@ -826,7 +843,7 @@ class BinaryEncoding:
         else:
             return None
 
-    def encode(self, tree: Node, encoding: Optional[str]=None) -> bytes:
+    def encode(self, tree: Node, encoding: Optional[str]=None, compressed: bool=True) -> bytes:
         """
         Given a tree of Node objects, encode the data with the current encoding.
 
@@ -852,6 +869,12 @@ class BinaryEncoding:
         if encoding_magic is None:
             raise BinaryEncodingException(f"Invalid text encoding {encoding}")
 
-        encoder = BinaryEncoder(tree, self.__sanitize_encoding(encoding))
+        encoder = BinaryEncoder(tree, self.__sanitize_encoding(encoding), compressed)
         data = encoder.get_data()
-        return struct.pack(">BBBB", BinaryEncoding.MAGIC, BinaryEncoding.COMPRESSED_WITH_DATA, encoding_magic, (~encoding_magic & 0xFF)) + data
+        return struct.pack(
+            ">BBBB",
+            BinaryEncoding.MAGIC,
+            BinaryEncoding.COMPRESSED_WITH_DATA if compressed else BinaryEncoding.DECOMPRESSED_WITH_DATA,
+            encoding_magic,
+            (~encoding_magic & 0xFF)
+        ) + data
