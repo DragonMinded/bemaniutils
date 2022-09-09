@@ -11,9 +11,11 @@ class TestProtocol(unittest.TestCase):
     def assertLoopback(self, root: Node) -> None:
         proto = EAmuseProtocol()
 
-        for encoding in [EAmuseProtocol.BINARY, EAmuseProtocol.XML]:
+        for encoding in [EAmuseProtocol.BINARY, EAmuseProtocol.BINARY_DECOMPRESSED, EAmuseProtocol.XML]:
             if encoding == EAmuseProtocol.BINARY:
                 loop_name = "binary"
+            elif encoding == EAmuseProtocol.BINARY_DECOMPRESSED:
+                loop_name = "decompressed binary"
             elif encoding == EAmuseProtocol.XML:
                 loop_name = "xml"
             else:
