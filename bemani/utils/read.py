@@ -372,6 +372,7 @@ class ImportPopn(ImportBase):
             '23': VersionConstants.POPN_MUSIC_ECLALE,
             '24': VersionConstants.POPN_MUSIC_USANEKO,
             '25': VersionConstants.POPN_MUSIC_PEACE,
+            '26': VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES,
         }.get(version, -1)
 
         if actual_version == VersionConstants.POPN_MUSIC_TUNE_STREET:
@@ -383,7 +384,7 @@ class ImportPopn(ImportBase):
             # Newer pop'n has charts for easy, normal, hyper, another
             self.charts = [0, 1, 2, 3]
         else:
-            raise Exception("Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24, 25!")
+            raise Exception("Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24, 25, 26!")
 
         super().__init__(config, GameConstants.POPN_MUSIC, actual_version, no_combine, update)
 
@@ -979,6 +980,104 @@ class ImportPopn(ImportBase):
 
             # Offset and step of file DB
             file_offset = 0x2B8010
+            file_step = 32
+
+            # Standard lookups
+            genre_offset = 0
+            title_offset = 1
+            artist_offset = 2
+            comment_offset = 3
+            english_title_offset = 4
+            english_artist_offset = 5
+            extended_genre_offset = -1
+            charts_offset = 8
+            folder_offset = 9
+
+            # Offsets for normal chart difficulties
+            easy_offset = 12
+            normal_offset = 13
+            hyper_offset = 14
+            ex_offset = 15
+
+            # Offsets for battle chart difficulties
+            battle_normal_offset = 16
+            battle_hyper_offset = 17
+
+            # Offsets into which offset to seek to for file lookups
+            easy_file_offset = 18
+            normal_file_offset = 19
+            hyper_file_offset = 20
+            ex_file_offset = 21
+            battle_normal_file_offset = 22
+            battle_hyper_file_offset = 23
+
+            packedfmt = (
+                '<'
+                'I'  # Genre
+                'I'  # Title
+                'I'  # Artist
+                'I'  # Comment
+                'I'  # English Title
+                'I'  # English Artist
+                'H'  # ??
+                'H'  # ??
+                'I'  # Available charts mask
+                'I'  # Folder
+                'I'  # Event unlocks?
+                'I'  # Event unlocks?
+                'B'  # Easy difficulty
+                'B'  # Normal difficulty
+                'B'  # Hyper difficulty
+                'B'  # EX difficulty
+                'B'  # Battle normal difficulty
+                'B'  # Battle hyper difficulty
+                'xx'  # Unknown pointer
+                'H'  # Easy chart pointer
+                'H'  # Normal chart pointer
+                'H'  # Hyper chart pointer
+                'H'  # EX chart pointer
+                'H'  # Battle normal pointer
+                'H'  # Battle hyper pointer
+                'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+            )
+
+            # Offsets into file DB for finding file and folder.
+            file_folder_offset = 0
+            file_name_offset = 1
+
+            filefmt = (
+                '<'
+                'I'  # Folder
+                'I'  # Filename
+                'I'
+                'I'
+                'I'
+                'I'
+                'I'
+                'I'
+            )
+
+            # Decoding function for chart masks
+            def available_charts(mask: int) -> Tuple[bool, bool, bool, bool, bool, bool]:
+                return (
+                    mask & 0x0080000 > 0,  # Easy chart bit
+                    True,  # Always a normal chart
+                    mask & 0x1000000 > 0,  # Hyper chart bit
+                    mask & 0x2000000 > 0,  # Ex chart bit
+                    True,  # Always a battle normal chart
+                    mask & 0x4000000 > 0,  # Battle hyper chart bit
+                )
+
+        elif self.version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES:
+            # Based on M39:J:A:A:2022061300
+
+            # Normal offset for music DB, size
+            offset = 0x2DEA68
+            step = 172
+            length = 2019
+
+            # Offset and step of file DB
+            file_offset = 0x2CDB00
             file_step = 32
 
             # Standard lookups
