@@ -24,7 +24,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
     GAME_MAX_DECO_ID: int = 133
 
     # Item limits are as follows:
-    # 0: 1877 - ID is the music ID that the player purchased/unlocked.
+    # 0: 2019 - ID is the music ID that the player purchased/unlocked.
     # 1: 2344
     # 2: 3
     # 3: 133 - ID points at a character part that can be purchased on the character screen.
@@ -385,8 +385,8 @@ class PopnMusicKaimei(PopnMusicModernBase):
         root = super().format_profile(userid, profile)
 
         account = root.child('account')
-        account.add_child(Node.s16('card_again_count', profile.get_int('point')))
-        account.add_child(Node.s16('sp_riddles_id', profile.get_int('step')))
+        account.add_child(Node.s16('card_again_count', profile.get_int('card_again_count')))
+        account.add_child(Node.s16('sp_riddles_id', profile.get_int('sp_riddles_id')))
 
         # Kaimei riddles events
         event2021 = Node.void('event2021')
