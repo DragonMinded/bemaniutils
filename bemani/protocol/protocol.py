@@ -23,6 +23,7 @@ class EAmuseProtocol:
 
     XML: Final[int] = 1
     BINARY: Final[int] = 2
+    BINARY_DECOMPRESSED: Final[int] = 3
 
     SHIFT_JIS_LEGACY: Final[str] = "shift-jis-legacy"
     SHIFT_JIS: Final[str] = "shift-jis"
@@ -214,6 +215,10 @@ class EAmuseProtocol:
             # It's binary, encode it
             binary = BinaryEncoding()
             return binary.encode(tree, encoding=text_encoding)
+        elif packet_encoding == EAmuseProtocol.BINARY_DECOMPRESSED:
+            # It's binary, encode it
+            binary = BinaryEncoding()
+            return binary.encode(tree, encoding=text_encoding, compressed=False)
         elif packet_encoding == EAmuseProtocol.XML:
             # It's XML, encode it
             xml = XmlEncoding()

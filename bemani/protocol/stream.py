@@ -128,6 +128,20 @@ class OutputStream:
             self.__formatted_data = b''.join(self.__data)
         return self.__formatted_data
 
+    def write_blob(self, blob: bytes) -> int:
+        """
+        Write a binary blob of data to the stream
+
+        Parameters:
+            blob - An blob of data to write.
+
+        Returns:
+            the number of bytes written
+        """
+        self.__data.append(blob)
+        self.__data_len += len(blob)
+        return len(blob)
+
     def write_byte(self, byte: bytes) -> None:
         """
         Write a raw byte to the end of the output stream.
