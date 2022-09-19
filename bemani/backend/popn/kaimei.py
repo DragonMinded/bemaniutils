@@ -382,7 +382,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
         )
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
-        root = PopnMusicModernBase.format_profile(self, userid, profile)
+        root = super().format_profile(userid, profile)
 
         account = root.child('account')
         account.add_child(Node.s16('card_again_count', profile.get_int('point')))
@@ -402,7 +402,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
 
         # Generate Short Riddles for MN tanteisha
         randomRiddles: List[int] = []
-        for x in range(3):
+        for _ in range(3):
             riddle = 0
             while True:
                 riddle = math.floor(random.randrange(1, 21, 1))
@@ -438,7 +438,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
-        newprofile = PopnMusicModernBase.unformat_profile(self, userid, request, oldprofile)
+        newprofile = super().unformat_profile(userid, request, oldprofile)
 
         account = request.child('account')
         if account is not None:
