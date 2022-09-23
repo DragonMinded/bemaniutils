@@ -33,6 +33,12 @@ class JubeatFesto(
     name: str = 'Jubeat Festo'
     version: int = VersionConstants.JUBEAT_FESTO
 
+    JBOX_EMBLEM_NORMAL: Final[int] = 1
+    JBOX_EMBLEM_PREMIUM: Final[int] = 2
+
+    EVENT_STATUS_OPEN: Final[int] = 0x1
+    EVENT_STATUS_COMPLETE: Final[int] = 0x2
+
     EVENTS: Dict[int, Dict[str, bool]] = {
         5: {
             'enabled': False,
@@ -81,9 +87,6 @@ class JubeatFesto(
             'enabled': False,
         },
     }
-
-    EVENT_STATUS_OPEN: Final[int] = 0x1
-    EVENT_STATUS_COMPLETE: Final[int] = 0x2
 
     COURSE_STATUS_SEEN: Final[int] = 0x01
     COURSE_STATUS_PLAYED: Final[int] = 0x02
@@ -1108,6 +1111,54 @@ class JubeatFesto(
             root.set_attribute('status', str(Status.NO_PROFILE))
         return root
 
+    def handle_gameend_final_request(self, request: Node) -> Node:
+        data = request.child('data')
+        player = data.child('player')
+
+        if player is not None:
+            refid = player.child_value('refid')
+        else:
+            refid = None
+
+        if refid is not None:
+            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        else:
+            userid = None
+
+        if userid is not None:
+            profile = self.get_profile(userid)
+
+            # Grab unlock progress
+            item = player.child('item')
+            if item is not None:
+                profile.replace_int_array('emblem_list', 96, item.child_value('emblem_list'))
+
+            # jbox stuff
+            jbox = player.child('jbox')
+            jboxdict = profile.get_dict('jbox')
+            if jbox is not None:
+                jboxdict.replace_int('point', jbox.child_value('point'))
+                emblemtype = jbox.child_value('emblem/type')
+                index = jbox.child_value('emblem/index')
+                if emblemtype == self.JBOX_EMBLEM_NORMAL:
+                    jboxdict.replace_int('normal_index', index)
+                elif emblemtype == self.JBOX_EMBLEM_PREMIUM:
+                    jboxdict.replace_int('premium_index', index)
+            profile.replace_dict('jbox', jboxdict)
+
+            # Born stuff
+            born = player.child('born')
+            if born is not None:
+                profile.replace_int('born_status', born.child_value('status'))
+                profile.replace_int('born_year', born.child_value('year'))
+        else:
+            profile = None
+
+        if userid is not None and profile is not None:
+            self.put_profile(userid, profile)
+
+        return Node.void('gameend')
+
     def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void('gametop')
         datanode = Node.void('data')
@@ -1118,49 +1169,53 @@ class JubeatFesto(
         playdata = Node.void('mdata_list')
         player.add_child(playdata)
 
-        # TODO: Need to add hard mode charts, make previous games ignore them, and sum
-        # them up here as well.
         music = ValidatedDict()
         for score in scores:
+            chart = self.db_to_game_chart(score.chart)
+            if score.chart in {self.CHART_TYPE_HARD_BASIC, self.CHART_TYPE_HARD_ADVANCED, self.CHART_TYPE_HARD_EXTREME}:
+                prefix = 'hard'
+            else:
+                prefix = 'normal'
+
             data = music.get_dict(str(score.id))
-            play_cnt = data.get_int_array('play_cnt', 3)
-            clear_cnt = data.get_int_array('clear_cnt', 3)
-            clear_flags = data.get_int_array('clear_flags', 3)
-            fc_cnt = data.get_int_array('fc_cnt', 3)
-            ex_cnt = data.get_int_array('ex_cnt', 3)
-            points = data.get_int_array('points', 3)
-            music_rate = data.get_int_array('music_rate', 3)
+            play_cnt = data.get_int_array(f'{prefix}_play_cnt', 3)
+            clear_cnt = data.get_int_array(f'{prefix}_clear_cnt', 3)
+            clear_flags = data.get_int_array(f'{prefix}_clear_flags', 3)
+            fc_cnt = data.get_int_array(f'{prefix}_fc_cnt', 3)
+            ex_cnt = data.get_int_array(f'{prefix}_ex_cnt', 3)
+            points = data.get_int_array(f'{prefix}_points', 3)
+            music_rate = data.get_int_array(f'{prefix}_music_rate', 3)
 
             # Replace data for this chart type
-            play_cnt[score.chart] = score.plays
-            clear_cnt[score.chart] = score.data.get_int('clear_count')
-            fc_cnt[score.chart] = score.data.get_int('full_combo_count')
-            ex_cnt[score.chart] = score.data.get_int('excellent_count')
-            points[score.chart] = score.points
-            music_rate[score.chart] = score.data.get_int('music_rate')
+            play_cnt[chart] = score.plays
+            clear_cnt[chart] = score.data.get_int('clear_count')
+            fc_cnt[chart] = score.data.get_int('full_combo_count')
+            ex_cnt[chart] = score.data.get_int('excellent_count')
+            points[chart] = score.points
+            music_rate[chart] = score.data.get_int('music_rate')
 
             # Format the clear flags
-            clear_flags[score.chart] = self.GAME_FLAG_BIT_PLAYED
+            clear_flags[chart] = self.GAME_FLAG_BIT_PLAYED
             if score.data.get_int('clear_count') > 0:
-                clear_flags[score.chart] |= self.GAME_FLAG_BIT_CLEARED
+                clear_flags[chart] |= self.GAME_FLAG_BIT_CLEARED
             if score.data.get_int('full_combo_count') > 0:
-                clear_flags[score.chart] |= self.GAME_FLAG_BIT_FULL_COMBO
+                clear_flags[chart] |= self.GAME_FLAG_BIT_FULL_COMBO
             if score.data.get_int('excellent_count') > 0:
-                clear_flags[score.chart] |= self.GAME_FLAG_BIT_EXCELLENT
+                clear_flags[chart] |= self.GAME_FLAG_BIT_EXCELLENT
 
             # Save chart data back
-            data.replace_int_array('play_cnt', 3, play_cnt)
-            data.replace_int_array('clear_cnt', 3, clear_cnt)
-            data.replace_int_array('clear_flags', 3, clear_flags)
-            data.replace_int_array('fc_cnt', 3, fc_cnt)
-            data.replace_int_array('ex_cnt', 3, ex_cnt)
-            data.replace_int_array('points', 3, points)
-            data.replace_int_array('music_rate', 3, music_rate)
+            data.replace_int_array(f'{prefix}_play_cnt', 3, play_cnt)
+            data.replace_int_array(f'{prefix}_clear_cnt', 3, clear_cnt)
+            data.replace_int_array(f'{prefix}_clear_flags', 3, clear_flags)
+            data.replace_int_array(f'{prefix}_fc_cnt', 3, fc_cnt)
+            data.replace_int_array(f'{prefix}_ex_cnt', 3, ex_cnt)
+            data.replace_int_array(f'{prefix}_points', 3, points)
+            data.replace_int_array(f'{prefix}_music_rate', 3, music_rate)
 
             # Update the ghost (untyped)
-            ghost = data.get('ghost', [None, None, None])
-            ghost[score.chart] = score.data.get('ghost')
-            data['ghost'] = ghost
+            ghost = data.get(f'{prefix}_ghost', [None, None, None])
+            ghost[chart] = score.data.get('ghost')
+            data[f'{prefix}_ghost'] = ghost
 
             # Save it back
             music.replace_dict(str(score.id), data)
@@ -1169,26 +1224,50 @@ class JubeatFesto(
             scoredata = music.get_dict(scoreid)
             musicdata = Node.void('musicdata')
             playdata.add_child(musicdata)
-
             musicdata.set_attribute('music_id', scoreid)
-            normalnode = Node.void('normal')
-            musicdata.add_child(normalnode)
 
-            normalnode.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('play_cnt', 3)))
-            normalnode.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('clear_cnt', 3)))
-            normalnode.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('fc_cnt', 3)))
-            normalnode.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('ex_cnt', 3)))
-            normalnode.add_child(Node.s32_array('score', scoredata.get_int_array('points', 3)))
-            normalnode.add_child(Node.s8_array('clear', scoredata.get_int_array('clear_flags', 3)))
-            normalnode.add_child(Node.s32_array('music_rate', scoredata.get_int_array('music_rate', 3)))
+            # Since in the worst case, we could be wasting a lot of data by always sending both a normal and hard mode block
+            # we need to check if there's even a score array worth sending. This should help with performance for larger
+            # score databases.
+            if scoredata.get_int_array('normal_play_cnt', 3) != [0, 0, 0]:
+                normalnode = Node.void('normal')
+                musicdata.add_child(normalnode)
 
-            for i, ghost in enumerate(scoredata.get('ghost', [None, None, None])):
-                if ghost is None:
-                    continue
+                normalnode.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('normal_play_cnt', 3)))
+                normalnode.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('normal_clear_cnt', 3)))
+                normalnode.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('normal_fc_cnt', 3)))
+                normalnode.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('normal_ex_cnt', 3)))
+                normalnode.add_child(Node.s32_array('score', scoredata.get_int_array('normal_points', 3)))
+                normalnode.add_child(Node.s8_array('clear', scoredata.get_int_array('normal_clear_flags', 3)))
+                normalnode.add_child(Node.s32_array('music_rate', scoredata.get_int_array('normal_music_rate', 3)))
 
-                bar = Node.u8_array('bar', ghost)
-                normalnode.add_child(bar)
-                bar.set_attribute('seq', str(i))
+                for i, ghost in enumerate(scoredata.get('normal_ghost', [None, None, None])):
+                    if ghost is None:
+                        continue
+
+                    bar = Node.u8_array('bar', ghost)
+                    normalnode.add_child(bar)
+                    bar.set_attribute('seq', str(i))
+
+            if scoredata.get_int_array('hard_play_cnt', 3) != [0, 0, 0]:
+                hardnode = Node.void('hard')
+                musicdata.add_child(hardnode)
+
+                hardnode.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('hard_play_cnt', 3)))
+                hardnode.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('hard_clear_cnt', 3)))
+                hardnode.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('hard_fc_cnt', 3)))
+                hardnode.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('hard_ex_cnt', 3)))
+                hardnode.add_child(Node.s32_array('score', scoredata.get_int_array('hard_points', 3)))
+                hardnode.add_child(Node.s8_array('clear', scoredata.get_int_array('hard_clear_flags', 3)))
+                hardnode.add_child(Node.s32_array('music_rate', scoredata.get_int_array('hard_music_rate', 3)))
+
+                for i, ghost in enumerate(scoredata.get('hard_ghost', [None, None, None])):
+                    if ghost is None:
+                        continue
+
+                    bar = Node.u8_array('bar', ghost)
+                    hardnode.add_child(bar)
+                    bar.set_attribute('seq', str(i))
 
         return root
 

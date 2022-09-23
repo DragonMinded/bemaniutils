@@ -672,6 +672,10 @@ class JubeatSaucer(
 
         music = ValidatedDict()
         for score in scores:
+            # Ignore festo-and-above chart types.
+            if score.chart not in {self.CHART_TYPE_BASIC, self.CHART_TYPE_ADVANCED, self.CHART_TYPE_EXTREME}:
+                continue
+
             data = music.get_dict(str(score.id))
             play_cnt = data.get_int_array('play_cnt', 3)
             clear_cnt = data.get_int_array('clear_cnt', 3)
