@@ -693,7 +693,10 @@ class JubeatFesto(
 
         # Mapping of what music is allowed by default, if this is set to all 0's
         # then the game will crash because it can't figure out what default song
-        # to choose for new player sort.
+        # to choose for new player sort. The way to calculate what song one of the
+        # bits is for in any music_list array below is to look at the "pos_index"
+        # field in the music_info.xml file. The entry in the array is calculated by
+        # "(pos_index / 32)" and the bit to set is "1 << (pos_index % 32)"
         info.add_child(Node.s32_array(
             'white_music_list',
             [
@@ -784,6 +787,9 @@ class JubeatFesto(
             ],
         ))
 
+        # Bitfield that determines what music is considered "pick up" versus "common" on the jubility
+        # jacket field at the end of the game. Hot music is just the music in the current mix. The
+        # bitfield values were taken from the "pos_index" field for all songs that are in festo.
         info.add_child(Node.s32_array(
             'hot_music_list',
             [
