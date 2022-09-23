@@ -102,7 +102,7 @@ class JubeatQubell(
             evt = Node.void('event')
             event_info.add_child(evt)
             evt.set_attribute('type', str(event))
-            evt.add_child(Node.u8('state', 0x1 if self.EVENTS[event]['enabled'] else 0x0))
+            evt.add_child(Node.u8('state', 1 if self.EVENTS[event]['enabled'] else 0))
 
         # Each of the following two sections should have zero or more child nodes (no
         # particular name) which look like the following:
@@ -549,7 +549,7 @@ class JubeatQubell(
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
-        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version')))
+        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version') and not profile.get_bool('saved')))
 
         # Not saved, but loaded
         info.add_child(Node.s32('mtg_entry_cnt', 123))
@@ -925,6 +925,7 @@ class JubeatQubell(
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
+        newprofile.replace_bool('saved', True)
         data = request.child('data')
 
         # Grab system information
