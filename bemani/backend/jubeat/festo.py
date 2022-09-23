@@ -796,9 +796,9 @@ class JubeatFesto(
                 0, 0, 0, 0,
                 0, 0, 0, 0,
                 0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
+                0, -4194304, -2080769, -1,
+                -17, -3, -33554433, -242,
+                -268435473, 1073741823, -1073748992, 15,
                 0, 0, 0, 0,
                 0, 0, 0, 0,
                 0, 0, 0, 0,
@@ -832,7 +832,6 @@ class JubeatFesto(
         info.add_child(expert_option)
         expert_option.add_child(Node.bool('is_available', True))
 
-        # TODO: Make this configurable.
         all_music_matching = Node.void('all_music_matching')
         info.add_child(all_music_matching)
         all_music_matching.add_child(Node.bool('is_available', True))
