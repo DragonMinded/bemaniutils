@@ -58,6 +58,7 @@ from bemani.client.reflec import (
 )
 from bemani.client.bishi import TheStarBishiBashiClient
 from bemani.client.mga.mga import MetalGearArcadeClient
+from bemani.client.gitadora.nextage import GitadoraNextageClient
 
 
 def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, Any]) -> BaseClient:
@@ -302,6 +303,14 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             config,
         )
 
+    if game == 'gitadora-nextage':
+        return GitadoraNextageClient(
+            proto,
+            pcbid,
+            config,
+        )
+
+
     raise Exception(f'Unknown game {game}')
 
 
@@ -515,6 +524,11 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             'model': "I36:J:A:A:2011092900",
             'avs': None,
         },
+        'gitadora-nextage': {
+            'name': "Gitadora Nextage",
+            'model': "M32:J:A:A:2021021500",
+            'avs': "2.15.9 r6694",
+        },
     }
     if action == 'list':
         for game in sorted([game for game in games]):
@@ -603,6 +617,7 @@ def main() -> None:
         'reflec-5': 'reflec-volzza',
         'reflec-6': 'reflec-volzza2',
         'mga': 'metal-gear-arcade',
+        'gitadora-7': 'gitadora-nextage',
     }.get(game, game)
 
     mainloop(args.address, args.port, args.config, action, game, args.cardid, args.verbose)

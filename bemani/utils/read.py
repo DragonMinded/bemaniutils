@@ -3862,6 +3862,219 @@ class ImportDanceEvolution(ImportBase):
             self.insert_music_id_for_song(next_id, song['id'], 0, song['title'], song['artist'], None, data)
             self.finish_batch()
 
+class ImportGitadora(ImportBase):
+
+    #disable tutorial chart.
+    BANNED_CHART = [
+        2681,
+    ]
+
+    def __init__(
+        self, 
+        config: Config,
+        version: str, 
+        no_combine: bool, 
+        update: bool
+    ) -> None:
+        if version in ['5','6','7','8']:
+            actual_version = {
+                '5': VersionConstants.GITADORA_MATIXX,
+                '6': VersionConstants.GITADORA_EXCHAIN,
+                '7': VersionConstants.GITADORA_NEXTAGE,
+                '8': VersionConstants.GITADORA_HIGH_VOLTAGE,
+            }.get(version, -1)
+
+        elif version in ['omni-5', 'omni-6', 'omni-7', 'omni-8']:
+            actual_version = {
+                'omni-5': VersionConstants.GITADORA_MATIXX,
+                'omni-6': VersionConstants.GITADORA_EXCHAIN,
+                'omni-7': VersionConstants.GITADORA_NEXTAGE,
+                'omni-8': VersionConstants.GITADORA_HIGH_VOLTAGE,
+            }.get(version, -1) + DBConstants.OMNIMIX_VERSION_BUMP
+            # <xg_diff_list __type="u16" __count="15">0 150 370 690 790 0 130 310 410 670 0 140 400 700 770</xg_diff_list>
+            # <xg_diff_list __type="u16" __count="15">1 2 3 4 5 1 2 3 4 5 0 1 2 3 4</xg_diff_list>
+            # 1-4: gf difficulties level. 
+            # 6-9: dm difficulties level
+            # 11-14: bass difficulties level.
+            # thus the chart should be define:
+            # gf:1-4; 5-8.
+            # dm: 1-4
+            # difficulties split with " " space.
+            # gf level: 1,2,3,4
+            # dm level: 6,7,8,9
+            # bass(gf2) level: 11,12,13,14
+        elif version == 'all':
+            actual_version = None
+
+        if actual_version in [
+            None,
+            VersionConstants.GITADORA_MATIXX,
+            VersionConstants.GITADORA_EXCHAIN,
+            VersionConstants.GITADORA_NEXTAGE,
+            VersionConstants.GITADORA_HIGH_VOLTAGE,
+            VersionConstants.GITADORA_MATIXX + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.GITADORA_EXCHAIN + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.GITADORA_NEXTAGE + DBConstants.OMNIMIX_VERSION_BUMP,
+            VersionConstants.GITADORA_HIGH_VOLTAGE + DBConstants.OMNIMIX_VERSION_BUMP,
+        ]:
+            self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]  
+
+        else:
+            raise Exception("Unsupported Gitadora version, expected one of the following: 5,6,7,8")
+
+        super().__init__(config, GameConstants.GITADORA, actual_version, no_combine, update)
+
+    def import_music_db(self, xmlfile: str) -> None:
+        with open(xmlfile, 'rb') as fp:
+            #  This is gross, but elemtree won't do it for us so whatever
+            bytedata = fp.read()
+            #  strdata = bytedata.decode('shift_jisx0213', errors='replace')
+            strdata = bytedata.decode('utf-8')
+        root = ET.fromstring(strdata)
+
+        for music_entry in root.findall('mdb_data'):
+            #  Grab the ID
+            songid = int(music_entry.find('music_id').text)
+            title = music_entry.find('title_name').text
+            artist = music_entry.find('artist_title_ascii').text
+            difficulties_list = music_entry.find('xg_diff_list').text
+            difficulties_space_split_list = difficulties_list.split(' ')
+            difficulties = list(map(eval, difficulties_space_split_list))
+            #  Find normal info about the song
+            bpm = float(music_entry.find('bpm').text)
+            bpm2 = float(music_entry.find('bpm2').text)
+            data_ver = int(music_entry.find('data_ver').text)
+            # first. split each difficulties list into this type.
+            # 0 230 480 565 585 0 155 390 710 0 0 255 495 0 0
+            # ['0', '230', '480', '565', '585', '0', '155', '390', '710', '0', '0', '255', '495', '0', '0']
+            # [0, 230, 480, 565, 585, 0, 155, 390, 710, 0, 0, 255, 495, 0, 0]
+
+            #  Import it
+            self.start_batch()
+            if songid in self.BANNED_CHART:
+                continue
+            for chart in self.charts:
+                #  First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(songid, chart)
+                if self.no_combine or old_id is None:
+                    #  Insert original
+                    print(f"New entry for {songid} chart {chart}")
+                    next_id = self.get_next_music_id()
+                else:
+                    #  Insert pointing at same ID so scores transfer
+                    print(f"Reused entry for {songid} chart {chart}")
+                    next_id = old_id
+                data = {
+                    'difficulty': difficulties[chart],
+                    'bpm': bpm,
+                    'bpm2': bpm2,
+                    'data_ver': data_ver
+                }
+                self.insert_music_id_for_song(next_id, songid, chart, title, artist, None, data)
+            self.finish_batch()
+    
+    # import player-board info.
+    def import_trbitem_db(self, xmlfile: str) -> None:
+        with open(xmlfile, 'rb') as fp:
+            #  This is gross, but elemtree won't do it for us so whatever
+            bytedata = fp.read()
+            strdata = bytedata.decode('shift_jisx0213', errors='replace')
+        root = ET.fromstring(strdata)
+        
+        for trbitem in root.findall('.//trbitem'):
+            self.start_batch()
+            trbitem_id = int(trbitem.find('index').text)
+            trbitem_name = trbitem.find('name').text
+            trbitem_data = dict(
+                name=trbitem_name
+            )
+            print(f"New catalog entry for quest {trbitem_id}")
+            self.insert_catalog_entry('trbitem', trbitem_id, trbitem_data,)
+            self.finish_batch()
+
+    def import_from_server(self, server: str, token: str) -> None:
+        # First things first, lets try to import the music DB. We want to make
+        # sure that even if the server doesn't respond right, we have a chart
+        # entry for every chart for each song we're importing.
+        music = self.remote_music(server, token)
+        music_lut: Dict[int, Dict[int, Song]] = {}
+        for entry in music.get_all_songs(self.game, self.version):
+            if entry.id not in music_lut:
+                music_lut[entry.id] = {
+                    chart: Song(
+                        entry.game,
+                        entry.version,
+                        entry.id,
+                        chart,
+                        entry.name,
+                        entry.artist,
+                        entry.genre,
+                        {}
+                    ) for chart in self.charts
+                }
+            music_lut[entry.id][entry.chart] = entry
+
+        # Import it
+        for _, songs in music_lut.items():
+            self.start_batch()
+            for _, song in songs.items():
+                # First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(song.id, song.chart)
+                if self.no_combine or old_id is None:
+                    # Insert original
+                    print(f"New entry for {song.id} chart {song.chart}")
+                    next_id = self.get_next_music_id()
+                else:
+                    # Insert pointing at same ID so scores transfer
+                    print(f"Reused entry for {song.id} chart {song.chart}")
+                    next_id = old_id
+                data = {
+                    'difficulty': song.data.get_int('difficulty'),
+                    'bpm': song.data.get_int('bpm'),
+                    'bpm2': song.data.get_int('bpm2'),
+                }
+                print(song.data)
+                self.insert_music_id_for_song(next_id, song.id, song.chart, song.name, song.artist, None, data)
+            self.finish_batch()
+
+        # Now, attempt to insert any catalog items we got for this version.
+        game = self.remote_game(server, token)
+        self.start_batch()
+        for item in game.get_items(self.game, self.version):
+            if item.type == "trbitem":
+                print(f"New catalog entry for trbitem {item.id}")
+                print(item.data)
+                self.insert_catalog_entry(
+                    'trbitem',
+                    item.id,
+                    {
+                        'name': item.data.get_str('name'),
+                    }
+                )
+        self.finish_batch()
+
+    def import_metadata(self, tsvfile: str) -> None:
+        if self.version is not None:
+            raise Exception("Unsupported Gitadora version, expected one of the following: all")
+
+        with open(tsvfile, newline='') as tsvhandle:
+            gitadorareader = csv.reader(tsvhandle, delimiter='\t', quotechar='"')
+            for row in gitadorareader:
+                songid = int(row[0])
+                name = row[1]
+                artist = row[2]
+
+                if len(name) == 0:
+                    name = None
+                if len(artist) == 0:
+                    artist = None
+
+                print(f"Setting name/artist/genre for {songid} all charts")
+                self.start_batch()
+                for chart in self.charts:
+                    self.update_metadata_for_song(songid, chart, name, artist)
+                self.finish_batch()   
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Import Game Music DB')
@@ -4103,5 +4316,24 @@ if __name__ == "__main__":
         danevo.import_music_db(songs)
         danevo.close()
 
+    elif series == GameConstants.GITADORA:
+        gitadora = ImportGitadora(config, args.version, args.no_combine, args.update)
+        if args.tsv is not None:
+            # Special case for Gitadora, grab the title/artist metadata that was
+            # hand-populated since its not in the music DB.
+            gitadora.import_metadata(args.tsv)
+        else:
+            if args.server and args.token:
+                gitadora.import_from_server(args.server, args.token)
+            elif args.xml is not None:
+                gitadora.import_music_db(args.xml)
+                gitadora.import_trbitem_db(args.xml)
+            
+            else:    
+                raise Exception(
+                    'No music-info.xml provided and no remote server specified! ' +
+                    'Please provide either a --xml or a --server and --token option!'
+                )
+        gitadora.close()
     else:
         raise Exception('Unsupported game series!')

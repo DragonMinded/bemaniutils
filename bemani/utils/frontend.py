@@ -15,6 +15,7 @@ from bemani.frontend.ddr import ddr_pages
 from bemani.frontend.sdvx import sdvx_pages
 from bemani.frontend.reflec import reflec_pages
 from bemani.frontend.museca import museca_pages
+from bemani.frontend.gitadora import gitadora_pages
 from bemani.utils.config import load_config as base_load_config, register_games as base_register_games
 
 
@@ -44,6 +45,8 @@ def register_blueprints() -> None:
         app.register_blueprint(reflec_pages)
     if GameConstants.MUSECA in config.support:
         app.register_blueprint(museca_pages)
+    if GameConstants.GITADORA in config.support:
+        app.register_blueprint(gitadora_pages)
 
 
 def register_games() -> None:

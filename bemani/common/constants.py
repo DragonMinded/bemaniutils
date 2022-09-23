@@ -20,6 +20,7 @@ class GameConstants(Enum):
     POPN_MUSIC: Final[str] = 'pnm'
     REFLEC_BEAT: Final[str] = 'reflec'
     SDVX: Final[str] = 'sdvx'
+    GITADORA: Final[str] = 'gitadora'
 
 
 class VersionConstants:
@@ -136,6 +137,15 @@ class VersionConstants:
     SDVX_INFINITE_INFECTION: Final[int] = 2
     SDVX_GRAVITY_WARS: Final[int] = 3
     SDVX_HEAVENLY_HAVEN: Final[int] = 4
+
+    GITADORA: Final[int] = 1
+    GITADORA_OVERDRIVE: Final[int] = 2
+    GITADORA_TRIBOOST: Final[int] = 3
+    GITADORA_TRIBOOST_RE_EVOLVE: Final[int] = 4
+    GITADORA_MATIXX: Final[int] = 5
+    GITADORA_EXCHAIN: Final[int] = 6
+    GITADORA_NEXTAGE: Final[int] = 7
+    GITADORA_HIGH_VOLTAGE: Final[int] = 8
 
 
 class APIConstants(Enum):
@@ -283,6 +293,20 @@ class DBConstants:
     SDVX_GRADE_AAA: Final[int] = 700
     SDVX_GRADE_AAA_PLUS: Final[int] = 800
     SDVX_GRADE_S: Final[int] = 900
+
+    GITADORA_CLEAR_TYPE_NO_PLAY: Final[int] = 50
+    GITADORA_CLEAR_TYPE_FAILED: Final[int] = 100
+    GITADORA_CLEAR_TYPE_CLEAR: Final[int] = 200
+    GITADORA_CLEAR_TYPE_FULL_COMBO: Final[int] = 300
+    GITADORA_CLEAR_TYPE_EXCELLENT: Final[int] = 400
+    GITADORA_GRADE_E: Final[int] = 100
+    GITADORA_GRADE_D: Final[int] = 200
+    GITADORA_GRADE_C: Final[int] = 300
+    GITADORA_GRADE_B: Final[int] = 400
+    GITADORA_GRADE_A: Final[int]  = 500
+    GITADORA_GRADE_S: Final[int]  = 600
+    GITADORA_GRADE_SS: Final[int]  = 700
+    GITADORA_GRADE_EXCELLENT: Final[int]  = 800
 
 
 class BroadcastConstants(Enum):

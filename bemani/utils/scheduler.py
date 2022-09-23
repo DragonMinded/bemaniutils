@@ -10,6 +10,7 @@ from bemani.backend.ddr import DDRFactory
 from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
 from bemani.backend.museca import MusecaFactory
+from bemani.backend.gitadora import GitadoraFactory
 from bemani.frontend.popn import PopnMusicCache
 from bemani.frontend.iidx import IIDXCache
 from bemani.frontend.jubeat import JubeatCache
@@ -19,6 +20,7 @@ from bemani.frontend.ddr import DDRCache
 from bemani.frontend.sdvx import SoundVoltexCache
 from bemani.frontend.reflec import ReflecBeatCache
 from bemani.frontend.museca import MusecaCache
+from bemani.frontend.gitadora import GitadoraCache
 from bemani.common import GameConstants, Time
 from bemani.data import Config, Data
 from bemani.utils.config import load_config
@@ -57,6 +59,9 @@ def run_scheduled_work(config: Config) -> None:
     if GameConstants.MUSECA in config.support:
         enabled_factories.append(MusecaFactory)
         enabled_caches.append(MusecaCache)
+    if GameConstants.GITADORA in config.support:
+        enabled_factories.append(GitadoraFactory)
+        enabled_caches.append(GitadoraCache)
 
     # First, run any backend scheduled work
     for factory in enabled_factories:
