@@ -5,7 +5,9 @@ from typing_extensions import Final
 
 from bemani.backend.jubeat.base import JubeatBase
 from bemani.backend.jubeat.common import (
+    JubeatDemodataGetHitchartHandler,
     JubeatDemodataGetNewsHandler,
+    JubeatGamendRegisterHandler,
     JubeatGametopGetMeetingHandler,
     JubeatLobbyCheckHandler,
     JubeatLoggerReportHandler,
@@ -13,16 +15,18 @@ from bemani.backend.jubeat.common import (
 from bemani.backend.jubeat.clan import JubeatClan
 
 from bemani.backend.base import Status
-from bemani.common import Profile, ValidatedDict, VersionConstants
-from bemani.data import Data, UserID, Score, Song
+from bemani.common import Profile, Time, ValidatedDict, VersionConstants
+from bemani.data import Data, Achievement, UserID, Score, Song
 from bemani.protocol import Node
 
 
 class JubeatFesto(
+    JubeatDemodataGetHitchartHandler,
     JubeatDemodataGetNewsHandler,
+    JubeatGamendRegisterHandler,
     JubeatGametopGetMeetingHandler,
-    JubeatLoggerReportHandler,
     JubeatLobbyCheckHandler,
+    JubeatLoggerReportHandler,
     JubeatBase
 ):
 
@@ -81,10 +85,27 @@ class JubeatFesto(
     EVENT_STATUS_OPEN: Final[int] = 0x1
     EVENT_STATUS_COMPLETE: Final[int] = 0x2
 
-    # TODO: Verify these
     COURSE_STATUS_SEEN: Final[int] = 0x01
     COURSE_STATUS_PLAYED: Final[int] = 0x02
     COURSE_STATUS_CLEARED: Final[int] = 0x04
+
+    COURSE_TYPE_PERMANENT: Final[int] = 1
+    COURSE_TYPE_TIME_BASED: Final[int] = 2
+
+    COURSE_CLEAR_SCORE: Final[int] = 1
+    COURSE_CLEAR_COMBINED_SCORE: Final[int] = 2
+    COURSE_CLEAR_HAZARD: Final[int] = 3
+
+    COURSE_HAZARD_EXC1: Final[int] = 1
+    COURSE_HAZARD_EXC2: Final[int] = 2
+    COURSE_HAZARD_EXC3: Final[int] = 3
+    COURSE_HAZARD_FC1: Final[int] = 4
+    COURSE_HAZARD_FC2: Final[int] = 5
+    COURSE_HAZARD_FC3: Final[int] = 6
+
+    GAME_CHART_TYPE_BASIC: Final[int] = 0
+    GAME_CHART_TYPE_ADVANCED: Final[int] = 1
+    GAME_CHART_TYPE_EXTREME: Final[int] = 2
 
     # Return the netlog service so that Festo doesn't crash on coin-in.
     extra_services: List[str] = [
@@ -94,6 +115,30 @@ class JubeatFesto(
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatClan(self.data, self.config, self.model)
+
+    def game_to_db_chart(self, game_chart: int, hard_mode: bool) -> int:
+        if hard_mode:
+            return {
+                self.GAME_CHART_TYPE_BASIC: self.CHART_TYPE_HARD_BASIC,
+                self.GAME_CHART_TYPE_ADVANCED: self.CHART_TYPE_HARD_ADVANCED,
+                self.GAME_CHART_TYPE_EXTREME: self.CHART_TYPE_HARD_EXTREME,
+            }[game_chart]
+        else:
+            return {
+                self.GAME_CHART_TYPE_BASIC: self.CHART_TYPE_BASIC,
+                self.GAME_CHART_TYPE_ADVANCED: self.CHART_TYPE_ADVANCED,
+                self.GAME_CHART_TYPE_EXTREME: self.CHART_TYPE_EXTREME,
+            }[game_chart]
+
+    def db_to_game_chart(self, db_chart: int) -> int:
+        return {
+            self.CHART_TYPE_BASIC: self.GAME_CHART_TYPE_BASIC,
+            self.CHART_TYPE_ADVANCED: self.GAME_CHART_TYPE_ADVANCED,
+            self.CHART_TYPE_EXTREME: self.GAME_CHART_TYPE_EXTREME,
+            self.CHART_TYPE_HARD_BASIC: self.GAME_CHART_TYPE_BASIC,
+            self.CHART_TYPE_HARD_ADVANCED: self.GAME_CHART_TYPE_ADVANCED,
+            self.CHART_TYPE_HARD_EXTREME: self.GAME_CHART_TYPE_EXTREME,
+        }[db_chart]
 
     @classmethod
     def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
@@ -131,8 +176,479 @@ class JubeatFesto(
                 data.local.network.mark_scheduled(cls.game, cls.version, 'fc_challenge', 'daily')
         return events
 
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            'bools': [
+                {
+                    'name': 'Enable Stone Tablet Event',
+                    'tip': 'Enables the Stone Tablet event',
+                    'category': 'game_config',
+                    'setting': 'festo_dungeon',
+                },
+                {
+                    'name': '50th Anniversary Celebration',
+                    'tip': 'Display the 50th anniversary screen in attract mode',
+                    'category': 'game_config',
+                    'setting': '50th_anniversary',
+                },
+            ]
+        }
+
     def __get_course_list(self) -> List[Dict[str, Any]]:
         return [
+            # ASARI CUP
+            {
+                'id': 1,
+                'name': 'はじめてのビーチ',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 1,
+                'score': 700000,
+                'music': [
+                    [(60000080, 0), (90000025, 0), (90000040, 0)],
+                    [(60000086, 0), (70000047, 0)],
+                    [(90000027, 0)],
+                ],
+            },
+            {
+                'id': 2,
+                'name': '【初段】超幸せハイテンション',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 1,
+                'score': 700000,
+                'music': [
+                    [(60000100, 0), (90000030, 0), (90000079, 0)],
+                    [(70000125, 0), (90000050, 0)],
+                    [(70000106, 0)],
+                ],
+            },
+            {
+                'id': 3,
+                'name': 'アニメランニング',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 2,
+                'score': 750000,
+                'music': [
+                    [(90000031, 0), (90000037, 0), (90000082, 0)],
+                    [(80000120, 0)],
+                    [(80000125, 0)],
+                ],
+            },
+            {
+                'id': 4,
+                'name': 'パブリックリゾート',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 2,
+                'score': 750000,
+                'music': [
+                    [(90000040, 0), (50000296, 0), (90000044, 0)],
+                    [(90000033, 0), (90000039, 0)],
+                    [(80000091, 0)],
+                ],
+            },
+            {
+                'id': 5,
+                'name': '【二段】その笑顔は甘く蕩ける',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 3,
+                'score': 800000,
+                'music': [
+                    [(50000268, 0), (70000039, 0), (90000051, 0)],
+                    [(70000091, 0), (70000042, 0)],
+                    [(60000053, 0)],
+                ],
+            },
+            # KISAGO CUP
+            {
+                'id': 11,
+                'name': '電脳享受空間',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 800000,
+                'music': [
+                    [(70000046, 1), (70000160, 1), (80000126, 1)],
+                    [(80000031, 1), (80000097, 1)],
+                    [(90000049, 1)],
+                ],
+            },
+            {
+                'id': 12,
+                'name': '孤高の少女は破滅を願う',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 850000,
+                'music': [
+                    [(50000202, 0), (70000117, 0), (70000134, 0)],
+                    [(50000212, 0), (80000124, 1)],
+                    [(90001008, 1)],
+                ],
+            },
+            {
+                'id': 13,
+                'name': 'スタミナアップ！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 5,
+                'score': 2600000,
+                'music': [
+                    [(50000242, 0), (90000037, 1)],
+                    [(50000260, 1), (50000261, 1)],
+                    [(90000081, 1)],
+                ],
+            },
+            {
+                'id': 14,
+                'name': '【三段】この花を貴方へ',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 850000,
+                'music': [
+                    [(90000034, 1), (90000037, 1), (90000042, 1)],
+                    [(80000120, 1), (80001010, 1)],
+                    [(40000051, 1)],
+                ],
+            },
+            {
+                'id': 15,
+                'name': '【四段】嗚呼、大繁盛！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 6,
+                'score': 2600000,
+                'music': [
+                    [(50000085, 2), (50000237, 2), (80000080, 2)],
+                    [(50000172, 2), (50000235, 2)],
+                    [(70000065, 2)],
+                ],
+            },
+            # MURU CUP
+            {
+                'id': 21,
+                'name': '黒船来航',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 7,
+                'score': 850000,
+                'music': [
+                    [(50000086, 2), (60000066, 2), (80000040, 1)],
+                    [(50000096, 2), (80000048, 2)],
+                    [(50000091, 2)],
+                ],
+            },
+            {
+                'id': 22,
+                'name': '【五段】濁流を乗り越えて',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 7,
+                'score': 2650000,
+                'music': [
+                    [(50000343, 2), (60000060, 1), (60000071, 2)],
+                    [(60000027, 2), (80000048, 2)],
+                    [(20000038, 2)],
+                ],
+            },
+            {
+                'id': 23,
+                'name': 'のんびり。ゆったり。ほがらかに。',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 8,
+                'score': 950000,
+                'music': [
+                    [(40000154, 2), (80000124, 1), (80000126, 2)],
+                    [(60000048, 2), (90000026, 2)],
+                    [(90000050, 2)],
+                ],
+            },
+            {
+                'id': 24,
+                'name': '海・KOI・スィニョーレ！！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 8,
+                'score': 2650000,
+                'music': [
+                    [(50000201, 2)],
+                    [(50000339, 2)],
+                    [(50000038, 2)],
+                ],
+            },
+            {
+                'id': 25,
+                'name': '【六段】電柱を見ると思出す',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 9,
+                'score': 2750000,
+                'music': [
+                    [(50000288, 2), (80000046, 2), (80001008, 2)],
+                    [(50000207, 2), (70000117, 2)],
+                    [(30000048, 2)],
+                ],
+            },
+            # SAZAE CUP
+            {
+                'id': 31,
+                'name': '超フェスタ！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 10,
+                'score': 930000,
+                'music': [
+                    [(70000076, 2), (70000077, 2)],
+                    [(20000038, 2), (40000160, 2)],
+                    [(70000145, 2)],
+                ],
+            },
+            {
+                'id': 32,
+                'name': '【七段】操り人形はほくそ笑む',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 10,
+                'score': 2800000,
+                'music': [
+                    [(70000006, 2), (70000171, 2), (80000003, 2)],
+                    [(50000078, 2), (50000324, 2)],
+                    [(80000118, 2)],
+                ],
+            },
+            {
+                'id': 33,
+                'name': '絶体絶命スリーチャレンジ！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_HAZARD,
+                'hazard_type': self.COURSE_HAZARD_FC3,
+                'difficulty': 11,
+                'score': 2800000,
+                'music': [
+                    [(50000238, 2), (70000003, 2), (90000051, 1)],
+                    [(50000027, 2), (50000387, 2)],
+                    [(80000056, 2)],
+                ],
+            },
+            {
+                'id': 34,
+                'name': '天国の舞踏会',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 11,
+                'score': 2800000,
+                'music': [
+                    [(60000065, 1)],
+                    [(80001007, 2)],
+                    [(90001007, 2)],
+                ],
+            },
+            {
+                'id': 35,
+                'name': '【八段】山の賽子',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 12,
+                'score': 2820000,
+                'music': [
+                    [(50000200, 2), (50000291, 2), (60000003, 2)],
+                    [(50000129, 2), (80000021, 2)],
+                    [(80000087, 2)],
+                ],
+            },
+            # HOTATE CUP
+            {
+                'id': 41,
+                'name': 'The 8th KAC 個人部門',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000052, 2)],
+                    [(90000013, 2)],
+                    [(70000167, 2)],
+                ],
+            },
+            {
+                'id': 42,
+                'name': 'The 8th KAC 団体部門',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000009, 2)],
+                    [(80000133, 2)],
+                    [(80000101, 2)],
+                ],
+            },
+            {
+                'id': 43,
+                'name': 'BEMANI MASTER KOREA 2019',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000003, 2)],
+                    [(80000090, 2)],
+                    [(90000009, 2)],
+                ],
+            },
+            {
+                'id': 44,
+                'name': '初めてのHARD MODE再び',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 13,
+                'score': 2750000,
+                'music': [
+                    [(50000096, 2), (50000263, 2), (80000119, 2)],
+                    [(60000021, 2), (60000075, 2)],
+                    [(60000039, 2)],
+                ],
+            },
+            {
+                'id': 45,
+                'name': '【九段】2人からの挑戦状',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 13,
+                'score': 2830000,
+                'music': [
+                    [(50000023, 2), (80000025, 2), (80000106, 2)],
+                    [(50000124, 2), (80000082, 2)],
+                    [(60000115, 2)],
+                ],
+            },
+            {
+                'id': 46,
+                'name': '天空の庭　太陽の園',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 13,
+                'score': 965000,
+                'music': [
+                    [(40000153, 2)],
+                    [(80000007, 2)],
+                    [(70000173, 2)],
+                ],
+            },
+            {
+                'id': 47,
+                'name': '緊急！迅速！大混乱！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 14,
+                'score': 2900000,
+                'music': [
+                    [(20000040, 2), (50000244, 2), (70000145, 2)],
+                    [(40000046, 2), (50000158, 2)],
+                    [(40000057, 2)],
+                ],
+            },
+            {
+                'id': 48,
+                'name': '【十段】時の超越者',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 2820000,
+                'music': [
+                    [(20000051, 2), (50000249, 2), (70000108, 2)],
+                    [(40000046, 2), (50000180, 2)],
+                    [(50000134, 2)],
+                ],
+            },
+            # OSHAKO CUP
+            {
+                'id': 51,
+                'name': '【皆伝】甘味なのに甘くない',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 15,
+                'score': 2850000,
+                'music': [
+                    [(90000010, 2)],
+                    [(80000101, 2)],
+                    [(50000102, 2)],
+                ],
+            },
+            {
+                'id': 52,
+                'name': '【伝導】真の青が魅せた空',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 15,
+                'score': 970000,
+                'music': [
+                    [(50000332, 2)],
+                    [(70000098, 2)],
+                    [(90001005, 2)],
+                ],
+            },
+            {
+                'id': 53,
+                'name': '豪華絢爛高揚絶頂',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 16,
+                'score': 2960000,
+                'music': [
+                    [(10000065, 2)],
+                    [(50000323, 2)],
+                    [(50000208, 2)],
+                ],
+            },
+            {
+                'id': 54,
+                'name': '絢爛豪華激情無常',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 16,
+                'score': 2960000,
+                'music': [
+                    [(60000010, 2)],
+                    [(70000110, 2)],
+                    [(90000047, 2)],
+                ],
+            },
+            {
+                'id': 55,
+                'name': '【指神】王の降臨',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 16,
+                'score': 2980000,
+                'music': [
+                    [(70000094, 2)],
+                    [(80000088, 2)],
+                    [(70000110, 2)],
+                ],
+            },
         ]
 
     def __get_global_info(self) -> Node:
@@ -147,29 +663,8 @@ class JubeatFesto(
             evt.set_attribute('type', str(event))
             evt.add_child(Node.u8('state', 1 if self.EVENTS[event]['enabled'] else 0))
 
-        # Each of the following two sections should have zero or more child nodes (no
-        # particular name) which look like the following:
-        #     <node>
-        #         <id __type="s32">songid</id>
-        #         <stime __type="str">start time?</stime>
-        #         <etime __type="str">end time?</etime>
-        #     </node>
-        # Share music?
-        share_music = Node.void('share_music')
-        info.add_child(share_music)
-
         genre_def_music = Node.void('genre_def_music')
         info.add_child(genre_def_music)
-
-        weekly_music = Node.void('weekly_music')
-        info.add_child(weekly_music)
-        weekly_music.add_child(Node.s32("value", 0))
-
-        # The following section should have zero or more child nodes (no particular
-        # name) which look like the following, with a song ID in the node's id attribute:
-        #     <node id="" />
-        weekly_music_list = Node.void('music_list')
-        weekly_music.add_child(weekly_music_list)
 
         info.add_child(Node.s32_array(
             'black_jacket_list',
@@ -218,28 +713,30 @@ class JubeatFesto(
             ],
         ))
 
+        # Mapping of what markers and themes are allowed for profile customization
+        # by default. If this is set to all 0's then there are no markers or themes
+        # offered and the default marker is forced.
         info.add_child(Node.s32_array(
-            'add_default_music_list',
+            'white_marker_list',
             [
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
             ],
         ))
 
+        info.add_child(Node.s32_array(
+            'white_theme_list',
+            [
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+                -1, -1, -1, -1,
+            ],
+        ))
+
+        # Possibly default unlocks for songs. Need to investigate further.
         info.add_child(Node.s32_array(
             'open_music_list',
             [
@@ -306,26 +803,6 @@ class JubeatFesto(
             ],
         ))
 
-        info.add_child(Node.s32_array(
-            'white_marker_list',
-            [
-                -1, -1, -1, -1,
-                -1, -1, -1, -1,
-                -1, -1, -1, -1,
-                -1, -1, -1, -1,
-            ],
-        ))
-
-        info.add_child(Node.s32_array(
-            'white_theme_list',
-            [
-                -1, -1, -1, -1,
-                -1, -1, -1, -1,
-                -1, -1, -1, -1,
-                -1, -1, -1, -1,
-            ],
-        ))
-
         jbox = Node.void('jbox')
         info.add_child(jbox)
         jbox.add_child(Node.s32('point', 0))
@@ -343,46 +820,180 @@ class JubeatFesto(
         born.add_child(Node.s8('status', 0))
         born.add_child(Node.s16('year', 0))
 
+        game_config = self.get_game_config()
+        konami_logo_50th = Node.void('konami_logo_50th')
+        info.add_child(konami_logo_50th)
+        konami_logo_50th.add_child(Node.bool('is_available', game_config.get_bool('50th_anniversary')))
+
         expert_option = Node.void('expert_option')
         info.add_child(expert_option)
         expert_option.add_child(Node.bool('is_available', True))
-
-        # TODO: Make this configurable.
-        konami_logo_50th = Node.void('konami_logo_50th')
-        info.add_child(konami_logo_50th)
-        konami_logo_50th.add_child(Node.bool('is_available', True))
 
         # TODO: Make this configurable.
         all_music_matching = Node.void('all_music_matching')
         info.add_child(all_music_matching)
         all_music_matching.add_child(Node.bool('is_available', True))
 
-        question_list = Node.void('question_list')
-        info.add_child(question_list)
-
         department = Node.void('department')
         info.add_child(department)
         department.add_child(Node.void('shop_list'))
 
+        question_list = Node.void('question_list')
+        info.add_child(question_list)
+
+        # Set up TUNE RUN course requirements
+        clan_course_list = Node.void('course_list')
+        info.add_child(clan_course_list)
+
+        valid_courses: Set[int] = set()
+        for course in self.__get_course_list():
+            if course['id'] < 1:
+                raise Exception(f"Invalid course ID {course['id']} found in course list!")
+            if course['id'] in valid_courses:
+                raise Exception(f"Duplicate ID {course['id']} found in course list!")
+            if course['clear_type'] == self.COURSE_CLEAR_HAZARD and 'hazard_type' not in course:
+                raise Exception(f"Need 'hazard_type' set in course {course['id']}!")
+            if course['course_type'] == self.COURSE_TYPE_TIME_BASED and 'end_time' not in course:
+                raise Exception(f"Need 'end_time' set in course {course['id']}!")
+            if course['clear_type'] in [self.COURSE_CLEAR_SCORE, self.COURSE_CLEAR_COMBINED_SCORE] and 'score' not in course:
+                raise Exception(f"Need 'score' set in course {course['id']}!")
+            if course['clear_type'] == self.COURSE_CLEAR_SCORE and course['score'] > 1000000:
+                raise Exception(f"Invalid per-coure score in course {course['id']}!")
+            if course['clear_type'] == self.COURSE_CLEAR_COMBINED_SCORE and course['score'] <= 1000000:
+                raise Exception(f"Invalid combined score in course {course['id']}!")
+            valid_courses.add(course['id'])
+
+            # Basics
+            clan_course = Node.void('course')
+            clan_course_list.add_child(clan_course)
+            clan_course.set_attribute('release_code', '2018112700')
+            clan_course.set_attribute('version_id', '0')
+            clan_course.set_attribute('id', str(course['id']))
+            clan_course.set_attribute('course_type', str(course['course_type']))
+            clan_course.add_child(Node.s32('difficulty', course['difficulty']))
+            clan_course.add_child(Node.u64('etime', (course['end_time'] if 'end_time' in course else 0) * 1000))
+            clan_course.add_child(Node.string('name', course['name']))
+
+            # List of included songs
+            tune_list = Node.void('tune_list')
+            clan_course.add_child(tune_list)
+            for order, charts in enumerate(course['music']):
+                tune = Node.void('tune')
+                tune_list.add_child(tune)
+                tune.set_attribute('no', str(order + 1))
+
+                seq_list = Node.void('seq_list')
+                tune.add_child(seq_list)
+
+                for songid, chart in charts:
+                    seq = Node.void('seq')
+                    seq_list.add_child(seq)
+                    seq.add_child(Node.s32('music_id', songid))
+                    seq.add_child(Node.s32('difficulty', chart))
+                    seq.add_child(Node.bool('is_secret', False))  # TODO: make this an attribute in course definition
+
+            # Clear criteria
+            clear = Node.void('clear')
+            clan_course.add_child(clear)
+            ex_option = Node.void('ex_option')
+            clear.add_child(ex_option)
+            ex_option.add_child(Node.bool('is_hard', course['hard'] if 'hard' in course else False))
+            ex_option.add_child(Node.s32('hazard_type', course['hazard_type'] if 'hazard_type' in course else 0))
+            clear.set_attribute('type', str(course['clear_type']))
+            clear.add_child(Node.s32('score', course['score'] if 'score' in course else 0))
+
+            reward_list = Node.void('reward_list')
+            clear.add_child(reward_list)
+
+        # Each of the following two sections should have zero or more child nodes (no
+        # particular name) which look like the following:
+        #     <node>
+        #         <id __type="s32">songid</id>
+        #         <stime __type="str">start time?</stime>
+        #         <etime __type="str">end time?</etime>
+        #     </node>
+        # Share music?
+        share_music = Node.void('share_music')
+        info.add_child(share_music)
+
+        weekly_music = Node.void('weekly_music')
+        info.add_child(weekly_music)
+        weekly_music.add_child(Node.s32("value", 0))
+
+        info.add_child(Node.s32_array(
+            'add_default_music_list',
+            [
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+            ],
+        ))
+
+        # The following section should have zero or more child nodes (no particular
+        # name) which look like the following, with a song ID in the node's id attribute:
+        #     <node id="" />
+        weekly_music_list = Node.void('music_list')
+        weekly_music.add_child(weekly_music_list)
+
+        # Enable/disable festo dungeon.
+        if game_config.get_bool('festo_dungeon'):
+            festo_dungeon = Node.void('festo_dungeon')
+            info.add_child(festo_dungeon)
+            festo_dungeon.add_child(Node.u64('etime', (Time.now() + Time.SECONDS_IN_WEEK) * 1000))
+
         # TODO: team_batle
+        info.add_child(Node.void('team_battle'))
 
         # TODO: qr
 
         # TODO: course_list
 
         # TODO: emo_list
+        info.add_child(Node.void('emo_list'))
 
         # TODO: hike_event
 
         # TODO: tip_list
-
-        # TODO: festo_dungeon
+        info.add_child(Node.void('tip_list'))
 
         # TODO: travel
 
         # TODO: stamp
 
         return info
+
+    def handle_shopinfo_regist_request(self, request: Node) -> Node:
+        # Update the name of this cab for admin purposes
+        self.update_machine_name(request.child_value('shop/name'))
+
+        shopinfo = Node.void('shopinfo')
+
+        data = Node.void('data')
+        shopinfo.add_child(data)
+        data.add_child(Node.u32('cabid', 1))
+        data.add_child(Node.string('locationid', 'nowhere'))
+        data.add_child(Node.u8('tax_phase', 1))
+
+        facility = Node.void('facility')
+        data.add_child(facility)
+        facility.add_child(Node.u32('exist', 1))
+
+        data.add_child(self.__get_global_info())
+
+        return shopinfo
 
     def handle_demodata_get_info_request(self, request: Node) -> Node:
         root = Node.void('demodata')
@@ -422,29 +1033,19 @@ class JubeatFesto(
         root = Node.void('demodata')
         return root
 
+    def handle_jbox_get_agreement_request(self, request: Node) -> Node:
+        root = Node.void('jbox')
+        root.add_child(Node.bool('is_agreement', True))
+        return root
+
+    def handle_jbox_get_list_request(self, request: Node) -> Node:
+        root = Node.void('jbox')
+        root.add_child(Node.void('selection_list'))
+        return root
+
     def handle_ins_netlog_request(self, request: Node) -> Node:
         root = Node.void('ins')
         return root
-
-    def handle_shopinfo_regist_request(self, request: Node) -> Node:
-        # Update the name of this cab for admin purposes
-        self.update_machine_name(request.child_value('shop/name'))
-
-        shopinfo = Node.void('shopinfo')
-
-        data = Node.void('data')
-        shopinfo.add_child(data)
-        data.add_child(Node.u32('cabid', 1))
-        data.add_child(Node.string('locationid', 'nowhere'))
-        data.add_child(Node.u8('tax_phase', 1))
-
-        facility = Node.void('facility')
-        data.add_child(facility)
-        facility.add_child(Node.u32('exist', 1))
-
-        data.add_child(self.__get_global_info())
-
-        return shopinfo
 
     def handle_recommend_get_recommend_request(self, request: Node) -> Node:
         recommend = Node.void('recommend')
@@ -630,7 +1231,7 @@ class JubeatFesto(
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
-        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version')))
+        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version') and not profile.get_bool('saved')))
 
         # Last played data, for showing cursor and such
         lastdict = profile.get_dict('last')
@@ -866,6 +1467,41 @@ class JubeatFesto(
         # For some reason, this is on the course list node this time around.
         category_list = Node.void('category_list')
         course_list.add_child(category_list)
+        for categoryid in range(1, 7):
+            category = Node.void('category')
+            category_list.add_child(category)
+            category.set_attribute('id', str(categoryid))
+            category.add_child(Node.bool('is_display', True))
+
+        # Drop list
+        drop_list = Node.void('drop_list')
+        player.add_child(drop_list)
+
+        dropachievements: Dict[int, Achievement] = {}
+        for achievement in achievements:
+            if achievement.type == 'drop':
+                dropachievements[achievement.id] = achievement
+
+        for dropid in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+            if dropid in dropachievements:
+                dropdata = dropachievements[dropid].data
+            else:
+                dropdata = ValidatedDict()
+
+            drop = Node.void('drop')
+            drop_list.add_child(drop)
+            drop.set_attribute('id', str(dropid))
+            drop.add_child(Node.s32('exp', dropdata.get_int('exp', -1)))
+            drop.add_child(Node.s32('flag', dropdata.get_int('flag', 0)))
+
+            item_list = Node.void('item_list')
+            drop.add_child(item_list)
+
+            for itemid in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+                item = Node.void('item')
+                item_list.add_child(item)
+                item.set_attribute('id', str(itemid))
+                item.add_child(Node.s32('num', dropdata.get_int(f'item_{itemid}')))
 
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
@@ -917,7 +1553,11 @@ class JubeatFesto(
 
         # TODO: hike_event
 
-        # TODO: festo_dungeon
+        # Festo dungeon
+        festo_dungeon = Node.void('festo_dungeon')
+        player.add_child(festo_dungeon)
+        festo_dungeon.add_child(Node.s32('phase', profile.get_int('festo_dungeon_phase')))
+        festo_dungeon.add_child(Node.s32('clear_flag', profile.get_int('festo_dungeon_clear_flag')))
 
         # TODO: travel
 

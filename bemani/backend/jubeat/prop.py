@@ -401,7 +401,7 @@ class JubeatProp(
             evt = Node.void('event')
             event_info.add_child(evt)
             evt.set_attribute('type', str(event))
-            evt.add_child(Node.u8('state', 0x1 if self.EVENTS[event]['enabled'] else 0x0))
+            evt.add_child(Node.u8('state', 1 if self.EVENTS[event]['enabled'] else 0))
 
         # Each of the following three sections should have zero or more child nodes (no
         # particular name) which look like the following:
