@@ -1404,7 +1404,7 @@ class JubeatFesto(
             self.game, self.music_version, userid, entry.get_int('whim', -1), timelimit=start_time
         )
 
-        # TODO: Are these still the right state constants?
+        # Full combo challenge and whim challenge
         fc_challenge = Node.void('fc_challenge')
         player.add_child(fc_challenge)
         today = Node.void('today')
@@ -1641,3 +1641,391 @@ class JubeatFesto(
         # TODO: travel
 
         return root
+
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+        newprofile = oldprofile.clone()
+        newprofile.replace_bool('saved', True)
+        data = request.child('data')
+
+        # Grab system information
+        sysinfo = data.child('info')
+
+        # Grab player information
+        player = data.child('player')
+
+        # Grab result information
+        result = data.child('result')
+
+        # Grab last information. Lots of this will be filled in while grabbing scores
+        last = newprofile.get_dict('last')
+        if sysinfo is not None:
+            last.replace_int('play_time', sysinfo.child_value('time_gameend'))
+            last.replace_str('shopname', sysinfo.child_value('shopname'))
+            last.replace_str('areaname', sysinfo.child_value('areaname'))
+
+        # Grab player info for echoing back
+        info = player.child('info')
+        if info is not None:
+            newprofile.replace_int('tune_cnt', info.child_value('tune_cnt'))
+            newprofile.replace_int('save_cnt', info.child_value('save_cnt'))
+            newprofile.replace_int('saved_cnt', info.child_value('saved_cnt'))
+            newprofile.replace_int('fc_cnt', info.child_value('fc_cnt'))
+            newprofile.replace_int('ex_cnt', info.child_value('ex_cnt'))
+            newprofile.replace_int('clear_cnt', info.child_value('clear_cnt'))
+            newprofile.replace_int('match_cnt', info.child_value('match_cnt'))
+            newprofile.replace_int('beat_cnt', info.child_value('beat_cnt'))
+            newprofile.replace_int('mynews_cnt', info.child_value('mynews_cnt'))
+
+            newprofile.replace_int('bonus_tune_points', info.child_value('bonus_tune_points'))
+            newprofile.replace_bool('is_bonus_tune_played', info.child_value('is_bonus_tune_played'))
+
+        # Grab last settings
+        lastnode = player.child('last')
+        if lastnode is not None:
+            last.replace_int('expert_option', lastnode.child_value('expert_option'))
+            last.replace_int('sort', lastnode.child_value('sort'))
+            last.replace_int('category', lastnode.child_value('category'))
+
+            settings = lastnode.child('settings')
+            if settings is not None:
+                last.replace_int('matching', settings.child_value('matching'))
+                last.replace_int('hazard', settings.child_value('hazard'))
+                last.replace_int('hard', settings.child_value('hard'))
+                last.replace_int('marker', settings.child_value('marker'))
+                last.replace_int('theme', settings.child_value('theme'))
+                last.replace_int('title', settings.child_value('title'))
+                last.replace_int('parts', settings.child_value('parts'))
+                last.replace_int('rank_sort', settings.child_value('rank_sort'))
+                last.replace_int('combo_disp', settings.child_value('combo_disp'))
+                last.replace_int_array('emblem', 5, settings.child_value('emblem'))
+
+        # Grab unlock progress
+        item = player.child('item')
+        if item is not None:
+            newprofile.replace_int_array('music_list', 64, item.child_value('music_list'))
+            newprofile.replace_int_array('secret_list', 64, item.child_value('secret_list'))
+            newprofile.replace_int_array('theme_list', 16, item.child_value('theme_list'))
+            newprofile.replace_int_array('marker_list', 16, item.child_value('marker_list'))
+            newprofile.replace_int_array('title_list', 160, item.child_value('title_list'))
+            newprofile.replace_int_array('parts_list', 160, item.child_value('parts_list'))
+            newprofile.replace_int_array('emblem_list', 96, item.child_value('emblem_list'))
+            newprofile.replace_int_array('commu_list', 16, item.child_value('commu_list'))
+
+            newitem = item.child('new')
+            if newitem is not None:
+                newprofile.replace_int_array('secret_list_new', 64, newitem.child_value('secret_list'))
+                newprofile.replace_int_array('theme_list_new', 16, newitem.child_value('theme_list'))
+                newprofile.replace_int_array('marker_list_new', 16, newitem.child_value('marker_list'))
+
+        # Grab categories stuff
+        fill_in_category = player.child('fill_in_category')
+        fill_in_category_normal = fill_in_category.child('normal')
+        if fill_in_category is not None:
+            newprofile.replace_int_array('normal_no_gray_flag_list', 16, fill_in_category_normal.child_value('no_gray_flag_list'))
+            newprofile.replace_int_array('normal_all_yellow_flag_list', 16, fill_in_category_normal.child_value('all_yellow_flag_list'))
+            newprofile.replace_int_array('normal_full_combo_flag_list', 16, fill_in_category_normal.child_value('full_combo_flag_list'))
+            newprofile.replace_int_array('normal_excellent_flag_list', 16, fill_in_category_normal.child_value('excellent_flag_list'))
+        fill_in_category_hard = fill_in_category.child('hard')
+        if fill_in_category is not None:
+            newprofile.replace_int_array('hard_no_gray_flag_list', 16, fill_in_category_hard.child_value('no_gray_flag_list'))
+            newprofile.replace_int_array('hard_all_yellow_flag_list', 16, fill_in_category_hard.child_value('all_yellow_flag_list'))
+            newprofile.replace_int_array('hard_full_combo_flag_list', 16, fill_in_category_hard.child_value('full_combo_flag_list'))
+            newprofile.replace_int_array('hard_excellent_flag_list', 16, fill_in_category_hard.child_value('excellent_flag_list'))
+
+        # jbox stuff
+        jbox = player.child('jbox')
+        jboxdict = newprofile.get_dict('jbox')
+        if jbox is not None:
+            jboxdict.replace_int('point', jbox.child_value('point'))
+            emblemtype = jbox.child_value('emblem/type')
+            index = jbox.child_value('emblem/index')
+            if emblemtype == self.JBOX_EMBLEM_NORMAL:
+                jboxdict.replace_int('normal_index', index)
+            elif emblemtype == self.JBOX_EMBLEM_PREMIUM:
+                jboxdict.replace_int('premium_index', index)
+        newprofile.replace_dict('jbox', jboxdict)
+
+        # Drop list
+        drop_list = player.child('drop_list')
+        if drop_list is not None:
+            for drop in drop_list.children:
+                try:
+                    dropid = int(drop.attribute('id'))
+                except TypeError:
+                    # Unrecognized drop
+                    continue
+                exp = drop.child_value('exp')
+                flag = drop.child_value('flag')
+                items: Dict[int, int] = {}
+
+                item_list = drop.child('item_list')
+                if item_list is not None:
+                    for item in item_list.children:
+                        try:
+                            itemid = int(item.attribute('id'))
+                        except TypeError:
+                            # Unrecognized item
+                            continue
+                        items[itemid] = item.child_value('num')
+
+                olddrop = self.data.local.user.get_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    dropid,
+                    'drop',
+                )
+
+                if olddrop is None:
+                    # Create a new event structure for this
+                    olddrop = ValidatedDict()
+
+                olddrop.replace_int('exp', exp)
+                olddrop.replace_int('flag', flag)
+                for itemid, num in items.items():
+                    olddrop.replace_int(f'item_{itemid}', num)
+
+                # Save it as an achievement
+                self.data.local.user.put_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    dropid,
+                    'drop',
+                    olddrop,
+                )
+
+        # event stuff
+        newprofile.replace_int('event_flag', player.child_value('event_flag'))
+        event_info = player.child('event_info')
+        if event_info is not None:
+            for child in event_info.children:
+                try:
+                    eventid = int(child.attribute('type'))
+                except TypeError:
+                    # Event is empty
+                    continue
+                is_completed = child.child_value('is_completed')
+
+                # Figure out if we should update the rating/scores or not
+                oldevent = self.data.local.user.get_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    eventid,
+                    'event',
+                )
+
+                if oldevent is None:
+                    # Create a new event structure for this
+                    oldevent = ValidatedDict()
+
+                oldevent.replace_bool('is_completed', is_completed)
+
+                # Save it as an achievement
+                self.data.local.user.put_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    eventid,
+                    'event',
+                    oldevent,
+                )
+
+        # Still don't know what this is for lol
+        newprofile.replace_int('navi_flag', player.child_value('navi/flag'))
+
+        # Grab scores and save those
+        if result is not None:
+            for tune in result.children:
+                if tune.name != 'tune':
+                    continue
+                result = tune.child('player')
+                songid = tune.child_value('music')
+                timestamp = tune.child_value('timestamp') / 1000
+                chart = self.game_to_db_chart(int(result.child('score').attribute('seq')), bool(result.child_value('is_hard_mode')))
+                points = result.child_value('score')
+                flags = int(result.child('score').attribute('clear'))
+                combo = int(result.child('score').attribute('combo'))
+                ghost = result.child_value('mbar')
+                music_rate = result.child_value('music_rate')
+
+                stats = {
+                    'perfect': result.child_value('nr_perfect'),
+                    'great': result.child_value('nr_great'),
+                    'good': result.child_value('nr_good'),
+                    'poor': result.child_value('nr_poor'),
+                    'miss': result.child_value('nr_miss'),
+                }
+
+                # Miscelaneous last data for echoing to profile get
+                last.replace_int('music_id', songid)
+                last.replace_int('seq_id', int(result.child('score').attribute('seq')))
+
+                mapping = {
+                    self.GAME_FLAG_BIT_CLEARED: self.PLAY_MEDAL_CLEARED,
+                    self.GAME_FLAG_BIT_FULL_COMBO: self.PLAY_MEDAL_FULL_COMBO,
+                    self.GAME_FLAG_BIT_EXCELLENT: self.PLAY_MEDAL_EXCELLENT,
+                    self.GAME_FLAG_BIT_NEARLY_FULL_COMBO: self.PLAY_MEDAL_NEARLY_FULL_COMBO,
+                    self.GAME_FLAG_BIT_NEARLY_EXCELLENT: self.PLAY_MEDAL_NEARLY_EXCELLENT,
+                }
+
+                # Figure out the highest medal based on bits passed in
+                medal = self.PLAY_MEDAL_FAILED
+                for bit in mapping:
+                    if flags & bit > 0:
+                        medal = max(medal, mapping[bit])
+
+                self.update_score(userid, timestamp, songid, chart, points, medal,
+                                  combo, ghost, stats, music_rate)
+
+        # Born stuff
+        born = player.child('born')
+        if born is not None:
+            newprofile.replace_int('born_status', born.child_value('status'))
+            newprofile.replace_int('born_year', born.child_value('year'))
+
+        # jubility list sent looks like this
+        # <jubility>
+        #     <target_music>
+        #         <hot_music_list param="36385">
+        #             <music>
+        #                 <music_id __type="s32">90000130</music_id>
+        #                 <seq __type="s8">2</seq>
+        #                 <rate __type="s32">975</rate>
+        #                 <value __type="s32">1280</value>
+        #                 <is_hard_mode __type="bool">0</is_hard_mode>
+        #             </music>
+        #         </hot_music_list>
+        #         <other_music_list param="36770">
+
+        # Grab jubility
+        jubility = player.child('jubility')
+        if jubility is not None:
+            target_music = jubility.child('target_music')
+
+            # Pick up jubility stuff
+            hot_music_list = target_music.child('hot_music_list')
+            pick_up_chart = ValidatedDict()
+            for music in hot_music_list.children:
+                music_id = music.child_value('music_id')
+                chart = self.game_to_db_chart(int(music.child_value('seq')), bool(music.child_value('is_hard_mode')))
+                music_rate = float(music.child_value('rate')) / 10
+                value = float(music.child_value('value')) / 10
+                entry = {
+                    'music_id': music_id,
+                    'seq': chart,
+                    'music_rate': music_rate,
+                    'value': value,
+                }
+                pick_up_chart.replace_dict(f'{music_id}_{chart}', entry)
+
+            # Save it back
+            newprofile.replace_dict('pick_up_chart', pick_up_chart)
+            newprofile.replace_float('pick_up_jubility', float(hot_music_list.attribute('param')) / 10)
+
+            # Common jubility stuff
+            other_music_list = target_music.child('other_music_list')
+            common_chart = ValidatedDict()
+            for music in other_music_list.children:
+                music_id = music.child_value('music_id')
+                chart = self.game_to_db_chart(int(music.child_value('seq')), bool(music.child_value('is_hard_mode')))
+                music_rate = float(music.child_value('rate')) / 10
+                value = float(music.child_value('value')) / 10
+                entry = {
+                    'music_id': music_id,
+                    'seq': chart,
+                    'music_rate': music_rate,
+                    'value': value,
+                }
+                common_chart.replace_dict(f'{music_id}_{chart}', entry)
+
+            # Save it back
+            newprofile.replace_dict('common_chart', common_chart)
+            newprofile.replace_float('common_jubility', float(other_music_list.attribute('param')) / 10)
+
+        # Clan course saving
+        clan_course_list = player.child('course_list')
+        if clan_course_list is not None:
+            for course in clan_course_list.children:
+                if course.name != 'course':
+                    continue
+
+                courseid = int(course.attribute('id'))
+                status = course.child_value('status')
+                is_seen = (status & self.COURSE_STATUS_SEEN) != 0
+                is_played = (status & self.COURSE_STATUS_PLAYED) != 0
+
+                # Update seen status and played status
+                oldcourse = self.data.local.user.get_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    courseid,
+                    'course',
+                )
+
+                if oldcourse is None:
+                    # Create a new course structure for this
+                    oldcourse = ValidatedDict()
+
+                oldcourse.replace_bool('seen', oldcourse.get_bool('seen') or is_seen)
+                oldcourse.replace_bool('played', oldcourse.get_bool('played') or is_played)
+
+                # Save it as an achievement
+                self.data.local.user.put_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    courseid,
+                    'course',
+                    oldcourse,
+                )
+
+        # If they played a course, figure out if they cleared it.
+        select_course = player.child('select_course')
+        if select_course is not None:
+            try:
+                courseid = int(select_course.attribute('id'))
+            except Exception:
+                courseid = 0
+            cleared = select_course.child_value('is_cleared')
+
+            if courseid > 0 and cleared:
+                # Update course cleared status
+                oldcourse = self.data.local.user.get_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    courseid,
+                    'course',
+                )
+
+                if oldcourse is None:
+                    # Create a new course structure for this
+                    oldcourse = ValidatedDict()
+
+                oldcourse.replace_bool('cleared', True)
+
+                # Save it as an achievement
+                self.data.local.user.put_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    courseid,
+                    'course',
+                    oldcourse,
+                )
+
+        # Save back last information gleaned from results
+        newprofile.replace_dict('last', last)
+
+        festo_dungeon = player.child('festo_dungeon')
+        if festo_dungeon is not None:
+            newprofile.replace_int('festo_dungeon_phase', festo_dungeon.child_value('phase'))
+            newprofile.replace_int('festo_dungeon_clear_flag', festo_dungeon.child_value('clear_flag'))
+
+        # Keep track of play statistics
+        self.update_play_statistics(userid)
+
+        return newprofile
