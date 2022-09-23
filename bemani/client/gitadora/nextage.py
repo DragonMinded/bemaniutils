@@ -1,4 +1,3 @@
-from lib2to3.pgen2.token import NAME
 import random
 import time
 from typing import Any, Dict, Optional
@@ -19,7 +18,7 @@ class GitadoraNextageClient(BaseClient):
         
         shop = Node.void('shop')
         nextage_shopinfo.add_child(shop)
-        shop.add_child(Node.void('name', NAME))
+        shop.add_child(Node.void('name', 'TEST'))
         shop.add_child(Node.s8('pref', 13))
         shop.add_child(Node.string('systemid', srcid))
         shop.add_child(Node.string('softwareid', '04040000000000000000'))
