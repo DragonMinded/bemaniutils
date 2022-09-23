@@ -703,6 +703,47 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
+    if GameConstants.GITADORA in g.config.support:
+        # Nostalgia pages
+        gitadora_entries = []
+        if len([p for p in profiles if p[0] == GameConstants.GITADORA]) > 0:
+            gitadora_entries.extend([
+                {
+                    'label': 'Game Options',
+                    'uri': url_for('gitadora_pages.viewsettings'),
+                },
+                {
+                    'label': 'Rivals',
+                    'uri': url_for('gitadora_pages.viewrivals'),
+                },
+                {
+                    'label': 'Personal Profile',
+                    'uri': url_for('gitadora_pages.viewplayer', userid=g.userID),
+                },
+                {
+                    'label': 'Personal Scores',
+                    'uri': url_for('gitadora_pages.viewscores', userid=g.userID),
+                },
+            ])
+        gitadora_entries.extend([
+            {
+                'label': 'Global Scores',
+                'uri': url_for('gitadora_pages.viewnetworkscores'),
+            },
+            {
+                'label': 'All Players',
+                'uri': url_for('gitadora_pages.viewplayers'),
+            },
+        ])
+        pages.append(
+            {
+                'label': 'Gitadora',
+                'entries': gitadora_entries,
+                'base_uri': app.blueprints['gitadora_pages'].url_prefix,
+                'gamecode': GameConstants.GITADORA,
+            },
+        )
+
     # Admin pages
     if user.admin:
         pages.append(
