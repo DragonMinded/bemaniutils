@@ -3,8 +3,6 @@
 var valid_versions = Object.keys(window.versions);
 var pagenav = new History(valid_versions);
 
-var title_min_version = 25;
-
 var settings_view = React.createClass({
 
     getInitialState: function(props) {

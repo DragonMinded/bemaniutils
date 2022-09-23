@@ -23,7 +23,7 @@ class GitadoraNextageClient(BaseClient):
         shop.add_child(Node.string('systemid', srcid))
         shop.add_child(Node.string('softwareid', '04040000000000000000'))
         shop.add_child(Node.string('hardwareid', '0100DEADBEEF'))
-        shop.add_child(Node.string('locationid', 'JP-146'))
+        shop.add_child(Node.string('locationid', 'JP-1'))
         testmode = Node.void('testmode')
         nextage_shopinfo.add_child(testmode)
         sound_option = Node.void('sound_option')
@@ -124,5 +124,5 @@ class GitadoraNextageClient(BaseClient):
         self.assert_path(resp, "response/nextage_shopinfo/temperature/@is_send")
         self.assert_path(resp, "response/nextage_shopinfo/tax/@tax_phase")
 
-
+    
         

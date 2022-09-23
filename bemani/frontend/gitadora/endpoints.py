@@ -265,7 +265,7 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(info.keys(), reverse=True)[0]
 
     return render_react(
-        f'{info[latest_version]["name"]}\'s Pop\'n Music Profile',
+        f'{info[latest_version]["name"]}\'s Gitadora Profile',
         'gitadora/player.react.js',
         {
             'playerid': userid,
