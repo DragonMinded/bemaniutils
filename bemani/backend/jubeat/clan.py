@@ -1651,7 +1651,7 @@ class JubeatClan(
             newprofile.replace_int_array('title_list', 160, item.child_value('title_list'))
             newprofile.replace_int_array('parts_list', 160, item.child_value('parts_list'))
             newprofile.replace_int_array('emblem_list', 96, item.child_value('emblem_list'))
-            newprofile.replace_int_array('commu_list', 96, item.child_value('commu_list'))
+            newprofile.replace_int_array('commu_list', 16, item.child_value('commu_list'))
 
             newitem = item.child('new')
             if newitem is not None:
