@@ -9,7 +9,7 @@ from bemani.protocol import Node
 class GitadoraNextageClient(BaseClient):
     NAME = 'ＴＥＳＴ'
 
-    def verify_nextage_shopinfo_regist_request(self, srcid: str) -> None:
+    def verify_nextage_shopinfo_regist_request(self) -> None:
         call = self.call_node()
 
         nextage_shopinfo = Node.void('nextage_shopinfo')
@@ -20,7 +20,7 @@ class GitadoraNextageClient(BaseClient):
         nextage_shopinfo.add_child(shop)
         shop.add_child(Node.void('name', 'TEST'))
         shop.add_child(Node.s8('pref', 13))
-        shop.add_child(Node.string('systemid', srcid))
+        shop.add_child(Node.string('systemid', self.pcbid))
         shop.add_child(Node.string('softwareid', '04040000000000000000'))
         shop.add_child(Node.string('hardwareid', '0100DEADBEEF'))
         shop.add_child(Node.string('locationid', 'JP-1'))
@@ -118,11 +118,109 @@ class GitadoraNextageClient(BaseClient):
         resp = self.exchange('', call)
 
         # Verify that response is correct
-        self.assert_path(resp, "response/nextage_shopinfo/@status")
-        self.assert_path(resp, "response/nextage_shopinfo/data/@cabid")
-        self.assert_path(resp, "response/nextage_shopinfo/data/@locationid")
-        self.assert_path(resp, "response/nextage_shopinfo/temperature/@is_send")
-        self.assert_path(resp, "response/nextage_shopinfo/tax/@tax_phase")
+        self.assert_path(resp, "response/nextage_shopinfo/data/cabid")
+        self.assert_path(resp, "response/nextage_shopinfo/data/locationid")
+        self.assert_path(resp, "response/nextage_shopinfo/temperature/is_send")
+        self.assert_path(resp, "response/nextage_shopinfo/tax/tax_phase")
 
-    
-        
+    def verify_nextage_gameinfo(self) -> None:
+        call = self.call_node()
+
+        nextage_gameinfo = Node.void('nextage_gameinfo')
+        call.add_child(nextage_gameinfo)
+        nextage_gameinfo.set_attribute('method', 'get')
+
+        shop = Node.void('shop')
+        nextage_gameinfo.add_child(shop)
+        shop.add_child(Node.string('locationid', 'JP-146'))
+        shop.add_child(Node.u32('cabid', 1))
+        shop.add_child(Node.s32('data_version', 158))
+        temperature = Node.void('temperature')
+        nextage_gameinfo.add_child(temperature)
+        temperature.add_child(Node.bool('is_send', False))
+        online_update = Node.void('online_update')
+        nextage_gameinfo.add_child(online_update)
+        online_update.add_child(Node.s32('nr_package', 0))
+        online_update.add_child(Node.s32('nr_done_package', 0))
+        online_update.add_child(Node.s32('progress', 0))
+        online_update.add_child(Node.bool('is_onlineupdate_ready', False))
+
+        # Swap with server
+        resp = self.exchange('', call)
+
+        # Verify that response is correct
+        self.assert_path(resp, "response/nextage_gameinfo/now_date")
+        self.assert_path(resp, "response/nextage_gameinfo/extra")
+        self.assert_path(resp, "response/nextage_gameinfo/infect_music")
+        self.assert_path(resp, "response/nextage_gameinfo/unlock_challenge")
+        self.assert_path(resp, "response/nextage_gameinfo/ranking")
+        self.assert_path(resp, "response/nextage_gameinfo/recommendmusic")
+        self.assert_path(resp, "response/nextage_gameinfo/demomusic")
+        self.assert_path(resp, "response/nextage_gameinfo/general_term")
+        self.assert_path(resp, "response/nextage_gameinfo/lotterybox")
+        self.assert_path(resp, "response/nextage_gameinfo/assert_report_state")
+
+    def verify_nextage_playablemusic(self) -> None:
+        call = self.call_node()
+
+        nextage_playablemusic = Node.void('nextage_playablemusic')
+        call.add_child(nextage_playablemusic)
+        nextage_playablemusic.set_attribute('method', 'get')
+
+        nextage_playablemusic.add_child(Node.s32('data_version', 158))
+        data = Node.void('data')
+        nextage_playablemusic.add_child(data)
+        data.add_child(Node.bool('flag', True))
+
+        # Swap with server
+        resp = self.exchange('', call)
+
+        # Verify that response is correct
+        self.assert_path(resp, "response/nextage_playablemusic/hot")
+        self.assert_path(resp, "response/nextage_playablemusic/musicinfo")
+
+    def verify_nextage_gametop(self) -> None:
+        call = self.call_node()
+
+        nextage_gametop = Node.void('nextage_gametop')
+        nextage_gametop.set_attribute('method', 'get')
+        player = Node.void('player')
+        nextage_gametop.add_child(player)
+        player.set_attribute('no', '1')
+        player.add_child(Node.string('refid', '7C2DB3AE506A966E'))
+        player.add_child(Node.s32('cabid', 1))
+        player.add_child(Node.bool('is_rival', False))
+        request = Node.void('request')
+        player.add_child(request)
+        request.add_child(Node.u8('kind', 0))
+        request.add_child(Node.u16('offset', 0))
+        request.add_child(Node.u16('music_nr', 1500))
+
+        # Swap with server
+        resp = self.exchange('', call)
+
+        # Verify that response is correct
+        self.assert_path(resp, "response/nextage_gametop/player/playerboard")
+        self.assert_path(resp, "response/nextage_gametop/player/player_info")
+        self.assert_path(resp, "response/nextage_gametop/player/playinfo")
+        self.assert_path(resp, "response/nextage_gametop/player/customdata")
+        self.assert_path(resp, "response/nextage_gametop/player/skilldata")
+        self.assert_path(resp, "response/nextage_gametop/player/favoritemusic")
+        self.assert_path(resp, "response/nextage_gametop/player/chara_list")
+        self.assert_path(resp, "response/nextage_gametop/player/title_parts")
+        self.assert_path(resp, "response/nextage_gametop/player/information")
+        self.assert_path(resp, "response/nextage_gametop/player/player_info")
+        self.assert_path(resp, "response/nextage_gametop/player/groove")
+        self.assert_path(resp, "response/nextage_gametop/player/reward")
+        self.assert_path(resp, "response/nextage_gametop/player/skindata")
+        self.assert_path(resp, "response/nextage_gametop/player/tutorial")
+        self.assert_path(resp, "response/nextage_gametop/player/rivaldata")
+        self.assert_path(resp, "response/nextage_gametop/player/frienddata")
+        self.assert_path(resp, "response/nextage_gametop/player/tutorial")
+        self.assert_path(resp, "response/nextage_gametop/player/record/gf")
+        self.assert_path(resp, "response/nextage_gametop/player/record/dm")
+        self.assert_path(resp, "response/nextage_gametop/player/battledata")
+        self.assert_path(resp, "response/nextage_gametop/player/is_free_ok")
+        self.assert_path(resp, "response/nextage_gametop/player/ranking")
+        self.assert_path(resp, "response/nextage_gametop/player/stage_result")
+        self.assert_path(resp, "response/nextage_gametop/player/musiclist")
