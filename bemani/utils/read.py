@@ -2113,6 +2113,15 @@ class ImportIIDX(ImportBase):
                     continue
 
                 if sound_files is not None:
+
+                    def load_ifs(fname: str) -> Optional[IFS]:
+                        fname = os.path.join(os.path.abspath(assets_dir), fname)
+                        fp = open(fname, "rb")
+                        data = fp.read()
+                        fp.close()
+
+                        return IFS(data, reference_loader=load_ifs)
+
                     if song.id in sound_files:
                         # Look up chart info!
                         filename = sound_files[song.id]
@@ -2124,10 +2133,7 @@ class ImportIIDX(ImportBase):
                             data = fp.read()
                             fp.close()
                         else:
-                            fp = open(filename, "rb")
-                            ifsdata = fp.read()
-                            fp.close()
-                            ifs = IFS(ifsdata)
+                            ifs = load_ifs(filename)
                             for fn in ifs.filenames:
                                 _, extension = os.path.splitext(fn)
                                 if extension == ".1":
