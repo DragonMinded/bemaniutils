@@ -198,7 +198,12 @@ class SoundVoltexExceedGear(
             2: "SKILL ANALYZER 第1回 Bコース",
             3: "SKILL ANALYZER 第1回 Cコース",
             4: "BEMANI MASTER KOREA 2021",
+            5: "SKILL ANALYZER 第2回",
             6: "10周年記念コース",
+            7: "SKILL ANALYZER 第3回",
+            8: "SKILL ANALYZER 第4回 Aコース",
+            9: "SKILL ANALYZER 第4回 Bコース",
+            10: "SKILL ANALYZER 第5回 Aコース",
         }
 
     def __get_skill_analyzer_skill_levels(self) -> Dict[int, str]:
@@ -290,6 +295,96 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 1,
+                'tracks': [
+                    {
+                        'id': 1374,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 936,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 314,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 1,
+                'tracks': [
+                    {
+                        'id': 1718,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 144,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 568,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 1,
+                'tracks': [
+                    {
+                        'id': 271,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 209,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1083,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 1,
+                'tracks': [
+                    {
+                        'id': 1526,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 84,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 76,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 1,
+                'tracks': [
+                    {
+                        'id': 1441,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 274,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 569,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
             # Skill LV.02
             {
                 'season_id': 1,
@@ -341,6 +436,96 @@ class SoundVoltexExceedGear(
                     },
                     {
                         'id': 945,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 2,
+                'tracks': [
+                    {
+                        'id': 1221,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 169,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 254,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 2,
+                'tracks': [
+                    {
+                        'id': 1659,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 739,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 561,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 2,
+                'tracks': [
+                    {
+                        'id': 1088,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 973,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 22,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 2,
+                'tracks': [
+                    {
+                        'id': 171,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 474,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 18,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 2,
+                'tracks': [
+                    {
+                        'id': 1057,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 865,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 721,
                         'type': self.CHART_TYPE_ADVANCED,
                     },
                 ],
@@ -400,6 +585,96 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 3,
+                'tracks': [
+                    {
+                        'id': 1429,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 462,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 237,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 3,
+                'tracks': [
+                    {
+                        'id': 1110,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1513,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 732,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 3,
+                'tracks': [
+                    {
+                        'id': 157,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1039,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 972,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 3,
+                'tracks': [
+                    {
+                        'id': 281,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1254,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 997,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 3,
+                'tracks': [
+                    {
+                        'id': 673,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 954,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1867,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
             # Skill LV.04
             {
                 'season_id': 1,
@@ -451,6 +726,96 @@ class SoundVoltexExceedGear(
                     },
                     {
                         'id': 1424,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 4,
+                'tracks': [
+                    {
+                        'id': 449,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 329,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1293,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 4,
+                'tracks': [
+                    {
+                        'id': 174,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1217,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 617,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 4,
+                'tracks': [
+                    {
+                        'id': 1395,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 238,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1342,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 4,
+                'tracks': [
+                    {
+                        'id': 417,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1572,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 539,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 4,
+                'tracks': [
+                    {
+                        'id': 461,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 538,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1510,
                         'type': self.CHART_TYPE_ADVANCED,
                     },
                 ],
@@ -510,6 +875,96 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 5,
+                'tracks': [
+                    {
+                        'id': 486,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 920,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1318,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 5,
+                'tracks': [
+                    {
+                        'id': 1564,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1679,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 285,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 5,
+                'tracks': [
+                    {
+                        'id': 283,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1551,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 573,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 5,
+                'tracks': [
+                    {
+                        'id': 1701,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 523,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 477,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 5,
+                'tracks': [
+                    {
+                        'id': 1300,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1697,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 476,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
             # Skill LV.06
             {
                 'season_id': 1,
@@ -561,6 +1016,96 @@ class SoundVoltexExceedGear(
                     },
                     {
                         'id': 1312,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 6,
+                'tracks': [
+                    {
+                        'id': 1288,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 256,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1445,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 6,
+                'tracks': [
+                    {
+                        'id': 545,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1563,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 916,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 6,
+                'tracks': [
+                    {
+                        'id': 1565,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1409,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 202,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 6,
+                'tracks': [
+                    {
+                        'id': 1412,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1417,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1081,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 6,
+                'tracks': [
+                    {
+                        'id': 1115,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1425,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 756,
                         'type': self.CHART_TYPE_EXHAUST,
                     },
                 ],
@@ -620,6 +1165,114 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 7,
+                'tracks': [
+                    {
+                        'id': 1129,
+                        'type': self.CHART_TYPE_NOVICE,
+                    },
+                    {
+                        'id': 1349,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                    {
+                        'id': 1608,
+                        'type': self.CHART_TYPE_ADVANCED,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 7,
+                'tracks': [
+                    {
+                        'id': 1224,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 989,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 688,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 7,
+                'tracks': [
+                    {
+                        'id': 866,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 330,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 669,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 7,
+                'tracks': [
+                    {
+                        'id': 1250,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 434,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 690,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 7,
+                'tracks': [
+                    {
+                        'id': 315,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 861,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1303,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 7,
+                'tracks': [
+                    {
+                        'id': 411,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 990,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 514,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
             # Skill LV.08
             {
                 'season_id': 1,
@@ -675,6 +1328,114 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 492,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 930,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 651,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 1201,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 980,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 900,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 399,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1166,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1305,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 460,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 772,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 891,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 484,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 905,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1539,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 778,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1727,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1127,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
             # Skill LV.09
             {
                 'season_id': 1,
@@ -726,6 +1487,114 @@ class SoundVoltexExceedGear(
                     },
                     {
                         'id': 1476,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 9,
+                'tracks': [
+                    {
+                        'id': 1607,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1240,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 510,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 9,
+                'tracks': [
+                    {
+                        'id': 1155,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 937,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1243,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 9,
+                'tracks': [
+                    {
+                        'id': 882,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1759,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 993,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 9,
+                'tracks': [
+                    {
+                        'id': 234,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 886,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1716,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 9,
+                'tracks': [
+                    {
+                        'id': 1019,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 943,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1208,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 9,
+                'tracks': [
+                    {
+                        'id': 737,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1485,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1262,
                         'type': self.CHART_TYPE_MAXIMUM,
                     },
                 ],
@@ -785,6 +1654,114 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 10,
+                'tracks': [
+                    {
+                        'id': 1251,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1540,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1712,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 10,
+                'tracks': [
+                    {
+                        'id': 1158,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1341,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1238,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 10,
+                'tracks': [
+                    {
+                        'id': 1644,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1331,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1625,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 10,
+                'tracks': [
+                    {
+                        'id': 1760,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 730,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 967,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 10,
+                'tracks': [
+                    {
+                        'id': 786,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 837,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1200,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 10,
+                'tracks': [
+                    {
+                        'id': 832,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1749,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 633,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
             # Skill LV.11
             {
                 'season_id': 1,
@@ -822,6 +1799,114 @@ class SoundVoltexExceedGear(
                     },
                 ],
             },
+            {
+                'season_id': 5,
+                'skill_level': 11,
+                'tracks': [
+                    {
+                        'id': 1143,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1298,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1619,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 11,
+                'tracks': [
+                    {
+                        'id': 374,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1277,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 73,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 11,
+                'tracks': [
+                    {
+                        'id': 1550,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                    {
+                        'id': 1366,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1722,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 11,
+                'tracks': [
+                    {
+                        'id': 1776,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1365,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 911,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 11,
+                'tracks': [
+                    {
+                        'id': 979,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                    {
+                        'id': 1459,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1774,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 11,
+                'tracks': [
+                    {
+                        'id': 725,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                    {
+                        'id': 1201,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 654,
+                        'type': self.CHART_TYPE_EXHAUST,
+                    },
+                ],
+            },
             # Skill LV.INF
             {
                 'season_id': 1,
@@ -855,6 +1940,114 @@ class SoundVoltexExceedGear(
                     },
                     {
                         'id': 1270,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 12,
+                'tracks': [
+                    {
+                        'id': 1639,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1496,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1766,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 5,
+                'skill_level': 12,
+                'tracks': [
+                    {
+                        'id': 1104,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1189,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1362,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 7,
+                'skill_level': 8,
+                'tracks': [
+                    {
+                        'id': 495,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                    {
+                        'id': 1464,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1767,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 8,
+                'skill_level': 12,
+                'tracks': [
+                    {
+                        'id': 1364,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1661,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1099,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 9,
+                'skill_level': 12,
+                'tracks': [
+                    {
+                        'id': 914,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                    {
+                        'id': 376,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                    {
+                        'id': 1362,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                ],
+            },
+            {
+                'season_id': 10,
+                'skill_level': 12,
+                'tracks': [
+                    {
+                        'id': 704,
+                        'type': self.CHART_TYPE_INFINITE,
+                    },
+                    {
+                        'id': 1176,
+                        'type': self.CHART_TYPE_MAXIMUM,
+                    },
+                    {
+                        'id': 1889,
                         'type': self.CHART_TYPE_MAXIMUM,
                     },
                 ],
