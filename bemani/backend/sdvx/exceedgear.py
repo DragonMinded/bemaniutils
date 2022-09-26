@@ -3161,9 +3161,15 @@ class SoundVoltexExceedGear(
             for crewid in range(1, 999):
                 info = Node.void('info')
                 itemnode.add_child(info)
-                info.add_child(Node.u8('type', self.GAME_CATALOG_TYPE_CREW))
+                info.add_child(Node.u8('type', 11))
                 info.add_child(Node.u32('id', crewid))
-                info.add_child(Node.u32('param', 1))
+                info.add_child(Node.u32('param', 15))
+
+            info = Node.void('info')
+            itemnode.add_child(info)
+            info.add_child(Node.u8('type', 4))
+            info.add_child(Node.u32('id', 599))
+            info.add_child(Node.u32('param', 10))
 
         # Skill courses
         skill = Node.void('skill')
