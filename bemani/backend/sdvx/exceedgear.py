@@ -1805,15 +1805,15 @@ class SoundVoltexExceedGear(
                 'tracks': [
                     {
                         'id': 1143,
-                        'type': self.CHART_TYPE_EXHAUST,
+                        'type': self.CHART_TYPE_MAXIMUM,
                     },
                     {
                         'id': 1298,
-                        'type': self.CHART_TYPE_EXHAUST,
+                        'type': self.CHART_TYPE_MAXIMUM,
                     },
                     {
                         'id': 1619,
-                        'type': self.CHART_TYPE_EXHAUST,
+                        'type': self.CHART_TYPE_MAXIMUM,
                     },
                 ],
             },
