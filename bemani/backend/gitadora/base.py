@@ -258,6 +258,8 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         the same attributes in a score.
         """
         if grade not in [
+            self.GITADORA_GRADE_E,
+            self.GITADORA_GRADE_D,
             self.GITADORA_GRADE_C,
             self.GITADORA_GRADE_B,
             self.GITADORA_GRADE_A,

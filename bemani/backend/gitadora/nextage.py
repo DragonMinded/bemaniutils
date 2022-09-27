@@ -4,7 +4,7 @@ from typing_extensions import Final
 from typing import Optional, List, Dict
 
 from bemani.backend.gitadora.base import GitadoraBase
-from bemani.backend.gitadora.gitadoramusiclist import MUSICLIST_NEXTAGE, MUSICLIST_NEXTAGE_OMNIMIX
+from bemani.backend.gitadora.musiclists.nextagemusiclist import MUSICLIST_NEXTAGE, MUSICLIST_NEXTAGE_OMNIMIX
 from bemani.backend.ess import EventLogHandler
 
 from bemani.common import VersionConstants, Profile, Time
