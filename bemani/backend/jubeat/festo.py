@@ -148,7 +148,7 @@ class JubeatFesto(
         """
         Insert daily FC challenges into the DB.
         """
-        events = []
+        events: List[Tuple[str, Dict[str, Any]]] = []
         if data.local.network.should_schedule(cls.game, cls.version, 'fc_challenge', 'daily'):
             # Generate a new list of two FC challenge songs.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
@@ -177,6 +177,74 @@ class JubeatFesto(
 
                 # Mark that we did some actual work here.
                 data.local.network.mark_scheduled(cls.game, cls.version, 'fc_challenge', 'daily')
+        if data.local.network.should_schedule(cls.game, cls.version, 'random_course', 'daily'):
+            # Generate a new list of three random songs for random course mode.
+            start_time, end_time = data.local.network.get_schedule_duration('daily')
+
+            def is_ten(song: Song) -> bool:
+                # We only want random songs that actually have a hard chart! This should be all songs right now,
+                # but let's be conservative in case a future game screws things up.
+                if song.chart not in {cls.CHART_TYPE_HARD_BASIC, cls.CHART_TYPE_HARD_ADVANCED, cls.CHART_TYPE_HARD_EXTREME}:
+                    return False
+
+                difficulty = song.data.get_float('difficulty', 13)
+                if difficulty == 13.0:
+                    difficulty = float(song.data.get_int('difficulty', 13))
+
+                return difficulty >= 10.0 and difficulty < 11.0
+
+            def chart_lut(chart: int) -> int:
+                return {
+                    cls.CHART_TYPE_HARD_BASIC: cls.CHART_TYPE_BASIC,
+                    cls.CHART_TYPE_HARD_ADVANCED: cls.CHART_TYPE_ADVANCED,
+                    cls.CHART_TYPE_HARD_EXTREME: cls.CHART_TYPE_EXTREME,
+                }[chart]
+
+            all_tens = [song for song in data.local.music.get_all_songs(cls.game, cls.version) if is_ten(song)]
+            if len(all_tens) >= 3:
+                course_songs = random.sample(all_tens, 3)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'random_course',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'song1': {
+                            'id': course_songs[0].id,
+                            'chart': chart_lut(course_songs[0].chart),
+                        },
+                        'song2': {
+                            'id': course_songs[1].id,
+                            'chart': chart_lut(course_songs[1].chart),
+                        },
+                        'song3': {
+                            'id': course_songs[2].id,
+                            'chart': chart_lut(course_songs[2].chart),
+                        },
+                    },
+                )
+                events.append((
+                    'jubeat_random_course_charts',
+                    {
+                        'version': cls.version,
+                        'song1': {
+                            'id': course_songs[0].id,
+                            'chart': chart_lut(course_songs[0].chart),
+                        },
+                        'song2': {
+                            'id': course_songs[1].id,
+                            'chart': chart_lut(course_songs[1].chart),
+                        },
+                        'song3': {
+                            'id': course_songs[2].id,
+                            'chart': chart_lut(course_songs[2].chart),
+                        },
+                    },
+                ))
+
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'random_course', 'daily')
         return events
 
     @classmethod
@@ -185,6 +253,20 @@ class JubeatFesto(
         Return all of our front-end modifiably settings.
         """
         return {
+            'ints': [
+                {
+                    'name': 'KAC Course Phase',
+                    'tip': 'The KAC competition courses that should be available in Tune Run',
+                    'category': 'game_config',
+                    'setting': 'kac_phase',
+                    'values': {
+                        0: 'No KAC phase',
+                        1: 'The 8th KAC',
+                        2: 'The 9th KAC',
+                        3: 'The 10th KAC',
+                    }
+                },
+            ],
             'bools': [
                 {
                     'name': 'Enable Stone Tablet Event',
@@ -209,6 +291,172 @@ class JubeatFesto(
         # data version of the game running is to provide the correct course. We could just support
         # only final data, but that's no fun!
         dataver = self.model.version or 2022052400
+
+        # If it is available, then grab the random course. If we haven't generated that course, then
+        # just don't bother trying to create it.
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, 'random_course')
+        random_course: List[Dict[str, Any]] = []
+
+        if entry is not None:
+            song1 = entry.get_dict('song1')
+            song2 = entry.get_dict('song2')
+            song3 = entry.get_dict('song3')
+
+            random_course = [{
+                'id': 57,
+                'name': '腕試し！ランダムコース',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 15,
+                'score': 2850000,
+                'music': [
+                    [(song1.get_int('id'), song1.get_int('chart'))],
+                    [(song2.get_int('id'), song2.get_int('chart'))],
+                    [(song3.get_int('id'), song3.get_int('chart'))],
+                ],
+            }]
+
+        # So the game has a hard limit of 60 courses, but if we include everything from the
+        # lifetime of festo including the random course we end up with 61 courses, which means
+        # the game truncates the last course. Boo, that sucks. So, we have to have certain
+        # courses switched. Let's do the KAC courses since in real life there would never have
+        # been multiple KAC courses available at once.
+        game_config = self.get_game_config()
+        kac_phase = game_config.get_int('kac_phase')
+        kac_8th = []
+        kac_9th = []
+        kac_10th = []
+
+        if kac_phase == 1:
+            kac_8th = [
+                {
+                    'id': 41,
+                    'name': 'The 8th KAC 個人部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000052, 2)],
+                        [(90000013, 2)],
+                        [(70000167, 2)],
+                    ],
+                },
+                {
+                    'id': 42,
+                    'name': 'The 8th KAC 団体部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000009, 2)],
+                        [(80000133, 2)],
+                        [(80000101, 2)],
+                    ],
+                },
+            ]
+        elif kac_phase == 2:
+            kac_9th = [
+                {
+                    'id': 201,
+                    'name': 'The 9th KAC 1st Stage 個人部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000125, 2)],
+                        [(60000065, 2)],
+                        [(90000023, 2)],
+                    ],
+                },
+                {
+                    'id': 202,
+                    'name': 'The 9th KAC 1st Stage 団体部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000125, 2)],
+                        [(50000135, 2)],
+                        [(90000045, 2)],
+                    ],
+                },
+                {
+                    'id': 203,
+                    'name': 'The 9th KAC 2nd Stage 個人部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000095, 2)],
+                        [(80000085, 2)],
+                        [(80000090, 2)],
+                    ],
+                },
+                {
+                    'id': 204,
+                    'name': 'The 9th KAC 2nd Stage 団体部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000113, 2)],
+                        [(50000344, 2)],
+                        [(90000096, 2)],
+                    ],
+                },
+            ]
+        elif kac_phase == 3:
+            kac_10th = [
+                {
+                    'id': 205,
+                    'name': 'The 10th KAC 1st Stage',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000003, 2)],
+                        [(90000151, 2)],
+                        [(90000174, 2)],
+                    ],
+                },
+                {
+                    'id': 206,
+                    'name': 'The 10th KAC 2nd Stage',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000121, 2)],
+                        [(90000113, 2)],
+                        [(90000124, 2)],
+                    ],
+                },
+            ]
 
         return [
             # ASARI CUP
@@ -732,36 +980,7 @@ class JubeatFesto(
                 ],
             },
             # HOTATE CUP
-            {
-                'id': 41,
-                'name': 'The 8th KAC 個人部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000052, 2)],
-                    [(90000013, 2)],
-                    [(70000167, 2)],
-                ],
-            },
-            {
-                'id': 42,
-                'name': 'The 8th KAC 団体部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000009, 2)],
-                    [(80000133, 2)],
-                    [(80000101, 2)],
-                ],
-            },
+            *kac_8th,  # Contains courses 41 and 42.
             {
                 'id': 43,
                 'name': 'BEMANI MASTER KOREA 2019',
@@ -777,96 +996,8 @@ class JubeatFesto(
                     [(90000009, 2)],
                 ],
             },
-            {
-                'id': 201,
-                'name': 'The 9th KAC 1st Stage 個人部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000125, 2)],
-                    [(60000065, 2)],
-                    [(90000023, 2)],
-                ],
-            },
-            {
-                'id': 202,
-                'name': 'The 9th KAC 1st Stage 団体部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000125, 2)],
-                    [(50000135, 2)],
-                    [(90000045, 2)],
-                ],
-            },
-            {
-                'id': 203,
-                'name': 'The 9th KAC 2nd Stage 個人部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000095, 2)],
-                    [(80000085, 2)],
-                    [(80000090, 2)],
-                ],
-            },
-            {
-                'id': 204,
-                'name': 'The 9th KAC 2nd Stage 団体部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000113, 2)],
-                    [(50000344, 2)],
-                    [(90000096, 2)],
-                ],
-            },
-            {
-                'id': 205,
-                'name': 'The 10th KAC 1st Stage',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000003, 2)],
-                    [(90000151, 2)],
-                    [(90000174, 2)],
-                ],
-            },
-            {
-                'id': 206,
-                'name': 'The 10th KAC 2nd Stage',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000121, 2)],
-                    [(90000113, 2)],
-                    [(90000124, 2)],
-                ],
-            },
+            *kac_9th,  # Contains courses 201, 202, 203 and 204.
+            *kac_10th,  # Contains courses 205 and 206.
             {
                 'id': 207,
                 'name': '#どうやって押してる？',
@@ -1075,9 +1206,7 @@ class JubeatFesto(
                     [(90000057, 2)],
                 ],
             },
-            # TODO: We are missing the "Random Course" course from this mode, which picks a random song
-            # with difficulty 10.0-10.9 for the first, second and third song in the course. We would need
-            # to code in a random level song select, which could also be useful for the recommended endpoint.
+            *random_course,  # Contains course 57.
             {
                 'id': 58,
                 'name': '#あなたのjubeatはどこから？',
@@ -1295,6 +1424,7 @@ class JubeatFesto(
         info.add_child(clan_course_list)
 
         valid_courses: Set[int] = set()
+        dataver = self.model.version or 2022052400
         for course in self.__get_course_list():
             if course['id'] < 1:
                 raise Exception(f"Invalid course ID {course['id']} found in course list!")
@@ -1315,7 +1445,7 @@ class JubeatFesto(
             # Basics
             clan_course = Node.void('course')
             clan_course_list.add_child(clan_course)
-            clan_course.set_attribute('release_code', '2018112700')
+            clan_course.set_attribute('release_code', str(dataver))
             clan_course.set_attribute('version_id', '0')
             clan_course.set_attribute('id', str(course['id']))
             clan_course.set_attribute('course_type', str(course['course_type']))

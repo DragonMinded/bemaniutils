@@ -6,6 +6,7 @@ var possible_events = [
     'unauthorized_pcbid',
     'jubeat_league_course',
     'jubeat_fc_challenge_charts',
+    'jubeat_random_course_charts',
     'iidx_daily_charts',
     'pcbevent',
     'paseli_transaction',
@@ -19,6 +20,7 @@ var event_names = {
     'unauthorized_pcbid': 'Unauthorized PCBIDs',
     'jubeat_league_course': 'Jubeat League Courses',
     'jubeat_fc_challenge_charts': 'Jubeat Full Combo Challenge Charts',
+    'jubeat_random_course_charts': 'Jubeat Random 10s Course Charts',
     'iidx_daily_charts': 'IIDX Daily Charts',
     'pnm_course': 'Pop\'n Music Course',
     'pcbevent': 'PCB Events',
@@ -170,6 +172,8 @@ var audit_events = React.createClass({
                                     return <JubeatLeagueCourseEvent event={event} versions={this.state.jubeatversions} songs={this.state.jubeatsongs} />;
                                 } else if(event.type == 'jubeat_fc_challenge_charts') {
                                     return <JubeatFCChallengeEvent event={event} versions={this.state.jubeatversions} songs={this.state.jubeatsongs} />;
+                                } else if(event.type == 'jubeat_random_course_charts') {
+                                    return <JubeatRandomCourseEvent event={event} versions={this.state.jubeatversions} songs={this.state.jubeatsongs} />;
                                 } else if(event.type == 'iidx_daily_charts') {
                                     return <IIDXDailyChartsEvent event={event} versions={this.state.iidxversions} songs={this.state.iidxsongs} />;
                                 } else if(event.type == 'pcbevent') {
