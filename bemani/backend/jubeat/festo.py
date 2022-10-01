@@ -1538,8 +1538,6 @@ class JubeatFesto(
 
         # TODO: qr
 
-        # TODO: course_list
-
         # TODO: emo_list
         info.add_child(Node.void('emo_list'))
 
