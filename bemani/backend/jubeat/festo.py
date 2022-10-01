@@ -202,6 +202,14 @@ class JubeatFesto(
         }
 
     def __get_course_list(self) -> List[Dict[str, Any]]:
+        # Note that several of the below courses originally included removed songs, because older
+        # versions of the game included them and they were removed sometime in its 4 year lifespan.
+        # For those courses, the game will not display them unless you are on a data version that
+        # includes the song. BemaniWiki notes when they were changed, so we check to see what the
+        # data version of the game running is to provide the correct course. We could just support
+        # only final data, but that's no fun!
+        dataver = self.model.version or 2022052400
+
         return [
             # ASARI CUP
             {
@@ -212,9 +220,13 @@ class JubeatFesto(
                 'difficulty': 1,
                 'score': 700000,
                 'music': [
-                    [(60000080, 0), (90000025, 0), (90000040, 0)],
+                    [
+                        (60000080, 0),
+                        (90000025 if dataver < 2021081600 else 90000077, 0),
+                        (90000040 if dataver < 2021081600 else 90000139, 0),
+                    ],
                     [(60000086, 0), (70000047, 0)],
-                    [(90000027, 0)],
+                    [(90000027 if dataver < 2021081600 else 90000141, 0)],
                 ],
             },
             {
@@ -225,7 +237,11 @@ class JubeatFesto(
                 'difficulty': 1,
                 'score': 700000,
                 'music': [
-                    [(60000100, 0), (90000030, 0), (90000079, 0)],
+                    [
+                        (70000057 if dataver < 2019062100 else (90000079 if dataver < 2022021600 else 20000031), 0),
+                        (60000100, 0),
+                        (90000030 if dataver < 2021081600 else 90000078, 0),
+                    ],
                     [(70000125, 0), (90000050, 0)],
                     [(70000106, 0)],
                 ],
@@ -238,9 +254,18 @@ class JubeatFesto(
                 'difficulty': 2,
                 'score': 750000,
                 'music': [
-                    [(90000031, 0), (90000037, 0), (90000082, 0)],
-                    [(80000120, 0)],
-                    [(80000125, 0)],
+                    [
+                        (80000020 if dataver < 2019062100 else (90000082 if dataver < 2022021600 else 60000092), 0),
+                        (90000031, 0),
+                        (90000037 if dataver < 2021081600 else 90000172, 0),
+                    ],
+                    [
+                        (80000034 if dataver < 2020062900 else (30000108 if dataver < 2020091300 else (40000107 if dataver < 2021020100 else 30000004)), 0),
+                        (80000120 if dataver < 2021020200 else 80000059, 0),
+                    ],
+                    [
+                        (80000125 if dataver < 2021031900 else 50000209, 0),
+                    ],
                 ],
             },
             {
@@ -251,9 +276,18 @@ class JubeatFesto(
                 'difficulty': 2,
                 'score': 750000,
                 'music': [
-                    [(90000040, 0), (50000296, 0), (90000044, 0)],
-                    [(90000033, 0), (90000039, 0)],
-                    [(80000091, 0)],
+                    [
+                        (70000148 if dataver < 2020021900 else (90000040 if dataver < 2021081600 else 80000097), 0),
+                        (50000296 if dataver < 2021081600 else 90000029, 0),
+                        (90000044 if dataver < 2021081600 else 90000076, 0),
+                    ],
+                    [
+                        (90000033 if dataver < 2021081600 else 80000093, 0),
+                        (90000039 if dataver < 2021081600 else 90000048, 0),
+                    ],
+                    [
+                        (80000091 if dataver < 2021020200 else 80000038, 0),
+                    ],
                 ],
             },
             {
@@ -269,6 +303,20 @@ class JubeatFesto(
                     [(60000053, 0)],
                 ],
             },
+            {
+                'id': 6,
+                'name': '#オレのユビティズム',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 3,
+                'score': 2100000,
+                'music': [
+                    [(20000042, 0), (20000042, 1), (20000042, 2)],
+                    [(70000119, 0), (70000119, 1), (70000119, 2)],
+                    [(50000115, 0), (50000115, 1), (50000115, 2)],
+                ],
+            },
             # KISAGO CUP
             {
                 'id': 11,
@@ -278,7 +326,11 @@ class JubeatFesto(
                 'difficulty': 4,
                 'score': 800000,
                 'music': [
-                    [(70000046, 1), (70000160, 1), (80000126, 1)],
+                    [
+                        (70000046, 1),
+                        (70000160, 1),
+                        (80000126 if dataver < 2021020200 else 50000233, 1),
+                    ],
                     [(80000031, 1), (80000097, 1)],
                     [(90000049, 1)],
                 ],
@@ -304,9 +356,15 @@ class JubeatFesto(
                 'difficulty': 5,
                 'score': 2600000,
                 'music': [
-                    [(50000242, 0), (90000037, 1)],
+                    [
+                        (50000242, 0),
+                        (80000034 if dataver < 2020063000 else (90000079 if dataver < 2022021600 else 50000277), 1),
+                        (90000037 if dataver < 2021081600 else 50000294, 1),
+                    ],
                     [(50000260, 1), (50000261, 1)],
-                    [(90000081, 1)],
+                    [
+                        (70000085 if dataver < 2019062100 else (90000081 if dataver < 2022021600 else 90000143), 1),
+                    ],
                 ],
             },
             {
@@ -317,8 +375,15 @@ class JubeatFesto(
                 'difficulty': 4,
                 'score': 850000,
                 'music': [
-                    [(90000034, 1), (90000037, 1), (90000042, 1)],
-                    [(80000120, 1), (80001010, 1)],
+                    [
+                        (20000111 if dataver < 2019062100 else 90000034, 1),
+                        (90000037 if dataver < 2021081600 else 90000107, 1),
+                        (70000131 if dataver < 2019111800 else (90000042 if dataver < 2021081600 else 90000140), 1),
+                    ],
+                    [
+                        (80000120 if dataver < 2021020200 else 80000052, 1),
+                        (80001010, 1),
+                    ],
                     [(40000051, 1)],
                 ],
             },
@@ -332,7 +397,138 @@ class JubeatFesto(
                 'music': [
                     [(50000085, 2), (50000237, 2), (80000080, 2)],
                     [(50000172, 2), (50000235, 2)],
-                    [(70000065, 2)],
+                    [(70000065, 2)]
+                ],
+            },
+            {
+                'id': 16,
+                'name': '#シャレを言いなシャレ',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2400000,
+                'music': [
+                    [(70000003, 0), (70000003, 1), (70000003, 2)],
+                    [(70000045, 0), (70000045, 1), (70000045, 2)],
+                    [(70000076, 0), (70000076, 1), (70000076, 2)],
+                ],
+            },
+            {
+                'id': 101,
+                'name': 'jubeat大回顧展 ROOM 1',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 950000,
+                'music': [
+                    [(50000277, 0), (50000277, 1), (50000277, 2)],
+                    [(50000325, 0), (50000325, 1), (50000325, 2)],
+                    [(90000014, 0), (90000014, 1), (90000014, 2)],
+                ],
+            },
+            {
+                'id': 102,
+                'name': 'jubeat大回顧展 ROOM 2',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2750000,
+                'music': [
+                    [(30000048, 0), (30000048, 1), (30000048, 2)],
+                    [(30000121, 0), (30000121, 1), (30000121, 2)],
+                    [(90000012, 0), (90000012, 1), (90000012, 2)],
+                ],
+            },
+            {
+                'id': 103,
+                'name': 'jubeat大回顧展 ROOM 3',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 925000,
+                'music': [
+                    [(60000007, 0), (60000007, 1), (60000007, 2)],
+                    [(60000070, 0), (60000070, 1), (60000070, 2)],
+                    [(90000016, 0), (90000016, 1), (90000016, 2)],
+                ],
+            },
+            {
+                'id': 104,
+                'name': 'jubeat大回顧展 ROOM 4',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2800000,
+                'music': [
+                    [(40000051, 0), (40000051, 1), (40000051, 2)],
+                    [(40000129, 0), (40000129, 1), (40000129, 2)],
+                    [(90000013, 0), (90000013, 1), (90000013, 2)],
+                ],
+            },
+            {
+                'id': 105,
+                'name': 'jubeat大回顧展 ROOM 5',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2775000,
+                'music': [
+                    [(70000177, 0), (70000177, 1), (70000177, 2)],
+                    [(70000011, 0), (70000011, 1), (70000011, 2)],
+                    [(90000017, 0), (90000017, 1), (90000017, 2)],
+                ],
+            },
+            {
+                'id': 106,
+                'name': 'jubeat大回顧展 ROOM 6',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 940000,
+                'music': [
+                    [(20000123, 0), (20000123, 1), (20000123, 2)],
+                    [(20000038, 0), (20000038, 1), (20000038, 2)],
+                    [(90000011, 0), (90000011, 1), (90000011, 2)],
+                ],
+            },
+            {
+                'id': 107,
+                'name': 'jubeat大回顧展 ROOM 7',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 950000,
+                'music': [
+                    [(50000021, 0), (50000021, 1), (50000021, 2)],
+                    [(50000078, 0), (50000078, 1), (50000078, 2)],
+                    [(90000015, 0), (90000015, 1), (90000015, 2)],
+                ],
+            },
+            {
+                'id': 108,
+                'name': 'jubeat大回顧展 ROOM 8',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2800000,
+                'music': [
+                    [(80000028, 0), (80000028, 1), (80000028, 2)],
+                    [(80000087, 0), (80000087, 1), (80000087, 2)],
+                    [(90000018, 0), (90000018, 1), (90000018, 2)],
+                ],
+            },
+            {
+                'id': 109,
+                'name': 'jubeat大回顧展 ROOM 9',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 930000,
+                'music': [
+                    [(10000038, 0), (10000038, 1), (10000038, 2)],
+                    [(10000065, 0), (10000065, 1), (10000065, 2)],
+                    [(90000010, 0), (90000010, 1), (90000010, 2)],
                 ],
             },
             # MURU CUP
@@ -357,7 +553,11 @@ class JubeatFesto(
                 'difficulty': 7,
                 'score': 2650000,
                 'music': [
-                    [(50000343, 2), (60000060, 1), (60000071, 2)],
+                    [
+                        (50000343, 2),
+                        (60000060, 2),
+                        (70000156 if dataver < 2020040300 else 60000071, 2),
+                    ],
                     [(60000027, 2), (80000048, 2)],
                     [(20000038, 2)],
                 ],
@@ -370,8 +570,15 @@ class JubeatFesto(
                 'difficulty': 8,
                 'score': 950000,
                 'music': [
-                    [(40000154, 2), (80000124, 1), (80000126, 2)],
-                    [(60000048, 2), (90000026, 2)],
+                    [
+                        (40000154, 2),
+                        (80000124, 2),
+                        (80000126 if dataver < 2021020200 else 90000139, 2),
+                    ],
+                    [
+                        (60000048, 2),
+                        (70000157 if dataver < 2020040300 else 80000041, 2),
+                    ],
                     [(90000050, 2)],
                 ],
             },
@@ -399,6 +606,48 @@ class JubeatFesto(
                     [(50000288, 2), (80000046, 2), (80001008, 2)],
                     [(50000207, 2), (70000117, 2)],
                     [(30000048, 2)],
+                ],
+            },
+            {
+                'id': 26,
+                'name': '雨上がりレインボー',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 9,
+                'score': 2650000,
+                'music': [
+                    [(50000138, 2)],
+                    [(80000057, 2)],
+                    [(90000011, 2)],
+                ],
+            },
+            {
+                'id': 27,
+                'name': 'Rain時々雨ノチ雨',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 9,
+                'score': 2650000,
+                'music': [
+                    [(30000050, 2)],
+                    [(80000123, 2)],
+                    [(50000092, 2)],
+                ],
+            },
+            {
+                'id': 28,
+                'name': '#心に残った曲',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 7,
+                'score': 2700000,
+                'music': [
+                    [(80000136, 0), (80000136, 1), (80000136, 2)],
+                    [(20000038, 0), (20000038, 1), (20000038, 2)],
+                    [(60000065, 0), (60000065, 1), (70000084, 1)],
                 ],
             },
             # SAZAE CUP
@@ -435,7 +684,6 @@ class JubeatFesto(
                 'clear_type': self.COURSE_CLEAR_HAZARD,
                 'hazard_type': self.COURSE_HAZARD_FC3,
                 'difficulty': 11,
-                'score': 2800000,
                 'music': [
                     [(50000238, 2), (70000003, 2), (90000051, 1)],
                     [(50000027, 2), (50000387, 2)],
@@ -466,6 +714,21 @@ class JubeatFesto(
                     [(50000200, 2), (50000291, 2), (60000003, 2)],
                     [(50000129, 2), (80000021, 2)],
                     [(80000087, 2)],
+                ],
+            },
+            {
+                'id': 36,
+                'name': '#コクがある曲',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 12,
+                'score': 2400000,
+                'music': [
+                    [(50000139, 0), (50000139, 1), (50000139, 2)],
+                    [(90000002, 0), (90000002, 1), (90000002, 2)],
+                    [(50000060, 0), (50000060, 1), (50000060, 2)],
                 ],
             },
             # HOTATE CUP
@@ -512,6 +775,126 @@ class JubeatFesto(
                     [(90000003, 2)],
                     [(80000090, 2)],
                     [(90000009, 2)],
+                ],
+            },
+            {
+                'id': 201,
+                'name': 'The 9th KAC 1st Stage 個人部門',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000125, 2)],
+                    [(60000065, 2)],
+                    [(90000023, 2)],
+                ],
+            },
+            {
+                'id': 202,
+                'name': 'The 9th KAC 1st Stage 団体部門',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000125, 2)],
+                    [(50000135, 2)],
+                    [(90000045, 2)],
+                ],
+            },
+            {
+                'id': 203,
+                'name': 'The 9th KAC 2nd Stage 個人部門',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000095, 2)],
+                    [(80000085, 2)],
+                    [(80000090, 2)],
+                ],
+            },
+            {
+                'id': 204,
+                'name': 'The 9th KAC 2nd Stage 団体部門',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000113, 2)],
+                    [(50000344, 2)],
+                    [(90000096, 2)],
+                ],
+            },
+            {
+                'id': 205,
+                'name': 'The 10th KAC 1st Stage',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000003, 2)],
+                    [(90000151, 2)],
+                    [(90000174, 2)],
+                ],
+            },
+            {
+                'id': 206,
+                'name': 'The 10th KAC 2nd Stage',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000121, 2)],
+                    [(90000113, 2)],
+                    [(90000124, 2)],
+                ],
+            },
+            {
+                'id': 207,
+                'name': '#どうやって押してる？',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 13,
+                'score': 2600000,
+                'music': [
+                    [(40000127, 0)],
+                    [(50000123, 0)],
+                    [(50000126, 0)],
+                ],
+            },
+            {
+                'id': 208,
+                'name': 'BEMANI MASTER KOREA 2021',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000180, 2)],
+                    [(90000095, 2)],
+                    [(90000047, 2)],
                 ],
             },
             {
@@ -562,8 +945,8 @@ class JubeatFesto(
                 'difficulty': 14,
                 'score': 2900000,
                 'music': [
-                    [(20000040, 2), (50000244, 2), (70000145, 2)],
-                    [(40000046, 2), (50000158, 2)],
+                    [(20000040, 2), (50000244, 2), (60000074, 2)],
+                    [(40000152, 2), (50000158, 2)],
                     [(40000057, 2)],
                 ],
             },
@@ -576,9 +959,35 @@ class JubeatFesto(
                 'difficulty': 14,
                 'score': 2820000,
                 'music': [
-                    [(20000051, 2), (50000249, 2), (70000108, 2)],
+                    [(20000051, 2), (50000249, 2), (70000145, 2)],
                     [(40000046, 2), (50000180, 2)],
                     [(50000134, 2)],
+                ],
+            },
+            {
+                'id': 49,
+                'name': '【伝導】10代目最強に挑戦！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 14,
+                'score': 2998179,
+                'music': [
+                    [(50000100, 2)],
+                    [(90000047, 2)],
+                    [(90000057, 2)],
+                ],
+            },
+            {
+                'id': 110,
+                'name': 'jubeat大回顧展 ROOM 10',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 13,
+                'score': 2850000,
+                'music': [
+                    [(30000127, 2)],
+                    [(60000078, 2)],
+                    [(90000047, 2)],
                 ],
             },
             # OSHAKO CUP
@@ -650,6 +1059,38 @@ class JubeatFesto(
                     [(70000094, 2)],
                     [(80000088, 2)],
                     [(70000110, 2)],
+                ],
+            },
+            {
+                'id': 56,
+                'name': '【伝導】1116全てを超越した日',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 16,
+                'score': 2975000,
+                'music': [
+                    [(50000208, 2)],
+                    [(80000050, 2)],
+                    [(90000057, 2)],
+                ],
+            },
+            # TODO: We are missing the "Random Course" course from this mode, which picks a random song
+            # with difficulty 10.0-10.9 for the first, second and third song in the course. We would need
+            # to code in a random level song select, which could also be useful for the recommended endpoint.
+            {
+                'id': 58,
+                'name': '#あなたのjubeatはどこから？',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 15,
+                'score': 2900000,
+                'music': [
+                    [(10000065, 0), (10000065, 1), (10000065, 2)],
+                    [(30000048, 0), (30000048, 1), (30000048, 2)],
+                    [(90000047, 0), (90000047, 1), (90000047, 2)],
                 ],
             },
         ]
@@ -898,7 +1339,7 @@ class JubeatFesto(
                     seq_list.add_child(seq)
                     seq.add_child(Node.s32('music_id', songid))
                     seq.add_child(Node.s32('difficulty', chart))
-                    seq.add_child(Node.bool('is_secret', False))  # TODO: make this an attribute in course definition
+                    seq.add_child(Node.bool('is_secret', False))
 
             # Clear criteria
             clear = Node.void('clear')
@@ -1076,6 +1517,14 @@ class JubeatFesto(
             music.add_child(Node.s8('seq', song.chart))
 
         return recommend
+
+    def handle_gametop_get_info_request(self, request: Node) -> Node:
+        root = Node.void('gametop')
+        data = Node.void('data')
+        root.add_child(data)
+        data.add_child(self.__get_global_info())
+
+        return root
 
     def handle_gametop_regist_request(self, request: Node) -> Node:
         data = request.child('data')
