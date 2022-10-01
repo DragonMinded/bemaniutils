@@ -1533,22 +1533,23 @@ class JubeatFesto(
             info.add_child(festo_dungeon)
             festo_dungeon.add_child(Node.u64('etime', (Time.now() + Time.SECONDS_IN_WEEK) * 1000))
 
-        # TODO: team_batle
+        # Unsupported team_battle nodes.
         info.add_child(Node.void('team_battle'))
 
-        # TODO: qr
-
-        # TODO: emo_list
+        # Unsupported EMO list for EMO shop.
         info.add_child(Node.void('emo_list'))
 
-        # TODO: hike_event
+        # Unsupported hike_event.
+        info.add_child(Node.void('hike_event'))
 
-        # TODO: tip_list
+        # Unsupported tip_list, this probably lets the server control the tips between songs.
         info.add_child(Node.void('tip_list'))
 
-        # TODO: travel
+        # Unsupported mission travel event, which is very server-controlled.
+        info.add_child(Node.void('travel'))
 
-        # TODO: stamp
+        # Unsupported stamp rally event, since this poorly undocumented.
+        info.add_child(Node.void('stamp'))
 
         return info
 
@@ -1935,7 +1936,7 @@ class JubeatFesto(
         settings.add_child(Node.s8('hard', lastdict.get_int('hard')))
         settings.add_child(Node.s8('hazard', lastdict.get_int('hazard')))
 
-        # Secret unlocks, TODO: Make these configurable so events work.
+        # Secret unlocks, the game is too complicated and server-controlled to handle these correctly.
         item = Node.void('item')
         player.add_child(item)
         item.add_child(Node.s32_array('music_list', profile.get_int_array('music_list', 64, [-1] * 64)))
@@ -2213,21 +2214,21 @@ class JubeatFesto(
             Node.s32_array('excellent_flag_list', profile.get_int_array('hard_excellent_flag_list', 16, [-1] * 16))
         )
 
-        # TODO: Unknown department stuff
+        # Unknown department shop stuff, I think this handles the EMO shop.
         department = Node.void('department')
         player.add_child(department)
         department.add_child(Node.void('shop_list'))
 
-        # TODO: Unknown stamp stuff
+        # Stamp rally stuff, this is too server-controlled and not documented on BemaniWiki.
         stamp = Node.void('stamp')
         player.add_child(stamp)
         stamp.add_child(Node.void('sheet_list'))
 
-        # TODO: team_battle?
+        # Missing team_battle, which we do not support.
 
-        # TODO: eamuse_gift_list?
+        # Missing eamuse_gift_list, which we do not support.
 
-        # TODO: hike_event
+        # Missing hike_event, which I can't find any info on.
 
         # Festo dungeon
         festo_dungeon = Node.void('festo_dungeon')
@@ -2235,7 +2236,7 @@ class JubeatFesto(
         festo_dungeon.add_child(Node.s32('phase', profile.get_int('festo_dungeon_phase')))
         festo_dungeon.add_child(Node.s32('clear_flag', profile.get_int('festo_dungeon_clear_flag')))
 
-        # TODO: travel
+        # Missing travel event, which I do not want to implement.
 
         return root
 
