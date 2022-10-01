@@ -290,6 +290,36 @@ var JubeatFCChallengeEvent = React.createClass({
     },
 });
 
+var JubeatRandomCourseEvent = React.createClass({
+    render: function() {
+        var event = this.props.event;
+        var game = this.props.versions[event.data.version];
+        var charts = ["Basic", "Advanced", "Extreme"];
+
+        return (
+            <tr key={event.id}>
+                <td><Timestamp timestamp={event.timestamp} /></td>
+                <td className="scheduled">
+                    <div className="circle" />
+                    Generated New {game} Random 10s Course
+                </td>
+                <td className="details">
+                    <div>Songs:</div>
+                    {[event.data.song1, event.data.song2, event.data.song3].map(function(song) {
+                        return (
+                            <div>
+                                <a href={Link.get('jubeatsong', song.id) + "#" + charts[song.chart]}>
+                                    {this.props.songs[song.id].artist}{this.props.songs[song.id].artist ? " - " : ""}{this.props.songs[song.id].name}
+                                </a> ({charts[song.chart]})
+                            </div>
+                        );
+                    }.bind(this))}
+                </td>
+            </tr>
+        );
+    },
+});
+
 var IIDXDailyChartsEvent = React.createClass({
     render: function() {
         var event = this.props.event;
