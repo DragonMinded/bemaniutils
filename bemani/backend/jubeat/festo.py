@@ -1624,6 +1624,21 @@ class JubeatFesto(
         root = Node.void('ins')
         return root
 
+    def handle_lab_get_ranking_request(self, request: Node) -> Node:
+        root = Node.void('lab')
+        root.add_child(Node.s8('category', request.child_value('category') or 0))
+
+        entries = Node.void('entries')
+        root.add_child(entries)
+
+        # The game allows up to 10 entries, each looking like this:
+        #     <entry>
+        #         <seq_id __type="str">XXXXXXXXX</seq_id>
+        #     <entry>
+        entries.set_attribute('count', '0')
+
+        return root
+
     def handle_recommend_get_recommend_request(self, request: Node) -> Node:
         recommend = Node.void('recommend')
         data = Node.void('data')
