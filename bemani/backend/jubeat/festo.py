@@ -2157,31 +2157,31 @@ class JubeatFesto(
         normal = Node.void('normal')
         fill_in_category.add_child(normal)
         normal.add_child(
-            Node.s32_array('no_gray_flag_list', profile.get_int_array('normal_no_gray_flag_list', 16, [-1] * 16))
+            Node.s32_array('no_gray_flag_list', profile.get_int_array('normal_no_gray_flag_list', 16, [0] * 16))
         )
         normal.add_child(
-            Node.s32_array('all_yellow_flag_list', profile.get_int_array('normal_all_yellow_flag_list', 16, [-1] * 16))
+            Node.s32_array('all_yellow_flag_list', profile.get_int_array('normal_all_yellow_flag_list', 16, [0] * 16))
         )
         normal.add_child(
-            Node.s32_array('full_combo_flag_list', profile.get_int_array('normal_full_combo_flag_list', 16, [-1] * 16))
+            Node.s32_array('full_combo_flag_list', profile.get_int_array('normal_full_combo_flag_list', 16, [0] * 16))
         )
         normal.add_child(
-            Node.s32_array('excellent_flag_list', profile.get_int_array('normal_excellent_flag_list', 16, [-1] * 16))
+            Node.s32_array('excellent_flag_list', profile.get_int_array('normal_excellent_flag_list', 16, [0] * 16))
         )
 
         hard = Node.void('hard')
         fill_in_category.add_child(hard)
         hard.add_child(
-            Node.s32_array('no_gray_flag_list', profile.get_int_array('hard_no_gray_flag_list', 16, [-1] * 16))
+            Node.s32_array('no_gray_flag_list', profile.get_int_array('hard_no_gray_flag_list', 16, [0] * 16))
         )
         hard.add_child(
-            Node.s32_array('all_yellow_flag_list', profile.get_int_array('hard_all_yellow_flag_list', 16, [-1] * 16))
+            Node.s32_array('all_yellow_flag_list', profile.get_int_array('hard_all_yellow_flag_list', 16, [0] * 16))
         )
         hard.add_child(
-            Node.s32_array('full_combo_flag_list', profile.get_int_array('hard_full_combo_flag_list', 16, [-1] * 16))
+            Node.s32_array('full_combo_flag_list', profile.get_int_array('hard_full_combo_flag_list', 16, [0] * 16))
         )
         hard.add_child(
-            Node.s32_array('excellent_flag_list', profile.get_int_array('hard_excellent_flag_list', 16, [-1] * 16))
+            Node.s32_array('excellent_flag_list', profile.get_int_array('hard_excellent_flag_list', 16, [0] * 16))
         )
 
         # Unknown department shop stuff, I think this handles the EMO shop.
