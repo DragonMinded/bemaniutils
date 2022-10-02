@@ -4,7 +4,6 @@ from typing_extensions import Final
 from typing import Optional, List, Dict
 
 from bemani.backend.gitadora.base import GitadoraBase
-from bemani.backend.gitadora.musiclists.nextagemusiclist import MUSICLIST_NEXTAGE, MUSICLIST_NEXTAGE_OMNIMIX
 from bemani.backend.ess import EventLogHandler
 
 from bemani.common import VersionConstants, Profile, Time
@@ -703,10 +702,37 @@ class GitadoraNextage(
         # musicinfo. should been import the musicdb at first.
         # gitadora's music difficulties have changed a lot between each version. 
         # thus have to collect full music difficulties from each data's musiclist.
-        if self.omnimix == True:
-            all_songs = MUSICLIST_NEXTAGE_OMNIMIX
-        else:
-            all_songs = MUSICLIST_NEXTAGE
+        # edit. all music item should be read from sql.db system.
+        #musicinfo. should been import the musicdb at first.
+        all_songs =self.data.local.music.get_all_songs(self.game, self.music_version)
+        songs = list(set([song.id for song in all_songs]))
+        secret_music = [413,516,532,608,705,1100,1114,1130,1133,1462,1508,1547,1623,2531,2539,]
+        musicinfo = Node.void('musicinfo')
+        root.add_child(musicinfo)
+        musicinfo.set_attribute('nr',str(len(songs)))
+        for song in all_songs:
+            chart: List[int] = []
+            if song.chart <= 14:
+                chart.append(song.data.get_int('difficulty'))
+            if song.chart == 14:
+                # change difficulty num. 
+                # musicdb: guitar: 0,1,2,3,4; drum: 5,6,7,8,9; bass: 10,11,12,13,14
+                # gamesend: guitar: 0,1,2,3,4; bass: 5,6,7,8,9; drum: 10,11,12,13,14
+                for change_item in range(6,10):
+                    chart[change_item], chart[change_item+5] = chart[change_item+5], chart[change_item]
+                music = Node.void('music')
+                musicinfo.add_child(music)
+                music.add_child(Node.s32('id',song.id))
+                music.add_child(Node.bool('cont_gf',True))
+                music.add_child(Node.bool('cont_dm',True))
+                music.add_child(Node.bool('is_secret',False))#unlock all
+                if song.id in secret_music or 2590<= song.id <=2711:#hot music
+                    music.add_child(Node.bool('is_hot',True))
+                else:
+                    music.add_child(Node.bool('is_hot',False))
+                music.add_child(Node.s32('data_ver',-1))
+                music.add_child(Node.u16_array('diff',chart))
+
 
         musicinfo = Node.void('musicinfo')
         root.add_child(musicinfo)
