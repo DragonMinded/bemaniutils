@@ -16,7 +16,7 @@ from bemani.backend.jubeat.clan import JubeatClan
 
 from bemani.backend.base import Status
 from bemani.common import Profile, Time, ValidatedDict, VersionConstants
-from bemani.data import Data, Achievement, UserID, Score, Song
+from bemani.data import Data, UserID, Score, Song
 from bemani.protocol import Node
 
 
@@ -2150,36 +2150,6 @@ class JubeatFesto(
             category.set_attribute('id', str(categoryid))
             category.add_child(Node.bool('is_display', True))
 
-        # Drop list
-        drop_list = Node.void('drop_list')
-        player.add_child(drop_list)
-
-        dropachievements: Dict[int, Achievement] = {}
-        for achievement in achievements:
-            if achievement.type == 'drop':
-                dropachievements[achievement.id] = achievement
-
-        for dropid in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-            if dropid in dropachievements:
-                dropdata = dropachievements[dropid].data
-            else:
-                dropdata = ValidatedDict()
-
-            drop = Node.void('drop')
-            drop_list.add_child(drop)
-            drop.set_attribute('id', str(dropid))
-            drop.add_child(Node.s32('exp', dropdata.get_int('exp', -1)))
-            drop.add_child(Node.s32('flag', dropdata.get_int('flag', 0)))
-
-            item_list = Node.void('item_list')
-            drop.add_child(item_list)
-
-            for itemid in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-                item = Node.void('item')
-                item_list.add_child(item)
-                item.set_attribute('id', str(itemid))
-                item.add_child(Node.s32('num', dropdata.get_int(f'item_{itemid}')))
-
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
         player.add_child(fill_in_category)
@@ -2342,56 +2312,6 @@ class JubeatFesto(
             elif emblemtype == self.JBOX_EMBLEM_PREMIUM:
                 jboxdict.replace_int('premium_index', index)
         newprofile.replace_dict('jbox', jboxdict)
-
-        # Drop list
-        drop_list = player.child('drop_list')
-        if drop_list is not None:
-            for drop in drop_list.children:
-                try:
-                    dropid = int(drop.attribute('id'))
-                except TypeError:
-                    # Unrecognized drop
-                    continue
-                exp = drop.child_value('exp')
-                flag = drop.child_value('flag')
-                items: Dict[int, int] = {}
-
-                item_list = drop.child('item_list')
-                if item_list is not None:
-                    for item in item_list.children:
-                        try:
-                            itemid = int(item.attribute('id'))
-                        except TypeError:
-                            # Unrecognized item
-                            continue
-                        items[itemid] = item.child_value('num')
-
-                olddrop = self.data.local.user.get_achievement(
-                    self.game,
-                    self.version,
-                    userid,
-                    dropid,
-                    'drop',
-                )
-
-                if olddrop is None:
-                    # Create a new event structure for this
-                    olddrop = ValidatedDict()
-
-                olddrop.replace_int('exp', exp)
-                olddrop.replace_int('flag', flag)
-                for itemid, num in items.items():
-                    olddrop.replace_int(f'item_{itemid}', num)
-
-                # Save it as an achievement
-                self.data.local.user.put_achievement(
-                    self.game,
-                    self.version,
-                    userid,
-                    dropid,
-                    'drop',
-                    olddrop,
-                )
 
         # event stuff
         newprofile.replace_int('event_flag', player.child_value('event_flag'))
