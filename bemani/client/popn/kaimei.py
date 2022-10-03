@@ -581,7 +581,7 @@ class PopnMusicKaimeiClient(BaseClient):
                         },
                     ]
                     # Random score to add in
-                    songid = random.randint(907, 950)
+                    songid = random.randint(920, 950)
                     chartid = random.randint(0, 3)
                     score = random.randint(0, 100000)
                     medal = random.randint(1, 11)

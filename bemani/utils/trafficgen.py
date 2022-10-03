@@ -19,6 +19,7 @@ from bemani.client.jubeat import (
     JubeatPropClient,
     JubeatQubellClient,
     JubeatClanClient,
+    JubeatFestoClient,
 )
 from bemani.client.popn import (
     PopnMusicTuneStreetClient,
@@ -135,6 +136,12 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
         )
     if game == 'jubeat-clan':
         return JubeatClanClient(
+            proto,
+            pcbid,
+            config,
+        )
+    if game == 'jubeat-festo':
+        return JubeatFestoClient(
             proto,
             pcbid,
             config,
@@ -380,6 +387,11 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             'model': "L44:J:E:A:2018070901",
             'avs': "2.17.3 r8311",
         },
+        'jubeat-festo': {
+            'name': "Jubeat Festo",
+            'model': "L44:J:B:A:2022052400",
+            'avs': "2.17.3 r8311",
+        },
         'iidx-rootage': {
             'name': "Beatmania IIDX ROOTAGE",
             'model': "LDJ:J:A:A:2019090200",
@@ -586,6 +598,7 @@ def main() -> None:
         'jubeat-6': 'jubeat-prop',
         'jubeat-7': 'jubeat-qubell',
         'jubeat-8': 'jubeat-clan',
+        'jubeat-9': 'jubeat-festo',
         'ddr-12': 'ddr-x2',
         'ddr-13': 'ddr-x3',
         'ddr-14': 'ddr-2013',

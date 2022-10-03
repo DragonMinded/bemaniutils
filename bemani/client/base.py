@@ -90,7 +90,7 @@ class BaseClient:
         if not self.__assert_path(root, path):
             raise Exception(f'Path \'{path}\' not found in root node:\n{root}')
 
-    def verify_services_get(self, expected_services: List[str]=[]) -> None:
+    def verify_services_get(self, expected_services: List[str]=[], include_net: bool = False) -> None:
         call = self.call_node()
 
         # Construct node
@@ -104,6 +104,21 @@ class BaseClient:
             services.add_child(info)
 
             info.add_child(Node.string('AVS2', self.config['avs']))
+
+        if include_net:
+            net = Node.void('net')
+            services.add_child(net)
+            iface = Node.void('if')
+            net.add_child(iface)
+            iface.add_child(Node.u8('id', 0))
+            iface.add_child(Node.bool('valid', True))
+            iface.add_child(Node.u8('type', 1))
+            iface.add_child(Node.u8_array('mac', [1, 2, 3, 4, 5, 6]))
+            iface.add_child(Node.ipv4('addr', '10.0.0.100'))
+            iface.add_child(Node.ipv4('bcast', '10.0.0.255'))
+            iface.add_child(Node.ipv4('netmask', '255.255.255.0'))
+            iface.add_child(Node.ipv4('gateway', '10.0.0.1'))
+            iface.add_child(Node.ipv4('dhcp', '10.0.0.1'))
 
         # Swap with server
         resp = self.exchange('core/services', call)

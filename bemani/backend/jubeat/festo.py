@@ -2287,18 +2287,19 @@ class JubeatFesto(
 
         # Grab categories stuff
         fill_in_category = player.child('fill_in_category')
-        fill_in_category_normal = fill_in_category.child('normal')
         if fill_in_category is not None:
-            newprofile.replace_int_array('normal_no_gray_flag_list', 16, fill_in_category_normal.child_value('no_gray_flag_list'))
-            newprofile.replace_int_array('normal_all_yellow_flag_list', 16, fill_in_category_normal.child_value('all_yellow_flag_list'))
-            newprofile.replace_int_array('normal_full_combo_flag_list', 16, fill_in_category_normal.child_value('full_combo_flag_list'))
-            newprofile.replace_int_array('normal_excellent_flag_list', 16, fill_in_category_normal.child_value('excellent_flag_list'))
-        fill_in_category_hard = fill_in_category.child('hard')
-        if fill_in_category is not None:
-            newprofile.replace_int_array('hard_no_gray_flag_list', 16, fill_in_category_hard.child_value('no_gray_flag_list'))
-            newprofile.replace_int_array('hard_all_yellow_flag_list', 16, fill_in_category_hard.child_value('all_yellow_flag_list'))
-            newprofile.replace_int_array('hard_full_combo_flag_list', 16, fill_in_category_hard.child_value('full_combo_flag_list'))
-            newprofile.replace_int_array('hard_excellent_flag_list', 16, fill_in_category_hard.child_value('excellent_flag_list'))
+            fill_in_category_normal = fill_in_category.child('normal')
+            if fill_in_category_normal is not None:
+                newprofile.replace_int_array('normal_no_gray_flag_list', 16, fill_in_category_normal.child_value('no_gray_flag_list'))
+                newprofile.replace_int_array('normal_all_yellow_flag_list', 16, fill_in_category_normal.child_value('all_yellow_flag_list'))
+                newprofile.replace_int_array('normal_full_combo_flag_list', 16, fill_in_category_normal.child_value('full_combo_flag_list'))
+                newprofile.replace_int_array('normal_excellent_flag_list', 16, fill_in_category_normal.child_value('excellent_flag_list'))
+            fill_in_category_hard = fill_in_category.child('hard')
+            if fill_in_category_hard is not None:
+                newprofile.replace_int_array('hard_no_gray_flag_list', 16, fill_in_category_hard.child_value('no_gray_flag_list'))
+                newprofile.replace_int_array('hard_all_yellow_flag_list', 16, fill_in_category_hard.child_value('all_yellow_flag_list'))
+                newprofile.replace_int_array('hard_full_combo_flag_list', 16, fill_in_category_hard.child_value('full_combo_flag_list'))
+                newprofile.replace_int_array('hard_excellent_flag_list', 16, fill_in_category_hard.child_value('excellent_flag_list'))
 
         # jbox stuff
         jbox = player.child('jbox')
