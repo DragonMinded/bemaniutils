@@ -148,11 +148,11 @@ class JubeatFrontend(FrontendBase):
         formatted_profile['emblem'] = self.format_emblem(profile.get_dict('last').get_int_array('emblem', 5))
         formatted_profile['jubility'] = profile.get_int('jubility')
         formatted_profile['pick_up_jubility'] = profile.get_float('pick_up_jubility')
-        #  Only reason this is a dictionary of dictionaries is because ValidatedDict doesn't support a list of dictionaries. Probably intentionally lol
-        #  Just listify the pickup/common charts and then sort them by the value key in each dictionary since that's the actual number of points
-        formatted_profile['pick_up_chart'] = sorted(list(profile.get_dict('pick_up_chart').values()), key=lambda x: x['value'], reverse=True)
+        # Only reason this is a dictionary of dictionaries is because ValidatedDict doesn't support a list of dictionaries. 
+        # Probably intentionally lol. Just listify the pickup/common charts.
+        formatted_profile['pick_up_chart'] = list(profile.get_dict('pick_up_chart').values())
         formatted_profile['common_jubility'] = profile.get_float('common_jubility')
-        formatted_profile['common_chart'] = sorted(list(profile.get_dict('common_chart').values()), key=lambda x: x['value'], reverse=True)
+        formatted_profile['common_chart'] = list(profile.get_dict('common_chart').values())
         formatted_profile['ex_count'] = profile.get_int('ex_cnt')
         formatted_profile['fc_count'] = profile.get_int('fc_cnt')
         return formatted_profile

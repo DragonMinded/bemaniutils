@@ -39,7 +39,7 @@ var jubility_view = React.createClass({
 
     renderJubilityBreakdown: function(player) {
         return (
-            <div className="row">
+            <div className='row'>
                 {this.renderJubilityTable(player, true)}
                 {this.renderJubilityTable(player, false)}
             </div>
@@ -57,46 +57,49 @@ var jubility_view = React.createClass({
             return null;
         }
         return(
-            <div className="col-6 col-12-medium">
+            <div className='col-6 col-12-medium'>
                 <p>
                     <b>
                     {pickup == true ? <b>Pick up chart breakdown</b> : <b>Common chart breakdown</b>}
                     </b>
                 </p>
-                <table>
-                    <thead>
-                        <th>Song</th>
-                        <th>Hard Mode</th>
-                        <th>Music Rate</th>
-                        <th>Jubility</th>
-                    </thead>
-                    <tbody>
-                        {jubilityChart.map(function(entry) {
-                            songid = entry.music_id;
-                            music_rate = entry.music_rate;
-                            hard_mode = entry.seq >= 3;
-                            value = entry.value;
-                            return (
-                                <tr>
-                                    <td>
-                                        <a href={Link.get('individual_score', songid)}>
-                                            <div>{ this.state.songs[songid].name }</div>
-                                        </a>
-                                    </td>
-                                    <td>
-                                        {hard_mode ? 'Yes' : 'No'}
-                                    </td>
-                                    <td>
-                                        {music_rate.toFixed(1)}%
-                                    </td>
-                                    <td>
-                                        {value.toFixed(1)}
-                                    </td>
-                                </tr>
-                            );
-                        }.bind(this))}
-                    </tbody>
-                </table>
+                <Table 
+                    className='list jubility'
+                    columns={[
+                        {
+                            name: 'Song',
+                            render: function(entry) {
+                                return (
+                                    <a href={Link.get('individual_score', entry.music_id)}>
+                                        <div>{ this.state.songs[entry.music_id].name }</div>
+                                    </a>
+                                );
+                            }.bind(this),
+                        },
+                        {
+                            name: 'Hard Mode',
+                            render: function(entry) { return entry.seq >= 3 ? 'Yes' : 'No'; }
+                        },
+                        {
+                            name: 'Music Rate',
+                            render: function(entry) { return entry.music_rate.toFixed(1) + '%'; },
+                            sort: function(a, b) {
+                                return a.music_rate - b.music_rate;
+                            },
+                            reverse: true,
+                        },
+                        {
+                            name: 'Jubility',
+                            render: function(entry) { return entry.value.toFixed(1); },
+                            sort: function(a, b) {
+                                return a.value - b.value;
+                            },
+                            reverse: true,
+                        },
+                    ]}
+                    defaultsort='Jubility'
+                    rows={jubilityChart}
+                />
             </div>
         );
     },
@@ -118,13 +121,13 @@ var jubility_view = React.createClass({
             // version == festo
             this.state.version == 13 ? 
                 <div>
-                    <LabelledSection label="Jubility">
+                    <LabelledSection label='Jubility'>
                     {(player.common_jubility+player.pick_up_jubility).toFixed(1)}
                     </LabelledSection>
-                    <LabelledSection label="Common Jubility">
+                    <LabelledSection label='Common Jubility'>
                         {player.common_jubility.toFixed(1)}
                     </LabelledSection>
-                    <LabelledSection label="Pick up Jubility">
+                    <LabelledSection label='Pick up Jubility'>
                         {player.pick_up_jubility.toFixed(1)}
                     </LabelledSection>
                 </div>
@@ -132,7 +135,7 @@ var jubility_view = React.createClass({
             // Default which version >= Saucer except qubell and festo
             this.state.version >= 8 ? 
                 <div>
-                    <LabelledSection label="Jubility">
+                    <LabelledSection label='Jubility'>
                     {player.jubility / 100}
                     </LabelledSection>
                 </div>
@@ -198,7 +201,7 @@ var jubility_view = React.createClass({
                     <section>
                         <p>
                             <SelectVersion
-                                name="version"
+                                name='version'
                                 value={ item.indexOf(item[this.state.version - 1]) }
                                 versions={ item }
                                 onChange={function(event) {
