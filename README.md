@@ -226,10 +226,10 @@ This should be given the same config file as "api", "frontend" and "services".
 Development version of an eAmusement protocol server using flask and the protocol
 libraries also used in "bemanishark" and "trafficgen". Currently it lets most modern
 BEMANI games boot and supports full profile and events for Beatmania IIDX 20-26,
-Pop'n Music 19-26, Jubeat Saucer, Saucer Fulfill, Prop, Qubell and Clan, Sound Voltex
-1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace, MÚSECA 1,
-MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper, Volzza
-1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi.
+Pop'n Music 19-26, Jubeat Saucer, Saucer Fulfill, Prop, Qubell, Clan and Festo, Sound
+Voltex 1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace,
+MÚSECA 1, MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper,
+Volzza 1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi.
 
 Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with a Python
@@ -259,10 +259,11 @@ guarantees are made on the accuracy of the emulation though I've strived to be
 correct. In some cases, I will verify the response, and in other cases I will
 simply verify that certain things exist so as not to crash a real client. This
 currently generates traffic emulating Beatmania IIDX 20-26, Pop'n Music 19-26, Jubeat
-Saucer, Fulfill, Prop, Qubell and Clan, Sound Voltex 1, 2, 3 Season 1/2 and 4, Dance
-Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA 1+1/2,
-Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper, Volzza 1 and
-Volzza 2 and can verify card events and score events, as well as PASELI transactions.
+Saucer, Fulfill, Prop, Qubell, Clan and Festo, Sound Voltex 1, 2, 3 Season 1/2 and 4,
+Dance Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA
+1+1/2, Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper,
+Volzza 1 and Volzza 2 and can verify card events and score events, as well as PASELI
+transactions.
 
 ## verifylibs
 
@@ -423,6 +424,7 @@ table:
 * Prop:           prop
 * Qubell:         qubell
 * Clan:           clan
+* Festo:          festo
 
 An example is as follows:
 
