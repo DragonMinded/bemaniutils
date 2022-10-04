@@ -249,7 +249,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         self.update_machine_name(request.child_value('pcb_setting/name'))
         return Node.void('pcb22')
 
-    def handle_lobby22_request(self, request: Node) -> Node:
+    def handle_lobby22_requests(self, request: Node) -> Node:
         # Stub out the entire lobby22 service
         return Node.void('lobby22')
 

@@ -106,7 +106,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
             return self.GAME_PLAY_RANK_AAA
         return self.GAME_PLAY_RANK_S
 
-    def handle_lobby24_request(self, request: Node) -> Node:
+    def handle_lobby24_requests(self, request: Node) -> Node:
         # Stub out the entire lobby24 service
         return Node.void('lobby24')
 
