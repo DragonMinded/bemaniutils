@@ -147,7 +147,7 @@ class Dispatch:
         if response is None:
             # Now, try to pass it off to a generic service handler
             try:
-                handler = getattr(game, f'handle_{request.name}_request')
+                handler = getattr(game, f'handle_{request.name}_requests')
             except AttributeError:
                 handler = None
             if handler is not None:
