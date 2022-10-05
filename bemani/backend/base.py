@@ -26,8 +26,9 @@ class Factory(ABC):
     """
     The base class every game factory inherits from. Defines a create method
     which should return some game class which can handle packets. Game classes
-    inherit from Base, and have handle_<call>_request methods on them that
-    Dispatch will look up in order to handle calls.
+    inherit from Base, and have handle_<call>_requests service methods or
+    handle_<call>_<method>_request methods on them that Dispatch will look up
+    in order to handle calls.
     """
 
     MANAGED_CLASSES: List[Type["Base"]]

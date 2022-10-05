@@ -28,6 +28,7 @@ from bemani.backend.popn.lapistoria import PopnMusicLapistoria
 from bemani.backend.popn.eclale import PopnMusicEclale
 from bemani.backend.popn.usaneko import PopnMusicUsaNeko
 from bemani.backend.popn.peace import PopnMusicPeace
+from bemani.backend.popn.kaimei import PopnMusicKaimei
 from bemani.common import Model, VersionConstants
 from bemani.data import Config, Data
 
@@ -60,6 +61,7 @@ class PopnMusicFactory(Factory):
         PopnMusicEclale,
         PopnMusicUsaNeko,
         PopnMusicPeace,
+        PopnMusicKaimei,
     ]
 
     @classmethod
@@ -79,8 +81,10 @@ class PopnMusicFactory(Factory):
                 return VersionConstants.POPN_MUSIC_ECLALE
             if date >= 2016121400 and date < 2018101700:
                 return VersionConstants.POPN_MUSIC_USANEKO
-            if date >= 2018101700:
+            if date >= 2018101700 and date < 2021042600:
                 return VersionConstants.POPN_MUSIC_PEACE
+            if date >= 2021042600:
+                return VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES
             return None
 
         if model.gamecode == 'G15':
@@ -113,6 +117,8 @@ class PopnMusicFactory(Factory):
                     return PopnMusicEclale(data, config, model)
                 if parentversion == VersionConstants.POPN_MUSIC_PEACE:
                     return PopnMusicUsaNeko(data, config, model)
+                if parentversion == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES:
+                    return PopnMusicPeace(data, config, model)
 
                 # Unknown older version
                 return None
@@ -128,6 +134,8 @@ class PopnMusicFactory(Factory):
                 return PopnMusicUsaNeko(data, config, model)
             if version == VersionConstants.POPN_MUSIC_PEACE:
                 return PopnMusicPeace(data, config, model)
+            if version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES:
+                return PopnMusicKaimei(data, config, model)
 
         # Unknown game version
         return None

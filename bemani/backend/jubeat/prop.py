@@ -401,7 +401,7 @@ class JubeatProp(
             evt = Node.void('event')
             event_info.add_child(evt)
             evt.set_attribute('type', str(event))
-            evt.add_child(Node.u8('state', 0x1 if self.EVENTS[event]['enabled'] else 0x0))
+            evt.add_child(Node.u8('state', 1 if self.EVENTS[event]['enabled'] else 0))
 
         # Each of the following three sections should have zero or more child nodes (no
         # particular name) which look like the following:
@@ -1362,6 +1362,10 @@ class JubeatProp(
 
         music = ValidatedDict()
         for score in scores:
+            # Ignore festo-and-above chart types.
+            if score.chart not in {self.CHART_TYPE_BASIC, self.CHART_TYPE_ADVANCED, self.CHART_TYPE_EXTREME}:
+                continue
+
             data = music.get_dict(str(score.id))
             play_cnt = data.get_int_array('play_cnt', 3)
             clear_cnt = data.get_int_array('clear_cnt', 3)

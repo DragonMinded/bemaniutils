@@ -6,7 +6,7 @@ from bemani.client.base import BaseClient
 from bemani.protocol import Node
 
 
-class PopnMusicPeaceClient(BaseClient):
+class PopnMusicKaimeiClient(BaseClient):
     NAME = 'ＴＥＳＴ'
 
     def verify_pcb24_boot(self, loc: str) -> None:

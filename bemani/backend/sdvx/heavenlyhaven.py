@@ -108,6 +108,12 @@ class SoundVoltexHeavenlyHaven(
                     'category': 'game_config',
                     'setting': 'force_unlock_crew',
                 },
+                {
+                    'name': '50th Anniversary Celebration',
+                    'tip': 'Display the 50th anniversary screen in attract mode',
+                    'category': 'game_config',
+                    'setting': '50th_anniversary',
+                },
             ],
         }
 
@@ -3296,7 +3302,8 @@ class SoundVoltexHeavenlyHaven(
         enable_event("DEMOGAME_PLAY")
         enable_event("TOTAL_MEMORIAL_ENABLE")
         enable_event("EVENT_IDS_SERIALCODE_TOHO_02")
-        enable_event("KONAMI_50TH_LOGO")
+        if game_config.get_bool('50th_anniversary'):
+            enable_event("KONAMI_50TH_LOGO")
         enable_event("KAC6TH_FINISH")
         enable_event("KAC7TH_FINISH")
         enable_event("KAC8TH_FINISH")

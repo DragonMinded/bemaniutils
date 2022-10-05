@@ -254,7 +254,7 @@ class PopnMusicEclale(PopnMusicBase):
         self.__construct_common_info(info)
         return info
 
-    def handle_lobby22_request(self, request: Node) -> Node:
+    def handle_lobby22_requests(self, request: Node) -> Node:
         # Stub out the entire lobby22 service (yes, its lobby22 in Pop'n 23)
         return Node.void('lobby22')
 

@@ -1,4 +1,3 @@
-from typing import Optional
 from typing_extensions import Final
 
 from bemani.backend.base import Base, Status
@@ -24,11 +23,7 @@ class PASELIHandler(Base):
     """
     paseli_padding: int = 1
 
-    def handle_eacoin_request(self, request: Node) -> Optional[Node]:
-        """
-        First, a generic handler to catch if paseli is not enabled, so that each
-        individual method below doesn't need to handle it.
-        """
+    def handle_eacoin_checkin_request(self, request: Node) -> Node:
         if not self.config.paseli.enabled:
             # Refuse to respond, we don't have PASELI enabled
             print("PASELI not enabled, ignoring eacoin request")
@@ -36,10 +31,6 @@ class PASELIHandler(Base):
             root.set_attribute('status', str(Status.NOT_ALLOWED))
             return root
 
-        # This is fine, let the individual request handlers handle this packet.
-        return None
-
-    def handle_eacoin_checkin_request(self, request: Node) -> Node:
         root = Node.void('eacoin')
         cardid = request.child_value('cardid')
         pin = request.child_value('passwd')
@@ -85,6 +76,13 @@ class PASELIHandler(Base):
         return root
 
     def handle_eacoin_opcheckin_request(self, request: Node) -> Node:
+        if not self.config.paseli.enabled:
+            # Refuse to respond, we don't have PASELI enabled
+            print("PASELI not enabled, ignoring eacoin request")
+            root = Node.void('eacoin')
+            root.set_attribute('status', str(Status.NOT_ALLOWED))
+            return root
+
         root = Node.void('eacoin')
         passwd = request.child_value('passwd')
 
@@ -118,6 +116,12 @@ class PASELIHandler(Base):
         return root
 
     def handle_eacoin_consume_request(self, request: Node) -> Node:
+        if not self.config.paseli.enabled:
+            # Refuse to respond, we don't have PASELI enabled
+            print("PASELI not enabled, ignoring eacoin request")
+            root = Node.void('eacoin')
+            root.set_attribute('status', str(Status.NOT_ALLOWED))
+            return root
 
         def make_resp(status: int, balance: int) -> Node:
             root = Node.void('eacoin')
@@ -174,6 +178,13 @@ class PASELIHandler(Base):
         return make_resp(0, balance)
 
     def handle_eacoin_getlog_request(self, request: Node) -> Node:
+        if not self.config.paseli.enabled:
+            # Refuse to respond, we don't have PASELI enabled
+            print("PASELI not enabled, ignoring eacoin request")
+            root = Node.void('eacoin')
+            root.set_attribute('status', str(Status.NOT_ALLOWED))
+            return root
+
         root = Node.void('eacoin')
         sessid = request.child_value('sessid')
         logtype = request.child_value('logtype')
@@ -389,6 +400,13 @@ class PASELIHandler(Base):
         return root
 
     def handle_eacoin_opchpass_request(self, request: Node) -> Node:
+        if not self.config.paseli.enabled:
+            # Refuse to respond, we don't have PASELI enabled
+            print("PASELI not enabled, ignoring eacoin request")
+            root = Node.void('eacoin')
+            root.set_attribute('status', str(Status.NOT_ALLOWED))
+            return root
+
         root = Node.void('eacoin')
         oldpass = request.child_value('passwd')
         newpass = request.child_value('newpasswd')
@@ -423,6 +441,13 @@ class PASELIHandler(Base):
         return root
 
     def handle_eacoin_checkout_request(self, request: Node) -> Node:
+        if not self.config.paseli.enabled:
+            # Refuse to respond, we don't have PASELI enabled
+            print("PASELI not enabled, ignoring eacoin request")
+            root = Node.void('eacoin')
+            root.set_attribute('status', str(Status.NOT_ALLOWED))
+            return root
+
         session = request.child_value('sessid')
         if session is not None:
             # Destroy the session so it can't be used for any other purchases
@@ -432,6 +457,13 @@ class PASELIHandler(Base):
         return root
 
     def handle_eacoin_opcheckout_request(self, request: Node) -> Node:
+        if not self.config.paseli.enabled:
+            # Refuse to respond, we don't have PASELI enabled
+            print("PASELI not enabled, ignoring eacoin request")
+            root = Node.void('eacoin')
+            root.set_attribute('status', str(Status.NOT_ALLOWED))
+            return root
+
         session = request.child_value('sessid')
         if session is not None:
             # Destroy the session so it can't be used for any other purchases

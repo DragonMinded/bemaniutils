@@ -655,7 +655,7 @@ class JubeatClan(
             evt = Node.void('event')
             event_info.add_child(evt)
             evt.set_attribute('type', str(event))
-            evt.add_child(Node.u8('state', self.EVENT_STATUS_OPEN if self.EVENTS[event]['enabled'] else 0))
+            evt.add_child(Node.u8('state', 1 if self.EVENTS[event]['enabled'] else 0))
 
         # Each of the following two sections should have zero or more child nodes (no
         # particular name) which look like the following:
@@ -1126,6 +1126,10 @@ class JubeatClan(
 
         music = ValidatedDict()
         for score in scores:
+            # Ignore festo-and-above chart types.
+            if score.chart not in {self.CHART_TYPE_BASIC, self.CHART_TYPE_ADVANCED, self.CHART_TYPE_EXTREME}:
+                continue
+
             data = music.get_dict(str(score.id))
             play_cnt = data.get_int_array('play_cnt', 3)
             clear_cnt = data.get_int_array('clear_cnt', 3)
@@ -1234,7 +1238,7 @@ class JubeatClan(
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
-        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version')))
+        info.add_child(Node.bool('inherit', profile.get_bool('has_old_version') and not profile.get_bool('saved')))
 
         # Not saved, but loaded
         info.add_child(Node.s32('mtg_entry_cnt', 123))
@@ -1575,10 +1579,10 @@ class JubeatClan(
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
         player.add_child(fill_in_category)
-        fill_in_category.add_child(Node.s32_array('no_gray_flag_list', profile.get_int_array('no_gray_flag_list', 16, [-1] * 16)))
-        fill_in_category.add_child(Node.s32_array('all_yellow_flag_list', profile.get_int_array('all_yellow_flag_list', 16, [-1] * 16)))
-        fill_in_category.add_child(Node.s32_array('full_combo_flag_list', profile.get_int_array('full_combo_flag_list', 16, [-1] * 16)))
-        fill_in_category.add_child(Node.s32_array('excellent_flag_list', profile.get_int_array('excellent_flag_list', 16, [-1] * 16)))
+        fill_in_category.add_child(Node.s32_array('no_gray_flag_list', profile.get_int_array('no_gray_flag_list', 16, [0] * 16)))
+        fill_in_category.add_child(Node.s32_array('all_yellow_flag_list', profile.get_int_array('all_yellow_flag_list', 16, [0] * 16)))
+        fill_in_category.add_child(Node.s32_array('full_combo_flag_list', profile.get_int_array('full_combo_flag_list', 16, [0] * 16)))
+        fill_in_category.add_child(Node.s32_array('excellent_flag_list', profile.get_int_array('excellent_flag_list', 16, [0] * 16)))
 
         # Daily Bonus
         daily_bonus_list = Node.void('daily_bonus_list')
@@ -1592,6 +1596,7 @@ class JubeatClan(
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
+        newprofile.replace_bool('saved', True)
         data = request.child('data')
 
         # Grab system information
@@ -1656,7 +1661,7 @@ class JubeatClan(
             newprofile.replace_int_array('title_list', 160, item.child_value('title_list'))
             newprofile.replace_int_array('parts_list', 160, item.child_value('parts_list'))
             newprofile.replace_int_array('emblem_list', 96, item.child_value('emblem_list'))
-            newprofile.replace_int_array('commu_list', 96, item.child_value('commu_list'))
+            newprofile.replace_int_array('commu_list', 16, item.child_value('commu_list'))
 
             newitem = item.child('new')
             if newitem is not None:

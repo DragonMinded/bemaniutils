@@ -15,8 +15,8 @@ from bemani.backend.jubeat.common import (
 from bemani.backend.jubeat.clan import JubeatClan
 
 from bemani.backend.base import Status
-from bemani.common import Time, ValidatedDict, VersionConstants, Profile
-from bemani.data import Data, Achievement, Score, Song, UserID
+from bemani.common import Profile, Time, ValidatedDict, VersionConstants
+from bemani.data import Data, UserID, Score, Song
 from bemani.protocol import Node
 
 
@@ -63,9 +63,6 @@ class JubeatFesto(
         }
     }
 
-    # These songs are gone in festo final but will likely be readded in the omnimix...
-    FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS: Set[int] = set(range(80000301, 80000348))
-
     COURSE_STATUS_SEEN: Final[int] = 0x01
     COURSE_STATUS_PLAYED: Final[int] = 0x02
     COURSE_STATUS_CLEARED: Final[int] = 0x04
@@ -87,6 +84,12 @@ class JubeatFesto(
     GAME_CHART_TYPE_BASIC: Final[int] = 0
     GAME_CHART_TYPE_ADVANCED: Final[int] = 1
     GAME_CHART_TYPE_EXTREME: Final[int] = 2
+
+    # Return the netlog service so that Festo doesn't crash on coin-in.
+    extra_services: List[str] = [
+        'netlog',
+        'slocal',
+    ]
 
     def previous_version(self) -> Optional[JubeatBase]:
         return JubeatClan(self.data, self.config, self.model)
@@ -120,7 +123,7 @@ class JubeatFesto(
         """
         Insert daily FC challenges into the DB.
         """
-        events = []
+        events: List[Tuple[str, Dict[str, Any]]] = []
         if data.local.network.should_schedule(cls.game, cls.version, 'fc_challenge', 'daily'):
             # Generate a new list of two FC challenge songs. Skip a particular song range since these are all a single song ID.
             # Jubeat Clan has an unlock event where you have to play different charts for the same song, and the charts are
@@ -153,6 +156,74 @@ class JubeatFesto(
 
                 # Mark that we did some actual work here.
                 data.local.network.mark_scheduled(cls.game, cls.version, 'fc_challenge', 'daily')
+        if data.local.network.should_schedule(cls.game, cls.version, 'random_course', 'daily'):
+            # Generate a new list of three random songs for random course mode.
+            start_time, end_time = data.local.network.get_schedule_duration('daily')
+
+            def is_ten(song: Song) -> bool:
+                # We only want random songs that actually have a hard chart! This should be all songs right now,
+                # but let's be conservative in case a future game screws things up.
+                if song.chart not in {cls.CHART_TYPE_HARD_BASIC, cls.CHART_TYPE_HARD_ADVANCED, cls.CHART_TYPE_HARD_EXTREME}:
+                    return False
+
+                difficulty = song.data.get_float('difficulty', 13)
+                if difficulty == 13.0:
+                    difficulty = float(song.data.get_int('difficulty', 13))
+
+                return difficulty >= 10.0 and difficulty < 11.0
+
+            def chart_lut(chart: int) -> int:
+                return {
+                    cls.CHART_TYPE_HARD_BASIC: cls.CHART_TYPE_BASIC,
+                    cls.CHART_TYPE_HARD_ADVANCED: cls.CHART_TYPE_ADVANCED,
+                    cls.CHART_TYPE_HARD_EXTREME: cls.CHART_TYPE_EXTREME,
+                }[chart]
+
+            all_tens = [song for song in data.local.music.get_all_songs(cls.game, cls.version) if is_ten(song)]
+            if len(all_tens) >= 3:
+                course_songs = random.sample(all_tens, 3)
+                data.local.game.put_time_sensitive_settings(
+                    cls.game,
+                    cls.version,
+                    'random_course',
+                    {
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'song1': {
+                            'id': course_songs[0].id,
+                            'chart': chart_lut(course_songs[0].chart),
+                        },
+                        'song2': {
+                            'id': course_songs[1].id,
+                            'chart': chart_lut(course_songs[1].chart),
+                        },
+                        'song3': {
+                            'id': course_songs[2].id,
+                            'chart': chart_lut(course_songs[2].chart),
+                        },
+                    },
+                )
+                events.append((
+                    'jubeat_random_course_charts',
+                    {
+                        'version': cls.version,
+                        'song1': {
+                            'id': course_songs[0].id,
+                            'chart': chart_lut(course_songs[0].chart),
+                        },
+                        'song2': {
+                            'id': course_songs[1].id,
+                            'chart': chart_lut(course_songs[1].chart),
+                        },
+                        'song3': {
+                            'id': course_songs[2].id,
+                            'chart': chart_lut(course_songs[2].chart),
+                        },
+                    },
+                ))
+
+                # Mark that we did some actual work here.
+                data.local.network.mark_scheduled(cls.game, cls.version, 'random_course', 'daily')
         return events
 
     @classmethod
@@ -161,18 +232,211 @@ class JubeatFesto(
         Return all of our front-end modifiably settings.
         """
         return {
+            'ints': [
+                {
+                    'name': 'KAC Course Phase',
+                    'tip': 'The KAC competition courses that should be available in Tune Run',
+                    'category': 'game_config',
+                    'setting': 'kac_phase',
+                    'values': {
+                        0: 'No KAC phase',
+                        1: 'The 8th KAC',
+                        2: 'The 9th KAC',
+                        3: 'The 10th KAC',
+                    }
+                },
+            ],
             'bools': [
                 {
-                    'name': 'Disable Stone Tablet Event',
-                    'tip': 'Disables the Stone Tablet event',
+                    'name': 'Enable Stone Tablet Event',
+                    'tip': 'Enables the Stone Tablet event',
                     'category': 'game_config',
-                    'setting': 'festo_dungeon_disable',
-                }
+                    'setting': 'festo_dungeon',
+                },
+                {
+                    'name': '50th Anniversary Celebration',
+                    'tip': 'Display the 50th anniversary screen in attract mode',
+                    'category': 'game_config',
+                    'setting': '50th_anniversary',
+                },
             ]
         }
 
     def __get_course_list(self) -> List[Dict[str, Any]]:
-        # Full course list found at http://bemaniwiki.com/index.php?jubeat%20festo/TUNE%20RUN
+        # Note that several of the below courses originally included removed songs, because older
+        # versions of the game included them and they were removed sometime in its 4 year lifespan.
+        # For those courses, the game will not display them unless you are on a data version that
+        # includes the song. BemaniWiki notes when they were changed, so we check to see what the
+        # data version of the game running is to provide the correct course. We could just support
+        # only final data, but that's no fun!
+        dataver = self.model.version or 2022052400
+
+        # If it is available, then grab the random course. If we haven't generated that course, then
+        # just don't bother trying to create it.
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, 'random_course')
+        random_course: List[Dict[str, Any]] = []
+
+        if entry is not None:
+            song1 = entry.get_dict('song1')
+            song2 = entry.get_dict('song2')
+            song3 = entry.get_dict('song3')
+
+            random_course = [{
+                'id': 57,
+                'name': '腕試し！ランダムコース',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 15,
+                'score': 2850000,
+                'music': [
+                    [(song1.get_int('id'), song1.get_int('chart'))],
+                    [(song2.get_int('id'), song2.get_int('chart'))],
+                    [(song3.get_int('id'), song3.get_int('chart'))],
+                ],
+            }]
+
+        # So the game has a hard limit of 60 courses, but if we include everything from the
+        # lifetime of festo including the random course we end up with 61 courses, which means
+        # the game truncates the last course. Boo, that sucks. So, we have to have certain
+        # courses switched. Let's do the KAC courses since in real life there would never have
+        # been multiple KAC courses available at once.
+        game_config = self.get_game_config()
+        kac_phase = game_config.get_int('kac_phase')
+        kac_8th = []
+        kac_9th = []
+        kac_10th = []
+
+        if kac_phase == 1:
+            kac_8th = [
+                {
+                    'id': 41,
+                    'name': 'The 8th KAC 個人部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000052, 2)],
+                        [(90000013, 2)],
+                        [(70000167, 2)],
+                    ],
+                },
+                {
+                    'id': 42,
+                    'name': 'The 8th KAC 団体部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000009, 2)],
+                        [(80000133, 2)],
+                        [(80000101, 2)],
+                    ],
+                },
+            ]
+        elif kac_phase == 2:
+            kac_9th = [
+                {
+                    'id': 201,
+                    'name': 'The 9th KAC 1st Stage 個人部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000125, 2)],
+                        [(60000065, 2)],
+                        [(90000023, 2)],
+                    ],
+                },
+                {
+                    'id': 202,
+                    'name': 'The 9th KAC 1st Stage 団体部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000125, 2)],
+                        [(50000135, 2)],
+                        [(90000045, 2)],
+                    ],
+                },
+                {
+                    'id': 203,
+                    'name': 'The 9th KAC 2nd Stage 個人部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000095, 2)],
+                        [(80000085, 2)],
+                        [(80000090, 2)],
+                    ],
+                },
+                {
+                    'id': 204,
+                    'name': 'The 9th KAC 2nd Stage 団体部門',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000113, 2)],
+                        [(50000344, 2)],
+                        [(90000096, 2)],
+                    ],
+                },
+            ]
+        elif kac_phase == 3:
+            kac_10th = [
+                {
+                    'id': 205,
+                    'name': 'The 10th KAC 1st Stage',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000003, 2)],
+                        [(90000151, 2)],
+                        [(90000174, 2)],
+                    ],
+                },
+                {
+                    'id': 206,
+                    'name': 'The 10th KAC 2nd Stage',
+                    'course_type': self.COURSE_TYPE_TIME_BASED,
+                    'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                    'clear_type': self.COURSE_CLEAR_SCORE,
+                    'hard': True,
+                    'difficulty': 14,
+                    'score': 700000,
+                    'music': [
+                        [(90000121, 2)],
+                        [(90000113, 2)],
+                        [(90000124, 2)],
+                    ],
+                },
+            ]
+
         return [
             # ASARI CUP
             {
@@ -183,9 +447,13 @@ class JubeatFesto(
                 'difficulty': 1,
                 'score': 700000,
                 'music': [
-                    [(60000080, 0), (90000025, 0), (90000040, 0)],
+                    [
+                        (60000080, 0),
+                        (90000025 if dataver < 2021081600 else 90000077, 0),
+                        (90000040 if dataver < 2021081600 else 90000139, 0),
+                    ],
                     [(60000086, 0), (70000047, 0)],
-                    [(90000027, 0)],
+                    [(90000027 if dataver < 2021081600 else 90000141, 0)],
                 ],
             },
             {
@@ -196,7 +464,11 @@ class JubeatFesto(
                 'difficulty': 1,
                 'score': 700000,
                 'music': [
-                    [(60000100, 0), (90000030, 0), (90000079, 0)],
+                    [
+                        (70000057 if dataver < 2019062100 else (90000079 if dataver < 2022021600 else 20000031), 0),
+                        (60000100, 0),
+                        (90000030 if dataver < 2021081600 else 90000078, 0),
+                    ],
                     [(70000125, 0), (90000050, 0)],
                     [(70000106, 0)],
                 ],
@@ -209,9 +481,18 @@ class JubeatFesto(
                 'difficulty': 2,
                 'score': 750000,
                 'music': [
-                    [(90000031, 0), (90000037, 0), (90000082, 0)],
-                    [(80000120, 0)],
-                    [(80000125, 0)],
+                    [
+                        (80000020 if dataver < 2019062100 else (90000082 if dataver < 2022021600 else 60000092), 0),
+                        (90000031, 0),
+                        (90000037 if dataver < 2021081600 else 90000172, 0),
+                    ],
+                    [
+                        (80000034 if dataver < 2020062900 else (30000108 if dataver < 2020091300 else (40000107 if dataver < 2021020100 else 30000004)), 0),
+                        (80000120 if dataver < 2021020200 else 80000059, 0),
+                    ],
+                    [
+                        (80000125 if dataver < 2021031900 else 50000209, 0),
+                    ],
                 ],
             },
             {
@@ -222,9 +503,18 @@ class JubeatFesto(
                 'difficulty': 2,
                 'score': 750000,
                 'music': [
-                    [(90000040, 0), (50000296, 0), (90000044, 0)],
-                    [(90000033, 0), (90000039, 0)],
-                    [(80000091, 0)],
+                    [
+                        (70000148 if dataver < 2020021900 else (90000040 if dataver < 2021081600 else 80000097), 0),
+                        (50000296 if dataver < 2021081600 else 90000029, 0),
+                        (90000044 if dataver < 2021081600 else 90000076, 0),
+                    ],
+                    [
+                        (90000033 if dataver < 2021081600 else 80000093, 0),
+                        (90000039 if dataver < 2021081600 else 90000048, 0),
+                    ],
+                    [
+                        (80000091 if dataver < 2021020200 else 80000038, 0),
+                    ],
                 ],
             },
             {
@@ -240,6 +530,20 @@ class JubeatFesto(
                     [(60000053, 0)],
                 ],
             },
+            {
+                'id': 6,
+                'name': '#オレのユビティズム',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 3,
+                'score': 2100000,
+                'music': [
+                    [(20000042, 0), (20000042, 1), (20000042, 2)],
+                    [(70000119, 0), (70000119, 1), (70000119, 2)],
+                    [(50000115, 0), (50000115, 1), (50000115, 2)],
+                ],
+            },
             # KISAGO CUP
             {
                 'id': 11,
@@ -249,7 +553,11 @@ class JubeatFesto(
                 'difficulty': 4,
                 'score': 800000,
                 'music': [
-                    [(70000046, 1), (70000160, 1), (80000126, 1)],
+                    [
+                        (70000046, 1),
+                        (70000160, 1),
+                        (80000126 if dataver < 2021020200 else 50000233, 1),
+                    ],
                     [(80000031, 1), (80000097, 1)],
                     [(90000049, 1)],
                 ],
@@ -275,9 +583,15 @@ class JubeatFesto(
                 'difficulty': 5,
                 'score': 2600000,
                 'music': [
-                    [(50000242, 0), (90000037, 1)],
+                    [
+                        (50000242, 0),
+                        (80000034 if dataver < 2020063000 else (90000079 if dataver < 2022021600 else 50000277), 1),
+                        (90000037 if dataver < 2021081600 else 50000294, 1),
+                    ],
                     [(50000260, 1), (50000261, 1)],
-                    [(90000081, 1)],
+                    [
+                        (70000085 if dataver < 2019062100 else (90000081 if dataver < 2022021600 else 90000143), 1),
+                    ],
                 ],
             },
             {
@@ -288,8 +602,15 @@ class JubeatFesto(
                 'difficulty': 4,
                 'score': 850000,
                 'music': [
-                    [(90000034, 1), (90000037, 1), (90000042, 1)],
-                    [(80000120, 1), (80001010, 1)],
+                    [
+                        (20000111 if dataver < 2019062100 else 90000034, 1),
+                        (90000037 if dataver < 2021081600 else 90000107, 1),
+                        (70000131 if dataver < 2019111800 else (90000042 if dataver < 2021081600 else 90000140), 1),
+                    ],
+                    [
+                        (80000120 if dataver < 2021020200 else 80000052, 1),
+                        (80001010, 1),
+                    ],
                     [(40000051, 1)],
                 ],
             },
@@ -303,7 +624,138 @@ class JubeatFesto(
                 'music': [
                     [(50000085, 2), (50000237, 2), (80000080, 2)],
                     [(50000172, 2), (50000235, 2)],
-                    [(70000065, 2)],
+                    [(70000065, 2)]
+                ],
+            },
+            {
+                'id': 16,
+                'name': '#シャレを言いなシャレ',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2400000,
+                'music': [
+                    [(70000003, 0), (70000003, 1), (70000003, 2)],
+                    [(70000045, 0), (70000045, 1), (70000045, 2)],
+                    [(70000076, 0), (70000076, 1), (70000076, 2)],
+                ],
+            },
+            {
+                'id': 101,
+                'name': 'jubeat大回顧展 ROOM 1',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 950000,
+                'music': [
+                    [(50000277, 0), (50000277, 1), (50000277, 2)],
+                    [(50000325, 0), (50000325, 1), (50000325, 2)],
+                    [(90000014, 0), (90000014, 1), (90000014, 2)],
+                ],
+            },
+            {
+                'id': 102,
+                'name': 'jubeat大回顧展 ROOM 2',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2750000,
+                'music': [
+                    [(30000048, 0), (30000048, 1), (30000048, 2)],
+                    [(30000121, 0), (30000121, 1), (30000121, 2)],
+                    [(90000012, 0), (90000012, 1), (90000012, 2)],
+                ],
+            },
+            {
+                'id': 103,
+                'name': 'jubeat大回顧展 ROOM 3',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 925000,
+                'music': [
+                    [(60000007, 0), (60000007, 1), (60000007, 2)],
+                    [(60000070, 0), (60000070, 1), (60000070, 2)],
+                    [(90000016, 0), (90000016, 1), (90000016, 2)],
+                ],
+            },
+            {
+                'id': 104,
+                'name': 'jubeat大回顧展 ROOM 4',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2800000,
+                'music': [
+                    [(40000051, 0), (40000051, 1), (40000051, 2)],
+                    [(40000129, 0), (40000129, 1), (40000129, 2)],
+                    [(90000013, 0), (90000013, 1), (90000013, 2)],
+                ],
+            },
+            {
+                'id': 105,
+                'name': 'jubeat大回顧展 ROOM 5',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2775000,
+                'music': [
+                    [(70000177, 0), (70000177, 1), (70000177, 2)],
+                    [(70000011, 0), (70000011, 1), (70000011, 2)],
+                    [(90000017, 0), (90000017, 1), (90000017, 2)],
+                ],
+            },
+            {
+                'id': 106,
+                'name': 'jubeat大回顧展 ROOM 6',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 940000,
+                'music': [
+                    [(20000123, 0), (20000123, 1), (20000123, 2)],
+                    [(20000038, 0), (20000038, 1), (20000038, 2)],
+                    [(90000011, 0), (90000011, 1), (90000011, 2)],
+                ],
+            },
+            {
+                'id': 107,
+                'name': 'jubeat大回顧展 ROOM 7',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 950000,
+                'music': [
+                    [(50000021, 0), (50000021, 1), (50000021, 2)],
+                    [(50000078, 0), (50000078, 1), (50000078, 2)],
+                    [(90000015, 0), (90000015, 1), (90000015, 2)],
+                ],
+            },
+            {
+                'id': 108,
+                'name': 'jubeat大回顧展 ROOM 8',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 4,
+                'score': 2800000,
+                'music': [
+                    [(80000028, 0), (80000028, 1), (80000028, 2)],
+                    [(80000087, 0), (80000087, 1), (80000087, 2)],
+                    [(90000018, 0), (90000018, 1), (90000018, 2)],
+                ],
+            },
+            {
+                'id': 109,
+                'name': 'jubeat大回顧展 ROOM 9',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'difficulty': 4,
+                'score': 930000,
+                'music': [
+                    [(10000038, 0), (10000038, 1), (10000038, 2)],
+                    [(10000065, 0), (10000065, 1), (10000065, 2)],
+                    [(90000010, 0), (90000010, 1), (90000010, 2)],
                 ],
             },
             # MURU CUP
@@ -328,7 +780,11 @@ class JubeatFesto(
                 'difficulty': 7,
                 'score': 2650000,
                 'music': [
-                    [(50000343, 2), (60000060, 1), (60000071, 2)],
+                    [
+                        (50000343, 2),
+                        (60000060, 2),
+                        (70000156 if dataver < 2020040300 else 60000071, 2),
+                    ],
                     [(60000027, 2), (80000048, 2)],
                     [(20000038, 2)],
                 ],
@@ -341,8 +797,15 @@ class JubeatFesto(
                 'difficulty': 8,
                 'score': 950000,
                 'music': [
-                    [(40000154, 2), (80000124, 1), (80000126, 2)],
-                    [(60000048, 2), (90000026, 2)],
+                    [
+                        (40000154, 2),
+                        (80000124, 2),
+                        (80000126 if dataver < 2021020200 else 90000139, 2),
+                    ],
+                    [
+                        (60000048, 2),
+                        (70000157 if dataver < 2020040300 else 80000041, 2),
+                    ],
                     [(90000050, 2)],
                 ],
             },
@@ -370,6 +833,48 @@ class JubeatFesto(
                     [(50000288, 2), (80000046, 2), (80001008, 2)],
                     [(50000207, 2), (70000117, 2)],
                     [(30000048, 2)],
+                ],
+            },
+            {
+                'id': 26,
+                'name': '雨上がりレインボー',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 9,
+                'score': 2650000,
+                'music': [
+                    [(50000138, 2)],
+                    [(80000057, 2)],
+                    [(90000011, 2)],
+                ],
+            },
+            {
+                'id': 27,
+                'name': 'Rain時々雨ノチ雨',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 9,
+                'score': 2650000,
+                'music': [
+                    [(30000050, 2)],
+                    [(80000123, 2)],
+                    [(50000092, 2)],
+                ],
+            },
+            {
+                'id': 28,
+                'name': '#心に残った曲',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 7,
+                'score': 2700000,
+                'music': [
+                    [(80000136, 0), (80000136, 1), (80000136, 2)],
+                    [(20000038, 0), (20000038, 1), (20000038, 2)],
+                    [(60000065, 0), (60000065, 1), (70000084, 1)],
                 ],
             },
             # SAZAE CUP
@@ -406,7 +911,6 @@ class JubeatFesto(
                 'clear_type': self.COURSE_CLEAR_HAZARD,
                 'hazard_type': self.COURSE_HAZARD_FC3,
                 'difficulty': 11,
-                'score': 2800000,
                 'music': [
                     [(50000238, 2), (70000003, 2), (90000051, 1)],
                     [(50000027, 2), (50000387, 2)],
@@ -439,37 +943,23 @@ class JubeatFesto(
                     [(80000087, 2)],
                 ],
             },
+            {
+                'id': 36,
+                'name': '#コクがある曲',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 12,
+                'score': 2400000,
+                'music': [
+                    [(50000139, 0), (50000139, 1), (50000139, 2)],
+                    [(90000002, 0), (90000002, 1), (90000002, 2)],
+                    [(50000060, 0), (50000060, 1), (50000060, 2)],
+                ],
+            },
             # HOTATE CUP
-            {
-                'id': 41,
-                'name': 'The 8th KAC 個人部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000052, 2)],
-                    [(90000013, 2)],
-                    [(70000167, 2)],
-                ],
-            },
-            {
-                'id': 42,
-                'name': 'The 8th KAC 団体部門',
-                'course_type': self.COURSE_TYPE_TIME_BASED,
-                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
-                'clear_type': self.COURSE_CLEAR_SCORE,
-                'hard': True,
-                'difficulty': 14,
-                'score': 700000,
-                'music': [
-                    [(90000009, 2)],
-                    [(80000133, 2)],
-                    [(80000101, 2)],
-                ],
-            },
+            *kac_8th,  # Contains courses 41 and 42.
             {
                 'id': 43,
                 'name': 'BEMANI MASTER KOREA 2019',
@@ -483,6 +973,38 @@ class JubeatFesto(
                     [(90000003, 2)],
                     [(80000090, 2)],
                     [(90000009, 2)],
+                ],
+            },
+            *kac_9th,  # Contains courses 201, 202, 203 and 204.
+            *kac_10th,  # Contains courses 205 and 206.
+            {
+                'id': 207,
+                'name': '#どうやって押してる？',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 13,
+                'score': 2600000,
+                'music': [
+                    [(40000127, 0)],
+                    [(50000123, 0)],
+                    [(50000126, 0)],
+                ],
+            },
+            {
+                'id': 208,
+                'name': 'BEMANI MASTER KOREA 2021',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_SCORE,
+                'hard': True,
+                'difficulty': 14,
+                'score': 700000,
+                'music': [
+                    [(90000180, 2)],
+                    [(90000095, 2)],
+                    [(90000047, 2)],
                 ],
             },
             {
@@ -533,8 +1055,8 @@ class JubeatFesto(
                 'difficulty': 14,
                 'score': 2900000,
                 'music': [
-                    [(20000040, 2), (50000244, 2), (70000145, 2)],
-                    [(40000046, 2), (50000158, 2)],
+                    [(20000040, 2), (50000244, 2), (60000074, 2)],
+                    [(40000152, 2), (50000158, 2)],
                     [(40000057, 2)],
                 ],
             },
@@ -547,9 +1069,35 @@ class JubeatFesto(
                 'difficulty': 14,
                 'score': 2820000,
                 'music': [
-                    [(20000051, 2), (50000249, 2), (70000108, 2)],
+                    [(20000051, 2), (50000249, 2), (70000145, 2)],
                     [(40000046, 2), (50000180, 2)],
                     [(50000134, 2)],
+                ],
+            },
+            {
+                'id': 49,
+                'name': '【伝導】10代目最強に挑戦！',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 14,
+                'score': 2998179,
+                'music': [
+                    [(50000100, 2)],
+                    [(90000047, 2)],
+                    [(90000057, 2)],
+                ],
+            },
+            {
+                'id': 110,
+                'name': 'jubeat大回顧展 ROOM 10',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'difficulty': 13,
+                'score': 2850000,
+                'music': [
+                    [(30000127, 2)],
+                    [(60000078, 2)],
+                    [(90000047, 2)],
                 ],
             },
             # OSHAKO CUP
@@ -623,6 +1171,36 @@ class JubeatFesto(
                     [(70000110, 2)],
                 ],
             },
+            {
+                'id': 56,
+                'name': '【伝導】1116全てを超越した日',
+                'course_type': self.COURSE_TYPE_PERMANENT,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 16,
+                'score': 2975000,
+                'music': [
+                    [(50000208, 2)],
+                    [(80000050, 2)],
+                    [(90000057, 2)],
+                ],
+            },
+            *random_course,  # Contains course 57.
+            {
+                'id': 58,
+                'name': '#あなたのjubeatはどこから？',
+                'course_type': self.COURSE_TYPE_TIME_BASED,
+                'end_time': Time.end_of_this_week() + Time.SECONDS_IN_WEEK,
+                'clear_type': self.COURSE_CLEAR_COMBINED_SCORE,
+                'hard': True,
+                'difficulty': 15,
+                'score': 2900000,
+                'music': [
+                    [(10000065, 0), (10000065, 1), (10000065, 2)],
+                    [(30000048, 0), (30000048, 1), (30000048, 2)],
+                    [(90000047, 0), (90000047, 1), (90000047, 2)],
+                ],
+            },
         ]
 
     def __get_global_info(self) -> Node:
@@ -635,7 +1213,7 @@ class JubeatFesto(
             evt = Node.void('event')
             event_info.add_child(evt)
             evt.set_attribute('type', str(event))
-            evt.add_child(Node.u8('state', self.EVENT_STATUS_OPEN if self.EVENTS[event]['enabled'] else 0))
+            evt.add_child(Node.u8('state', 1 if self.EVENTS[event]['enabled'] else 0))
 
         genre_def_music = Node.void('genre_def_music')
         info.add_child(genre_def_music)
@@ -661,8 +1239,13 @@ class JubeatFesto(
                 0, 0, 0, 0,
             ],
         ))
-
-        # Some sort of music DB whitelist
+        
+        # Mapping of what music is allowed by default, if this is set to all 0's
+        # then the game will crash because it can't figure out what default song
+        # to choose for new player sort. The way to calculate what song one of the
+        # bits is for in any music_list array below is to look at the "pos_index"
+        # field in the music_info.xml file. The entry in the array is calculated by
+        # "(pos_index / 32)" and the bit to set is "1 << (pos_index % 32)"
         info.add_child(Node.s32_array(
             'white_music_list',
             [
@@ -685,6 +1268,9 @@ class JubeatFesto(
             ],
         ))
 
+        # Mapping of what markers and themes are allowed for profile customization
+        # by default. If this is set to all 0's then there are no markers or themes
+        # offered and the default marker is forced.
         info.add_child(Node.s32_array(
             'white_marker_list',
             [
@@ -705,6 +1291,7 @@ class JubeatFesto(
             ],
         ))
 
+        # Possibly default unlocks for songs. Need to investigate further.
         info.add_child(Node.s32_array(
             'open_music_list',
             [
@@ -749,6 +1336,9 @@ class JubeatFesto(
             ],
         ))
 
+        # Bitfield that determines what music is considered "pick up" versus "common" on the jubility
+        # jacket field at the end of the game. Hot music is just the music in the current mix. The
+        # bitfield values were taken from the "pos_index" field for all songs that are in festo.
         info.add_child(Node.s32_array(
             'hot_music_list',
             [
@@ -768,7 +1358,7 @@ class JubeatFesto(
                 0, 0, 0, 0,
                 0, 0, 0, 0,
                 0, 0, 0, 0,
-            ]
+            ],
         ))
 
         jbox = Node.void('jbox')
@@ -788,19 +1378,10 @@ class JubeatFesto(
         born.add_child(Node.s8('status', 0))
         born.add_child(Node.s16('year', 0))
 
-        # Collection list values should look like:
-        #     <rating>
-        #         <id __type="s32">songid</id>
-        #         <stime __type="str">start time?</stime>
-        #         <etime __type="str">end time?</etime>
-        #     </node>
-        collection = Node.void('collection')
-        info.add_child(collection)
-        collection.add_child(Node.void('rating_s'))
-
+        game_config = self.get_game_config()
         konami_logo_50th = Node.void('konami_logo_50th')
         info.add_child(konami_logo_50th)
-        konami_logo_50th.add_child(Node.bool('is_available', True))
+        konami_logo_50th.add_child(Node.bool('is_available', game_config.get_bool('50th_anniversary')))
 
         expert_option = Node.void('expert_option')
         info.add_child(expert_option)
@@ -813,6 +1394,10 @@ class JubeatFesto(
         all_music_matching.add_child(department)
         department.add_child(Node.void('pack_list'))
 
+        department = Node.void('department')
+        info.add_child(department)
+        department.add_child(Node.void('shop_list'))
+
         question_list = Node.void('question_list')
         info.add_child(question_list)
 
@@ -821,6 +1406,7 @@ class JubeatFesto(
         info.add_child(clan_course_list)
 
         valid_courses: Set[int] = set()
+        dataver = self.model.version or 2022052400
         for course in self.__get_course_list():
             if course['id'] < 1:
                 raise Exception(f"Invalid course ID {course['id']} found in course list!")
@@ -841,7 +1427,7 @@ class JubeatFesto(
             # Basics
             clan_course = Node.void('course')
             clan_course_list.add_child(clan_course)
-            clan_course.set_attribute('release_code', '2018112700')
+            clan_course.set_attribute('release_code', str(dataver))
             clan_course.set_attribute('version_id', '0')
             clan_course.set_attribute('id', str(course['id']))
             clan_course.set_attribute('course_type', str(course['course_type']))
@@ -865,7 +1451,7 @@ class JubeatFesto(
                     seq_list.add_child(seq)
                     seq.add_child(Node.s32('music_id', songid))
                     seq.add_child(Node.s32('difficulty', chart))
-                    seq.add_child(Node.bool('is_secret', False))  # TODO: make this an attribute in course definition
+                    seq.add_child(Node.bool('is_secret', False))
 
             # Clear criteria
             clear = Node.void('clear')
@@ -879,10 +1465,22 @@ class JubeatFesto(
 
             reward_list = Node.void('reward_list')
             clear.add_child(reward_list)
-        # add stuff for newer festo to boot
 
-        info.add_child(Node.void('share_music'))
-        info.add_child(Node.void('weekly_music'))
+        # Each of the following two sections should have zero or more child nodes (no
+        # particular name) which look like the following:
+        #     <node>
+        #         <id __type="s32">songid</id>
+        #         <stime __type="str">start time?</stime>
+        #         <etime __type="str">end time?</etime>
+        #     </node>
+        # Share music?
+        share_music = Node.void('share_music')
+        info.add_child(share_music)
+
+        weekly_music = Node.void('weekly_music')
+        info.add_child(weekly_music)
+        weekly_music.add_child(Node.s32("value", 0))
+
         info.add_child(Node.s32_array(
             'add_default_music_list',
             [
@@ -905,17 +1503,36 @@ class JubeatFesto(
             ],
         ))
 
-        # Enable festo dungeon event
-        game_config = self.get_game_config()
-        if not game_config.get_bool('festo_dungeon_disable'):
+        # The following section should have zero or more child nodes (no particular
+        # name) which look like the following, with a song ID in the node's id attribute:
+        #     <node id="" />
+        weekly_music_list = Node.void('music_list')
+        weekly_music.add_child(weekly_music_list)
+
+        # Enable/disable festo dungeon.
+        if game_config.get_bool('festo_dungeon'):
             festo_dungeon = Node.void('festo_dungeon')
             info.add_child(festo_dungeon)
-            festo_dungeon.add_child(Node.u64('etime', 1620511371000))
+            festo_dungeon.add_child(Node.u64('etime', (Time.now() + Time.SECONDS_IN_WEEK) * 1000))
 
-        info.add_child(Node.void('department'))
+        # Unsupported team_battle nodes.
         info.add_child(Node.void('team_battle'))
+
+        # Unsupported EMO list for EMO shop.
         info.add_child(Node.void('emo_list'))
+
+        # Unsupported hike_event.
+        info.add_child(Node.void('hike_event'))
+
+        # Unsupported tip_list, this probably lets the server control the tips between songs.
         info.add_child(Node.void('tip_list'))
+
+        # Unsupported mission travel event, which is very server-controlled.
+        info.add_child(Node.void('travel'))
+
+        # Unsupported stamp rally event, since this poorly undocumented.
+        info.add_child(Node.void('stamp'))
+
         return info
 
     def handle_shopinfo_regist_request(self, request: Node) -> Node:
@@ -933,9 +1550,77 @@ class JubeatFesto(
         facility = Node.void('facility')
         data.add_child(facility)
         facility.add_child(Node.u32('exist', 1))
+
         data.add_child(self.__get_global_info())
 
         return shopinfo
+
+    def handle_demodata_get_info_request(self, request: Node) -> Node:
+        root = Node.void('demodata')
+        data = Node.void('data')
+        root.add_child(data)
+
+        info = Node.void('info')
+        data.add_child(info)
+
+        # This is the same stuff set in the common info, so if we ever do make this
+        # configurable, I think we'll need to return the same thing in both spots.
+        info.add_child(Node.s32_array(
+            'add_default_music_list',
+            [
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+            ],
+        ))
+
+        return root
+
+    def handle_demodata_get_jbox_list_request(self, request: Node) -> Node:
+        root = Node.void('demodata')
+        return root
+
+    def handle_jbox_get_agreement_request(self, request: Node) -> Node:
+        root = Node.void('jbox')
+        root.add_child(Node.bool('is_agreement', True))
+        return root
+
+    def handle_jbox_get_list_request(self, request: Node) -> Node:
+        root = Node.void('jbox')
+        root.add_child(Node.void('selection_list'))
+        return root
+
+    def handle_ins_netlog_request(self, request: Node) -> Node:
+        root = Node.void('ins')
+        return root
+
+    def handle_lab_get_ranking_request(self, request: Node) -> Node:
+        root = Node.void('lab')
+        root.add_child(Node.s8('category', request.child_value('category') or 0))
+
+        entries = Node.void('entries')
+        root.add_child(entries)
+
+        # The game allows up to 10 entries, each looking like this:
+        #     <entry>
+        #         <seq_id __type="str">XXXXXXXXX</seq_id>
+        #     <entry>
+        entries.set_attribute('count', '0')
+
+        return root
 
     def handle_demodata_get_info_request(self, request: Node) -> Node:
         root = Node.void('demodata')
@@ -1066,15 +1751,7 @@ class JubeatFesto(
 
         return Node.void('gameend')
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score], mdata_ver: Optional[int]=None) -> Node:
-        if mdata_ver is None:
-            mdata_ver = -1
-        min_music_id, max_music_id = {
-            1: (0, 60000000),
-            2: (60000000, 90009999),
-            3: (90009999, 1000000000),
-            -1: (0, 1000000000),
-        }.get(mdata_ver)
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
@@ -1088,18 +1765,18 @@ class JubeatFesto(
         for score in scores:
             chart = self.db_to_game_chart(score.chart)
             if score.chart in {self.CHART_TYPE_HARD_BASIC, self.CHART_TYPE_HARD_ADVANCED, self.CHART_TYPE_HARD_EXTREME}:
-                hard = 'hard_'
+                prefix = 'hard'
             else:
-                hard = ''
+                prefix = 'normal'
 
             data = music.get_dict(str(score.id))
-            play_cnt = data.get_int_array(f'{hard}play_cnt', 3)
-            clear_cnt = data.get_int_array(f'{hard}clear_cnt', 3)
-            clear_flags = data.get_int_array(f'{hard}clear_flags', 3)
-            fc_cnt = data.get_int_array(f'{hard}fc_cnt', 3)
-            ex_cnt = data.get_int_array(f'{hard}ex_cnt', 3)
-            points = data.get_int_array(f'{hard}points', 3)
-            music_rate = data.get_int_array(f'{hard}music_rate', 3)
+            play_cnt = data.get_int_array(f'{prefix}_play_cnt', 3)
+            clear_cnt = data.get_int_array(f'{prefix}_clear_cnt', 3)
+            clear_flags = data.get_int_array(f'{prefix}_clear_flags', 3)
+            fc_cnt = data.get_int_array(f'{prefix}_fc_cnt', 3)
+            ex_cnt = data.get_int_array(f'{prefix}_ex_cnt', 3)
+            points = data.get_int_array(f'{prefix}_points', 3)
+            music_rate = data.get_int_array(f'{prefix}_music_rate', 3)
 
             # Replace data for this chart type
             play_cnt[chart] = score.plays
@@ -1119,17 +1796,19 @@ class JubeatFesto(
                 clear_flags[chart] |= self.GAME_FLAG_BIT_EXCELLENT
 
             # Save chart data back
-            data.replace_int_array(f'{hard}play_cnt', 3, play_cnt)
-            data.replace_int_array(f'{hard}clear_cnt', 3, clear_cnt)
-            data.replace_int_array(f'{hard}clear_flags', 3, clear_flags)
-            data.replace_int_array(f'{hard}fc_cnt', 3, fc_cnt)
-            data.replace_int_array(f'{hard}ex_cnt', 3, ex_cnt)
-            data.replace_int_array(f'{hard}points', 3, points)
-            data.replace_int_array(f'{hard}music_rate', 3, music_rate)
+            data.replace_int_array(f'{prefix}_play_cnt', 3, play_cnt)
+            data.replace_int_array(f'{prefix}_clear_cnt', 3, clear_cnt)
+            data.replace_int_array(f'{prefix}_clear_flags', 3, clear_flags)
+            data.replace_int_array(f'{prefix}_fc_cnt', 3, fc_cnt)
+            data.replace_int_array(f'{prefix}_ex_cnt', 3, ex_cnt)
+            data.replace_int_array(f'{prefix}_points', 3, points)
+            data.replace_int_array(f'{prefix}_music_rate', 3, music_rate)
+
             # Update the ghost (untyped)
-            ghost = data.get(f'{hard}ghost', [None, None, None])
+            ghost = data.get(f'{prefix}_ghost', [None, None, None])
             ghost[chart] = score.data.get('ghost')
-            data[f'{hard}ghost'] = ghost
+            data[f'{prefix}_ghost'] = ghost
+
             # Save it back
             if score.id in self.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS:
                 # Mirror it to every version so the score shows up regardless of
@@ -1149,43 +1828,46 @@ class JubeatFesto(
             musicdata.set_attribute('music_id', scoreid)
 
             # Since in the worst case, we could be wasting a lot of data by always sending both a normal and hard mode block
-            # we need to check if there's even a score array worth sending. This should help with performance for larger score databases.
-            if scoredata.get_int_array('play_cnt', 3) != [0, 0, 0]:
-                normal_score = Node.void('normal')
-                musicdata.add_child(normal_score)
-                normal_score.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('play_cnt', 3)))
-                normal_score.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('clear_cnt', 3)))
-                normal_score.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('fc_cnt', 3)))
-                normal_score.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('ex_cnt', 3)))
-                normal_score.add_child(Node.s32_array('score', scoredata.get_int_array('points', 3)))
-                normal_score.add_child(Node.s8_array('clear', scoredata.get_int_array('clear_flags', 3)))
-                normal_score.add_child(Node.s32_array('music_rate', scoredata.get_int_array('music_rate', 3)))
+            # we need to check if there's even a score array worth sending. This should help with performance for larger
+            # score databases.
+            if scoredata.get_int_array('normal_play_cnt', 3) != [0, 0, 0]:
+                normalnode = Node.void('normal')
+                musicdata.add_child(normalnode)
 
-                for i, ghost in enumerate(scoredata.get('ghost', [None, None, None])):
+                normalnode.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('normal_play_cnt', 3)))
+                normalnode.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('normal_clear_cnt', 3)))
+                normalnode.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('normal_fc_cnt', 3)))
+                normalnode.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('normal_ex_cnt', 3)))
+                normalnode.add_child(Node.s32_array('score', scoredata.get_int_array('normal_points', 3)))
+                normalnode.add_child(Node.s8_array('clear', scoredata.get_int_array('normal_clear_flags', 3)))
+                normalnode.add_child(Node.s32_array('music_rate', scoredata.get_int_array('normal_music_rate', 3)))
+
+                for i, ghost in enumerate(scoredata.get('normal_ghost', [None, None, None])):
                     if ghost is None:
                         continue
 
                     bar = Node.u8_array('bar', ghost)
-                    normal_score.add_child(bar)
+                    normalnode.add_child(bar)
                     bar.set_attribute('seq', str(i))
 
             if scoredata.get_int_array('hard_play_cnt', 3) != [0, 0, 0]:
-                hard_score = Node.void('hard')
-                musicdata.add_child(hard_score)
-                hard_score.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('hard_play_cnt', 3)))
-                hard_score.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('hard_clear_cnt', 3)))
-                hard_score.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('hard_fc_cnt', 3)))
-                hard_score.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('hard_ex_cnt', 3)))
-                hard_score.add_child(Node.s32_array('score', scoredata.get_int_array('hard_points', 3)))
-                hard_score.add_child(Node.s8_array('clear', scoredata.get_int_array('hard_clear_flags', 3)))
-                hard_score.add_child(Node.s32_array('music_rate', scoredata.get_int_array('hard_music_rate', 3)))
+                hardnode = Node.void('hard')
+                musicdata.add_child(hardnode)
+
+                hardnode.add_child(Node.s32_array('play_cnt', scoredata.get_int_array('hard_play_cnt', 3)))
+                hardnode.add_child(Node.s32_array('clear_cnt', scoredata.get_int_array('hard_clear_cnt', 3)))
+                hardnode.add_child(Node.s32_array('fc_cnt', scoredata.get_int_array('hard_fc_cnt', 3)))
+                hardnode.add_child(Node.s32_array('ex_cnt', scoredata.get_int_array('hard_ex_cnt', 3)))
+                hardnode.add_child(Node.s32_array('score', scoredata.get_int_array('hard_points', 3)))
+                hardnode.add_child(Node.s8_array('clear', scoredata.get_int_array('hard_clear_flags', 3)))
+                hardnode.add_child(Node.s32_array('music_rate', scoredata.get_int_array('hard_music_rate', 3)))
 
                 for i, ghost in enumerate(scoredata.get('hard_ghost', [None, None, None])):
                     if ghost is None:
                         continue
 
                     bar = Node.u8_array('bar', ghost)
-                    hard_score.add_child(bar)
+                    hardnode.add_child(bar)
                     bar.set_attribute('seq', str(i))
 
         return root
@@ -1221,18 +1903,15 @@ class JubeatFesto(
         info.add_child(Node.s32('match_cnt', profile.get_int('match_cnt')))
         info.add_child(Node.s32('beat_cnt', profile.get_int('beat_cnt')))
         info.add_child(Node.s32('mynews_cnt', profile.get_int('mynews_cnt')))
+        info.add_child(Node.s32('mtg_entry_cnt', 123))
+        info.add_child(Node.s32('mtg_hold_cnt', 456))
+        info.add_child(Node.u8('mtg_result', 10))
         info.add_child(Node.s32('bonus_tune_points', profile.get_int('bonus_tune_points')))
         info.add_child(Node.bool('is_bonus_tune_played', profile.get_bool('is_bonus_tune_played')))
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
-        # Should only be true on the first load, stuff breaks otherwise
         info.add_child(Node.bool('inherit', profile.get_bool('has_old_version') and not profile.get_bool('saved')))
-
-        # Not saved, but loaded
-        info.add_child(Node.s32('mtg_entry_cnt', 123))
-        info.add_child(Node.s32('mtg_hold_cnt', 456))
-        info.add_child(Node.u8('mtg_result', 10))
 
         # Last played data, for showing cursor and such
         lastdict = profile.get_dict('last')
@@ -1261,7 +1940,7 @@ class JubeatFesto(
         settings.add_child(Node.s8('hard', lastdict.get_int('hard')))
         settings.add_child(Node.s8('hazard', lastdict.get_int('hazard')))
 
-        # Secret unlocks
+        # Secret unlocks, the game is too complicated and server-controlled to handle these correctly.
         item = Node.void('item')
         player.add_child(item)
         item.add_child(Node.s32_array('music_list', profile.get_int_array('music_list', 64, [-1] * 64)))
@@ -1325,6 +2004,7 @@ class JubeatFesto(
         today_attempts = self.data.local.music.get_all_attempts(self.game, self.music_version, userid, entry.get_int('today', -1), timelimit=start_time)
         whim_attempts = self.data.local.music.get_all_attempts(self.game, self.music_version, userid, entry.get_int('whim', -1), timelimit=start_time)
 
+        # Full combo challenge and whim challenge
         fc_challenge = Node.void('fc_challenge')
         player.add_child(fc_challenge)
         today = Node.void('today')
@@ -1458,79 +2138,71 @@ class JubeatFesto(
             clan_course.set_attribute('id', str(course['id']))
             clan_course.add_child(Node.s8('status', status))
 
-        # Each category has one of the following nodes
+        # For some reason, this is on the course list node this time around.
+        category_list = Node.void('category_list')
+        course_list.add_child(category_list)
         for categoryid in range(1, 7):
             category = Node.void('category')
             category_list.add_child(category)
             category.set_attribute('id', str(categoryid))
             category.add_child(Node.bool('is_display', True))
 
-        # Drop list
-        drop_list = Node.void('drop_list')
-        player.add_child(drop_list)
-
-        dropachievements: Dict[int, Achievement] = {}
-        for achievement in achievements:
-            if achievement.type == 'drop':
-                dropachievements[achievement.id] = achievement
-
-        for dropid in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-            if dropid in dropachievements:
-                dropdata = dropachievements[dropid].data
-            else:
-                dropdata = ValidatedDict()
-
-            drop = Node.void('drop')
-            drop_list.add_child(drop)
-            drop.set_attribute('id', str(dropid))
-            drop.add_child(Node.s32('exp', dropdata.get_int('exp', -1)))
-            drop.add_child(Node.s32('flag', dropdata.get_int('flag', 0)))
-
-            item_list = Node.void('item_list')
-            drop.add_child(item_list)
-
-            for itemid in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-                item = Node.void('item')
-                item_list.add_child(item)
-                item.set_attribute('id', str(itemid))
-                item.add_child(Node.s32('num', dropdata.get_int(f'item_{itemid}')))
-
-        department = Node.void('department')
-        player.add_child(department)
-
-        # Emo node added in festo
-        emo_list = Node.void("emo_list")
-        player.add_child(emo_list)
-
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
         player.add_child(fill_in_category)
         normal = Node.void('normal')
         fill_in_category.add_child(normal)
-        normal.add_child(Node.s32_array('no_gray_flag_list', profile.get_int_array('no_gray_flag_list', 16, [0] * 16)))
-        normal.add_child(Node.s32_array('all_yellow_flag_list', profile.get_int_array('all_yellow_flag_list', 16, [0] * 16)))
-        normal.add_child(Node.s32_array('full_combo_flag_list', profile.get_int_array('full_combo_flag_list', 16, [0] * 16)))
-        normal.add_child(Node.s32_array('excellent_flag_list', profile.get_int_array('excellent_flag_list', 16, [0] * 16)))
+        normal.add_child(
+            Node.s32_array('no_gray_flag_list', profile.get_int_array('normal_no_gray_flag_list', 16, [0] * 16))
+        )
+        normal.add_child(
+            Node.s32_array('all_yellow_flag_list', profile.get_int_array('normal_all_yellow_flag_list', 16, [0] * 16))
+        )
+        normal.add_child(
+            Node.s32_array('full_combo_flag_list', profile.get_int_array('normal_full_combo_flag_list', 16, [0] * 16))
+        )
+        normal.add_child(
+            Node.s32_array('excellent_flag_list', profile.get_int_array('normal_excellent_flag_list', 16, [0] * 16))
+        )
 
         hard = Node.void('hard')
         fill_in_category.add_child(hard)
-        hard.add_child(Node.s32_array('no_gray_flag_list', profile.get_int_array('hard_no_gray_flag_list', 16, [0] * 16)))
-        hard.add_child(Node.s32_array('all_yellow_flag_list', profile.get_int_array('hard_all_yellow_flag_list', 16, [0] * 16)))
-        hard.add_child(Node.s32_array('full_combo_flag_list', profile.get_int_array('hard_full_combo_flag_list', 16, [0] * 16)))
-        hard.add_child(Node.s32_array('excellent_flag_list', profile.get_int_array('hard_excellent_flag_list', 16, [0] * 16)))
+        hard.add_child(
+            Node.s32_array('no_gray_flag_list', profile.get_int_array('hard_no_gray_flag_list', 16, [0] * 16))
+        )
+        hard.add_child(
+            Node.s32_array('all_yellow_flag_list', profile.get_int_array('hard_all_yellow_flag_list', 16, [0] * 16))
+        )
+        hard.add_child(
+            Node.s32_array('full_combo_flag_list', profile.get_int_array('hard_full_combo_flag_list', 16, [0] * 16))
+        )
+        hard.add_child(
+            Node.s32_array('excellent_flag_list', profile.get_int_array('hard_excellent_flag_list', 16, [0] * 16))
+        )
 
-        # Daily Bonus
-        daily_bonus_list = Node.void('daily_bonus_list')
-        player.add_child(daily_bonus_list)
+        # Unknown department shop stuff, I think this handles the EMO shop.
+        department = Node.void('department')
+        player.add_child(department)
+        department.add_child(Node.void('shop_list'))
 
-        # Tickets
-        ticket_list = Node.void('ticket_list')
-        player.add_child(ticket_list)
+        # Stamp rally stuff, this is too server-controlled and not documented on BemaniWiki.
+        stamp = Node.void('stamp')
+        player.add_child(stamp)
+        stamp.add_child(Node.void('sheet_list'))
 
+        # Missing team_battle, which we do not support.
+
+        # Missing eamuse_gift_list, which we do not support.
+
+        # Missing hike_event, which I can't find any info on.
+
+        # Festo dungeon
         festo_dungeon = Node.void('festo_dungeon')
         player.add_child(festo_dungeon)
         festo_dungeon.add_child(Node.s32('phase', profile.get_int('festo_dungeon_phase')))
         festo_dungeon.add_child(Node.s32('clear_flag', profile.get_int('festo_dungeon_clear_flag')))
+
+        # Missing travel event, which I do not want to implement.
 
         return root
 
@@ -1601,7 +2273,7 @@ class JubeatFesto(
             newprofile.replace_int_array('title_list', 160, item.child_value('title_list'))
             newprofile.replace_int_array('parts_list', 160, item.child_value('parts_list'))
             newprofile.replace_int_array('emblem_list', 96, item.child_value('emblem_list'))
-            newprofile.replace_int_array('commu_list', 96, item.child_value('commu_list'))
+            newprofile.replace_int_array('commu_list', 16, item.child_value('commu_list'))
 
             newitem = item.child('new')
             if newitem is not None:
@@ -1611,18 +2283,20 @@ class JubeatFesto(
 
         # Grab categories stuff
         fill_in_category = player.child('fill_in_category')
-        fill_in_category_normal = fill_in_category.child('normal')
         if fill_in_category is not None:
-            newprofile.replace_int_array('no_gray_flag_list', 16, fill_in_category_normal.child_value('no_gray_flag_list'))
-            newprofile.replace_int_array('all_yellow_flag_list', 16, fill_in_category_normal.child_value('all_yellow_flag_list'))
-            newprofile.replace_int_array('full_combo_flag_list', 16, fill_in_category_normal.child_value('full_combo_flag_list'))
-            newprofile.replace_int_array('excellent_flag_list', 16, fill_in_category_normal.child_value('excellent_flag_list'))
-        fill_in_category_hard = fill_in_category.child('hard')
-        if fill_in_category is not None:
-            newprofile.replace_int_array('hard_no_gray_flag_list', 16, fill_in_category_hard.child_value('no_gray_flag_list'))
-            newprofile.replace_int_array('hard_all_yellow_flag_list', 16, fill_in_category_hard.child_value('all_yellow_flag_list'))
-            newprofile.replace_int_array('hard_full_combo_flag_list', 16, fill_in_category_hard.child_value('full_combo_flag_list'))
-            newprofile.replace_int_array('hard_excellent_flag_list', 16, fill_in_category_hard.child_value('excellent_flag_list'))
+            fill_in_category_normal = fill_in_category.child('normal')
+            if fill_in_category_normal is not None:
+                newprofile.replace_int_array('normal_no_gray_flag_list', 16, fill_in_category_normal.child_value('no_gray_flag_list'))
+                newprofile.replace_int_array('normal_all_yellow_flag_list', 16, fill_in_category_normal.child_value('all_yellow_flag_list'))
+                newprofile.replace_int_array('normal_full_combo_flag_list', 16, fill_in_category_normal.child_value('full_combo_flag_list'))
+                newprofile.replace_int_array('normal_excellent_flag_list', 16, fill_in_category_normal.child_value('excellent_flag_list'))
+            fill_in_category_hard = fill_in_category.child('hard')
+            if fill_in_category_hard is not None:
+                newprofile.replace_int_array('hard_no_gray_flag_list', 16, fill_in_category_hard.child_value('no_gray_flag_list'))
+                newprofile.replace_int_array('hard_all_yellow_flag_list', 16, fill_in_category_hard.child_value('all_yellow_flag_list'))
+                newprofile.replace_int_array('hard_full_combo_flag_list', 16, fill_in_category_hard.child_value('full_combo_flag_list'))
+                newprofile.replace_int_array('hard_excellent_flag_list', 16, fill_in_category_hard.child_value('excellent_flag_list'))
+
         # jbox stuff
         jbox = player.child('jbox')
         jboxdict = newprofile.get_dict('jbox')
@@ -1635,56 +2309,6 @@ class JubeatFesto(
             elif emblemtype == self.JBOX_EMBLEM_PREMIUM:
                 jboxdict.replace_int('premium_index', index)
         newprofile.replace_dict('jbox', jboxdict)
-
-        # Drop list
-        drop_list = player.child('drop_list')
-        if drop_list is not None:
-            for drop in drop_list.children:
-                try:
-                    dropid = int(drop.attribute('id'))
-                except TypeError:
-                    # Unrecognized drop
-                    continue
-                exp = drop.child_value('exp')
-                flag = drop.child_value('flag')
-                items: Dict[int, int] = {}
-
-                item_list = drop.child('item_list')
-                if item_list is not None:
-                    for item in item_list.children:
-                        try:
-                            itemid = int(item.attribute('id'))
-                        except TypeError:
-                            # Unrecognized item
-                            continue
-                        items[itemid] = item.child_value('num')
-
-                olddrop = self.data.local.user.get_achievement(
-                    self.game,
-                    self.version,
-                    userid,
-                    dropid,
-                    'drop',
-                )
-
-                if olddrop is None:
-                    # Create a new event structure for this
-                    olddrop = ValidatedDict()
-
-                olddrop.replace_int('exp', exp)
-                olddrop.replace_int('flag', flag)
-                for itemid, num in items.items():
-                    olddrop.replace_int(f'item_{itemid}', num)
-
-                # Save it as an achievement
-                self.data.local.user.put_achievement(
-                    self.game,
-                    self.version,
-                    userid,
-                    dropid,
-                    'drop',
-                    olddrop,
-                )
 
         # event stuff
         newprofile.replace_int('event_flag', player.child_value('event_flag'))
@@ -1800,6 +2424,7 @@ class JubeatFesto(
         jubility = player.child('jubility')
         if jubility is not None:
             target_music = jubility.child('target_music')
+
             # Pick up jubility stuff
             hot_music_list = target_music.child('hot_music_list')
             pick_up_chart = ValidatedDict()
@@ -1815,9 +2440,11 @@ class JubeatFesto(
                     'value': value,
                 }
                 pick_up_chart.replace_dict(f'{music_id}_{chart}', entry)
+
             # Save it back
             newprofile.replace_dict('pick_up_chart', pick_up_chart)
             newprofile.replace_float('pick_up_jubility', float(hot_music_list.attribute('param')) / 10)
+
             # Common jubility stuff
             other_music_list = target_music.child('other_music_list')
             common_chart = ValidatedDict()
@@ -1833,6 +2460,7 @@ class JubeatFesto(
                     'value': value,
                 }
                 common_chart.replace_dict(f'{music_id}_{chart}', entry)
+
             # Save it back
             newprofile.replace_dict('common_chart', common_chart)
             newprofile.replace_float('common_jubility', float(other_music_list.attribute('param')) / 10)
@@ -1875,6 +2503,7 @@ class JubeatFesto(
                     oldcourse,
                 )
 
+        # If they played a course, figure out if they cleared it.
         select_course = player.child('select_course')
         if select_course is not None:
             try:

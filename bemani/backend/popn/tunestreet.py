@@ -616,6 +616,6 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return root
 
-    def handle_lobby_request(self, request: Node) -> Node:
+    def handle_lobby_requests(self, request: Node) -> Node:
         # Stub out the entire lobby service
         return Node.void('lobby')

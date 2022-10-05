@@ -19,6 +19,7 @@ from bemani.client.jubeat import (
     JubeatPropClient,
     JubeatQubellClient,
     JubeatClanClient,
+    JubeatFestoClient,
 )
 from bemani.client.popn import (
     PopnMusicTuneStreetClient,
@@ -28,6 +29,7 @@ from bemani.client.popn import (
     PopnMusicEclaleClient,
     PopnMusicUsaNekoClient,
     PopnMusicPeaceClient,
+    PopnMusicKaimeiClient,
 )
 from bemani.client.ddr import (
     DDRX2Client,
@@ -102,6 +104,12 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             pcbid,
             config,
         )
+    if game == 'pnm-kaimei':
+        return PopnMusicKaimeiClient(
+            proto,
+            pcbid,
+            config,
+        )
     if game == 'jubeat-saucer':
         return JubeatSaucerClient(
             proto,
@@ -128,6 +136,12 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
         )
     if game == 'jubeat-clan':
         return JubeatClanClient(
+            proto,
+            pcbid,
+            config,
+        )
+    if game == 'jubeat-festo':
+        return JubeatFestoClient(
             proto,
             pcbid,
             config,
@@ -342,6 +356,12 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
             'old_profile_model': "M39:J:B:A",
             'avs': "2.15.8 r6631",
         },
+        'pnm-kaimei': {
+            'name': "Pop'n Music Kaimei riddles",
+            'model': "M39:J:B:A:2022061300",
+            'old_profile_model': "M39:J:B:A",
+            'avs': "2.15.8 r6631",
+        },
         'jubeat-saucer': {
             'name': "Jubeat Saucer",
             'model': "L44:J:A:A:2014012802",
@@ -365,6 +385,11 @@ def mainloop(address: str, port: int, configfile: str, action: str, game: str, c
         'jubeat-clan': {
             'name': "Jubeat Clan",
             'model': "L44:J:E:A:2018070901",
+            'avs': "2.17.3 r8311",
+        },
+        'jubeat-festo': {
+            'name': "Jubeat Festo",
+            'model': "L44:J:B:A:2022052400",
             'avs': "2.17.3 r8311",
         },
         'iidx-rootage': {
@@ -560,6 +585,7 @@ def main() -> None:
         'pnm-23': 'pnm-eclale',
         'pnm-24': 'pnm-usaneko',
         'pnm-25': 'pnm-peace',
+        'pnm-26': 'pnm-kaimei',
         'iidx-20': 'iidx-tricoro',
         'iidx-21': 'iidx-spada',
         'iidx-22': 'iidx-pendual',
@@ -572,6 +598,7 @@ def main() -> None:
         'jubeat-6': 'jubeat-prop',
         'jubeat-7': 'jubeat-qubell',
         'jubeat-8': 'jubeat-clan',
+        'jubeat-9': 'jubeat-festo',
         'ddr-12': 'ddr-x2',
         'ddr-13': 'ddr-x3',
         'ddr-14': 'ddr-2013',
