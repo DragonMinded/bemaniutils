@@ -60,7 +60,31 @@ class JubeatFesto(
         },
         101: {
             'enabled': False,
-        }
+        },
+        102: {
+            'enabled': False,
+        },
+        103: {
+            'enabled': False,
+        },
+        104: {
+            'enabled': False,
+        },
+        105: {
+            'enabled': False,
+        },
+        106: {
+            'enabled': False,
+        },
+        107: {
+            'enabled': False,
+        },
+        108: {
+            'enabled': False,
+        },
+        109: {
+            'enabled': False,
+        },
     }
 
     COURSE_STATUS_SEEN: Final[int] = 0x01
@@ -131,7 +155,7 @@ class JubeatFesto(
             # range, but it will be a different ID depending on the prefecture set in settings. This means its not safe to send
             # these song IDs, so we explicitly exclude them.
             start_time, end_time = data.local.network.get_schedule_duration('daily')
-            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version) if song.id not in cls.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS)
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
             if len(all_songs) >= 2:
                 daily_songs = random.sample(all_songs, 2)
                 data.local.game.put_time_sensitive_settings(
@@ -1530,10 +1554,6 @@ class JubeatFesto(
         # Unsupported stamp rally event, since this poorly undocumented.
         info.add_child(Node.void('stamp'))
 
-        info.add_child(Node.void('department'))
-        info.add_child(Node.void('team_battle'))
-        info.add_child(Node.void('emo_list'))
-        info.add_child(Node.void('tip_list'))
         return info
 
     def handle_shopinfo_regist_request(self, request: Node) -> Node:
@@ -1879,6 +1899,9 @@ class JubeatFesto(
         info.add_child(Node.s32('match_cnt', profile.get_int('match_cnt')))
         info.add_child(Node.s32('beat_cnt', profile.get_int('beat_cnt')))
         info.add_child(Node.s32('mynews_cnt', profile.get_int('mynews_cnt')))
+        info.add_child(Node.s32('mtg_entry_cnt', profile.get_int('mtg_entry_cnt')))
+        info.add_child(Node.s32('mtg_hold_cnt', profile.get_int('mtg_hold_cnt')))
+        info.add_child(Node.u8('mtg_result', profile.get_int('mtg_result')))
         info.add_child(Node.s32('bonus_tune_points', profile.get_int('bonus_tune_points')))
         info.add_child(Node.bool('is_bonus_tune_played', profile.get_bool('is_bonus_tune_played')))
 
@@ -2016,6 +2039,18 @@ class JubeatFesto(
             if achievement.type == 'course':
                 course_completion[achievement.id] = achievement.data
 
+        for eventid, eventdata in self.EVENTS.items():
+            # There are two significant bits here, bit 0 and bit 1, I think the first
+            # one is whether the event is started, second is if its finished?
+            event = Node.void('event')
+            event_info.add_child(event)
+            event.set_attribute('type', str(eventid))
+
+            state = 0x0
+            state |= self.EVENT_STATUS_OPEN if eventdata['enabled'] else 0
+            state |= self.EVENT_STATUS_COMPLETE if event_completion.get(eventid, False) else 0
+            event.add_child(Node.u8('state', state))
+
         # JBox stuff
         jbox = Node.void('jbox')
         jboxdict = profile.get_dict('jbox')
@@ -2077,6 +2112,9 @@ class JubeatFesto(
         question_list = Node.void('question_list')
         player.add_child(question_list)
 
+        emo_list = Node.void('emo_list')
+        player.add_child(emo_list)
+
         # Union Battle
         union_battle = Node.void('union_battle')
         player.add_child(union_battle)
@@ -2094,9 +2132,9 @@ class JubeatFesto(
         category_list = Node.void('category_list')
         player.add_child(category_list)
 
-        # Clan Course List Progress
-        clan_course_list = Node.void('course_list')
-        player.add_child(clan_course_list)
+        # Course List Progress
+        course_list = Node.void('course_list')
+        player.add_child(course_list)
 
         # Each course that we have completed has one of the following nodes.
         for course in self.__get_course_list():
@@ -2106,14 +2144,14 @@ class JubeatFesto(
             status |= self.COURSE_STATUS_PLAYED if status_dict.get_bool('played') else 0
             status |= self.COURSE_STATUS_CLEARED if status_dict.get_bool('cleared') else 0
 
-            clan_course = Node.void('course')
-            clan_course_list.add_child(clan_course)
-            clan_course.set_attribute('id', str(course['id']))
-            clan_course.add_child(Node.s8('status', status))
+            coursenode = Node.void('course')
+            course_list.add_child(coursenode)
+            coursenode.set_attribute('id', str(course['id']))
+            coursenode.add_child(Node.s8('status', status))
 
         # For some reason, this is on the course list node this time around.
         category_list = Node.void('category_list')
-        clan_course_list.add_child(category_list)
+        course_list.add_child(category_list)
         for categoryid in range(1, 7):
             category = Node.void('category')
             category_list.add_child(category)
@@ -2122,6 +2160,7 @@ class JubeatFesto(
 
         # Fill in category
         fill_in_category = Node.void('fill_in_category')
+
         player.add_child(fill_in_category)
         normal = Node.void('normal')
         fill_in_category.add_child(normal)
@@ -2391,6 +2430,7 @@ class JubeatFesto(
         jubility = player.child('jubility')
         if jubility is not None:
             target_music = jubility.child('target_music')
+
             # Pick up jubility stuff
             hot_music_list = target_music.child('hot_music_list')
             pick_up_chart = ValidatedDict()
@@ -2426,6 +2466,7 @@ class JubeatFesto(
                     'value': value,
                 }
                 common_chart.replace_dict(f'{music_id}_{chart}', entry)
+
             # Save it back
             newprofile.replace_dict('common_chart', common_chart)
             newprofile.replace_float('common_jubility', float(other_music_list.attribute('param')) / 10)
