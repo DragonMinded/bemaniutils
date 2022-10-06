@@ -1752,7 +1752,15 @@ class JubeatFesto(
 
         return Node.void('gameend')
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score], mdata_ver: Optional[int] = None) -> Node:
+        if mdata_ver is None:
+            mdata_ver = -1
+        min_music_id, max_music_id = {
+            1: (0, 60000000),
+            2: (60000000, 90009999),
+            3: (90009999, 1000000000),
+            -1: (0, 1000000000),
+        }.get(mdata_ver)
         root = Node.void('gametop')
         datanode = Node.void('data')
         root.add_child(datanode)
