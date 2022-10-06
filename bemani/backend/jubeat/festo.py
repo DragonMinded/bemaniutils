@@ -1623,30 +1623,6 @@ class JubeatFesto(
 
         return root
 
-    def handle_demodata_get_info_request(self, request: Node) -> Node:
-        root = Node.void('demodata')
-        data = Node.void('data')
-        root.add_child(data)
-        officialnews = Node.void('officialnews')
-        officialnews.set_attribute('count', '0')
-        data.add_child(officialnews)
-
-        return root
-
-    def handle_demodata_get_jbox_list_request(self, request: Node) -> Node:
-        root = Node.void('demodata')
-        return root
-
-    def handle_jbox_get_agreement_request(self, request: Node) -> Node:
-        root = Node.void('jbox')
-        root.add_child(Node.bool('is_agreement', True))
-        return root
-
-    def handle_jbox_get_list_request(self, request: Node) -> Node:
-        root = Node.void('jbox')
-        root.add_child(Node.void('selection_list'))
-        return root
-
     def handle_recommend_get_recommend_request(self, request: Node) -> Node:
         recommend = Node.void('recommend')
         data = Node.void('data')
@@ -1817,16 +1793,7 @@ class JubeatFesto(
             ghost = data.get(f'{prefix}_ghost', [None, None, None])
             ghost[chart] = score.data.get('ghost')
             data[f'{prefix}_ghost'] = ghost
-
-            # Save it back
-            if score.id in self.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS:
-                # Mirror it to every version so the score shows up regardless of
-                # prefecture setting.
-                for prefecture_id in self.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS:
-                    music.replace_dict(str(prefecture_id), data)
-            else:
-                # Regular copy.
-                music.replace_dict(str(score.id), data)
+            music.replace_dict(str(score.id), data)
 
         for scoreid in music:
             if int(scoreid) >= max_music_id or int(scoreid) <= min_music_id:
@@ -2146,7 +2113,7 @@ class JubeatFesto(
 
         # For some reason, this is on the course list node this time around.
         category_list = Node.void('category_list')
-        course_list.add_child(category_list)
+        clan_course_list.add_child(category_list)
         for categoryid in range(1, 7):
             category = Node.void('category')
             category_list.add_child(category)
