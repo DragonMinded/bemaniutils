@@ -64,6 +64,18 @@ var network_scores = React.createClass({
                 </div>
                 <div>
                     <span className="status">{score.status}</span>
+                    <br/>
+                    <span className="bolder">Stats:</span>
+                    <br/>
+                    {score.stats.perfect}
+                    <span> / </span>
+                    {score.stats.great}
+                    <span> / </span>
+                    {score.stats.good}
+                    <span> / </span>
+                    {score.stats.poor}
+                    <span> / </span>
+                    {score.stats.miss}
                 </div>
             </div>
         );

@@ -35,6 +35,18 @@ var HighScore = React.createClass({
                 </div>
                 <div>
                     <span className="status">{this.props.score.status}</span>
+                    <br/>
+                    <span className="bolder">Stats:</span>
+                    <br/>
+                    {this.props.score.stats.perfect}
+                    <span> / </span>
+                    {this.props.score.stats.great}
+                    <span> / </span>
+                    {this.props.score.stats.good}
+                    <span> / </span>
+                    {this.props.score.stats.poor}
+                    <span> / </span>
+                    {this.props.score.stats.miss}
                 </div>
                 { this.props.score.userid && window.shownames ?
                     <div><a href={Link.get('player', this.props.score.userid)}>{

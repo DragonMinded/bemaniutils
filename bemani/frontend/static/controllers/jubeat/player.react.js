@@ -36,9 +36,50 @@ var profile_view = React.createClass({
         );
     },
 
+    renderJubility: function(player) {
+        return(
+            // version == prop ( No Jubility )
+            this.state.version == 10 ?
+            null
+            :
+            // version == qubell ( No Jubility )
+            this.state.version == 11 ?
+            null
+            :
+            // version == festo
+            this.state.version == 13 ?
+                <div>
+                    <LabelledSection label="Jubility">
+                    {(player.common_jubility+player.pick_up_jubility).toFixed(1)}
+                    </LabelledSection>
+                    <p>
+                        <b>
+                            <a href={Link.get('jubility')}>{ window.own_profile ?
+                                <span>Your Jubility Breakdown &rarr;</span> :
+                                <span>{player.name}'s Jubility Breakdown &rarr;</span>
+                            }</a>
+                        </b>
+                    </p>
+                </div>
+            :
+            // Default which version >= Saucer except qubell and festo
+            this.state.version >= 8 ?
+                <div>
+                    <LabelledSection label="Jubility">
+                    {player.jubility / 100}
+                    </LabelledSection>
+                </div>
+            :
+            null
+        )
+    },
+
     render: function() {
         if (this.state.player[this.state.version]) {
             var player = this.state.player[this.state.version];
+            var item = Object.keys(window.versions).map(function(k){
+                return window.versions[k]
+            })
             return (
                 <div>
                     <div className="section">
@@ -68,6 +109,13 @@ var profile_view = React.createClass({
                         <LabelledSection label="Total Plays">
                             {player.plays}回
                         </LabelledSection>
+                        <LabelledSection label="EXCELLENTs">
+                            {player.ex_count}回
+                        </LabelledSection>
+                        <LabelledSection label="FULL COMBOs">
+                            {player.fc_count}回
+                        </LabelledSection>
+                        {this.renderJubility(player)}
                     </div>
                     <div className="section">
                         <a href={Link.get('records')}>{ window.own_profile ?
@@ -83,22 +131,23 @@ var profile_view = React.createClass({
                 </div>
             );
         } else {
+            var item = Object.keys(window.versions).map(function(k){
+                return window.versions[k]
+            })
             return (
                 <div>
                     <div className="section">
-                        {this.state.profiles.map(function(version) {
-                            return (
-                                <Nav
-                                    title={window.versions[version]}
-                                    active={this.state.version == version}
-                                    onClick={function(event) {
-                                        if (this.state.version == version) { return; }
-                                        this.setState({version: version});
-                                        pagenav.navigate(version);
-                                    }.bind(this)}
-                                />
-                            );
-                        }.bind(this))}
+                        <SelectVersion
+                            name="version"
+                            value={ item.indexOf(item[this.state.version - 1]) }
+                            versions={ item }
+                            onChange={function(event) {
+                                var version = item.indexOf(item[event]) + 1
+                                if (this.state.version == version) { return; }
+                                this.setState({version: version});
+                                pagenav.navigate(version);
+                            }.bind(this)}
+                        />
                     </div>
                     <div className="section">
                         This player has no profile for {window.versions[this.state.version]}!
