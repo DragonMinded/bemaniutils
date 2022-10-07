@@ -85,8 +85,8 @@ var network_scores = React.createClass({
                         <tr>
                             { window.shownames ? <th>Name</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>

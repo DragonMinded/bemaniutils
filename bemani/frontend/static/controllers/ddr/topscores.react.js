@@ -180,7 +180,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Grade',
-                                render: function(topscore) { return topscore.rank; },
+                                render: function(topscore) { return <span className="grade">{topscore.rank}</span>; },
                             },
                             {
                                 name: 'Score',

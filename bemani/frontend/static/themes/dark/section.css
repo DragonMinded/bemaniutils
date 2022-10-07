@@ -104,7 +104,7 @@ div.score span.score {
     padding-right: 3px;
 }
 
-div.score span.grade {
+div.score span.grade, table.topscores span.grade {
     font-weight: bold;
     padding-right: 3px;
 }
@@ -114,7 +114,7 @@ div.songname {
     font-size: large;
 }
 
-div.songartist, div.songgenre, div.songdifficulty, div.songplays {
+div.songartist, div.songgenre, div.songdifficulty, div.songdifficulties, div.songplays {
     font-size: small;
 }
 
@@ -152,9 +152,9 @@ span.loading {
 }
 
 span.raised {
-    font-style: italic;
-    font-size: small;
+    font-size: smaller;
     font-weight: bold;
+    text-transform: uppercase;
 }
 
 dl {

@@ -298,7 +298,7 @@ var rivals_view = React.createClass({
                                     return (
                                         <tr>
                                             <td>
-                                                <td><Rival userid={rival.userid} player={player} /></td>
+                                                <Rival userid={rival.userid} player={player} />
                                                 { rival.active ?
                                                     <div className="pill">active</div> :
                                                     null

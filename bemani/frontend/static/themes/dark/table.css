@@ -29,6 +29,10 @@ table.list tbody td, table.add tbody td {
     vertical-align: top;
 }
 
+table.list tr.header td {
+    vertical-align: middle ! important;
+}
+
 table.list tbody td {
     border: 1px solid #6a6a6a;
     padding: 10px;
