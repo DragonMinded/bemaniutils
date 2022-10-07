@@ -101,8 +101,8 @@ var network_scores = React.createClass({
                             { window.showdjnames ? <th>DJ Name</th> : null }
                             { window.showdjnames ? <th>Arcade</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>
