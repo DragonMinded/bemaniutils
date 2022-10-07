@@ -69,12 +69,14 @@ class BaseData:
         """
         if self.__config.database.read_only:
             # See if this is an insert/update/delete
-            for write_statement in [
-                "insert into ",
-                "update ",
-                "delete from ",
+            lowered = sql.lower()
+            for write_statement_group in [
+                ["insert into"],
+                ["update", "set"],
+                ["delete from"],
             ]:
-                if write_statement in sql.lower() and not safe_write_operation:
+                includes = all(s in lowered for s in write_statement_group)
+                if includes and not safe_write_operation:
                     raise Exception('Read-only mode is active!')
         return self.__conn.execute(
             text(sql),
