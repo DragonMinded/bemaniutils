@@ -47,7 +47,7 @@ class DDRFrontend(FrontendBase):
 
     def update_weight(self, profile: Profile, weight: int, enabled: bool) -> Profile:
         newprofile = copy.deepcopy(profile)
-        if newprofile.get_int('version') in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
+        if newprofile.version in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             if enabled:
                 newprofile.replace_int('weight', weight)
                 newprofile.replace_bool('workout_mode', True)
@@ -74,7 +74,7 @@ class DDRFrontend(FrontendBase):
 
     def update_settings(self, profile: Profile, new_settings: Dict[str, Any]) -> Profile:
         newprofile = copy.deepcopy(profile)
-        if newprofile.get_int('version') in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
+        if newprofile.version in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             newprofile.replace_int('arrowskin', new_settings['arrowskin'])
             newprofile.replace_int('guidelines', new_settings['guidelines'])
             newprofile.replace_int('filter', new_settings['filter'])
@@ -86,7 +86,7 @@ class DDRFrontend(FrontendBase):
 
     def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
-        if profile.get_int('version') in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
+        if profile.version in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             formatted_profile.update({
                 'sp': playstats.get_int('single_plays'),
                 'dp': playstats.get_int('double_plays'),
@@ -202,12 +202,12 @@ class DDRFrontend(FrontendBase):
 
     def activate_rival(self, profile: Profile, position: int) -> Profile:
         newprofile = copy.deepcopy(profile)
-        if newprofile.get_int('version') == VersionConstants.DDR_X2:
+        if newprofile.version == VersionConstants.DDR_X2:
             # X2 only has one active rival
             lastdict = newprofile.get_dict('last')
             lastdict.replace_int('fri', position + 1)
             newprofile.replace_dict('last', lastdict)
-        elif newprofile.get_int('version') in [VersionConstants.DDR_X3_VS_2NDMIX, VersionConstants.DDR_2013, VersionConstants.DDR_2014, VersionConstants.DDR_ACE, VersionConstants.DDR_A20]:
+        elif newprofile.version in [VersionConstants.DDR_X3_VS_2NDMIX, VersionConstants.DDR_2013, VersionConstants.DDR_2014, VersionConstants.DDR_ACE, VersionConstants.DDR_A20]:
             # X3 has 3 active rivals, put this in the first open slot
             lastdict = newprofile.get_dict('last')
             if lastdict.get_int('rival1') < 1:
@@ -221,13 +221,13 @@ class DDRFrontend(FrontendBase):
 
     def deactivate_rival(self, profile: Profile, position: int) -> Profile:
         newprofile = copy.deepcopy(profile)
-        if newprofile.get_int('version') == VersionConstants.DDR_X2:
+        if newprofile.version == VersionConstants.DDR_X2:
             # X2 only has one active rival
             lastdict = newprofile.get_dict('last')
             if lastdict.get_int('fri') == position + 1:
                 lastdict.replace_int('fri', 0)
             newprofile.replace_dict('last', lastdict)
-        elif newprofile.get_int('version') in [VersionConstants.DDR_X3_VS_2NDMIX, VersionConstants.DDR_2013, VersionConstants.DDR_2014, VersionConstants.DDR_ACE, VersionConstants.DDR_A20]:
+        elif newprofile.version in [VersionConstants.DDR_X3_VS_2NDMIX, VersionConstants.DDR_2013, VersionConstants.DDR_2014, VersionConstants.DDR_ACE, VersionConstants.DDR_A20]:
             # X3 has 3 active rivals, put this in the first open slot
             lastdict = newprofile.get_dict('last')
             if lastdict.get_int('rival1') == position + 1:
@@ -241,9 +241,9 @@ class DDRFrontend(FrontendBase):
 
     def format_rival(self, link: Link, profile: Profile) -> Dict[str, Any]:
         pos = int(link.type[7:])
-        if profile.get_int('version') == VersionConstants.DDR_X2:
+        if profile.version == VersionConstants.DDR_X2:
             active = pos == (profile.get_dict('last').get_int('fri') - 1)
-        elif profile.get_int('version') in {
+        elif profile.version in {
             VersionConstants.DDR_X3_VS_2NDMIX,
             VersionConstants.DDR_2013,
             VersionConstants.DDR_2014,
