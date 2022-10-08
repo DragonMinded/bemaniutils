@@ -2,12 +2,6 @@
 
 var Nav = createReactClass({
     render: function() {
-        var cls = 'nav';
-        if (this.props.active) {
-            cls += ' active';
-        }
-        cls += " " + this.props.title;
-
         var title = (
            <span>
                 {this.props.title}
@@ -19,7 +13,7 @@ var Nav = createReactClass({
         );
         return (
             <Button
-                className={cls}
+                className={classNames("nav", {"active": this.props.active}, this.props.title)}
                 disabled={this.props.disabled}
                 style={this.props.style}
                 onClick={function(event) {

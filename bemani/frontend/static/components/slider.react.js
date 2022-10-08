@@ -4,7 +4,7 @@ var Slider = createReactClass({
     render: function() {
         return (
             <div
-                className={"slider " + (this.props.value ? "on " : "off ") + this.props.className}
+                className={classNames("slider", this.props.value ? "on" : "off", this.props.className)}
                 onClick={function(event) {
                     event.preventDefault();
                     event.stopPropagation();
