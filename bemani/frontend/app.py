@@ -21,6 +21,10 @@ app = Flask(
 config = Config()
 
 
+# Allow cache-busting of entire frontend for major changes such as react upgrades.
+FRONTEND_CACHE_BUST: str = "site.1.0.react.16.14"
+
+
 @app.before_request
 def before_request() -> None:
     global config
@@ -291,6 +295,7 @@ def navigation() -> Dict[str, Any]:
                 'components': components,
                 'any': jinja2_any,
                 'theme_url': jinja2_theme,
+                'cache_bust': f"v={FRONTEND_CACHE_BUST}",
             }
     except AttributeError:
         # If we are trying to render a 500 error and we couldn't even run the
@@ -300,6 +305,7 @@ def navigation() -> Dict[str, Any]:
             'components': components,
             'any': jinja2_any,
             'theme_url': jinja2_theme,
+            'cache_bust': f"v={FRONTEND_CACHE_BUST}",
         }
 
     pages: List[Dict[str, Any]] = []
@@ -811,4 +817,5 @@ def navigation() -> Dict[str, Any]:
         'components': components,
         'any': jinja2_any,
         'theme_url': jinja2_theme,
+        'cache_bust': f"v={FRONTEND_CACHE_BUST}",
     }
