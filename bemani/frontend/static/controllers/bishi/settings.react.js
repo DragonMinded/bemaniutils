@@ -61,14 +61,14 @@ var settings_view = createReactClass({
         return (
             <LabelledSection vertical={true} label="Name">{
                 !this.state.editing_name ?
-                    <span>
+                    <>
                         <span>{player.name}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_name: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveName}>
                         <input
                             type="text"

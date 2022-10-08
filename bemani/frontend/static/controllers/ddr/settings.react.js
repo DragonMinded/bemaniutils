@@ -167,14 +167,14 @@ var settings_view = createReactClass({
         return (
             <LabelledSection vertical={true} label="Name">{
                 !this.state.editing_name ?
-                    <span>
+                    <>
                         <span>{player.name}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_name: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveName}>
                         <input
                             type="text"
@@ -216,7 +216,7 @@ var settings_view = createReactClass({
         return (
             <LabelledSection vertical={true} label="Weight">{
                 !this.state.editing_weight ?
-                    <span>
+                    <>
                         { player.workout_mode ?
                             <span>{player.weight / 10} kg</span> :
                             <span className="placeholder">workout mode disabled</span>
@@ -226,7 +226,7 @@ var settings_view = createReactClass({
                                 this.setState({editing_weight: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveWeight}>
                         <div className="row">
                             <input
@@ -320,13 +320,13 @@ var settings_view = createReactClass({
                         <h3>User Profile</h3>
                         {this.renderName(player)}
                         <LabelledSection vertical={true} label={
-                            <span>
+                            <>
                                 Fast/Slow Display
                                 { this.state.saving_early_late ?
                                     <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
                                     null
                                 }
-                            </span>
+                            </>
                         }>
                             <Slider
                                 on="on"
@@ -339,13 +339,13 @@ var settings_view = createReactClass({
                             />
                         </LabelledSection>
                         <LabelledSection vertical={true} label={
-                            <span>
+                            <>
                                 Combo Position
                                 { this.state.saving_background_combo ?
                                     <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
                                     null
                                 }
-                            </span>
+                            </>
                         }>
                             <Slider
                                 className="padded"
