@@ -82,7 +82,7 @@ var settings_view = createReactClass({
         event.preventDefault();
     },
 
-    toggleEarlyLate: function(event) {
+    toggleEarlyLate: function() {
         this.setState({saving_early_late: true})
         AJAX.post(
             Link.get('updateearlylate'),
@@ -99,10 +99,9 @@ var settings_view = createReactClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
-    toggleBackgroundCombo: function(event) {
+    toggleBackgroundCombo: function() {
         this.setState({saving_background_combo: true})
         AJAX.post(
             Link.get('updatebackgroundcombo'),
@@ -119,7 +118,6 @@ var settings_view = createReactClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
     saveName: function(event) {

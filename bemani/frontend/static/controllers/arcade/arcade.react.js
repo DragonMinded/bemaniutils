@@ -105,7 +105,7 @@ var arcade_management = createReactClass({
         event.preventDefault();
     },
 
-    togglePaseliEnabled: function(event) {
+    togglePaseliEnabled: function() {
         this.setState({paseli_enabled_saving: true})
         AJAX.post(
             Link.get('paseli_enabled'),
@@ -117,10 +117,9 @@ var arcade_management = createReactClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
-    togglePaseliInfinite: function(event) {
+    togglePaseliInfinite: function() {
         this.setState({paseli_infinite_saving: true})
         AJAX.post(
             Link.get('paseli_infinite'),
@@ -132,10 +131,9 @@ var arcade_management = createReactClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
-    toggleMaskServicesURL: function(event) {
+    toggleMaskServicesURL: function() {
         this.setState({mask_services_url_saving: true})
         AJAX.post(
             Link.get('mask_services_url'),
@@ -147,7 +145,6 @@ var arcade_management = createReactClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
     addBalance: function(event) {

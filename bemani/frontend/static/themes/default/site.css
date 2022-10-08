@@ -48,6 +48,14 @@ div.navigation {
     }
 }
 
+@media only screen and (min-width: 600px) {
+    div.jconfirm-box-container {
+        margin-left: 25%;
+        margin-right: 25%;
+        width: 50%;
+    }
+}
+
 @media only screen and (hover: none) {
     .tinynav {
         display: inline-block;
