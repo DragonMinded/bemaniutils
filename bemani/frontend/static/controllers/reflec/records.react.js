@@ -57,9 +57,9 @@ var HighScore = React.createClass({
                     <span className="score">{this.props.score.points}</span>
                     <span className="label">M</span>
                     <span className="score">{this.props.score.miss_count < 0 ? '-' : this.props.score.miss_count}</span>
-                    {this.props.score.combo > 0 ? <span>
+                    {this.props.score.combo >= 0 ? <span>
                         <span className="label">Combo</span>
-                        <span className="score">{this.props.score.combo < 0 ? '-' : this.props.score.combo}</span>
+                        <span className="score">{this.props.score.combo}</span>
                     </span> : null}
                 </div>
                 <div>

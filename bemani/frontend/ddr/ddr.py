@@ -114,7 +114,7 @@ class DDRFrontend(FrontendBase):
 
     def format_score(self, userid: UserID, score: Score) -> Dict[str, Any]:
         formatted_score = super().format_score(userid, score)
-        formatted_score['combo'] = score.data.get_int('combo')
+        formatted_score['combo'] = score.data.get_int('combo', -1)
         formatted_score['lamp'] = score.data.get_int('halo')
         formatted_score['halo'] = {
             DDRBase.HALO_NONE: None,
@@ -146,7 +146,7 @@ class DDRFrontend(FrontendBase):
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
         formatted_attempt = super().format_attempt(userid, attempt)
-        formatted_attempt['combo'] = attempt.data.get_int('combo')
+        formatted_attempt['combo'] = attempt.data.get_int('combo', -1)
         formatted_attempt['halo'] = {
             DDRBase.HALO_NONE: None,
             DDRBase.HALO_GOOD_FULL_COMBO: "GOOD FULL COMBO",

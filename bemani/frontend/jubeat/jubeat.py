@@ -109,7 +109,6 @@ class JubeatFrontend(FrontendBase):
             JubeatBase.PLAY_MEDAL_NEARLY_EXCELLENT: "NEARLY EXCELLENT",
             JubeatBase.PLAY_MEDAL_EXCELLENT: "EXCELLENT",
         }.get(score.data.get_int('medal'), 'NO PLAY')
-        formatted_score['music_rate'] = score.data.get_int('music_rate', 0) / 10
         formatted_score['clear_cnt'] = score.data.get_int('clear_count', 0)
         formatted_score['stats'] = score.data.get_dict('stats')
         return formatted_score
@@ -129,7 +128,6 @@ class JubeatFrontend(FrontendBase):
             JubeatBase.PLAY_MEDAL_NEARLY_EXCELLENT: "NEARLY EXCELLENT",
             JubeatBase.PLAY_MEDAL_EXCELLENT: "EXCELLENT",
         }.get(attempt.data.get_int('medal'), 'NO PLAY')
-        formatted_attempt['music_rate'] = attempt.data.get_int('music_rate', 0) / 10
         formatted_attempt['stats'] = attempt.data.get_dict('stats')
         return formatted_attempt
 

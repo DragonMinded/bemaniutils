@@ -124,7 +124,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Combo',
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
+                                render: function(topscore) { return topscore.combo >= 0 ? topscore.combo : '-'; },
                                 sort: function(a, b) {
                                     return a.combo - b.combo;
                                 },

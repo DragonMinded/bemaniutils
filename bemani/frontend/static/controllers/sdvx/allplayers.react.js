@@ -57,7 +57,7 @@ var all_players = React.createClass({
                                 }.bind(this),
                             },
                             {
-                                name: 'Play Count',
+                                name: 'Total Rounds',
                                 render: function(userid) {
                                     var player = this.state.players[userid];
                                     return player.plays;

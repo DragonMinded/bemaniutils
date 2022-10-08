@@ -35,7 +35,7 @@ class SoundVoltexFrontend(FrontendBase):
         formatted_score = super().format_score(userid, score)
         formatted_score['combo'] = score.data.get_int('combo', -1)
         formatted_score['grade'] = {
-            SoundVoltexBase.GRADE_NO_PLAY: 'No Play',
+            SoundVoltexBase.GRADE_NO_PLAY: '-',
             SoundVoltexBase.GRADE_D: 'D',
             SoundVoltexBase.GRADE_C: 'C',
             SoundVoltexBase.GRADE_B: 'B',
@@ -48,21 +48,22 @@ class SoundVoltexFrontend(FrontendBase):
             SoundVoltexBase.GRADE_S: 'S',
         }.get(score.data.get_int('grade'), 'No Play')
         formatted_score['clear_type'] = {
-            SoundVoltexBase.CLEAR_TYPE_NO_PLAY: 'No Play',
-            SoundVoltexBase.CLEAR_TYPE_FAILED: 'Failed',
-            SoundVoltexBase.CLEAR_TYPE_CLEAR: 'Cleared',
-            SoundVoltexBase.CLEAR_TYPE_HARD_CLEAR: 'Hard Cleared',
-            SoundVoltexBase.CLEAR_TYPE_ULTIMATE_CHAIN: 'Ultimate Chain',
-            SoundVoltexBase.CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: 'Perfect Ultimate Chain',
-        }.get(score.data.get_int('clear_type'), 'Failed')
+            SoundVoltexBase.CLEAR_TYPE_NO_PLAY: 'NO PLAY',
+            SoundVoltexBase.CLEAR_TYPE_FAILED: 'FAILED',
+            SoundVoltexBase.CLEAR_TYPE_CLEAR: 'CLEARED',
+            SoundVoltexBase.CLEAR_TYPE_HARD_CLEAR: 'HARD CLEARED',
+            SoundVoltexBase.CLEAR_TYPE_ULTIMATE_CHAIN: 'ULTIMATE CHAIN',
+            SoundVoltexBase.CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: 'PERFECT ULTIMATE CHAIN',
+        }.get(score.data.get_int('clear_type'), 'FAILED')
         formatted_score['medal'] = score.data.get_int('clear_type')
+        formatted_score['stats'] = score.data.get_dict('stats')
         return formatted_score
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
         formatted_attempt = super().format_attempt(userid, attempt)
         formatted_attempt['combo'] = attempt.data.get_int('combo', -1)
         formatted_attempt['grade'] = {
-            SoundVoltexBase.GRADE_NO_PLAY: 'No Play',
+            SoundVoltexBase.GRADE_NO_PLAY: '-',
             SoundVoltexBase.GRADE_D: 'D',
             SoundVoltexBase.GRADE_C: 'C',
             SoundVoltexBase.GRADE_B: 'B',
@@ -75,14 +76,15 @@ class SoundVoltexFrontend(FrontendBase):
             SoundVoltexBase.GRADE_S: 'S',
         }.get(attempt.data.get_int('grade'), 'No Play')
         formatted_attempt['clear_type'] = {
-            SoundVoltexBase.CLEAR_TYPE_NO_PLAY: 'No Play',
-            SoundVoltexBase.CLEAR_TYPE_FAILED: 'Failed',
-            SoundVoltexBase.CLEAR_TYPE_CLEAR: 'Cleared',
-            SoundVoltexBase.CLEAR_TYPE_HARD_CLEAR: 'Hard Cleared',
-            SoundVoltexBase.CLEAR_TYPE_ULTIMATE_CHAIN: 'Ultimate Chain',
-            SoundVoltexBase.CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: 'Perfect Ultimate Chain',
-        }.get(attempt.data.get_int('clear_type'), 'Failed')
+            SoundVoltexBase.CLEAR_TYPE_NO_PLAY: 'NO PLAY',
+            SoundVoltexBase.CLEAR_TYPE_FAILED: 'FAILED',
+            SoundVoltexBase.CLEAR_TYPE_CLEAR: 'CLEARED',
+            SoundVoltexBase.CLEAR_TYPE_HARD_CLEAR: 'HARD CLEARED',
+            SoundVoltexBase.CLEAR_TYPE_ULTIMATE_CHAIN: 'ULTIMATE CHAIN',
+            SoundVoltexBase.CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: 'PERFECT ULTIMATE CHAIN',
+        }.get(attempt.data.get_int('clear_type'), 'FAILED')
         formatted_attempt['medal'] = attempt.data.get_int('clear_type')
+        formatted_attempt['stats'] = attempt.data.get_dict('stats')
         return formatted_attempt
 
     def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:

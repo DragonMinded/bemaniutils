@@ -196,7 +196,7 @@ var top_scores = React.createClass({
                                     return a.combo - b.combo;
                                 },
                                 reverse: true,
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : ''; },
+                                render: function(topscore) { return topscore.combo >= 0 ? topscore.combo : '-'; },
                             },
                             {
                                 name: 'Halo',

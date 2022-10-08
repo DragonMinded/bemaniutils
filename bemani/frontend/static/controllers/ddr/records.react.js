@@ -32,7 +32,7 @@ var HighScore = React.createClass({
                     <span className="grade">{this.props.score.rank}</span>
                     <span className="score">{this.props.score.points}</span>
                 </div>
-                { this.props.score.combo > 0 ?
+                { this.props.score.combo >= 0 ?
                     <div>
                         <span className="label">Combo</span>
                         <span className="score">{this.props.score.combo}</span>

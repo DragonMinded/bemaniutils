@@ -122,7 +122,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Combo',
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : ''; },
+                                render: function(topscore) { return topscore.combo >= 0 ? topscore.combo : '-'; },
                                 sort: function(a, b) {
                                     return a.combo - b.combo;
                                 },
@@ -130,7 +130,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Music Rate',
-                                render: function(topscore) { return topscore.music_rate > 0 ? topscore.music_rate + "%" : ''; },
+                                render: function(topscore) { return topscore.music_rate >= 0 ? topscore.music_rate + "%" : '-'; },
                                 sort: function(a, b) {
                                     return a.music_rate - b.music_rate;
                                 },
