@@ -197,7 +197,7 @@ var network_records = createReactClass({
         return (
             <span>
                 { paginate ?
-                    <div className="section">
+                    <div className="section" key="paginatebuttons">
                         {songids.map(function(songid) {
                             if (songid < 0) {
                                 curbutton = curbutton + 1;
@@ -220,7 +220,7 @@ var network_records = createReactClass({
                     </div> :
                     null
                 }
-                <div className="section">
+                <div className="section" key="contents">
                     <table className="list records">
                         <thead></thead>
                         <tbody>
