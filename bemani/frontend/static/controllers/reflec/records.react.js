@@ -19,7 +19,7 @@ var sort_names = {
     'clear': 'Clear Type',
 };
 
-var HighScore = React.createClass({
+var HighScore = createReactClass({
 
     renderGrade: function(score) {
         if (score.achievement_rate < 6000) {
@@ -77,7 +77,7 @@ var HighScore = React.createClass({
     },
 });
 
-var network_records = React.createClass({
+var network_records = createReactClass({
 
     sortRecords: function(records) {
         var sorted_records = {};

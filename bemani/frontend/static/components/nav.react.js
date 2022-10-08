@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Nav = React.createClass({
+var Nav = createReactClass({
     render: function() {
         var cls = 'nav';
         if (this.props.active) {

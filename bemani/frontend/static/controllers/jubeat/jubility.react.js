@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.versions);
 var pagenav = new History(valid_versions);
 
-var jubility_view = React.createClass({
+var jubility_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.player);

@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Next = React.createClass({
+var Next = createReactClass({
     render: function() {
         return (
             <Nav

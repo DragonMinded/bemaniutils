@@ -5,7 +5,7 @@ var valid_charts = ['Basic', 'Medium', 'Hard', 'Special'].filter(function(val, i
 });
 var pagenav = new History(valid_charts);
 
-var top_scores = React.createClass({
+var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
         var newscores = [[], [], [], [], []];

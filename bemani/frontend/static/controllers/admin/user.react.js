@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var user_management = React.createClass({
+var user_management = createReactClass({
     getInitialState: function(props) {
         var credits = {};
         Object.keys(window.arcades).map(function(arcadeid) {

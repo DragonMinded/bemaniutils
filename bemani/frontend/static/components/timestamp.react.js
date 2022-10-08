@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Timestamp = React.createClass({
+var Timestamp = createReactClass({
     render: function() {
         if (this.props.timestamp <= 0) {
             return <div className="timestamp">N/A</div>;

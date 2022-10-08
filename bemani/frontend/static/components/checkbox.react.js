@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Checkbox = React.createClass({
+var Checkbox = createReactClass({
     render: function() {
         return (
             <span className={this.props.className} onClick={this.props.onClick}>

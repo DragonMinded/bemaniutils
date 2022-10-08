@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Graph = React.createClass({
+var Graph = createReactClass({
     componentDidMount: function() {
         var config = {
             type: this.props.type,
@@ -44,7 +44,7 @@ var Graph = React.createClass({
 
 });
 
-var LineGraph = React.createClass({
+var LineGraph = createReactClass({
 
     render: function() {
         return (
@@ -59,7 +59,7 @@ var LineGraph = React.createClass({
     },
 });
 
-var RadarGraph = React.createClass({
+var RadarGraph = createReactClass({
 
     render: function() {
         return (

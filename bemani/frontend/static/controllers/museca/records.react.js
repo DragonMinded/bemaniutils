@@ -22,7 +22,7 @@ var sort_names = {
     'clear': 'Clear Type',
 };
 
-var HighScore = React.createClass({
+var HighScore = createReactClass({
     render: function() {
         if (!this.props.score) {
             return null;
@@ -64,7 +64,7 @@ var HighScore = React.createClass({
     },
 });
 
-var network_records = React.createClass({
+var network_records = createReactClass({
 
     sortRecords: function(records) {
         var sorted_records = {};

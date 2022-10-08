@@ -6,7 +6,7 @@ var valid_charts = ['SP Beginner', 'SP Basic', 'SP Difficult', 'SP Expert', 'SP 
 });
 var pagenav = new History(valid_charts);
 
-var top_scores = React.createClass({
+var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
         var newscores = [[], [], [], [], [], [], [], [], [], []];

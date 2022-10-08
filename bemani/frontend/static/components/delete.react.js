@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Delete = React.createClass({
+var Delete = createReactClass({
     render: function() {
         return (
             <Button

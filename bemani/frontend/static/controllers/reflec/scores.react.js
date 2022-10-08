@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var network_scores = React.createClass({
+var network_scores = createReactClass({
     getInitialState: function(props) {
         return {
             songs: window.songs,

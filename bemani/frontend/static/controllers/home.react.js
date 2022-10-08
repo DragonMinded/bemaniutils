@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var home = React.createClass({
+var home = createReactClass({
     getInitialState: function(props) {
         return {
             news: window.news,

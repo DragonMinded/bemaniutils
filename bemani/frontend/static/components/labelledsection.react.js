@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var LabelledSection = React.createClass({
+var LabelledSection = createReactClass({
     render: function() {
         var classname = "labelledsection"
         if (this.props.vertical) {

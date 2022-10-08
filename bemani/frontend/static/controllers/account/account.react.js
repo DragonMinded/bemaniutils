@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var account_management = React.createClass({
+var account_management = createReactClass({
     getInitialState: function(props) {
         return {
             email: window.email,

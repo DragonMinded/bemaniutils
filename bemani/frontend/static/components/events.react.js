@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var UnknownEvent = React.createClass({
+var UnknownEvent = createReactClass({
     render: function() {
         return (
             <tr key={event.id}>
@@ -15,7 +15,7 @@ var UnknownEvent = React.createClass({
     },
 });
 
-var ExceptionEvent = React.createClass({
+var ExceptionEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var location = 'Unknown Service';
@@ -77,7 +77,7 @@ var ExceptionEvent = React.createClass({
     },
 });
 
-var UnhandledPacketEvent = React.createClass({
+var UnhandledPacketEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         return (
@@ -96,7 +96,7 @@ var UnhandledPacketEvent = React.createClass({
     },
 });
 
-var UnauthorizedClientEvent = React.createClass({
+var UnauthorizedClientEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         return (
@@ -125,7 +125,7 @@ var UnauthorizedClientEvent = React.createClass({
     },
 });
 
-var PCBEvent = React.createClass({
+var PCBEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         return (
@@ -162,7 +162,7 @@ var PCBEvent = React.createClass({
     },
 });
 
-var PASELITransactionEvent = React.createClass({
+var PASELITransactionEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var username = null;
@@ -228,7 +228,7 @@ var PASELITransactionEvent = React.createClass({
     },
 });
 
-var JubeatLeagueCourseEvent = React.createClass({
+var JubeatLeagueCourseEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -256,7 +256,7 @@ var JubeatLeagueCourseEvent = React.createClass({
     },
 });
 
-var JubeatFCChallengeEvent = React.createClass({
+var JubeatFCChallengeEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -290,7 +290,7 @@ var JubeatFCChallengeEvent = React.createClass({
     },
 });
 
-var JubeatRandomCourseEvent = React.createClass({
+var JubeatRandomCourseEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -320,7 +320,7 @@ var JubeatRandomCourseEvent = React.createClass({
     },
 });
 
-var IIDXDailyChartsEvent = React.createClass({
+var IIDXDailyChartsEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -348,7 +348,7 @@ var IIDXDailyChartsEvent = React.createClass({
     },
 });
 
-var PopnMusicCourseEvent = React.createClass({
+var PopnMusicCourseEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -372,7 +372,7 @@ var PopnMusicCourseEvent = React.createClass({
     },
 });
 
-var DDRProfilePurge = React.createClass({
+var DDRProfilePurge = createReactClass({
     render: function() {
         var event = this.props.event;
         var username = null;

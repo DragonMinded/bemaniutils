@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var news_management = React.createClass({
+var news_management = createReactClass({
     getInitialState: function(props) {
         return {
             news: window.news,

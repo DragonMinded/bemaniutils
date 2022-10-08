@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var LongMessage = React.createClass({
+var LongMessage = createReactClass({
     getInitialState: function(props) {
         return {
             expanded: false,

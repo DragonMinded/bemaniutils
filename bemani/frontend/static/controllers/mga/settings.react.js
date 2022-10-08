@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.versions);
 var pagenav = new History(valid_versions);
 
-var settings_view = React.createClass({
+var settings_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.player);

@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.rivals);
 var pagenav = new History(valid_versions);
 
-var rivals_view = React.createClass({
+var rivals_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.rivals);

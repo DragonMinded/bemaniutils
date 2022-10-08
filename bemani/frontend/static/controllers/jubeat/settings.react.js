@@ -19,7 +19,7 @@ var emblem_option_names = {
     'speech_bubble': 'Speech Bubble',
 }
 
-var settings_view = React.createClass({
+var settings_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.player);

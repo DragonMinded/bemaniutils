@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var card_management = React.createClass({
+var card_management = createReactClass({
     getInitialState: function(props) {
         return {
             cards: window.cards,

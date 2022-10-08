@@ -20,7 +20,7 @@ var sort_names = {
 };
 var chart_map = [0, 1, 2, 3, 4, 6, 7, 8, 9];
 
-var HighScore = React.createClass({
+var HighScore = createReactClass({
     render: function() {
         if (!this.props.score) {
             return null;
@@ -51,7 +51,7 @@ var HighScore = React.createClass({
     },
 });
 
-var network_records = React.createClass({
+var network_records = createReactClass({
 
     sortRecords: function(records) {
         var sorted_records = {};

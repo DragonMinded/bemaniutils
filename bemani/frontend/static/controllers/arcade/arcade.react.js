@@ -8,7 +8,7 @@ function count_pcbids(machines) {
     return count;
 }
 
-var arcade_management = React.createClass({
+var arcade_management = createReactClass({
     getInitialState: function(props) {
         var credits = {};
         Object.keys(window.users).map(function(userid) {

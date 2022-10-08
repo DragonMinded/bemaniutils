@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Slider = React.createClass({
+var Slider = createReactClass({
     render: function() {
         return (
             <div

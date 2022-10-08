@@ -4,7 +4,7 @@ function makeGameSettingName(game_settings) {
     return game_settings.game + '-' + game_settings.version;
 }
 
-var GameSettings = React.createClass({
+var GameSettings = createReactClass({
     getInitialState: function() {
         var valid_settings = this.props.game_settings.map(function(setting) {
             return makeGameSettingName(setting);

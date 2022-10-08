@@ -30,7 +30,7 @@ var event_names = {
 
 var mergehandler = new MergeManager(function(evt) { return evt.id; }, MergeManager.MERGE_POLICY_DROP);
 
-var audit_events = React.createClass({
+var audit_events = createReactClass({
     getInitialState: function(props) {
         return {
             events: mergehandler.add(window.events),

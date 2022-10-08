@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var api_management = React.createClass({
+var api_management = createReactClass({
     getInitialState: function(props) {
         var info = this.scheduleServerInfo(window.servers);
         return {

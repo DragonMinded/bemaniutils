@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var all_players = React.createClass({
+var all_players = createReactClass({
 
     getInitialState: function(props) {
         return {

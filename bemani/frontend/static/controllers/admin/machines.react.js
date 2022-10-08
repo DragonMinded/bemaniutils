@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var machine_management = React.createClass({
+var machine_management = createReactClass({
     getInitialState: function(props) {
         return {
             machines: window.machines,
