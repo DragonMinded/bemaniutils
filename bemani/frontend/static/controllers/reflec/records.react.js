@@ -57,10 +57,10 @@ var HighScore = createReactClass({
                     <span className="score">{this.props.score.points}</span>
                     <span className="label">M</span>
                     <span className="score">{this.props.score.miss_count < 0 ? '-' : this.props.score.miss_count}</span>
-                    {this.props.score.combo >= 0 ? <span>
+                    {this.props.score.combo >= 0 ? <>
                         <span className="label">Combo</span>
                         <span className="score">{this.props.score.combo}</span>
-                    </span> : null}
+                    </> : null}
                 </div>
                 <div>
                     <span className="status">{this.props.score.combo_type}</span>
@@ -195,7 +195,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 { paginate ?
                     <div className="section" key="paginatebuttons">
                         {songids.map(function(songid) {
@@ -308,7 +308,7 @@ var network_records = createReactClass({
                         </tbody>
                     </table>
                 </div>
-            </span>
+            </>
         );
     },
 
@@ -380,7 +380,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -397,7 +397,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -430,7 +430,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -447,7 +447,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -480,7 +480,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -497,7 +497,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 

@@ -131,7 +131,7 @@ var rivals_view = createReactClass({
         if (count >= window.max_active_rivals[this.state.version]) { avail = false; }
 
         return (
-            <span>
+            <>
                 {avail ?
                     <Add
                         title="Add Rival"
@@ -141,7 +141,7 @@ var rivals_view = createReactClass({
                     /> :
                     null
                 }
-            </span>
+            </>
         );
     },
 
