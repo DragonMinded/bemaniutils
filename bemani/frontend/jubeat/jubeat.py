@@ -146,13 +146,54 @@ class JubeatFrontend(FrontendBase):
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile['plays'] = playstats.get_int('total_plays')
         formatted_profile['emblem'] = self.format_emblem(profile.get_dict('last').get_int_array('emblem', 5))
-        formatted_profile['jubility'] = profile.get_int('jubility')
-        formatted_profile['pick_up_jubility'] = profile.get_float('pick_up_jubility')
-        # Only reason this is a dictionary of dictionaries is because ValidatedDict doesn't support a list of dictionaries.
-        # Probably intentionally lol. Just listify the pickup/common charts.
-        formatted_profile['pick_up_chart'] = list(profile.get_dict('pick_up_chart').values())
-        formatted_profile['common_jubility'] = profile.get_float('common_jubility')
-        formatted_profile['common_chart'] = list(profile.get_dict('common_chart').values())
+        formatted_profile['jubility'] = (
+            profile.get_int('jubility')
+            if profile.version not in {VersionConstants.JUBEAT_PROP, VersionConstants.JUBEAT_QUBELL, VersionConstants.JUBEAT_FESTO}
+            else 0
+        )
+        formatted_profile['pick_up_jubility'] = (
+            profile.get_float('pick_up_jubility')
+            if profile.version == VersionConstants.JUBEAT_FESTO
+            else 0
+        )
+        formatted_profile['common_jubility'] = (
+            profile.get_float('common_jubility')
+            if profile.version == VersionConstants.JUBEAT_FESTO
+            else 0
+        )
+        if profile.version == VersionConstants.JUBEAT_FESTO:
+            # Only reason this is a dictionary of dictionaries is because ValidatedDict doesn't support a list of dictionaries.
+            # Probably intentionally lol. Just listify the pickup/common charts.
+            formatted_profile['pick_up_chart'] = list(profile.get_dict('pick_up_chart').values())
+            formatted_profile['common_chart'] = list(profile.get_dict('common_chart').values())
+        elif profile.version == VersionConstants.JUBEAT_CLAN:
+            # Look up achievements which is where jubility was stored. This is a bit of a hack
+            # due to the fact that this could be formatting remote profiles, but then they should
+            # have no achievements.
+            userid = self.data.local.user.from_refid(profile.game, profile.version, profile.refid)
+            if userid is not None:
+                achievements = self.data.local.user.get_achievements(profile.game, profile.version, userid)
+            else:
+                achievements = []
+
+            jubeat_entries: List[ValidatedDict] = []
+            for achievement in achievements:
+                if achievement.type != 'jubility':
+                    continue
+
+                # Figure out for each song, what's the highest value jubility and
+                # keep that.
+                bestentry = ValidatedDict()
+                for chart in [0, 1, 2]:
+                    entry = achievement.data.get_dict(str(chart))
+                    if entry.get_int("value") >= bestentry.get_int("value"):
+                        bestentry = entry.clone()
+                        bestentry.replace_int("songid", achievement.id)
+                        bestentry.replace_int("chart", chart)
+                jubeat_entries.append(bestentry)
+            jubeat_entries = sorted(jubeat_entries, key=lambda entry: entry.get_int("value"), reverse=True)[:30]
+            formatted_profile['chart'] = jubeat_entries
+
         formatted_profile['ex_count'] = profile.get_int('ex_cnt')
         formatted_profile['fc_count'] = profile.get_int('fc_cnt')
         return formatted_profile

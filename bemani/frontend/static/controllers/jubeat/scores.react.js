@@ -52,6 +52,13 @@ var network_scores = React.createClass({
     },
 
     renderScore: function(score) {
+        has_stats = (
+            score.stats.perfect > 0 ||
+            score.stats.great > 0 ||
+            score.stats.good > 0 ||
+            score.stats.poor > 0 ||
+            score.stats.miss > 0
+        );
         return (
             <div className="score">
                 <div>
@@ -59,14 +66,12 @@ var network_scores = React.createClass({
                     <span className="score">{score.points}</span>
                     <span className="label">Combo</span>
                     <span className="score">{score.combo < 0 ? '-' : score.combo}</span>
-                    <span className="label">Music Rate</span>
-                    <span className="score">{score.music_rate < 0 ? '-' : score.music_rate}</span>
+                    {score.music_rate > 0 ? <span>
+                        <span className="label">Music Rate</span>
+                        <span className="score">{score.music_rate <= 0 ? '-' : score.music_rate}%</span>
+                    </span> : null}
                 </div>
-                <div>
-                    <span className="status">{score.status}</span>
-                    <br/>
-                    <span className="bolder">Stats:</span>
-                    <br/>
+                {has_stats ? <div title="perfect / great / good / poor / miss">
                     {score.stats.perfect}
                     <span> / </span>
                     {score.stats.great}
@@ -76,6 +81,9 @@ var network_scores = React.createClass({
                     {score.stats.poor}
                     <span> / </span>
                     {score.stats.miss}
+                </div> : null}
+                <div>
+                    <span className="status">{score.status}</span>
                 </div>
             </div>
         );
@@ -89,8 +97,8 @@ var network_scores = React.createClass({
                         <tr>
                             { window.shownames ? <th>Name</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>

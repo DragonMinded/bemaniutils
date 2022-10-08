@@ -54,13 +54,6 @@ div.labelledsection.filled {
     border: 1px dashed #dddddd;
 }
 
-span.separator {
-    font-size: large;
-    font-weight: bold;
-    padding-left: 5px;
-    padding-right: 5px;
-}
-
 div.labelledsection.iidx.themeoption select {
     width: 200px;
 }

@@ -273,3 +273,48 @@ span.checkbox {
     padding-right: 5px;
     cursor: default;
 }
+
+div.slider {
+    display: inline-block;
+    border-radius: 10px;
+}
+
+div.slider.on {
+    background: #2196F3;
+    border: 1px solid #0a6fc2;
+}
+
+div.slider.off {
+    background: #cccccc;
+    border: 1px solid #a0a0a0;
+}
+
+div.slider span.label {
+    width: 70px;
+    font-weight: normal;
+    font-size: small;
+    height: 18px;
+    display: inline-block;
+}
+
+div.slider span.label.on {
+    text-align: center;
+}
+
+div.slider span.label.off {
+    text-align: center;
+}
+
+div.slider span.ball {
+    position: absolute;
+    display: inline-block;
+    border-radius: 8px;
+    background: white;
+    width: 14px;
+    height: 14px;
+    margin: 2px;
+}
+
+div.slider span.ball.off {
+    margin-left: -16px;
+}

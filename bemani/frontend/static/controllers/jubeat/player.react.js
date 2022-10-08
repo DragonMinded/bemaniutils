@@ -48,27 +48,15 @@ var profile_view = React.createClass({
             :
             // version == festo
             this.state.version == 13 ?
-                <div>
-                    <LabelledSection label="Jubility">
-                    {(player.common_jubility+player.pick_up_jubility).toFixed(1)}
-                    </LabelledSection>
-                    <p>
-                        <b>
-                            <a href={Link.get('jubility')}>{ window.own_profile ?
-                                <span>Your Jubility Breakdown &rarr;</span> :
-                                <span>{player.name}'s Jubility Breakdown &rarr;</span>
-                            }</a>
-                        </b>
-                    </p>
-                </div>
+                <LabelledSection label="Jubility">
+                {(player.common_jubility+player.pick_up_jubility).toFixed(1)}
+                </LabelledSection>
             :
             // Default which version >= Saucer except qubell and festo
             this.state.version >= 8 ?
-                <div>
-                    <LabelledSection label="Jubility">
-                    {player.jubility / 100}
-                    </LabelledSection>
-                </div>
+                <LabelledSection label="Jubility">
+                {player.jubility / 100}
+                </LabelledSection>
             :
             null
         )
@@ -100,23 +88,33 @@ var profile_view = React.createClass({
                     </div>
                     <div className="section">
                         <LabelledSection label="User ID">{player.extid}</LabelledSection>
-                        <LabelledSection label="Register Time">
+                        <LabelledSection label="Profile Created">
                             <Timestamp timestamp={player.first_play_time}/>
                         </LabelledSection>
-                        <LabelledSection label="Last Play Time">
+                        <LabelledSection label="Last Played">
                             <Timestamp timestamp={player.last_play_time}/>
                         </LabelledSection>
-                        <LabelledSection label="Total Plays">
+                        <LabelledSection label="Total Rounds">
                             {player.plays}回
                         </LabelledSection>
-                        <LabelledSection label="EXCELLENTs">
+                    </div>
+                    <div className="section">
+                        <LabelledSection label="Excellent Clears">
                             {player.ex_count}回
                         </LabelledSection>
-                        <LabelledSection label="FULL COMBOs">
+                        <LabelledSection label="Full Combo Clears">
                             {player.fc_count}回
                         </LabelledSection>
                         {this.renderJubility(player)}
                     </div>
+                    {this.state.version >= 12 ? <div className="section">
+                        <b>
+                            <a href={Link.get('jubility', null, this.state.version)}>{ window.own_profile ?
+                                <span>Your Jubility Breakdown &rarr;</span> :
+                                <span>{player.name}'s Jubility Breakdown &rarr;</span>
+                            }</a>
+                        </b>
+                    </div> : null}
                     <div className="section">
                         <a href={Link.get('records')}>{ window.own_profile ?
                             <span>view your records</span> :
