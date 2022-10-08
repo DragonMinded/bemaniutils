@@ -60,10 +60,10 @@ var network_scores = createReactClass({
                     <span className="grade">{score.grade}</span>
                     <span className="label">Score</span>
                     <span className="score">{score.points}</span>
-                    {score.combo >= 0 ? <span>
+                    {score.combo >= 0 ? <>
                         <span className="label">Combo</span>
                         <span className="score">{score.combo}</span>
-                    </span> : null}
+                    </> : null}
                 </div>
                 {has_stats ? <div title="critical / near / error">
                     {score.stats.critical}

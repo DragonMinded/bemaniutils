@@ -182,9 +182,9 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 { paginate ?
-                    <div className="section">
+                    <div className="section" key="paginatebuttons">
                         {songids.map(function(songid) {
                             if (songid < 0) {
                                 curbutton = curbutton + 1;
@@ -207,7 +207,7 @@ var network_records = createReactClass({
                     </div> :
                     null
                 }
-                <div className="section">
+                <div className="section" key="contents">
                     <table className="list records">
                         <thead></thead>
                         <tbody>
@@ -284,7 +284,7 @@ var network_records = createReactClass({
                         </tbody>
                     </table>
                 </div>
-            </span>
+            </>
         );
     },
 
@@ -304,7 +304,6 @@ var network_records = createReactClass({
                 return this.getPlays(this.state.records[songid]) > 0;
             }.bind(this));
         }
-
         return this.renderBySongIDList(songids, false);
     },
 
@@ -356,7 +355,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -373,7 +372,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -406,7 +405,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -423,7 +422,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 

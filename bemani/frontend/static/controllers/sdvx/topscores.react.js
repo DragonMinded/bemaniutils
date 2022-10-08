@@ -132,7 +132,6 @@ var top_scores = createReactClass({
                             {
                                 name: 'Judgement Stats',
                                 render: function(topscore) {
-                                    console.log(topscore);
                                     has_stats = (
                                         topscore.stats.critical > 0 ||
                                         topscore.stats.near > 0 ||
