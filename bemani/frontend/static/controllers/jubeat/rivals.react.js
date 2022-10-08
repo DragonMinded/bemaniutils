@@ -155,7 +155,7 @@ var rivals_view = createReactClass({
                         }.bind(this))}
                     </div>
                     <div className="section">
-                        <form onSubmit={this.searchForPlayers}>
+                        <form onSubmit={this.searchForPlayers} className="padded">
                             <label for="search">Name or Jubeat ID:</label>
                             <br />
                             <input

@@ -175,7 +175,7 @@ var rivals_view = createReactClass({
                         }.bind(this))}
                     </div>
                     <div className="section">
-                        <form onSubmit={this.searchForPlayersName}>
+                        <form onSubmit={this.searchForPlayersName} className="padded">
                             <label for="search">Name:</label>
                             <br />
                             <input
@@ -229,7 +229,7 @@ var rivals_view = createReactClass({
                                 null
                             }
                         </form>
-                        <form onSubmit={this.searchForPlayersID}>
+                        <form onSubmit={this.searchForPlayersID} className="padded">
                             <label for="search">Pop'n Music ID:</label>
                             <br />
                             <input
