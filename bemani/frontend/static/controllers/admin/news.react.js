@@ -153,7 +153,7 @@ var news_management = createReactClass({
         if (this.state.editing_news) {
             if (this.state.editing_news.id == entry.id) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="button"
                             value="preview"
@@ -174,14 +174,14 @@ var news_management = createReactClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             return (
-                <span>
+                <>
                     <Edit
                         onClick={function(event) {
                             var editing_news = null;
@@ -200,7 +200,7 @@ var news_management = createReactClass({
                             this.deleteExistingNews(event, entry.id);
                         }.bind(this)}
                     />
-                </span>
+                </>
             );
         }
     },

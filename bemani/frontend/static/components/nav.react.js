@@ -3,13 +3,13 @@
 var Nav = createReactClass({
     render: function() {
         var title = (
-           <span>
+           <>
                 {this.props.title}
                 {this.props.showAlert ?
                     <span className="alert">{ "\u26a0" }</span> :
                     null
                 }
-            </span>
+            </>
         );
         return (
             <Button

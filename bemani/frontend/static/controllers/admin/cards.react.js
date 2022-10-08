@@ -91,15 +91,15 @@ var card_management = createReactClass({
 
     renderEditButton: function(card) {
         return (
-            <span>
-                <Nav
+            <>
+                <Edit
                     title="view/edit"
                     onClick={function(event) {
                         window.location=Link.get('viewuser', card.id);
                     }.bind(this)}
                 />
                 <Delete onClick={this.deleteExistingCard.bind(this, card.number)} />
-            </span>
+            </>
         );
     },
 

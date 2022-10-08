@@ -141,7 +141,7 @@ def jsx(filename: str) -> Response:
         if jsx is None:
             with open(jsxfile, 'rb') as f:
                 transformer = JSXTransformer()
-                jsx = transformer.transform_string(f.read().decode('utf-8'))
+                jsx = transformer.transform_string(polyfill_fragments(f.read().decode('utf-8')))
             # Set the cache to one year, since we namespace on this file's update time
             g.cache.set(namespace, jsx, timeout=86400 * 365)
         return Response(jsx, mimetype='application/javascript')
@@ -161,6 +161,12 @@ def jsx(filename: str) -> Response:
         else:
             # Just pass it forward like normal for production.
             raise
+
+
+def polyfill_fragments(jsx: str) -> str:
+    jsx = jsx.replace("<>", "<React.Fragment>")
+    jsx = jsx.replace("</>", "</React.Fragment>")
+    return jsx
 
 
 def render_react(

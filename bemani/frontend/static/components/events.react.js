@@ -23,44 +23,44 @@ var ExceptionEvent = createReactClass({
         if (event.data.service == 'frontend') {
             location = 'Web UI';
             details = (
-                <span>
+                <>
                     <div>
                         <div className="inline">URI:</div>
                         <pre className="inline">{event.data.request}</pre>
                     </div>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         } else if(event.data.service == 'xrpc') {
             location = 'Game Services';
             details = (
-                <span>
+                <>
                     <div>Request:</div>
                     <LongMessage>{event.data.request}</LongMessage>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         } else if(event.data.service == 'scheduler') {
             location = 'Work Scheduler';
             details = (
-                <span>
+                <>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         } else if (event.data.service == 'api') {
             location = 'Data Exchange API';
             details = (
-                <span>
+                <>
                     <div>
                         <div className="inline">URI:</div>
                         <pre className="inline">{event.data.request}</pre>
                     </div>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         }
 

@@ -278,7 +278,8 @@ span.checkbox {
 }
 
 div.slider {
-    display: inline-block;
+    display: inline-flex;
+    height: 18px;
     border-radius: 10px;
 }
 
@@ -296,7 +297,7 @@ div.slider span.label {
     width: 70px;
     font-weight: normal;
     font-size: small;
-    height: 18px;
+    height: 16px;
     display: inline-block;
 }
 
@@ -319,5 +320,5 @@ div.slider span.ball {
 }
 
 div.slider span.ball.off {
-    margin-left: -16px;
+    margin-left: 54px;
 }

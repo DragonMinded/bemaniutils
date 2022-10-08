@@ -13,14 +13,14 @@ var Slider = createReactClass({
                     }
                 }.bind(this)}
             >{ this.props.value ?
-                <span>
+                <>
                     <span className="ball on"></span>
                     <span className="label on">{this.props.on}</span>
-                </span> :
-                <span>
+                </> :
+                <>
                     <span className="label off">{this.props.off}</span>
                     <span className="ball off"></span>
-                </span>
+                </>
             }</div>
         );
     },

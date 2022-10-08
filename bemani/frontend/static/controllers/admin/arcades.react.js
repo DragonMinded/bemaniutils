@@ -94,7 +94,7 @@ var card_management = createReactClass({
         if(this.state.editing_arcade) {
             if (this.state.editing_arcade.id == arcade.id) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="submit"
                             value="save"
@@ -108,14 +108,14 @@ var card_management = createReactClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             return (
-                <span>
+                <>
                     <Edit
                         onClick={function(event) {
                             var editing_arcade = null;
@@ -135,7 +135,7 @@ var card_management = createReactClass({
                             this.deleteExistingArcade(event, arcade.id);
                         }.bind(this)}
                     />
-                </span>
+                </>
             );
         }
     },

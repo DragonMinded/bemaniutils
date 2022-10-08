@@ -2,6 +2,8 @@ import argparse
 import os
 from react.jsx import JSXTransformer  # type: ignore
 
+from bemani.frontend.app import polyfill_fragments
+
 
 SCRIPT_PATH: str = os.path.dirname(os.path.realpath(__file__))
 
@@ -42,7 +44,7 @@ def main() -> None:
         os.makedirs(os.path.dirname(outfile), exist_ok=True)
 
         with open(infile, 'rb') as f:
-            jsx = transformer.transform_string(f.read().decode('utf-8')).encode('utf-8')
+            jsx = transformer.transform_string(polyfill_fragments(f.read().decode('utf-8'))).encode('utf-8')
 
         print(f"Writing {outfile}...")
         with open(outfile, 'wb') as f:

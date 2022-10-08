@@ -207,14 +207,14 @@ var arcade_management = createReactClass({
         return (
             <LabelledSection vertical={true} label="PIN">{
                 !this.state.editing_pin ?
-                    <span>
+                    <>
                         <span>{this.state.pin}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_pin: true, new_pin: this.state.pin});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePin}>
                         <input
                             type="text"
@@ -255,14 +255,14 @@ var arcade_management = createReactClass({
         return (
             <LabelledSection vertical={true} label="Region">{
                 !this.state.editing_region ?
-                    <span>
+                    <>
                         <span>{ window.regions[this.state.region] }</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_region: true, new_region: this.state.region});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveRegion}>
                         <SelectInt
                             name="region"
@@ -413,7 +413,7 @@ var arcade_management = createReactClass({
         if (this.state.editing_machine) {
             if (this.state.editing_machine.pcbid == machine.pcbid) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="submit"
                             value="save"
@@ -427,15 +427,15 @@ var arcade_management = createReactClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             if (window.max_pcbids > 0 && machine.editable) {
                 return (
-                    <span>
+                    <>
                         <Edit
                             onClick={function(event) {
                                 var editing_machine = null;
@@ -454,10 +454,10 @@ var arcade_management = createReactClass({
                                 this.deleteExistingMachine(event, machine.pcbid);
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         }
     },
@@ -475,13 +475,13 @@ var arcade_management = createReactClass({
                     {this.renderPIN()}
                     {this.renderRegion()}
                     <LabelledSection vertical={true} label={
-                        <span>
+                        <>
                             PASELI Enabled
                             { this.state.paseli_enabled_saving ?
                                 <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
                                 null
                             }
-                        </span>
+                        </>
                     }>
                         <Slider
                             on="yes"
@@ -494,13 +494,13 @@ var arcade_management = createReactClass({
                         />
                     </LabelledSection>
                     <LabelledSection vertical={true} label={
-                        <span>
+                        <>
                             PASELI Infinite
                             { this.state.paseli_infinite_saving ?
                                 <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
                                 null
                             }
-                        </span>
+                        </>
                     }>
                         <Slider
                             on="yes"
@@ -513,13 +513,13 @@ var arcade_management = createReactClass({
                         />
                     </LabelledSection>
                     <LabelledSection vertical={true} label={
-                        <span>
+                        <>
                             Mask Web Address
                             { this.state.mask_services_url_saving ?
                                 <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
                                 null
                             }
-                        </span>
+                        </>
                     }>
                         <Slider
                             on="yes"

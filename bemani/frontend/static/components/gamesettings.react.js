@@ -196,11 +196,11 @@ var GameSettings = createReactClass({
                     />
                     { this.state.settings_saving[this.state.current_setting] ?
                         <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
+                        null
                     }
                     { this.state.settings_saved[this.state.current_setting] ?
                         <span>{ "\u2713" }</span> :
-                            null
+                        null
                     }
                 </div>
             </div>

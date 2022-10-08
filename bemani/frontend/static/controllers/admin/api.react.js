@@ -187,7 +187,7 @@ var api_management = createReactClass({
         if(this.state.editing_client) {
             if (this.state.editing_client.id == client.id) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="submit"
                             value="save"
@@ -201,14 +201,14 @@ var api_management = createReactClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             return (
-                <span>
+                <>
                     <Edit
                         onClick={function(event) {
                             var editing_client = null;
@@ -227,7 +227,7 @@ var api_management = createReactClass({
                             this.deleteExistingClient(event, client.id);
                         }.bind(this)}
                     />
-                </span>
+                </>
             );
         }
     },
@@ -269,7 +269,7 @@ var api_management = createReactClass({
         if(this.state.editing_server) {
             if (this.state.editing_server.id == server.id) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="submit"
                             value="save"
@@ -283,14 +283,14 @@ var api_management = createReactClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             return (
-                <span>
+                <>
                     <Edit
                         onClick={function(event) {
                             var editing_server = null;
@@ -309,7 +309,7 @@ var api_management = createReactClass({
                             this.deleteExistingServer(event, server.id);
                         }.bind(this)}
                     />
-                </span>
+                </>
             );
         }
     },
@@ -368,10 +368,10 @@ var api_management = createReactClass({
         }
         if (this.state.info[server.id].loading) {
             return (
-                <span>
+                <>
                      <img className="loading" src={Link.get('static', 'loading-16.gif')} />
                      {' querying server for info...'}
-                 </span>
+                 </>
              );
         }
         if (this.state.info[server.id].status == 'badauth') {
@@ -386,7 +386,7 @@ var api_management = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div>
                     <b>{this.state.info[server.id].name}</b>
                     {' administered by '}
@@ -395,14 +395,14 @@ var api_management = createReactClass({
                 { this.state.info[server.id].status == 'badversion' ?
                     <span className='placeholder'>This server supports an incompatible version of the API!</span> : null
                 }
-            </span>
+            </>
         );
     },
 
     renderServerAllowedData: function(server) {
         if (this.state.editing_server && server.id == this.state.editing_server.id) {
             return (
-                <span>
+                <>
                     <div>
                         <input
                             name="stats"
@@ -435,7 +435,7 @@ var api_management = createReactClass({
                         />
                         <label htmlFor="scores">rivals and scores</label>
                     </div>
-                </span>
+                </>
             );
         } else {
             if (!server.allow_stats && !server.allow_scores) {

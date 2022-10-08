@@ -45,6 +45,9 @@ table td.center {
 
 table.list input[type="text"], table.add input[type="text"] {
     width: 100%;
+    box-sizing: border-box;
+    -webkit-box-sizing:border-box;
+    -moz-box-sizing: border-box;
 }
 
 table.list select, table.add select {
