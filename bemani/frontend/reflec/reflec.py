@@ -38,17 +38,17 @@ class ReflecBeatFrontend(FrontendBase):
         formatted_score['achievement_rate'] = score.data.get_int('achievement_rate', -1)
         formatted_score['miss_count'] = score.data.get_int('miss_count', -1)
         formatted_score['clear_type'] = {
-            ReflecBeatBase.CLEAR_TYPE_NO_PLAY: 'No Play',
-            ReflecBeatBase.CLEAR_TYPE_FAILED: 'Failed',
-            ReflecBeatBase.CLEAR_TYPE_CLEARED: 'Cleared',
-            ReflecBeatBase.CLEAR_TYPE_HARD_CLEARED: 'Hard Cleared',
-            ReflecBeatBase.CLEAR_TYPE_S_HARD_CLEARED: 'S-Hard Cleared',
-        }.get(score.data.get_int('clear_type'), 'Failed')
+            ReflecBeatBase.CLEAR_TYPE_NO_PLAY: 'NO PLAY',
+            ReflecBeatBase.CLEAR_TYPE_FAILED: 'FAILED',
+            ReflecBeatBase.CLEAR_TYPE_CLEARED: 'CLEARED',
+            ReflecBeatBase.CLEAR_TYPE_HARD_CLEARED: 'HARD CLEARED',
+            ReflecBeatBase.CLEAR_TYPE_S_HARD_CLEARED: 'S-HARD CLEARED',
+        }.get(score.data.get_int('clear_type'), 'FAILED')
         formatted_score['combo_type'] = {
             ReflecBeatBase.COMBO_TYPE_NONE: '',
-            ReflecBeatBase.COMBO_TYPE_ALMOST_COMBO: 'Almost Full Combo',
-            ReflecBeatBase.COMBO_TYPE_FULL_COMBO: 'Full Combo',
-            ReflecBeatBase.COMBO_TYPE_FULL_COMBO_ALL_JUST: 'Full Combo + All Just',
+            ReflecBeatBase.COMBO_TYPE_ALMOST_COMBO: 'ALMOST FULL COMBO',
+            ReflecBeatBase.COMBO_TYPE_FULL_COMBO: 'FULL COMBO',
+            ReflecBeatBase.COMBO_TYPE_FULL_COMBO_ALL_JUST: 'FULL COMBO + ALL JUST',
         }.get(score.data.get_int('combo_type'), '')
         formatted_score['medal'] = score.data.get_int('combo_type') * 1000 + score.data.get_int('clear_type')
         return formatted_score
@@ -59,17 +59,17 @@ class ReflecBeatFrontend(FrontendBase):
         formatted_attempt['achievement_rate'] = attempt.data.get_int('achievement_rate', -1)
         formatted_attempt['miss_count'] = attempt.data.get_int('miss_count', -1)
         formatted_attempt['clear_type'] = {
-            ReflecBeatBase.CLEAR_TYPE_NO_PLAY: 'No Play',
-            ReflecBeatBase.CLEAR_TYPE_FAILED: 'Failed',
-            ReflecBeatBase.CLEAR_TYPE_CLEARED: 'Cleared',
-            ReflecBeatBase.CLEAR_TYPE_HARD_CLEARED: 'Hard Cleared',
-            ReflecBeatBase.CLEAR_TYPE_S_HARD_CLEARED: 'S-Hard Cleared',
-        }.get(attempt.data.get_int('clear_type'), 'Failed')
+            ReflecBeatBase.CLEAR_TYPE_NO_PLAY: 'NO PLAY',
+            ReflecBeatBase.CLEAR_TYPE_FAILED: 'FAILED',
+            ReflecBeatBase.CLEAR_TYPE_CLEARED: 'CLEARED',
+            ReflecBeatBase.CLEAR_TYPE_HARD_CLEARED: 'HARD CLEARED',
+            ReflecBeatBase.CLEAR_TYPE_S_HARD_CLEARED: 'S-HARD CLEARED',
+        }.get(attempt.data.get_int('clear_type'), 'FAILED')
         formatted_attempt['combo_type'] = {
             ReflecBeatBase.COMBO_TYPE_NONE: '',
-            ReflecBeatBase.COMBO_TYPE_ALMOST_COMBO: 'Almost Full Combo',
-            ReflecBeatBase.COMBO_TYPE_FULL_COMBO: 'Full Combo',
-            ReflecBeatBase.COMBO_TYPE_FULL_COMBO_ALL_JUST: 'Full Combo + All Just',
+            ReflecBeatBase.COMBO_TYPE_ALMOST_COMBO: 'ALMOST FULL COMBO',
+            ReflecBeatBase.COMBO_TYPE_FULL_COMBO: 'FULL COMBO',
+            ReflecBeatBase.COMBO_TYPE_FULL_COMBO_ALL_JUST: 'FULL COMBO + ALL JUST',
         }.get(attempt.data.get_int('combo_type'), '')
         formatted_attempt['medal'] = attempt.data.get_int('combo_type') * 1000 + attempt.data.get_int('clear_type')
         return formatted_attempt

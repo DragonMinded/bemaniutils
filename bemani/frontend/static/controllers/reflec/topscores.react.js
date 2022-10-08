@@ -151,11 +151,18 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Combo',
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
+                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : ''; },
+                                sort: function(a, b) {
+                                    return a.combo - b.combo;
+                                },
+                                reverse: true,
                             },
                             {
                                 name: 'Miss Count',
-                                render: function(topscore) { return topscore.miss_count > 0 ? topscore.miss_count : '-'; },
+                                render: function(topscore) { return topscore.miss_count; },
+                                sort: function(a, b) {
+                                    return a.miss_count - b.miss_count;
+                                },
                             },
                         ]}
                         defaultsort='Score'
