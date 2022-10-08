@@ -6,7 +6,6 @@ function makeGameSettingName(game_settings) {
 
 var GameSettings = React.createClass({
     getInitialState: function() {
-        console.log(this.props);
         var valid_settings = this.props.game_settings.map(function(setting) {
             return makeGameSettingName(setting);
         });

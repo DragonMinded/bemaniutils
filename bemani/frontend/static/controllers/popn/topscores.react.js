@@ -119,6 +119,30 @@ var top_scores = React.createClass({
                             {
                                 name: 'Combo',
                                 render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
+                                sort: function(a, b) {
+                                    return a.combo - b.combo;
+                                },
+                                reverse: true,
+                            },
+                            {
+                                name: 'Judgement Stats',
+                                render: function(topscore) {
+                                    has_stats = (
+                                        topscore.stats.cool > 0 ||
+                                        topscore.stats.great > 0 ||
+                                        topscore.stats.good > 0 ||
+                                        topscore.stats.bad > 0
+                                    );
+                                    return has_stats ? <div title="cool / great / good / bad">
+                                        {topscore.stats.cool}
+                                        <span> / </span>
+                                        {topscore.stats.great}
+                                        <span> / </span>
+                                        {topscore.stats.good}
+                                        <span> / </span>
+                                        {topscore.stats.bad}
+                                    </div> : null;
+                                }
                             },
                         ]}
                         defaultsort='Score'

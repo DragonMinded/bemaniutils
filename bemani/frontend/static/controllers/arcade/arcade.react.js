@@ -166,7 +166,6 @@ var arcade_management = React.createClass({
                 Object.keys(response.users).map(function(userid) {
                     credits[userid] = '';
                 });
-                console.log('huh?');
                 this.setState({
                     users: response.users,
                     balances: response.balances,

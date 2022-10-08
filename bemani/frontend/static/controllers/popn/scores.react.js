@@ -60,6 +60,13 @@ var network_scores = React.createClass({
     },
 
     renderScore: function(score) {
+        has_stats = (
+            score.stats.cool > 0 ||
+            score.stats.great > 0 ||
+            score.stats.good > 0 ||
+            score.stats.bad > 0
+        );
+
         return (
             <div className="score">
                 <div>
@@ -68,6 +75,15 @@ var network_scores = React.createClass({
                     <span className="label">Combo</span>
                     <span className="score">{score.combo < 0 ? '-' : score.combo}</span>
                 </div>
+                {has_stats ? <div title="cool / great / good / bad">
+                    {score.stats.cool}
+                    <span> / </span>
+                    {score.stats.great}
+                    <span> / </span>
+                    {score.stats.good}
+                    <span> / </span>
+                    {score.stats.bad}
+                </div> : null}
                 <div>
                     <span className="status">{score.status}</span>
                 </div>
@@ -83,8 +99,8 @@ var network_scores = React.createClass({
                         <tr>
                             { window.shownames ? <th>Name</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>

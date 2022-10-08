@@ -45,10 +45,10 @@ class MusecaFrontend(FrontendBase):
             MusecaBase.GRADE_PERFECT: 'Perfect (傑)',
         }.get(score.data.get_int('grade'), 'No Play')
         formatted_score['clear_type'] = {
-            MusecaBase.CLEAR_TYPE_FAILED: 'Failed',
-            MusecaBase.CLEAR_TYPE_CLEARED: 'Cleared',
-            MusecaBase.CLEAR_TYPE_FULL_COMBO: 'Full Combo',
-        }.get(score.data.get_int('clear_type'), 'Failed')
+            MusecaBase.CLEAR_TYPE_FAILED: 'FAILED',
+            MusecaBase.CLEAR_TYPE_CLEARED: 'CLEARED',
+            MusecaBase.CLEAR_TYPE_FULL_COMBO: 'FULL COMBO',
+        }.get(score.data.get_int('clear_type'), 'FAILED')
         formatted_score['medal'] = score.data.get_int('clear_type')
         formatted_score['stats'] = score.data.get_dict('stats')
         return formatted_score
@@ -68,10 +68,10 @@ class MusecaFrontend(FrontendBase):
             MusecaBase.GRADE_PERFECT: 'Perfect (傑)',
         }.get(attempt.data.get_int('grade'), 'No Play')
         formatted_attempt['clear_type'] = {
-            MusecaBase.CLEAR_TYPE_FAILED: 'Failed',
-            MusecaBase.CLEAR_TYPE_CLEARED: 'Cleared',
-            MusecaBase.CLEAR_TYPE_FULL_COMBO: 'Full Combo',
-        }.get(attempt.data.get_int('clear_type'), 'Failed')
+            MusecaBase.CLEAR_TYPE_FAILED: 'FAILED',
+            MusecaBase.CLEAR_TYPE_CLEARED: 'CLEARED',
+            MusecaBase.CLEAR_TYPE_FULL_COMBO: 'FULL COMBO',
+        }.get(attempt.data.get_int('clear_type'), 'FAILED')
         formatted_attempt['medal'] = attempt.data.get_int('clear_type')
         formatted_attempt['stats'] = attempt.data.get_dict('stats')
         return formatted_attempt

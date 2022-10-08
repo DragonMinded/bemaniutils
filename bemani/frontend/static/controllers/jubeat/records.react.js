@@ -47,13 +47,13 @@ var HighScore = React.createClass({
                 </div> : null}
                 {has_stats ? <div title="perfect / great / good / poor / miss">
                     {this.props.score.stats.perfect}
-                <span> / </span>
+                    <span> / </span>
                     {this.props.score.stats.great}
-                <span> / </span>
+                    <span> / </span>
                     {this.props.score.stats.good}
-                <span> / </span>
+                    <span> / </span>
                     {this.props.score.stats.poor}
-                <span> / </span>
+                    <span> / </span>
                     {this.props.score.stats.miss}
                 </div> : null}
                 <div>

@@ -39,39 +39,41 @@ class PopnMusicFrontend(FrontendBase):
         formatted_score = super().format_score(userid, score)
         formatted_score['combo'] = score.data.get_int('combo', -1)
         formatted_score['medal'] = score.data.get_int('medal')
+        formatted_score['stats'] = score.data.get_dict('stats')
         formatted_score['status'] = {
-            PopnMusicBase.PLAY_MEDAL_NO_PLAY: "No Play",
-            PopnMusicBase.PLAY_MEDAL_CIRCLE_FAILED: "○ Failed",
-            PopnMusicBase.PLAY_MEDAL_DIAMOND_FAILED: "◇ Failed",
-            PopnMusicBase.PLAY_MEDAL_STAR_FAILED: "☆ Failed",
-            PopnMusicBase.PLAY_MEDAL_EASY_CLEAR: "Easy Clear",
-            PopnMusicBase.PLAY_MEDAL_CIRCLE_CLEARED: "○ Cleared",
-            PopnMusicBase.PLAY_MEDAL_DIAMOND_CLEARED: "◇ Cleared",
-            PopnMusicBase.PLAY_MEDAL_STAR_CLEARED: "☆ Cleared",
-            PopnMusicBase.PLAY_MEDAL_CIRCLE_FULL_COMBO: "○ Full Combo",
-            PopnMusicBase.PLAY_MEDAL_DIAMOND_FULL_COMBO: "◇ Full Combo",
-            PopnMusicBase.PLAY_MEDAL_STAR_FULL_COMBO: "☆ Full Combo",
-            PopnMusicBase.PLAY_MEDAL_PERFECT: "Perfect",
-        }.get(score.data.get_int('medal'), 'No Play')
+            PopnMusicBase.PLAY_MEDAL_NO_PLAY: "NO PLAY",
+            PopnMusicBase.PLAY_MEDAL_CIRCLE_FAILED: "○ FAILED",
+            PopnMusicBase.PLAY_MEDAL_DIAMOND_FAILED: "◇ FAILED",
+            PopnMusicBase.PLAY_MEDAL_STAR_FAILED: "☆ FAILED",
+            PopnMusicBase.PLAY_MEDAL_EASY_CLEAR: "EASY CLEAR",
+            PopnMusicBase.PLAY_MEDAL_CIRCLE_CLEARED: "○ CLEARED",
+            PopnMusicBase.PLAY_MEDAL_DIAMOND_CLEARED: "◇ CLEARED",
+            PopnMusicBase.PLAY_MEDAL_STAR_CLEARED: "☆ CLEARED",
+            PopnMusicBase.PLAY_MEDAL_CIRCLE_FULL_COMBO: "○ FULL COMBO",
+            PopnMusicBase.PLAY_MEDAL_DIAMOND_FULL_COMBO: "◇ FULL COMBO",
+            PopnMusicBase.PLAY_MEDAL_STAR_FULL_COMBO: "☆ FULL COMBO",
+            PopnMusicBase.PLAY_MEDAL_PERFECT: "PERFECT",
+        }.get(score.data.get_int('medal'), 'NO PLAY')
         return formatted_score
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
         formatted_attempt = super().format_attempt(userid, attempt)
         formatted_attempt['combo'] = attempt.data.get_int('combo', -1)
         formatted_attempt['medal'] = attempt.data.get_int('medal')
+        formatted_attempt['stats'] = attempt.data.get_dict('stats')
         formatted_attempt['status'] = {
-            PopnMusicBase.PLAY_MEDAL_CIRCLE_FAILED: "○ Failed",
-            PopnMusicBase.PLAY_MEDAL_DIAMOND_FAILED: "◇ Failed",
-            PopnMusicBase.PLAY_MEDAL_STAR_FAILED: "☆ Failed",
-            PopnMusicBase.PLAY_MEDAL_EASY_CLEAR: "Easy Clear",
-            PopnMusicBase.PLAY_MEDAL_CIRCLE_CLEARED: "○ Cleared",
-            PopnMusicBase.PLAY_MEDAL_DIAMOND_CLEARED: "◇ Cleared",
-            PopnMusicBase.PLAY_MEDAL_STAR_CLEARED: "☆ Cleared",
-            PopnMusicBase.PLAY_MEDAL_CIRCLE_FULL_COMBO: "○ Full Combo",
-            PopnMusicBase.PLAY_MEDAL_DIAMOND_FULL_COMBO: "◇ Full Combo",
-            PopnMusicBase.PLAY_MEDAL_STAR_FULL_COMBO: "☆ Full Combo",
-            PopnMusicBase.PLAY_MEDAL_PERFECT: "Perfect",
-        }.get(attempt.data.get_int('medal'), 'No Play')
+            PopnMusicBase.PLAY_MEDAL_CIRCLE_FAILED: "○ FAILED",
+            PopnMusicBase.PLAY_MEDAL_DIAMOND_FAILED: "◇ FAILED",
+            PopnMusicBase.PLAY_MEDAL_STAR_FAILED: "☆ FAILED",
+            PopnMusicBase.PLAY_MEDAL_EASY_CLEAR: "EASY CLEAR",
+            PopnMusicBase.PLAY_MEDAL_CIRCLE_CLEARED: "○ CLEARED",
+            PopnMusicBase.PLAY_MEDAL_DIAMOND_CLEARED: "◇ CLEARED",
+            PopnMusicBase.PLAY_MEDAL_STAR_CLEARED: "☆ CLEARED",
+            PopnMusicBase.PLAY_MEDAL_CIRCLE_FULL_COMBO: "○ FULL COMBO",
+            PopnMusicBase.PLAY_MEDAL_DIAMOND_FULL_COMBO: "◇ FULL COMBO",
+            PopnMusicBase.PLAY_MEDAL_STAR_FULL_COMBO: "☆ FULL COMBO",
+            PopnMusicBase.PLAY_MEDAL_PERFECT: "PERFECT",
+        }.get(attempt.data.get_int('medal'), 'NO PLAY')
         return formatted_attempt
 
     def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:

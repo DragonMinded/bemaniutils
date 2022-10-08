@@ -112,7 +112,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Clear Type',
-                                render: function(topscore) { return topscore.clear_type.toUpperCase(); },
+                                render: function(topscore) { return topscore.clear_type; },
                             },
                             {
                                 name: 'Score',

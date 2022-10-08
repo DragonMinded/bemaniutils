@@ -52,7 +52,7 @@ var HighScore = React.createClass({
                     {this.props.score.stats.error}
                 </div> : null}
                 <div>
-                    <span className="status">{this.props.score.clear_type.toUpperCase()}</span>
+                    <span className="status">{this.props.score.clear_type}</span>
                 </div>
                 { this.props.score.userid && window.shownames ?
                     <div><a href={Link.get('player', this.props.score.userid)}>{

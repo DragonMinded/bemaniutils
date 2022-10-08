@@ -80,7 +80,7 @@ var network_scores = React.createClass({
                     {score.stats.error}
                 </div> : null}
                 <div>
-                    <span className="status">{score.clear_type.toUpperCase()}</span>
+                    <span className="status">{score.clear_type}</span>
                 </div>
             </div>
         );
