@@ -196,7 +196,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 { paginate ?
                     <div className="section">
                         {songids.map(function(songid) {
@@ -323,7 +323,7 @@ var network_records = createReactClass({
                         </tbody>
                     </table>
                 </div>
-            </span>
+            </>
         );
     },
 
@@ -395,7 +395,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -412,7 +412,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -445,7 +445,7 @@ var network_records = createReactClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -462,7 +462,7 @@ var network_records = createReactClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 

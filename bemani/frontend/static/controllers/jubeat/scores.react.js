@@ -66,10 +66,10 @@ var network_scores = createReactClass({
                     <span className="score">{score.points}</span>
                     <span className="label">Combo</span>
                     <span className="score">{score.combo < 0 ? '-' : score.combo}</span>
-                    {score.music_rate >= 0 ? <span>
+                    {score.music_rate >= 0 ? <>
                         <span className="label">Music Rate</span>
                         <span className="score">{score.music_rate <= 0 ? '-' : score.music_rate}%</span>
-                    </span> : null}
+                    </> : null}
                 </div>
                 {has_stats ? <div title="perfect / great / good / poor / miss">
                     {score.stats.perfect}

@@ -111,7 +111,7 @@ var rivals_view = createReactClass({
         if (count >= 3) { avail = false; }
 
         return (
-            <span>
+            <>
                 {avail ?
                     <Add
                         title="Add Rival"
@@ -121,7 +121,7 @@ var rivals_view = createReactClass({
                     /> :
                     null
                 }
-            </span>
+            </>
         );
     },
 

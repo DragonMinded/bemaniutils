@@ -184,6 +184,10 @@ span.filter:not(:last-child) {
     margin-bottom: 2px;
 }
 
+.slider.spaced {
+    margin-left: 5px;
+}
+
 span.slider-label {
     position: relative;
     top: -3px;

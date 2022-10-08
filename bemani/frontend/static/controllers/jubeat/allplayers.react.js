@@ -71,18 +71,18 @@ var all_players = createReactClass({
                                 reverse: true,
                             },
                             {
-                                name: <span>
+                                name: <>
                                     Jubility
-                                    <span className="separator" />
                                     <Slider
                                         on="new"
                                         off="old"
+                                        className="spaced"
                                         value={this.state.jubility}
                                         onChange={function(value) {
                                             this.setState({jubility: value});
                                         }.bind(this)}
                                     />
-                                </span>,
+                                </>,
                                 render: function(userid) {
                                     var player = this.state.players[userid];
                                     if (this.state.jubility && (player.common_jubility != 0 || player.pick_up_jubility != 0)) {
