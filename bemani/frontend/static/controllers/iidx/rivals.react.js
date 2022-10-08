@@ -118,7 +118,7 @@ var rivals_view = createReactClass({
         if (dp_count >= 5) { dp_avail = false; }
 
         return (
-            <span>
+            <>
                 {sp_avail ?
                     <Add
                         title="Add SP Rival"
@@ -137,7 +137,7 @@ var rivals_view = createReactClass({
                     /> :
                     null
                 }
-            </span>
+            </>
         );
     },
 

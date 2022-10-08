@@ -268,14 +268,14 @@ var settings_view = createReactClass({
         return (
             <LabelledSection vertical={true} label="DJ Name">{
                 !this.state.editing_name ?
-                    <span>
+                    <>
                         <span>{player.name}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_name: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveDJName}>
                         <input
                             type="text"
@@ -317,14 +317,14 @@ var settings_view = createReactClass({
         return (
             <LabelledSection vertical={true} label="Prefecture">{
                 !this.state.editing_prefecture ?
-                    <span>
+                    <>
                         <span>{window.regions[player.prefecture]}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_prefecture: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePrefecture}>
                         <SelectInt
                             name="prefecture"
