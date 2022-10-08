@@ -59,13 +59,13 @@ var profile_view = React.createClass({
                     </div>
                     <div className="section">
                         <LabelledSection label="User ID">{player.extid}</LabelledSection>
-                        <LabelledSection label="Register Time">
+                        <LabelledSection label="Profile Created">
                             <Timestamp timestamp={player.first_play_time}/>
                         </LabelledSection>
-                        <LabelledSection label="Last Play Time">
+                        <LabelledSection label="Last Played">
                             <Timestamp timestamp={player.last_play_time}/>
                         </LabelledSection>
-                        <LabelledSection label="Total Plays">
+                        <LabelledSection label="Total Rounds">
                             {player.plays}回
                         </LabelledSection>
                     </div>
