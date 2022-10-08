@@ -50,6 +50,7 @@ class MusecaFrontend(FrontendBase):
             MusecaBase.CLEAR_TYPE_FULL_COMBO: 'Full Combo',
         }.get(score.data.get_int('clear_type'), 'Failed')
         formatted_score['medal'] = score.data.get_int('clear_type')
+        formatted_score['stats'] = score.data.get_dict('stats')
         return formatted_score
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
@@ -72,6 +73,7 @@ class MusecaFrontend(FrontendBase):
             MusecaBase.CLEAR_TYPE_FULL_COMBO: 'Full Combo',
         }.get(attempt.data.get_int('clear_type'), 'Failed')
         formatted_attempt['medal'] = attempt.data.get_int('clear_type')
+        formatted_attempt['stats'] = attempt.data.get_dict('stats')
         return formatted_attempt
 
     def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:

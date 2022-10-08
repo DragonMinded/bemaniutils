@@ -88,7 +88,7 @@ var top_scores = React.createClass({
                     }.bind(this))}
                 </div>
                 <div className="section">
-               		<Table
+                    <Table
                         className="list topscores"
                         columns={[
                             {
@@ -112,7 +112,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Clear Type',
-                                render: function(topscore) { return topscore.clear_type; },
+                                render: function(topscore) { return topscore.clear_type.toUpperCase(); },
                             },
                             {
                                 name: 'Score',
@@ -125,6 +125,27 @@ var top_scores = React.createClass({
                             {
                                 name: 'Combo',
                                 render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
+                                sort: function(a, b) {
+                                    return a.combo - b.combo;
+                                },
+                                reverse: true,
+                            },
+                            {
+                                name: 'Judgement Stats',
+                                render: function(topscore) {
+                                    has_stats = (
+                                        topscore.stats.critical > 0 ||
+                                        topscore.stats.near > 0 ||
+                                        topscore.stats.error > 0
+                                    );
+                                    return has_stats ? <div title="critical / near / error">
+                                        {topscore.stats.critical}
+                                        <span> / </span>
+                                        {topscore.stats.near}
+                                        <span> / </span>
+                                        {topscore.stats.error}
+                                    </div> : null;
+                                }
                             },
                         ]}
                         defaultsort='Score'

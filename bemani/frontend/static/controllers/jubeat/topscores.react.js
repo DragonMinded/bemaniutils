@@ -148,13 +148,13 @@ var top_scores = React.createClass({
                                     );
                                     return has_stats ? <div title="perfect / great / good / poor / miss">
                                         {topscore.stats.perfect}
-                                    <span> / </span>
+                                        <span> / </span>
                                         {topscore.stats.great}
-                                    <span> / </span>
+                                        <span> / </span>
                                         {topscore.stats.good}
-                                    <span> / </span>
+                                        <span> / </span>
                                         {topscore.stats.poor}
-                                    <span> / </span>
+                                        <span> / </span>
                                         {topscore.stats.miss}
                                     </div> : null;
                                 }
