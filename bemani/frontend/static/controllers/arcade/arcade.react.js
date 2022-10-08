@@ -478,29 +478,62 @@ var arcade_management = React.createClass({
                     }</LabelledSection>
                     {this.renderPIN()}
                     {this.renderRegion()}
-                    <LabelledSection vertical={true} label="PASELI Enabled">
-                        <span>{ this.state.paseli_enabled ? 'yes' : 'no' }</span>
-                        <Toggle onClick={this.togglePaseliEnabled.bind(this)} />
-                        { this.state.paseli_enabled_saving ?
-                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
-                        }
+                    <LabelledSection vertical={true} label={
+                        <span>
+                            PASELI Enabled
+                            { this.state.paseli_enabled_saving ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </span>
+                    }>
+                        <Slider
+                            on="yes"
+                            off="no"
+                            className="padded"
+                            value={this.state.paseli_enabled}
+                            onChange={function(value) {
+                                this.togglePaseliEnabled();
+                            }.bind(this)}
+                        />
                     </LabelledSection>
-                    <LabelledSection vertical={true} label="PASELI Infinite">
-                        <span>{ this.state.paseli_infinite ? 'yes' : 'no' }</span>
-                        <Toggle onClick={this.togglePaseliInfinite.bind(this)} />
-                        { this.state.paseli_infinite_saving ?
-                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
-                        }
+                    <LabelledSection vertical={true} label={
+                        <span>
+                            PASELI Infinite
+                            { this.state.paseli_infinite_saving ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </span>
+                    }>
+                        <Slider
+                            on="yes"
+                            off="no"
+                            className="padded"
+                            value={this.state.paseli_infinite}
+                            onChange={function(value) {
+                                this.togglePaseliInfinite();
+                            }.bind(this)}
+                        />
                     </LabelledSection>
-                    <LabelledSection vertical={true} label="Mask Web Address">
-                        <span>{ this.state.mask_services_url ? 'yes' : 'no' }</span>
-                        <Toggle onClick={this.toggleMaskServicesURL.bind(this)} />
-                        { this.state.mask_services_url_saving ?
-                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
-                        }
+                    <LabelledSection vertical={true} label={
+                        <span>
+                            Mask Web Address
+                            { this.state.mask_services_url_saving ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </span>
+                    }>
+                        <Slider
+                            on="yes"
+                            off="no"
+                            className="padded"
+                            value={this.state.mask_services_url}
+                            onChange={function(value) {
+                                this.toggleMaskServicesURL();
+                            }.bind(this)}
+                        />
                     </LabelledSection>
                 </div>
                 <div className="section">

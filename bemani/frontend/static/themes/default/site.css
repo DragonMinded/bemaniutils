@@ -119,6 +119,7 @@ ul.navigation {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    z-index: 1;
 }
 
 ul.navigation li {
@@ -274,8 +275,8 @@ div.slider {
 }
 
 div.slider.on {
-    background: #2196F3;
-    border: 1px solid #0a6fc2;
+    background: #6eb9f7;
+    border: 1px solid #3da2f5;
 }
 
 div.slider.off {

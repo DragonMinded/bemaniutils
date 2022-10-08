@@ -321,21 +321,44 @@ var settings_view = React.createClass({
                     <div className="section">
                         <h3>User Profile</h3>
                         {this.renderName(player)}
-                        <LabelledSection vertical={true} label="Fast/Slow Display">
-                            <span>{ this.state.player[this.state.version].early_late ? 'on' : 'off' }</span>
-                            <Toggle onClick={this.toggleEarlyLate.bind(this)} />
-                            { this.state.saving_early_late ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                                null
-                            }
+                        <LabelledSection vertical={true} label={
+                            <span>
+                                Fast/Slow Display
+                                { this.state.saving_early_late ?
+                                    <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                    null
+                                }
+                            </span>
+                        }>
+                            <Slider
+                                on="on"
+                                off="off"
+                                className="padded fix"
+                                value={this.state.player[this.state.version].early_late}
+                                onChange={function(value) {
+                                    this.toggleEarlyLate();
+                                }.bind(this)}
+                            />
                         </LabelledSection>
-                        <LabelledSection vertical={true} label="Combo Position">
-                            <span>{ this.state.player[this.state.version].background_combo ? 'background' : 'foreground' }</span>
-                            <Toggle onClick={this.toggleBackgroundCombo.bind(this)} />
-                            { this.state.saving_background_combo ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                                null
-                            }
+                        <LabelledSection vertical={true} label={
+                            <span>
+                                Combo Position
+                                { this.state.saving_background_combo ?
+                                    <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                    null
+                                }
+                            </span>
+                        }>
+                            <Slider
+                                className="padded"
+                                value={this.state.player[this.state.version].background_combo}
+                                onChange={function(value) {
+                                    this.toggleBackgroundCombo();
+                                }.bind(this)}
+                            />
+                            <span className="slider-label">{
+                                this.state.player[this.state.version].background_combo ? 'background' : 'foreground'
+                            }</span>
                         </LabelledSection>
                         {this.renderWeight(player)}
                     </div>

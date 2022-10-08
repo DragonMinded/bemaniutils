@@ -178,3 +178,19 @@ span.filter:not(:last-child) {
     padding-right: 20px;
 }
 
+.slider.padded {
+    margin-right: 5px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+span.slider-label {
+    position: relative;
+    padding-right: 20px;
+    top: -4px;
+}
+
+.slider.fix .label {
+    margin-top: 1px;
+    margin-bottom: -1px;
+}
