@@ -210,6 +210,15 @@ Think of this as a combination of "replay" and "psmap". This is also extremely u
 when building new integration test clients. Run it like `./responsegen --help` to
 see all information and usage.
 
+## sampleclient
+
+A very barebones sample client for the BEMAPI implementation contained in this repo.
+Run it like `./sampleclient --help` to see help output and determine how to use this.
+Essentially, this is provided as a barebones client that does nothing other than
+print fetched info to the screen. You can use this as a starting point for an
+application that uses BEMAPI to fetch info from an api instance or to test your
+production installation.
+
 ## scheduler
 
 A command-line utility for kicking off scheduled work that must be performed against the
