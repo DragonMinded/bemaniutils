@@ -565,6 +565,17 @@ will want to run this with versions 1-6 to completely initialize:
 ./read --config config/server.yaml --series reflec --version 1 --bin reflecbeat.dll
 ```
 
+### Gitadora
+
+For Gitadora, you will need the `mdb_**.xml` file from the game you wish to import.
+Then, run the following command, modifying the version parameter as required. Also do the same on omnimix.
+
+* Nextage:       mdb_nt.xml
+
+```
+./read --config config/server.yaml --series gitadora --version 7 --bin data/product/xml/mdb_nt.xml
+```
+
 ## Running Locally
 
 Once you've set all of this up, you can start the network in debug mode using a command

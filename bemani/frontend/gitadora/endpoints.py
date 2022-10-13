@@ -264,6 +264,12 @@ def viewplayer(userid: UserID) -> Response:
         abort(404)
     latest_version = sorted(info.keys(), reverse=True)[0]
 
+    for version in info:
+        gf_rival = g.data.local.user.get_link(GameConstants.GITADORA, version, g.userID, 'gf_rival', userid)
+        dm_rival = g.data.local.user.get_link(GameConstants.GITADORA, version, g.userID, 'dm_rival', userid)
+        info[version]['gf_rival'] = gf_rival is not None
+        info[version]['dm_rival'] = dm_rival is not None
+
     return render_react(
         f'{info[latest_version]["name"]}\'s Gitadora Profile',
         'gitadora/player.react.js',
@@ -277,6 +283,8 @@ def viewplayer(userid: UserID) -> Response:
             'refresh': url_for('gitadora_pages.listplayer', userid=userid),
             'records': url_for('gitadora_pages.viewrecords', userid=userid),
             'scores': url_for('gitadora_pages.viewscores', userid=userid),
+            'addrival': url_for('gitadora_pages.addrival'),
+            'removerival': url_for('gitadora_pages.removerival'),
         },
     )
 
@@ -425,15 +433,16 @@ def listrivals() -> Dict[str, Any]:
 def searchrivals() -> Dict[str, Any]:
     frontend = GitadoraFrontend(g.data, g.config, g.cache)
     version = int(request.get_json()['version'])
-    djname = request.get_json()['term']
+    name = request.get_json()['term']
 
     # Try to treat the term as an extid
-    extid = ID.parse_extid(djname)
+    extid = ID.parse_extid(name)
 
     matches = set()
     profiles = g.data.remote.user.get_all_profiles(GameConstants.GITADORA, version)
     for (userid, profile) in profiles:
-        if profile.get_int('extid') == extid or profile.get_str('name').lower() == djname.lower():
+        profile.get_str('name')
+        if profile.extid == extid or profile.get_str('name').lower() == name.lower():
             matches.add(userid)
 
     playerinfo = frontend.get_all_player_info(list(matches), allow_remote=True)
@@ -455,12 +464,12 @@ def addrival() -> Dict[str, Any]:
     # Add this rival link
     if rivaltype != 'gf_rival' and rivaltype != 'dm_rival':
         raise Exception(f'Invalid rival type {rivaltype}!')
-    profile = g.data.remote.user.get_profile(GameConstants.IIDX, version, other_userid)
+    profile = g.data.remote.user.get_profile(GameConstants.GITADORA, version, other_userid)
     if profile is None:
         raise Exception('Unable to find profile for rival!')
 
     g.data.local.user.put_link(
-        GameConstants.IIDX,
+        GameConstants.GITADORA,
         version,
         userid,
         rivaltype,

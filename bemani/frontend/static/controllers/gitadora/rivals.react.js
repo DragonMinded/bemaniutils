@@ -13,7 +13,8 @@ var rivals_view = React.createClass({
             players: window.players,
             profiles: profiles,
             version: version,
-            term: "",
+            term_id: "",
+            term_name: "",
             results: {},
             searching: false,
             offset: 0,
@@ -41,18 +42,36 @@ var rivals_view = React.createClass({
         );
     },
 
-    searchForPlayers: function(event) {
-        this.setState({searching: true});
+    searchForPlayersID: function(event) {
+        this.setState({searching_id: true});
         AJAX.post(
             Link.get('search'),
             {
                 version: this.state.version,
-                term: this.state.term,
+                term: this.state.term_id.substring(0, 9),
             },
             function(response) {
                 this.setState({
                     results: response.results,
-                    searching: false,
+                    searching_id: false,
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
+    searchForPlayersName: function(event) {
+        this.setState({searching_name: true});
+        AJAX.post(
+            Link.get('search'),
+            {
+                version: this.state.version,
+                term: this.state.term_name,
+            },
+            function(response) {
+                this.setState({
+                    results: response.results,
+                    searching_name: false,
                 });
             }.bind(this)
         );
@@ -95,7 +114,7 @@ var rivals_view = React.createClass({
         event.preventDefault();
     },
 
-    addSPDPRivals: function(userid) {
+    addGFDMRivals: function(userid) {
         if (userid == window.userid) {
             return null;
         }
@@ -171,20 +190,50 @@ var rivals_view = React.createClass({
                         }.bind(this))}
                     </div>
                     <div className="section">
-                        <form onSubmit={this.searchForPlayers}>
-                            <label for="search">Name or GITADORA ID:</label>
+                        <form onSubmit={this.searchForPlayersName}>
+                            <label for="search">Name:</label>
                             <br />
                             <input
                                 type="text"
                                 className="inline"
-                                maxlength="9"
-                                value={this.state.term}
+                                maxlength="8"
+                                size="12"
+                                value={this.state.term_name}
                                 onChange={function(event) {
-                                    var value = event.target.value.toUpperCase();
-                                    var intRegex = /^[-&$#\\.\\?\\*!A-Z0-9]*$/;
-                                    // Normally, names are <= 6 characters, but we allow GITADORA IDs here too
-                                    if (value.length <= 9 && intRegex.test(value)) {
-                                        this.setState({term: value});
+                                    var rawvalue = event.target.value;
+                                    var value = "";
+                                    // Nasty conversion to change typing into wide text
+                                    for (var i = 0; i < rawvalue.length; i++) {
+                                        var c = rawvalue.charCodeAt(i);
+                                        if (c >= '0'.charCodeAt(0) && c <= '9'.charCodeAt(0)) {
+                                            c = 0xFF10 + (c - '0'.charCodeAt(0));
+                                        } else if(c >= 'A'.charCodeAt(0) && c <= 'Z'.charCodeAt(0)) {
+                                            c = 0xFF21 + (c - 'A'.charCodeAt(0));
+                                        } else if(c >= 'a'.charCodeAt(0) && c <= 'z'.charCodeAt(0)) {
+                                            c = 0xFF41 + (c - 'a'.charCodeAt(0));
+                                        } else if(c == '@'.charCodeAt(0)) {
+                                            c = 0xFF20;
+                                        } else if(c == ','.charCodeAt(0)) {
+                                            c = 0xFF0C;
+                                        } else if(c == '.'.charCodeAt(0)) {
+                                            c = 0xFF0E;
+                                        } else if(c == '_'.charCodeAt(0)) {
+                                           c = 0xFF3F;
+                                        }
+                                        value = value + String.fromCharCode(c);
+                                    }
+                                    var nameRegex = new RegExp(
+                                        "^[" +
+                                        "\uFF20-\uFF3A" + // widetext A-Z and @
+                                        "\uFF41-\uFF5A" + // widetext a-z
+                                        "\uFF10-\uFF19" + // widetext 0-9
+                                        "\uFF0C\uFF0E\uFF3F" + // widetext ,._
+                                        "\u3041-\u308D\u308F\u3092\u3093" + // hiragana
+                                        "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC" + // katakana
+                                        "]*$"
+                                    );
+                                    if (value.length <= 8 && nameRegex.test(value)) {
+                                        this.setState({term_name: value});
                                     }
                                 }.bind(this)}
                                 name="search"
@@ -195,12 +244,45 @@ var rivals_view = React.createClass({
                                 null
                             }
                         </form>
+                        <form onSubmit={this.searchForPlayersID}>
+                            <label for="search">GITADORA ID:</label>
+                            <br />
+                            <input
+                                type="text"
+                                className="inline"
+                                maxlength="9"
+                                value={this.state.term_id}
+                                onChange={function(event) {
+                                    var value = event.target.value.toUpperCase();
+                                    var intRegex = new RegExp(
+                                        "^[" +
+                                        "0-9" +
+                                        "-" +
+                                        "]*$"
+                                    );
+                                    // Allow pnm IDs as shown in Eclale and such (with
+                                    // extra CRC at the end).
+                                    if (value.length <= 14 && intRegex.test(value)) {
+                                        this.setState({term_id: value});
+                                    }
+                                }.bind(this)}
+                                name="search"
+                            />
+                            <input type="submit" value="search" />
+                            { this.state.searching_id ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </form>
                         {resultlength > 0 ?
                             <table className="list players">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
                                         <th>Gitadora ID</th>
+                                        <th>Total Skills</th>
+                                        <th>GuitarFreaks Skills</th>
+                                        <th>DrumMania Skills</th>
                                         <th className="action"></th>
                                     </tr>
                                 </thead>
@@ -216,7 +298,10 @@ var rivals_view = React.createClass({
                                             <tr>
                                                 <td><Rival userid={userid} player={player} /></td>
                                                 <td>{ player.extid }</td>
-                                                <td className="edit">{this.addSPDPRivals(userid)}</td>
+                                                <td>{ (player.gf_skills + player.dm_skills) / 100 }</td>
+                                                <td>{ player.gf_skills / 100 }</td>
+                                                <td>{ player.dm_skills / 100 }</td>
+                                                <td className="edit">{this.addGFDMRivals(userid)}</td>
                                             </tr>
                                         );
                                     }.bind(this))
