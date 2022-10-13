@@ -573,7 +573,7 @@ Then, run the following command, modifying the version parameter as required. Al
 * Nextage:       mdb_nt.xml
 
 ```
-./read --config config/server.yaml --series gitadora --version 7 --bin data/product/xml/mdb_nt.xml
+./read --config config/server.yaml --series gitadora --version 7 --xml data/product/xml/mdb_nt.xml
 ```
 
 ## Running Locally
