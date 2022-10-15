@@ -41,6 +41,7 @@ arcade = Table(
     Column("description", String(255), nullable=False),
     Column("pin", String(8), nullable=False),
     Column("pref", Integer, nullable=False),
+    Column("area", String(63)),
     Column("data", JSON),
     mysql_charset="utf8mb4",
 )
@@ -317,6 +318,7 @@ class MachineData(BaseData):
         name: str,
         description: str,
         region: int,
+        area: Optional[str],
         data: Dict[str, Any],
         owners: List[UserID],
     ) -> Arcade:
@@ -327,8 +329,8 @@ class MachineData(BaseData):
             An Arcade object representing this arcade
         """
         sql = (
-            "INSERT INTO arcade (name, description, pref, data, pin) "
-            + "VALUES (:name, :desc, :pref, :data, '00000000')"
+            "INSERT INTO arcade (name, description, pref, area, data, pin) "
+            + "VALUES (:name, :desc, :pref, :area, :data, '00000000')"
         )
         cursor = self.execute(
             sql,
@@ -336,6 +338,7 @@ class MachineData(BaseData):
                 "name": name,
                 "desc": description,
                 "pref": region,
+                "area": area,
                 "data": self.serialize(data),
             },
         )
@@ -362,7 +365,9 @@ class MachineData(BaseData):
         Returns:
             An Arcade object if this arcade was found, or None otherwise.
         """
-        sql = "SELECT name, description, pin, pref, data FROM arcade WHERE id = :id"
+        sql = (
+            "SELECT name, description, pin, pref, area, data FROM arcade WHERE id = :id"
+        )
         cursor = self.execute(sql, {"id": arcadeid})
         if cursor.rowcount != 1:
             # Arcade doesn't exist
@@ -379,6 +384,7 @@ class MachineData(BaseData):
             result["description"],
             result["pin"],
             result["pref"],
+            result["area"] or None,
             self.deserialize(result["data"]),
             [owner["userid"] for owner in cursor.fetchall()],
         )
@@ -393,7 +399,7 @@ class MachineData(BaseData):
         # Update machine name based on game
         sql = (
             "UPDATE `arcade` "
-            + "SET name = :name, description = :desc, pin = :pin, pref = :pref, data = :data "
+            + "SET name = :name, description = :desc, pin = :pin, pref = :pref, area = :area, data = :data "
             + "WHERE id = :arcadeid"
         )
         self.execute(
@@ -403,6 +409,7 @@ class MachineData(BaseData):
                 "desc": arcade.description,
                 "pin": arcade.pin,
                 "pref": arcade.region,
+                "area": arcade.area,
                 "data": self.serialize(arcade.data),
                 "arcadeid": arcade.id,
             },
@@ -447,7 +454,7 @@ class MachineData(BaseData):
                 arcade_to_owners[arcade] = []
             arcade_to_owners[arcade].append(owner)
 
-        sql = "SELECT id, name, description, pin, pref, data FROM arcade"
+        sql = "SELECT id, name, description, pin, pref, area, data FROM arcade"
         cursor = self.execute(sql)
         return [
             Arcade(
@@ -456,6 +463,7 @@ class MachineData(BaseData):
                 result["description"],
                 result["pin"],
                 result["pref"],
+                result["area"] or None,
                 self.deserialize(result["data"]),
                 arcade_to_owners.get(result["id"], []),
             )

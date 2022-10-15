@@ -95,6 +95,11 @@ class Server:
         # Region was fine.
         return region
 
+    @property
+    def area(self) -> Optional[str]:
+        area = self.__config.get("server", {}).get("area")
+        return str(area) if area else None
+
 
 class Client:
     def __init__(self, parent_config: "Config") -> None:

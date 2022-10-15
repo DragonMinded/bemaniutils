@@ -7,6 +7,7 @@ var card_management = createReactClass({
                 name: '',
                 description: '',
                 region: window.default_region,
+                area: window.default_area,
                 paseli_enabled: window.paseli_enabled,
                 paseli_infinite: window.paseli_infinite,
                 mask_services_url: window.mask_services_url,
@@ -36,6 +37,7 @@ var card_management = createReactClass({
                         name: '',
                         description: '',
                         region: window.default_region,
+                        area: window.default_area,
                         paseli_enabled: window.paseli_enabled,
                         paseli_infinite: window.paseli_infinite,
                         mask_services_url: window.mask_services_url,
@@ -201,8 +203,35 @@ var card_management = createReactClass({
         }
     },
 
+    renderArea: function(arcade) {
+        if (this.state.editing_arcade && arcade.id == this.state.editing_arcade.id) {
+            return <input
+                name="area"
+                type="text"
+                value={ this.state.editing_arcade.area }
+                onChange={function(event) {
+                    var arcade = this.state.editing_arcade;
+                    arcade.area = event.target.value;
+                    this.setState({
+                        editing_arcade: arcade,
+                    });
+                }.bind(this)}
+            />;
+        } else {
+            return <span>{ arcade.area }</span>;
+        }
+    },
+
     sortDescription: function(a, b) {
         return a.description.localeCompare(b.description);
+    },
+
+    sortArea: function(a, b) {
+        return a.area.localeCompare(b.area);
+    },
+
+    sortRegion: function(a, b) {
+        return window.regions[a.region].localeCompare(window.regions[b.region]);
     },
 
     renderOwners: function(arcade) {
@@ -331,6 +360,12 @@ var card_management = createReactClass({
                                 {
                                     name: "Region",
                                     render: this.renderRegion,
+                                    sort: this.sortRegion,
+                                },
+                                {
+                                    name: "Custom Area",
+                                    render: this.renderArea,
+                                    sort: this.sortArea,
                                 },
                                 {
                                     name: 'Owners',
@@ -368,6 +403,7 @@ var card_management = createReactClass({
                                     <th>Name</th>
                                     <th>Description</th>
                                     <th>Region</th>
+                                    <th>Custom Area</th>
                                     <th>Owners</th>
                                     <th>PASELI Enabled</th>
                                     <th>PASELI Infinite</th>
@@ -409,6 +445,18 @@ var card_management = createReactClass({
                                             onChange={function(choice) {
                                                 var arcade = this.state.new_arcade;
                                                 arcade.region = event.target.value;
+                                                this.setState({new_arcade: arcade});
+                                            }.bind(this)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            name="area"
+                                            type="text"
+                                            value={ this.state.new_arcade.area }
+                                            onChange={function(event) {
+                                                var arcade = this.state.new_arcade;
+                                                arcade.area = event.target.value;
                                                 this.setState({new_arcade: arcade});
                                             }.bind(this)}
                                         />

@@ -76,6 +76,7 @@ def format_arcade(arcade: Arcade) -> Dict[str, Any]:
         "description": arcade.description,
         "pin": arcade.pin,
         "region": arcade.region,
+        "area": arcade.area,
         "paseli_enabled": arcade.data.get_bool("paseli_enabled"),
         "paseli_infinite": arcade.data.get_bool("paseli_infinite"),
         "mask_services_url": arcade.data.get_bool("mask_services_url"),
@@ -155,6 +156,7 @@ def viewarcade(arcadeid: int) -> Response:
             "update_balance": url_for("arcade_pages.updatebalance", arcadeid=arcadeid),
             "update_pin": url_for("arcade_pages.updatepin", arcadeid=arcadeid),
             "update_region": url_for("arcade_pages.updateregion", arcadeid=arcadeid),
+            "update_area": url_for("arcade_pages.updatearea", arcadeid=arcadeid),
             "generatepcbid": url_for("arcade_pages.generatepcbid", arcadeid=arcadeid),
             "updatepcbid": url_for("arcade_pages.updatepcbid", arcadeid=arcadeid),
             "removepcbid": url_for("arcade_pages.removepcbid", arcadeid=arcadeid),
@@ -342,6 +344,31 @@ def updateregion(arcadeid: int) -> Dict[str, Any]:
 
     # Return nothing
     return {"region": region}
+
+
+@arcade_pages.route("/<int:arcadeid>/area/update", methods=["POST"])
+@jsonify
+@loginrequired
+def updatearea(arcadeid: int) -> Dict[str, Any]:
+    # Cast the ID for type safety.
+    arcadeid = ArcadeID(arcadeid)
+
+    try:
+        area = request.get_json()["area"] or None
+    except Exception:
+        area = None
+
+    # Make sure the arcade is valid
+    arcade = g.data.local.machine.get_arcade(arcadeid)
+    if arcade is None or g.userID not in arcade.owners:
+        raise Exception("You don't own this arcade, refusing to update!")
+
+    # Update and save
+    arcade.area = area
+    g.data.local.machine.put_arcade(arcade)
+
+    # Return nothing
+    return {"area": area}
 
 
 @arcade_pages.route("/<int:arcadeid>/pcbids/generate", methods=["POST"])

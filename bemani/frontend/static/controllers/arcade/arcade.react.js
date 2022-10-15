@@ -27,6 +27,9 @@ var arcade_management = createReactClass({
             region: window.arcade.region,
             editing_region: false,
             new_region: '',
+            area: window.arcade.area,
+            editing_area: false,
+            new_area: '',
             paseli_enabled_saving: false,
             paseli_infinite_saving: false,
             mask_services_url_saving: false,
@@ -99,6 +102,21 @@ var arcade_management = createReactClass({
                     region: response.region,
                     new_region: '',
                     editing_region: false,
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
+    saveArea: function(event) {
+        AJAX.post(
+            Link.get('update_area'),
+            {area: this.state.new_area},
+            function(response) {
+                this.setState({
+                    area: response.area,
+                    new_area: '',
+                    editing_area: false,
                 });
             }.bind(this)
         );
@@ -291,6 +309,51 @@ var arcade_management = createReactClass({
         );
     },
 
+    renderArea: function() {
+        return (
+            <LabelledSection vertical={true} label="Custom Area">{
+                !this.state.editing_area ?
+                    <>
+                        <span>{ this.state.area ? this.state.area : <i>unset</i> }</span>
+                        <Edit
+                            onClick={function(event) {
+                                this.setState({editing_area: true, new_area: this.state.area});
+                            }.bind(this)}
+                        />
+                    </> :
+                    <form className="inline" onSubmit={this.saveArea}>
+                        <input
+                            type="text"
+                            className="inline"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
+                            value={this.state.new_area}
+                            onChange={function(event) {
+                                if (event.target.value.length <= 63) {
+                                    this.setState({new_area: event.target.value});
+                                }
+                            }.bind(this)}
+                            name="area"
+                        />
+                        <input
+                            type="submit"
+                            value="save"
+                        />
+                        <input
+                            type="button"
+                            value="cancel"
+                            onClick={function(event) {
+                                this.setState({
+                                    new_area: '',
+                                    editing_area: false,
+                                });
+                            }.bind(this)}
+                        />
+                    </form>
+            }</LabelledSection>
+        );
+    },
+
     generateNewMachine: function(event) {
         AJAX.post(
             Link.get('generatepcbid'),
@@ -474,6 +537,7 @@ var arcade_management = createReactClass({
                     }</LabelledSection>
                     {this.renderPIN()}
                     {this.renderRegion()}
+                    {this.renderArea()}
                     <LabelledSection vertical={true} label={
                         <>
                             PASELI Enabled

@@ -45,7 +45,19 @@ class ID:
         """
         Take a machine ID as an integer, format it as a string.
         """
-        if region not in {"JP", "KR", "TW", "HK", "US", "GB", "IT", "ES", "FR", "PT"}:
+        if region not in {
+            "JP",
+            "KR",
+            "TW",
+            "HK",
+            "US",
+            "GB",
+            "IT",
+            "ES",
+            "FR",
+            "PT",
+            "XX",
+        }:
             raise Exception(f"Invalid region {region}!")
         return f"{region}-{machine_id}"
 
@@ -57,7 +69,7 @@ class ID:
         try:
             if (
                 machine_id[:2]
-                in {"JP", "KR", "TW", "HK", "US", "GB", "IT", "ES", "FR", "PT"}
+                in {"JP", "KR", "TW", "HK", "US", "GB", "IT", "ES", "FR", "PT", "XX"}
                 and machine_id[2] == "-"
             ):
                 return int(machine_id[3:])

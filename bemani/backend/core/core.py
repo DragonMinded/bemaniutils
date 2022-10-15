@@ -129,9 +129,11 @@ class CoreHandler(Base):
         machine = self.get_machine()
         if machine.arcade is None:
             region = self.config.server.region
+            area = self.config.server.area
         else:
             arcade = self.data.local.machine.get_arcade(machine.arcade)
             region = arcade.region
+            area = arcade.area
 
         if region == RegionConstants.HONG_KONG:
             country = "HK"
@@ -182,6 +184,9 @@ class CoreHandler(Base):
         location.add_child(Node.string("region", regionstr))
         location.add_child(Node.string("name", machine.name))
         location.add_child(Node.u8("type", 0))
+        if area is not None:
+            location.add_child(Node.string("regionname", area))
+            location.add_child(Node.string("regionjname", area))
 
         line = Node.void("line")
         line.add_child(Node.string("id", "."))

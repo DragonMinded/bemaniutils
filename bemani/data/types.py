@@ -161,6 +161,7 @@ class Arcade:
         description: str,
         pin: str,
         region: int,
+        area: Optional[str],
         data: Dict[str, Any],
         owners: List[UserID],
     ) -> None:
@@ -173,6 +174,7 @@ class Arcade:
             description - The description of the arcade.
             pin - An eight digit string representing the PIN used to pull up PASELI info.
             region - An integer representing the region this arcade is in.
+            area - A string representing the custom area this arcade is in, or None if default.
             data - A dictionary of settings for this arcade.
             owners - An list of integers specifying the user IDs of owners for this arcade.
         """
@@ -181,11 +183,12 @@ class Arcade:
         self.description = description
         self.pin = pin
         self.region = region
+        self.area = area
         self.data = ValidatedDict(data)
         self.owners = owners
 
     def __repr__(self) -> str:
-        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, region={self.region}, data={self.data}, owners={self.owners})"
+        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, region={self.region}, area={self.area}, data={self.data}, owners={self.owners})"
 
 
 class Song:

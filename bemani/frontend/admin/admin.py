@@ -48,6 +48,7 @@ def format_arcade(arcade: Arcade) -> Dict[str, Any]:
         "name": arcade.name,
         "description": arcade.description,
         "region": arcade.region,
+        "area": arcade.area or "",
         "paseli_enabled": arcade.data.get_bool("paseli_enabled"),
         "paseli_infinite": arcade.data.get_bool("paseli_infinite"),
         "mask_services_url": arcade.data.get_bool("mask_services_url"),
@@ -269,6 +270,7 @@ def viewarcades() -> Response:
             "paseli_enabled": g.config.paseli.enabled,
             "paseli_infinite": g.config.paseli.infinite,
             "default_region": g.config.server.region,
+            "default_area": g.config.server.area,
             "mask_services_url": False,
         },
         {
@@ -500,6 +502,7 @@ def updatearcade() -> Dict[str, Any]:
     arcade.name = new_values["name"]
     arcade.description = new_values["description"]
     arcade.region = new_values["region"]
+    arcade.area = new_values["area"] or None
     arcade.data.replace_bool("paseli_enabled", new_values["paseli_enabled"])
     arcade.data.replace_bool("paseli_infinite", new_values["paseli_infinite"])
     arcade.data.replace_bool("mask_services_url", new_values["mask_services_url"])
@@ -542,6 +545,7 @@ def addarcade() -> Dict[str, Any]:
         new_values["name"],
         new_values["description"],
         new_values["region"],
+        new_values["area"] or None,
         {
             "paseli_enabled": new_values["paseli_enabled"],
             "paseli_infinite": new_values["paseli_infinite"],
