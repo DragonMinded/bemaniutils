@@ -32,7 +32,7 @@ config = Config()
 
 
 # Allow cache-busting of entire frontend for major changes such as react upgrades.
-FRONTEND_CACHE_BUST: str = "site.1.0.react.16.14"
+FRONTEND_CACHE_BUST: str = "site.1.1.react.16.14"
 
 
 @app.before_request
