@@ -58,7 +58,7 @@ def receive_request(path: str) -> Response:
 
     dataprovider = Data(requestconfig)
     try:
-        dispatch = Dispatch(requestconfig, dataprovider, True)
+        dispatch = Dispatch(requestconfig, dataprovider, config["verbose"])
         resp = dispatch.handle(req)
 
         if resp is None:
@@ -158,6 +158,9 @@ if __name__ == "__main__":
     config["server"]["port"] = args.port
     if args.read_only:
         config["database"]["read_only"] = True
+
+    # Force full verbose output when running as a debug app.
+    config["verbose"] = True
 
     # Register game handlers
     register_games()
