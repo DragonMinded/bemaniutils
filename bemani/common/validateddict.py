@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from bemani.common.constants import GameConstants
 
 
-def intish(val: Any, base: int=10) -> Optional[int]:
+def intish(val: Any, base: int = 10) -> Optional[int]:
     if val is None:
         return None
     try:
@@ -30,7 +30,7 @@ class ValidatedDict(dict):
     def clone(self) -> "ValidatedDict":
         return ValidatedDict(copy.deepcopy(self))
 
-    def get_int(self, name: str, default: int=0) -> int:
+    def get_int(self, name: str, default: int = 0) -> int:
         """
         Given the name of a value, return an integer stored under that name.
 
@@ -48,7 +48,7 @@ class ValidatedDict(dict):
             return default
         return val
 
-    def get_float(self, name: str, default: float=0.0) -> float:
+    def get_float(self, name: str, default: float = 0.0) -> float:
         """
         Given the name of a value, return a float stored under that name.
 
@@ -66,7 +66,7 @@ class ValidatedDict(dict):
             return default
         return val
 
-    def get_bool(self, name: str, default: bool=False) -> bool:
+    def get_bool(self, name: str, default: bool = False) -> bool:
         """
         Given the name of a value, return a boolean stored under that name.
 
@@ -84,7 +84,7 @@ class ValidatedDict(dict):
             return default
         return val
 
-    def get_str(self, name: str, default: str='') -> str:
+    def get_str(self, name: str, default: str = "") -> str:
         """
         Given the name of a value, return string stored under that name.
 
@@ -102,7 +102,7 @@ class ValidatedDict(dict):
             return default
         return val
 
-    def get_bytes(self, name: str, default: bytes=b'') -> bytes:
+    def get_bytes(self, name: str, default: bytes = b"") -> bytes:
         """
         Given the name of a value, return bytes stored under that name.
 
@@ -120,7 +120,9 @@ class ValidatedDict(dict):
             return default
         return val
 
-    def get_int_array(self, name: str, length: int, default: Optional[List[int]]=None) -> List[int]:
+    def get_int_array(
+        self, name: str, length: int, default: Optional[List[int]] = None
+    ) -> List[int]:
         """
         Given the name of a value, return a list of integers stored under that name.
 
@@ -136,7 +138,7 @@ class ValidatedDict(dict):
         if default is None:
             default = [0] * length
         if len(default) != length:
-            raise Exception('Gave default of wrong length!')
+            raise Exception("Gave default of wrong length!")
 
         val = self.get(name)
         if val is None:
@@ -150,7 +152,9 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_bool_array(self, name: str, length: int, default: Optional[List[bool]]=None) -> List[bool]:
+    def get_bool_array(
+        self, name: str, length: int, default: Optional[List[bool]] = None
+    ) -> List[bool]:
         """
         Given the name of a value, return a list of booleans stored under that name.
 
@@ -166,7 +170,7 @@ class ValidatedDict(dict):
         if default is None:
             default = [False] * length
         if len(default) != length:
-            raise Exception('Gave default of wrong length!')
+            raise Exception("Gave default of wrong length!")
 
         val = self.get(name)
         if val is None:
@@ -180,7 +184,9 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_bytes_array(self, name: str, length: int, default: Optional[List[bytes]]=None) -> List[bytes]:
+    def get_bytes_array(
+        self, name: str, length: int, default: Optional[List[bytes]] = None
+    ) -> List[bytes]:
         """
         Given the name of a value, return a list of bytestrings stored under that name.
 
@@ -194,9 +200,9 @@ class ValidatedDict(dict):
             A list of bytestrings.
         """
         if default is None:
-            default = [b''] * length
+            default = [b""] * length
         if len(default) != length:
-            raise Exception('Gave default of wrong length!')
+            raise Exception("Gave default of wrong length!")
 
         val = self.get(name)
         if val is None:
@@ -210,7 +216,9 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_str_array(self, name: str, length: int, default: Optional[List[str]]=None) -> List[str]:
+    def get_str_array(
+        self, name: str, length: int, default: Optional[List[str]] = None
+    ) -> List[str]:
         """
         Given the name of a value, return a list of strings stored under that name.
 
@@ -224,9 +232,9 @@ class ValidatedDict(dict):
             A list of strings.
         """
         if default is None:
-            default = [''] * length
+            default = [""] * length
         if len(default) != length:
-            raise Exception('Gave default of wrong length!')
+            raise Exception("Gave default of wrong length!")
 
         val = self.get(name)
         if val is None:
@@ -240,7 +248,9 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_dict(self, name: str, default: Optional[Dict[Any, Any]]=None) -> 'ValidatedDict':
+    def get_dict(
+        self, name: str, default: Optional[Dict[Any, Any]] = None
+    ) -> "ValidatedDict":
         """
         Given the name of a value, return a dictionary stored under that name.
 
@@ -452,7 +462,14 @@ class Profile(ValidatedDict):
     combo and the refid and extid associated wit the profile.
     """
 
-    def __init__(self, game: GameConstants, version: int, refid: str, extid: int, initial_values: Dict[str, Any] = {}) -> None:
+    def __init__(
+        self,
+        game: GameConstants,
+        version: int,
+        refid: str,
+        extid: int,
+        initial_values: Dict[str, Any] = {},
+    ) -> None:
         super().__init__(initial_values or {})
         self.game = game
         self.version = version
@@ -460,7 +477,9 @@ class Profile(ValidatedDict):
         self.extid = extid
 
     def clone(self) -> "Profile":
-        return Profile(self.game, self.version, self. refid, self.extid, copy.deepcopy(self))
+        return Profile(
+            self.game, self.version, self.refid, self.extid, copy.deepcopy(self)
+        )
 
 
 class PlayStatistics(ValidatedDict):

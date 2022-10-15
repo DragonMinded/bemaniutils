@@ -5,7 +5,6 @@ from bemani.data.types import Server
 
 
 class APIProviderInterface(ABC):
-
     @abstractmethod
     def get_all_servers(self) -> List[Server]:
         """

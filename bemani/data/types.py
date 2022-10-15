@@ -2,8 +2,8 @@ from typing import Optional, List, Dict, Any, NewType
 
 from bemani.common import ValidatedDict, GameConstants
 
-UserID = NewType('UserID', int)
-ArcadeID = NewType('ArcadeID', int)
+UserID = NewType("UserID", int)
+ArcadeID = NewType("ArcadeID", int)
 
 
 class User:
@@ -15,7 +15,9 @@ class User:
     more cards, or swap out a card for a new one.
     """
 
-    def __init__(self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool) -> None:
+    def __init__(
+        self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool
+    ) -> None:
         """
         Initialize the user object.
 
@@ -43,7 +45,13 @@ class Achievement:
     that can have some attached data, such as item unlocks, tran medals, course progress, etc.
     """
 
-    def __init__(self, achievementid: int, achievementtype: str, timestamp: Optional[int], data: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        achievementid: int,
+        achievementtype: str,
+        timestamp: Optional[int],
+        data: Dict[str, Any],
+    ) -> None:
         """
         Initialize the achievement object.
 
@@ -68,7 +76,9 @@ class Link:
     determined by the game that needs this linkage.
     """
 
-    def __init__(self, userid: UserID, linktype: str, other_userid: UserID, data: Dict[str, Any]) -> None:
+    def __init__(
+        self, userid: UserID, linktype: str, other_userid: UserID, data: Dict[str, Any]
+    ) -> None:
         """
         Initialize the achievement object.
 
@@ -144,7 +154,16 @@ class Arcade:
     crediting accounts. Machines belong to either no arcade or a single arcase.
     """
 
-    def __init__(self, arcadeid: ArcadeID, name: str, description: str, pin: str, region: int, data: Dict[str, Any], owners: List[UserID]) -> None:
+    def __init__(
+        self,
+        arcadeid: ArcadeID,
+        name: str,
+        description: str,
+        pin: str,
+        region: int,
+        data: Dict[str, Any],
+        owners: List[UserID],
+    ) -> None:
         """
         Initialize the arcade instance.
 
@@ -329,7 +348,15 @@ class Event:
     invalid PCBIDs trying to connect, or more mundate events such as daily selection.
     """
 
-    def __init__(self, auditid: int, timestamp: int, userid: Optional[UserID], arcadeid: Optional[ArcadeID], event: str, data: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        auditid: int,
+        timestamp: int,
+        userid: Optional[UserID],
+        arcadeid: Optional[ArcadeID],
+        event: str,
+        data: Dict[str, Any],
+    ) -> None:
         """
         Initialize the audit event object.
 
@@ -405,7 +432,15 @@ class Server:
     to for pulling data.
     """
 
-    def __init__(self, serverid: int, timestamp: int, uri: str, token: str, allow_stats: bool, allow_scores: bool) -> None:
+    def __init__(
+        self,
+        serverid: int,
+        timestamp: int,
+        uri: str,
+        token: str,
+        allow_stats: bool,
+        allow_scores: bool,
+    ) -> None:
         """
         Initialize the server object.
 

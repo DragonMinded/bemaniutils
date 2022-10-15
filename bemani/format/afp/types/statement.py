@@ -23,7 +23,9 @@ class ConvertedAction:
 class Statement(ConvertedAction):
     # This is just a type class for finished statements.
     def render(self, prefix: str) -> List[str]:
-        raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement render()!"
+        )
 
 
 class DefineLabelStatement(Statement):
@@ -59,7 +61,9 @@ class GotoStatement(Statement):
     # A goto, including the ID of the chunk we want to jump to.
     def __init__(self, location: int) -> None:
         if location < 0:
-            raise Exception(f"Logic error, attempting to go to artificially inserted location {location}!")
+            raise Exception(
+                f"Logic error, attempting to go to artificially inserted location {location}!"
+            )
 
         self.location = location
 
@@ -118,7 +122,9 @@ class NopStatement(Statement):
 
     def render(self, prefix: str) -> List[str]:
         # We should never render this!
-        raise Exception("Logic error, a NopStatement should never make it to the render stage!")
+        raise Exception(
+            "Logic error, a NopStatement should never make it to the render stage!"
+        )
 
 
 class ExpressionStatement(Statement):
@@ -208,7 +214,12 @@ class GotoFrameStatement(Statement):
 
 class CloneSpriteStatement(Statement):
     # Clone a sprite.
-    def __init__(self, obj_to_clone: Any, name: Union[str, Expression], depth: Union[int, Expression]) -> None:
+    def __init__(
+        self,
+        obj_to_clone: Any,
+        name: Union[str, Expression],
+        depth: Union[int, Expression],
+    ) -> None:
         self.obj_to_clone = obj_to_clone
         self.name = name
         self.depth = depth
@@ -260,7 +271,9 @@ class GetURL2Statement(Statement):
 
 class SetMemberStatement(Statement):
     # Call a method on an object.
-    def __init__(self, objectref: Any, name: Union[str, int, Expression], valueref: Any) -> None:
+    def __init__(
+        self, objectref: Any, name: Union[str, int, Expression], valueref: Any
+    ) -> None:
         self.objectref = objectref
         self.name = name
         self.valueref = valueref
@@ -353,7 +366,7 @@ class StoreRegisterStatement(Statement):
         self.valueref = valueref
 
     def code_equiv(self) -> str:
-        return self.register.render('')
+        return self.register.render("")
 
     def __repr__(self) -> str:
         val = value_ref(self.valueref, "")
@@ -472,7 +485,9 @@ class AndIf(IfExpr):
                 # for a fact that this if can never be true.
                 self.__false = True
             else:
-                self.__false = self.left.is_always_false() or self.right.is_always_false()
+                self.__false = (
+                    self.left.is_always_false() or self.right.is_always_false()
+                )
         return self.__false
 
     def simplify(self) -> "IfExpr":
@@ -547,11 +562,16 @@ class AndIf(IfExpr):
 
     def __hash__(self) -> int:
         if self.__hash is None:
-            self.__hash = hash("AND:" + ",".join(sorted(str(hash(s)) for s in set(_gather_and(self)))))
+            self.__hash = hash(
+                "AND:" + ",".join(sorted(str(hash(s)) for s in set(_gather_and(self))))
+            )
         return self.__hash
 
     def __repr__(self) -> str:
-        return " && ".join((f"({c!r})" if isinstance(c, (AndIf, OrIf)) else repr(c)) for c in _gather_and(self))
+        return " && ".join(
+            (f"({c!r})" if isinstance(c, (AndIf, OrIf)) else repr(c))
+            for c in _gather_and(self)
+        )
 
 
 class OrIf(IfExpr):
@@ -667,11 +687,16 @@ class OrIf(IfExpr):
 
     def __hash__(self) -> int:
         if self.__hash is None:
-            self.__hash = hash("OR:" + ",".join(sorted(str(hash(s)) for s in set(_gather_or(self)))))
+            self.__hash = hash(
+                "OR:" + ",".join(sorted(str(hash(s)) for s in set(_gather_or(self))))
+            )
         return self.__hash
 
     def __repr__(self) -> str:
-        return " || ".join((f"({c!r})" if isinstance(c, (AndIf, OrIf)) else repr(c)) for c in _gather_or(self))
+        return " || ".join(
+            (f"({c!r})" if isinstance(c, (AndIf, OrIf)) else repr(c))
+            for c in _gather_or(self)
+        )
 
 
 def _gather_and(obj: IfExpr) -> List[IfExpr]:
@@ -708,7 +733,9 @@ def _factor_and(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
         if not left_ors or not right_ors:
             return _accum_or(commons).simplify()
 
-        return OrIf(_accum_or(commons), AndIf(_accum_or(left_ors), _accum_or(right_ors))).simplify()
+        return OrIf(
+            _accum_or(commons), AndIf(_accum_or(left_ors), _accum_or(right_ors))
+        ).simplify()
     else:
         return None
 
@@ -769,7 +796,9 @@ def _factor_or(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
         if not left_ands or not right_ands:
             return _accum_and(commons).simplify()
 
-        return AndIf(_accum_and(commons), OrIf(_accum_and(left_ands), _accum_and(right_ands))).simplify()
+        return AndIf(
+            _accum_and(commons), OrIf(_accum_and(left_ands), _accum_and(right_ands))
+        ).simplify()
     else:
         return None
 
@@ -903,9 +932,13 @@ class TwoParameterIf(IfExpr):
         if self.comp == self.GT_EQUALS:
             return TwoParameterIf(self.conditional1, self.LT, self.conditional2)
         if self.comp == self.STRICT_EQUALS:
-            return TwoParameterIf(self.conditional1, self.STRICT_NOT_EQUALS, self.conditional2)
+            return TwoParameterIf(
+                self.conditional1, self.STRICT_NOT_EQUALS, self.conditional2
+            )
         if self.comp == self.STRICT_NOT_EQUALS:
-            return TwoParameterIf(self.conditional1, self.STRICT_EQUALS, self.conditional2)
+            return TwoParameterIf(
+                self.conditional1, self.STRICT_EQUALS, self.conditional2
+            )
         raise Exception(f"Cannot invert {self.comp}!")
 
     def swap(self) -> "TwoParameterIf":
@@ -922,9 +955,13 @@ class TwoParameterIf(IfExpr):
         if self.comp == self.GT_EQUALS:
             return TwoParameterIf(self.conditional2, self.LT_EQUALS, self.conditional1)
         if self.comp == self.STRICT_EQUALS:
-            return TwoParameterIf(self.conditional2, self.STRICT_EQUALS, self.conditional1)
+            return TwoParameterIf(
+                self.conditional2, self.STRICT_EQUALS, self.conditional1
+            )
         if self.comp == self.STRICT_NOT_EQUALS:
-            return TwoParameterIf(self.conditional2, self.STRICT_NOT_EQUALS, self.conditional1)
+            return TwoParameterIf(
+                self.conditional2, self.STRICT_NOT_EQUALS, self.conditional1
+            )
         raise Exception(f"Cannot swap {self.comp}!")
 
     def __repr__(self) -> str:
@@ -934,7 +971,12 @@ class TwoParameterIf(IfExpr):
 
 
 class IfStatement(Statement):
-    def __init__(self, cond: IfExpr, true_statements: Sequence[Statement], false_statements: Sequence[Statement]) -> None:
+    def __init__(
+        self,
+        cond: IfExpr,
+        true_statements: Sequence[Statement],
+        false_statements: Sequence[Statement],
+    ) -> None:
         self.cond = cond
         self.true_statements = list(true_statements)
         self.false_statements = list(false_statements)
@@ -949,19 +991,19 @@ class IfStatement(Statement):
             false_entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
 
         if false_entries:
-            return os.linesep.join([
-                f"if ({self.cond}) {{",
-                os.linesep.join(true_entries),
-                "} else {",
-                os.linesep.join(false_entries),
-                "}"
-            ])
+            return os.linesep.join(
+                [
+                    f"if ({self.cond}) {{",
+                    os.linesep.join(true_entries),
+                    "} else {",
+                    os.linesep.join(false_entries),
+                    "}",
+                ]
+            )
         else:
-            return os.linesep.join([
-                f"if ({self.cond}) {{",
-                os.linesep.join(true_entries),
-                "}"
-            ])
+            return os.linesep.join(
+                [f"if ({self.cond}) {{", os.linesep.join(true_entries), "}"]
+            )
 
     def render(self, prefix: str) -> List[str]:
         true_entries: List[str] = []
@@ -981,14 +1023,14 @@ class IfStatement(Statement):
                 f"{prefix}else",
                 f"{prefix}{{",
                 *false_entries,
-                f"{prefix}}}"
+                f"{prefix}}}",
             ]
         else:
             return [
                 f"{prefix}if ({self.cond})",
                 f"{prefix}{{",
                 *true_entries,
-                f"{prefix}}}"
+                f"{prefix}}}",
             ]
 
 
@@ -1001,11 +1043,7 @@ class DoWhileStatement(Statement):
         for statement in self.body:
             entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
 
-        return os.linesep.join([
-            "do {",
-            os.linesep.join(entries),
-            "} while (True)"
-        ])
+        return os.linesep.join(["do {", os.linesep.join(entries), "} while (True)"])
 
     def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
@@ -1023,7 +1061,15 @@ class DoWhileStatement(Statement):
 
 class ForStatement(DoWhileStatement):
     # Special case of a DoWhileStatement that tracks its own exit condition and increment.
-    def __init__(self, inc_variable: str, inc_init: Any, cond: IfExpr, inc_assign: Any, body: Sequence[Statement], local: bool = False) -> None:
+    def __init__(
+        self,
+        inc_variable: str,
+        inc_init: Any,
+        cond: IfExpr,
+        inc_assign: Any,
+        body: Sequence[Statement],
+        local: bool = False,
+    ) -> None:
         super().__init__(body)
         self.inc_variable = inc_variable
         self.inc_init = inc_init
@@ -1043,11 +1089,13 @@ class ForStatement(DoWhileStatement):
         else:
             local = ""
 
-        return os.linesep.join([
-            f"for ({local}{self.inc_variable} = {inc_init}; {self.cond}; {self.inc_variable} = {inc_assign}) {{",
-            os.linesep.join(entries),
-            "}"
-        ])
+        return os.linesep.join(
+            [
+                f"for ({local}{self.inc_variable} = {inc_init}; {self.cond}; {self.inc_variable} = {inc_assign}) {{",
+                os.linesep.join(entries),
+                "}",
+            ]
+        )
 
     def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
@@ -1080,11 +1128,9 @@ class WhileStatement(DoWhileStatement):
         for statement in self.body:
             entries.extend([f"  {s}" for s in str(statement).split(os.linesep)])
 
-        return os.linesep.join([
-            f"while ({self.cond}) {{",
-            os.linesep.join(entries),
-            "}"
-        ])
+        return os.linesep.join(
+            [f"while ({self.cond}) {{", os.linesep.join(entries), "}"]
+        )
 
     def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
@@ -1111,15 +1157,19 @@ class SwitchCase:
 
         if self.const is not None:
             const = value_ref(self.const, "")
-            return os.linesep.join([
-                f"case {const}:",
-                os.linesep.join(entries),
-            ])
+            return os.linesep.join(
+                [
+                    f"case {const}:",
+                    os.linesep.join(entries),
+                ]
+            )
         else:
-            return os.linesep.join([
-                "default:",
-                os.linesep.join(entries),
-            ])
+            return os.linesep.join(
+                [
+                    "default:",
+                    os.linesep.join(entries),
+                ]
+            )
 
     def render(self, prefix: str) -> List[str]:
         entries: List[str] = []
@@ -1150,11 +1200,7 @@ class SwitchStatement(Statement):
             cases.extend([f"  {s}" for s in str(case).split(os.linesep)])
 
         check = object_ref(self.check_variable, "")
-        return os.linesep.join([
-            f"switch ({check}) {{",
-            os.linesep.join(cases),
-            "}"
-        ])
+        return os.linesep.join([f"switch ({check}) {{", os.linesep.join(cases), "}"])
 
     def render(self, prefix: str) -> List[str]:
         cases: List[str] = []
@@ -1162,9 +1208,4 @@ class SwitchStatement(Statement):
             cases.extend(case.render(prefix=prefix + "    "))
 
         check = object_ref(self.check_variable, prefix)
-        return [
-            f"{prefix}switch ({check})",
-            f"{prefix}{{",
-            *cases,
-            f"{prefix}}}"
-        ]
+        return [f"{prefix}switch ({check})", f"{prefix}{{", *cases, f"{prefix}}}"]

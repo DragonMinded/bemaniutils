@@ -116,6 +116,13 @@ bring your production DB up to sync with the code you are deploying. Run it like
 `./dbutils --help` to see all options. The config file that this works on is the same
 that is given to "api", "services" and "frontend".
 
+## formatfiles
+
+A simple wrapper frontend to black, the formatter used on this project. Running this will
+auto-format all of the python code that might need formatting, leaving the rest out. When
+submitting pull requests make sure to run this so that your code conforms to the style
+used by this project!
+
 ## frontend
 
 Development version of a frontend server allowing for account and server administration
@@ -722,7 +729,8 @@ up your MySQL instance, see the `examples/` directory.
 Contributions are welcome! Before submitting a pull request, ensure that your code
 is type-hint clean by running `./verifytyping` and ensure that it hasn't broken basic
 libraries with `./verifylibs`. Make sure that it is also lint-clean with `./verifylint`.
-If you are changing code related to a particular game, it is nice to include a
+You should also make sure its formatted correctly by running `./formatfiles`.
+If you are changing code related to a particular game, it is required to include a
 verification in the form of a game traffic emulator, so that basic functionality can
 be verified. To ensure you haven't broken another game with your changes, its recommended
 to run the traffic generator against your code with various games. For convenience, you

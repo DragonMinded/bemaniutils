@@ -45,9 +45,9 @@ class XmlDecoder:
                          attribute values. This attribute values should already be decoded from
                          the XML's encoding.
         """
-        data_type = attributes.get('__type')
+        data_type = attributes.get("__type")
 
-        array_str = attributes.get('__count')
+        array_str = attributes.get("__count")
         if array_str is not None:
             array = True
         else:
@@ -55,18 +55,20 @@ class XmlDecoder:
 
         if data_type is None:
             # Special case for nodes that don't have a type
-            node = Node(name=tag.decode('ascii'), type=Node.NODE_TYPE_VOID)
+            node = Node(name=tag.decode("ascii"), type=Node.NODE_TYPE_VOID)
         else:
             # Get the data value
             type_int = Node.typename_to_type(data_type)
             if type_int is None:
-                raise XmlEncodingException(f'Invalid node type {data_type} for node {tag.decode("ascii")}')
+                raise XmlEncodingException(
+                    f'Invalid node type {data_type} for node {tag.decode("ascii")}'
+                )
 
-            node = Node(name=tag.decode('ascii'), type=type_int, array=array)
+            node = Node(name=tag.decode("ascii"), type=type_int, array=array)
 
         # Now, do the attributes
         for attr in attributes:
-            if attr == '__type' or attr == '__count':
+            if attr == "__type" or attr == "__count":
                 # Skip these, handled
                 continue
             else:
@@ -84,8 +86,10 @@ class XmlDecoder:
         """
         node = self.current.pop()
 
-        if node.name != tag.decode('ascii'):
-            raise Exception(f'Logic error, expected {tag.decode("ascii")} but got {node.name}')
+        if node.name != tag.decode("ascii"):
+            raise Exception(
+                f'Logic error, expected {tag.decode("ascii")} but got {node.name}'
+            )
 
         if len(self.current) == 0:
             self.root = node
@@ -94,13 +98,13 @@ class XmlDecoder:
             parent.add_child(node)
 
     def __yield_values(self, text: str) -> Iterator[str]:
-        value = ''
+        value = ""
 
         for c in text:
             if c.isspace():
                 if len(value) > 0:
                     yield value
-                    value = ''
+                    value = ""
             else:
                 value = value + c
 
@@ -118,62 +122,84 @@ class XmlDecoder:
         try:
             value = text.decode(self.encoding)
         except UnicodeDecodeError:
-            raise XmlEncodingException('Failed to decode text node with given encoding')
+            raise XmlEncodingException("Failed to decode text node with given encoding")
 
         if len(self.current) > 0:
             data_type = self.current[-1].data_type
             composite = self.current[-1].is_composite
             array = self.current[-1].is_array
 
-            if data_type == 'void':
+            if data_type == "void":
                 # We can't handle this
                 return
 
-            if data_type == 'str':
+            if data_type == "str":
                 # Do nothing, already fine
-                value = value.replace('&amp;', '&')
-                value = value.replace('&lt;', '<')
-                value = value.replace('&gt;', '>')
-                value = value.replace('&apos;', '\'')
-                value = value.replace('&quot;', '\"')
+                value = value.replace("&amp;", "&")
+                value = value.replace("&lt;", "<")
+                value = value.replace("&gt;", ">")
+                value = value.replace("&apos;", "'")
+                value = value.replace("&quot;", '"')
                 if self.current[-1].value is None:
                     self.current[-1].set_value(value)
                 else:
                     self.current[-1].set_value(self.current[-1].value + value)
-            elif data_type == 'bin':
+            elif data_type == "bin":
                 # Convert from a hex string
                 def hex_to_bin(hexval: str) -> bytes:
                     intval = int(hexval, 16)
-                    return struct.pack('>B', intval)
+                    return struct.pack(">B", intval)
 
                 # Remove any spaces first
-                value = ''.join([c for c in value if not c.isspace()])
+                value = "".join([c for c in value if not c.isspace()])
                 if self.current[-1].value is None:
-                    self.current[-1].set_value(b''.join([hex_to_bin(value[i:(i + 2)]) for i in range(0, len(value), 2)]))
+                    self.current[-1].set_value(
+                        b"".join(
+                            [
+                                hex_to_bin(value[i : (i + 2)])
+                                for i in range(0, len(value), 2)
+                            ]
+                        )
+                    )
                 else:
-                    self.current[-1].set_value(self.current[-1].value + b''.join([hex_to_bin(value[i:(i + 2)]) for i in range(0, len(value), 2)]))
-            elif data_type == 'ip4':
+                    self.current[-1].set_value(
+                        self.current[-1].value
+                        + b"".join(
+                            [
+                                hex_to_bin(value[i : (i + 2)])
+                                for i in range(0, len(value), 2)
+                            ]
+                        )
+                    )
+            elif data_type == "ip4":
                 # Do nothing, already fine
                 self.current[-1].set_value(value)
-            elif data_type == 'bool':
+            elif data_type == "bool":
+
                 def conv_bool(val: str) -> bool:
-                    if val and val.lower() in ['0', 'false']:
+                    if val and val.lower() in ["0", "false"]:
                         return False
                     else:
                         return True
 
                 if array or composite:
-                    self.current[-1].set_value([conv_bool(v) for v in self.__yield_values(value)])
+                    self.current[-1].set_value(
+                        [conv_bool(v) for v in self.__yield_values(value)]
+                    )
                 else:
                     self.current[-1].set_value(conv_bool(value))
-            elif data_type == 'float':
+            elif data_type == "float":
                 if array or composite:
-                    self.current[-1].set_value([float(v) for v in self.__yield_values(value)])
+                    self.current[-1].set_value(
+                        [float(v) for v in self.__yield_values(value)]
+                    )
                 else:
                     self.current[-1].set_value(float(value))
             else:
                 if array or composite:
-                    self.current[-1].set_value([int(v) for v in self.__yield_values(value)])
+                    self.current[-1].set_value(
+                        [int(v) for v in self.__yield_values(value)]
+                    )
                 else:
                     self.current[-1].set_value(int(value))
 
@@ -188,59 +214,59 @@ class XmlDecoder:
         """
         attr_stream = InputStream(attributes)
         parsed_attrs: Dict[str, str] = {}
-        state = 'space'
-        attr = b''
-        val = b''
+        state = "space"
+        attr = b""
+        val = b""
 
         def unescape(value: bytes) -> str:
             val = value.decode(self.encoding)
-            val = val.replace('&amp;', '&')
-            val = val.replace('&lt;', '<')
-            val = val.replace('&gt;', '>')
-            val = val.replace('&apos;', '\'')
-            val = val.replace('&quot;', '\"')
-            val = val.replace('&#13;', '\r')
-            return val.replace('&#10;', '\n')
+            val = val.replace("&amp;", "&")
+            val = val.replace("&lt;", "<")
+            val = val.replace("&gt;", ">")
+            val = val.replace("&apos;", "'")
+            val = val.replace("&quot;", '"')
+            val = val.replace("&#13;", "\r")
+            return val.replace("&#10;", "\n")
 
         while True:
             c = attr_stream.read_byte()
 
             if c is None:
                 return parsed_attrs
-            if state == 'space':
+            if state == "space":
                 if not c.isspace():
-                    state = 'attr'
+                    state = "attr"
                     attr = c
-            elif state == 'attr':
-                if c == b'=':
+            elif state == "attr":
+                if c == b"=":
                     attr = attr.strip()
-                    state = 'valstart'
+                    state = "valstart"
                 else:
                     attr = attr + c
-            elif state == 'valstart':
+            elif state == "valstart":
                 if c == b'"':
-                    state = 'valdouble'
-                    val = b''
-                elif c == b'\'':
-                    state = 'valsingle'
-                    val = b''
-            elif state == 'valdouble':
+                    state = "valdouble"
+                    val = b""
+                elif c == b"'":
+                    state = "valsingle"
+                    val = b""
+            elif state == "valdouble":
                 if c == b'"':
-                    state = 'space'
-                    parsed_attrs[attr.decode('ascii')] = unescape(val)
+                    state = "space"
+                    parsed_attrs[attr.decode("ascii")] = unescape(val)
                 else:
                     val = val + c
-            elif state == 'valsingle':
-                if c == b'\'':
-                    state = 'space'
-                    parsed_attrs[attr.decode('ascii')] = unescape(val)
+            elif state == "valsingle":
+                if c == b"'":
+                    state = "space"
+                    parsed_attrs[attr.decode("ascii")] = unescape(val)
                 else:
                     val = val + c
 
     def __split_node(self, content: bytes) -> Tuple[bytes, bytes]:
         node_stream = InputStream(content)
-        tag = b''
-        attributes = b''
+        tag = b""
+        attributes = b""
         state = "tag"
 
         while True:
@@ -272,21 +298,21 @@ class XmlDecoder:
             The node contents, minus the < and > characters. This will be encoded
             in the XML document's encoding.
         """
-        if content[:1] == b'?' and content[-1:] == b'?':
+        if content[:1] == b"?" and content[-1:] == b"?":
             # Special node, parse to get the encoding.
             tag, attributes = self.__split_node(content[1:-1])
-            if tag == b'xml':
+            if tag == b"xml":
                 attributes_dict = self.__parse_attributes(attributes)
-                if 'encoding' in attributes_dict:
-                    self.encoding = attributes_dict['encoding']
+                if "encoding" in attributes_dict:
+                    self.encoding = attributes_dict["encoding"]
             return
 
-        if content[:1] == b'/':
+        if content[:1] == b"/":
             # We got an element end
             self.__end_element(content[1:])
         else:
             # We got a start element
-            if content[-1:] == b'/':
+            if content[-1:] == b"/":
                 # This is an empty element
                 empty = True
                 content = content[:-1]
@@ -306,27 +332,27 @@ class XmlDecoder:
         Returns:
             A Node object representing the root of the XML document.
         """
-        state = 'text'
-        text = b''
-        node = b''
+        state = "text"
+        text = b""
+        node = b""
 
         while True:
             c = self.stream.read_byte()
 
             if c is None:
                 return self.root
-            elif state == 'text':
-                if c == b'<':
+            elif state == "text":
+                if c == b"<":
                     self.__text(text)
-                    state = 'node'
-                    node = b''
+                    state = "node"
+                    node = b""
                 else:
                     text = text + c
-            elif state == 'node':
-                if c == b'>':
+            elif state == "node":
+                if c == b">":
                     self.__handle_node(node)
-                    state = 'text'
-                    text = b''
+                    state = "text"
+                    text = b""
                 else:
                     node = node + c
 
@@ -345,7 +371,7 @@ class XmlEncoder:
         self.encoding = encoding
 
     def get_data(self) -> bytes:
-        magic = f'<?xml version="1.0" encoding="{self.encoding}"?>'.encode('ascii')
+        magic = f'<?xml version="1.0" encoding="{self.encoding}"?>'.encode("ascii")
         payload = self.to_xml(self.tree)
 
         return magic + payload
@@ -366,98 +392,118 @@ class XmlEncoder:
             # Represent type and length
             if node.is_array:
                 if node.value is None:
-                    attrs_dict['__count'] = '0'
+                    attrs_dict["__count"] = "0"
                 else:
-                    attrs_dict['__count'] = str(len(node.value))
-                order.insert(0, '__count')
-            attrs_dict['__type'] = node.data_type
-            order.insert(0, '__type')
+                    attrs_dict["__count"] = str(len(node.value))
+                order.insert(0, "__count")
+            attrs_dict["__type"] = node.data_type
+            order.insert(0, "__type")
 
-        def escape(val: Any, attr: bool=False) -> bytes:
+        def escape(val: Any, attr: bool = False) -> bytes:
             if isinstance(val, str):
-                val = val.replace('&', '&amp;')
-                val = val.replace('<', '&lt;')
-                val = val.replace('>', '&gt;')
-                val = val.replace('\'', '&apos;')
-                val = val.replace('\"', '&quot;')
+                val = val.replace("&", "&amp;")
+                val = val.replace("<", "&lt;")
+                val = val.replace(">", "&gt;")
+                val = val.replace("'", "&apos;")
+                val = val.replace('"', "&quot;")
                 if attr:
-                    val = val.replace('\r', '&#13;')
-                    val = val.replace('\n', '&#10;')
+                    val = val.replace("\r", "&#13;")
+                    val = val.replace("\n", "&#10;")
 
                 return val.encode(self.encoding)
             else:
-                return str(val).encode('ascii')
+                return str(val).encode("ascii")
 
         if attrs_dict:
-            attrs = b' ' + b' '.join([b''.join([attr.encode('ascii'), b'="', escape(attrs_dict[attr], attr=True), b'"']) for attr in order])
+            attrs = b" " + b" ".join(
+                [
+                    b"".join(
+                        [
+                            attr.encode("ascii"),
+                            b'="',
+                            escape(attrs_dict[attr], attr=True),
+                            b'"',
+                        ]
+                    )
+                    for attr in order
+                ]
+            )
         else:
-            attrs = b''
+            attrs = b""
 
         if node.children:
             # Has children nodes
             children = [self.to_xml(child) for child in node.children]
-            string = b''.join([
-                b'<',
-                node.name.encode('ascii'),
-                attrs,
-                b'>',
-                b''.join(children),
-                b'</',
-                node.name.encode('ascii'),
-                b'>',
-            ])
+            string = b"".join(
+                [
+                    b"<",
+                    node.name.encode("ascii"),
+                    attrs,
+                    b">",
+                    b"".join(children),
+                    b"</",
+                    node.name.encode("ascii"),
+                    b">",
+                ]
+            )
         else:
             # Doesn't have children nodes
             if node.data_length == 0:
                 # Void node
-                string = b''.join([
-                    b'<',
-                    node.name.encode('ascii'),
-                    attrs,
-                    b'/>',
-                ])
+                string = b"".join(
+                    [
+                        b"<",
+                        node.name.encode("ascii"),
+                        attrs,
+                        b"/>",
+                    ]
+                )
             else:
                 # Node with values
                 if node.is_array or node.is_composite:
                     if node.value is None:
-                        vals = ''
+                        vals = ""
                     else:
-                        if node.data_type == 'bool':
-                            vals = ' '.join([('1' if val else '0') for val in node.value])
+                        if node.data_type == "bool":
+                            vals = " ".join(
+                                [("1" if val else "0") for val in node.value]
+                            )
                         else:
-                            vals = ' '.join([str(val) for val in node.value])
-                    binary = vals.encode('ascii')
-                elif node.data_type == 'str':
+                            vals = " ".join([str(val) for val in node.value])
+                    binary = vals.encode("ascii")
+                elif node.data_type == "str":
                     binary = escape(node.value)
-                elif node.data_type == 'bool':
-                    binary = b'1' if node.value else b'0'
-                elif node.data_type == 'ip4':
-                    vals = '.'.join([str(val) for val in node.value])
-                    binary = vals.encode('ascii')
-                elif node.data_type == 'bin':
+                elif node.data_type == "bool":
+                    binary = b"1" if node.value else b"0"
+                elif node.data_type == "ip4":
+                    vals = ".".join([str(val) for val in node.value])
+                    binary = vals.encode("ascii")
+                elif node.data_type == "bin":
                     # Convert to a hex string
                     def bin_to_hex(binary: int) -> str:
                         val = hex(binary)[2:]
                         while len(val) < 2:
-                            val = '0' + val
+                            val = "0" + val
                         return val
 
-                    vals = ''.join([bin_to_hex(v) for v in node.value])
-                    binary = vals.encode('ascii')
+                    vals = "".join([bin_to_hex(v) for v in node.value])
+                    binary = vals.encode("ascii")
                 else:
                     vals = str(node.value)
-                    binary = vals.encode('ascii')
+                    binary = vals.encode("ascii")
 
-                string = b''.join([
-                    b'<',
-                    node.name.encode('ascii'),
-                    attrs,
-                    b'>',
-                    binary,
-                    b'</',
-                    node.name.encode('ascii'),
-                    b'>',
-                ])
+                string = b"".join(
+                    [
+                        b"<",
+                        node.name.encode("ascii"),
+                        attrs,
+                        b">",
+                        binary,
+                        b"</",
+                        node.name.encode("ascii"),
+                        b">",
+                    ]
+                )
 
         return string
 
@@ -466,10 +512,11 @@ class XmlEncoding:
     """
     Wrapper class representing an XML encoding.
     """
+
     # The string values should match the constants in EAmuseProtocol.
     # I have no better way to link these than to write this comment,
     # as otherwise we would have a circular dependency.
-    ACCEPTED_ENCODINGS: Final[List[str]] = ['shift-jis', 'euc-jp', 'utf-8', 'ascii']
+    ACCEPTED_ENCODINGS: Final[List[str]] = ["shift-jis", "euc-jp", "utf-8", "ascii"]
 
     def __init__(self) -> None:
         """
@@ -489,10 +536,10 @@ class XmlEncoding:
             A new encoding string that is equivalent but normalized.
         """
         encoding = encoding.lower()
-        encoding = encoding.replace('_', '-')
+        encoding = encoding.replace("_", "-")
         return encoding
 
-    def decode(self, data: bytes, skip_on_exceptions: bool=False) -> Optional[Node]:
+    def decode(self, data: bytes, skip_on_exceptions: bool = False) -> Optional[Node]:
         """
         Given a data blob, decode the data with the current encoding. Will set
         the class property value 'encoding' to the encoding used on the last
@@ -506,7 +553,7 @@ class XmlEncoding:
             if we couldn't decode the object for some reason.
         """
         # Always assume this, unless we get told otherwise in the XML
-        self.encoding = 'shift-jis'
+        self.encoding = "shift-jis"
 
         # Decode property/value
         try:
@@ -520,7 +567,7 @@ class XmlEncoding:
             else:
                 raise
 
-    def encode(self, tree: Node, encoding: Optional[str]=None) -> bytes:
+    def encode(self, tree: Node, encoding: Optional[str] = None) -> bytes:
         """
         Given a tree of Node objects, encode the data with the current encoding.
 
@@ -536,7 +583,7 @@ class XmlEncoding:
         if encoding is None:
             encoding = self.encoding
         if encoding is None:
-            raise XmlEncodingException('Unknown encoding')
+            raise XmlEncodingException("Unknown encoding")
 
         encoding = self.__fix_encoding(encoding)
         if encoding not in XmlEncoding.ACCEPTED_ENCODINGS:

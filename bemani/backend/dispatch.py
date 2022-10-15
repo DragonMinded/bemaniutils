@@ -61,7 +61,7 @@ class Dispatch:
         """
         self.log("Received request:\n{}", tree)
 
-        if tree.name != 'call':
+        if tree.name != "call":
             # Invalid request
             self.log("Invalid root node {}", tree.name)
             return None
@@ -71,15 +71,17 @@ class Dispatch:
             self.log("Invalid number of children for root node")
             return None
 
-        modelstring = tree.attribute('model')
+        modelstring = tree.attribute("model")
         model = Model.from_modelstring(modelstring)
-        pcbid = tree.attribute('srcid')
+        pcbid = tree.attribute("srcid")
 
         # If we are enforcing, bail out if we don't recognize thie ID
         pcb = self.__data.local.machine.get_machine(pcbid)
         if self.__config.server.enforce_pcbid and pcb is None:
             self.log("Unrecognized PCBID {}", pcbid)
-            raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config.client.address)
+            raise UnrecognizedPCBIDException(
+                pcbid, modelstring, self.__config.client.address
+            )
 
         # If we don't have a Machine, but we aren't enforcing, we must create it
         if pcb is None:
@@ -88,9 +90,9 @@ class Dispatch:
         request = tree.children[0]
 
         config = self.__config.clone()
-        config['machine'] = {
-            'pcbid': pcbid,
-            'arcade': pcb.arcade,
+        config["machine"] = {
+            "pcbid": pcbid,
+            "arcade": pcb.arcade,
         }
 
         # If the machine we looked up is in an arcade, override the global
@@ -98,22 +100,29 @@ class Dispatch:
         if pcb.arcade is not None:
             arcade = self.__data.local.machine.get_arcade(pcb.arcade)
             if arcade is not None:
-                config['paseli']['enabled'] = arcade.data.get_bool('paseli_enabled')
-                config['paseli']['infinite'] = arcade.data.get_bool('paseli_infinite')
-                if arcade.data.get_bool('mask_services_url'):
+                config["paseli"]["enabled"] = arcade.data.get_bool("paseli_enabled")
+                config["paseli"]["infinite"] = arcade.data.get_bool("paseli_infinite")
+                if arcade.data.get_bool("mask_services_url"):
                     # Mask the address, no matter what the server settings are
-                    config['server']['uri'] = None
+                    config["server"]["uri"] = None
 
         game = Base.create(self.__data, config, model)
-        method = request.attribute('method')
+        method = request.attribute("method")
         response = None
 
         # If we are enforcing, make sure the PCBID isn't specified to be
         # game-specific
         if config.server.enforce_pcbid and pcb.game is not None:
             if pcb.game != game.game:
-                self.log("PCBID {} assigned to game {}, but connected from game {}", pcbid, pcb.game, game.game)
-                raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
+                self.log(
+                    "PCBID {} assigned to game {}, but connected from game {}",
+                    pcbid,
+                    pcb.game,
+                    game.game,
+                )
+                raise UnrecognizedPCBIDException(
+                    pcbid, modelstring, config.client.address
+                )
             if pcb.version is not None:
                 if pcb.version > 0 and pcb.version != game.version:
                     self.log(
@@ -124,7 +133,9 @@ class Dispatch:
                         game.game,
                         game.version,
                     )
-                    raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
+                    raise UnrecognizedPCBIDException(
+                        pcbid, modelstring, config.client.address
+                    )
                 if pcb.version < 0 and (-pcb.version) < game.version:
                     self.log(
                         "PCBID {} assigned to game {} maximum version {}, but connected from game {} version {}",
@@ -134,11 +145,13 @@ class Dispatch:
                         game.game,
                         game.version,
                     )
-                    raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
+                    raise UnrecognizedPCBIDException(
+                        pcbid, modelstring, config.client.address
+                    )
 
         # First, try to handle with specific service/method function
         try:
-            handler = getattr(game, f'handle_{request.name}_{method}_request')
+            handler = getattr(game, f"handle_{request.name}_{method}_request")
         except AttributeError:
             handler = None
         if handler is not None:
@@ -147,7 +160,7 @@ class Dispatch:
         if response is None:
             # Now, try to pass it off to a generic service handler
             try:
-                handler = getattr(game, f'handle_{request.name}_requests')
+                handler = getattr(game, f"handle_{request.name}_requests")
             except AttributeError:
                 handler = None
             if handler is not None:
@@ -159,12 +172,12 @@ class Dispatch:
             return None
 
         # Make sure we have a status value if one wasn't provided
-        if 'status' not in response.attributes:
-            response.set_attribute('status', str(Status.SUCCESS))
+        if "status" not in response.attributes:
+            response.set_attribute("status", str(Status.SUCCESS))
 
-        root = Node.void('response')
+        root = Node.void("response")
         root.add_child(response)
-        root.set_attribute('dstid', pcbid)
+        root.set_attribute("dstid", pcbid)
 
         self.log("Sending response:\n{}", root)
 

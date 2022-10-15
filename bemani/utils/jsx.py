@@ -9,8 +9,16 @@ SCRIPT_PATH: str = os.path.dirname(os.path.realpath(__file__))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Prebuild all JSX files so they can be statically served by nginx or similar.")
-    parser.add_argument("-d", "--output-directory", help="Output directory for the JSX files.", type=str, default="./build/jsx")
+    parser = argparse.ArgumentParser(
+        description="Prebuild all JSX files so they can be statically served by nginx or similar."
+    )
+    parser.add_argument(
+        "-d",
+        "--output-directory",
+        help="Output directory for the JSX files.",
+        type=str,
+        default="./build/jsx",
+    )
     args = parser.parse_args()
 
     outdir = os.path.abspath(args.output_directory)
@@ -30,7 +38,7 @@ def main() -> None:
                 if fname.endswith(".react.js"):
                     fullpath = os.path.join(dirpath, fname)
                     if fullpath.startswith(basedir):
-                        files.append(fullpath[len(basedir):])
+                        files.append(fullpath[len(basedir) :])
             for dname in dnames:
                 if dname == "." or dname == "..":
                     continue
@@ -43,11 +51,13 @@ def main() -> None:
         outfile = os.path.join(outdir, fname)
         os.makedirs(os.path.dirname(outfile), exist_ok=True)
 
-        with open(infile, 'rb') as f:
-            jsx = transformer.transform_string(polyfill_fragments(f.read().decode('utf-8'))).encode('utf-8')
+        with open(infile, "rb") as f:
+            jsx = transformer.transform_string(
+                polyfill_fragments(f.read().decode("utf-8"))
+            ).encode("utf-8")
 
         print(f"Writing {outfile}...")
-        with open(outfile, 'wb') as f:
+        with open(outfile, "wb") as f:
             f.write(jsx)
 
 

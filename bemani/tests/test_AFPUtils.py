@@ -5,7 +5,6 @@ from bemani.utils.afputils import parse_intlist, adjust_background_loop
 
 
 class TestAFPUtils(unittest.TestCase):
-
     def test_parse_intlist(self) -> None:
         # Simple
         self.assertEqual(

@@ -66,12 +66,17 @@ class PopnMusicFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for gamecode in ['G15', 'H16', 'I17', 'J39', 'K39', 'L39', 'M39']:
+        for gamecode in ["G15", "H16", "I17", "J39", "K39", "L39", "M39"]:
             Base.register(gamecode, PopnMusicFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
-
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional[Base]:
         def version_from_date(date: int) -> Optional[int]:
             if date <= 2014061900:
                 return VersionConstants.POPN_MUSIC_SUNNY_PARK
@@ -87,26 +92,34 @@ class PopnMusicFactory(Factory):
                 return VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES
             return None
 
-        if model.gamecode == 'G15':
+        if model.gamecode == "G15":
             return PopnMusicAdventure(data, config, model)
-        if model.gamecode == 'H16':
+        if model.gamecode == "H16":
             return PopnMusicParty(data, config, model)
-        if model.gamecode == 'I17':
+        if model.gamecode == "I17":
             return PopnMusicTheMovie(data, config, model)
-        if model.gamecode == 'J39':
+        if model.gamecode == "J39":
             return PopnMusicSengokuRetsuden(data, config, model)
-        if model.gamecode == 'K39':
+        if model.gamecode == "K39":
             return PopnMusicTuneStreet(data, config, model)
-        if model.gamecode == 'L39':
+        if model.gamecode == "L39":
             return PopnMusicFantasia(data, config, model)
-        if model.gamecode == 'M39':
+        if model.gamecode == "M39":
             if model.version is None:
                 if parentmodel is None:
                     return None
 
                 # We have no way to tell apart newer versions. However, we can make
                 # an educated guess if we happen to be summoned for old profile lookup.
-                if parentmodel.gamecode not in ['G15', 'H16', 'I17', 'J39', 'K39', 'L39', 'M39']:
+                if parentmodel.gamecode not in [
+                    "G15",
+                    "H16",
+                    "I17",
+                    "J39",
+                    "K39",
+                    "L39",
+                    "M39",
+                ]:
                     return None
                 parentversion = version_from_date(parentmodel.version)
                 if parentversion == VersionConstants.POPN_MUSIC_LAPISTORIA:

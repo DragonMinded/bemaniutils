@@ -39,27 +39,29 @@ class Shape:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'vertex_points': [p.as_dict(*args, **kwargs) for p in self.vertex_points],
-            'tex_points': [p.as_dict(*args, **kwargs) for p in self.tex_points],
-            'tex_colors': [c.as_dict(*args, **kwargs) for c in self.tex_colors],
-            'draw_params': [d.as_dict(*args, **kwargs) for d in self.draw_params],
-            'bounds': self.bounds.as_dict(args, kwargs),
+            "name": self.name,
+            "vertex_points": [p.as_dict(*args, **kwargs) for p in self.vertex_points],
+            "tex_points": [p.as_dict(*args, **kwargs) for p in self.tex_points],
+            "tex_colors": [c.as_dict(*args, **kwargs) for c in self.tex_colors],
+            "draw_params": [d.as_dict(*args, **kwargs) for d in self.draw_params],
+            "bounds": self.bounds.as_dict(args, kwargs),
         }
 
     def __repr__(self) -> str:
-        return os.linesep.join([
-            *[f"vertex point: {vertex}" for vertex in self.vertex_points],
-            *[f"tex point: {tex}" for tex in self.tex_points],
-            *[f"tex color: {color}" for color in self.tex_colors],
-            *[f"draw params: {params}" for params in self.draw_params],
-            *[f"bounds: {self.bounds}"],
-        ])
+        return os.linesep.join(
+            [
+                *[f"vertex point: {vertex}" for vertex in self.vertex_points],
+                *[f"tex point: {tex}" for tex in self.tex_points],
+                *[f"tex color: {color}" for color in self.tex_colors],
+                *[f"draw params: {params}" for params in self.draw_params],
+                *[f"bounds: {self.bounds}"],
+            ]
+        )
 
     def get_until_null(self, offset: int) -> bytes:
         out = b""
         while self.data[offset] != 0:
-            out += self.data[offset:(offset + 1)]
+            out += self.data[offset : (offset + 1)]
             offset += 1
         return out
 
@@ -85,12 +87,25 @@ class Shape:
         if fileflags & ~0xC:
             raise Exception(f"Unexpected file flags {fileflags} in GE2D structure!")
 
-        vertex_count, tex_count, color_count, label_count, render_params_count, _ = struct.unpack(
+        (
+            vertex_count,
+            tex_count,
+            color_count,
+            label_count,
+            render_params_count,
+            _,
+        ) = struct.unpack(
             f"{endian}HHHHHH",
             self.data[20:32],
         )
 
-        vertex_offset, tex_offset, color_offset, label_offset, render_params_offset = struct.unpack(
+        (
+            vertex_offset,
+            tex_offset,
+            color_offset,
+            label_offset,
+            render_params_offset,
+        ) = struct.unpack(
             f"{endian}IIIII",
             self.data[32:52],
         )
@@ -101,7 +116,9 @@ class Shape:
             # point and there are only 8 of them, making a rectangle.
             for vertexno in range(vertex_count):
                 vertexno_offset = vertex_offset + (8 * vertexno)
-                x, y = struct.unpack(f"{endian}ff", self.data[vertexno_offset:vertexno_offset + 8])
+                x, y = struct.unpack(
+                    f"{endian}ff", self.data[vertexno_offset : vertexno_offset + 8]
+                )
                 vertex_points.append(Point(x, y))
         self.vertex_points = vertex_points
 
@@ -109,7 +126,9 @@ class Shape:
         if tex_offset != 0:
             for texno in range(tex_count):
                 texno_offset = tex_offset + (8 * texno)
-                x, y = struct.unpack(f"{endian}ff", self.data[texno_offset:texno_offset + 8])
+                x, y = struct.unpack(
+                    f"{endian}ff", self.data[texno_offset : texno_offset + 8]
+                )
                 tex_points.append(Point(x, y))
         self.tex_points = tex_points
 
@@ -117,7 +136,9 @@ class Shape:
         if color_offset != 0:
             for colorno in range(color_count):
                 colorno_offset = color_offset + (4 * colorno)
-                rgba = struct.unpack(f"{endian}I", self.data[colorno_offset:colorno_offset + 4])[0]
+                rgba = struct.unpack(
+                    f"{endian}I", self.data[colorno_offset : colorno_offset + 4]
+                )[0]
                 color = Color(
                     a=(rgba & 0xFF) / 255.0,
                     b=((rgba >> 8) & 0xFF) / 255.0,
@@ -131,7 +152,9 @@ class Shape:
         if label_offset != 0:
             for labelno in range(label_count):
                 labelno_offset = label_offset + (4 * labelno)
-                labelptr = struct.unpack(f"{endian}I", self.data[labelno_offset:labelno_offset + 4])[0]
+                labelptr = struct.unpack(
+                    f"{endian}I", self.data[labelno_offset : labelno_offset + 4]
+                )[0]
 
                 bytedata = self.get_until_null(labelptr)
                 labels.append(descramble_text(bytedata, text_obfuscated))
@@ -175,19 +198,34 @@ class Shape:
             # are used when drawing shapes, whether to use a blend value or draw a primitive, etc.
             for render_paramsno in range(render_params_count):
                 render_paramsno_offset = render_params_offset + (16 * render_paramsno)
-                mode, flags, tex1, tex2, trianglecount, unk, rgba, triangleoffset = struct.unpack(
+                (
+                    mode,
+                    flags,
+                    tex1,
+                    tex2,
+                    trianglecount,
+                    unk,
+                    rgba,
+                    triangleoffset,
+                ) = struct.unpack(
                     f"{endian}BBBBHHII",
-                    self.data[(render_paramsno_offset):(render_paramsno_offset + 16)]
+                    self.data[(render_paramsno_offset) : (render_paramsno_offset + 16)],
                 )
 
                 if mode != 4:
                     raise Exception("Unexpected mode in GE2D structure!")
                 if (flags & 0x2) and not labels:
-                    raise Exception("GE2D structure has a texture, but no region labels present!")
+                    raise Exception(
+                        "GE2D structure has a texture, but no region labels present!"
+                    )
                 if (flags & 0x2) and (tex1 == 0xFF):
-                    raise Exception("GE2D structure requests a texture, but no texture pointer present!")
+                    raise Exception(
+                        "GE2D structure requests a texture, but no texture pointer present!"
+                    )
                 if tex2 != 0xFF:
-                    raise Exception("GE2D structure requests a second texture, but we don't support this!")
+                    raise Exception(
+                        "GE2D structure requests a second texture, but we don't support this!"
+                    )
                 if unk != 0x0:
                     raise Exception("Unhandled unknown data in GE2D structure!")
 
@@ -200,8 +238,17 @@ class Shape:
 
                 verticies: List[int] = []
                 for render_paramstriangleno in range(trianglecount):
-                    render_paramstriangleno_offset = triangleoffset + (2 * render_paramstriangleno)
-                    tex_offset = struct.unpack(f"{endian}H", self.data[render_paramstriangleno_offset:(render_paramstriangleno_offset + 2)])[0]
+                    render_paramstriangleno_offset = triangleoffset + (
+                        2 * render_paramstriangleno
+                    )
+                    tex_offset = struct.unpack(
+                        f"{endian}H",
+                        self.data[
+                            render_paramstriangleno_offset : (
+                                render_paramstriangleno_offset + 2
+                            )
+                        ],
+                    )[0]
                     verticies.append(tex_offset)
 
                 # Seen bits are 0x1, 0x2, 0x4, 0x8 so far.
@@ -247,10 +294,10 @@ class DrawParams:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'flags': self.flags,
-            'region': self.region,
-            'vertexes': self.vertexes,
-            'blend': self.blend.as_dict(*args, **kwargs) if self.blend else None,
+            "flags": self.flags,
+            "region": self.region,
+            "vertexes": self.vertexes,
+            "blend": self.blend.as_dict(*args, **kwargs) if self.blend else None,
         }
 
     def __repr__(self) -> str:

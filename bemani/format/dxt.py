@@ -21,7 +21,9 @@ class DXTBuffer:
         self.block_countx = self.width // 4
         self.block_county = self.height // 4
 
-        self.decompressed_buffer: List[Optional[bytes]] = [None] * ((width * height) * 2)
+        self.decompressed_buffer: List[Optional[bytes]] = [None] * (
+            (width * height) * 2
+        )
 
     def unpackRGB(self, packed: int) -> Tuple[int, int, int]:
         # This function converts RGB565 format to raw pixels
@@ -37,10 +39,12 @@ class DXTBuffer:
 
     def swapbytes(self, data: bytes, swap: bool) -> bytes:
         if swap:
-            return b"".join([
-                data[(x + 1):(x + 2)] + data[x:(x + 1)]
-                for x in range(0, len(data), 2)
-            ])
+            return b"".join(
+                [
+                    data[(x + 1) : (x + 2)] + data[x : (x + 1)]
+                    for x in range(0, len(data), 2)
+                ]
+            )
         return data
 
     def DXT5Decompress(self, filedata: bytes, swap: bool = False) -> bytes:
@@ -49,7 +53,9 @@ class DXTBuffer:
         for row in range(self.block_county):
             for col in range(self.block_countx):
                 # Get the alpha values, and color lookup table
-                a0, a1, acode0, acode1, c0, c1, ctable = struct.unpack("<BBHIHHI", self.swapbytes(file.read(16), swap))
+                a0, a1, acode0, acode1, c0, c1, ctable = struct.unpack(
+                    "<BBHIHHI", self.swapbytes(file.read(16), swap)
+                )
 
                 # The 4x4 Lookup table loop
                 for j in range(4):
@@ -65,7 +71,7 @@ class DXTBuffer:
                             self.getAlpha(i, j, a0, a1, (acode1 << 16) | acode0),
                         )  # Set the color for the current pixel
 
-        return b''.join([x for x in self.decompressed_buffer if x is not None])
+        return b"".join([x for x in self.decompressed_buffer if x is not None])
 
     def DXT1Decompress(self, filedata: bytes, swap: bool = False) -> bytes:
         # Loop through each block and decompress it
@@ -74,7 +80,9 @@ class DXTBuffer:
             for col in range(self.block_countx):
 
                 # Color 1 color 2, color look up table
-                c0, c1, ctable = struct.unpack("<HHI", self.swapbytes(file.read(8), swap))
+                c0, c1, ctable = struct.unpack(
+                    "<HHI", self.swapbytes(file.read(8), swap)
+                )
 
                 # The 4x4 Lookup table loop
                 for j in range(4):
@@ -90,7 +98,7 @@ class DXTBuffer:
                             255,
                         )  # Set the color for the current pixel
 
-        return b''.join([x for x in self.decompressed_buffer if x is not None])
+        return b"".join([x for x in self.decompressed_buffer if x is not None])
 
     def getColors(
         self,
@@ -103,7 +111,9 @@ class DXTBuffer:
         c1: int,
         alpha: int,
     ) -> None:
-        code = (ctable >> (2 * ((4 * j) + i))) & 0x03  # Get the color of the current pixel
+        code = (
+            ctable >> (2 * ((4 * j) + i))
+        ) & 0x03  # Get the color of the current pixel
         pixel_color = None
 
         r0, g0, b0 = self.unpackRGB(c0)
@@ -116,19 +126,29 @@ class DXTBuffer:
             pixel_color = (r1, g1, b1, alpha)
         if code == 2:
             if c0 > c1:
-                pixel_color = ((2 * r0 + r1) // 3, (2 * g0 + g1) // 3, (2 * b0 + b1) // 3, alpha)
+                pixel_color = (
+                    (2 * r0 + r1) // 3,
+                    (2 * g0 + g1) // 3,
+                    (2 * b0 + b1) // 3,
+                    alpha,
+                )
             else:
                 pixel_color = ((r0 + r1) // 2, (g0 + g1) // 2, (b0 + b1) // 2, alpha)
         if code == 3:
             if c0 > c1:
-                pixel_color = ((r0 + 2 * r1) // 3, (g0 + 2 * g1) // 3, (b0 + 2 * b1) // 3, alpha)
+                pixel_color = (
+                    (r0 + 2 * r1) // 3,
+                    (g0 + 2 * g1) // 3,
+                    (b0 + 2 * b1) // 3,
+                    alpha,
+                )
             else:
                 pixel_color = (0, 0, 0, alpha)
 
         # While not surpassing the image dimensions, assign pixels the colors.
         if pixel_color is not None and (x + i) < self.width and (y + j) < self.height:
-            self.decompressed_buffer[(y + j) * self.width + (x + i)] = (
-                struct.pack('<BBBB', *pixel_color)
+            self.decompressed_buffer[(y + j) * self.width + (x + i)] = struct.pack(
+                "<BBBB", *pixel_color
             )
 
     def getAlpha(self, i: int, j: int, a0: int, a1: int, acode: int) -> int:

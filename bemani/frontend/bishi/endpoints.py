@@ -13,42 +13,40 @@ from bemani.frontend.types import g
 
 
 bishi_pages = Blueprint(
-    'bishi_pages',
+    "bishi_pages",
     __name__,
-    url_prefix=f'/{GameConstants.BISHI_BASHI.value}',
+    url_prefix=f"/{GameConstants.BISHI_BASHI.value}",
     template_folder=templates_location,
     static_folder=static_location,
 )
 
 
-@bishi_pages.route('/players')
+@bishi_pages.route("/players")
 @loginrequired
 def viewplayers() -> Response:
     frontend = BishiBashiFrontend(g.data, g.config, g.cache)
     return render_react(
-        'All BishiBashi Players',
-        'bishi/allplayers.react.js',
+        "All BishiBashi Players",
+        "bishi/allplayers.react.js",
+        {"players": frontend.get_all_players()},
         {
-            'players': frontend.get_all_players()
-        },
-        {
-            'refresh': url_for('bishi_pages.listplayers'),
-            'player': url_for('bishi_pages.viewplayer', userid=-1),
+            "refresh": url_for("bishi_pages.listplayers"),
+            "player": url_for("bishi_pages.viewplayer", userid=-1),
         },
     )
 
 
-@bishi_pages.route('/players/list')
+@bishi_pages.route("/players/list")
 @jsonify
 @loginrequired
 def listplayers() -> Dict[str, Any]:
     frontend = BishiBashiFrontend(g.data, g.config, g.cache)
     return {
-        'players': frontend.get_all_players(),
+        "players": frontend.get_all_players(),
     }
 
 
-@bishi_pages.route('/players/<int:userid>')
+@bishi_pages.route("/players/<int:userid>")
 @loginrequired
 def viewplayer(userid: UserID) -> Response:
     frontend = BishiBashiFrontend(g.data, g.config, g.cache)
@@ -59,20 +57,22 @@ def viewplayer(userid: UserID) -> Response:
 
     return render_react(
         f'{djinfo[latest_version]["name"]}\'s BishiBashi Profile',
-        'bishi/player.react.js',
+        "bishi/player.react.js",
         {
-            'playerid': userid,
-            'own_profile': userid == g.userID,
-            'player': djinfo,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "playerid": userid,
+            "own_profile": userid == g.userID,
+            "player": djinfo,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'refresh': url_for('bishi_pages.listplayer', userid=userid),
+            "refresh": url_for("bishi_pages.listplayer", userid=userid),
         },
     )
 
 
-@bishi_pages.route('/players/<int:userid>/list')
+@bishi_pages.route("/players/<int:userid>/list")
 @jsonify
 @loginrequired
 def listplayer(userid: UserID) -> Dict[str, Any]:
@@ -80,11 +80,11 @@ def listplayer(userid: UserID) -> Dict[str, Any]:
     djinfo = frontend.get_all_player_info([userid])[userid]
 
     return {
-        'player': djinfo,
+        "player": djinfo,
     }
 
 
-@bishi_pages.route('/options')
+@bishi_pages.route("/options")
 @loginrequired
 def viewsettings() -> Response:
     frontend = BishiBashiFrontend(g.data, g.config, g.cache)
@@ -94,35 +94,37 @@ def viewsettings() -> Response:
         abort(404)
 
     return render_react(
-        'BishiBashi Game Settings',
-        'bishi/settings.react.js',
+        "BishiBashi Game Settings",
+        "bishi/settings.react.js",
         {
-            'player': djinfo,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "player": djinfo,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'updatename': url_for('bishi_pages.updatename'),
+            "updatename": url_for("bishi_pages.updatename"),
         },
     )
 
 
-@bishi_pages.route('/options/name/update', methods=['POST'])
+@bishi_pages.route("/options/name/update", methods=["POST"])
 @jsonify
 @loginrequired
 def updatename() -> Dict[str, Any]:
     frontend = BishiBashiFrontend(g.data, g.config, g.cache)
-    version = int(request.get_json()['version'])
-    name = request.get_json()['name']
+    version = int(request.get_json()["version"])
+    name = request.get_json()["name"]
     user = g.data.local.user.get_user(g.userID)
     if user is None:
-        raise Exception('Unable to find user to update!')
+        raise Exception("Unable to find user to update!")
 
     # Grab profile and update dj name
     profile = g.data.local.user.get_profile(GameConstants.BISHI_BASHI, version, user.id)
     if profile is None:
-        raise Exception('Unable to find profile to update!')
+        raise Exception("Unable to find profile to update!")
     if len(name) == 0 or len(name) > 6:
-        raise Exception('Invalid profile name!')
+        raise Exception("Invalid profile name!")
 
     # Convert lowercase to uppercase. We allow lowercase widetext in
     # the JS frontend to allow for Windows IME input of hiragana/katakana.
@@ -132,44 +134,48 @@ def updatename() -> Dict[str, Any]:
             return chr(i - (0xFF41 - 0xFF21))
         else:
             return char
-    name = ''.join([conv(a) for a in name])
 
-    if re.match(
-        "^[" +
-        "\uFF20-\uFF3A" +  # widetext A-Z, @
-        "\uFF10-\uFF19" +  # widetext 0-9
-        "\u3041-\u308D\u308F\u3092\u3093" +  # hiragana
-        "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC" +  # katakana
-        "\u3000" +  # widetext blank space
-        "\u301C" +  # widetext ~
-        "\u30FB" +  # widetext middot
-        "\u30FC" +  # widetext long dash
-        "\u2212" +  # widetext short dash
-        "\u2605" +  # widetext heavy star
-        "\uFF01" +  # widetext !
-        "\uFF03" +  # widetext #
-        "\uFF04" +  # widetext $
-        "\uFF05" +  # widetext %
-        "\uFF06" +  # widetext &
-        "\uFF08" +  # widetext (
-        "\uFF09" +  # widetext )
-        "\uFF0A" +  # widetext *
-        "\uFF0B" +  # widetext +
-        "\uFF0F" +  # widetext /
-        "\uFF1C" +  # widetext <
-        "\uFF1D" +  # widetext =
-        "\uFF1E" +  # widetext >
-        "\uFF1F" +  # widetext ?
-        "\uFFE5" +  # widetext Yen symbol
-        "]*$",
-        name,
-    ) is None:
-        raise Exception('Invalid profile name!')
+    name = "".join([conv(a) for a in name])
+
+    if (
+        re.match(
+            "^["
+            + "\uFF20-\uFF3A"
+            + "\uFF10-\uFF19"  # widetext A-Z, @
+            + "\u3041-\u308D\u308F\u3092\u3093"  # widetext 0-9
+            + "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC"  # hiragana
+            + "\u3000"  # katakana
+            + "\u301C"  # widetext blank space
+            + "\u30FB"  # widetext ~
+            + "\u30FC"  # widetext middot
+            + "\u2212"  # widetext long dash
+            + "\u2605"  # widetext short dash
+            + "\uFF01"  # widetext heavy star
+            + "\uFF03"  # widetext !
+            + "\uFF04"  # widetext #
+            + "\uFF05"  # widetext $
+            + "\uFF06"  # widetext %
+            + "\uFF08"  # widetext &
+            + "\uFF09"  # widetext (
+            + "\uFF0A"  # widetext )
+            + "\uFF0B"  # widetext *
+            + "\uFF0F"  # widetext +
+            + "\uFF1C"  # widetext /
+            + "\uFF1D"  # widetext <
+            + "\uFF1E"  # widetext =
+            + "\uFF1F"  # widetext >
+            + "\uFFE5"  # widetext ?
+            + "]*$",  # widetext Yen symbol
+            name,
+        )
+        is None
+    ):
+        raise Exception("Invalid profile name!")
     profile = frontend.update_name(profile, name)
     g.data.local.user.put_profile(GameConstants.BISHI_BASHI, version, user.id, profile)
 
     # Return that we updated
     return {
-        'version': version,
-        'name': frontend.sanitize_name(name),
+        "version": version,
+        "name": frontend.sanitize_name(name),
     }

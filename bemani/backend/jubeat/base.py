@@ -28,9 +28,13 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     PLAY_MEDAL_FAILED: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_FAILED
     PLAY_MEDAL_CLEARED: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_CLEARED
-    PLAY_MEDAL_NEARLY_FULL_COMBO: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_FULL_COMBO
+    PLAY_MEDAL_NEARLY_FULL_COMBO: Final[
+        int
+    ] = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_FULL_COMBO
     PLAY_MEDAL_FULL_COMBO: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_FULL_COMBO
-    PLAY_MEDAL_NEARLY_EXCELLENT: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_EXCELLENT
+    PLAY_MEDAL_NEARLY_EXCELLENT: Final[
+        int
+    ] = DBConstants.JUBEAT_PLAY_MEDAL_NEARLY_EXCELLENT
     PLAY_MEDAL_EXCELLENT: Final[int] = DBConstants.JUBEAT_PLAY_MEDAL_EXCELLENT
 
     CHART_TYPE_BASIC: Final[int] = 0
@@ -42,7 +46,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
-        if model.rev == 'X' or model.rev == 'Y':
+        if model.rev == "X" or model.rev == "Y":
             self.omnimix = True
         else:
             self.omnimix = False
@@ -53,7 +57,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return DBConstants.OMNIMIX_VERSION_BUMP + self.version
         return self.version
 
-    def previous_version(self) -> Optional['JubeatBase']:
+    def previous_version(self) -> Optional["JubeatBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
@@ -69,8 +73,8 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             userid - The user ID we are saving the profile for.
             profile - A dictionary that should be looked up later using get_profile.
         """
-        if 'has_old_version' in profile:
-            del profile['has_old_version']
+        if "has_old_version" in profile:
+            del profile["has_old_version"]
         super().put_profile(userid, profile)
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
@@ -78,16 +82,20 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('gametop')
+        return Node.void("gametop")
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
+    def format_scores(
+        self, userid: UserID, profile: Profile, scores: List[Score]
+    ) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
         """
-        return Node.void('gametop')
+        return Node.void("gametop")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -113,7 +121,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now try to find out if the profile is new or old
         oldversion = self.previous_version()
         oldprofile = oldversion.get_profile(userid)
-        profile['has_old_version'] = oldprofile is not None
+        profile["has_old_version"] = oldprofile is not None
 
         # Now, return it
         return self.format_profile(userid, profile)
@@ -127,7 +135,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         if name is None:
-            name = 'なし'
+            name = "なし"
 
         # First, create and save the default profile
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
@@ -137,7 +145,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             refid,
             0,
             {
-                'name': name,
+                "name": name,
             },
         )
         self.put_profile(userid, profile)
@@ -145,7 +153,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now, reload and format the profile, looking up the has old version flag
         oldversion = self.previous_version()
         oldprofile = oldversion.get_profile(userid)
-        profile['has_old_version'] = oldprofile is not None
+        profile["has_old_version"] = oldprofile is not None
 
         return self.format_profile(userid, profile)
 
@@ -158,7 +166,9 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         if scores is None:
             return None
         profile = self.get_profile(userid)
@@ -175,9 +185,9 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         points: int,
         medal: int,
         combo: int,
-        ghost: Optional[List[int]]=None,
-        stats: Optional[Dict[str, int]]=None,
-        music_rate: Optional[int]=None,
+        ghost: Optional[List[int]] = None,
+        stats: Optional[Dict[str, int]] = None,
+        music_rate: Optional[int] = None,
     ) -> None:
         """
         Given various pieces of a score, update the user's high score and score
@@ -220,38 +230,38 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Replace medal with highest value
-        scoredata.replace_int('medal', max(scoredata.get_int('medal'), medal))
-        history.replace_int('medal', medal)
+        scoredata.replace_int("medal", max(scoredata.get_int("medal"), medal))
+        history.replace_int("medal", medal)
 
         # Increment counters based on medal
         if medal == self.PLAY_MEDAL_CLEARED:
-            scoredata.increment_int('clear_count')
+            scoredata.increment_int("clear_count")
         if medal == self.PLAY_MEDAL_FULL_COMBO:
-            scoredata.increment_int('full_combo_count')
+            scoredata.increment_int("full_combo_count")
         if medal == self.PLAY_MEDAL_EXCELLENT:
-            scoredata.increment_int('excellent_count')
+            scoredata.increment_int("excellent_count")
 
         # If we have a combo, replace it
-        scoredata.replace_int('combo', max(scoredata.get_int('combo'), combo))
-        history.replace_int('combo', combo)
+        scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+        history.replace_int("combo", combo)
 
         if stats is not None:
             if raised:
                 # We have stats, and there's a new high score, update the stats
-                scoredata.replace_dict('stats', stats)
-            history.replace_dict('stats', stats)
+                scoredata.replace_dict("stats", stats)
+            history.replace_dict("stats", stats)
 
         if ghost is not None:
             # Update the ghost regardless, but don't bother with it in history
-            scoredata.replace_int_array('ghost', len(ghost), ghost)
+            scoredata.replace_int_array("ghost", len(ghost), ghost)
 
         if music_rate is not None:
             if oldscore is not None:
-                if music_rate > oldscore.data.get_int('music_rate'):
-                    scoredata.replace_int('music_rate', music_rate)
+                if music_rate > oldscore.data.get_int("music_rate"):
+                    scoredata.replace_int("music_rate", music_rate)
             else:
-                scoredata.replace_int('music_rate', music_rate)
-            history.replace_int('music_rate', music_rate)
+                scoredata.replace_int("music_rate", music_rate)
+            history.replace_int("music_rate", music_rate)
 
         # Look up where this score was earned
         lid = self.get_machine_id()

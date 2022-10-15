@@ -20,18 +20,18 @@ def descramble_text(text: bytes, obfuscated: bool) -> str:
         if obfuscated and (text[0] - 0x20) > 0x7F:
             # Gotta do a weird demangling where we swap the
             # top bit.
-            return bytes(((x + 0x80) & 0xFF) for x in text).decode('ascii')
+            return bytes(((x + 0x80) & 0xFF) for x in text).decode("ascii")
         else:
-            return text.decode('ascii')
+            return text.decode("ascii")
     else:
         return ""
 
 
 def scramble_text(text: str, obfuscated: bool) -> bytes:
     if obfuscated:
-        return bytes(((x + 0x80) & 0xFF) for x in text.encode('ascii')) + b'\0'
+        return bytes(((x + 0x80) & 0xFF) for x in text.encode("ascii")) + b"\0"
     else:
-        return text.encode('ascii') + b'\0'
+        return text.encode("ascii") + b"\0"
 
 
 class TrackedCoverageManager:
@@ -69,11 +69,21 @@ class TrackedCoverage:
                 raise Exception(f"Already covered {hex(offset)}!")
             self.coverage[i] = True
 
-    def print_coverage(self, req_start: Optional[int] = None, req_end: Optional[int] = None) -> None:
+    def print_coverage(
+        self, req_start: Optional[int] = None, req_end: Optional[int] = None
+    ) -> None:
         for start, offset in self.get_uncovered_chunks(req_start, req_end):
-            print(f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)", file=sys.stderr)
+            print(
+                f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)",
+                file=sys.stderr,
+            )
 
-    def get_uncovered_chunks(self, req_start: Optional[int] = None, req_end: Optional[int] = None, adjust_offsets: bool = False) -> List[Tuple[int, int]]:
+    def get_uncovered_chunks(
+        self,
+        req_start: Optional[int] = None,
+        req_end: Optional[int] = None,
+        adjust_offsets: bool = False,
+    ) -> List[Tuple[int, int]]:
         # First offset that is not coverd in a run.
         start: Optional[int] = None
         chunks: List[Tuple[int, int]] = []
@@ -117,7 +127,12 @@ class TrackedCoverage:
                     end = req_end
 
             if adjust_offsets:
-                filtered_chunks.append((start - req_start if req_start else 0, end - req_start if req_start else 0))
+                filtered_chunks.append(
+                    (
+                        start - req_start if req_start else 0,
+                        end - req_start if req_start else 0,
+                    )
+                )
             else:
                 filtered_chunks.append((start, end))
         return filtered_chunks
@@ -150,7 +165,9 @@ class VerboseOutput:
         return VerboseOutputManager(self, verbose)
 
     def vprint(self, *args: Any, **kwargs: Any) -> None:
-        should_print = self.verbose or (kwargs.get('component', None) in self.components)
-        kwargs = {k: v for k, v in kwargs.items() if k != 'component'}
+        should_print = self.verbose or (
+            kwargs.get("component", None) in self.components
+        )
+        kwargs = {k: v for k, v in kwargs.items() if k != "component"}
         if should_print:
             print(*args, **kwargs, file=sys.stderr)

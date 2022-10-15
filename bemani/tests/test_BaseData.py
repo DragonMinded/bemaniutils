@@ -6,19 +6,18 @@ from bemani.data.mysql.base import BaseData
 
 
 class TestBaseData(unittest.TestCase):
-
     def test_basic_serialize(self) -> None:
         data = BaseData(Mock(), None)
 
         testdict = {
-            'test1': 1,
-            'test2': '2',
-            'test3': 3.3,
-            'test4': [1, 2, 3, 4],
-            'test5': {
-                'a': 'b',
+            "test1": 1,
+            "test2": "2",
+            "test3": 3.3,
+            "test4": [1, 2, 3, 4],
+            "test5": {
+                "a": "b",
             },
-            'testempty': [],
+            "testempty": [],
         }
 
         self.assertEqual(data.deserialize(data.serialize(testdict)), testdict)
@@ -27,7 +26,7 @@ class TestBaseData(unittest.TestCase):
         data = BaseData(Mock(), None)
 
         testdict = {
-            'bytes': b'\x01\x02\x03\x04\x05',
+            "bytes": b"\x01\x02\x03\x04\x05",
         }
 
         serialized = data.serialize(testdict)
@@ -38,12 +37,12 @@ class TestBaseData(unittest.TestCase):
         data = BaseData(Mock(), None)
 
         testdict = {
-            'sentinal': True,
-            'test': {
-                'sentinal': False,
-                'bytes': b'\x01\x02\x03\x04\x05',
-                'bytes2': b'',
-            }
+            "sentinal": True,
+            "test": {
+                "sentinal": False,
+                "bytes": b"\x01\x02\x03\x04\x05",
+                "bytes2": b"",
+            },
         }
 
         self.assertEqual(data.deserialize(data.serialize(testdict)), testdict)

@@ -15,7 +15,7 @@ class BishiBashiBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     game: GameConstants = GameConstants.BISHI_BASHI
 
-    def previous_version(self) -> Optional['BishiBashiBase']:
+    def previous_version(self) -> Optional["BishiBashiBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.

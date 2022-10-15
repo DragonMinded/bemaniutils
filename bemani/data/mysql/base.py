@@ -19,13 +19,13 @@ Table for storing session IDs, so a session ID can be used to look up an arbitra
 This is currently used for user logins, user and arcade PASELI sessions.
 """
 session = Table(
-    'session',
+    "session",
     metadata,
-    Column('id', Integer, nullable=False),
-    Column('type', String(32), nullable=False),
-    Column('session', String(32), nullable=False, unique=True),
-    Column('expiration', Integer),
-    mysql_charset='utf8mb4',
+    Column("id", Integer, nullable=False),
+    Column("type", String(32), nullable=False),
+    Column("session", String(32), nullable=False, unique=True),
+    Column("expiration", Integer),
+    mysql_charset="utf8mb4",
 )
 
 
@@ -33,7 +33,7 @@ class _BytesEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         if isinstance(obj, bytes):
             # We're abusing lists here, we have a mixed type
-            return ['__bytes__'] + [b for b in obj]  # type: ignore
+            return ["__bytes__"] + [b for b in obj]
         return json.JSONEncoder.default(self, obj)
 
 
@@ -56,7 +56,12 @@ class BaseData:
         self.__config = config
         self.__conn = conn
 
-    def execute(self, sql: str, params: Optional[Dict[str, Any]]=None, safe_write_operation: bool=False) -> CursorResult:
+    def execute(
+        self,
+        sql: str,
+        params: Optional[Dict[str, Any]] = None,
+        safe_write_operation: bool = False,
+    ) -> CursorResult:
         """
         Given a SQL string and some parameters, execute the query and return the result.
 
@@ -77,7 +82,7 @@ class BaseData:
             ]:
                 includes = all(s in lowered for s in write_statement_group)
                 if includes and not safe_write_operation:
-                    raise Exception('Read-only mode is active!')
+                    raise Exception("Read-only mode is active!")
         return self.__conn.execute(
             text(sql),
             params if params is not None else {},
@@ -105,7 +110,7 @@ class BaseData:
 
             if type(jd) == list:
                 # Could be serialized by us, could be a normal list.
-                if len(jd) >= 1 and jd[0] == '__bytes__':
+                if len(jd) >= 1 and jd[0] == "__bytes__":
                     # This is a serialized bytestring
                     return bytes(jd[1:])
 
@@ -132,15 +137,19 @@ class BaseData:
         """
         # Look up the user account, making sure to expire old sessions
         sql = "SELECT id FROM session WHERE session = :session AND type = :type AND expiration > :timestamp"
-        cursor = self.execute(sql, {'session': session, 'type': sesstype, 'timestamp': Time.now()})
+        cursor = self.execute(
+            sql, {"session": session, "type": sesstype, "timestamp": Time.now()}
+        )
         if cursor.rowcount != 1:
             # Couldn't find a user with this session
             return None
 
         result = cursor.fetchone()
-        return result['id']
+        return result["id"]
 
-    def _create_session(self, opid: int, optype: str, expiration: int=(30 * 86400)) -> str:
+    def _create_session(
+        self, opid: int, optype: str, expiration: int = (30 * 86400)
+    ) -> str:
         """
         Given an ID, create a session string.
 
@@ -153,21 +162,29 @@ class BaseData:
         """
         # Create a new session that is unique
         while True:
-            session = ''.join(random.choice('0123456789ABCDEF') for _ in range(BaseData.SESSION_LENGTH))
+            session = "".join(
+                random.choice("0123456789ABCDEF")
+                for _ in range(BaseData.SESSION_LENGTH)
+            )
             sql = "SELECT session FROM session WHERE session = :session"
-            cursor = self.execute(sql, {'session': session})
+            cursor = self.execute(sql, {"session": session})
             if cursor.rowcount == 0:
                 # Make sure sessions expire in a reasonable amount of time
                 expiration = Time.now() + expiration
 
                 # Use that session
                 sql = (
-                    "INSERT INTO session (id, session, type, expiration) " +
-                    "VALUES (:id, :session, :optype, :expiration)"
+                    "INSERT INTO session (id, session, type, expiration) "
+                    + "VALUES (:id, :session, :optype, :expiration)"
                 )
                 cursor = self.execute(
                     sql,
-                    {'id': opid, 'session': session, 'optype': optype, 'expiration': expiration},
+                    {
+                        "id": opid,
+                        "session": session,
+                        "optype": optype,
+                        "expiration": expiration,
+                    },
                     safe_write_operation=True,
                 )
                 if cursor.rowcount == 1:
@@ -182,8 +199,10 @@ class BaseData:
         """
         # Remove the session token
         sql = "DELETE FROM session WHERE session = :session AND type = :sesstype"
-        self.execute(sql, {'session': session, 'sesstype': sesstype}, safe_write_operation=True)
+        self.execute(
+            sql, {"session": session, "sesstype": sesstype}, safe_write_operation=True
+        )
 
         # Also weed out any other defunct sessions
         sql = "DELETE FROM session WHERE expiration < :timestamp"
-        self.execute(sql, {'timestamp': Time.now()}, safe_write_operation=True)
+        self.execute(sql, {"timestamp": Time.now()}, safe_write_operation=True)

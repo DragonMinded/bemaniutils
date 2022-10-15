@@ -13,7 +13,7 @@ class MetalGearArcadeBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     game: GameConstants = GameConstants.MGA
 
-    def previous_version(self) -> Optional['MetalGearArcadeBase']:
+    def previous_version(self) -> Optional["MetalGearArcadeBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.

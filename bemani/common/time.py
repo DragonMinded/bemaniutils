@@ -31,10 +31,7 @@ class Time:
         """
         now = datetime.datetime.utcnow().date()
         beginning_of_day = datetime.datetime(
-            now.year,
-            now.month,
-            now.day,
-            tzinfo=tz.tzutc()
+            now.year, now.month, now.day, tzinfo=tz.tzutc()
         )
         end_of_day = beginning_of_day + datetime.timedelta(days=1)
         return calendar.timegm(end_of_day.timetuple())
@@ -46,10 +43,7 @@ class Time:
         """
         now = datetime.datetime.utcnow().date()
         beginning_of_day = datetime.datetime(
-            now.year,
-            now.month,
-            now.day,
-            tzinfo=tz.tzutc()
+            now.year, now.month, now.day, tzinfo=tz.tzutc()
         )
         return calendar.timegm(beginning_of_day.timetuple())
 
@@ -107,7 +101,7 @@ class Time:
         return [yesterday.year, yesterday.month, yesterday.day]
 
     @staticmethod
-    def week_in_days_since_epoch(timestamp: Optional[int]=None) -> int:
+    def week_in_days_since_epoch(timestamp: Optional[int] = None) -> int:
         """
         Returns the day number of the beginning of this week, where day zero is
         the unix epoch at UTC timezone. So if we were one week in, this would return
@@ -122,7 +116,7 @@ class Time:
         return (week - datetime.date(1970, 1, 1)).days
 
     @staticmethod
-    def days_into_year(timestamp: Optional[int]=None) -> List[int]:
+    def days_into_year(timestamp: Optional[int] = None) -> List[int]:
         """
         Returns a [year, days] list representing the current year, and number
         of days into the current year. If a timestamp is provided, returns the
@@ -135,7 +129,7 @@ class Time:
         return [date.tm_year, date.tm_yday]
 
     @staticmethod
-    def days_into_week(timestamp: Optional[int]=None) -> int:
+    def days_into_week(timestamp: Optional[int] = None) -> int:
         """
         Returns an integer representing the number of days into the current week
         we are, with 0 = monday, 1 = tuesday, etc. If a timestamp is provided,
@@ -148,7 +142,7 @@ class Time:
         return date.tm_wday
 
     @staticmethod
-    def timestamp_from_date(year: int, month: int=1, day: int=1) -> int:
+    def timestamp_from_date(year: int, month: int = 1, day: int = 1) -> int:
         """
         Given a date (either a year, year/month, or year/month/day), returns
         the unix timestamp from UTC of that date. Supports out of bounds
@@ -161,12 +155,7 @@ class Time:
             year = year + 1
             month = month - 12
 
-        date = datetime.datetime(
-            year,
-            month,
-            day,
-            tzinfo=tz.tzutc()
-        )
+        date = datetime.datetime(year, month, day, tzinfo=tz.tzutc())
         return calendar.timegm(date.timetuple())
 
     @staticmethod

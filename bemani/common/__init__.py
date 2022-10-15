@@ -1,7 +1,14 @@
 from bemani.common.model import Model
 from bemani.common.validateddict import ValidatedDict, Profile, PlayStatistics, intish
 from bemani.common.http import HTTP
-from bemani.common.constants import APIConstants, GameConstants, VersionConstants, DBConstants, BroadcastConstants, RegionConstants
+from bemani.common.constants import (
+    APIConstants,
+    GameConstants,
+    VersionConstants,
+    DBConstants,
+    BroadcastConstants,
+    RegionConstants,
+)
 from bemani.common.card import CardCipher, CardCipherException
 from bemani.common.id import ID
 from bemani.common.aes import AESCipher

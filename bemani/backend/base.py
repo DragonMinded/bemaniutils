@@ -3,7 +3,15 @@ import traceback
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
 from typing_extensions import Final
 
-from bemani.common import Model, ValidatedDict, Profile, PlayStatistics, GameConstants, RegionConstants, Time
+from bemani.common import (
+    Model,
+    ValidatedDict,
+    Profile,
+    PlayStatistics,
+    GameConstants,
+    RegionConstants,
+    Time,
+)
 from bemani.data import Config, Data, Arcade, Machine, UserID, RemoteUser
 
 
@@ -15,6 +23,7 @@ class Status:
     """
     List of statuses we return to the game for various reasons.
     """
+
     SUCCESS: Final[int] = 0
     NO_PROFILE: Final[int] = 109
     NOT_ALLOWED: Final[int] = 110
@@ -41,7 +50,7 @@ class Factory(ABC):
         with Base, using Base.register(). Factories specify the game code that
         they support, which Base will use when routing requests.
         """
-        raise NotImplementedError('Override this in subclass!')
+        raise NotImplementedError("Override this in subclass!")
 
     @classmethod
     def run_scheduled_work(cls, data: Data, config: Config) -> None:
@@ -59,10 +68,10 @@ class Factory(ABC):
                 stack = traceback.format_exc()
                 print(stack)
                 data.local.network.put_event(
-                    'exception',
+                    "exception",
                     {
-                        'service': 'scheduler',
-                        'traceback': stack,
+                        "service": "scheduler",
+                        "traceback": stack,
                     },
                 )
             for event in events:
@@ -88,7 +97,13 @@ class Factory(ABC):
 
     @classmethod
     @abstractmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional["Base"]:
         """
         Given a modelstring and an optional parent model, return an instantiated game class that can handle a packet.
 
@@ -106,7 +121,7 @@ class Factory(ABC):
             A subclass of Base that hopefully has a handle_<call>_request method on it, for the particular
             call that Dispatch wants to resolve, or None if we can't look up a game.
         """
-        raise NotImplementedError('Override this in subclass!')
+        raise NotImplementedError("Override this in subclass!")
 
 
 class Base(ABC):
@@ -172,7 +187,13 @@ class Base(ABC):
         self.model = model
 
     @classmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional['Base']:
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional["Base"]:
         """
         Given a modelstring and an optional parent model, return an instantiated game class that can handle a packet.
 
@@ -200,7 +221,9 @@ class Base(ABC):
             return Base(data, config, model)
         else:
             # Return the registered module providing this game
-            return cls.__registered_games[model.gamecode].create(data, config, model, parentmodel=parentmodel)
+            return cls.__registered_games[model.gamecode].create(
+                data, config, model, parentmodel=parentmodel
+            )
 
     @classmethod
     def register(cls, gamecode: str, handler: Type[Factory]) -> None:
@@ -216,7 +239,9 @@ class Base(ABC):
         cls.__registered_handlers.add(handler)
 
     @classmethod
-    def run_scheduled_work(cls, data: Data, config: Config) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(
+        cls, data: Data, config: Config
+    ) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Run any out-of-band scheduled work that is applicable to this game.
         """
@@ -267,7 +292,10 @@ class Base(ABC):
         Returns:
             True if the profile exists, False if not.
         """
-        return self.data.local.user.get_profile(self.game, self.version, userid) is not None
+        return (
+            self.data.local.user.get_profile(self.game, self.version, userid)
+            is not None
+        )
 
     def get_profile(self, userid: UserID) -> Optional[Profile]:
         """
@@ -321,9 +349,16 @@ class Base(ABC):
             or an empty dictionary if nothing was found.
         """
         userids = list(set(userids))
-        profiles = self.data.remote.user.get_any_profiles(self.game, self.version, userids)
+        profiles = self.data.remote.user.get_any_profiles(
+            self.game, self.version, userids
+        )
         return [
-            (userid, profile if profile is not None else Profile(self.game, self.version, "", 0))
+            (
+                userid,
+                profile
+                if profile is not None
+                else Profile(self.game, self.version, "", 0),
+            )
             for (userid, profile) in profiles
         ]
 
@@ -336,10 +371,12 @@ class Base(ABC):
             profile - A dictionary that should be looked up later using get_profile.
         """
         if RemoteUser.is_remote(userid):
-            raise Exception('Trying to save a remote profile locally!')
+            raise Exception("Trying to save a remote profile locally!")
         self.data.local.user.put_profile(self.game, self.version, userid, profile)
 
-    def update_play_statistics(self, userid: UserID, stats: Optional[PlayStatistics] = None) -> None:
+    def update_play_statistics(
+        self, userid: UserID, stats: Optional[PlayStatistics] = None
+    ) -> None:
         """
         Given a user ID, calculate new play statistics.
 
@@ -351,59 +388,65 @@ class Base(ABC):
             stats - A play statistics object we should store extra data from.
         """
         if RemoteUser.is_remote(userid):
-            raise Exception('Trying to save remote statistics locally!')
+            raise Exception("Trying to save remote statistics locally!")
 
         # We store the play statistics in a series-wide settings blob so its available
         # across all game versions, since it isn't game-specific.
-        settings = self.data.local.game.get_settings(self.game, userid) or ValidatedDict({})
+        settings = self.data.local.game.get_settings(
+            self.game, userid
+        ) or ValidatedDict({})
 
         if stats is not None:
             for key in stats:
                 # Make sure we don't override anything we manage here
                 if key in {
-                    'total_plays',
-                    'today_plays',
-                    'total_days',
-                    'first_play_timestamp',
-                    'last_play_timestamp',
-                    'last_play_date',
-                    'consecutive_days',
+                    "total_plays",
+                    "today_plays",
+                    "total_days",
+                    "first_play_timestamp",
+                    "last_play_timestamp",
+                    "last_play_date",
+                    "consecutive_days",
                 }:
                     continue
                 # Safe to copy over
                 settings[key] = stats[key]
 
-        settings.replace_int('total_plays', settings.get_int('total_plays') + 1)
-        settings.replace_int('first_play_timestamp', settings.get_int('first_play_timestamp', Time.now()))
-        settings.replace_int('last_play_timestamp', Time.now())
+        settings.replace_int("total_plays", settings.get_int("total_plays") + 1)
+        settings.replace_int(
+            "first_play_timestamp", settings.get_int("first_play_timestamp", Time.now())
+        )
+        settings.replace_int("last_play_timestamp", Time.now())
 
-        last_play_date = settings.get_int_array('last_play_date', 3)
+        last_play_date = settings.get_int_array("last_play_date", 3)
         today_play_date = Time.todays_date()
         yesterday_play_date = Time.yesterdays_date()
         if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
+            last_play_date[0] == today_play_date[0]
+            and last_play_date[1] == today_play_date[1]
+            and last_play_date[2] == today_play_date[2]
         ):
             # We already played today, add one.
-            settings.replace_int('today_plays', settings.get_int('today_plays') + 1)
+            settings.replace_int("today_plays", settings.get_int("today_plays") + 1)
         else:
             # We played on a new day, so count total days up.
-            settings.replace_int('total_days', settings.get_int('total_days') + 1)
+            settings.replace_int("total_days", settings.get_int("total_days") + 1)
 
             # We played only once today (the play we are saving).
-            settings.replace_int('today_plays', 1)
+            settings.replace_int("today_plays", 1)
             if (
-                last_play_date[0] == yesterday_play_date[0] and
-                last_play_date[1] == yesterday_play_date[1] and
-                last_play_date[2] == yesterday_play_date[2]
+                last_play_date[0] == yesterday_play_date[0]
+                and last_play_date[1] == yesterday_play_date[1]
+                and last_play_date[2] == yesterday_play_date[2]
             ):
                 # We played yesterday, add one to consecutive days
-                settings.replace_int('consecutive_days', settings.get_int('consecutive_days') + 1)
+                settings.replace_int(
+                    "consecutive_days", settings.get_int("consecutive_days") + 1
+                )
             else:
                 # We haven't played yesterday, so we have only one consecutive day.
-                settings.replace_int('consecutive_days', 1)
-        settings.replace_int_array('last_play_date', 3, today_play_date)
+                settings.replace_int("consecutive_days", 1)
+        settings.replace_int_array("last_play_date", 3, today_play_date)
 
         # Save back
         self.data.local.game.put_settings(self.game, userid, settings)
@@ -442,9 +485,13 @@ class Base(ABC):
     def get_machine_region(self) -> int:
         arcade = self.get_arcade()
         if arcade is None:
-            return RegionConstants.db_to_game_region(self.requires_extended_regions, self.config.server.region)
+            return RegionConstants.db_to_game_region(
+                self.requires_extended_regions, self.config.server.region
+            )
         else:
-            return RegionConstants.db_to_game_region(self.requires_extended_regions, arcade.region)
+            return RegionConstants.db_to_game_region(
+                self.requires_extended_regions, arcade.region
+            )
 
     def get_game_config(self) -> ValidatedDict:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
@@ -452,7 +499,9 @@ class Base(ABC):
         # If this machine belongs to an arcade, use its settings. If the settings aren't present,
         # default to the game's defaults.
         if machine.arcade is not None:
-            settings = self.data.local.machine.get_settings(machine.arcade, self.game, self.version, 'game_config')
+            settings = self.data.local.machine.get_settings(
+                machine.arcade, self.game, self.version, "game_config"
+            )
             if settings is None:
                 settings = ValidatedDict()
             return settings
@@ -460,7 +509,12 @@ class Base(ABC):
         # If this machine does not belong to an arcade, use the server-wide settings. If the settings
         # aren't present, default ot the game's default.
         else:
-            settings = self.data.local.machine.get_settings(self.data.local.machine.DEFAULT_SETTINGS_ARCADE, self.game, self.version, 'game_config')
+            settings = self.data.local.machine.get_settings(
+                self.data.local.machine.DEFAULT_SETTINGS_ARCADE,
+                self.game,
+                self.version,
+                "game_config",
+            )
             if settings is None:
                 settings = ValidatedDict()
             return settings
@@ -511,38 +565,38 @@ class Base(ABC):
             )
 
         # Calculate whether we are on our first play of the day or not.
-        last_play_date = settings.get_int_array('last_play_date', 3)
+        last_play_date = settings.get_int_array("last_play_date", 3)
         if (
-            last_play_date[0] == today_play_date[0] and
-            last_play_date[1] == today_play_date[1] and
-            last_play_date[2] == today_play_date[2]
+            last_play_date[0] == today_play_date[0]
+            and last_play_date[1] == today_play_date[1]
+            and last_play_date[2] == today_play_date[2]
         ):
             # We last played today, so the total days and today plays are accurate
             # as stored.
-            today_count = settings.get_int('today_plays', 0)
-            total_days = settings.get_int('total_days', 1)
-            consecutive_days = settings.get_int('consecutive_days', 1)
+            today_count = settings.get_int("today_plays", 0)
+            total_days = settings.get_int("total_days", 1)
+            consecutive_days = settings.get_int("consecutive_days", 1)
         else:
             if (
-                last_play_date[0] != 0 and
-                last_play_date[1] != 0 and
-                last_play_date[2] != 0
+                last_play_date[0] != 0
+                and last_play_date[1] != 0
+                and last_play_date[2] != 0
             ):
                 # We've played before but not today, so the total days is
                 # the stored count plus today.
-                total_days = settings.get_int('total_days') + 1
+                total_days = settings.get_int("total_days") + 1
             else:
                 # We've never played before, so the total days is just 1.
                 total_days = 1
 
             if (
-                last_play_date[0] == yesterday_play_date[0] and
-                last_play_date[1] == yesterday_play_date[1] and
-                last_play_date[2] == yesterday_play_date[2]
+                last_play_date[0] == yesterday_play_date[0]
+                and last_play_date[1] == yesterday_play_date[1]
+                and last_play_date[2] == yesterday_play_date[2]
             ):
                 # We've played before, and it was yesterday, so today is the
                 # next consecutive day. So add the current value and today.
-                consecutive_days = settings.get_int('consecutive_days') + 1
+                consecutive_days = settings.get_int("consecutive_days") + 1
             else:
                 # This is the first consecutive day, we've either never played
                 # or we played a bunch but in the past before yesterday.
@@ -553,25 +607,27 @@ class Base(ABC):
 
         # Grab any extra settings that a game may have stored here.
         extra_settings: Dict[str, Any] = {
-            key: value for (key, value) in settings.items()
-            if key not in {
-                'total_plays',
-                'today_plays',
-                'total_days',
-                'first_play_timestamp',
-                'last_play_timestamp',
-                'last_play_date',
-                'consecutive_days',
+            key: value
+            for (key, value) in settings.items()
+            if key
+            not in {
+                "total_plays",
+                "today_plays",
+                "total_days",
+                "first_play_timestamp",
+                "last_play_timestamp",
+                "last_play_date",
+                "consecutive_days",
             }
         }
 
         return PlayStatistics(
             self.game,
-            settings.get_int('total_plays') + 1,
+            settings.get_int("total_plays") + 1,
             today_count + 1,
             total_days,
             consecutive_days,
-            settings.get_int('first_play_timestamp', Time.now()),
-            settings.get_int('last_play_timestamp', Time.now()),
+            settings.get_int("first_play_timestamp", Time.now()),
+            settings.get_int("last_play_timestamp", Time.now()),
             extra_settings,
         )

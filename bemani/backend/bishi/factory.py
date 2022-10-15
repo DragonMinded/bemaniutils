@@ -14,13 +14,19 @@ class BishiBashiFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for gamecode in ['IBB']:
+        for gamecode in ["IBB"]:
             Base.register(gamecode, BishiBashiFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional[Base]:
 
-        if model.gamecode == 'IBB':
+        if model.gamecode == "IBB":
             return TheStarBishiBashi(data, config, model)
 
         # Unknown game version

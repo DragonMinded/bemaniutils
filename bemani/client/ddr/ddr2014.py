@@ -7,54 +7,54 @@ from bemani.protocol import Node
 
 
 class DDR2014Client(BaseClient):
-    NAME = 'TEST'
+    NAME = "TEST"
 
     def verify_game_shop(self, loc: str) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'shop')
-        game.set_attribute('area', '51')
-        game.set_attribute('boot', '34')
-        game.set_attribute('close', '0')
-        game.set_attribute('close_t', '0')
-        game.set_attribute('coin', '02.01.--.--.01.G')
-        game.set_attribute('diff', '3')
-        game.set_attribute('during', '1')
-        game.set_attribute('edit_cnt', '0')
-        game.set_attribute('edit_used', '1')
-        game.set_attribute('first', '1')
-        game.set_attribute('ip', '1.5.7.3')
-        game.set_attribute('is_freefirstplay', '1')
-        game.set_attribute('is_paseli', '1')
-        game.set_attribute('loc', loc)
-        game.set_attribute('mac', '00:11:22:33:44:55')
-        game.set_attribute('machine', '2')
-        game.set_attribute('name', 'ＴＥＳＴ')
-        game.set_attribute('pay', '0')
-        game.set_attribute('region', '.')
-        game.set_attribute('soft', self.config['model'])
-        game.set_attribute('softid', self.pcbid)
-        game.set_attribute('stage', '1')
-        game.set_attribute('time', '60')
-        game.set_attribute('type', '0')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "shop")
+        game.set_attribute("area", "51")
+        game.set_attribute("boot", "34")
+        game.set_attribute("close", "0")
+        game.set_attribute("close_t", "0")
+        game.set_attribute("coin", "02.01.--.--.01.G")
+        game.set_attribute("diff", "3")
+        game.set_attribute("during", "1")
+        game.set_attribute("edit_cnt", "0")
+        game.set_attribute("edit_used", "1")
+        game.set_attribute("first", "1")
+        game.set_attribute("ip", "1.5.7.3")
+        game.set_attribute("is_freefirstplay", "1")
+        game.set_attribute("is_paseli", "1")
+        game.set_attribute("loc", loc)
+        game.set_attribute("mac", "00:11:22:33:44:55")
+        game.set_attribute("machine", "2")
+        game.set_attribute("name", "ＴＥＳＴ")
+        game.set_attribute("pay", "0")
+        game.set_attribute("region", ".")
+        game.set_attribute("soft", self.config["model"])
+        game.set_attribute("softid", self.pcbid)
+        game.set_attribute("stage", "1")
+        game.set_attribute("time", "60")
+        game.set_attribute("type", "0")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game/@stop")
 
     def verify_game_common(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'common')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "common")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game/flag/@id")
@@ -67,159 +67,159 @@ class DDR2014Client(BaseClient):
 
     def verify_game_hiscore(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'hiscore')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "hiscore")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
-        for child in resp.child('game').children:
-            self.assert_path(child, 'music/@reclink_num')
-            self.assert_path(child, 'music/type/@diff')
-            self.assert_path(child, 'music/type/name')
-            self.assert_path(child, 'music/type/score')
-            self.assert_path(child, 'music/type/area')
-            self.assert_path(child, 'music/type/rank')
-            self.assert_path(child, 'music/type/combo_type')
-            self.assert_path(child, 'music/type/code')
+        for child in resp.child("game").children:
+            self.assert_path(child, "music/@reclink_num")
+            self.assert_path(child, "music/type/@diff")
+            self.assert_path(child, "music/type/name")
+            self.assert_path(child, "music/type/score")
+            self.assert_path(child, "music/type/area")
+            self.assert_path(child, "music/type/rank")
+            self.assert_path(child, "music/type/combo_type")
+            self.assert_path(child, "music/type/code")
 
     def verify_game_area_hiscore(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'area_hiscore')
-        game.set_attribute('shop_area', '51')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "area_hiscore")
+        game.set_attribute("shop_area", "51")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
-        for child in resp.child('game').children:
-            self.assert_path(child, 'music/@reclink_num')
-            self.assert_path(child, 'music/type/@diff')
-            self.assert_path(child, 'music/type/name')
-            self.assert_path(child, 'music/type/score')
-            self.assert_path(child, 'music/type/area')
-            self.assert_path(child, 'music/type/rank')
-            self.assert_path(child, 'music/type/combo_type')
-            self.assert_path(child, 'music/type/code')
+        for child in resp.child("game").children:
+            self.assert_path(child, "music/@reclink_num")
+            self.assert_path(child, "music/type/@diff")
+            self.assert_path(child, "music/type/name")
+            self.assert_path(child, "music/type/score")
+            self.assert_path(child, "music/type/area")
+            self.assert_path(child, "music/type/rank")
+            self.assert_path(child, "music/type/combo_type")
+            self.assert_path(child, "music/type/code")
 
     def verify_game_message(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'message')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "message")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
     def verify_game_ranking(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'ranking')
-        game.set_attribute('max', '10')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "ranking")
+        game.set_attribute("max", "10")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
     def verify_game_log(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'log')
-        game.set_attribute('type', '0')
-        game.set_attribute('soft', self.config['model'])
-        game.set_attribute('softid', self.pcbid)
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('boot', '34')
-        game.set_attribute('mac', '00:11:22:33:44:55')
-        clear = Node.void('clear')
+        game.set_attribute("method", "log")
+        game.set_attribute("type", "0")
+        game.set_attribute("soft", self.config["model"])
+        game.set_attribute("softid", self.pcbid)
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("boot", "34")
+        game.set_attribute("mac", "00:11:22:33:44:55")
+        clear = Node.void("clear")
         game.add_child(clear)
-        clear.set_attribute('book', '0')
-        clear.set_attribute('edit', '0')
-        clear.set_attribute('rank', '0')
-        clear.set_attribute('set', '0')
-        auto = Node.void('auto')
+        clear.set_attribute("book", "0")
+        clear.set_attribute("edit", "0")
+        clear.set_attribute("rank", "0")
+        clear.set_attribute("set", "0")
+        auto = Node.void("auto")
         game.add_child(auto)
-        auto.set_attribute('book', '1')
-        auto.set_attribute('edit', '1')
-        auto.set_attribute('rank', '1')
-        auto.set_attribute('set', '1')
+        auto.set_attribute("book", "1")
+        auto.set_attribute("edit", "1")
+        auto.set_attribute("rank", "1")
+        auto.set_attribute("set", "1")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
     def verify_game_tax_info(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'tax_info')
-        game.set_attribute('ver', '2014102700')
+        game.set_attribute("method", "tax_info")
+        game.set_attribute("ver", "2014102700")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game/tax_info/@tax_phase")
 
     def verify_game_recorder(self) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'recorder')
-        game.set_attribute('assert_cnt', '0')
-        game.set_attribute('assert_info', '')
-        game.set_attribute('assert_path', '')
-        game.set_attribute('assert_time', '0')
-        game.set_attribute('boot_time', '1706151228')
-        game.set_attribute('cnt_demo', '1')
-        game.set_attribute('cnt_music', '1')
-        game.set_attribute('cnt_play', '0')
-        game.set_attribute('last_mid', '481')
-        game.set_attribute('last_seq', '36')
-        game.set_attribute('last_step', '0')
-        game.set_attribute('last_time', '1706151235')
-        game.set_attribute('softcode', self.config['model'])
-        game.set_attribute('temp_seq', '15')
-        game.set_attribute('temp_step', '8')
-        game.set_attribute('temp_time', '1706151234')
-        game.set_attribute('wd_restart', '0')
+        game.set_attribute("method", "recorder")
+        game.set_attribute("assert_cnt", "0")
+        game.set_attribute("assert_info", "")
+        game.set_attribute("assert_path", "")
+        game.set_attribute("assert_time", "0")
+        game.set_attribute("boot_time", "1706151228")
+        game.set_attribute("cnt_demo", "1")
+        game.set_attribute("cnt_music", "1")
+        game.set_attribute("cnt_play", "0")
+        game.set_attribute("last_mid", "481")
+        game.set_attribute("last_seq", "36")
+        game.set_attribute("last_step", "0")
+        game.set_attribute("last_time", "1706151235")
+        game.set_attribute("softcode", self.config["model"])
+        game.set_attribute("temp_seq", "15")
+        game.set_attribute("temp_step", "8")
+        game.set_attribute("temp_time", "1706151234")
+        game.set_attribute("wd_restart", "0")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
     def verify_game_lock(self, ref_id: str, play: int) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('refid', ref_id)
-        game.set_attribute('method', 'lock')
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('play', str(play))
+        game.set_attribute("refid", ref_id)
+        game.set_attribute("method", "lock")
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("play", str(play))
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game/@now_login")
@@ -228,34 +228,34 @@ class DDR2014Client(BaseClient):
         # Pad the name to 8 characters
         name = self.NAME[:8]
         while len(name) < 8:
-            name = name + ' '
+            name = name + " "
 
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'new')
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('name', name)
-        game.set_attribute('area', '51')
-        game.set_attribute('old', '0')
-        game.set_attribute('refid', ref_id)
+        game.set_attribute("method", "new")
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("name", name)
+        game.set_attribute("area", "51")
+        game.set_attribute("old", "0")
+        game.set_attribute("refid", ref_id)
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
     def verify_game_load_daily(self, ref_id: str) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'load_daily')
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('refid', ref_id)
+        game.set_attribute("method", "load_daily")
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("refid", ref_id)
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         self.assert_path(resp, "response/game/daycount/@playcount")
         self.assert_path(resp, "response/game/dailycombo/@daily_combo")
@@ -263,20 +263,20 @@ class DDR2014Client(BaseClient):
 
     def verify_game_load(self, ref_id: str, msg_type: str) -> Dict[str, Any]:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'load')
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('refid', ref_id)
+        game.set_attribute("method", "load")
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("refid", ref_id)
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
-        if msg_type == 'new':
+        if msg_type == "new":
             # Verify that response is correct
             self.assert_path(resp, "response/game/@none")
             return {}
-        if msg_type == 'existing':
+        if msg_type == "existing":
             # Verify existing profile and return info
             self.assert_path(resp, "response/game/seq")
             self.assert_path(resp, "response/game/code")
@@ -345,63 +345,63 @@ class DDR2014Client(BaseClient):
             for i in range(55):
                 self.assert_path(resp, f"response/game/play_area/@play_cnt{i}")
 
-            gr_s = resp.child('game/gr_s')
-            gr_d = resp.child('game/gr_d')
+            gr_s = resp.child("game/gr_s")
+            gr_d = resp.child("game/gr_d")
 
             return {
-                'name': resp.child_value('game/name'),
-                'ext_id': resp.child_value('game/code'),
-                'single_plays': resp.child_value('game/cnt_s'),
-                'double_plays': resp.child_value('game/cnt_d'),
-                'groove_single': [
-                    int(gr_s.attribute('gr1')),
-                    int(gr_s.attribute('gr2')),
-                    int(gr_s.attribute('gr3')),
-                    int(gr_s.attribute('gr4')),
-                    int(gr_s.attribute('gr5')),
+                "name": resp.child_value("game/name"),
+                "ext_id": resp.child_value("game/code"),
+                "single_plays": resp.child_value("game/cnt_s"),
+                "double_plays": resp.child_value("game/cnt_d"),
+                "groove_single": [
+                    int(gr_s.attribute("gr1")),
+                    int(gr_s.attribute("gr2")),
+                    int(gr_s.attribute("gr3")),
+                    int(gr_s.attribute("gr4")),
+                    int(gr_s.attribute("gr5")),
                 ],
-                'groove_double': [
-                    int(gr_d.attribute('gr1')),
-                    int(gr_d.attribute('gr2')),
-                    int(gr_d.attribute('gr3')),
-                    int(gr_d.attribute('gr4')),
-                    int(gr_d.attribute('gr5')),
+                "groove_double": [
+                    int(gr_d.attribute("gr1")),
+                    int(gr_d.attribute("gr2")),
+                    int(gr_d.attribute("gr3")),
+                    int(gr_d.attribute("gr4")),
+                    int(gr_d.attribute("gr5")),
                 ],
             }
 
-        raise Exception('Unknown load type!')
+        raise Exception("Unknown load type!")
 
     def verify_game_load_m(self, ref_id: str) -> Dict[int, Dict[int, Dict[str, Any]]]:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('all', '1')
-        game.set_attribute('refid', ref_id)
-        game.set_attribute('method', 'load_m')
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("all", "1")
+        game.set_attribute("refid", ref_id)
+        game.set_attribute("method", "load_m")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         scores: Dict[int, Dict[int, Dict[str, Any]]] = {}
         self.assert_path(resp, "response/game")
-        for child in resp.child('game').children:
-            self.assert_path(child, 'music/@reclink')
-            reclink = int(child.attribute('reclink'))
+        for child in resp.child("game").children:
+            self.assert_path(child, "music/@reclink")
+            reclink = int(child.attribute("reclink"))
 
             for typenode in child.children:
-                self.assert_path(typenode, 'type/@diff')
-                self.assert_path(typenode, 'type/score')
-                self.assert_path(typenode, 'type/count')
-                self.assert_path(typenode, 'type/rank')
-                self.assert_path(typenode, 'type/combo_type')
-                chart = int(typenode.attribute('diff'))
+                self.assert_path(typenode, "type/@diff")
+                self.assert_path(typenode, "type/score")
+                self.assert_path(typenode, "type/count")
+                self.assert_path(typenode, "type/rank")
+                self.assert_path(typenode, "type/combo_type")
+                chart = int(typenode.attribute("diff"))
                 vals = {
-                    'score': typenode.child_value('score'),
-                    'count': typenode.child_value('count'),
-                    'rank': typenode.child_value('rank'),
-                    'halo': typenode.child_value('combo_type'),
+                    "score": typenode.child_value("score"),
+                    "count": typenode.child_value("count"),
+                    "rank": typenode.child_value("rank"),
+                    "halo": typenode.child_value("combo_type"),
                 }
                 if reclink not in scores:
                     scores[reclink] = {}
@@ -410,91 +410,95 @@ class DDR2014Client(BaseClient):
 
     def verify_game_load_edit(self, ref_id: str) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('pid', '0')
-        game.set_attribute('refid', ref_id)
-        game.set_attribute('method', 'load_edit')
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("pid", "0")
+        game.set_attribute("refid", ref_id)
+        game.set_attribute("method", "load_edit")
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
-    def verify_game_save(self, ref_id: str, style: int, gauge: Optional[List[int]]=None) -> None:
+    def verify_game_save(
+        self, ref_id: str, style: int, gauge: Optional[List[int]] = None
+    ) -> None:
         gauge = gauge or [0, 0, 0, 0, 0]
 
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'save')
-        game.set_attribute('refid', ref_id)
-        game.set_attribute('ver', '2014102700')
-        game.set_attribute('shop_area', '51')
-        last = Node.void('last')
+        game.set_attribute("method", "save")
+        game.set_attribute("refid", ref_id)
+        game.set_attribute("ver", "2014102700")
+        game.set_attribute("shop_area", "51")
+        last = Node.void("last")
         game.add_child(last)
-        last.set_attribute('mode', '1')
-        last.set_attribute('style', str(style))
-        gr = Node.void('gr')
+        last.set_attribute("mode", "1")
+        last.set_attribute("style", str(style))
+        gr = Node.void("gr")
         game.add_child(gr)
-        gr.set_attribute('gr1', str(gauge[0]))
-        gr.set_attribute('gr2', str(gauge[1]))
-        gr.set_attribute('gr3', str(gauge[2]))
-        gr.set_attribute('gr4', str(gauge[3]))
-        gr.set_attribute('gr5', str(gauge[4]))
+        gr.set_attribute("gr1", str(gauge[0]))
+        gr.set_attribute("gr2", str(gauge[1]))
+        gr.set_attribute("gr3", str(gauge[2]))
+        gr.set_attribute("gr4", str(gauge[3]))
+        gr.set_attribute("gr5", str(gauge[4]))
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
-    def verify_game_save_m(self, ref_id: str, ext_id: str, score: Dict[str, Any]) -> None:
+    def verify_game_save_m(
+        self, ref_id: str, ext_id: str, score: Dict[str, Any]
+    ) -> None:
         call = self.call_node()
-        game = Node.void('game')
+        game = Node.void("game")
         call.add_child(game)
-        game.set_attribute('method', 'save_m')
-        game.set_attribute('diff', '12345')
-        game.set_attribute('mtype', str(score['chart']))
-        game.set_attribute('mid', str(score['id']))
-        game.set_attribute('refid', ref_id)
-        game.set_attribute('ver', '2014102700')
-        data = Node.void('data')
+        game.set_attribute("method", "save_m")
+        game.set_attribute("diff", "12345")
+        game.set_attribute("mtype", str(score["chart"]))
+        game.set_attribute("mid", str(score["id"]))
+        game.set_attribute("refid", ref_id)
+        game.set_attribute("ver", "2014102700")
+        data = Node.void("data")
         game.add_child(data)
-        data.set_attribute('score', str(score['score']))
-        data.set_attribute('rank', str(score['rank']))
-        data.set_attribute('shop_area', '0')
-        data.set_attribute('playmode', '1')
-        data.set_attribute('combo', str(score['combo']))
-        data.set_attribute('phase', '1')
-        data.set_attribute('style', '0')
-        data.set_attribute('full', '1' if score['halo'] >= 1 else '0')
-        data.set_attribute('great_fc', '1' if score['halo'] == 1 else '0')
-        data.set_attribute('good_fc', '1' if score['halo'] == 4 else '0')
-        data.set_attribute('perf_fc', '1' if score['halo'] == 2 else '0')
-        gauge = Node.void('gauge')
+        data.set_attribute("score", str(score["score"]))
+        data.set_attribute("rank", str(score["rank"]))
+        data.set_attribute("shop_area", "0")
+        data.set_attribute("playmode", "1")
+        data.set_attribute("combo", str(score["combo"]))
+        data.set_attribute("phase", "1")
+        data.set_attribute("style", "0")
+        data.set_attribute("full", "1" if score["halo"] >= 1 else "0")
+        data.set_attribute("great_fc", "1" if score["halo"] == 1 else "0")
+        data.set_attribute("good_fc", "1" if score["halo"] == 4 else "0")
+        data.set_attribute("perf_fc", "1" if score["halo"] == 2 else "0")
+        gauge = Node.void("gauge")
         game.add_child(gauge)
-        gauge.set_attribute('life8', '0')
-        gauge.set_attribute('assist', '0')
-        gauge.set_attribute('risky', '0')
-        gauge.set_attribute('life4', '0')
-        gauge.set_attribute('hard', '0')
-        player = Node.void('player')
+        gauge.set_attribute("life8", "0")
+        gauge.set_attribute("assist", "0")
+        gauge.set_attribute("risky", "0")
+        gauge.set_attribute("life4", "0")
+        gauge.set_attribute("hard", "0")
+        player = Node.void("player")
         game.add_child(player)
-        player.set_attribute('playcnt', '123')
-        player.set_attribute('code', ext_id)
-        option = Node.void('option_02')
+        player.set_attribute("playcnt", "123")
+        player.set_attribute("code", ext_id)
+        option = Node.void("option_02")
         game.add_child(option)
-        option.set_attribute('opt02_0', '6')
-        option.set_attribute('opt02_6', '1')
-        option.set_attribute('opt02_13', '2')
-        game.add_child(Node.u8_array('trace', [0] * 512))
-        game.add_child(Node.u32('size', 512))
+        option.set_attribute("opt02_0", "6")
+        option.set_attribute("opt02_6", "1")
+        option.set_attribute("opt02_13", "2")
+        game.add_child(Node.u8_array("trace", [0] * 512))
+        game.add_child(Node.u32("size", 512))
 
         # Swap with server
-        resp = self.exchange('', call)
+        resp = self.exchange("", call)
 
         # Verify that response is correct
         self.assert_path(resp, "response/game")
@@ -503,26 +507,26 @@ class DDR2014Client(BaseClient):
         # Verify boot sequence is okay
         self.verify_services_get(
             expected_services=[
-                'pcbtracker',
-                'pcbevent',
-                'local',
-                'message',
-                'facility',
-                'cardmng',
-                'package',
-                'posevent',
-                'pkglist',
-                'dlstatus',
-                'eacoin',
-                'lobby',
-                'ntp',
-                'keepalive'
+                "pcbtracker",
+                "pcbevent",
+                "local",
+                "message",
+                "facility",
+                "cardmng",
+                "package",
+                "posevent",
+                "pkglist",
+                "dlstatus",
+                "eacoin",
+                "lobby",
+                "ntp",
+                "keepalive",
             ]
         )
         paseli_enabled = self.verify_pcbtracker_alive()
         self.verify_message_get()
         self.verify_package_list()
-        location = self.verify_facility_get('EUC_JP')
+        location = self.verify_facility_get("EUC_JP")
         self.verify_pcbevent_put()
         self.verify_game_recorder()
         self.verify_game_tax_info()
@@ -542,24 +546,34 @@ class DDR2014Client(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(card, msg_type='unregistered', paseli_enabled=paseli_enabled)
+            self.verify_cardmng_inquire(
+                card, msg_type="unregistered", paseli_enabled=paseli_enabled
+            )
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(f'Invalid refid \'{ref_id}\' returned when registering card')
-            if ref_id != self.verify_cardmng_inquire(card, msg_type='new', paseli_enabled=paseli_enabled):
-                raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
+                raise Exception(
+                    f"Invalid refid '{ref_id}' returned when registering card"
+                )
+            if ref_id != self.verify_cardmng_inquire(
+                card, msg_type="new", paseli_enabled=paseli_enabled
+            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             # Bishi doesn't read a new profile, it just writes out CSV for a blank one
-            self.verify_game_load(ref_id, msg_type='new')
+            self.verify_game_load(ref_id, msg_type="new")
             self.verify_game_new(ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled)
+            ref_id = self.verify_cardmng_inquire(
+                card, msg_type="query", paseli_enabled=paseli_enabled
+            )
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(card, msg_type='query', paseli_enabled=paseli_enabled):
-            raise Exception(f'Invalid refid \'{ref_id}\' returned when querying card')
+        if ref_id != self.verify_cardmng_inquire(
+            card, msg_type="query", paseli_enabled=paseli_enabled
+        ):
+            raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify locking and unlocking profile ability
         self.verify_game_lock(ref_id, 1)
@@ -567,53 +581,53 @@ class DDR2014Client(BaseClient):
 
         if cardid is None:
             # Verify empty profile
-            profile = self.verify_game_load(ref_id, msg_type='existing')
-            ext_id = str(profile['ext_id'])
-            if profile['name'] != self.NAME:
-                raise Exception('Profile has invalid name associated with it!')
-            if profile['single_plays'] != 0:
-                raise Exception('Profile has plays on single already!')
-            if profile['double_plays'] != 0:
-                raise Exception('Profile has plays on double already!')
-            if any([g != 0 for g in profile['groove_single']]):
-                raise Exception('Profile has single groove gauge values already!')
-            if any([g != 0 for g in profile['groove_double']]):
-                raise Exception('Profile has double groove gauge values already!')
+            profile = self.verify_game_load(ref_id, msg_type="existing")
+            ext_id = str(profile["ext_id"])
+            if profile["name"] != self.NAME:
+                raise Exception("Profile has invalid name associated with it!")
+            if profile["single_plays"] != 0:
+                raise Exception("Profile has plays on single already!")
+            if profile["double_plays"] != 0:
+                raise Exception("Profile has plays on double already!")
+            if any([g != 0 for g in profile["groove_single"]]):
+                raise Exception("Profile has single groove gauge values already!")
+            if any([g != 0 for g in profile["groove_double"]]):
+                raise Exception("Profile has double groove gauge values already!")
 
             # Verify empty scores
             scores = self.verify_game_load_m(ref_id)
             if len(scores) > 0:
-                raise Exception('Scores exist on new profile!')
+                raise Exception("Scores exist on new profile!")
 
             self.verify_game_load_edit(ref_id)
             self.verify_game_load_daily(ref_id)
 
             # Verify profile saving
             self.verify_game_save(ref_id, 0, [1, 2, 3, 4, 5])
-            profile = self.verify_game_load(ref_id, msg_type='existing')
-            if profile['name'] != self.NAME:
-                raise Exception('Profile has invalid name associated with it!')
-            if profile['single_plays'] != 1:
-                raise Exception('Profile has invalid plays on single!')
-            if profile['double_plays'] != 0:
-                raise Exception('Profile has invalid plays on double!')
-            if profile['groove_single'] != [1, 2, 3, 4, 5]:
-                raise Exception('Profile has invalid single groove gauge values!')
-            if any([g != 0 for g in profile['groove_double']]):
-                raise Exception('Profile has invalid double groove gauge values!')
+            profile = self.verify_game_load(ref_id, msg_type="existing")
+            if profile["name"] != self.NAME:
+                raise Exception("Profile has invalid name associated with it!")
+            if profile["single_plays"] != 1:
+                raise Exception("Profile has invalid plays on single!")
+            if profile["double_plays"] != 0:
+                raise Exception("Profile has invalid plays on double!")
+            if profile["groove_single"] != [1, 2, 3, 4, 5]:
+                raise Exception("Profile has invalid single groove gauge values!")
+            if any([g != 0 for g in profile["groove_double"]]):
+                raise Exception("Profile has invalid double groove gauge values!")
 
             self.verify_game_save(ref_id, 1, [5, 4, 3, 2, 1])
-            profile = self.verify_game_load(ref_id, msg_type='existing')
-            if profile['name'] != self.NAME:
-                raise Exception('Profile has invalid name associated with it!')
-            if profile['single_plays'] != 1:
-                raise Exception('Profile has invalid plays on single!')
-            if profile['double_plays'] != 1:
-                raise Exception('Profile has invalid plays on double!')
-            if profile['groove_single'] != [1, 2, 3, 4, 5]:
-                raise Exception('Profile has invalid single groove gauge values!')
-            if profile['groove_double'] != [5, 4, 3, 2, 1]:
-                raise Exception('Profile has invalid double groove gauge values!')
+            profile = self.verify_game_load(ref_id, msg_type="existing")
+            if profile["name"] != self.NAME:
+                raise Exception("Profile has invalid name associated with it!")
+            if profile["single_plays"] != 1:
+                raise Exception("Profile has invalid plays on single!")
+            if profile["double_plays"] != 1:
+                raise Exception("Profile has invalid plays on double!")
+            if profile["groove_single"] != [1, 2, 3, 4, 5]:
+                raise Exception("Profile has invalid single groove gauge values!")
+            if profile["groove_double"] != [5, 4, 3, 2, 1]:
+                raise Exception("Profile has invalid double groove gauge values!")
 
             # Now, write some scores and verify saving
             for phase in [1, 2]:
@@ -621,71 +635,71 @@ class DDR2014Client(BaseClient):
                     dummyscores = [
                         # An okay score on a chart
                         {
-                            'id': 593,
-                            'chart': 3,
-                            'score': 800000,
-                            'combo': 123,
-                            'rank': 4,
-                            'halo': 1,
+                            "id": 593,
+                            "chart": 3,
+                            "score": 800000,
+                            "combo": 123,
+                            "rank": 4,
+                            "halo": 1,
                         },
                         # A good score on an easier chart same song
                         {
-                            'id': 593,
-                            'chart': 2,
-                            'score': 990000,
-                            'combo': 321,
-                            'rank': 2,
-                            'halo': 2,
+                            "id": 593,
+                            "chart": 2,
+                            "score": 990000,
+                            "combo": 321,
+                            "rank": 2,
+                            "halo": 2,
                         },
                         # A perfect score
                         {
-                            'id': 483,
-                            'chart': 3,
-                            'score': 1000000,
-                            'combo': 400,
-                            'rank': 1,
-                            'halo': 3,
+                            "id": 483,
+                            "chart": 3,
+                            "score": 1000000,
+                            "combo": 400,
+                            "rank": 1,
+                            "halo": 3,
                         },
                         # A bad score
                         {
-                            'id': 483,
-                            'chart': 2,
-                            'score': 100000,
-                            'combo': 5,
-                            'rank': 7,
-                            'halo': 0,
+                            "id": 483,
+                            "chart": 2,
+                            "score": 100000,
+                            "combo": 5,
+                            "rank": 7,
+                            "halo": 0,
                         },
                         {
-                            'id': 483,
-                            'chart': 1,
-                            'score': 60000,
-                            'combo': 5,
-                            'rank': 6,
-                            'halo': 4,
+                            "id": 483,
+                            "chart": 1,
+                            "score": 60000,
+                            "combo": 5,
+                            "rank": 6,
+                            "halo": 4,
                         },
                     ]
                 if phase == 2:
                     dummyscores = [
                         # A better score on a chart
                         {
-                            'id': 593,
-                            'chart': 3,
-                            'score': 850000,
-                            'combo': 234,
-                            'rank': 3,
-                            'halo': 2,
+                            "id": 593,
+                            "chart": 3,
+                            "score": 850000,
+                            "combo": 234,
+                            "rank": 3,
+                            "halo": 2,
                         },
                         # A worse score on another chart
                         {
-                            'id': 593,
-                            'chart': 2,
-                            'score': 980000,
-                            'combo': 300,
-                            'rank': 3,
-                            'halo': 0,
-                            'expected_score': 990000,
-                            'expected_rank': 2,
-                            'expected_halo': 2,
+                            "id": 593,
+                            "chart": 2,
+                            "score": 980000,
+                            "combo": 300,
+                            "rank": 3,
+                            "halo": 0,
+                            "expected_score": 990000,
+                            "expected_rank": 2,
+                            "expected_halo": 2,
                         },
                     ]
 
@@ -693,21 +707,29 @@ class DDR2014Client(BaseClient):
                     self.verify_game_save_m(ref_id, ext_id, score)
                 scores = self.verify_game_load_m(ref_id)
                 for score in dummyscores:
-                    data = scores.get(score['id'], {}).get(score['chart'], None)
+                    data = scores.get(score["id"], {}).get(score["chart"], None)
                     if data is None:
-                        raise Exception(f'Expected to get score back for song {score["id"]} chart {score["chart"]}!')
+                        raise Exception(
+                            f'Expected to get score back for song {score["id"]} chart {score["chart"]}!'
+                        )
 
                     # Verify the attributes of the score
-                    expected_score = score.get('expected_score', score['score'])
-                    expected_rank = score.get('expected_rank', score['rank'])
-                    expected_halo = score.get('expected_halo', score['halo'])
+                    expected_score = score.get("expected_score", score["score"])
+                    expected_rank = score.get("expected_rank", score["rank"])
+                    expected_halo = score.get("expected_halo", score["halo"])
 
-                    if data['score'] != expected_score:
-                        raise Exception(f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["score"]}\'')
-                    if data['rank'] != expected_rank:
-                        raise Exception(f'Expected a rank of \'{expected_rank}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got rank \'{data["rank"]}\'')
-                    if data['halo'] != expected_halo:
-                        raise Exception(f'Expected a halo of \'{expected_halo}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got halo \'{data["halo"]}\'')
+                    if data["score"] != expected_score:
+                        raise Exception(
+                            f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["score"]}\''
+                        )
+                    if data["rank"] != expected_rank:
+                        raise Exception(
+                            f'Expected a rank of \'{expected_rank}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got rank \'{data["rank"]}\''
+                        )
+                    if data["halo"] != expected_halo:
+                        raise Exception(
+                            f'Expected a halo of \'{expected_halo}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got halo \'{data["halo"]}\''
+                        )
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
