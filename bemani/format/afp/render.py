@@ -47,7 +47,13 @@ class RegisteredClip:
     # SWF as well as AP2DefineSpriteTags which are essentially embedded movie clips. The
     # tag_id is the AP2DefineSpriteTag that created us, or None if this is the clip for
     # the root of the movie.
-    def __init__(self, tag_id: Optional[int], frames: List[Frame], tags: List[Tag], labels: Dict[str, int]) -> None:
+    def __init__(
+        self,
+        tag_id: Optional[int],
+        frames: List[Frame],
+        tags: List[Tag],
+        labels: Dict[str, int],
+    ) -> None:
         self.tag_id = tag_id
         self.frames = frames
         self.tags = tags
@@ -59,7 +65,14 @@ class RegisteredClip:
 
 class RegisteredShape:
     # A shape that we are rendering, as placed by some placed clip somewhere.
-    def __init__(self, tag_id: int, vertex_points: List[Point], tex_points: List[Point], tex_colors: List[Color], draw_params: List[DrawParams]) -> None:
+    def __init__(
+        self,
+        tag_id: int,
+        vertex_points: List[Point],
+        tex_points: List[Point],
+        tex_colors: List[Color],
+        draw_params: List[DrawParams],
+    ) -> None:
         self.tag_id = tag_id
         self.vertex_points: List[Point] = vertex_points
         self.tex_points: List[Point] = tex_points
@@ -122,7 +135,9 @@ class PlacedObject:
         self.visible: bool = True
 
     @property
-    def source(self) -> Union[RegisteredClip, RegisteredShape, RegisteredImage, RegisteredDummy]:
+    def source(
+        self,
+    ) -> Union[RegisteredClip, RegisteredShape, RegisteredImage, RegisteredDummy]:
         raise NotImplementedError("Only implemented in subclass!")
 
     @property
@@ -153,7 +168,17 @@ class PlacedShape(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredShape,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
+        super().__init__(
+            object_id,
+            depth,
+            rotation_origin,
+            transform,
+            projection,
+            mult_color,
+            add_color,
+            blend,
+            mask,
+        )
         self.__source = source
 
     @property
@@ -180,7 +205,17 @@ class PlacedClip(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredClip,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
+        super().__init__(
+            object_id,
+            depth,
+            rotation_origin,
+            transform,
+            projection,
+            mult_color,
+            add_color,
+            blend,
+            mask,
+        )
         self.placed_objects: List[PlacedObject] = []
         self.frame: int = 0
         self.unplayed_tags: List[int] = [i for i in range(len(source.tags))]
@@ -221,9 +256,9 @@ class PlacedClip(PlacedObject):
 
     def __repr__(self) -> str:
         return (
-            f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, " +
-            f"requested_frame={self.requested_frame}, total_frames={len(self.source.frames)}, playing={self.playing}, " +
-            f"finished={self.finished})"
+            f"PlacedClip(object_id={self.object_id}, depth={self.depth}, source={self.source}, frame={self.frame}, "
+            + f"requested_frame={self.requested_frame}, total_frames={len(self.source.frames)}, playing={self.playing}, "
+            + f"finished={self.finished})"
         )
 
     def __resolve_frame(self, frame: Any) -> Optional[int]:
@@ -344,7 +379,17 @@ class PlacedImage(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredImage,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
+        super().__init__(
+            object_id,
+            depth,
+            rotation_origin,
+            transform,
+            projection,
+            mult_color,
+            add_color,
+            blend,
+            mask,
+        )
         self.__source = source
 
     @property
@@ -370,7 +415,17 @@ class PlacedDummy(PlacedObject):
         mask: Optional[Mask],
         source: RegisteredDummy,
     ) -> None:
-        super().__init__(object_id, depth, rotation_origin, transform, projection, mult_color, add_color, blend, mask)
+        super().__init__(
+            object_id,
+            depth,
+            rotation_origin,
+            transform,
+            projection,
+            mult_color,
+            add_color,
+            blend,
+            mask,
+        )
         self.__source = source
 
     @property
@@ -409,7 +464,7 @@ class Global:
         # This is identical to regular gotoAndPlay, however it also recursively
         # goes through and sets all child clips playing as well.
         try:
-            meth = getattr(self.clip, 'gotoAndPlay')
+            meth = getattr(self.clip, "gotoAndPlay")
 
             # Call it, set the return on the stack.
             retval = meth(frame)
@@ -426,10 +481,14 @@ class Global:
             return retval
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call gotoAndPlay({frame}) on {self.clip} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call gotoAndPlay({frame}) on {self.clip} but that method doesn't exist!"
+            )
             return UNDEFINED
 
-    def __find_parent(self, parent: PlacedClip, child: PlacedClip) -> Optional[PlacedClip]:
+    def __find_parent(
+        self, parent: PlacedClip, child: PlacedClip
+    ) -> Optional[PlacedClip]:
         for obj in parent.placed_objects:
             if obj is child:
                 # This is us, so the parent is our parent.
@@ -446,9 +505,18 @@ class Global:
 
 
 class AEPLib:
-    def aep_set_rect_mask(self, thisptr: Any, left: Any, right: Any, top: Any, bottom: Any) -> None:
-        if not isinstance(left, (int, float)) or not isinstance(right, (int, float)) or not isinstance(top, (int, float)) or not isinstance(bottom, (int, float)):
-            print(f"WARNING: Ignoring aeplib.aep_set_rect_mask call with invalid parameters {left}, {right}, {top}, {bottom}!")
+    def aep_set_rect_mask(
+        self, thisptr: Any, left: Any, right: Any, top: Any, bottom: Any
+    ) -> None:
+        if (
+            not isinstance(left, (int, float))
+            or not isinstance(right, (int, float))
+            or not isinstance(top, (int, float))
+            or not isinstance(bottom, (int, float))
+        ):
+            print(
+                f"WARNING: Ignoring aeplib.aep_set_rect_mask call with invalid parameters {left}, {right}, {top}, {bottom}!"
+            )
             return
         if isinstance(thisptr, PlacedObject):
             thisptr.mask = Mask(
@@ -460,7 +528,9 @@ class AEPLib:
                 ),
             )
         else:
-            print(f"WARNING: Ignoring aeplib.aep_set_rect_mask call with unrecognized target {thisptr}!")
+            print(
+                f"WARNING: Ignoring aeplib.aep_set_rect_mask call with unrecognized target {thisptr}!"
+            )
 
     def aep_set_set_frame(self, thisptr: Any, frame: Any) -> None:
         # This appears to be some sort of callback that the game or other animations can use to figure out
@@ -471,49 +541,59 @@ class AEPLib:
 
     def aep_set_frame_control(self, thisptr: Any, depth: Any, frame: Any) -> None:
         if not isinstance(thisptr, PlacedClip):
-            print(f"WARNING: Ignoring aeplib.aep_set_frame_control with unrecognized current object {thisptr}!")
+            print(
+                f"WARNING: Ignoring aeplib.aep_set_frame_control with unrecognized current object {thisptr}!"
+            )
             return
 
         for obj in thisptr.placed_objects:
             if obj.depth == depth:
                 if not isinstance(obj, PlacedClip):
-                    print(f"WARNING: Ignoring aeplib.aep_set_frame_control called on object {obj} at depth {depth}!")
+                    print(
+                        f"WARNING: Ignoring aeplib.aep_set_frame_control called on object {obj} at depth {depth}!"
+                    )
                     return
 
                 obj.setInvisibleUntil(frame)
                 return
 
-        print(f"WARNING: Ignoring aeplib.aep_set_frame_control called on nonexistent object at depth {depth}!")
+        print(
+            f"WARNING: Ignoring aeplib.aep_set_frame_control called on nonexistent object at depth {depth}!"
+        )
 
     def gotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
         # This appears to be a wrapper to allow calling gotoAndPlay on clips.
         try:
-            meth = getattr(thisptr, 'gotoAndPlay')
+            meth = getattr(thisptr, "gotoAndPlay")
 
             # Call it, set the return on the stack.
             return meth(frame)
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!"
+            )
             return UNDEFINED
 
     def gotoAndStop(self, thisptr: Any, frame: Any) -> Any:
         # This appears to be a wrapper to allow calling gotoAndStop on clips.
         try:
-            meth = getattr(thisptr, 'gotoAndStop')
+            meth = getattr(thisptr, "gotoAndStop")
 
             # Call it, set the return on the stack.
             return meth(frame)
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call gotoAndStop({frame}) on {thisptr} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call gotoAndStop({frame}) on {thisptr} but that method doesn't exist!"
+            )
             return UNDEFINED
 
     def deepGotoAndPlay(self, thisptr: Any, frame: Any) -> Any:
         # This is identical to regular gotoAndPlay, however it also recursively
         # goes through and sets all child clips playing as well.
         try:
-            meth = getattr(thisptr, 'gotoAndPlay')
+            meth = getattr(thisptr, "gotoAndPlay")
 
             # Call it, set the return on the stack.
             retval = meth(frame)
@@ -530,14 +610,16 @@ class AEPLib:
             return retval
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call gotoAndPlay({frame}) on {thisptr} but that method doesn't exist!"
+            )
             return UNDEFINED
 
     def deepGotoAndStop(self, thisptr: Any, frame: Any) -> Any:
         # This is identical to regular gotoAndStop, however it also recursively
         # goes through and sets all child clips stopped as well.
         try:
-            meth = getattr(thisptr, 'gotoAndStop')
+            meth = getattr(thisptr, "gotoAndStop")
 
             # Call it, set the return on the stack.
             retval = meth(frame)
@@ -554,46 +636,63 @@ class AEPLib:
             return retval
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call gotoAndStop({frame}) on {thisptr} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call gotoAndStop({frame}) on {thisptr} but that method doesn't exist!"
+            )
             return UNDEFINED
 
     def play(self, thisptr: Any) -> Any:
         # This appears to be a wrapper to allow calling play on clips.
         try:
-            meth = getattr(thisptr, 'play')
+            meth = getattr(thisptr, "play")
 
             # Call it, set the return on the stack.
             return meth()
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call play() on {thisptr} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call play() on {thisptr} but that method doesn't exist!"
+            )
             return UNDEFINED
 
     def stop(self, thisptr: Any) -> Any:
         # This appears to be a wrapper to allow calling stop on clips.
         try:
-            meth = getattr(thisptr, 'stop')
+            meth = getattr(thisptr, "stop")
 
             # Call it, set the return on the stack.
             return meth()
         except AttributeError:
             # Function does not exist!
-            print(f"WARNING: Tried to call stop() on {thisptr} but that method doesn't exist!")
+            print(
+                f"WARNING: Tried to call stop() on {thisptr} but that method doesn't exist!"
+            )
             return UNDEFINED
 
 
 class ASDLib:
     def sound_play(self, sound: Any) -> None:
         if not isinstance(sound, str):
-            print(f"WARNING: Ignoring asdlib.sound_play call with invalid parameters {sound}!")
-        print(f"WARNING: Requested sound {sound} be played but we don't support sound yet!")
+            print(
+                f"WARNING: Ignoring asdlib.sound_play call with invalid parameters {sound}!"
+            )
+        print(
+            f"WARNING: Requested sound {sound} be played but we don't support sound yet!"
+        )
 
 
 MissingThis = object()
 
 
 class AFPRenderer(VerboseOutput):
-    def __init__(self, shapes: Dict[str, Shape] = {}, textures: Dict[str, Image.Image] = {}, swfs: Dict[str, SWF] = {}, single_threaded: bool = False, enable_aa: bool = False) -> None:
+    def __init__(
+        self,
+        shapes: Dict[str, Shape] = {},
+        textures: Dict[str, Image.Image] = {},
+        swfs: Dict[str, SWF] = {},
+        single_threaded: bool = False,
+        enable_aa: bool = False,
+    ) -> None:
         super().__init__()
 
         # Options for rendering
@@ -606,14 +705,17 @@ class AFPRenderer(VerboseOutput):
         self.swfs: Dict[str, SWF] = swfs
 
         # Internal render parameters.
-        self.__registered_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]] = {}
+        self.__registered_objects: Dict[
+            int,
+            Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy],
+        ] = {}
         self.__root: Optional[PlacedClip] = None
         self.__camera: Optional[PlacedCamera] = None
 
         # List of imports that we provide stub implementations for.
         self.__stubbed_swfs: Set[str] = {
-            'aeplib.aeplib',
-            'aeplib.__Packages.aeplib',
+            "aeplib.aeplib",
+            "aeplib.__Packages.aeplib",
         }
 
     def add_shape(self, name: str, data: Shape) -> None:
@@ -650,10 +752,18 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 with self.debugging(verbose):
                     swf.color = background_color or swf.color
-                    yield from self.__render(swf, only_depths, only_frames, movie_transform, background_image, overridden_width, overridden_height)
+                    yield from self.__render(
+                        swf,
+                        only_depths,
+                        only_frames,
+                        movie_transform,
+                        background_image,
+                        overridden_width,
+                        overridden_height,
+                    )
                     return
 
-        raise Exception(f'{path} not found in registered SWFs!')
+        raise Exception(f"{path} not found in registered SWFs!")
 
     def compute_path_location(
         self,
@@ -665,7 +775,7 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 return swf.location
 
-        raise Exception(f'{path} not found in registered SWFs!')
+        raise Exception(f"{path} not found in registered SWFs!")
 
     def compute_path_frames(
         self,
@@ -678,7 +788,7 @@ class AFPRenderer(VerboseOutput):
                 # This is the SWF we care about.
                 return len(swf.frames)
 
-        raise Exception(f'{path} not found in registered SWFs!')
+        raise Exception(f"{path} not found in registered SWFs!")
 
     def compute_path_frame_duration(
         self,
@@ -692,7 +802,7 @@ class AFPRenderer(VerboseOutput):
                 spf = 1.0 / swf.fps
                 return int(spf * 1000.0)
 
-        raise Exception(f'{path} not found in registered SWFs!')
+        raise Exception(f"{path} not found in registered SWFs!")
 
     def compute_path_size(
         self,
@@ -704,24 +814,32 @@ class AFPRenderer(VerboseOutput):
             if swf.exported_name == path:
                 return swf.location
 
-        raise Exception(f'{path} not found in registered SWFs!')
+        raise Exception(f"{path} not found in registered SWFs!")
 
     def list_paths(self, verbose: bool = False) -> Generator[str, None, None]:
         # Given the loaded animations, return a list of possible paths to render.
         for _name, swf in self.swfs.items():
             yield swf.exported_name
 
-    def __execute_bytecode(self, bytecode: ByteCode, clip: PlacedClip, thisptr: Optional[Any] = MissingThis, prefix: str="") -> None:
+    def __execute_bytecode(
+        self,
+        bytecode: ByteCode,
+        clip: PlacedClip,
+        thisptr: Optional[Any] = MissingThis,
+        prefix: str = "",
+    ) -> None:
         if self.__root is None:
-            raise Exception("Logic error, executing bytecode outside of a rendering movie clip!")
+            raise Exception(
+                "Logic error, executing bytecode outside of a rendering movie clip!"
+            )
 
         thisobj = clip if (thisptr is MissingThis) else thisptr
         globalobj = Global(self.__root, clip)
         location: int = 0
         stack: List[Any] = []
         variables: Dict[str, Any] = {
-            'aeplib': AEPLib(),
-            'asdlib': ASDLib(),
+            "aeplib": AEPLib(),
+            "asdlib": ASDLib(),
         }
         registers: List[Any] = [UNDEFINED] * 256
 
@@ -732,7 +850,9 @@ class AFPRenderer(VerboseOutput):
 
             if action.opcode == AP2Action.END:
                 # End the execution.
-                self.vprint(f"{prefix}  Ending bytecode execution.", component="bytecode")
+                self.vprint(
+                    f"{prefix}  Ending bytecode execution.", component="bytecode"
+                )
                 break
             elif action.opcode == AP2Action.GET_VARIABLE:
                 varname = stack.pop()
@@ -749,9 +869,14 @@ class AFPRenderer(VerboseOutput):
                 obj = stack.pop()
 
                 if not hasattr(obj, attribute):
-                    print(f"WARNING: Tried to set attribute {attribute} on {obj} to {set_value} but that attribute doesn't exist!")
+                    print(
+                        f"WARNING: Tried to set attribute {attribute} on {obj} to {set_value} but that attribute doesn't exist!"
+                    )
                 else:
-                    self.vprint(f"{prefix}  Setting attribute {attribute} on {obj} to {set_value}", component="bytecode")
+                    self.vprint(
+                        f"{prefix}  Setting attribute {attribute} on {obj} to {set_value}",
+                        component="bytecode",
+                    )
                     setattr(obj, attribute, set_value)
             elif action.opcode == AP2Action.CALL_METHOD:
                 # Grab the method name.
@@ -763,21 +888,28 @@ class AFPRenderer(VerboseOutput):
                 # Grab the parameters to pass to the function.
                 num_params = stack.pop()
                 if not isinstance(num_params, int):
-                    raise Exception("Logic error, cannot get number of parameters to method call!")
+                    raise Exception(
+                        "Logic error, cannot get number of parameters to method call!"
+                    )
                 params = []
                 for _ in range(num_params):
                     params.append(stack.pop())
 
                 # Look up the python function we're calling.
                 try:
-                    self.vprint(f"{prefix}  Calling method {methname}({', '.join(repr(s) for s in params)}) on {obj}", component="bytecode")
+                    self.vprint(
+                        f"{prefix}  Calling method {methname}({', '.join(repr(s) for s in params)}) on {obj}",
+                        component="bytecode",
+                    )
                     meth = getattr(obj, methname)
 
                     # Call it, set the return on the stack.
                     stack.append(meth(*params))
                 except AttributeError:
                     # Function does not exist!
-                    print(f"WARNING: Tried to call {methname}({', '.join(repr(s) for s in params)}) on {obj} but that method doesn't exist!")
+                    print(
+                        f"WARNING: Tried to call {methname}({', '.join(repr(s) for s in params)}) on {obj} but that method doesn't exist!"
+                    )
                     stack.append(UNDEFINED)
             elif action.opcode == AP2Action.CALL_FUNCTION:
                 # Grab the method name.
@@ -786,21 +918,28 @@ class AFPRenderer(VerboseOutput):
                 # Grab the parameters to pass to the function.
                 num_params = stack.pop()
                 if not isinstance(num_params, int):
-                    raise Exception("Logic error, cannot get number of parameters to function call!")
+                    raise Exception(
+                        "Logic error, cannot get number of parameters to function call!"
+                    )
                 params = []
                 for _ in range(num_params):
                     params.append(stack.pop())
 
                 # Look up the python function we're calling.
                 try:
-                    self.vprint(f"{prefix}  Calling global function {funcname}({', '.join(repr(s) for s in params)})", component="bytecode")
+                    self.vprint(
+                        f"{prefix}  Calling global function {funcname}({', '.join(repr(s) for s in params)})",
+                        component="bytecode",
+                    )
                     func = getattr(globalobj, funcname)
 
                     # Call it, set the return on the stack.
                     stack.append(func(*params))
                 except AttributeError:
                     # Function does not exist!
-                    print(f"WARNING: Tried to call {funcname}({', '.join(repr(s) for s in params)}) on {globalobj} but that function doesn't exist!")
+                    print(
+                        f"WARNING: Tried to call {funcname}({', '.join(repr(s) for s in params)}) on {globalobj} but that function doesn't exist!"
+                    )
                     stack.append(UNDEFINED)
             elif isinstance(action, PushAction):
                 for obj in action.objects:
@@ -846,11 +985,16 @@ class AFPRenderer(VerboseOutput):
 
         self.vprint(f"{prefix}Bytecode engine finished.", component="bytecode")
 
-    def __place(self, tag: Tag, operating_clip: PlacedClip, prefix: str = "") -> Tuple[Optional[PlacedClip], bool]:
+    def __place(
+        self, tag: Tag, operating_clip: PlacedClip, prefix: str = ""
+    ) -> Tuple[Optional[PlacedClip], bool]:
         # "Place" a tag on the screen. Most of the time, this means performing the action of the tag,
         # such as defining a shape (registering it with our shape list) or adding/removing an object.
         if isinstance(tag, AP2ShapeTag):
-            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}", component="tags")
+            self.vprint(
+                f"{prefix}    Loading {tag.reference} into object slot {tag.id}",
+                component="tags",
+            )
 
             if tag.reference not in self.shapes:
                 raise Exception(f"Cannot find shape reference {tag.reference}!")
@@ -867,7 +1011,10 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2ImageTag):
-            self.vprint(f"{prefix}    Loading {tag.reference} into object slot {tag.id}", component="tags")
+            self.vprint(
+                f"{prefix}    Loading {tag.reference} into object slot {tag.id}",
+                component="tags",
+            )
 
             if tag.reference not in self.textures:
                 raise Exception(f"Cannot find texture reference {tag.reference}!")
@@ -881,10 +1028,15 @@ class AFPRenderer(VerboseOutput):
             return None, False
 
         elif isinstance(tag, AP2DefineSpriteTag):
-            self.vprint(f"{prefix}    Loading Sprite into object slot {tag.id}", component="tags")
+            self.vprint(
+                f"{prefix}    Loading Sprite into object slot {tag.id}",
+                component="tags",
+            )
 
             # Register a new clip that we might reference to execute.
-            self.__registered_objects[tag.id] = RegisteredClip(tag.id, tag.frames, tag.tags, tag.labels)
+            self.__registered_objects[tag.id] = RegisteredClip(
+                tag.id, tag.frames, tag.tags, tag.labels
+            )
 
             # Didn't place a new clip, didn't change anything.
             return None, False
@@ -892,9 +1044,13 @@ class AFPRenderer(VerboseOutput):
         elif isinstance(tag, AP2PlaceObjectTag):
             if tag.unrecognized_options:
                 if tag.source_tag_id is not None:
-                    print(f"WARNING: Place object tag referencing {tag.source_tag_id} includes unparsed options and might not display properly!")
+                    print(
+                        f"WARNING: Place object tag referencing {tag.source_tag_id} includes unparsed options and might not display properly!"
+                    )
                 else:
-                    print(f"WARNING: Place object tag on depth {tag.depth} includes unparsed options and might not display properly!")
+                    print(
+                        f"WARNING: Place object tag on depth {tag.depth} includes unparsed options and might not display properly!"
+                    )
 
             if tag.update:
                 for i in range(len(operating_clip.placed_objects) - 1, -1, -1):
@@ -903,14 +1059,28 @@ class AFPRenderer(VerboseOutput):
                     if obj.object_id == tag.object_id and obj.depth == tag.depth:
                         new_mult_color = tag.mult_color or obj.mult_color
                         new_add_color = tag.add_color or obj.add_color
-                        new_transform = obj.transform.update(tag.transform) if tag.transform is not None else obj.transform
+                        new_transform = (
+                            obj.transform.update(tag.transform)
+                            if tag.transform is not None
+                            else obj.transform
+                        )
                         new_rotation_origin = tag.rotation_origin or obj.rotation_origin
                         new_blend = tag.blend or obj.blend
-                        new_projection = tag.projection if tag.projection != AP2PlaceObjectTag.PROJECTION_NONE else obj.projection
+                        new_projection = (
+                            tag.projection
+                            if tag.projection != AP2PlaceObjectTag.PROJECTION_NONE
+                            else obj.projection
+                        )
 
-                        if tag.source_tag_id is not None and tag.source_tag_id != obj.source.tag_id:
+                        if (
+                            tag.source_tag_id is not None
+                            and tag.source_tag_id != obj.source.tag_id
+                        ):
                             # This completely updates the pointed-at object.
-                            self.vprint(f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}", component="tags")
+                            self.vprint(
+                                f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}",
+                                component="tags",
+                            )
 
                             newobj = self.__registered_objects[tag.source_tag_id]
                             if isinstance(newobj, RegisteredShape):
@@ -979,10 +1149,15 @@ class AFPRenderer(VerboseOutput):
                                 # Didn't place a new clip, changed the parent clip.
                                 return None, True
                             else:
-                                raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
+                                raise Exception(
+                                    f"Unrecognized object with Tag ID {tag.source_tag_id}!"
+                                )
                         else:
                             # As far as I can tell, pretty much only color and matrix stuff can be updated.
-                            self.vprint(f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}", component="tags")
+                            self.vprint(
+                                f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}",
+                                component="tags",
+                            )
                             obj.mult_color = new_mult_color
                             obj.add_color = new_add_color
                             obj.transform = new_transform
@@ -992,14 +1167,21 @@ class AFPRenderer(VerboseOutput):
                             return None, True
 
                 # Didn't place a new clip, did change something.
-                print(f"WARNING: Couldn't find tag {tag.object_id} on depth {tag.depth} to update!")
+                print(
+                    f"WARNING: Couldn't find tag {tag.object_id} on depth {tag.depth} to update!"
+                )
                 return None, False
             else:
                 if tag.source_tag_id is None:
-                    raise Exception("Cannot place a tag with no source ID and no update flags!")
+                    raise Exception(
+                        "Cannot place a tag with no source ID and no update flags!"
+                    )
 
                 if tag.source_tag_id in self.__registered_objects:
-                    self.vprint(f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}", component="tags")
+                    self.vprint(
+                        f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}",
+                        component="tags",
+                    )
 
                     newobj = self.__registered_objects[tag.source_tag_id]
                     if isinstance(newobj, RegisteredShape):
@@ -1056,9 +1238,13 @@ class AFPRenderer(VerboseOutput):
                         for flags, code in tag.triggers.items():
                             if flags & AP2Trigger.ON_LOAD:
                                 for bytecode in code:
-                                    self.__execute_bytecode(bytecode, placed_clip, prefix=prefix + "      ")
+                                    self.__execute_bytecode(
+                                        bytecode, placed_clip, prefix=prefix + "      "
+                                    )
                             else:
-                                print("WARNING: Unhandled PLACE_OBJECT trigger with flags {flags}!")
+                                print(
+                                    "WARNING: Unhandled PLACE_OBJECT trigger with flags {flags}!"
+                                )
 
                         # Placed a new clip, changed the parent.
                         return placed_clip, True
@@ -1081,25 +1267,34 @@ class AFPRenderer(VerboseOutput):
                         # Didn't place a new clip, changed the parent clip.
                         return None, True
                     else:
-                        raise Exception(f"Unrecognized object with Tag ID {tag.source_tag_id}!")
+                        raise Exception(
+                            f"Unrecognized object with Tag ID {tag.source_tag_id}!"
+                        )
 
-                raise Exception(f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!")
+                raise Exception(
+                    f"Cannot find a shape or sprite with Tag ID {tag.source_tag_id}!"
+                )
 
         elif isinstance(tag, AP2RemoveObjectTag):
-            self.vprint(f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}", component="tags")
+            self.vprint(
+                f"{prefix}    Removing Object ID {tag.object_id} from Depth {tag.depth}",
+                component="tags",
+            )
 
             if tag.object_id != 0:
                 # Remove the identified object by object ID and depth.
                 # Remember removed objects so we can stop any clips.
                 removed_objects = [
-                    obj for obj in operating_clip.placed_objects
+                    obj
+                    for obj in operating_clip.placed_objects
                     if obj.object_id == tag.object_id and obj.depth == tag.depth
                 ]
 
                 # Get rid of the objects that we're removing from the master list.
                 operating_clip.placed_objects = [
-                    obj for obj in operating_clip.placed_objects
-                    if not(obj.object_id == tag.object_id and obj.depth == tag.depth)
+                    obj
+                    for obj in operating_clip.placed_objects
+                    if not (obj.object_id == tag.object_id and obj.depth == tag.depth)
                 ]
             else:
                 # Remove the last placed object at this depth. The placed objects list isn't
@@ -1110,12 +1305,19 @@ class AFPRenderer(VerboseOutput):
                     real_index = len(operating_clip.placed_objects) - (i + 1)
 
                     if operating_clip.placed_objects[real_index].depth == tag.depth:
-                        removed_objects = operating_clip.placed_objects[real_index:(real_index + 1)]
-                        operating_clip.placed_objects = operating_clip.placed_objects[:real_index] + operating_clip.placed_objects[(real_index + 1):]
+                        removed_objects = operating_clip.placed_objects[
+                            real_index : (real_index + 1)
+                        ]
+                        operating_clip.placed_objects = (
+                            operating_clip.placed_objects[:real_index]
+                            + operating_clip.placed_objects[(real_index + 1) :]
+                        )
                         break
 
             if not removed_objects:
-                print(f"WARNING: Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!")
+                print(
+                    f"WARNING: Couldn't find object to remove by ID {tag.object_id} and depth {tag.depth}!"
+                )
 
             # TODO: Handle ON_UNLOAD triggers for this object. I don't think I've ever seen one
             # on any object so this might be a pedantic request.
@@ -1125,7 +1327,9 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DoActionTag):
             self.vprint(f"{prefix}    Execution action tag.", component="tags")
-            self.__execute_bytecode(tag.bytecode, operating_clip, prefix=prefix + "      ")
+            self.__execute_bytecode(
+                tag.bytecode, operating_clip, prefix=prefix + "      "
+            )
 
             # Didn't place a new clip.
             return None, False
@@ -1175,13 +1379,21 @@ class AFPRenderer(VerboseOutput):
         if mask.rectangle is None:
             # Calculate the new mask rectangle.
             mask.rectangle = affine_composite(
-                Image.new('RGBA', (int(mask.bounds.right), int(mask.bounds.bottom)), (0, 0, 0, 0)),
+                Image.new(
+                    "RGBA",
+                    (int(mask.bounds.right), int(mask.bounds.bottom)),
+                    (0, 0, 0, 0),
+                ),
                 Color(0.0, 0.0, 0.0, 0.0),
                 Color(1.0, 1.0, 1.0, 1.0),
                 Matrix.identity().translate(Point(mask.bounds.left, mask.bounds.top)),
                 None,
                 0,
-                Image.new('RGBA', (int(mask.bounds.width), int(mask.bounds.height)), (255, 0, 0, 255)),
+                Image.new(
+                    "RGBA",
+                    (int(mask.bounds.width), int(mask.bounds.height)),
+                    (255, 0, 0, 255),
+                ),
                 single_threaded=self.__single_threaded,
                 aa_mode=AAMode.NONE,
             )
@@ -1189,7 +1401,9 @@ class AFPRenderer(VerboseOutput):
         # Draw the mask onto a new image.
         if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
             calculated_mask = affine_composite(
-                Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+                Image.new(
+                    "RGBA", (parent_mask.width, parent_mask.height), (0, 0, 0, 0)
+                ),
                 Color(0.0, 0.0, 0.0, 0.0),
                 Color(1.0, 1.0, 1.0, 1.0),
                 transform,
@@ -1201,9 +1415,13 @@ class AFPRenderer(VerboseOutput):
             )
         elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
             if self.__camera is None:
-                print("WARNING: Element requests perspective projection but no camera exists!")
+                print(
+                    "WARNING: Element requests perspective projection but no camera exists!"
+                )
                 calculated_mask = affine_composite(
-                    Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+                    Image.new(
+                        "RGBA", (parent_mask.width, parent_mask.height), (0, 0, 0, 0)
+                    ),
                     Color(0.0, 0.0, 0.0, 0.0),
                     Color(1.0, 1.0, 1.0, 1.0),
                     transform,
@@ -1215,7 +1433,9 @@ class AFPRenderer(VerboseOutput):
                 )
             else:
                 calculated_mask = perspective_composite(
-                    Image.new('RGBA', (parent_mask.width, parent_mask.height), (0, 0, 0, 0)),
+                    Image.new(
+                        "RGBA", (parent_mask.width, parent_mask.height), (0, 0, 0, 0)
+                    ),
                     Color(0.0, 0.0, 0.0, 0.0),
                     Color(1.0, 1.0, 1.0, 1.0),
                     transform,
@@ -1252,27 +1472,47 @@ class AFPRenderer(VerboseOutput):
         parent_add_color: Color,
         parent_blend: int,
         only_depths: Optional[List[int]] = None,
-        prefix: str="",
+        prefix: str = "",
     ) -> Image.Image:
         if not renderable.visible:
-            self.vprint(f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}", component="render")
+            self.vprint(
+                f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}",
+                component="render",
+            )
             return img
 
-        self.vprint(f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}", component="render")
+        self.vprint(
+            f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}",
+            component="render",
+        )
 
         # Compute the affine transformation matrix for this object.
-        transform = renderable.transform.multiply(parent_transform).translate(Point.identity().subtract(renderable.rotation_origin))
-        projection = AP2PlaceObjectTag.PROJECTION_PERSPECTIVE if parent_projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE else renderable.projection
+        transform = renderable.transform.multiply(parent_transform).translate(
+            Point.identity().subtract(renderable.rotation_origin)
+        )
+        projection = (
+            AP2PlaceObjectTag.PROJECTION_PERSPECTIVE
+            if parent_projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE
+            else renderable.projection
+        )
 
         # Calculate blending and blend color if it is present.
-        mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(parent_mult_color)
-        add_color = (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0)).multiply(parent_mult_color).add(parent_add_color)
+        mult_color = (renderable.mult_color or Color(1.0, 1.0, 1.0, 1.0)).multiply(
+            parent_mult_color
+        )
+        add_color = (
+            (renderable.add_color or Color(0.0, 0.0, 0.0, 0.0))
+            .multiply(parent_mult_color)
+            .add(parent_add_color)
+        )
         blend = renderable.blend or 0
         if parent_blend not in {0, 1, 2} and blend in {0, 1, 2}:
             blend = parent_blend
 
         if renderable.mask:
-            mask = self.__apply_mask(parent_mask, transform, projection, renderable.mask)
+            mask = self.__apply_mask(
+                parent_mask, transform, projection, renderable.mask
+            )
         else:
             mask = parent_mask
 
@@ -1293,7 +1533,18 @@ class AFPRenderer(VerboseOutput):
                 for obj in renderable.placed_objects:
                     if obj.depth != depth:
                         continue
-                    img = self.__render_object(img, obj, transform, projection, mask, mult_color, add_color, blend, only_depths=new_only_depths, prefix=prefix + " ")
+                    img = self.__render_object(
+                        img,
+                        obj,
+                        transform,
+                        projection,
+                        mask,
+                        mult_color,
+                        add_color,
+                        blend,
+                        only_depths=new_only_depths,
+                        prefix=prefix + " ",
+                    )
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
@@ -1317,7 +1568,9 @@ class AFPRenderer(VerboseOutput):
                 if params.flags & 0x2:
                     # We need to look up the texture for this.
                     if params.region not in self.textures:
-                        raise Exception(f"Cannot find texture reference {params.region}!")
+                        raise Exception(
+                            f"Cannot find texture reference {params.region}!"
+                        )
                     texture = self.textures[params.region]
 
                     if params.flags & 0x8:
@@ -1331,7 +1584,9 @@ class AFPRenderer(VerboseOutput):
                         if len(shape.vertex_points) != 4:
                             print("WARNING: Unsupported non-rectangle shape!")
                         if params.blend is None:
-                            raise Exception("Logic error, rectangle without a blend color!")
+                            raise Exception(
+                                "Logic error, rectangle without a blend color!"
+                            )
 
                         x_points = set(p.x for p in shape.vertex_points)
                         y_points = set(p.y for p in shape.vertex_points)
@@ -1353,14 +1608,22 @@ class AFPRenderer(VerboseOutput):
                         if bad:
                             print("WARNING: Unsupported non-rectangle shape!")
 
-                        shape.rectangle = Image.new('RGBA', (int(right - left), int(bottom - top)), (params.blend.as_tuple()))
+                        shape.rectangle = Image.new(
+                            "RGBA",
+                            (int(right - left), int(bottom - top)),
+                            (params.blend.as_tuple()),
+                        )
                     texture = shape.rectangle
                     rectangle = True
 
                 if texture is not None:
                     if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
                         if self.__enable_aa:
-                            aamode = AAMode.UNSCALED_SSAA_ONLY if rectangle else AAMode.SSAA_OR_BILINEAR
+                            aamode = (
+                                AAMode.UNSCALED_SSAA_ONLY
+                                if rectangle
+                                else AAMode.SSAA_OR_BILINEAR
+                            )
                         else:
                             aamode = AAMode.NONE
 
@@ -1378,11 +1641,17 @@ class AFPRenderer(VerboseOutput):
                     elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
                         if self.__camera is None:
                             if self.__enable_aa:
-                                aamode = AAMode.UNSCALED_SSAA_ONLY if rectangle else AAMode.SSAA_OR_BILINEAR
+                                aamode = (
+                                    AAMode.UNSCALED_SSAA_ONLY
+                                    if rectangle
+                                    else AAMode.SSAA_OR_BILINEAR
+                                )
                             else:
                                 aamode = AAMode.NONE
 
-                            print("WARNING: Element requests perspective projection but no camera exists!")
+                            print(
+                                "WARNING: Element requests perspective projection but no camera exists!"
+                            )
                             img = affine_composite(
                                 img,
                                 add_color,
@@ -1396,7 +1665,11 @@ class AFPRenderer(VerboseOutput):
                             )
                         else:
                             if self.__enable_aa:
-                                aamode = AAMode.UNSCALED_SSAA_ONLY if rectangle else AAMode.SSAA_ONLY
+                                aamode = (
+                                    AAMode.UNSCALED_SSAA_ONLY
+                                    if rectangle
+                                    else AAMode.SSAA_ONLY
+                                )
                             else:
                                 aamode = AAMode.NONE
 
@@ -1431,11 +1704,15 @@ class AFPRenderer(VerboseOutput):
                     blend,
                     texture,
                     single_threaded=self.__single_threaded,
-                    aa_mode=AAMode.SSAA_OR_BILINEAR if self.__enable_aa else AAMode.NONE,
+                    aa_mode=AAMode.SSAA_OR_BILINEAR
+                    if self.__enable_aa
+                    else AAMode.NONE,
                 )
             elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
                 if self.__camera is None:
-                    print("WARNING: Element requests perspective projection but no camera exists!")
+                    print(
+                        "WARNING: Element requests perspective projection but no camera exists!"
+                    )
                     img = affine_composite(
                         img,
                         add_color,
@@ -1445,7 +1722,9 @@ class AFPRenderer(VerboseOutput):
                         blend,
                         texture,
                         single_threaded=self.__single_threaded,
-                        aa_mode=AAMode.SSAA_OR_BILINEAR if self.__enable_aa else AAMode.NONE,
+                        aa_mode=AAMode.SSAA_OR_BILINEAR
+                        if self.__enable_aa
+                        else AAMode.NONE,
                     )
                 else:
                     img = perspective_composite(
@@ -1483,15 +1762,24 @@ class AFPRenderer(VerboseOutput):
         # None of our children (or their children, etc...) or ourselves is dirty.
         return False
 
-    def __process_tags(self, clip: PlacedClip, only_dirty: bool, prefix: str = "  ") -> bool:
-        self.vprint(f"{prefix}Handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}", component="tags")
+    def __process_tags(
+        self, clip: PlacedClip, only_dirty: bool, prefix: str = "  "
+    ) -> bool:
+        self.vprint(
+            f"{prefix}Handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}",
+            component="tags",
+        )
 
         # Track whether anything in ourselves or our children changes during this processing.
         changed = False
 
         # Make sure to set the requested frame if it isn't set by an external force.
         if clip.requested_frame is None:
-            if not clip.playing or only_dirty or (clip.finished and clip is self.__root):
+            if (
+                not clip.playing
+                or only_dirty
+                or (clip.finished and clip is self.__root)
+            ):
                 # We aren't playing this clip because its either paused or finished,
                 # or it isn't dirty and we're doing dirty updates only. So, we don't
                 # need to advance to any frame.
@@ -1510,10 +1798,15 @@ class AFPRenderer(VerboseOutput):
             if clip.frame > clip.requested_frame:
                 # Rewind this clip to the beginning so we can replay until the requested frame.
                 if clip is self.__root:
-                    print("WARNING: Root clip was rewound, its possible this animation plays forever!")
+                    print(
+                        "WARNING: Root clip was rewound, its possible this animation plays forever!"
+                    )
                 clip.rewind()
 
-            self.vprint(f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}", component="tags")
+            self.vprint(
+                f"{prefix}  Processing frame {clip.frame} on our way to frame {clip.requested_frame}",
+                component="tags",
+            )
 
             # Clips that are part of our own placed objects which we should handle.
             child_clips = [c for c in clip.placed_objects if isinstance(c, PlacedClip)]
@@ -1527,48 +1820,81 @@ class AFPRenderer(VerboseOutput):
                 # See if we have any orphans that need to be placed before this frame will work.
                 for unplayed_tag in clip.unplayed_tags:
                     if unplayed_tag < frame.start_tag_offset:
-                        self.vprint(f"{prefix}  Including orphaned tag {unplayed_tag} in frame evaluation", component="tags")
+                        self.vprint(
+                            f"{prefix}  Including orphaned tag {unplayed_tag} in frame evaluation",
+                            component="tags",
+                        )
                         played_tags.add(unplayed_tag)
                         orphans.append(clip.source.tags[unplayed_tag])
 
-                for tagno in range(frame.start_tag_offset, frame.start_tag_offset + frame.num_tags):
+                for tagno in range(
+                    frame.start_tag_offset, frame.start_tag_offset + frame.num_tags
+                ):
                     played_tags.add(tagno)
 
                 # Check these off our future todo list.
-                clip.unplayed_tags = [t for t in clip.unplayed_tags if t not in played_tags]
+                clip.unplayed_tags = [
+                    t for t in clip.unplayed_tags if t not in played_tags
+                ]
 
                 # Grab the normal list of tags, add to the orphans.
-                tags = orphans + clip.source.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
+                tags = (
+                    orphans
+                    + clip.source.tags[
+                        frame.start_tag_offset : (
+                            frame.start_tag_offset + frame.num_tags
+                        )
+                    ]
+                )
                 for tagno, tag in enumerate(tags):
                     # Perform the action of this tag.
-                    self.vprint(f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}", component="tags")
+                    self.vprint(
+                        f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}",
+                        component="tags",
+                    )
                     new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
                     changed = changed or clip_changed
 
                     # If we create a new movie clip, process it as well for this frame.
                     if new_clip:
                         # These are never dirty-only updates as they're fresh-placed.
-                        changed = self.__process_tags(new_clip, False, prefix=prefix + "  ") or changed
+                        changed = (
+                            self.__process_tags(new_clip, False, prefix=prefix + "  ")
+                            or changed
+                        )
 
                 # Now, advance the frame for this clip since we processed the frame.
                 clip.advance()
 
             # Now, handle each of the existing clips.
             for child in child_clips:
-                changed = self.__process_tags(child, only_dirty, prefix=prefix + "  ") or changed
+                changed = (
+                    self.__process_tags(child, only_dirty, prefix=prefix + "  ")
+                    or changed
+                )
 
             # See if we're done with this clip.
             if clip.frame == clip.requested_frame:
                 clip.requested_frame = None
                 break
 
-        self.vprint(f"{prefix}Finished handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}", component="tags")
+        self.vprint(
+            f"{prefix}Finished handling {'dirty updates on ' if only_dirty else ''}placed clip {clip.object_id} at depth {clip.depth}",
+            component="tags",
+        )
 
         # Return if anything was modified.
         return changed
 
-    def __handle_imports(self, swf: SWF) -> Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]]:
-        external_objects: Dict[int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]] = {}
+    def __handle_imports(
+        self, swf: SWF
+    ) -> Dict[
+        int, Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]
+    ]:
+        external_objects: Dict[
+            int,
+            Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy],
+        ] = {}
 
         # Go through, recursively resolve imports for all SWF files.
         for tag_id, imp in swf.imported_tags.items():
@@ -1576,16 +1902,22 @@ class AFPRenderer(VerboseOutput):
                 if other.exported_name == imp.swf:
                     # This SWF should have the tag reference.
                     if imp.tag not in other.exported_tags:
-                        print(f"WARNING: {swf.exported_name} imports {imp} but that import is not in {other.exported_name}!")
+                        print(
+                            f"WARNING: {swf.exported_name} imports {imp} but that import is not in {other.exported_name}!"
+                        )
                         external_objects[tag_id] = RegisteredDummy(tag_id)
                         break
                     else:
-                        external_objects[tag_id] = self.__find_import(other, other.exported_tags[imp.tag])
+                        external_objects[tag_id] = self.__find_import(
+                            other, other.exported_tags[imp.tag]
+                        )
                         break
             else:
                 # Only display a warning if we don't have our own stub implementation of this SWF.
                 if repr(imp) not in self.__stubbed_swfs:
-                    print(f"WARNING: {swf.exported_name} imports {imp} but that SWF is not in our library!")
+                    print(
+                        f"WARNING: {swf.exported_name} imports {imp} but that SWF is not in our library!"
+                    )
                 external_objects[tag_id] = RegisteredDummy(tag_id)
 
         # Fix up tag IDs to point at our local definition of them.
@@ -1595,11 +1927,15 @@ class AFPRenderer(VerboseOutput):
         # Return our newly populated registered object table containing all imports!
         return external_objects
 
-    def __find_import(self, swf: SWF, tag_id: int) -> Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]:
+    def __find_import(
+        self, swf: SWF, tag_id: int
+    ) -> Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]:
         if tag_id in swf.imported_tags:
             external_objects = self.__handle_imports(swf)
             if tag_id not in external_objects:
-                raise Exception(f"Logic error, tag ID {tag_id} is an export for {swf.exported_name} but we didn't populate it!")
+                raise Exception(
+                    f"Logic error, tag ID {tag_id} is an export for {swf.exported_name} but we didn't populate it!"
+                )
             return external_objects[tag_id]
 
         # We need to do a basic placement to find the registered object so we can return it.
@@ -1612,14 +1948,22 @@ class AFPRenderer(VerboseOutput):
 
         tag = self.__find_tag(root_clip, tag_id)
         if tag is None:
-            print(f"WARNING: {swf.exported_name} exports {swf.imported_tags[tag_id]} but does not manifest an object!")
+            print(
+                f"WARNING: {swf.exported_name} exports {swf.imported_tags[tag_id]} but does not manifest an object!"
+            )
             return RegisteredDummy(tag_id)
         return tag
 
-    def __find_tag(self, clip: RegisteredClip, tag_id: int) -> Optional[Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]]:
+    def __find_tag(
+        self, clip: RegisteredClip, tag_id: int
+    ) -> Optional[
+        Union[RegisteredShape, RegisteredClip, RegisteredImage, RegisteredDummy]
+    ]:
         # Fake-execute this clip to find the tag we need to manifest.
         for frame in clip.frames:
-            tags = clip.tags[frame.start_tag_offset:(frame.start_tag_offset + frame.num_tags)]
+            tags = clip.tags[
+                frame.start_tag_offset : (frame.start_tag_offset + frame.num_tags)
+            ]
 
             for tag in tags:
                 # Attempt to place any tags.
@@ -1627,7 +1971,9 @@ class AFPRenderer(VerboseOutput):
                     if tag.id == tag_id:
                         # We need to be able to see this shape to place it.
                         if tag.reference not in self.shapes:
-                            raise Exception(f"Cannot find shape reference {tag.reference}!")
+                            raise Exception(
+                                f"Cannot find shape reference {tag.reference}!"
+                            )
 
                         # This matched, so this is the import.
                         return RegisteredShape(
@@ -1642,7 +1988,9 @@ class AFPRenderer(VerboseOutput):
                     if tag.id == tag_id:
                         # We need to be able to see this shape to place it.
                         if tag.reference not in self.textures:
-                            raise Exception(f"Cannot find texture reference {tag.reference}!")
+                            raise Exception(
+                                f"Cannot find texture reference {tag.reference}!"
+                            )
 
                         # This matched, so this is the import.
                         return RegisteredImage(
@@ -1685,7 +2033,9 @@ class AFPRenderer(VerboseOutput):
         # Calculate actual size based on given movie transform.
         actual_width = overridden_width or swf.location.width
         actual_height = overridden_height or swf.location.height
-        resized_width, resized_height, _ = movie_transform.multiply_point(Point(actual_width, actual_height)).as_tuple()
+        resized_width, resized_height, _ = movie_transform.multiply_point(
+            Point(actual_width, actual_height)
+        ).as_tuple()
 
         if round(swf.location.top, 2) != 0.0 or round(swf.location.left, 2) != 0.0:
             # TODO: If the location top/left is nonzero, we need move the root transform
@@ -1737,8 +2087,13 @@ class AFPRenderer(VerboseOutput):
 
             # Register the background images with the texture library.
             for background_frame in range(background_frames):
-                if background_image[background_frame].width != imgwidth or background_image[background_frame].height != imgheight:
-                    raise Exception(f"Frame {background_frame + 1} of background image sequence has different dimensions than others!")
+                if (
+                    background_image[background_frame].width != imgwidth
+                    or background_image[background_frame].height != imgheight
+                ):
+                    raise Exception(
+                        f"Frame {background_frame + 1} of background image sequence has different dimensions than others!"
+                    )
                 name = f"{swf.exported_name}_inserted_background_{background_frame}"
                 self.textures[name] = background_image[background_frame].convert("RGBA")
 
@@ -1753,12 +2108,14 @@ class AFPRenderer(VerboseOutput):
                 Color(0.0, 0.0, 0.0, 0.0),
                 0,
                 None,
-                background_object
+                background_object,
             )
             root_clip.placed_objects.append(background_container)
 
         # Create the root mask for where to draw the root clip.
-        movie_mask = Image.new("RGBA", (resized_width, resized_height), color=(255, 0, 0, 255))
+        movie_mask = Image.new(
+            "RGBA", (resized_width, resized_height), color=(255, 0, 0, 255)
+        )
 
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
@@ -1773,7 +2130,10 @@ class AFPRenderer(VerboseOutput):
         try:
             while root_clip.playing and not root_clip.finished:
                 # Create a new image to render into.
-                self.vprint(f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)}", component="core")
+                self.vprint(
+                    f"Rendering frame {frameno + 1}/{len(root_clip.source.frames)}",
+                    component="core",
+                )
 
                 # Go through all registered clips, place all needed tags.
                 changed = self.__process_tags(root_clip, False)
@@ -1788,7 +2148,9 @@ class AFPRenderer(VerboseOutput):
                         if obj is background_container:
                             break
                     else:
-                        self.vprint("Root clip was rewound, re-placing background image on clip.")
+                        self.vprint(
+                            "Root clip was rewound, re-placing background image on clip."
+                        )
                         root_clip.placed_objects.append(background_container)
 
                     # Now, update the background image if we need to.
@@ -1800,27 +2162,42 @@ class AFPRenderer(VerboseOutput):
 
                 # Adjust camera based on the movie's scaling.
                 if self.__camera is not None and not self.__camera.adjusted:
-                    self.__camera.center = movie_transform.multiply_point(self.__camera.center)
+                    self.__camera.center = movie_transform.multiply_point(
+                        self.__camera.center
+                    )
                     self.__camera.adjusted = True
 
                 # If we're only rendering some frames, don't bother to do the draw operations
                 # if we aren't going to return the frame.
                 if only_frames and (frameno + 1) not in only_frames:
-                    self.vprint(f"Skipped rendering frame {frameno + 1}/{len(root_clip.source.frames)}", component="core")
+                    self.vprint(
+                        f"Skipped rendering frame {frameno + 1}/{len(root_clip.source.frames)}",
+                        component="core",
+                    )
                     last_rendered_frame = None
                     frameno += 1
                     continue
 
                 if changed or last_rendered_frame is None:
-                    if last_width != root_clip._width or last_height != root_clip._height:
+                    if (
+                        last_width != root_clip._width
+                        or last_height != root_clip._height
+                    ):
                         last_width = root_clip._width
                         last_height = root_clip._height
-                        if root_clip._width > actual_width or root_clip._height > actual_height:
-                            print(f"WARNING: Root clip requested to resize to {last_width}x{last_height} which overflows root canvas!")
+                        if (
+                            root_clip._width > actual_width
+                            or root_clip._height > actual_height
+                        ):
+                            print(
+                                f"WARNING: Root clip requested to resize to {last_width}x{last_height} which overflows root canvas!"
+                            )
 
                     # Now, render out the placed objects.
                     color = swf.color or Color(0.0, 0.0, 0.0, 0.0)
-                    curimage = Image.new("RGBA", (resized_width, resized_height), color=color.as_tuple())
+                    curimage = Image.new(
+                        "RGBA", (resized_width, resized_height), color=color.as_tuple()
+                    )
                     curimage = self.__render_object(
                         curimage,
                         root_clip,
@@ -1838,7 +2215,10 @@ class AFPRenderer(VerboseOutput):
                     curimage = last_rendered_frame.copy()
 
                 # Return that frame, advance our bookkeeping.
-                self.vprint(f"Finished rendering frame {frameno + 1}/{len(root_clip.source.frames)}", component="core")
+                self.vprint(
+                    f"Finished rendering frame {frameno + 1}/{len(root_clip.source.frames)}",
+                    component="core",
+                )
                 last_rendered_frame = curimage
                 frameno += 1
                 yield curimage
@@ -1848,7 +2228,9 @@ class AFPRenderer(VerboseOutput):
                     break
         except KeyboardInterrupt:
             # Allow ctrl-c to end early and render a partial animation.
-            print(f"WARNING: Interrupted early, will render only {frameno}/{len(root_clip.source.frames)} frames of animation!")
+            print(
+                f"WARNING: Interrupted early, will render only {frameno}/{len(root_clip.source.frames)} frames of animation!"
+            )
 
         # Clean up
         self.__root = None

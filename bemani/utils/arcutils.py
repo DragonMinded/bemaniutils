@@ -15,7 +15,7 @@ def main() -> None:
         "-d",
         "--directory",
         help="Directory to extract to. Defaults to current directory.",
-        default="."
+        default=".",
     )
     parser.add_argument(
         "-l",
@@ -26,11 +26,11 @@ def main() -> None:
     args = parser.parse_args()
 
     root = args.directory
-    if root[-1] != '/':
-        root = root + '/'
+    if root[-1] != "/":
+        root = root + "/"
     root = os.path.realpath(root)
 
-    rfp = open(args.file, 'rb')
+    rfp = open(args.file, "rb")
     data = rfp.read()
     rfp.close()
 
@@ -39,13 +39,13 @@ def main() -> None:
         if args.list_only:
             print(fn)
         else:
-            print(f'Extracting {fn} to disk...')
+            print(f"Extracting {fn} to disk...")
             realfn = os.path.join(root, fn)
             dirof = os.path.dirname(realfn)
             os.makedirs(dirof, exist_ok=True)
-            with open(realfn, 'wb') as wfp:
+            with open(realfn, "wb") as wfp:
                 wfp.write(arc.read_file(fn))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

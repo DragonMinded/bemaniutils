@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var machine_management = React.createClass({
+var machine_management = createReactClass({
     getInitialState: function(props) {
         return {
             machines: window.machines,
@@ -244,7 +244,7 @@ var machine_management = React.createClass({
             };
 
             return (
-                <span>
+                <>
                     <select
                         name="function"
                         value={value}
@@ -275,7 +275,7 @@ var machine_management = React.createClass({
                         <option value="atmost">specific game or older</option>
                     </select>
                     {extra}
-                </span>
+                </>
             );
         } else {
             if (machine.game == 'any') {
@@ -325,20 +325,18 @@ var machine_management = React.createClass({
     renderArcade: function(machine) {
         if (this.state.editing_machine && machine.pcbid == this.state.editing_machine.pcbid) {
             return (
-                <span>
-                    <SelectArcade
-                        name="owner"
-                        value={ this.state.editing_machine.arcade }
-                        arcades={ this.state.arcades }
-                        onChange={function(owner) {
-                            var machine = this.state.editing_machine;
-                            machine.arcade = parseInt(owner);
-                            this.setState({
-                                editing_machine: machine,
-                             });
-                         }.bind(this)}
-                     />
-                 </span>
+                <SelectArcade
+                    name="owner"
+                    value={ this.state.editing_machine.arcade }
+                    arcades={ this.state.arcades }
+                    onChange={function(owner) {
+                        var machine = this.state.editing_machine;
+                        machine.arcade = parseInt(owner);
+                        this.setState({
+                            editing_machine: machine,
+                         });
+                     }.bind(this)}
+                 />
              );
         } else {
             if (machine.arcade) {
@@ -397,7 +395,7 @@ var machine_management = React.createClass({
         if (this.state.editing_machine) {
             if (this.state.editing_machine.pcbid == machine.pcbid) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="submit"
                             value="save"
@@ -411,14 +409,14 @@ var machine_management = React.createClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             return (
-                <span>
+                <>
                     <Edit
                         onClick={function(event) {
                             var editing_machine = null;
@@ -437,7 +435,7 @@ var machine_management = React.createClass({
                             this.deleteExistingMachine(event, machine.pcbid);
                         }.bind(this)}
                     />
-                </span>
+                </>
             );
         }
     },

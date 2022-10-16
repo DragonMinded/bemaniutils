@@ -16,7 +16,10 @@ from bemani.frontend.sdvx import sdvx_pages
 from bemani.frontend.reflec import reflec_pages
 from bemani.frontend.museca import museca_pages
 from bemani.frontend.gitadora import gitadora_pages
-from bemani.utils.config import load_config as base_load_config, register_games as base_register_games
+from bemani.utils.config import (
+    load_config as base_load_config,
+    register_games as base_register_games,
+)
 
 
 def register_blueprints() -> None:
@@ -61,17 +64,37 @@ def load_config(filename: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="A front end services provider for eAmusement games.")
-    parser.add_argument("-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80)
-    parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
-    parser.add_argument("-r", "--profile", help="Turn on profiling for front end, writing CProfile data to the currenct directory", action="store_true")
-    parser.add_argument("-o", "--read-only", action="store_true", help="Force the database into read-only mode.")
+    parser = argparse.ArgumentParser(
+        description="A front end services provider for eAmusement games."
+    )
+    parser.add_argument(
+        "-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Core configuration. Defaults to server.yaml",
+        type=str,
+        default="server.yaml",
+    )
+    parser.add_argument(
+        "-r",
+        "--profile",
+        help="Turn on profiling for front end, writing CProfile data to the currenct directory",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-o",
+        "--read-only",
+        action="store_true",
+        help="Force the database into read-only mode.",
+    )
     args = parser.parse_args()
 
     # Set up app
     load_config(args.config)
     if args.read_only:
-        config['database']['read_only'] = True
+        config["database"]["read_only"] = True
 
     # Register all blueprints
     register_blueprints()
@@ -81,11 +104,12 @@ def main() -> None:
 
     if args.profile:
         from werkzeug.contrib.profiler import ProfilerMiddleware
-        app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir='.')  # type: ignore
+
+        app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=".")  # type: ignore
 
     # Run the app
-    app.run(host='0.0.0.0', port=args.port, debug=True)
+    app.run(host="0.0.0.0", port=args.port, debug=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

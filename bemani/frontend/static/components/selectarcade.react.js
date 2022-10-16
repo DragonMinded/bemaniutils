@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var SelectArcade = React.createClass({
+var SelectArcade = createReactClass({
     render: function() {
         return (
             <select

@@ -19,7 +19,7 @@ class LineNumber:
 
 
 class StructPrinter:
-    def __init__(self, pe: PEFile, default_encoding: str="ascii") -> None:
+    def __init__(self, pe: PEFile, default_encoding: str = "ascii") -> None:
         self.default_encoding = default_encoding
         self.pe = pe
 
@@ -46,7 +46,9 @@ class StructPrinter:
                     if not in_dereference:
                         in_dereference = True
                         if cur_accum:
-                            raise Exception("Cannot have dereference marker in middle of specifier!")
+                            raise Exception(
+                                "Cannot have dereference marker in middle of specifier!"
+                            )
                     else:
                         # Double-indirect dereference.
                         cur_accum += c
@@ -82,13 +84,19 @@ class StructPrinter:
                 continue
 
             # If we have either an integer prefix, or an offset prefix, accumulate here.
-            if c.isdigit() or c in '+-' or (c in 'xabcdefABCDEF' and ('+' in cur_accum or '-' in cur_accum)):
+            if (
+                c.isdigit()
+                or c in "+-"
+                or (c in "xabcdefABCDEF" and ("+" in cur_accum or "-" in cur_accum))
+            ):
                 cur_accum += c
                 continue
 
             if c == "&":
                 if cur_accum:
-                    raise Exception("Hex specifier should be at beginning of specifier!")
+                    raise Exception(
+                        "Hex specifier should be at beginning of specifier!"
+                    )
                 cur_accum += c
                 continue
 
@@ -107,10 +115,16 @@ class StructPrinter:
 
         return prefix, specs
 
-    def parse_struct(self, startaddr: str, endaddr: str, countstr: str, fmt: str) -> List[Any]:
+    def parse_struct(
+        self, startaddr: str, endaddr: str, countstr: str, fmt: str
+    ) -> List[Any]:
         start: int = int(startaddr, 16)
         end: Optional[int] = int(endaddr, 16) if endaddr is not None else None
-        count: Optional[int] = int(countstr, 16 if "0x" in countstr else 10) if countstr is not None else None
+        count: Optional[int] = (
+            int(countstr, 16 if "0x" in countstr else 10)
+            if countstr is not None
+            else None
+        )
 
         if end is None and count is None:
             raise Exception("Can't handle endless structures!")
@@ -130,7 +144,14 @@ class StructPrinter:
 
         return self.__parse_struct(start, end, count, prefix, specs)
 
-    def __parse_struct(self, start: int, end: Optional[int], count: Optional[int], prefix: str, specs: List[Any]) -> List[Any]:
+    def __parse_struct(
+        self,
+        start: int,
+        end: Optional[int],
+        count: Optional[int],
+        prefix: str,
+        specs: List[Any],
+    ) -> List[Any]:
         # Now, parse out each chunk.
         output = []
         offset = start
@@ -155,7 +176,9 @@ class StructPrinter:
                     if spec[-1] == "#":
                         if len(spec) > 1:
                             if spec[0] not in "+-":
-                                raise Exception("Line number offsets must include a '+' or '-' prefix!")
+                                raise Exception(
+                                    "Line number offsets must include a '+' or '-' prefix!"
+                                )
                             val = int(spec[:-1], 16 if "0x" in spec else 10)
                         else:
                             val = 0
@@ -163,8 +186,8 @@ class StructPrinter:
                     elif spec == "z":
                         # Null-terminated string
                         bs = b""
-                        while self.pe.data[offset:(offset + 1)] != b"\x00":
-                            bs += self.pe.data[offset:(offset + 1)]
+                        while self.pe.data[offset : (offset + 1)] != b"\x00":
+                            bs += self.pe.data[offset : (offset + 1)]
                             offset += 1
                         # Advance past null byte
                         offset += 1
@@ -175,8 +198,8 @@ class StructPrinter:
                         line.append(bs.decode(self.default_encoding))
                     else:
                         size = struct.calcsize(prefix + spec)
-                        chunk = self.pe.data[offset:(offset + size)]
-                        if spec != 'x':
+                        chunk = self.pe.data[offset : (offset + size)]
+                        if spec != "x":
                             if dohex:
                                 line.append(hex(struct.unpack(prefix + spec, chunk)[0]))
                             else:
@@ -184,11 +207,11 @@ class StructPrinter:
                         offset += size
                 else:
                     if self.pe.is_64bit():
-                        chunk = self.pe.data[offset:(offset + 8)]
+                        chunk = self.pe.data[offset : (offset + 8)]
                         pointer = struct.unpack(prefix + "Q", chunk)[0]
                         offset += 8
                     else:
-                        chunk = self.pe.data[offset:(offset + 4)]
+                        chunk = self.pe.data[offset : (offset + 4)]
                         pointer = struct.unpack(prefix + "I", chunk)[0]
                         offset += 4
 
@@ -199,7 +222,9 @@ class StructPrinter:
                         line.append(None)
                     else:
                         pointer = self.pe.virtual_to_physical(pointer)
-                        subparse = self.__parse_struct(pointer, pointer + 1, None, prefix, spec)
+                        subparse = self.__parse_struct(
+                            pointer, pointer + 1, None, prefix, spec
+                        )
                         if len(subparse) != 1:
                             raise Exception("Logic error!")
                         line.append(subparse[0])
@@ -213,7 +238,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="A utility to print structs out of a DLL.",
-        epilog=("""
+        epilog=(
+            """
 Some examples of valid format specifiers and what they do are as follows:
 
 *h = Decodes an array of short pointers, decoding the resulting shorts for each pointer in the array.
@@ -231,7 +257,8 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
 *z&+0x200# = Decodes an array of null-terminated string pointers, displaying the array entry number in hex starting at 0x200 and string. Broken down, it has the following parts:
     *z = Dereference the current value (*) and treat that integer as a pointer to a null-terminated string (z).
     &+0x200# = Print the current line number (#), offset by the value 0x200 (+0x200) as a hex number (&).
-"""),
+"""
+        ),
     )
     parser.add_argument(
         "--file",
@@ -262,7 +289,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
     parser.add_argument(
         "--encoding",
         help="Encoding to use for strings, such as 'ascii', 'utf-8' or 'shift-jis'.",
-        default='ascii',
+        default="ascii",
         type=str,
     )
     parser.add_argument(
@@ -272,10 +299,10 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
             "for details. Additionally, prefixing a format specifier with * allows dereferencing pointers. "
             "Surround a chunk of format specifiers with parenthesis to dereference structures. Note that "
             "structures can be arbitrarily nested to decode complex data types. For ease of unpacking C string "
-            "pointers, the specifier \"z\" is recognzied to mean null-terminated string. A & preceeding a "
+            'pointers, the specifier "z" is recognzied to mean null-terminated string. A & preceeding a '
             "format specifier means that we should convert to hex before displaying. For the ease of decoding "
-            "enumerations, the specifier \"#\" is recognized to mean entry number. You can provide it an "
-            "offset value such as \"+20#\" to start at a certain number."
+            'enumerations, the specifier "#" is recognized to mean entry number. You can provide it an '
+            'offset value such as "+20#" to start at a certain number.'
         ),
         type=str,
         default=None,
@@ -290,7 +317,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
             "If multiple sections must be emulated you can specify this multiple times."
         ),
         type=str,
-        action='append',
+        action="append",
         default=[],
     )
     parser.add_argument(
@@ -302,7 +329,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
             "can specify this multiple times."
         ),
         type=str,
-        action='append',
+        action="append",
         default=[],
     )
     parser.add_argument(
@@ -321,7 +348,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         print("You cannot specify both an --end and a --count!", file=sys.stderr)
         return 1
 
-    fp = open(args.file, 'rb')
+    fp = open(args.file, "rb")
     data = fp.read()
     fp.close()
 
@@ -344,7 +371,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
     # we're about to parse.
     if args.emulate_code:
         for chunk in args.emulate_code:
-            emulate_start, emulate_end = chunk.split(':', 1)
+            emulate_start, emulate_end = chunk.split(":", 1)
             start = int(emulate_start, 16)
             end = int(emulate_end, 16)
             pe.emulate_code(start, end, verbose=args.verbose)
@@ -362,5 +389,5 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

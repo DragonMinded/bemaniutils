@@ -116,6 +116,13 @@ bring your production DB up to sync with the code you are deploying. Run it like
 `./dbutils --help` to see all options. The config file that this works on is the same
 that is given to "api", "services" and "frontend".
 
+## formatfiles
+
+A simple wrapper frontend to black, the formatter used on this project. Running this will
+auto-format all of the python code that might need formatting, leaving the rest out. When
+submitting pull requests make sure to run this so that your code conforms to the style
+used by this project!
+
 ## frontend
 
 Development version of a frontend server allowing for account and server administration
@@ -210,6 +217,15 @@ Think of this as a combination of "replay" and "psmap". This is also extremely u
 when building new integration test clients. Run it like `./responsegen --help` to
 see all information and usage.
 
+## sampleclient
+
+A very barebones sample client for the BEMAPI implementation contained in this repo.
+Run it like `./sampleclient --help` to see help output and determine how to use this.
+Essentially, this is provided as a barebones client that does nothing other than
+print fetched info to the screen. You can use this as a starting point for an
+application that uses BEMAPI to fetch info from an api instance or to test your
+production installation.
+
 ## scheduler
 
 A command-line utility for kicking off scheduled work that must be performed against the
@@ -226,10 +242,10 @@ This should be given the same config file as "api", "frontend" and "services".
 Development version of an eAmusement protocol server using flask and the protocol
 libraries also used in "bemanishark" and "trafficgen". Currently it lets most modern
 BEMANI games boot and supports full profile and events for Beatmania IIDX 20-26,
-Pop'n Music 19-26, Jubeat Saucer, Saucer Fulfill, Prop, Qubell and Clan, Sound Voltex
-1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace, MÚSECA 1,
-MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper, Volzza
-1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi.
+Pop'n Music 19-26, Jubeat Saucer, Saucer Fulfill, Prop, Qubell, Clan and Festo, Sound
+Voltex 1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace,
+MÚSECA 1, MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper,
+Volzza 1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi.
 
 Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with a Python
@@ -259,10 +275,11 @@ guarantees are made on the accuracy of the emulation though I've strived to be
 correct. In some cases, I will verify the response, and in other cases I will
 simply verify that certain things exist so as not to crash a real client. This
 currently generates traffic emulating Beatmania IIDX 20-26, Pop'n Music 19-26, Jubeat
-Saucer, Fulfill, Prop, Qubell and Clan, Sound Voltex 1, 2, 3 Season 1/2 and 4, Dance
-Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA 1+1/2,
-Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper, Volzza 1 and
-Volzza 2 and can verify card events and score events, as well as PASELI transactions.
+Saucer, Fulfill, Prop, Qubell, Clan and Festo, Sound Voltex 1, 2, 3 Season 1/2 and 4,
+Dance Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA
+1+1/2, Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper,
+Volzza 1 and Volzza 2 and can verify card events and score events, as well as PASELI
+transactions.
 
 ## verifylibs
 
@@ -423,6 +440,7 @@ table:
 * Prop:           prop
 * Qubell:         qubell
 * Clan:           clan
+* Festo:          festo
 
 An example is as follows:
 
@@ -722,7 +740,8 @@ up your MySQL instance, see the `examples/` directory.
 Contributions are welcome! Before submitting a pull request, ensure that your code
 is type-hint clean by running `./verifytyping` and ensure that it hasn't broken basic
 libraries with `./verifylibs`. Make sure that it is also lint-clean with `./verifylint`.
-If you are changing code related to a particular game, it is nice to include a
+You should also make sure its formatted correctly by running `./formatfiles`.
+If you are changing code related to a particular game, it is required to include a
 verification in the form of a game traffic emulator, so that basic functionality can
 be verified. To ensure you haven't broken another game with your changes, its recommended
 to run the traffic generator against your code with various games. For convenience, you

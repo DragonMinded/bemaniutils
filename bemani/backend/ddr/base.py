@@ -4,7 +4,14 @@ from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import Model, Profile, ValidatedDict, GameConstants, DBConstants, Time
+from bemani.common import (
+    Model,
+    Profile,
+    ValidatedDict,
+    GameConstants,
+    DBConstants,
+    Time,
+)
 from bemani.data import Config, Data, Score, UserID, ScoreSaveException
 from bemani.protocol import Node
 
@@ -54,12 +61,12 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     # Return the local2 service so that DDR Ace will send certain packets.
     extra_services: List[str] = [
-        'local2',
+        "local2",
     ]
 
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
-        if model.rev == 'X':
+        if model.rev == "X":
             self.omnimix = True
         else:
             self.omnimix = False
@@ -74,39 +81,39 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         Given a game's rank constant, return the rank as defined above.
         """
-        raise Exception('Implement in sub-class!')
+        raise Exception("Implement in sub-class!")
 
     def db_to_game_rank(self, db_rank: int) -> int:
         """
         Given a rank as defined above, return the game's rank constant.
         """
-        raise Exception('Implement in sub-class!')
+        raise Exception("Implement in sub-class!")
 
     def game_to_db_chart(self, game_chart: int) -> int:
         """
         Given a game's chart for a song, return the chart as defined above.
         """
-        raise Exception('Implement in sub-class!')
+        raise Exception("Implement in sub-class!")
 
     def db_to_game_chart(self, db_chart: int) -> int:
         """
         Given a chart as defined above, return the game's chart constant.
         """
-        raise Exception('Implement in sub-class!')
+        raise Exception("Implement in sub-class!")
 
     def game_to_db_halo(self, game_halo: int) -> int:
         """
         Given a game's halo constant, return the halo as defined above.
         """
-        raise Exception('Implement in sub-class!')
+        raise Exception("Implement in sub-class!")
 
     def db_to_game_halo(self, db_halo: int) -> int:
         """
         Given a halo as defined above, return the game's halo constant.
         """
-        raise Exception('Implement in sub-class!')
+        raise Exception("Implement in sub-class!")
 
-    def previous_version(self) -> Optional['DDRBase']:
+    def previous_version(self) -> Optional["DDRBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
@@ -118,16 +125,20 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('game')
+        return Node.void("game")
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
+    def format_scores(
+        self, userid: UserID, profile: Profile, scores: List[Score]
+    ) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
         """
-        return Node.void('game')
+        return Node.void("game")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -153,7 +164,9 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now, return it
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], area: Optional[int]) -> None:
+    def new_profile_by_refid(
+        self, refid: Optional[str], name: Optional[str], area: Optional[int]
+    ) -> None:
         """
         Given a RefID and a name/area, create a new profile.
         """
@@ -169,8 +182,8 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             refid,
             0,
             {
-                'name': name,
-                'area': area,
+                "name": name,
+                "area": area,
             },
         )
         self.put_profile(userid, defaultprofile)
@@ -199,8 +212,8 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         rank: int,
         halo: int,
         combo: int,
-        trace: Optional[List[int]]=None,
-        ghost: Optional[str]=None,
+        trace: Optional[List[int]] = None,
+        ghost: Optional[str] = None,
     ) -> None:
         """
         Given various pieces of a score, update the user's high score and score
@@ -219,7 +232,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.CHART_DOUBLE_EXPERT,
             self.CHART_DOUBLE_CHALLENGE,
         ]:
-            raise Exception(f'Invalid chart {chart}')
+            raise Exception(f"Invalid chart {chart}")
         if halo not in [
             self.HALO_NONE,
             self.HALO_GOOD_FULL_COMBO,
@@ -227,7 +240,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.HALO_PERFECT_FULL_COMBO,
             self.HALO_MARVELOUS_FULL_COMBO,
         ]:
-            raise Exception(f'Invalid halo {halo}')
+            raise Exception(f"Invalid halo {halo}")
         if rank not in [
             self.RANK_E,
             self.RANK_D,
@@ -246,7 +259,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.RANK_AA_PLUS,
             self.RANK_AAA,
         ]:
-            raise Exception(f'Invalid rank {rank}')
+            raise Exception(f"Invalid rank {rank}")
 
         if userid is not None:
             oldscore = self.data.local.music.get_score(
@@ -277,26 +290,26 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Save combo
-        history.replace_int('combo', combo)
-        scoredata.replace_int('combo', max(scoredata.get_int('combo'), combo))
+        history.replace_int("combo", combo)
+        scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
 
         # Save halo
-        history.replace_int('halo', halo)
-        scoredata.replace_int('halo', max(scoredata.get_int('halo'), halo))
+        history.replace_int("halo", halo)
+        scoredata.replace_int("halo", max(scoredata.get_int("halo"), halo))
 
         # Save rank
-        history.replace_int('rank', rank)
-        scoredata.replace_int('rank', max(scoredata.get_int('rank'), rank))
+        history.replace_int("rank", rank)
+        scoredata.replace_int("rank", max(scoredata.get_int("rank"), rank))
 
         # Save ghost steps
         if trace is not None:
-            history.replace_int_array('trace', len(trace), trace)
+            history.replace_int_array("trace", len(trace), trace)
             if raised:
-                scoredata.replace_int_array('trace', len(trace), trace)
+                scoredata.replace_int_array("trace", len(trace), trace)
         if ghost is not None:
-            history.replace_str('ghost', ghost)
+            history.replace_str("ghost", ghost)
             if raised:
-                scoredata.replace_str('ghost', ghost)
+                scoredata.replace_str("ghost", ghost)
 
         # Look up where this score was earned
         lid = self.get_machine_id()

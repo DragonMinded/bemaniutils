@@ -9,7 +9,7 @@ from bemani.frontend.types import g
 
 
 home_pages = Blueprint(
-    'home_pages',
+    "home_pages",
     __name__,
     template_folder=templates_location,
     static_folder=static_location,
@@ -18,19 +18,19 @@ home_pages = Blueprint(
 
 def format_news(news: News) -> Dict[str, Any]:
     return {
-        'timestamp': news.timestamp,
-        'title': news.title,
-        'body': news.body,
+        "timestamp": news.timestamp,
+        "title": news.title,
+        "body": news.body,
     }
 
 
-@home_pages.route('/')
+@home_pages.route("/")
 @loginrequired
 def viewhome() -> Response:
     return render_react(
-        g.config.get('name', 'e-AMUSEMENT Network'),
-        'home.react.js',
+        g.config.get("name", "e-AMUSEMENT Network"),
+        "home.react.js",
         {
-            'news': [format_news(news) for news in g.data.local.network.get_all_news()],
-        }
+            "news": [format_news(news) for news in g.data.local.network.get_all_news()],
+        },
     )

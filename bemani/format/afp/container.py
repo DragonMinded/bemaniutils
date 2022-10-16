@@ -11,7 +11,14 @@ from bemani.protocol.node import Node
 
 from .swf import SWF
 from .geo import Shape
-from .util import TrackedCoverage, VerboseOutput, scramble_text, descramble_text, pad, align
+from .util import (
+    TrackedCoverage,
+    VerboseOutput,
+    scramble_text,
+    descramble_text,
+    pad,
+    align,
+)
 
 
 class PMAN:
@@ -31,9 +38,9 @@ class PMAN:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'flags': [self.flags1, self.flags2, self.flags3],
-            'entries': self.entries,
-            'ordering': self.ordering,
+            "flags": [self.flags1, self.flags2, self.flags3],
+            "entries": self.entries,
+            "ordering": self.ordering,
         }
 
 
@@ -66,19 +73,27 @@ class Texture:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'width': self.width,
-            'height': self.height,
-            'fmt': self.fmt,
-            'header_flags': [self.header_flags1, self.header_flags2, self.header_flags3],
-            'fmt_flags': self.fmtflags,
-            'raw': self.raw.hex(),
-            'compressed': self.compressed.hex() if self.compressed is not None else None,
+            "name": self.name,
+            "width": self.width,
+            "height": self.height,
+            "fmt": self.fmt,
+            "header_flags": [
+                self.header_flags1,
+                self.header_flags2,
+                self.header_flags3,
+            ],
+            "fmt_flags": self.fmtflags,
+            "raw": self.raw.hex(),
+            "compressed": self.compressed.hex()
+            if self.compressed is not None
+            else None,
         }
 
 
 class TextureRegion:
-    def __init__(self, textureno: int, left: int, top: int, right: int, bottom: int) -> None:
+    def __init__(
+        self, textureno: int, left: int, top: int, right: int, bottom: int
+    ) -> None:
         self.textureno = textureno
         self.left = left
         self.top = top
@@ -87,22 +102,22 @@ class TextureRegion:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'texture': self.textureno,
-            'left': self.left,
-            'top': self.top,
-            'right': self.right,
-            'bottom': self.bottom,
+            "texture": self.textureno,
+            "left": self.left,
+            "top": self.top,
+            "right": self.right,
+            "bottom": self.bottom,
         }
 
     def __repr__(self) -> str:
         return (
-            f"texture: {self.textureno}, " +
-            f"left: {self.left / 2}, " +
-            f"top: {self.top / 2}, " +
-            f"right: {self.right / 2}, " +
-            f"bottom: {self.bottom / 2}, " +
-            f"width: {(self.right - self.left) / 2}, " +
-            f"height: {(self.bottom - self.top) / 2}"
+            f"texture: {self.textureno}, "
+            + f"left: {self.left / 2}, "
+            + f"top: {self.top / 2}, "
+            + f"right: {self.right / 2}, "
+            + f"bottom: {self.bottom / 2}, "
+            + f"width: {(self.right - self.left) / 2}, "
+            + f"height: {(self.bottom - self.top) / 2}"
         )
 
 
@@ -119,8 +134,8 @@ class Unknown1:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'data': self.data.hex(),
+            "name": self.name,
+            "data": self.data.hex(),
         }
 
 
@@ -135,7 +150,7 @@ class Unknown2:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'data': self.data.hex(),
+            "data": self.data.hex(),
         }
 
 
@@ -217,25 +232,27 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'endian': self.endian,
-            'features': self.features,
-            'file_flags': self.file_flags.hex(),
-            'obfuscated': self.text_obfuscated,
-            'legacy_lz': self.legacy_lz,
-            'modern_lz': self.modern_lz,
-            'textures': [tex.as_dict(*args, **kwargs) for tex in self.textures],
-            'texturemap': self.texturemap.as_dict(*args, **kwargs),
-            'textureregion': [reg.as_dict(*args, **kwargs) for reg in self.texture_to_region],
-            'regionmap': self.regionmap.as_dict(*args, **kwargs),
-            'swfdata': [data.as_dict(*args, **kwargs) for data in self.swfdata],
-            'swfmap': self.swfmap.as_dict(*args, **kwargs),
-            'fontdata': str(self.fontdata) if self.fontdata is not None else None,
-            'shapes': [shape.as_dict(*args, **kwargs) for shape in self.shapes],
-            'shapemap': self.shapemap.as_dict(*args, **kwargs),
-            'unknown1': [unk.as_dict(*args, **kwargs) for unk in self.unknown1],
-            'unknown1map': self.unk_pman1.as_dict(*args, **kwargs),
-            'unknown2': [unk.as_dict(*args, **kwargs) for unk in self.unknown2],
-            'unknown2map': self.unk_pman2.as_dict(*args, **kwargs),
+            "endian": self.endian,
+            "features": self.features,
+            "file_flags": self.file_flags.hex(),
+            "obfuscated": self.text_obfuscated,
+            "legacy_lz": self.legacy_lz,
+            "modern_lz": self.modern_lz,
+            "textures": [tex.as_dict(*args, **kwargs) for tex in self.textures],
+            "texturemap": self.texturemap.as_dict(*args, **kwargs),
+            "textureregion": [
+                reg.as_dict(*args, **kwargs) for reg in self.texture_to_region
+            ],
+            "regionmap": self.regionmap.as_dict(*args, **kwargs),
+            "swfdata": [data.as_dict(*args, **kwargs) for data in self.swfdata],
+            "swfmap": self.swfmap.as_dict(*args, **kwargs),
+            "fontdata": str(self.fontdata) if self.fontdata is not None else None,
+            "shapes": [shape.as_dict(*args, **kwargs) for shape in self.shapes],
+            "shapemap": self.shapemap.as_dict(*args, **kwargs),
+            "unknown1": [unk.as_dict(*args, **kwargs) for unk in self.unknown1],
+            "unknown1map": self.unk_pman1.as_dict(*args, **kwargs),
+            "unknown2": [unk.as_dict(*args, **kwargs) for unk in self.unknown2],
+            "unknown2map": self.unk_pman2.as_dict(*args, **kwargs),
         }
 
     @staticmethod
@@ -255,22 +272,32 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         result = 0
         for byte in bytestream:
             for i in range(6):
-                result = TXP2File.poly(result) ^ TXP2File.cap32((result << 1) | ((byte >> i) & 1))
+                result = TXP2File.poly(result) ^ TXP2File.cap32(
+                    (result << 1) | ((byte >> i) & 1)
+                )
         return result
 
     def get_until_null(self, offset: int) -> bytes:
         out = b""
         while self.data[offset] != 0:
-            out += self.data[offset:(offset + 1)]
+            out += self.data[offset : (offset + 1)]
             offset += 1
         return out
 
     def descramble_pman(self, offset: int) -> PMAN:
         # Unclear what the first three unknowns are, but the fourth
         # looks like it could possibly be two int16s indicating unknown?
-        magic, expect_zero, flags1, flags2, numentries, flags3, data_offset = struct.unpack(
+        (
+            magic,
+            expect_zero,
+            flags1,
+            flags2,
+            numentries,
+            flags3,
+            data_offset,
+        ) = struct.unpack(
             f"{self.endian}4sIIIIII",
-            self.data[offset:(offset + 28)],
+            self.data[offset : (offset + 28)],
         )
         self.add_coverage(offset, 28)
 
@@ -292,7 +319,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 file_offset = data_offset + (i * 12)
                 name_crc, entry_no, nameoffset = struct.unpack(
                     f"{self.endian}III",
-                    self.data[file_offset:(file_offset + 12)],
+                    self.data[file_offset : (file_offset + 12)],
                 )
                 self.add_coverage(file_offset, 12)
 
@@ -306,7 +333,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 ordering[entry_no] = i
                 self.vprint(f"    {entry_no}: {name}, offset: {hex(nameoffset)}")
 
-                if name_crc != TXP2File.crc32(name.encode('ascii')):
+                if name_crc != TXP2File.crc32(name.encode("ascii")):
                     raise Exception(f"Name CRC failed for {name}")
 
         for i, n in enumerate(names):
@@ -366,18 +393,22 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         if feature_mask & 0x01:
             # List of textures that exist in the file, with pointers to their data.
-            length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
+            length, offset = struct.unpack(
+                f"{self.endian}II", self.data[header_offset : (header_offset + 8)]
+            )
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            self.vprint(f"Bit 0x000001 - textures; count: {length}, offset: {hex(offset)}")
+            self.vprint(
+                f"Bit 0x000001 - textures; count: {length}, offset: {hex(offset)}"
+            )
 
             for x in range(length):
                 interesting_offset = offset + (x * 12)
                 if interesting_offset != 0:
                     name_offset, texture_length, texture_offset = struct.unpack(
                         f"{self.endian}III",
-                        self.data[interesting_offset:(interesting_offset + 12)],
+                        self.data[interesting_offset : (interesting_offset + 12)],
                     )
                     self.add_coverage(interesting_offset, 12)
 
@@ -395,17 +426,23 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             # Get size, round up to nearest power of 4
                             inflated_size, deflated_size = struct.unpack(
                                 ">II",
-                                self.data[texture_offset:(texture_offset + 8)],
+                                self.data[texture_offset : (texture_offset + 8)],
                             )
                             self.add_coverage(texture_offset, 8)
                             if deflated_size != (texture_length - 8):
-                                raise Exception("We got an incorrect length for lz texture!")
-                            self.vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
+                                raise Exception(
+                                    "We got an incorrect length for lz texture!"
+                                )
+                            self.vprint(
+                                f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}"
+                            )
                             inflated_size = (inflated_size + 3) & (~3)
 
                             # Get the data offset.
                             lz_data_offset = texture_offset + 8
-                            lz_data = self.data[lz_data_offset:(lz_data_offset + deflated_size)]
+                            lz_data = self.data[
+                                lz_data_offset : (lz_data_offset + deflated_size)
+                            ]
                             self.add_coverage(lz_data_offset, deflated_size)
 
                             # This takes forever, so skip it if we're pretending.
@@ -414,17 +451,25 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         else:
                             inflated_size, deflated_size = struct.unpack(
                                 ">II",
-                                self.data[texture_offset:(texture_offset + 8)],
+                                self.data[texture_offset : (texture_offset + 8)],
                             )
 
                             # I'm guessing how raw textures work because I haven't seen them.
                             # I assume they're like the above, so lets put in some asertions.
                             if deflated_size != (texture_length - 8):
-                                raise Exception("We got an incorrect length for raw texture!")
-                            self.vprint(f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}")
+                                raise Exception(
+                                    "We got an incorrect length for raw texture!"
+                                )
+                            self.vprint(
+                                f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {deflated_size}, inflated_size: {inflated_size}"
+                            )
 
                             # Just grab the raw data.
-                            raw_data = self.data[(texture_offset + 8):(texture_offset + 8 + deflated_size)]
+                            raw_data = self.data[
+                                (texture_offset + 8) : (
+                                    texture_offset + 8 + deflated_size
+                                )
+                            ]
                             self.add_coverage(texture_offset, deflated_size + 8)
 
                         (
@@ -446,16 +491,24 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         # I have only ever observed the following values across two different games.
                         # Don't want to keep the chunk around so let's assert our assumptions.
                         if (expected_zero1 | expected_zero2) != 0:
-                            raise Exception("Found unexpected non-zero value in texture header!")
-                        if raw_data[32:44] != b'\0' * 12:
-                            raise Exception("Found unexpected non-zero value in texture header!")
+                            raise Exception(
+                                "Found unexpected non-zero value in texture header!"
+                            )
+                        if raw_data[32:44] != b"\0" * 12:
+                            raise Exception(
+                                "Found unexpected non-zero value in texture header!"
+                            )
                         # This is almost ALWAYS 3, but I've seen it be 1 as well, so I guess we have to
                         # round-trip it if we want to write files back out. I have no clue what it's for.
                         # I've seen it be 1 only on files used for fonts so far, but I am not sure there
                         # is any correlation there.
-                        header_flags3 = struct.unpack(f"{self.endian}I", raw_data[44:48])[0]
-                        if raw_data[48:64] != b'\0' * 16:
-                            raise Exception("Found unexpected non-zero value in texture header!")
+                        header_flags3 = struct.unpack(
+                            f"{self.endian}I", raw_data[44:48]
+                        )[0]
+                        if raw_data[48:64] != b"\0" * 16:
+                            raise Exception(
+                                "Found unexpected non-zero value in texture header!"
+                            )
                         fmt = fmtflags & 0xFF
 
                         # Extract flags that the game cares about.
@@ -482,7 +535,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             for i in range(width * height):
                                 pixel = struct.unpack(
                                     f"{self.endian}H",
-                                    raw_data[(64 + (i * 2)):(66 + (i * 2))],
+                                    raw_data[(64 + (i * 2)) : (66 + (i * 2))],
                                 )[0]
 
                                 # Extract the raw values
@@ -495,23 +548,33 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                                 green = green | (green >> 6)
                                 blue = blue | (blue >> 5)
 
-                                newdata.append(
-                                    struct.pack("<BBB", blue, green, red)
-                                )
+                                newdata.append(struct.pack("<BBB", blue, green, red))
                             img = Image.frombytes(
-                                'RGB', (width, height), b''.join(newdata), 'raw', 'RGB',
+                                "RGB",
+                                (width, height),
+                                b"".join(newdata),
+                                "raw",
+                                "RGB",
                             )
                         elif fmt == 0x0E:
                             # RGB image, no alpha. Game references D3D9 texture format 22 (R8G8B8).
                             img = Image.frombytes(
-                                'RGB', (width, height), raw_data[64:], 'raw', 'RGB',
+                                "RGB",
+                                (width, height),
+                                raw_data[64:],
+                                "raw",
+                                "RGB",
                             )
                         elif fmt == 0x10:
                             # Seems to be some sort of RGB with color swapping. Game references D3D9 texture
                             # format 21 (A8R8B8G8) but does manual byteswapping.
                             # TODO: Not sure this is correct, need to find sample files.
                             img = Image.frombytes(
-                                'RGB', (width, height), raw_data[64:], 'raw', 'BGR',
+                                "RGB",
+                                (width, height),
+                                raw_data[64:],
+                                "raw",
+                                "BGR",
                             )
                         elif fmt == 0x13:
                             # Some 16-bit texture format. Game references D3D9 texture format 25 (A1R5G5B5).
@@ -519,7 +582,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             for i in range(width * height):
                                 pixel = struct.unpack(
                                     f"{self.endian}H",
-                                    raw_data[(64 + (i * 2)):(66 + (i * 2))],
+                                    raw_data[(64 + (i * 2)) : (66 + (i * 2))],
                                 )[0]
 
                                 # Extract the raw values
@@ -537,14 +600,22 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                                     struct.pack("<BBBB", blue, green, red, alpha)
                                 )
                             img = Image.frombytes(
-                                'RGBA', (width, height), b''.join(newdata), 'raw', 'RGBA',
+                                "RGBA",
+                                (width, height),
+                                b"".join(newdata),
+                                "raw",
+                                "RGBA",
                             )
                         elif fmt == 0x15:
                             # RGBA format. Game references D3D9 texture format 21 (A8R8G8B8).
                             # Looks like unlike 0x20 below, the game does some endianness swapping.
                             # TODO: Not sure this is correct, need to find sample files.
                             img = Image.frombytes(
-                                'RGBA', (width, height), raw_data[64:], 'raw', 'ARGB',
+                                "RGBA",
+                                (width, height),
+                                raw_data[64:],
+                                "raw",
+                                "ARGB",
                             )
                         elif fmt == 0x16:
                             # DXT1 format. Game references D3D9 DXT1 texture format.
@@ -553,11 +624,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             # as little-endian by all DXT1 documentation.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
-                                'RGBA',
+                                "RGBA",
                                 (width, height),
-                                dxt.DXT1Decompress(raw_data[64:], swap=self.endian != "<"),
-                                'raw',
-                                'RGBA',
+                                dxt.DXT1Decompress(
+                                    raw_data[64:], swap=self.endian != "<"
+                                ),
+                                "raw",
+                                "RGBA",
                                 0,
                                 1,
                             )
@@ -568,11 +641,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             # as little-endian by all DXT5 documentation.
                             dxt = DXTBuffer(width, height)
                             img = Image.frombuffer(
-                                'RGBA',
+                                "RGBA",
                                 (width, height),
-                                dxt.DXT5Decompress(raw_data[64:], swap=self.endian != "<"),
-                                'raw',
-                                'RGBA',
+                                dxt.DXT5Decompress(
+                                    raw_data[64:], swap=self.endian != "<"
+                                ),
+                                "raw",
+                                "RGBA",
                                 0,
                                 1,
                             )
@@ -587,7 +662,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             for i in range(width * height):
                                 pixel = struct.unpack(
                                     f"{self.endian}H",
-                                    raw_data[(64 + (i * 2)):(66 + (i * 2))],
+                                    raw_data[(64 + (i * 2)) : (66 + (i * 2))],
                                 )[0]
 
                                 # Extract the raw values
@@ -606,15 +681,25 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                                     struct.pack("<BBBB", red, green, blue, alpha)
                                 )
                             img = Image.frombytes(
-                                'RGBA', (width, height), b''.join(newdata), 'raw', 'RGBA',
+                                "RGBA",
+                                (width, height),
+                                b"".join(newdata),
+                                "raw",
+                                "RGBA",
                             )
                         elif fmt == 0x20:
                             # RGBA format. Game references D3D9 surface format 21 (A8R8G8B8).
                             img = Image.frombytes(
-                                'RGBA', (width, height), raw_data[64:], 'raw', 'BGRA',
+                                "RGBA",
+                                (width, height),
+                                raw_data[64:],
+                                "raw",
+                                "BGRA",
                             )
                         else:
-                            self.vprint(f"Unsupported format {hex(fmt)} for texture {name}")
+                            self.vprint(
+                                f"Unsupported format {hex(fmt)} for texture {name}"
+                            )
                             img = None
 
                         self.textures.append(
@@ -638,7 +723,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         # Mapping between texture index and the name of the texture.
         if feature_mask & 0x02:
             # Mapping of texture name to texture index. This is used by regions to look up textures.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -660,18 +747,22 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             # Mapping between individual graphics and their respective textures.
             # This is 10 bytes per entry. Seems to need both 0x2 (texture index)
             # and 0x10 (region index).
-            length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
+            length, offset = struct.unpack(
+                f"{self.endian}II", self.data[header_offset : (header_offset + 8)]
+            )
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            self.vprint(f"Bit 0x000008 - regions; count: {length}, offset: {hex(offset)}")
+            self.vprint(
+                f"Bit 0x000008 - regions; count: {length}, offset: {hex(offset)}"
+            )
 
             if offset != 0 and length > 0:
                 for i in range(length):
                     descriptor_offset = offset + (10 * i)
                     texture_no, left, top, right, bottom = struct.unpack(
                         f"{self.endian}HHHHH",
-                        self.data[descriptor_offset:(descriptor_offset + 10)],
+                        self.data[descriptor_offset : (descriptor_offset + 10)],
                     )
                     self.add_coverage(descriptor_offset, 10)
 
@@ -690,7 +781,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x10:
             # Names of the graphics regions, so we can look into the texture_to_region
             # mapping above. Used by shapes to find the right region offset given a name.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -709,22 +802,30 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x40:
             # Two unknown bytes, first is a length or a count. Secound is
             # an optional offset to grab another set of bytes from.
-            length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
+            length, offset = struct.unpack(
+                f"{self.endian}II", self.data[header_offset : (header_offset + 8)]
+            )
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            self.vprint(f"Bit 0x000040 - unknown; count: {length}, offset: {hex(offset)}")
+            self.vprint(
+                f"Bit 0x000040 - unknown; count: {length}, offset: {hex(offset)}"
+            )
 
             if offset != 0 and length > 0:
                 for i in range(length):
                     unk_offset = offset + (i * 16)
-                    name_offset = struct.unpack(f"{self.endian}I", self.data[unk_offset:(unk_offset + 4)])[0]
+                    name_offset = struct.unpack(
+                        f"{self.endian}I", self.data[unk_offset : (unk_offset + 4)]
+                    )[0]
                     self.add_coverage(unk_offset, 4)
 
                     # The game does some very bizarre bit-shifting. Its clear tha the first value
                     # points at a name structure, but its not in the correct endianness. This replicates
                     # the weird logic seen in game disassembly.
-                    name_offset = (((name_offset >> 7) & 0x1FF) << 16) + ((name_offset >> 16) & 0xFFFF)
+                    name_offset = (((name_offset >> 7) & 0x1FF) << 16) + (
+                        (name_offset >> 16) & 0xFFFF
+                    )
                     if name_offset != 0:
                         # Let's decode this until the first null.
                         bytedata = self.get_until_null(name_offset)
@@ -735,7 +836,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     self.unknown1.append(
                         Unknown1(
                             name=name,
-                            data=self.data[(unk_offset + 4):(unk_offset + 16)],
+                            data=self.data[(unk_offset + 4) : (unk_offset + 16)],
                         )
                     )
                     self.add_coverage(unk_offset + 4, 12)
@@ -745,7 +846,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x80:
             # One unknown byte, treated as an offset. This is clearly the mapping for the parsed
             # structures from 0x40, but I don't know what those are.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -760,17 +863,21 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x100:
             # Two unknown bytes, first is a length or a count. Secound is
             # an optional offset to grab another set of bytes from.
-            length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
+            length, offset = struct.unpack(
+                f"{self.endian}II", self.data[header_offset : (header_offset + 8)]
+            )
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            self.vprint(f"Bit 0x000100 - unknown; count: {length}, offset: {hex(offset)}")
+            self.vprint(
+                f"Bit 0x000100 - unknown; count: {length}, offset: {hex(offset)}"
+            )
 
             if offset != 0 and length > 0:
                 for i in range(length):
                     unk_offset = offset + (i * 4)
                     self.unknown2.append(
-                        Unknown2(self.data[unk_offset:(unk_offset + 4)])
+                        Unknown2(self.data[unk_offset : (unk_offset + 4)])
                     )
                     self.add_coverage(unk_offset, 4)
         else:
@@ -779,7 +886,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x200:
             # One unknown byte, treated as an offset. Almost positive its a string mapping
             # for the above 0x100 structure. That's how this file format appears to work.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -795,7 +904,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             # One unknown byte, treated as an offset. I have no idea what this is used for,
             # it seems to be empty data in files that I've looked at, it doesn't go to any
             # structure or mapping.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -806,18 +917,22 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x800:
             # SWF raw data that is loaded and passed to AFP core. It is equivalent to the
             # afp files in an IFS container.
-            length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
+            length, offset = struct.unpack(
+                f"{self.endian}II", self.data[header_offset : (header_offset + 8)]
+            )
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            self.vprint(f"Bit 0x000800 - swfdata; count: {length}, offset: {hex(offset)}")
+            self.vprint(
+                f"Bit 0x000800 - swfdata; count: {length}, offset: {hex(offset)}"
+            )
 
             for x in range(length):
                 interesting_offset = offset + (x * 12)
                 if interesting_offset != 0:
                     name_offset, swf_length, swf_offset = struct.unpack(
                         f"{self.endian}III",
-                        self.data[interesting_offset:(interesting_offset + 12)],
+                        self.data[interesting_offset : (interesting_offset + 12)],
                     )
                     self.add_coverage(interesting_offset, 12)
                     if name_offset != 0:
@@ -825,14 +940,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         bytedata = self.get_until_null(name_offset)
                         self.add_coverage(name_offset, len(bytedata) + 1, unique=False)
                         name = descramble_text(bytedata, self.text_obfuscated)
-                        self.vprint(f"    {name}, length: {swf_length}, offset: {hex(swf_offset)}")
+                        self.vprint(
+                            f"    {name}, length: {swf_length}, offset: {hex(swf_offset)}"
+                        )
 
                     if swf_offset != 0:
                         self.swfdata.append(
-                            SWF(
-                                name,
-                                self.data[swf_offset:(swf_offset + swf_length)]
-                            )
+                            SWF(name, self.data[swf_offset : (swf_offset + swf_length)])
                         )
                         self.add_coverage(swf_offset, swf_length)
         else:
@@ -840,7 +954,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         if feature_mask & 0x1000:
             # A mapping structure that allows looking up SWF data by name.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -855,18 +971,22 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             # These are shapes as used with the SWF data above. They contain mappings between a
             # loaded texture shape and the region that contains data. They are equivalent to the
             # geo files found in an IFS container.
-            length, offset = struct.unpack(f"{self.endian}II", self.data[header_offset:(header_offset + 8)])
+            length, offset = struct.unpack(
+                f"{self.endian}II", self.data[header_offset : (header_offset + 8)]
+            )
             self.add_coverage(header_offset, 8)
             header_offset += 8
 
-            self.vprint(f"Bit 0x002000 - shapes; count: {length}, offset: {hex(offset)}")
+            self.vprint(
+                f"Bit 0x002000 - shapes; count: {length}, offset: {hex(offset)}"
+            )
 
             for x in range(length):
                 shape_base_offset = offset + (x * 12)
                 if shape_base_offset != 0:
                     name_offset, shape_length, shape_offset = struct.unpack(
                         f"{self.endian}III",
-                        self.data[shape_base_offset:(shape_base_offset + 12)],
+                        self.data[shape_base_offset : (shape_base_offset + 12)],
                     )
                     self.add_coverage(shape_base_offset, 12)
 
@@ -881,13 +1001,15 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     if shape_offset != 0:
                         shape = Shape(
                             name,
-                            self.data[shape_offset:(shape_offset + shape_length)],
+                            self.data[shape_offset : (shape_offset + shape_length)],
                         )
                         shape.parse(text_obfuscated=self.text_obfuscated)
                         self.shapes.append(shape)
                         self.add_coverage(shape_offset, shape_length)
 
-                        self.vprint(f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}")
+                        self.vprint(
+                            f"    {name}, length: {shape_length}, offset: {hex(shape_offset)}"
+                        )
                         for line in str(shape).split(os.linesep):
                             self.vprint(f"        {line}")
 
@@ -896,7 +1018,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         if feature_mask & 0x4000:
             # Mapping so that shapes can be looked up by name to get their offset.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -910,7 +1034,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x8000:
             # One unknown byte, treated as an offset. I have no idea what this is because
             # the games I've looked at don't include this bit.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -925,16 +1051,22 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x10000:
             # Included font package, BINXRPC encoded. This is basically a texture sheet with an XML
             # pointing at the region in the texture sheet for every renderable character.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
             # I am not sure what the unknown byte is for. It always appears as
             # all zeros in all files I've looked at.
-            expect_zero, length, binxrpc_offset = struct.unpack(f"{self.endian}III", self.data[offset:(offset + 12)])
+            expect_zero, length, binxrpc_offset = struct.unpack(
+                f"{self.endian}III", self.data[offset : (offset + 12)]
+            )
             self.add_coverage(offset, 12)
 
-            self.vprint(f"Bit 0x010000 - fontinfo; offset: {hex(offset)}, binxrpc offset: {hex(binxrpc_offset)}")
+            self.vprint(
+                f"Bit 0x010000 - fontinfo; offset: {hex(offset)}, binxrpc offset: {hex(binxrpc_offset)}"
+            )
 
             if expect_zero != 0:
                 # If we find non-zero versions of this, then that means updating the file is
@@ -942,7 +1074,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 raise Exception("Expected a zero in font package header!")
 
             if binxrpc_offset != 0:
-                self.fontdata = self.benc.decode(self.data[binxrpc_offset:(binxrpc_offset + length)])
+                self.fontdata = self.benc.decode(
+                    self.data[binxrpc_offset : (binxrpc_offset + length)]
+                )
                 self.add_coverage(binxrpc_offset, length)
             else:
                 self.fontdata = None
@@ -952,7 +1086,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         if feature_mask & 0x20000:
             # This is the byteswapping headers that allow us to byteswap the SWF data before passing it
             # to AFP core. It is equivalent to the bsi files in an IFS container.
-            offset = struct.unpack(f"{self.endian}I", self.data[header_offset:(header_offset + 4)])[0]
+            offset = struct.unpack(
+                f"{self.endian}I", self.data[header_offset : (header_offset + 4)]
+            )[0]
             self.add_coverage(header_offset, 4)
             header_offset += 4
 
@@ -967,9 +1103,11 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     # I've observed and seems to make sense.
                     expect_zero, afp_header_length, afp_header = struct.unpack(
                         f"{self.endian}III",
-                        self.data[structure_offset:(structure_offset + 12)]
+                        self.data[structure_offset : (structure_offset + 12)],
                     )
-                    self.vprint(f"    length: {afp_header_length}, offset: {hex(afp_header)}")
+                    self.vprint(
+                        f"    length: {afp_header_length}, offset: {hex(afp_header)}"
+                    )
                     self.add_coverage(structure_offset, 12)
 
                     if expect_zero != 0:
@@ -977,7 +1115,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         # potentially unsafe as we could rewrite it incorrectly. So, let's assert!
                         raise Exception("Expected a zero in SWF header!")
 
-                    self.swfdata[i].descramble_info = self.data[afp_header:(afp_header + afp_header_length)]
+                    self.swfdata[i].descramble_info = self.data[
+                        afp_header : (afp_header + afp_header_length)
+                    ]
                     self.add_coverage(afp_header, afp_header_length)
         else:
             self.vprint("Bit 0x020000 - swfheaders; NOT PRESENT")
@@ -1010,7 +1150,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         return data
 
-    def write_pman(self, data: bytes, offset: int, pman: PMAN, string_offsets: Dict[str, int]) -> bytes:
+    def write_pman(
+        self, data: bytes, offset: int, pman: PMAN, string_offsets: Dict[str, int]
+    ) -> bytes:
         # First, lay down the PMAN header
         if self.endian == "<":
             magic = b"PMAN"
@@ -1039,7 +1181,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         # Now, lay down the individual entries
         datas: List[bytes] = [b""] * len(pman.entries)
         for entry_no, name in enumerate(pman.entries):
-            name_crc = TXP2File.crc32(name.encode('ascii'))
+            name_crc = TXP2File.crc32(name.encode("ascii"))
 
             if name not in string_offsets:
                 # We haven't written this string out yet, so put it on our pending list.
@@ -1074,13 +1216,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         # The true file header, containing magic, some file flags, file length and
         # header length.
-        header: bytes = b''
+        header: bytes = b""
 
         # The bitfield structure that dictates what's found in the file and where.
-        bitfields: bytes = b''
+        bitfields: bytes = b""
 
         # The data itself.
-        body: bytes = b''
+        body: bytes = b""
 
         # First, plop down the file magic as well as the unknown file flags we
         # roundtripped.
@@ -1168,20 +1310,27 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
                 fmtflags = (texture.fmtflags & 0xFFFFFF00) | (texture.fmt & 0xFF)
 
-                raw_texture = struct.pack(
-                    f"{self.endian}4sIIIHHIII",
-                    magic,
-                    texture.header_flags1,
-                    texture.header_flags2,
-                    64 + len(texture.raw),
-                    texture.width,
-                    texture.height,
-                    fmtflags,
-                    0,
-                    0,
-                ) + (b'\0' * 12) + struct.pack(
-                    f"{self.endian}I", texture.header_flags3,
-                ) + (b'\0' * 16) + texture.raw
+                raw_texture = (
+                    struct.pack(
+                        f"{self.endian}4sIIIHHIII",
+                        magic,
+                        texture.header_flags1,
+                        texture.header_flags2,
+                        64 + len(texture.raw),
+                        texture.width,
+                        texture.height,
+                        fmtflags,
+                        0,
+                        0,
+                    )
+                    + (b"\0" * 12)
+                    + struct.pack(
+                        f"{self.endian}I",
+                        texture.header_flags3,
+                    )
+                    + (b"\0" * 16)
+                    + texture.raw
+                )
 
                 if self.legacy_lz:
                     raise Exception("We don't support legacy lz mode!")
@@ -1202,7 +1351,8 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             ">II",
                             len(raw_texture),
                             len(compressed_texture),
-                        ) + compressed_texture,
+                        )
+                        + compressed_texture,
                     )
                 else:
                     # We just need to place the raw texture down.
@@ -1213,7 +1363,8 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             ">II",
                             len(raw_texture),
                             len(raw_texture),
-                        ) + raw_texture,
+                        )
+                        + raw_texture,
                     )
 
             # Now, make sure the texture block is padded to 4 bytes, so we can figure out
@@ -1252,7 +1403,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             body = pad(body, offset)
 
             # First, lay down pointers and length, regardless of number of entries.
-            bitchunks[3] = struct.pack(f"{self.endian}II", len(self.texture_to_region), offset)
+            bitchunks[3] = struct.pack(
+                f"{self.endian}II", len(self.texture_to_region), offset
+            )
 
             for bounds in self.texture_to_region:
                 body += struct.pack(
@@ -1286,7 +1439,10 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     string_offset += len(entry1.name) + 1
 
                 # Write out the chunk itself.
-                body += struct.pack(f"{self.endian}I", string_offsets[entry1.name]) + entry1.data
+                body += (
+                    struct.pack(f"{self.endian}I", string_offsets[entry1.name])
+                    + entry1.data
+                )
 
             # Now, put down the strings that were new in this chunk.
             body = self.write_strings(body, pending_strings)
@@ -1315,7 +1471,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
             # Now, calculate where we can put SWF data and their names.
             swfdata_offset = align(len(body) + (len(self.swfdata) * 12))
-            string_offset = align(swfdata_offset + sum(align(len(a.data)) for a in self.swfdata))
+            string_offset = align(
+                swfdata_offset + sum(align(len(a.data)) for a in self.swfdata)
+            )
             swfdata = b""
 
             # Now, lay them out.
@@ -1350,7 +1508,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
             # Now, calculate where we can put shapes and their names.
             shape_offset = align(len(body) + (len(self.shapes) * 12))
-            string_offset = align(shape_offset + sum(align(len(s.data)) for s in self.shapes))
+            string_offset = align(
+                shape_offset + sum(align(len(s.data)) for s in self.shapes)
+            )
             shapedata = b""
 
             # Now, lay them out.
@@ -1501,7 +1661,11 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 body = pad(body, offset) + texture_data
 
                 # Now, update the patch location to make sure we point at the texture data.
-                body = body[:fix_offset] + struct.pack(f"{self.endian}I", offset) + body[(fix_offset + 4):]
+                body = (
+                    body[:fix_offset]
+                    + struct.pack(f"{self.endian}I", offset)
+                    + body[(fix_offset + 4) :]
+                )
 
         # Bit 0x40000 is for lz options.
 
@@ -1521,7 +1685,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         # Skip over padding to the body that we inserted specifically to track offsets
         # against the headers.
-        return header + bitfields + body[(header_length + 24):]
+        return header + bitfields + body[(header_length + 24) :]
 
     def update_texture(self, name: str, png_data: bytes) -> None:
         for texture in self.textures:
@@ -1533,7 +1697,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     raise Exception("Cannot update texture with different size!")
 
                 # Now, get the raw image data.
-                img = img.convert('RGBA')
+                img = img.convert("RGBA")
                 texture.img = img
 
                 # Now, refresh the raw texture data for when we write it out.
@@ -1563,7 +1727,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         # Now, figure out if the PNG data we got is valid.
         sprite_img = Image.open(io.BytesIO(png_data))
-        if sprite_img.width != ((region.right // 2) - (region.left // 2)) or sprite_img.height != ((region.bottom // 2) - (region.top // 2)):
+        if sprite_img.width != (
+            (region.right // 2) - (region.left // 2)
+        ) or sprite_img.height != ((region.bottom // 2) - (region.top // 2)):
             raise Exception("Cannot update sprite with different size!")
 
         # Now, copy the data over and update the raw texture.
@@ -1581,11 +1747,12 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 struct.pack(
                     f"{self.endian}H",
                     (
-                        (((pixel[0] >> 3) & 0x1F) << 11) |
-                        (((pixel[1] >> 2) & 0x3F) << 5) |
-                        ((pixel[2] >> 3) & 0x1F)
-                    )
-                ) for pixel in texture.img.getdata()
+                        (((pixel[0] >> 3) & 0x1F) << 11)
+                        | (((pixel[1] >> 2) & 0x3F) << 5)
+                        | ((pixel[2] >> 3) & 0x1F)
+                    ),
+                )
+                for pixel in texture.img.getdata()
             )
         elif texture.fmt == 0x13:
             # 16-bit A1R5G55 texture format.
@@ -1593,12 +1760,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 struct.pack(
                     f"{self.endian}H",
                     (
-                        (0x8000 if pixel[3] >= 128 else 0x0000) |
-                        (((pixel[0] >> 3) & 0x1F) << 10) |
-                        (((pixel[1] >> 3) & 0x1F) << 5) |
-                        ((pixel[2] >> 3) & 0x1F)
-                    )
-                ) for pixel in texture.img.getdata()
+                        (0x8000 if pixel[3] >= 128 else 0x0000)
+                        | (((pixel[0] >> 3) & 0x1F) << 10)
+                        | (((pixel[1] >> 3) & 0x1F) << 5)
+                        | ((pixel[2] >> 3) & 0x1F)
+                    ),
+                )
+                for pixel in texture.img.getdata()
             )
         elif texture.fmt == 0x1F:
             # 16-bit 4-4-4-4 RGBA format.
@@ -1606,12 +1774,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 struct.pack(
                     f"{self.endian}H",
                     (
-                        ((pixel[2] >> 4) & 0xF) |
-                        (((pixel[1] >> 4) & 0xF) << 4) |
-                        (((pixel[0] >> 4) & 0xF) << 8) |
-                        (((pixel[3] >> 4) & 0xF) << 12)
-                    )
-                ) for pixel in texture.img.getdata()
+                        ((pixel[2] >> 4) & 0xF)
+                        | (((pixel[1] >> 4) & 0xF) << 4)
+                        | (((pixel[0] >> 4) & 0xF) << 8)
+                        | (((pixel[3] >> 4) & 0xF) << 12)
+                    ),
+                )
+                for pixel in texture.img.getdata()
             )
         elif texture.fmt == 0x20:
             # 32-bit RGBA format
@@ -1622,10 +1791,13 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     pixel[1],
                     pixel[0],
                     pixel[3],
-                ) for pixel in texture.img.getdata()
+                )
+                for pixel in texture.img.getdata()
             )
         else:
-            raise Exception(f"Unsupported format {hex(texture.fmt)} for texture {texture.name}")
+            raise Exception(
+                f"Unsupported format {hex(texture.fmt)} for texture {texture.name}"
+            )
 
         # Make sure we don't use the old compressed data.
         texture.compressed = None

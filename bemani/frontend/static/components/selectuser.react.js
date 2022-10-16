@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var SelectUser = React.createClass({
+var SelectUser = createReactClass({
     render: function() {
         return (
             <select

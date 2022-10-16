@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Card = React.createClass({
+var Card = createReactClass({
     render: function() {
         return (
             <div className="card">{

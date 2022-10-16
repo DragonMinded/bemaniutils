@@ -1,33 +1,36 @@
+<!DOCTYPE html>
 <html>
     <head>
 		{% if title %}
 		<title>{{ title }}</title>
 		{% endif %}
-        <link rel="icon" type="image/png" href="{{ theme_url('favicon.png') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ theme_url('site.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ theme_url('color.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ theme_url('form.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ theme_url('section.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ theme_url('table.css') }}" />
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='jquery-confirm.css') }}" />
+        <link rel="icon" type="image/png" href="{{ theme_url('favicon.png') }}?{{ cache_bust }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('site.css') }}?{{ cache_bust }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('color.css') }}?{{ cache_bust }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('form.css') }}?{{ cache_bust }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('section.css') }}?{{ cache_bust }}" />
+        <link rel="stylesheet" type="text/css" href="{{ theme_url('table.css') }}?{{ cache_bust }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='jquery-confirm.css') }}?{{ cache_bust }}" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script type="text/javascript" src="{{ url_for('static', filename='chart.bundle.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='date.format.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='jquery-1.12.4.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='jquery-confirm.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='jquery.touchSwipe.min.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='tinynav.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='react.min.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='react-dom.min.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='ajax.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='messages.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='history.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='iidx-options.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='ddr-options.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='link.js') }}"></script>
-        <script defer type="text/javascript" src="{{ url_for('static', filename='merge.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='chart.bundle.min.js') }}?{{ cache_bust }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='date.format.min.js') }}?{{ cache_bust }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery-1.12.4.min.js') }}?{{ cache_bust }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery-confirm.js') }}?{{ cache_bust }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery.touchSwipe.min.js') }}?{{ cache_bust }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='tinynav.js') }}?{{ cache_bust }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='classnames.min.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='react.min.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='react-dom.min.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='create-react-class.min.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='ajax.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='messages.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='history.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='iidx-options.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='ddr-options.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='link.js') }}?{{ cache_bust }}"></script>
+        <script defer type="text/javascript" src="{{ url_for('static', filename='merge.js') }}?{{ cache_bust }}"></script>
         {% for entry in components %}
-        <script defer type="text/javascript" src="{{ url_for('jsx', filename=entry) }}"></script>
+            <script defer type="text/javascript" src="{{ url_for('jsx', filename=entry) }}?{{ cache_bust }}"></script>
         {% endfor %}
         {% block scripts %}{% endblock %}
 	</head>

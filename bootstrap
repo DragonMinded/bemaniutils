@@ -21,6 +21,7 @@ set -e
 ./read --series jubeat --version prop "$@"
 ./read --series jubeat --version qubell "$@"
 ./read --series jubeat --version clan "$@"
+./read --series jubeat --version festo "$@"
 
 # Init IIDX
 ./read --series iidx --version 20 "$@"

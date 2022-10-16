@@ -6,7 +6,6 @@ from bemani.data.types import UserID
 
 
 class TestRemoteUser(unittest.TestCase):
-
     def test_id_mangling(self) -> None:
         card = "E0040100DEADBEEF"
         userid = RemoteUser.card_to_userid(card)

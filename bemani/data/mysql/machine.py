@@ -15,18 +15,18 @@ a connection. It is also used for settings such as port forwarding and which arc
 a machine belongs to for the purpose of PASELI balance.
 """
 machine = Table(
-    'machine',
+    "machine",
     metadata,
-    Column('id', Integer, nullable=False, primary_key=True),
-    Column('pcbid', String(20), nullable=False, unique=True),
-    Column('name', String(255), nullable=False),
-    Column('description', String(255), nullable=False),
-    Column('arcadeid', Integer),
-    Column('port', Integer, nullable=False, unique=True),
-    Column('game', String(20)),
-    Column('version', Integer),
-    Column('data', JSON),
-    mysql_charset='utf8mb4',
+    Column("id", Integer, nullable=False, primary_key=True),
+    Column("pcbid", String(20), nullable=False, unique=True),
+    Column("name", String(255), nullable=False),
+    Column("description", String(255), nullable=False),
+    Column("arcadeid", Integer),
+    Column("port", Integer, nullable=False, unique=True),
+    Column("game", String(20)),
+    Column("version", Integer),
+    Column("data", JSON),
+    mysql_charset="utf8mb4",
 )
 
 """
@@ -34,27 +34,28 @@ Table for storing an arcade, to which zero or more machines may belong. This all
 an arcade to override some global settings such as PASELI enabled and infinite.
 """
 arcade = Table(
-    'arcade',
+    "arcade",
     metadata,
-    Column('id', Integer, nullable=False, primary_key=True),
-    Column('name', String(255), nullable=False),
-    Column('description', String(255), nullable=False),
-    Column('pin', String(8), nullable=False),
-    Column('pref', Integer, nullable=False),
-    Column('data', JSON),
-    mysql_charset='utf8mb4',
+    Column("id", Integer, nullable=False, primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("description", String(255), nullable=False),
+    Column("pin", String(8), nullable=False),
+    Column("pref", Integer, nullable=False),
+    Column("area", String(63)),
+    Column("data", JSON),
+    mysql_charset="utf8mb4",
 )
 
 """
 Table for storing arcade ownership. This allows for more than one owner to own an arcade.
 """
 arcade_owner = Table(
-    'arcade_owner',
+    "arcade_owner",
     metadata,
-    Column('userid', BigInteger(unsigned=True), nullable=False),
-    Column('arcadeid', Integer, nullable=False),
-    UniqueConstraint('userid', 'arcadeid', name='userid_arcadeid'),
-    mysql_charset='utf8mb4',
+    Column("userid", BigInteger(unsigned=True), nullable=False),
+    Column("arcadeid", Integer, nullable=False),
+    UniqueConstraint("userid", "arcadeid", name="userid_arcadeid"),
+    mysql_charset="utf8mb4",
 )
 
 """
@@ -63,15 +64,17 @@ owner to change settings related to a particular game, such as the events active
 shop ranking courses.
 """
 arcade_settings = Table(
-    'arcade_settings',
+    "arcade_settings",
     metadata,
-    Column('arcadeid', Integer, nullable=False),
-    Column('game', String(32), nullable=False),
-    Column('version', Integer, nullable=False),
-    Column('type', String(64), nullable=False),
-    Column('data', JSON, nullable=False),
-    UniqueConstraint('arcadeid', 'game', 'version', 'type', name='arcadeid_game_version_type'),
-    mysql_charset='utf8mb4',
+    Column("arcadeid", Integer, nullable=False),
+    Column("game", String(32), nullable=False),
+    Column("version", Integer, nullable=False),
+    Column("type", String(64), nullable=False),
+    Column("data", JSON, nullable=False),
+    UniqueConstraint(
+        "arcadeid", "game", "version", "type", name="arcadeid_game_version_type"
+    ),
+    mysql_charset="utf8mb4",
 )
 
 
@@ -97,13 +100,13 @@ class MachineData(BaseData):
             there is no machine matching this port.
         """
         sql = "SELECT pcbid FROM machine WHERE port = :port LIMIT 1"
-        cursor = self.execute(sql, {'port': port})
+        cursor = self.execute(sql, {"port": port})
         if cursor.rowcount != 1:
             # Machine doesn't exist
             return None
 
         result = cursor.fetchone()
-        return result['pcbid']
+        return result["pcbid"]
 
     def from_machine_id(self, machine_id: int) -> Optional[str]:
         """
@@ -117,13 +120,13 @@ class MachineData(BaseData):
             there is no machine matching this ID.
         """
         sql = "SELECT pcbid FROM machine WHERE id = :id LIMIT 1"
-        cursor = self.execute(sql, {'id': machine_id})
+        cursor = self.execute(sql, {"id": machine_id})
         if cursor.rowcount != 1:
             # Machine doesn't exist
             return None
 
         result = cursor.fetchone()
-        return result['pcbid']
+        return result["pcbid"]
 
     def from_userid(self, userid: UserID) -> List[ArcadeID]:
         """
@@ -136,8 +139,8 @@ class MachineData(BaseData):
             A list of integer IDs of the arcades this user owns.
         """
         sql = "SELECT arcadeid FROM arcade_owner WHERE userid = :userid"
-        cursor = self.execute(sql, {'userid': userid})
-        return [ArcadeID(result['arcadeid']) for result in cursor.fetchall()]
+        cursor = self.execute(sql, {"userid": userid})
+        return [ArcadeID(result["arcadeid"]) for result in cursor.fetchall()]
 
     def from_session(self, session: str) -> Optional[ArcadeID]:
         """
@@ -149,7 +152,7 @@ class MachineData(BaseData):
         Returns:
             User ID as an integer if found, or None if the session is expired or doesn't exist.
         """
-        arcadeid = self._from_session(session, 'arcadeid')
+        arcadeid = self._from_session(session, "arcadeid")
         if arcadeid is None:
             return None
         return ArcadeID(arcadeid)
@@ -165,25 +168,25 @@ class MachineData(BaseData):
             A Machine object representing a machine, or None if not found.
         """
         sql = "SELECT name, description, arcadeid, id, port, game, version, data FROM machine WHERE pcbid = :pcbid"
-        cursor = self.execute(sql, {'pcbid': pcbid})
+        cursor = self.execute(sql, {"pcbid": pcbid})
         if cursor.rowcount != 1:
             # Machine doesn't exist
             return None
 
         result = cursor.fetchone()
         return Machine(
-            result['id'],
+            result["id"],
             pcbid,
-            result['name'],
-            result['description'],
-            result['arcadeid'],
-            result['port'],
-            GameConstants(result['game']) if result['game'] else None,
-            result['version'],
-            self.deserialize(result['data']),
+            result["name"],
+            result["description"],
+            result["arcadeid"],
+            result["port"],
+            GameConstants(result["game"]) if result["game"] else None,
+            result["version"],
+            self.deserialize(result["data"]),
         )
 
-    def get_all_machines(self, arcade: Optional[ArcadeID]=None) -> List[Machine]:
+    def get_all_machines(self, arcade: Optional[ArcadeID] = None) -> List[Machine]:
         """
         Look up all machines on the network.
 
@@ -193,22 +196,23 @@ class MachineData(BaseData):
         sql = "SELECT pcbid, name, description, arcadeid, id, port, game, version, data FROM machine"
         data = {}
         if arcade is not None:
-            sql = sql + ' WHERE arcadeid = :arcade'
-            data['arcade'] = arcade
+            sql = sql + " WHERE arcadeid = :arcade"
+            data["arcade"] = arcade
 
         cursor = self.execute(sql, data)
         return [
             Machine(
-                result['id'],
-                result['pcbid'],
-                result['name'],
-                result['description'],
-                result['arcadeid'],
-                result['port'],
-                GameConstants(result['game']) if result['game'] else None,
-                result['version'],
-                self.deserialize(result['data']),
-            ) for result in cursor.fetchall()
+                result["id"],
+                result["pcbid"],
+                result["name"],
+                result["description"],
+                result["arcadeid"],
+                result["port"],
+                GameConstants(result["game"]) if result["game"] else None,
+                result["version"],
+                self.deserialize(result["data"]),
+            )
+            for result in cursor.fetchall()
         ]
 
     def put_machine(self, machine: Machine) -> None:
@@ -220,24 +224,30 @@ class MachineData(BaseData):
         """
         # Update machine name based on game
         sql = (
-            "UPDATE `machine` SET name = :name, description = :description, arcadeid = :arcadeid, " +
-            "port = :port, game = :game, version = :version, data = :data WHERE pcbid = :pcbid LIMIT 1"
+            "UPDATE `machine` SET name = :name, description = :description, arcadeid = :arcadeid, "
+            + "port = :port, game = :game, version = :version, data = :data WHERE pcbid = :pcbid LIMIT 1"
         )
         self.execute(
             sql,
             {
-                'name': machine.name,
-                'description': machine.description,
-                'arcadeid': machine.arcade,
-                'port': machine.port,
-                'game': machine.game.value if machine.game else None,
-                'version': machine.version,
-                'pcbid': machine.pcbid,
-                'data': self.serialize(machine.data)
+                "name": machine.name,
+                "description": machine.description,
+                "arcadeid": machine.arcade,
+                "port": machine.port,
+                "game": machine.game.value if machine.game else None,
+                "version": machine.version,
+                "pcbid": machine.pcbid,
+                "data": self.serialize(machine.data),
             },
         )
 
-    def create_machine(self, pcbid: str, name: str='なし', description: str='', arcade: Optional[ArcadeID]=None) -> Machine:
+    def create_machine(
+        self,
+        pcbid: str,
+        name: str = "なし",
+        description: str = "",
+        arcade: Optional[ArcadeID] = None,
+    ) -> Machine:
         """
         Given a PCBID, create a new machine entry.
 
@@ -262,7 +272,7 @@ class MachineData(BaseData):
             else:
                 # Grab highest port
                 result = cursor.fetchone()
-                port = result['port']
+                port = result["port"]
                 if port is not None:
                     port = port + 1
             # Default if we didn't get a port
@@ -272,10 +282,19 @@ class MachineData(BaseData):
             # Add new machine
             try:
                 sql = (
-                    "INSERT INTO `machine` (pcbid, name, description, port, arcadeid) " +
-                    "VALUES (:pcbid, :name, :description, :port, :arcadeid)"
+                    "INSERT INTO `machine` (pcbid, name, description, port, arcadeid) "
+                    + "VALUES (:pcbid, :name, :description, :port, :arcadeid)"
                 )
-                self.execute(sql, {'pcbid': pcbid, 'name': name, 'description': description, 'port': port, 'arcadeid': arcade})
+                self.execute(
+                    sql,
+                    {
+                        "pcbid": pcbid,
+                        "name": name,
+                        "description": description,
+                        "port": port,
+                        "arcadeid": arcade,
+                    },
+                )
             except Exception:
                 # Failed to add machine, try with new port
                 continue
@@ -292,9 +311,17 @@ class MachineData(BaseData):
             pcbid - The PCBID as returned from a game.
         """
         sql = "DELETE FROM `machine` WHERE pcbid = :pcbid LIMIT 1"
-        self.execute(sql, {'pcbid': pcbid})
+        self.execute(sql, {"pcbid": pcbid})
 
-    def create_arcade(self, name: str, description: str, region: int, data: Dict[str, Any], owners: List[UserID]) -> Arcade:
+    def create_arcade(
+        self,
+        name: str,
+        description: str,
+        region: int,
+        area: Optional[str],
+        data: Dict[str, Any],
+        owners: List[UserID],
+    ) -> Arcade:
         """
         Given a set of values, create a new arcade and return the ID of that arcade.
 
@@ -302,24 +329,27 @@ class MachineData(BaseData):
             An Arcade object representing this arcade
         """
         sql = (
-            "INSERT INTO arcade (name, description, pref, data, pin) " +
-            "VALUES (:name, :desc, :pref, :data, '00000000')"
+            "INSERT INTO arcade (name, description, pref, area, data, pin) "
+            + "VALUES (:name, :desc, :pref, :area, :data, '00000000')"
         )
         cursor = self.execute(
             sql,
             {
-                'name': name,
-                'desc': description,
-                'pref': region,
-                'data': self.serialize(data),
+                "name": name,
+                "desc": description,
+                "pref": region,
+                "area": area,
+                "data": self.serialize(data),
             },
         )
         if cursor.rowcount != 1:
-            raise ArcadeCreationException('Failed to create arcade!')
+            raise ArcadeCreationException("Failed to create arcade!")
         arcadeid = cursor.lastrowid
         for owner in owners:
-            sql = "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
-            self.execute(sql, {'userid': owner, 'arcadeid': arcadeid})
+            sql = (
+                "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
+            )
+            self.execute(sql, {"userid": owner, "arcadeid": arcadeid})
         new_arcade = self.get_arcade(arcadeid)
         if new_arcade is None:
             raise Exception("Failed to create an arcade!")
@@ -336,9 +366,9 @@ class MachineData(BaseData):
             An Arcade object if this arcade was found, or None otherwise.
         """
         sql = (
-            "SELECT name, description, pin, pref, data FROM arcade WHERE id = :id"
+            "SELECT name, description, pin, pref, area, data FROM arcade WHERE id = :id"
         )
-        cursor = self.execute(sql, {'id': arcadeid})
+        cursor = self.execute(sql, {"id": arcadeid})
         if cursor.rowcount != 1:
             # Arcade doesn't exist
             return None
@@ -346,16 +376,17 @@ class MachineData(BaseData):
         result = cursor.fetchone()
 
         sql = "SELECT userid FROM arcade_owner WHERE arcadeid = :id"
-        cursor = self.execute(sql, {'id': arcadeid})
+        cursor = self.execute(sql, {"id": arcadeid})
 
         return Arcade(
             arcadeid,
-            result['name'],
-            result['description'],
-            result['pin'],
-            result['pref'],
-            self.deserialize(result['data']),
-            [owner['userid'] for owner in cursor.fetchall()],
+            result["name"],
+            result["description"],
+            result["pin"],
+            result["pref"],
+            result["area"] or None,
+            self.deserialize(result["data"]),
+            [owner["userid"] for owner in cursor.fetchall()],
         )
 
     def put_arcade(self, arcade: Arcade) -> None:
@@ -367,26 +398,29 @@ class MachineData(BaseData):
         """
         # Update machine name based on game
         sql = (
-            "UPDATE `arcade` " +
-            "SET name = :name, description = :desc, pin = :pin, pref = :pref, data = :data " +
-            "WHERE id = :arcadeid"
+            "UPDATE `arcade` "
+            + "SET name = :name, description = :desc, pin = :pin, pref = :pref, area = :area, data = :data "
+            + "WHERE id = :arcadeid"
         )
         self.execute(
             sql,
             {
-                'name': arcade.name,
-                'desc': arcade.description,
-                'pin': arcade.pin,
-                'pref': arcade.region,
-                'data': self.serialize(arcade.data),
-                'arcadeid': arcade.id,
+                "name": arcade.name,
+                "desc": arcade.description,
+                "pin": arcade.pin,
+                "pref": arcade.region,
+                "area": arcade.area,
+                "data": self.serialize(arcade.data),
+                "arcadeid": arcade.id,
             },
         )
         sql = "DELETE FROM `arcade_owner` WHERE arcadeid = :arcadeid"
-        self.execute(sql, {'arcadeid': arcade.id})
+        self.execute(sql, {"arcadeid": arcade.id})
         for owner in arcade.owners:
-            sql = "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
-            self.execute(sql, {'userid': owner, 'arcadeid': arcade.id})
+            sql = (
+                "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
+            )
+            self.execute(sql, {"userid": owner, "arcadeid": arcade.id})
 
     def destroy_arcade(self, arcadeid: ArcadeID) -> None:
         """
@@ -397,11 +431,11 @@ class MachineData(BaseData):
             arcadeid - Integer specifying the arcade to delete.
         """
         sql = "DELETE FROM `arcade` WHERE id = :arcadeid LIMIT 1"
-        self.execute(sql, {'arcadeid': arcadeid})
+        self.execute(sql, {"arcadeid": arcadeid})
         sql = "DELETE FROM `arcade_owner` WHERE arcadeid = :arcadeid"
-        self.execute(sql, {'arcadeid': arcadeid})
+        self.execute(sql, {"arcadeid": arcadeid})
         sql = "UPDATE `machine` SET arcadeid = NULL WHERE arcadeid = :arcadeid"
-        self.execute(sql, {'arcadeid': arcadeid})
+        self.execute(sql, {"arcadeid": arcadeid})
 
     def get_all_arcades(self) -> List[Arcade]:
         """
@@ -414,27 +448,31 @@ class MachineData(BaseData):
         cursor = self.execute(sql)
         arcade_to_owners: Dict[int, List[UserID]] = {}
         for row in cursor.fetchall():
-            arcade = row['arcadeid']
-            owner = UserID(row['userid'])
+            arcade = row["arcadeid"]
+            owner = UserID(row["userid"])
             if arcade not in arcade_to_owners:
                 arcade_to_owners[arcade] = []
             arcade_to_owners[arcade].append(owner)
 
-        sql = "SELECT id, name, description, pin, pref, data FROM arcade"
+        sql = "SELECT id, name, description, pin, pref, area, data FROM arcade"
         cursor = self.execute(sql)
         return [
             Arcade(
-                ArcadeID(result['id']),
-                result['name'],
-                result['description'],
-                result['pin'],
-                result['pref'],
-                self.deserialize(result['data']),
-                arcade_to_owners.get(result['id'], []),
-            ) for result in cursor.fetchall()
+                ArcadeID(result["id"]),
+                result["name"],
+                result["description"],
+                result["pin"],
+                result["pref"],
+                result["area"] or None,
+                self.deserialize(result["data"]),
+                arcade_to_owners.get(result["id"], []),
+            )
+            for result in cursor.fetchall()
         ]
 
-    def get_settings(self, arcadeid: ArcadeID, game: GameConstants, version: int, setting: str) -> Optional[ValidatedDict]:
+    def get_settings(
+        self, arcadeid: ArcadeID, game: GameConstants, version: int, setting: str
+    ) -> Optional[ValidatedDict]:
         """
         Given an arcade and a game/version combo, look up this particular setting.
 
@@ -448,16 +486,26 @@ class MachineData(BaseData):
             A dictionary representing game settings, or None if there are no settings for this game/user.
         """
         sql = "SELECT data FROM arcade_settings WHERE arcadeid = :id AND game = :game AND version = :version AND type = :type"
-        cursor = self.execute(sql, {'id': arcadeid, 'game': game.value, 'version': version, 'type': setting})
+        cursor = self.execute(
+            sql,
+            {"id": arcadeid, "game": game.value, "version": version, "type": setting},
+        )
 
         if cursor.rowcount != 1:
             # Settings doesn't exist
             return None
 
         result = cursor.fetchone()
-        return ValidatedDict(self.deserialize(result['data']))
+        return ValidatedDict(self.deserialize(result["data"]))
 
-    def put_settings(self, arcadeid: ArcadeID, game: GameConstants, version: int, setting: str, data: Dict[str, Any]) -> None:
+    def put_settings(
+        self,
+        arcadeid: ArcadeID,
+        game: GameConstants,
+        version: int,
+        setting: str,
+        data: Dict[str, Any],
+    ) -> None:
         """
         Given an arcade and a game/version combo, update the particular setting.
 
@@ -469,11 +517,20 @@ class MachineData(BaseData):
             data - A dictionary that should be saved for this setting.
         """
         sql = (
-            "INSERT INTO arcade_settings (arcadeid, game, version, type, data) " +
-            "VALUES (:id, :game, :version, :type, :data) "
+            "INSERT INTO arcade_settings (arcadeid, game, version, type, data) "
+            + "VALUES (:id, :game, :version, :type, :data) "
             "ON DUPLICATE KEY UPDATE data=VALUES(data)"
         )
-        self.execute(sql, {'id': arcadeid, 'game': game.value, 'version': version, 'type': setting, 'data': self.serialize(data)})
+        self.execute(
+            sql,
+            {
+                "id": arcadeid,
+                "game": game.value,
+                "version": version,
+                "type": setting,
+                "data": self.serialize(data),
+            },
+        )
 
     def get_balances(self, arcadeid: ArcadeID) -> List[Tuple[UserID, int]]:
         """
@@ -486,16 +543,18 @@ class MachineData(BaseData):
             The PASELI balance for each user at this arcade.
         """
         sql = "SELECT userid, balance FROM balance WHERE arcadeid = :arcadeid"
-        cursor = self.execute(sql, {'arcadeid': arcadeid})
+        cursor = self.execute(sql, {"arcadeid": arcadeid})
         balances = []
         for entry in cursor.fetchall():
-            balances.append((
-                UserID(entry['userid']),
-                entry['balance'],
-            ))
+            balances.append(
+                (
+                    UserID(entry["userid"]),
+                    entry["balance"],
+                )
+            )
         return balances
 
-    def create_session(self, arcadeid: ArcadeID, expiration: int=(30 * 86400)) -> str:
+    def create_session(self, arcadeid: ArcadeID, expiration: int = (30 * 86400)) -> str:
         """
         Given a user ID, create a session string.
 
@@ -506,7 +565,7 @@ class MachineData(BaseData):
         Returns:
             A string that can be used as a session ID.
         """
-        return self._create_session(arcadeid, 'arcadeid', expiration)
+        return self._create_session(arcadeid, "arcadeid", expiration)
 
     def destroy_session(self, session: str) -> None:
         """
@@ -515,4 +574,4 @@ class MachineData(BaseData):
         Parameters:
             session - A session string as returned from create_session.
         """
-        self._destroy_session(session, 'arcadeid')
+        self._destroy_session(session, "arcadeid")

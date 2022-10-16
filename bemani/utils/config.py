@@ -17,14 +17,14 @@ from bemani.data import Config, Data
 
 def load_config(filename: str, config: Config) -> None:
     config.update(yaml.safe_load(open(filename)))
-    config['database']['engine'] = Data.create_engine(config)
-    config['filename'] = filename
+    config["database"]["engine"] = Data.create_engine(config)
+    config["filename"] = filename
 
     supported_series: Set[GameConstants] = set()
     for series in GameConstants:
-        if config.get('support', {}).get(series.value, False):
+        if config.get("support", {}).get(series.value, False):
             supported_series.add(series)
-    config['support'] = supported_series
+    config["support"] = supported_series
 
 
 def register_games(config: Config) -> None:

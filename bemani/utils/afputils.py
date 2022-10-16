@@ -10,7 +10,19 @@ import textwrap
 from PIL import Image, ImageDraw  # type: ignore
 from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
-from bemani.format.afp import TXP2File, Shape, SWF, Frame, Tag, AP2DoActionTag, AP2PlaceObjectTag, AP2DefineSpriteTag, AFPRenderer, Color, Matrix
+from bemani.format.afp import (
+    TXP2File,
+    Shape,
+    SWF,
+    Frame,
+    Tag,
+    AP2DoActionTag,
+    AP2PlaceObjectTag,
+    AP2DefineSpriteTag,
+    AFPRenderer,
+    Color,
+    Matrix,
+)
 from bemani.format import IFS
 
 
@@ -48,12 +60,14 @@ def write_bytecode(swf: SWF, directory: str, *, verbose: bool) -> None:
     # If we have frame labels, put them at the top as global defines.
     if lut:
         buff = [
-            os.linesep.join([
-                '// Defined frame labels from animation container, as used for frame lookups.',
-                'FRAME_LUT = {',
-                *[f"    {name!r}: {frame}," for name, frame in lut.items()],
-                '};',
-            ]),
+            os.linesep.join(
+                [
+                    "// Defined frame labels from animation container, as used for frame lookups.",
+                    "FRAME_LUT = {",
+                    *[f"    {name!r}: {frame}," for name, frame in lut.items()],
+                    "};",
+                ]
+            ),
             *buff,
         ]
 
@@ -61,7 +75,7 @@ def write_bytecode(swf: SWF, directory: str, *, verbose: bool) -> None:
     filename = os.path.join(directory, swf.exported_name) + ".code"
     print(f"Writing code to {filename}...")
     with open(filename, "wb") as bfp:
-        bfp.write(f"{os.linesep}{os.linesep}".join(buff).encode('utf-8'))
+        bfp.write(f"{os.linesep}{os.linesep}".join(buff).encode("utf-8"))
 
 
 def parse_intlist(data: str) -> List[int]:
@@ -69,8 +83,8 @@ def parse_intlist(data: str) -> List[int]:
 
     for chunk in data.split(","):
         chunk = chunk.strip()
-        if '-' in chunk:
-            start, end = chunk.split('-', 1)
+        if "-" in chunk:
+            start, end = chunk.split("-", 1)
             start_int = int(start.strip())
             end_int = int(end.strip())
             ints.extend(range(start_int, end_int + 1))
@@ -84,13 +98,13 @@ def extract_txp2(
     fname: str,
     output_dir: str,
     *,
-    split_textures: bool=False,
-    generate_mapping_overlays: bool=False,
-    write_mappings: bool=False,
-    write_raw: bool=False,
-    write_binaries: bool=False,
-    pretend: bool=False,
-    verbose: bool=False,
+    split_textures: bool = False,
+    generate_mapping_overlays: bool = False,
+    write_mappings: bool = False,
+    write_raw: bool = False,
+    write_binaries: bool = False,
+    pretend: bool = False,
+    verbose: bool = False,
 ) -> int:
     if split_textures:
         if write_raw:
@@ -114,7 +128,7 @@ def extract_txp2(
                 else:
                     print(f"Writing {filename}.png texture...")
                     with open(f"{filename}.png", "wb") as bfp:
-                        texture.img.save(bfp, format='PNG')
+                        texture.img.save(bfp, format="PNG")
 
             if not texture.img or write_raw:
                 if pretend:
@@ -129,14 +143,18 @@ def extract_txp2(
                 else:
                     print(f"Writing {filename}.xml texture info...")
                     with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(textwrap.dedent(f"""
+                        sfp.write(
+                            textwrap.dedent(
+                                f"""
                             <info>
                                 <width>{texture.width}</width>
                                 <height>{texture.height}</height>
                                 <type>{hex(texture.fmt)}</type>
                                 <raw>{filename}.raw</raw>
                             </info>
-                        """).strip())
+                        """
+                            ).strip()
+                        )
 
     if write_mappings:
         if not split_textures:
@@ -152,7 +170,9 @@ def extract_txp2(
                 else:
                     print(f"Writing {filename}.xml region information...")
                     with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(textwrap.dedent(f"""
+                        sfp.write(
+                            textwrap.dedent(
+                                f"""
                             <info>
                                 <left>{region.left}</left>
                                 <top>{region.top}</top>
@@ -160,7 +180,9 @@ def extract_txp2(
                                 <bottom>{region.bottom}</bottom>
                                 <texture>{texturename}</texture>
                             </info>
-                        """).strip())
+                        """
+                            ).strip()
+                        )
 
         if afpfile.fontdata is not None:
             filename = os.path.join(output_dir, "fontinfo.xml")
@@ -212,7 +234,7 @@ def extract_txp2(
                 for texture in afpfile.textures:
                     if texture.name == texturename:
                         overlays[texturename] = Image.new(
-                            'RGBA',
+                            "RGBA",
                             (texture.width, texture.height),
                             (0, 0, 0, 0),
                         )
@@ -222,7 +244,10 @@ def extract_txp2(
 
             draw = ImageDraw.Draw(overlays[texturename])
             draw.rectangle(
-                ((region.left // 2, region.top // 2), (region.right // 2, region.bottom // 2)),
+                (
+                    (region.left // 2, region.top // 2),
+                    (region.right // 2, region.bottom // 2),
+                ),
                 fill=(0, 0, 0, 0),
                 outline=(255, 0, 0, 255),
                 width=1,
@@ -240,7 +265,7 @@ def extract_txp2(
             else:
                 print(f"Writing {filename} overlay...")
                 with open(filename, "wb") as bfp:
-                    img.save(bfp, format='PNG')
+                    img.save(bfp, format="PNG")
 
     if split_textures:
         textures: Dict[str, Any] = {}
@@ -270,13 +295,20 @@ def extract_txp2(
                 else:
                     print(f"Writing {filename} sprite...")
                     sprite = textures[texturename].img.crop(
-                        (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                        (
+                            region.left // 2,
+                            region.top // 2,
+                            region.right // 2,
+                            region.bottom // 2,
+                        ),
                     )
                     with open(filename, "wb") as bfp:
-                        sprite.save(bfp, format='PNG')
+                        sprite.save(bfp, format="PNG")
             else:
                 if not announced.get(texturename, False):
-                    print(f"Cannot extract sprites from {texturename} because it is not a supported format!")
+                    print(
+                        f"Cannot extract sprites from {texturename} because it is not a supported format!"
+                    )
                     announced[texturename] = True
     if write_bytecode:
         for swf in afpfile.swfdata:
@@ -285,7 +317,9 @@ def extract_txp2(
     return 0
 
 
-def update_txp2(fname: str, update_dir: str, *, pretend: bool=False, verbose: bool=False) -> int:
+def update_txp2(
+    fname: str, update_dir: str, *, pretend: bool = False, verbose: bool = False
+) -> int:
     # First, parse the file out
     with open(fname, "rb") as bfp:
         afpfile = TXP2File(bfp.read(), verbose=verbose)
@@ -312,7 +346,9 @@ def update_txp2(fname: str, update_dir: str, *, pretend: bool=False, verbose: bo
         filename = os.path.join(update_dir, filename)
 
         if os.path.isfile(filename):
-            print(f"Updating {texturename} sprite piece {spritename} from {filename}...")
+            print(
+                f"Updating {texturename} sprite piece {spritename} from {filename}..."
+            )
 
             with open(filename, "rb") as bfp:
                 afpfile.update_sprite(texturename, spritename, bfp.read())
@@ -330,18 +366,28 @@ def update_txp2(fname: str, update_dir: str, *, pretend: bool=False, verbose: bo
     return 0
 
 
-def print_txp2(fname: str, *, decompile_bytecode: bool=False, verbose: bool=False) -> int:
+def print_txp2(
+    fname: str, *, decompile_bytecode: bool = False, verbose: bool = False
+) -> int:
     # First, parse the file out
     with open(fname, "rb") as bfp:
         afpfile = TXP2File(bfp.read(), verbose=verbose)
 
     # Now, print it
-    print(json.dumps(afpfile.as_dict(decompile_bytecode=decompile_bytecode, verbose=verbose), sort_keys=True, indent=4))
+    print(
+        json.dumps(
+            afpfile.as_dict(decompile_bytecode=decompile_bytecode, verbose=verbose),
+            sort_keys=True,
+            indent=4,
+        )
+    )
 
     return 0
 
 
-def parse_afp(afp: str, bsi: str, *, decompile_bytecode: bool=False, verbose: bool=False) -> int:
+def parse_afp(
+    afp: str, bsi: str, *, decompile_bytecode: bool = False, verbose: bool = False
+) -> int:
     # First, load the AFP and BSI files
     with open(afp, "rb") as bafp:
         with open(bsi, "rb") as bbsi:
@@ -349,12 +395,18 @@ def parse_afp(afp: str, bsi: str, *, decompile_bytecode: bool=False, verbose: bo
 
     # Now, print it
     swf.parse(verbose=verbose)
-    print(json.dumps(swf.as_dict(decompile_bytecode=decompile_bytecode, verbose=verbose), sort_keys=True, indent=4))
+    print(
+        json.dumps(
+            swf.as_dict(decompile_bytecode=decompile_bytecode, verbose=verbose),
+            sort_keys=True,
+            indent=4,
+        )
+    )
 
     return 0
 
 
-def decompile_afp(afp: str, bsi: str, output_dir: str, *, verbose: bool=False) -> int:
+def decompile_afp(afp: str, bsi: str, output_dir: str, *, verbose: bool = False) -> int:
     # First, load the AFP and BSI files
     with open(afp, "rb") as bafp:
         with open(bsi, "rb") as bbsi:
@@ -367,7 +419,7 @@ def decompile_afp(afp: str, bsi: str, output_dir: str, *, verbose: bool=False) -
     return 0
 
 
-def parse_geo(geo: str, *, verbose: bool=False) -> int:
+def parse_geo(geo: str, *, verbose: bool = False) -> int:
     # First, load the AFP and BSI files
     with open(geo, "rb") as bfp:
         shape = Shape("<unnamed>", bfp.read())
@@ -381,7 +433,9 @@ def parse_geo(geo: str, *, verbose: bool=False) -> int:
     return 0
 
 
-def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras: bool, verbose: bool) -> None:
+def load_containers(
+    renderer: AFPRenderer, containers: List[str], *, need_extras: bool, verbose: bool
+) -> None:
     # This is a complicated one, as we need to be able to specify multiple
     # directories of files as well as support IFS files and TXP2 files.
     for container in containers:
@@ -396,7 +450,10 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
 
         if afpfile is not None:
             if verbose:
-                print(f"Loading files out of TXP2 container {container}...", file=sys.stderr)
+                print(
+                    f"Loading files out of TXP2 container {container}...",
+                    file=sys.stderr,
+                )
 
             if need_extras:
                 # First, load GE2D structures into the renderer.
@@ -405,7 +462,9 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                     renderer.add_shape(name, shape)
 
                     if verbose:
-                        print(f"Added {name} to animation shape library.", file=sys.stderr)
+                        print(
+                            f"Added {name} to animation shape library.", file=sys.stderr
+                        )
 
                 # Now, split and load textures into the renderer.
                 sheets: Dict[str, Any] = {}
@@ -422,18 +481,30 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                                 sheets[texturename] = tex
                                 break
                         else:
-                            raise Exception("Could not find texture {texturename} to split!")
+                            raise Exception(
+                                "Could not find texture {texturename} to split!"
+                            )
 
                     if sheets[texturename].img:
                         sprite = sheets[texturename].img.crop(
-                            (region.left // 2, region.top // 2, region.right // 2, region.bottom // 2),
+                            (
+                                region.left // 2,
+                                region.top // 2,
+                                region.right // 2,
+                                region.bottom // 2,
+                            ),
                         )
                         renderer.add_texture(name, sprite)
 
                         if verbose:
-                            print(f"Added {name} to animation texture library.", file=sys.stderr)
+                            print(
+                                f"Added {name} to animation texture library.",
+                                file=sys.stderr,
+                            )
                     else:
-                        print(f"Cannot load {name} from {texturename} because it is not a supported format!")
+                        print(
+                            f"Cannot load {name} from {texturename} because it is not a supported format!"
+                        )
 
             # Finally, load the animation data itself into the renderer.
             for i, name in enumerate(afpfile.swfmap.entries):
@@ -453,14 +524,17 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
 
         if ifsfile is not None:
             if verbose:
-                print(f"Loading files out of IFS container {container}...", file=sys.stderr)
+                print(
+                    f"Loading files out of IFS container {container}...",
+                    file=sys.stderr,
+                )
             for fname in ifsfile.filenames:
                 if fname.startswith(f"geo{os.sep}"):
                     if not need_extras:
                         continue
 
                     # Trim off directory.
-                    shapename = fname[(3 + len(os.sep)):]
+                    shapename = fname[(3 + len(os.sep)) :]
 
                     # Load file, register it.
                     fdata = ifsfile.read_file(fname)
@@ -468,13 +542,16 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                     renderer.add_shape(shapename, shape)
 
                     if verbose:
-                        print(f"Added {shapename} to animation shape library.", file=sys.stderr)
+                        print(
+                            f"Added {shapename} to animation shape library.",
+                            file=sys.stderr,
+                        )
                 elif fname.startswith(f"tex{os.sep}") and fname.endswith(".png"):
                     if not need_extras:
                         continue
 
                     # Trim off directory, png extension.
-                    texname = fname[(3 + len(os.sep)):][:-4]
+                    texname = fname[(3 + len(os.sep)) :][:-4]
 
                     # Load file, register it.
                     fdata = ifsfile.read_file(fname)
@@ -482,10 +559,13 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                     renderer.add_texture(texname, tex)
 
                     if verbose:
-                        print(f"Added {texname} to animation texture library.", file=sys.stderr)
+                        print(
+                            f"Added {texname} to animation texture library.",
+                            file=sys.stderr,
+                        )
                 elif fname.startswith(f"afp{os.sep}"):
                     # Trim off directory, see if it has a corresponding bsi.
-                    afpname = fname[(3 + len(os.sep)):]
+                    afpname = fname[(3 + len(os.sep)) :]
                     bsipath = f"afp{os.sep}bsi{os.sep}{afpname}"
 
                     if bsipath in ifsfile.filenames:
@@ -495,11 +575,20 @@ def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras
                         renderer.add_swf(afpname, flash)
 
                         if verbose:
-                            print(f"Added {afpname} to animation library.", file=sys.stderr)
+                            print(
+                                f"Added {afpname} to animation library.",
+                                file=sys.stderr,
+                            )
             continue
 
 
-def list_paths(containers: List[str], *, include_frames: bool=False, include_size: bool=False, verbose: bool=False) -> int:
+def list_paths(
+    containers: List[str],
+    *,
+    include_frames: bool = False,
+    include_size: bool = False,
+    verbose: bool = False,
+) -> int:
     renderer = AFPRenderer()
     load_containers(renderer, containers, need_extras=False, verbose=verbose)
 
@@ -534,23 +623,31 @@ def adjust_background_loop(
     if background_loop_offset is None:
         background_loop_offset = 0
     else:
-        background_loop_offset -= (background_loop_start + 1)
+        background_loop_offset -= background_loop_start + 1
 
     # Don't one-index the end because we want it to be inclusive.
     if background_loop_end is None:
         background_loop_end = len(background)
 
     if background_loop_start >= background_loop_end:
-        raise Exception("Cannot start background loop after the end of the background loop!")
+        raise Exception(
+            "Cannot start background loop after the end of the background loop!"
+        )
     if background_loop_start < 0 or background_loop_end < 0:
         raise Exception("Cannot start or end background loop on a negative frame!")
-    if background_loop_start >= len(background) or background_loop_end > len(background):
-        raise Exception("Cannot start or end background loop larger than the number of background animation frames!")
+    if background_loop_start >= len(background) or background_loop_end > len(
+        background
+    ):
+        raise Exception(
+            "Cannot start or end background loop larger than the number of background animation frames!"
+        )
 
     background = background[background_loop_start:background_loop_end]
 
     if background_loop_offset < 0 or background_loop_offset >= len(background):
-        raise Exception("Cannot start first iteration of background loop outside the loop bounds!")
+        raise Exception(
+            "Cannot start first iteration of background loop outside the loop bounds!"
+        )
 
     return background[background_loop_offset:] + background[:background_loop_offset]
 
@@ -582,7 +679,9 @@ def render_path(
     if show_progress:
         print("Loading textures, shapes and animation instructions...")
 
-    renderer = AFPRenderer(single_threaded=disable_threads, enable_aa=enable_anti_aliasing)
+    renderer = AFPRenderer(
+        single_threaded=disable_threads, enable_aa=enable_anti_aliasing
+    )
     load_containers(renderer, containers, need_extras=True, verbose=verbose)
 
     if show_progress:
@@ -602,7 +701,9 @@ def render_path(
     if background_color:
         colorvals = background_color.split(",")
         if len(colorvals) not in [3, 4]:
-            raise Exception("Invalid color, specify a color as a comma-separated RGB or RGBA value!")
+            raise Exception(
+                "Invalid color, specify a color as a comma-separated RGB or RGBA value!"
+            )
 
         if len(colorvals) == 3:
             colorvals.append("255")
@@ -642,17 +743,19 @@ def render_path(
             startof, endof = os.path.splitext(fileof)
             if len(startof) == 0 or len(endof) == 0:
                 raise Exception("Invalid image specified as background!")
-            startof = startof + '-'
+            startof = startof + "-"
 
             # Gather up the sequence of files so we can make frames out of them.
             seqdict: Dict[int, str] = {}
             for filename in os.listdir(dirof):
                 if filename.startswith(startof) and filename.endswith(endof):
-                    seqno = filename[len(startof):(-len(endof))]
+                    seqno = filename[len(startof) : (-len(endof))]
                     if seqno.isdigit():
                         seqint = int(seqno)
                         if seqint in seqdict:
-                            raise Exception(f"{filename} specifies the same background frame number as {seqdict[seqint]}!")
+                            raise Exception(
+                                f"{filename} specifies the same background frame number as {seqdict[seqint]}!"
+                            )
                         seqdict[seqint] = filename
 
             # Now, order the sequence by the integer of the sequence number so we can load the images.
@@ -662,7 +765,9 @@ def render_path(
             )
 
             # Finally, get the filenames from this sequence.
-            filenames: List[str] = [os.path.join(dirof, filename) for (_, filename) in seqtuple]
+            filenames: List[str] = [
+                os.path.join(dirof, filename) for (_, filename) in seqtuple
+            ]
 
             # Now that we have the list, lets load the images!
             for filename in filenames:
@@ -682,7 +787,12 @@ def render_path(
                     raise Exception("Invalid image specified as background!")
 
         if background:
-            background = adjust_background_loop(background, background_loop_start, background_loop_end, background_loop_offset)
+            background = adjust_background_loop(
+                background,
+                background_loop_start,
+                background_loop_end,
+                background_loop_offset,
+            )
         else:
             raise Exception("Did not find any background images to load!")
     else:
@@ -705,7 +815,9 @@ def render_path(
     if force_aspect_ratio:
         ratio = force_aspect_ratio.split(":")
         if len(ratio) != 2:
-            raise Exception("Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!")
+            raise Exception(
+                "Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!"
+            )
 
         rx, ry = [float(r.strip()) for r in ratio]
         if rx <= 0 or ry <= 0:
@@ -775,7 +887,9 @@ def render_path(
             )
         ):
             if show_progress:
-                frameno = requested_frames[i] if requested_frames is not None else (i + 1)
+                frameno = (
+                    requested_frames[i] if requested_frames is not None else (i + 1)
+                )
                 print(f"Rendered animation frame {frameno}/{frames}.")
             images.append(img)
 
@@ -788,7 +902,14 @@ def render_path(
                 pass
 
             with open(output, "wb") as bfp:
-                images[0].save(bfp, format=fmt, save_all=True, append_images=images[1:], duration=duration, optimize=True)
+                images[0].save(
+                    bfp,
+                    format=fmt,
+                    save_all=True,
+                    append_images=images[1:],
+                    duration=duration,
+                    optimize=True,
+                )
 
             print(f"Wrote animation to {output}")
     else:
@@ -812,7 +933,9 @@ def render_path(
                     movie_transform=transform,
                 )
             ):
-                frameno = requested_frames[i] if requested_frames is not None else (i + 1)
+                frameno = (
+                    requested_frames[i] if requested_frames is not None else (i + 1)
+                )
                 fullname = f"{filename}-{frameno:{digits}}{ext}"
 
                 try:
@@ -831,12 +954,14 @@ def render_path(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker.")
-    subparsers = parser.add_subparsers(help='Action to take', dest='action')
+    parser = argparse.ArgumentParser(
+        description="Konami AFP graphic file unpacker/repacker."
+    )
+    subparsers = parser.add_subparsers(help="Action to take", dest="action")
 
     extract_parser = subparsers.add_parser(
-        'extract',
-        help='Extract relevant file data and textures from a TXP2 container',
+        "extract",
+        help="Extract relevant file data and textures from a TXP2 container",
         description="Extract textures, sprites, decompiled bytecode, AFP, BSI and GEO files from a TXP2 container.",
     )
     extract_parser.add_argument(
@@ -899,8 +1024,8 @@ def main() -> int:
     )
 
     update_parser = subparsers.add_parser(
-        'update',
-        help='Update relevant textures in a TXP2 container from a directory',
+        "update",
+        help="Update relevant textures in a TXP2 container from a directory",
         description="Update textures and sprites in a TXP2 container based on images in a directory.",
     )
     update_parser.add_argument(
@@ -927,9 +1052,9 @@ def main() -> int:
     )
 
     print_parser = subparsers.add_parser(
-        'print',
-        help='Print a TXP2 container\'s contents as a JSON dictionary',
-        description='Print a TXP2 container\'s contents as a JSON dictionary.',
+        "print",
+        help="Print a TXP2 container's contents as a JSON dictionary",
+        description="Print a TXP2 container's contents as a JSON dictionary.",
     )
     print_parser.add_argument(
         "file",
@@ -950,9 +1075,9 @@ def main() -> int:
     )
 
     parseafp_parser = subparsers.add_parser(
-        'parseafp',
-        help='Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container',
-        description='Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container.',
+        "parseafp",
+        help="Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container",
+        description="Parse a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container.",
     )
     parseafp_parser.add_argument(
         "afp",
@@ -978,9 +1103,9 @@ def main() -> int:
     )
 
     decompile_parser = subparsers.add_parser(
-        'decompile',
-        help='Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container',
-        description='Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container.',
+        "decompile",
+        help="Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container",
+        description="Decompile bytecode in a raw AFP/BSI file pair previously extracted from an IFS or TXP2 container.",
     )
     decompile_parser.add_argument(
         "afp",
@@ -1002,15 +1127,15 @@ def main() -> int:
         "-d",
         "--directory",
         metavar="DIR",
-        default='.',
+        default=".",
         type=str,
         help="Directory to write decompiled pseudocode files. Defaults to current directory.",
     )
 
     parsegeo_parser = subparsers.add_parser(
-        'parsegeo',
-        help='Parse a raw GEO file previously extracted from an IFS or TXP2 container',
-        description='Parse a raw GEO file previously extracted from an IFS or TXP2 container.',
+        "parsegeo",
+        help="Parse a raw GEO file previously extracted from an IFS or TXP2 container",
+        description="Parse a raw GEO file previously extracted from an IFS or TXP2 container.",
     )
     parsegeo_parser.add_argument(
         "geo",
@@ -1025,15 +1150,15 @@ def main() -> int:
     )
 
     render_parser = subparsers.add_parser(
-        'render',
-        help='Render a particular animation out of a collection of TXP2 or IFS containers',
-        description='Render a particular animation out of a collection of TXP2 or IFS containers.',
+        "render",
+        help="Render a particular animation out of a collection of TXP2 or IFS containers",
+        description="Render a particular animation out of a collection of TXP2 or IFS containers.",
     )
     render_parser.add_argument(
         "container",
         metavar="CONTAINER",
         type=str,
-        nargs='+',
+        nargs="+",
         help="A container to use for loading animation data. Can be either a TXP2 or IFS container.",
     )
     render_parser.add_argument(
@@ -1066,10 +1191,10 @@ def main() -> int:
         type=str,
         default="out.gif",
         help=(
-            'The output file (ending either in .gif, .webp or .png) where the render should be saved. If .png is chosen then the '
-            'output will be a series of png files for each rendered frame. If .gif or .webp is chosen the output will be an '
-            'animated image. Note that the .gif file format has several severe limitations which result in sub-optimal animations '
-            'so it is recommended to use .webp or .png instead.'
+            "The output file (ending either in .gif, .webp or .png) where the render should be saved. If .png is chosen then the "
+            "output will be a series of png files for each rendered frame. If .gif or .webp is chosen the output will be an "
+            "animated image. Note that the .gif file format has several severe limitations which result in sub-optimal animations "
+            "so it is recommended to use .webp or .png instead."
         ),
     )
     render_parser.add_argument(
@@ -1211,15 +1336,15 @@ def main() -> int:
     )
 
     list_parser = subparsers.add_parser(
-        'list',
-        help='List out the possible paths to render from a collection of TXP2 or IFS containers',
-        description='List out the possible paths to render from a collection of TXP2 or IFS containers.',
+        "list",
+        help="List out the possible paths to render from a collection of TXP2 or IFS containers",
+        description="List out the possible paths to render from a collection of TXP2 or IFS containers.",
     )
     list_parser.add_argument(
         "container",
         metavar="CONTAINER",
         type=str,
-        nargs='+',
+        nargs="+",
         help="A container to use for loading animation data. Can be either a TXP2 or IFS container.",
     )
     list_parser.add_argument(
@@ -1254,17 +1379,31 @@ def main() -> int:
             verbose=args.verbose,
         )
     elif args.action == "update":
-        return update_txp2(args.file, args.dir, pretend=args.pretend, verbose=args.verbose)
+        return update_txp2(
+            args.file, args.dir, pretend=args.pretend, verbose=args.verbose
+        )
     elif args.action == "print":
-        return print_txp2(args.file, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
+        return print_txp2(
+            args.file, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose
+        )
     elif args.action == "parseafp":
-        return parse_afp(args.afp, args.bsi, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
+        return parse_afp(
+            args.afp,
+            args.bsi,
+            decompile_bytecode=args.decompile_bytecode,
+            verbose=args.verbose,
+        )
     elif args.action == "decompile":
         return decompile_afp(args.afp, args.bsi, args.directory, verbose=args.verbose)
     elif args.action == "parsegeo":
         return parse_geo(args.geo, verbose=args.verbose)
     elif args.action == "list":
-        return list_paths(args.container, include_size=args.include_size, include_frames=args.include_frames, verbose=args.verbose)
+        return list_paths(
+            args.container,
+            include_size=args.include_size,
+            include_frames=args.include_frames,
+            verbose=args.verbose,
+        )
     elif args.action == "render":
         return render_path(
             args.container,

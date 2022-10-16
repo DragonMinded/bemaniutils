@@ -5,7 +5,7 @@ var valid_charts = ['SPN', 'SPH', 'SPA', 'DPN', 'DPH', 'DPA'].filter(function(va
 });
 var pagenav = new History(valid_charts);
 
-var top_scores = React.createClass({
+var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
         var newscores = [[], [], [], [], [], []];

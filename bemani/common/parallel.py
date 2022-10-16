@@ -1,7 +1,7 @@
 import concurrent.futures
 from typing import Any, Callable, List, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Parallel:
@@ -20,8 +20,12 @@ class Parallel:
 
         if len(lambdas) == 0:
             return []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(lambdas)) as executor:
-            futures = {executor.submit(lambdas[pos]): pos for pos in range(len(lambdas))}
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(lambdas)
+        ) as executor:
+            futures = {
+                executor.submit(lambdas[pos]): pos for pos in range(len(lambdas))
+            }
             results = []  # List: Tuple[Any, int]
 
             for future in concurrent.futures.as_completed(futures):
@@ -42,7 +46,9 @@ class Parallel:
         if len(params) == 0:
             return []
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(params)) as executor:
-            futures = {executor.submit(lam, params[pos]): pos for pos in range(len(params))}
+            futures = {
+                executor.submit(lam, params[pos]): pos for pos in range(len(params))
+            }
             results = []  # List: Tuple[Any, int]
 
             for future in concurrent.futures.as_completed(futures):
@@ -53,7 +59,7 @@ class Parallel:
             return [r[0] for r in sorted(results, key=lambda r: r[1])]
 
     @staticmethod
-    def call(lambdas: 'List[Callable[..., Any]]', *params: Any) -> List[Any]:
+    def call(lambdas: "List[Callable[..., Any]]", *params: Any) -> List[Any]:
         """
         Given a list of callables and zero or more params, calls each callable in
         parallel with the params specified. Essentially a map of params to multiple
@@ -63,8 +69,13 @@ class Parallel:
 
         if len(lambdas) == 0:
             return []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(lambdas)) as executor:
-            futures = {executor.submit(lambdas[pos], *params): pos for pos in range(len(lambdas))}
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(lambdas)
+        ) as executor:
+            futures = {
+                executor.submit(lambdas[pos], *params): pos
+                for pos in range(len(lambdas))
+            }
             results = []  # List: Tuple[Any, int]
 
             for future in concurrent.futures.as_completed(futures):

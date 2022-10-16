@@ -1,10 +1,11 @@
 /*** @jsx React.DOM */
 
-var all_players = React.createClass({
+var all_players = createReactClass({
 
     getInitialState: function(props) {
         return {
             players: window.players,
+            jubility: true,
         };
     },
 
@@ -57,7 +58,7 @@ var all_players = React.createClass({
                                 }.bind(this),
                             },
                             {
-                                name: 'Play Count',
+                                name: 'Total Rounds',
                                 render: function(userid) {
                                     var player = this.state.players[userid];
                                     return player.plays;
@@ -66,6 +67,55 @@ var all_players = React.createClass({
                                     var a = this.state.players[aid];
                                     var b = this.state.players[bid];
                                     return a.plays - b.plays;
+                                }.bind(this),
+                                reverse: true,
+                            },
+                            {
+                                name: <>
+                                    Jubility
+                                    <Slider
+                                        on="new"
+                                        off="old"
+                                        className="spaced"
+                                        value={this.state.jubility}
+                                        onChange={function(value) {
+                                            this.setState({jubility: value});
+                                        }.bind(this)}
+                                    />
+                                </>,
+                                render: function(userid) {
+                                    var player = this.state.players[userid];
+                                    if (this.state.jubility && (player.common_jubility != 0 || player.pick_up_jubility != 0)) {
+                                        return (player.common_jubility + player.pick_up_jubility).toFixed(1);
+                                    } else if (!this.state.jubility && player.jubility != 0) {
+                                        return player.jubility / 100
+                                    } else {
+                                        return "";
+                                    }
+                                }.bind(this),
+                                sort: function(aid, bid) {
+                                    var a = this.state.players[aid];
+                                    var b = this.state.players[bid];
+                                    if (this.state.jubility) {
+                                        if (a.common_jubility != 0 || a.pick_up_jubility != 0)
+                                            var ajub = a.common_jubility+a.pick_up_jubility;
+                                        else
+                                            var ajub = 0;
+                                        if (b.common_jubility != 0 || b.pick_up_jubility != 0)
+                                            var bjub = b.common_jubility+b.pick_up_jubility;
+                                        else
+                                            var bjub = 0;
+                                    } else {
+                                        if (a.jubility != 0)
+                                            var ajub = a.jubility / 100;
+                                        else
+                                            var ajub = 0;
+                                        if (b.jubility != 0)
+                                            var bjub = b.jubility / 100;
+                                        else
+                                            var bjub = 0;
+                                    }
+                                    return ajub-bjub;
                                 }.bind(this),
                                 reverse: true,
                             },

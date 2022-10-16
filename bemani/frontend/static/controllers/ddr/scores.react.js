@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var network_scores = React.createClass({
+var network_scores = createReactClass({
     getInitialState: function(props) {
         return {
             songs: window.songs,
@@ -64,7 +64,7 @@ var network_scores = React.createClass({
                     <span className="grade">{score.rank}</span>
                     <span className="score">{score.points}</span>
                 </div>
-                { score.combo > 0 ?
+                { score.combo >= 0 ?
                     <div>
                         <span className="label">Combo</span>
                         <span className="score">{score.combo}</span>
@@ -85,8 +85,8 @@ var network_scores = React.createClass({
                         <tr>
                             { window.shownames ? <th>Name</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>

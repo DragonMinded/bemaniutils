@@ -67,6 +67,12 @@
             <dd>{{ 'yes' if config.paseli.infinite else 'no' }} (can be overridden by arcade settings)</dd>
             <dt>Default Region</dt>
             <dd>{{ region[config.server.region] }} (can be overridden by arcade settings)</dd>
+            <dt>Default Custom Area</dt>
+            {% if config.server.area %}
+                <dd>{{ config.server.area or "<i>unset</i>" }} (can be overridden by arcade settings)</dd>
+            {% else %}
+                <dd><i>unset</i> (can be overridden by arcade settings)</dd>
+            {% endif %}
             <dt>Event Log Preservation Duration</dt>
             <dd>{{ (config.event_log_duration|string + ' seconds') if config.event_log_duration else 'infinite' }}</dd>
         </dl>

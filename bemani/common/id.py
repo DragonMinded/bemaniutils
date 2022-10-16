@@ -2,7 +2,6 @@ from typing import Optional
 
 
 class ID:
-
     @staticmethod
     def format_extid(extid: int) -> str:
         """
@@ -18,8 +17,8 @@ class ID:
         """
         extid_str = str(extid)
         while len(extid_str) < 8:
-            extid_str = '0' + extid_str
-        return f'{extid_str[0:4]}-{extid_str[4:8]}'
+            extid_str = "0" + extid_str
+        return f"{extid_str[0:4]}-{extid_str[4:8]}"
 
     @staticmethod
     def parse_extid(extid: str) -> Optional[int]:
@@ -35,20 +34,32 @@ class ID:
             An integer extid suitable for looking up in a DB.
         """
         try:
-            if len(extid) == 9 and extid[4:5] == '-':
+            if len(extid) == 9 and extid[4:5] == "-":
                 return int(extid[0:4] + extid[5:9])
         except ValueError:
             pass
         return None
 
     @staticmethod
-    def format_machine_id(machine_id: int, region: str = 'US') -> str:
+    def format_machine_id(machine_id: int, region: str = "US") -> str:
         """
         Take a machine ID as an integer, format it as a string.
         """
-        if region not in {'JP', 'KR', 'TW', 'HK', 'US', 'GB', 'IT', 'ES', 'FR', 'PT'}:
-            raise Exception(f'Invalid region {region}!')
-        return f'{region}-{machine_id}'
+        if region not in {
+            "JP",
+            "KR",
+            "TW",
+            "HK",
+            "US",
+            "GB",
+            "IT",
+            "ES",
+            "FR",
+            "PT",
+            "XX",
+        }:
+            raise Exception(f"Invalid region {region}!")
+        return f"{region}-{machine_id}"
 
     @staticmethod
     def parse_machine_id(machine_id: str) -> Optional[int]:
@@ -56,7 +67,11 @@ class ID:
         Take a formatted machine ID as a string, returning an int.
         """
         try:
-            if machine_id[:2] in {'JP', 'KR', 'TW', 'HK', 'US', 'GB', 'IT', 'ES', 'FR', 'PT'} and machine_id[2] == '-':
+            if (
+                machine_id[:2]
+                in {"JP", "KR", "TW", "HK", "US", "GB", "IT", "ES", "FR", "PT", "XX"}
+                and machine_id[2] == "-"
+            ):
                 return int(machine_id[3:])
         except ValueError:
             pass

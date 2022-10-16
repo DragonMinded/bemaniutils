@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var SelectInt = React.createClass({
+var SelectInt = createReactClass({
     __renderChoices: function() {
         if (this.props.choices instanceof Array) {
             // Given to us as an array, the index of the value is the selected value

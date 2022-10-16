@@ -2,8 +2,8 @@ from typing import Optional, List, Dict, Any, NewType
 
 from bemani.common import ValidatedDict, GameConstants
 
-UserID = NewType('UserID', int)
-ArcadeID = NewType('ArcadeID', int)
+UserID = NewType("UserID", int)
+ArcadeID = NewType("ArcadeID", int)
 
 
 class User:
@@ -15,7 +15,9 @@ class User:
     more cards, or swap out a card for a new one.
     """
 
-    def __init__(self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool) -> None:
+    def __init__(
+        self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool
+    ) -> None:
         """
         Initialize the user object.
 
@@ -43,7 +45,13 @@ class Achievement:
     that can have some attached data, such as item unlocks, tran medals, course progress, etc.
     """
 
-    def __init__(self, achievementid: int, achievementtype: str, timestamp: Optional[int], data: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        achievementid: int,
+        achievementtype: str,
+        timestamp: Optional[int],
+        data: Dict[str, Any],
+    ) -> None:
         """
         Initialize the achievement object.
 
@@ -68,7 +76,9 @@ class Link:
     determined by the game that needs this linkage.
     """
 
-    def __init__(self, userid: UserID, linktype: str, other_userid: UserID, data: Dict[str, Any]) -> None:
+    def __init__(
+        self, userid: UserID, linktype: str, other_userid: UserID, data: Dict[str, Any]
+    ) -> None:
         """
         Initialize the achievement object.
 
@@ -144,7 +154,17 @@ class Arcade:
     crediting accounts. Machines belong to either no arcade or a single arcase.
     """
 
-    def __init__(self, arcadeid: ArcadeID, name: str, description: str, pin: str, region: int, data: Dict[str, Any], owners: List[UserID]) -> None:
+    def __init__(
+        self,
+        arcadeid: ArcadeID,
+        name: str,
+        description: str,
+        pin: str,
+        region: int,
+        area: Optional[str],
+        data: Dict[str, Any],
+        owners: List[UserID],
+    ) -> None:
         """
         Initialize the arcade instance.
 
@@ -154,6 +174,7 @@ class Arcade:
             description - The description of the arcade.
             pin - An eight digit string representing the PIN used to pull up PASELI info.
             region - An integer representing the region this arcade is in.
+            area - A string representing the custom area this arcade is in, or None if default.
             data - A dictionary of settings for this arcade.
             owners - An list of integers specifying the user IDs of owners for this arcade.
         """
@@ -162,11 +183,12 @@ class Arcade:
         self.description = description
         self.pin = pin
         self.region = region
+        self.area = area
         self.data = ValidatedDict(data)
         self.owners = owners
 
     def __repr__(self) -> str:
-        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, region={self.region}, data={self.data}, owners={self.owners})"
+        return f"Arcade(arcadeid={self.id}, name={self.name}, description={self.description}, pin={self.pin}, region={self.region}, area={self.area}, data={self.data}, owners={self.owners})"
 
 
 class Song:
@@ -329,7 +351,15 @@ class Event:
     invalid PCBIDs trying to connect, or more mundate events such as daily selection.
     """
 
-    def __init__(self, auditid: int, timestamp: int, userid: Optional[UserID], arcadeid: Optional[ArcadeID], event: str, data: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        auditid: int,
+        timestamp: int,
+        userid: Optional[UserID],
+        arcadeid: Optional[ArcadeID],
+        event: str,
+        data: Dict[str, Any],
+    ) -> None:
         """
         Initialize the audit event object.
 
@@ -405,7 +435,15 @@ class Server:
     to for pulling data.
     """
 
-    def __init__(self, serverid: int, timestamp: int, uri: str, token: str, allow_stats: bool, allow_scores: bool) -> None:
+    def __init__(
+        self,
+        serverid: int,
+        timestamp: int,
+        uri: str,
+        token: str,
+        allow_stats: bool,
+        allow_scores: bool,
+    ) -> None:
         """
         Initialize the server object.
 

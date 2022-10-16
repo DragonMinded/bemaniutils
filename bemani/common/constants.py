@@ -29,6 +29,7 @@ class VersionConstants:
     since there are multiple keys with the same value. However, all database
     column named 'version' should contain only values found here.
     """
+
     BISHI_BASHI_TSBB: Final[int] = 1
 
     DDR_1STMIX: Final[int] = 1
@@ -152,10 +153,11 @@ class APIConstants(Enum):
     """
     The four types of IDs found in a BEMAPI request or response.
     """
-    ID_TYPE_SERVER: Final[str] = 'server'
-    ID_TYPE_CARD: Final[str] = 'card'
-    ID_TYPE_SONG: Final[str] = 'song'
-    ID_TYPE_INSTANCE: Final[str] = 'instance'
+
+    ID_TYPE_SERVER: Final[str] = "server"
+    ID_TYPE_CARD: Final[str] = "card"
+    ID_TYPE_SONG: Final[str] = "song"
+    ID_TYPE_INSTANCE: Final[str] = "instance"
 
 
 class DBConstants:
@@ -240,15 +242,15 @@ class DBConstants:
     JUBEAT_PLAY_MEDAL_NEARLY_EXCELLENT: Final[int] = 500
     JUBEAT_PLAY_MEDAL_EXCELLENT: Final[int] = 600
 
-    MUSECA_GRADE_DEATH: Final[int] = 100        # 没
-    MUSECA_GRADE_POOR: Final[int] = 200         # 拙
-    MUSECA_GRADE_MEDIOCRE: Final[int] = 300     # 凡
-    MUSECA_GRADE_GOOD: Final[int] = 400         # 佳
-    MUSECA_GRADE_GREAT: Final[int] = 500        # 良
-    MUSECA_GRADE_EXCELLENT: Final[int] = 600    # 優
-    MUSECA_GRADE_SUPERB: Final[int] = 700       # 秀
+    MUSECA_GRADE_DEATH: Final[int] = 100  # 没
+    MUSECA_GRADE_POOR: Final[int] = 200  # 拙
+    MUSECA_GRADE_MEDIOCRE: Final[int] = 300  # 凡
+    MUSECA_GRADE_GOOD: Final[int] = 400  # 佳
+    MUSECA_GRADE_GREAT: Final[int] = 500  # 良
+    MUSECA_GRADE_EXCELLENT: Final[int] = 600  # 優
+    MUSECA_GRADE_SUPERB: Final[int] = 700  # 秀
     MUSECA_GRADE_MASTERPIECE: Final[int] = 800  # 傑
-    MUSECA_GRADE_PERFECT: Final[int] = 900      # 傑
+    MUSECA_GRADE_PERFECT: Final[int] = 900  # 傑
     MUSECA_CLEAR_TYPE_FAILED: Final[int] = 100
     MUSECA_CLEAR_TYPE_CLEARED: Final[int] = 200
     MUSECA_CLEAR_TYPE_FULL_COMBO: Final[int] = 300
@@ -317,38 +319,38 @@ class BroadcastConstants(Enum):
     """
 
     # Sections related to the player/song/etc.
-    DJ_NAME: Final[str] = 'DJ Name'
-    SONG_NAME: Final[str] = 'Song'
-    ARTIST_NAME: Final[str] = 'Artist'
-    DIFFICULTY: Final[str] = 'Difficulty'
+    DJ_NAME: Final[str] = "DJ Name"
+    SONG_NAME: Final[str] = "Song"
+    ARTIST_NAME: Final[str] = "Artist"
+    DIFFICULTY: Final[str] = "Difficulty"
 
     # Section headers.
-    PLAY_STATS_HEADER: Final[str] = 'Play Stats'
+    PLAY_STATS_HEADER: Final[str] = "Play Stats"
 
     # Stats that relate to the song, but not the current play of the song.
-    TARGET_EXSCORE: Final[str] = 'Target EXScore'
-    BEST_CLEAR_STATUS: Final[str] = 'Best Clear'
+    TARGET_EXSCORE: Final[str] = "Target EXScore"
+    BEST_CLEAR_STATUS: Final[str] = "Best Clear"
 
     # Stats that have to do with the current play of the song.
-    EXSCORE: Final[str] = 'Your EXScore'
-    CLEAR_STATUS: Final[str] = 'Clear Status'
-    PERFECT_GREATS: Final[str] = 'Perfect Greats'
-    GREATS: Final[str] = 'Greats'
-    GOODS: Final[str] = 'Goods'
-    BADS: Final[str] = 'Bads'
-    POORS: Final[str] = 'Poors'
-    COMBO_BREAKS: Final[str] = 'Combo Breaks'
-    SLOWS: Final[str] = 'Slow'
-    FASTS: Final[str] = 'Fast'
-    GRADE: Final[str] = 'Grade'
-    RATE: Final[str] = 'Score Rate'
+    EXSCORE: Final[str] = "Your EXScore"
+    CLEAR_STATUS: Final[str] = "Clear Status"
+    PERFECT_GREATS: Final[str] = "Perfect Greats"
+    GREATS: Final[str] = "Greats"
+    GOODS: Final[str] = "Goods"
+    BADS: Final[str] = "Bads"
+    POORS: Final[str] = "Poors"
+    COMBO_BREAKS: Final[str] = "Combo Breaks"
+    SLOWS: Final[str] = "Slow"
+    FASTS: Final[str] = "Fast"
+    GRADE: Final[str] = "Grade"
+    RATE: Final[str] = "Score Rate"
 
     # Added for Pnm
-    PLAYER_NAME: Final[str] = 'Player Name'
-    SCORE: Final[str] = 'Your Score'
-    COOLS: Final[str] = 'Cools'
-    COMBO: Final[str] = 'Combo'
-    MEDAL: Final[str] = 'Medal'
+    PLAYER_NAME: Final[str] = "Player Name"
+    SCORE: Final[str] = "Your Score"
+    COOLS: Final[str] = "Cools"
+    COMBO: Final[str] = "Combo"
+    MEDAL: Final[str] = "Medal"
 
 
 class _RegionConstants:
@@ -489,57 +491,56 @@ class _RegionConstants:
     @property
     def LUT(cls) -> Dict[int, str]:
         return {
-            cls.HOKKAIDO: '北海道 (Hokkaido)',
-            cls.AOMORI: '青森県 (Aomori)',
-            cls.IWATE: '岩手県 (Iwate)',
-            cls.MIYAGI: '宮城県 (Miyagi)',
-            cls.AKITA: '秋田県 (Akita)',
-            cls.YAMAGATA: '山形県 (Yamagata)',
-            cls.FUKUSHIMA: '福島県 (Fukushima)',
-            cls.IBARAKI: '茨城県 (Ibaraki)',
-            cls.TOCHIGI: '栃木県 (Tochigi)',
-            cls.GUNMA: '群馬県 (Gunma)',
-            cls.SAITAMA: '埼玉県 (Saitama)',
-            cls.CHIBA: '千葉県 (Chiba)',
-            cls.TOKYO: '東京都 (Tokyo)',
-            cls.KANAGAWA: '神奈川県 (Kanagawa)',
-            cls.NIIGATA: '新潟県 (Niigata)',
-            cls.TOYAMA: '富山県 (Toyama)',
-            cls.ISHIKAWA: '石川県 (Ishikawa)',
-            cls.FUKUI: '福井県 (Fukui)',
-            cls.YAMANASHI: '山梨県 (Yamanashi)',
-            cls.NAGANO: '長野県 (Nagano)',
-            cls.GIFU: '岐阜県 (Gifu)',
-            cls.SHIZUOKA: '静岡県 (Shizuoka)',
-            cls.AICHI: '愛知県 (Aichi)',
-            cls.MIE: '三重県 (Mie)',
-            cls.SHIGA: '滋賀県 (Shiga)',
-            cls.KYOTO: '京都府 (Kyoto)',
-            cls.OSAKA: '大阪府 (Osaka)',
-            cls.HYOGO: '兵庫県 (Hyogo)',
-            cls.NARA: '奈良県 (Nara)',
-            cls.WAKAYAMA: '和歌山県 (Wakayama)',
-            cls.TOTTORI: '鳥取県 (Tottori)',
-            cls.SHIMANE: '島根県 (Shimane)',
-            cls.OKAYAMA: '岡山県 (Okayama)',
-            cls.HIROSHIMA: '広島県 (Hiroshima)',
-            cls.YAMAGUCHI: '山口県 (Yamaguchi)',
-            cls.TOKUSHIMA: '徳島県 (Tokushima)',
-            cls.KAGAWA: '香川県 (Kagawa)',
-            cls.EHIME: '愛媛県 (Ehime)',
-            cls.KOUCHI: '高知県 (Kochi)',
-            cls.FUKUOKA: '福岡県 (Fukuoka)',
-            cls.SAGA: '佐賀県 (Saga)',
-            cls.NAGASAKI: '長崎県 (Nagasaki)',
-            cls.KUMAMOTO: '熊本県 (Kumamoto)',
-            cls.OITA: '大分県 (Oita)',
-            cls.MIYAZAKI: '宮崎県 (Miyazaki)',
-            cls.KAGOSHIMA: '鹿児島県 (Kagoshima)',
-            cls.OKINAWA: '沖縄県 (Okinawa)',
-            cls.HONG_KONG: '香港 (Hong Kong)',
-            cls.KOREA: '韓国 (Korea)',
-            cls.TAIWAN: '台湾 (Taiwan)',
-
+            cls.HOKKAIDO: "北海道 (Hokkaido)",
+            cls.AOMORI: "青森県 (Aomori)",
+            cls.IWATE: "岩手県 (Iwate)",
+            cls.MIYAGI: "宮城県 (Miyagi)",
+            cls.AKITA: "秋田県 (Akita)",
+            cls.YAMAGATA: "山形県 (Yamagata)",
+            cls.FUKUSHIMA: "福島県 (Fukushima)",
+            cls.IBARAKI: "茨城県 (Ibaraki)",
+            cls.TOCHIGI: "栃木県 (Tochigi)",
+            cls.GUNMA: "群馬県 (Gunma)",
+            cls.SAITAMA: "埼玉県 (Saitama)",
+            cls.CHIBA: "千葉県 (Chiba)",
+            cls.TOKYO: "東京都 (Tokyo)",
+            cls.KANAGAWA: "神奈川県 (Kanagawa)",
+            cls.NIIGATA: "新潟県 (Niigata)",
+            cls.TOYAMA: "富山県 (Toyama)",
+            cls.ISHIKAWA: "石川県 (Ishikawa)",
+            cls.FUKUI: "福井県 (Fukui)",
+            cls.YAMANASHI: "山梨県 (Yamanashi)",
+            cls.NAGANO: "長野県 (Nagano)",
+            cls.GIFU: "岐阜県 (Gifu)",
+            cls.SHIZUOKA: "静岡県 (Shizuoka)",
+            cls.AICHI: "愛知県 (Aichi)",
+            cls.MIE: "三重県 (Mie)",
+            cls.SHIGA: "滋賀県 (Shiga)",
+            cls.KYOTO: "京都府 (Kyoto)",
+            cls.OSAKA: "大阪府 (Osaka)",
+            cls.HYOGO: "兵庫県 (Hyogo)",
+            cls.NARA: "奈良県 (Nara)",
+            cls.WAKAYAMA: "和歌山県 (Wakayama)",
+            cls.TOTTORI: "鳥取県 (Tottori)",
+            cls.SHIMANE: "島根県 (Shimane)",
+            cls.OKAYAMA: "岡山県 (Okayama)",
+            cls.HIROSHIMA: "広島県 (Hiroshima)",
+            cls.YAMAGUCHI: "山口県 (Yamaguchi)",
+            cls.TOKUSHIMA: "徳島県 (Tokushima)",
+            cls.KAGAWA: "香川県 (Kagawa)",
+            cls.EHIME: "愛媛県 (Ehime)",
+            cls.KOUCHI: "高知県 (Kochi)",
+            cls.FUKUOKA: "福岡県 (Fukuoka)",
+            cls.SAGA: "佐賀県 (Saga)",
+            cls.NAGASAKI: "長崎県 (Nagasaki)",
+            cls.KUMAMOTO: "熊本県 (Kumamoto)",
+            cls.OITA: "大分県 (Oita)",
+            cls.MIYAZAKI: "宮崎県 (Miyazaki)",
+            cls.KAGOSHIMA: "鹿児島県 (Kagoshima)",
+            cls.OKINAWA: "沖縄県 (Okinawa)",
+            cls.HONG_KONG: "香港 (Hong Kong)",
+            cls.KOREA: "韓国 (Korea)",
+            cls.TAIWAN: "台湾 (Taiwan)",
             # The following are different depending on the version of the game,
             # so we choose the new value.
             cls.THAILAND: "タイ (Thailand)",
@@ -548,7 +549,7 @@ class _RegionConstants:
             cls.PHILLIPINES: "フィリピン (Phillipines)",
             cls.MACAO: "マカオ (Macao)",
             cls.USA: "アメリカ (USA)",
-            cls.EUROPE: '欧州 (Europe)',
+            cls.EUROPE: "欧州 (Europe)",
             cls.NO_MAPPING: "海外 (Other)",
         }
 

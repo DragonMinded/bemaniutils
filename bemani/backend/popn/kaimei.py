@@ -41,164 +41,164 @@ class PopnMusicKaimei(PopnMusicModernBase):
         Return all of our front-end modifiably settings.
         """
         return {
-            'ints': [
+            "ints": [
                 {
-                    'name': 'Music Open Phase',
-                    'tip': 'Default music phase for all players.',
-                    'category': 'game_config',
-                    'setting': 'music_phase',
-                    'values': {
+                    "name": "Music Open Phase",
+                    "tip": "Default music phase for all players.",
+                    "category": "game_config",
+                    "setting": "music_phase",
+                    "values": {
                         # The value goes to 30 now, but it starts where usaneko left off at 23
                         # Unlocks a total of 10 songs
-                        23: 'No music unlocks',
-                        24: 'Phase 1',
-                        25: 'Phase 2',
-                        26: 'Phase 3',
-                        27: 'Phase 4',
-                        28: 'Phase 5',
-                        29: 'Phase 6',
-                        30: 'Phase MAX',
-                    }
+                        23: "No music unlocks",
+                        24: "Phase 1",
+                        25: "Phase 2",
+                        26: "Phase 3",
+                        27: "Phase 4",
+                        28: "Phase 5",
+                        29: "Phase 6",
+                        30: "Phase MAX",
+                    },
                 },
                 {
-                    'name': 'Kaimei! MN tanteisha event Phase',
-                    'tip': 'Kaimei! MN tanteisha event phase for all players.',
-                    'category': 'game_config',
-                    'setting': 'mn_tanteisha_phase',
-                    'values': {
-                        0: 'Disabled',
-                        1: 'Roki',
-                        2: 'shiroro',
-                        3: 'PIERRE&JILL',
-                        4: 'ROSA',
-                        5: 'taoxiang',
-                        6: 'TangTang',
-                        7: 'OTOBEAR',
-                        8: 'kaorin',
-                        9: 'CHARLY',
-                        10: 'ALOE',
-                        11: 'RIE♥chan',
-                        12: 'hina',
-                        13: 'PAPYRUS',
-                        14: '雷蔵, miho, RIE♥chan, Ryusei Honey',
-                        15: 'Murasaki',
-                        16: 'Lucifelle',
-                        17: '六',
-                        18: 'stella',
-                        19: 'ちせ',
-                        20: 'LISA',
-                        21: 'SUMIRE',
-                        22: 'SHISHITUGU',
-                        23: 'WALKER',
-                        24: 'Candy',
-                        25: 'Jade',
-                        26: 'AYA',
-                        27: 'kaorin',
-                        28: 'Lord Meh',
-                        29: 'HAMANOV',
-                        30: 'Agent',
-                        31: 'Yima',
-                        32: 'ikkei',
-                        33: 'echidna',
-                        34: 'lithos',
-                        35: 'SMOKE',
-                        36: 'the KING',
-                        37: 'Kicoro',
-                        38: 'DEBORAH',
-                        39: 'Teruo',
-                        40: 'the TOWER',
-                        41: 'Mamoru-kun',
-                        42: 'Canopus',
-                        43: 'Mimi Nyami',
-                        44: 'iO-LOWER',
-                        45: 'BOY',
-                        46: 'Sergei',
-                        47: 'SAPPHIRE',
-                        48: 'Chocky',
-                        49: 'HAPPPY',
-                        50: 'SHOLLKEE',
-                        51: 'CHARA-O',
-                        52: 'Hugh, GRIM, SUMIKO',
-                        53: 'Peetan',
-                        54: 'SHARK',
-                        55: 'Nakajima-san',
-                        56: 'KIKYO',
-                        57: 'SUMIRE',
-                        58: 'NAKAJI',
-                        59: 'moi moi',
-                        60: 'TITICACA',
-                        61: 'MASAMUNE',
-                        62: 'YUMMY'
+                    "name": "Kaimei! MN tanteisha event Phase",
+                    "tip": "Kaimei! MN tanteisha event phase for all players.",
+                    "category": "game_config",
+                    "setting": "mn_tanteisha_phase",
+                    "values": {
+                        0: "Disabled",
+                        1: "Roki",
+                        2: "shiroro",
+                        3: "PIERRE&JILL",
+                        4: "ROSA",
+                        5: "taoxiang",
+                        6: "TangTang",
+                        7: "OTOBEAR",
+                        8: "kaorin",
+                        9: "CHARLY",
+                        10: "ALOE",
+                        11: "RIE♥chan",
+                        12: "hina",
+                        13: "PAPYRUS",
+                        14: "雷蔵, miho, RIE♥chan, Ryusei Honey",
+                        15: "Murasaki",
+                        16: "Lucifelle",
+                        17: "六",
+                        18: "stella",
+                        19: "ちせ",
+                        20: "LISA",
+                        21: "SUMIRE",
+                        22: "SHISHITUGU",
+                        23: "WALKER",
+                        24: "Candy",
+                        25: "Jade",
+                        26: "AYA",
+                        27: "kaorin",
+                        28: "Lord Meh",
+                        29: "HAMANOV",
+                        30: "Agent",
+                        31: "Yima",
+                        32: "ikkei",
+                        33: "echidna",
+                        34: "lithos",
+                        35: "SMOKE",
+                        36: "the KING",
+                        37: "Kicoro",
+                        38: "DEBORAH",
+                        39: "Teruo",
+                        40: "the TOWER",
+                        41: "Mamoru-kun",
+                        42: "Canopus",
+                        43: "Mimi Nyami",
+                        44: "iO-LOWER",
+                        45: "BOY",
+                        46: "Sergei",
+                        47: "SAPPHIRE",
+                        48: "Chocky",
+                        49: "HAPPPY",
+                        50: "SHOLLKEE",
+                        51: "CHARA-O",
+                        52: "Hugh, GRIM, SUMIKO",
+                        53: "Peetan",
+                        54: "SHARK",
+                        55: "Nakajima-san",
+                        56: "KIKYO",
+                        57: "SUMIRE",
+                        58: "NAKAJI",
+                        59: "moi moi",
+                        60: "TITICACA",
+                        61: "MASAMUNE",
+                        62: "YUMMY",
                     },
                 },
                 {
                     # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
-                    'name': 'Holiday Greeting',
-                    'tip': 'Changes the payment selection confirmation sound.',
-                    'category': 'game_config',
-                    'setting': 'holiday_greeting',
-                    'values': {
-                        0: 'Okay!',
-                        1: 'Merry Christmas!',
-                        2: 'Happy New Year!',
-                    }
+                    "name": "Holiday Greeting",
+                    "tip": "Changes the payment selection confirmation sound.",
+                    "category": "game_config",
+                    "setting": "holiday_greeting",
+                    "values": {
+                        0: "Okay!",
+                        1: "Merry Christmas!",
+                        2: "Happy New Year!",
+                    },
                 },
                 {
                     # peace soundtrack hatsubai kinen SP event, 0 = off, 1 = active, 2 = off (0-2)
-                    'name': 'peace soundtrack hatsubai kinen SP',
-                    'tip': 'peace soundtrack hatsubai kinen SP for all players.',
-                    'category': 'game_config',
-                    'setting': 'peace_soundtrack',
-                    'values': {
-                        0: 'Not stated',
-                        1: 'Active',
-                        2: 'Ended',
-                    }
+                    "name": "peace soundtrack hatsubai kinen SP",
+                    "tip": "peace soundtrack hatsubai kinen SP for all players.",
+                    "category": "game_config",
+                    "setting": "peace_soundtrack",
+                    "values": {
+                        0: "Not stated",
+                        1: "Active",
+                        2: "Ended",
+                    },
                 },
                 {
-                    'name': 'MZD no kimagure tanteisha joshu',
-                    'tip': 'Boost increasing the Clarification Level, if four or more Requests still unresolved.',
-                    'category': 'game_config',
-                    'setting': 'tanteisha_joshu',
-                    'values': {
-                        0: 'Not stated',
-                        1: 'Active',
-                        2: 'Ended',
-                    }
-                },
-                {
-                    # Shutchou! pop'n quest Lively II event
-                    'name': 'Shutchou! pop\'n quest Lively phase',
-                    'tip': 'Shutchou! pop\'n quest Lively phase for all players.',
-                    'category': 'game_config',
-                    'setting': 'popn_quest_lively',
-                    'values': {
-                        0: 'Not started',
-                        1: 'fes 1',
-                        2: 'fes 2',
-                        3: 'fes FINAL',
-                        4: 'fes EXTRA',
-                        5: 'Ended',
-                    }
+                    "name": "MZD no kimagure tanteisha joshu",
+                    "tip": "Boost increasing the Clarification Level, if four or more Requests still unresolved.",
+                    "category": "game_config",
+                    "setting": "tanteisha_joshu",
+                    "values": {
+                        0: "Not stated",
+                        1: "Active",
+                        2: "Ended",
+                    },
                 },
                 {
                     # Shutchou! pop'n quest Lively II event
-                    'name': 'Shutchou! pop\'n quest Lively II phase',
-                    'tip': 'Shutchou! pop\'n quest Lively II phase for all players.',
-                    'category': 'game_config',
-                    'setting': 'popn_quest_lively_2',
-                    'values': {
-                        0: 'Not started',
-                        1: 'fes 1',
-                        2: 'fes 2',
-                        3: 'fes FINAL',
-                        4: 'fes EXTRA',
-                        5: 'fes THE END',
-                        6: 'Ended',
-                    }
+                    "name": "Shutchou! pop'n quest Lively phase",
+                    "tip": "Shutchou! pop'n quest Lively phase for all players.",
+                    "category": "game_config",
+                    "setting": "popn_quest_lively",
+                    "values": {
+                        0: "Not started",
+                        1: "fes 1",
+                        2: "fes 2",
+                        3: "fes FINAL",
+                        4: "fes EXTRA",
+                        5: "Ended",
+                    },
+                },
+                {
+                    # Shutchou! pop'n quest Lively II event
+                    "name": "Shutchou! pop'n quest Lively II phase",
+                    "tip": "Shutchou! pop'n quest Lively II phase for all players.",
+                    "category": "game_config",
+                    "setting": "popn_quest_lively_2",
+                    "values": {
+                        0: "Not started",
+                        1: "fes 1",
+                        2: "fes 2",
+                        3: "fes FINAL",
+                        4: "fes EXTRA",
+                        5: "fes THE END",
+                        6: "Ended",
+                    },
                 },
             ],
-            'bools': [
+            "bools": [
                 # We don't currently support lobbies or anything, so this is commented out until
                 # somebody gets around to implementing it.
                 # {
@@ -208,24 +208,24 @@ class PopnMusicKaimei(PopnMusicModernBase):
                 #     'setting': 'enable_net_taisen',
                 # },
                 {
-                    'name': 'Force Song Unlock',
-                    'tip': 'Force unlock all songs.',
-                    'category': 'game_config',
-                    'setting': 'force_unlock_songs',
+                    "name": "Force Song Unlock",
+                    "tip": "Force unlock all songs.",
+                    "category": "game_config",
+                    "setting": "force_unlock_songs",
                 },
             ],
         }
 
     def get_common_config(self) -> Tuple[Dict[int, int], bool]:
         game_config = self.get_game_config()
-        music_phase = game_config.get_int('music_phase')
-        holiday_greeting = game_config.get_int('holiday_greeting')
+        music_phase = game_config.get_int("music_phase")
+        holiday_greeting = game_config.get_int("holiday_greeting")
         enable_net_taisen = False  # game_config.get_bool('enable_net_taisen')
-        mn_tanteisha_phase = game_config.get_int('mn_tanteisha_phase')
-        peace_soundtrack = game_config.get_int('peace_soundtrack')
-        tanteisha_joshu = game_config.get_int('tanteisha_joshu')
-        popn_quest_lively = game_config.get_int('popn_quest_lively')
-        popn_quest_lively_2 = game_config.get_int('popn_quest_lively_2')
+        mn_tanteisha_phase = game_config.get_int("mn_tanteisha_phase")
+        peace_soundtrack = game_config.get_int("peace_soundtrack")
+        tanteisha_joshu = game_config.get_int("tanteisha_joshu")
+        popn_quest_lively = game_config.get_int("popn_quest_lively")
+        popn_quest_lively_2 = game_config.get_int("popn_quest_lively_2")
 
         # Event phases
         return (
@@ -384,20 +384,31 @@ class PopnMusicKaimei(PopnMusicModernBase):
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         root = super().format_profile(userid, profile)
 
-        account = root.child('account')
-        account.add_child(Node.s16('card_again_count', profile.get_int('card_again_count')))
-        account.add_child(Node.s16('sp_riddles_id', profile.get_int('sp_riddles_id')))
+        account = root.child("account")
+        account.add_child(
+            Node.s16("card_again_count", profile.get_int("card_again_count"))
+        )
+        account.add_child(Node.s16("sp_riddles_id", profile.get_int("sp_riddles_id")))
 
         # Kaimei riddles events
-        event2021 = Node.void('event2021')
+        event2021 = Node.void("event2021")
         root.add_child(event2021)
-        event2021.add_child(Node.u32('point', profile.get_int('point')))
-        event2021.add_child(Node.u8('step', profile.get_int('step')))
-        event2021.add_child(Node.u32_array('quest_point', profile.get_int_array('quest_point', 8, [0] * 8)))
-        event2021.add_child(Node.u8('step_nos', profile.get_int('step_nos')))
-        event2021.add_child(Node.u32_array('quest_point_nos', profile.get_int_array('quest_point_nos', 13, [0] * 13)))
+        event2021.add_child(Node.u32("point", profile.get_int("point")))
+        event2021.add_child(Node.u8("step", profile.get_int("step")))
+        event2021.add_child(
+            Node.u32_array(
+                "quest_point", profile.get_int_array("quest_point", 8, [0] * 8)
+            )
+        )
+        event2021.add_child(Node.u8("step_nos", profile.get_int("step_nos")))
+        event2021.add_child(
+            Node.u32_array(
+                "quest_point_nos",
+                profile.get_int_array("quest_point_nos", 13, [0] * 13),
+            )
+        )
 
-        riddles_data = Node.void('riddles_data')
+        riddles_data = Node.void("riddles_data")
         root.add_child(riddles_data)
 
         # Generate Short Riddles for MN tanteisha
@@ -413,62 +424,74 @@ class PopnMusicKaimei(PopnMusicModernBase):
 
             randomRiddles.append(riddle)
 
-            sh_riddles = Node.void('sh_riddles')
+            sh_riddles = Node.void("sh_riddles")
             riddles_data.add_child(sh_riddles)
-            sh_riddles.add_child(Node.u32('sh_riddles_id', riddle))
+            sh_riddles.add_child(Node.u32("sh_riddles_id", riddle))
 
         # Set up kaimei riddles achievements
-        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
+        achievements = self.data.local.user.get_achievements(
+            self.game, self.version, userid
+        )
         for achievement in achievements:
-            if achievement.type == 'riddle':
-                kaimei_gauge = achievement.data.get_int('kaimei_gauge')
-                is_cleared = achievement.data.get_bool('is_cleared')
-                riddles_cleared = achievement.data.get_bool('riddles_cleared')
-                select_count = achievement.data.get_int('select_count')
-                other_count = achievement.data.get_int('other_count')
+            if achievement.type == "riddle":
+                kaimei_gauge = achievement.data.get_int("kaimei_gauge")
+                is_cleared = achievement.data.get_bool("is_cleared")
+                riddles_cleared = achievement.data.get_bool("riddles_cleared")
+                select_count = achievement.data.get_int("select_count")
+                other_count = achievement.data.get_int("other_count")
 
-                sp_riddles = Node.void('sp_riddles')
+                sp_riddles = Node.void("sp_riddles")
                 riddles_data.add_child(sp_riddles)
-                sp_riddles.add_child(Node.u16('kaimei_gauge', kaimei_gauge))
-                sp_riddles.add_child(Node.bool('is_cleared', is_cleared))
-                sp_riddles.add_child(Node.bool('riddles_cleared', riddles_cleared))
-                sp_riddles.add_child(Node.u8('select_count', select_count))
-                sp_riddles.add_child(Node.u32('other_count', other_count))
+                sp_riddles.add_child(Node.u16("kaimei_gauge", kaimei_gauge))
+                sp_riddles.add_child(Node.bool("is_cleared", is_cleared))
+                sp_riddles.add_child(Node.bool("riddles_cleared", riddles_cleared))
+                sp_riddles.add_child(Node.u8("select_count", select_count))
+                sp_riddles.add_child(Node.u32("other_count", other_count))
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         newprofile = super().unformat_profile(userid, request, oldprofile)
 
-        account = request.child('account')
+        account = request.child("account")
         if account is not None:
-            newprofile.replace_int('card_again_count', account.child_value('card_again_count'))
-            newprofile.replace_int('sp_riddles_id', account.child_value('sp_riddles_id'))
+            newprofile.replace_int(
+                "card_again_count", account.child_value("card_again_count")
+            )
+            newprofile.replace_int(
+                "sp_riddles_id", account.child_value("sp_riddles_id")
+            )
 
         # Kaimei riddles events
-        event2021 = request.child('event2021')
+        event2021 = request.child("event2021")
         if event2021 is not None:
-            newprofile.replace_int('point', event2021.child_value('point'))
-            newprofile.replace_int('step', event2021.child_value('step'))
-            newprofile.replace_int_array('quest_point', 8, event2021.child_value('quest_point'))
-            newprofile.replace_int('step_nos', event2021.child_value('step_nos'))
-            newprofile.replace_int_array('quest_point_nos', 13, event2021.child_value('quest_point_nos'))
+            newprofile.replace_int("point", event2021.child_value("point"))
+            newprofile.replace_int("step", event2021.child_value("step"))
+            newprofile.replace_int_array(
+                "quest_point", 8, event2021.child_value("quest_point")
+            )
+            newprofile.replace_int("step_nos", event2021.child_value("step_nos"))
+            newprofile.replace_int_array(
+                "quest_point_nos", 13, event2021.child_value("quest_point_nos")
+            )
 
         # Extract kaimei riddles achievements
         for node in request.children:
-            if node.name == 'riddles_data':
+            if node.name == "riddles_data":
                 riddle_id = 0
-                playedRiddle = request.child('account').child_value('sp_riddles_id')
+                playedRiddle = request.child("account").child_value("sp_riddles_id")
                 for riddle in node.children:
-                    kaimei_gauge = riddle.child_value('kaimei_gauge')
-                    is_cleared = riddle.child_value('is_cleared')
-                    riddles_cleared = riddle.child_value('riddles_cleared')
-                    select_count = riddle.child_value('select_count')
-                    other_count = riddle.child_value('other_count')
+                    kaimei_gauge = riddle.child_value("kaimei_gauge")
+                    is_cleared = riddle.child_value("is_cleared")
+                    riddles_cleared = riddle.child_value("riddles_cleared")
+                    select_count = riddle.child_value("select_count")
+                    other_count = riddle.child_value("other_count")
 
-                    if (riddles_cleared or select_count >= 3):
+                    if riddles_cleared or select_count >= 3:
                         select_count = 3
-                    elif (playedRiddle == riddle_id):
+                    elif playedRiddle == riddle_id:
                         select_count += 1
 
                     self.data.local.user.put_achievement(
@@ -476,13 +499,13 @@ class PopnMusicKaimei(PopnMusicModernBase):
                         self.version,
                         userid,
                         riddle_id,
-                        'riddle',
+                        "riddle",
                         {
-                            'kaimei_gauge': kaimei_gauge,
-                            'is_cleared': is_cleared,
-                            'riddles_cleared': riddles_cleared,
-                            'select_count': select_count,
-                            'other_count': other_count,
+                            "kaimei_gauge": kaimei_gauge,
+                            "is_cleared": is_cleared,
+                            "riddles_cleared": riddles_cleared,
+                            "select_count": select_count,
+                            "other_count": other_count,
                         },
                     )
 

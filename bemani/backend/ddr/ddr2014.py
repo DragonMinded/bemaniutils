@@ -47,7 +47,7 @@ class DDR2014(
     DDRBase,
 ):
 
-    name: str = 'DanceDanceRevolution 2014'
+    name: str = "DanceDanceRevolution 2014"
     version: int = VersionConstants.DDR_2014
 
     GAME_STYLE_SINGLE: Final[int] = 0
@@ -154,47 +154,53 @@ class DDR2014(
         return combo_type
 
     def handle_game_common_request(self, request: Node) -> Node:
-        game = Node.void('game')
+        game = Node.void("game")
         for flagid in range(512):
-            flag = Node.void('flag')
+            flag = Node.void("flag")
             game.add_child(flag)
 
-            flag.set_attribute('id', str(flagid))
-            flag.set_attribute('t', '0')
-            flag.set_attribute('s1', '0')
-            flag.set_attribute('s2', '0')
-            flag.set_attribute('area', str(self.get_machine_region()))
-            flag.set_attribute('is_final', '0')
+            flag.set_attribute("id", str(flagid))
+            flag.set_attribute("t", "0")
+            flag.set_attribute("s1", "0")
+            flag.set_attribute("s2", "0")
+            flag.set_attribute("area", str(self.get_machine_region()))
+            flag.set_attribute("is_final", "0")
 
         # Last month's hit chart
-        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS, 30)
+        hit_chart = self.data.local.music.get_hit_chart(
+            self.game, self.music_version, self.GAME_MAX_SONGS, 30
+        )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for (reflink, plays) in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
-        game.add_child(Node.u32_array('cnt_music_monthly', counts_by_reflink))
+        game.add_child(Node.u32_array("cnt_music_monthly", counts_by_reflink))
 
         # Last week's hit chart
-        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS, 7)
+        hit_chart = self.data.local.music.get_hit_chart(
+            self.game, self.music_version, self.GAME_MAX_SONGS, 7
+        )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for (reflink, plays) in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
-        game.add_child(Node.u32_array('cnt_music_weekly', counts_by_reflink))
+        game.add_child(Node.u32_array("cnt_music_weekly", counts_by_reflink))
 
         # Last day's hit chart
-        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS, 1)
+        hit_chart = self.data.local.music.get_hit_chart(
+            self.game, self.music_version, self.GAME_MAX_SONGS, 1
+        )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for (reflink, plays) in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
-        game.add_child(Node.u32_array('cnt_music_daily', counts_by_reflink))
+        game.add_child(Node.u32_array("cnt_music_daily", counts_by_reflink))
 
         return game
 
     def handle_game_load_m_request(self, request: Node) -> Node:
-        extid = intish(request.attribute('code'))
-        refid = request.attribute('refid')
+        extid = intish(request.attribute("code"))
+        refid = request.attribute("refid")
 
         if extid is not None:
             # Rival score loading
@@ -204,7 +210,9 @@ class DDR2014(
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
+            scores = self.data.remote.music.get_scores(
+                self.game, self.music_version, userid
+            )
         else:
             scores = []
 
@@ -214,11 +222,11 @@ class DDR2014(
                 sortedscores[score.id] = {}
             sortedscores[score.id][score.chart] = score
 
-        game = Node.void('game')
+        game = Node.void("game")
         for song in sortedscores:
-            music = Node.void('music')
+            music = Node.void("music")
             game.add_child(music)
-            music.set_attribute('reclink', str(song))
+            music.set_attribute("reclink", str(song))
 
             for chart in sortedscores[song]:
                 score = sortedscores[song][chart]
@@ -227,17 +235,17 @@ class DDR2014(
                 except KeyError:
                     # Don't support this chart in this game
                     continue
-                gamerank = self.db_to_game_rank(score.data.get_int('rank'))
-                combo_type = self.db_to_game_halo(score.data.get_int('halo'))
+                gamerank = self.db_to_game_rank(score.data.get_int("rank"))
+                combo_type = self.db_to_game_halo(score.data.get_int("halo"))
 
-                typenode = Node.void('type')
+                typenode = Node.void("type")
                 music.add_child(typenode)
-                typenode.set_attribute('diff', str(gamechart))
+                typenode.set_attribute("diff", str(gamechart))
 
-                typenode.add_child(Node.u32('score', score.points))
-                typenode.add_child(Node.u16('count', score.plays))
-                typenode.add_child(Node.u8('rank', gamerank))
-                typenode.add_child(Node.u8('combo_type', combo_type))
+                typenode.add_child(Node.u32("score", score.points))
+                typenode.add_child(Node.u16("count", score.plays))
+                typenode.add_child(Node.u8("rank", gamerank))
+                typenode.add_child(Node.u8("combo_type", combo_type))
                 # The game optionally receives hard, life8, life4, risky, assist_clear, normal_clear
                 # u8 values too, and saves music scores with these set, but the UI doesn't appear to
                 # do anything with them, so we don't care.
@@ -245,26 +253,26 @@ class DDR2014(
         return game
 
     def handle_game_save_m_request(self, request: Node) -> Node:
-        refid = request.attribute('refid')
-        songid = int(request.attribute('mid'))
-        chart = self.game_to_db_chart(int(request.attribute('mtype')))
+        refid = request.attribute("refid")
+        songid = int(request.attribute("mid"))
+        chart = self.game_to_db_chart(int(request.attribute("mtype")))
 
         # Calculate statistics
-        data = request.child('data')
-        points = int(data.attribute('score'))
-        combo = int(data.attribute('combo'))
-        rank = self.game_to_db_rank(int(data.attribute('rank')))
+        data = request.child("data")
+        points = int(data.attribute("score"))
+        combo = int(data.attribute("combo"))
+        rank = self.game_to_db_rank(int(data.attribute("rank")))
         if points == 1000000:
             halo = self.HALO_MARVELOUS_FULL_COMBO
-        elif int(data.attribute('perf_fc')) != 0:
+        elif int(data.attribute("perf_fc")) != 0:
             halo = self.HALO_PERFECT_FULL_COMBO
-        elif int(data.attribute('great_fc')) != 0:
+        elif int(data.attribute("great_fc")) != 0:
             halo = self.HALO_GREAT_FULL_COMBO
-        elif int(data.attribute('good_fc')) != 0:
+        elif int(data.attribute("good_fc")) != 0:
             halo = self.HALO_GOOD_FULL_COMBO
         else:
             halo = self.HALO_NONE
-        trace = request.child_value('trace')
+        trace = request.child_value("trace")
 
         # Save the score, regardless of whether we have a refid. If we save
         # an anonymous score, it only goes into the DB to count against the
@@ -282,24 +290,24 @@ class DDR2014(
         )
 
         # No response needed
-        game = Node.void('game')
+        game = Node.void("game")
         return game
 
     def handle_game_load_edit_request(self, request: Node) -> Node:
-        return Node.void('game')
+        return Node.void("game")
 
     def handle_game_save_resultshot_request(self, request: Node) -> Node:
-        return Node.void('game')
+        return Node.void("game")
 
     def handle_game_trace_request(self, request: Node) -> Node:
         # This is almost identical to 2013 and below, except it will never
         # even try to request course traces, so we fork from common functionality.
-        extid = int(request.attribute('code'))
-        chart = int(request.attribute('type'))
-        mid = intish(request.attribute('mid'))
+        extid = int(request.attribute("code"))
+        chart = int(request.attribute("type"))
+        mid = intish(request.attribute("mid"))
 
         # Base packet is just game, if we find something we add to it
-        game = Node.void('game')
+        game = Node.void("game")
 
         # Rival trace loading
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
@@ -315,369 +323,389 @@ class DDR2014(
             mid,
             self.game_to_db_chart(chart),
         )
-        if songscore is not None and 'trace' in songscore.data:
-            game.add_child(Node.u32('size', len(songscore.data['trace'])))
-            game.add_child(Node.u8_array('trace', songscore.data['trace']))
+        if songscore is not None and "trace" in songscore.data:
+            game.add_child(Node.u32("size", len(songscore.data["trace"])))
+            game.add_child(Node.u8_array("trace", songscore.data["trace"]))
 
         return game
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
-        root = Node.void('game')
+        root = Node.void("game")
 
         # Look up play stats we bridge to every mix
         play_stats = self.get_play_statistics(userid)
 
         # Basic game settings
-        root.add_child(Node.string('seq', ''))
-        root.add_child(Node.u32('code', profile.extid))
-        root.add_child(Node.string('name', profile.get_str('name')))
-        root.add_child(Node.u8('area', profile.get_int('area', self.get_machine_region())))
-        root.add_child(Node.u32('cnt_s', play_stats.get_int('single_plays')))
-        root.add_child(Node.u32('cnt_d', play_stats.get_int('double_plays')))
-        root.add_child(Node.u32('cnt_b', play_stats.get_int('battle_plays')))  # This could be wrong, its a guess
-        root.add_child(Node.u32('cnt_m0', play_stats.get_int('cnt_m0')))
-        root.add_child(Node.u32('cnt_m1', play_stats.get_int('cnt_m1')))
-        root.add_child(Node.u32('cnt_m2', play_stats.get_int('cnt_m2')))
-        root.add_child(Node.u32('cnt_m3', play_stats.get_int('cnt_m3')))
-        root.add_child(Node.u32('cnt_m4', play_stats.get_int('cnt_m4')))
-        root.add_child(Node.u32('cnt_m5', play_stats.get_int('cnt_m5')))
-        root.add_child(Node.u32('exp', play_stats.get_int('exp')))
-        root.add_child(Node.u32('exp_o', profile.get_int('exp_o')))
-        root.add_child(Node.u32('star', profile.get_int('star')))
-        root.add_child(Node.u32('star_c', profile.get_int('star_c')))
-        root.add_child(Node.u8('combo', profile.get_int('combo', 0)))
-        root.add_child(Node.u8('timing_diff', profile.get_int('early_late', 0)))
+        root.add_child(Node.string("seq", ""))
+        root.add_child(Node.u32("code", profile.extid))
+        root.add_child(Node.string("name", profile.get_str("name")))
+        root.add_child(
+            Node.u8("area", profile.get_int("area", self.get_machine_region()))
+        )
+        root.add_child(Node.u32("cnt_s", play_stats.get_int("single_plays")))
+        root.add_child(Node.u32("cnt_d", play_stats.get_int("double_plays")))
+        root.add_child(
+            Node.u32("cnt_b", play_stats.get_int("battle_plays"))
+        )  # This could be wrong, its a guess
+        root.add_child(Node.u32("cnt_m0", play_stats.get_int("cnt_m0")))
+        root.add_child(Node.u32("cnt_m1", play_stats.get_int("cnt_m1")))
+        root.add_child(Node.u32("cnt_m2", play_stats.get_int("cnt_m2")))
+        root.add_child(Node.u32("cnt_m3", play_stats.get_int("cnt_m3")))
+        root.add_child(Node.u32("cnt_m4", play_stats.get_int("cnt_m4")))
+        root.add_child(Node.u32("cnt_m5", play_stats.get_int("cnt_m5")))
+        root.add_child(Node.u32("exp", play_stats.get_int("exp")))
+        root.add_child(Node.u32("exp_o", profile.get_int("exp_o")))
+        root.add_child(Node.u32("star", profile.get_int("star")))
+        root.add_child(Node.u32("star_c", profile.get_int("star_c")))
+        root.add_child(Node.u8("combo", profile.get_int("combo", 0)))
+        root.add_child(Node.u8("timing_diff", profile.get_int("early_late", 0)))
 
         # Character stuff
-        chara = Node.void('chara')
+        chara = Node.void("chara")
         root.add_child(chara)
-        chara.set_attribute('my', str(profile.get_int('chara', 30)))
-        root.add_child(Node.u16_array('chara_opt', profile.get_int_array('chara_opt', 96, [208] * 96)))
+        chara.set_attribute("my", str(profile.get_int("chara", 30)))
+        root.add_child(
+            Node.u16_array(
+                "chara_opt", profile.get_int_array("chara_opt", 96, [208] * 96)
+            )
+        )
 
         # Drill rankings
-        if 'title_gr' in profile:
-            title_gr = Node.void('title_gr')
+        if "title_gr" in profile:
+            title_gr = Node.void("title_gr")
             root.add_child(title_gr)
-            title_grdict = profile.get_dict('title_gr')
-            if 't' in title_grdict:
-                title_gr.set_attribute('t', str(title_grdict.get_int('t')))
-            if 's' in title_grdict:
-                title_gr.set_attribute('s', str(title_grdict.get_int('s')))
-            if 'd' in title_grdict:
-                title_gr.set_attribute('d', str(title_grdict.get_int('d')))
+            title_grdict = profile.get_dict("title_gr")
+            if "t" in title_grdict:
+                title_gr.set_attribute("t", str(title_grdict.get_int("t")))
+            if "s" in title_grdict:
+                title_gr.set_attribute("s", str(title_grdict.get_int("s")))
+            if "d" in title_grdict:
+                title_gr.set_attribute("d", str(title_grdict.get_int("d")))
 
         # Calorie mode
-        if 'weight' in profile:
+        if "weight" in profile:
             workouts = self.data.local.user.get_time_based_achievements(
                 self.game,
                 self.version,
                 userid,
-                achievementtype='workout',
+                achievementtype="workout",
                 since=Time.now() - Time.SECONDS_IN_DAY,
             )
-            total = sum([w.data.get_int('calories') for w in workouts])
-            workout = Node.void('workout')
+            total = sum([w.data.get_int("calories") for w in workouts])
+            workout = Node.void("workout")
             root.add_child(workout)
-            workout.set_attribute('weight', str(profile.get_int('weight')))
-            workout.set_attribute('day', str(total))
-            workout.set_attribute('disp', '1')
+            workout.set_attribute("weight", str(profile.get_int("weight")))
+            workout.set_attribute("day", str(total))
+            workout.set_attribute("disp", "1")
 
             # Unsure if this should be last day, or total calories ever
-            totalcalorie = Node.void('totalcalorie')
+            totalcalorie = Node.void("totalcalorie")
             root.add_child(totalcalorie)
-            totalcalorie.set_attribute('total', str(total))
+            totalcalorie.set_attribute("total", str(total))
 
         # Daily play counts
-        daycount = Node.void('daycount')
+        daycount = Node.void("daycount")
         root.add_child(daycount)
-        daycount.set_attribute('playcount', str(play_stats.today_plays))
+        daycount.set_attribute("playcount", str(play_stats.today_plays))
 
         # Daily combo stuff, unknown how this works
-        dailycombo = Node.void('dailycombo')
+        dailycombo = Node.void("dailycombo")
         root.add_child(dailycombo)
-        dailycombo.set_attribute('daily_combo', str(0))
-        dailycombo.set_attribute('daily_combo_lv', str(0))
+        dailycombo.set_attribute("daily_combo", str(0))
+        dailycombo.set_attribute("daily_combo_lv", str(0))
 
         # Last cursor settings
-        last = Node.void('last')
+        last = Node.void("last")
         root.add_child(last)
-        lastdict = profile.get_dict('last')
-        last.set_attribute('rival1', str(lastdict.get_int('rival1', -1)))
-        last.set_attribute('rival2', str(lastdict.get_int('rival2', -1)))
-        last.set_attribute('rival3', str(lastdict.get_int('rival3', -1)))
-        last.set_attribute('fri', str(lastdict.get_int('rival1', -1)))  # This literally goes to the same memory in 2014
-        last.set_attribute('style', str(lastdict.get_int('style')))
-        last.set_attribute('mode', str(lastdict.get_int('mode')))
-        last.set_attribute('cate', str(lastdict.get_int('cate')))
-        last.set_attribute('sort', str(lastdict.get_int('sort')))
-        last.set_attribute('mid', str(lastdict.get_int('mid')))
-        last.set_attribute('mtype', str(lastdict.get_int('mtype')))
-        last.set_attribute('cid', str(lastdict.get_int('cid')))
-        last.set_attribute('ctype', str(lastdict.get_int('ctype')))
-        last.set_attribute('sid', str(lastdict.get_int('sid')))
+        lastdict = profile.get_dict("last")
+        last.set_attribute("rival1", str(lastdict.get_int("rival1", -1)))
+        last.set_attribute("rival2", str(lastdict.get_int("rival2", -1)))
+        last.set_attribute("rival3", str(lastdict.get_int("rival3", -1)))
+        last.set_attribute(
+            "fri", str(lastdict.get_int("rival1", -1))
+        )  # This literally goes to the same memory in 2014
+        last.set_attribute("style", str(lastdict.get_int("style")))
+        last.set_attribute("mode", str(lastdict.get_int("mode")))
+        last.set_attribute("cate", str(lastdict.get_int("cate")))
+        last.set_attribute("sort", str(lastdict.get_int("sort")))
+        last.set_attribute("mid", str(lastdict.get_int("mid")))
+        last.set_attribute("mtype", str(lastdict.get_int("mtype")))
+        last.set_attribute("cid", str(lastdict.get_int("cid")))
+        last.set_attribute("ctype", str(lastdict.get_int("ctype")))
+        last.set_attribute("sid", str(lastdict.get_int("sid")))
 
         # Result stars
-        result_star = Node.void('result_star')
+        result_star = Node.void("result_star")
         root.add_child(result_star)
-        result_stars = profile.get_int_array('result_stars', 9)
+        result_stars = profile.get_int_array("result_stars", 9)
         for i in range(9):
-            result_star.set_attribute(f'slot{i + 1}', str(result_stars[i]))
+            result_star.set_attribute(f"slot{i + 1}", str(result_stars[i]))
 
         # Groove gauge level-ups
-        gr_s = Node.void('gr_s')
+        gr_s = Node.void("gr_s")
         root.add_child(gr_s)
         index = 1
-        for entry in profile.get_int_array('gr_s', 5):
-            gr_s.set_attribute(f'gr{index}', str(entry))
+        for entry in profile.get_int_array("gr_s", 5):
+            gr_s.set_attribute(f"gr{index}", str(entry))
             index = index + 1
 
-        gr_d = Node.void('gr_d')
+        gr_d = Node.void("gr_d")
         root.add_child(gr_d)
         index = 1
-        for entry in profile.get_int_array('gr_d', 5):
-            gr_d.set_attribute(f'gr{index}', str(entry))
+        for entry in profile.get_int_array("gr_d", 5):
+            gr_d.set_attribute(f"gr{index}", str(entry))
             index = index + 1
 
         # Options in menus
-        root.add_child(Node.s16_array('opt', profile.get_int_array('opt', 16)))
-        root.add_child(Node.s16_array('opt_ex', profile.get_int_array('opt_ex', 16)))
-        option_ver = Node.void('option_ver')
+        root.add_child(Node.s16_array("opt", profile.get_int_array("opt", 16)))
+        root.add_child(Node.s16_array("opt_ex", profile.get_int_array("opt_ex", 16)))
+        option_ver = Node.void("option_ver")
         root.add_child(option_ver)
-        option_ver.set_attribute('ver', str(profile.get_int('option_ver', 2)))
-        if 'option_02' in profile:
-            root.add_child(Node.s16_array('option_02', profile.get_int_array('option_02', 24)))
+        option_ver.set_attribute("ver", str(profile.get_int("option_ver", 2)))
+        if "option_02" in profile:
+            root.add_child(
+                Node.s16_array("option_02", profile.get_int_array("option_02", 24))
+            )
 
         # Unlock flags
-        root.add_child(Node.u8_array('flag', profile.get_int_array('flag', 512, [1] * 512)[:256]))
-        root.add_child(Node.u8_array('flag_ex', profile.get_int_array('flag', 512, [1] * 512)))
+        root.add_child(
+            Node.u8_array("flag", profile.get_int_array("flag", 512, [1] * 512)[:256])
+        )
+        root.add_child(
+            Node.u8_array("flag_ex", profile.get_int_array("flag", 512, [1] * 512))
+        )
 
         # Ranking display?
-        root.add_child(Node.u16_array('rank', profile.get_int_array('rank', 100)))
+        root.add_child(Node.u16_array("rank", profile.get_int_array("rank", 100)))
 
         # Rivals
         links = self.data.local.user.get_links(self.game, self.version, userid)
         for link in links:
-            if link.type[:7] != 'friend_':
+            if link.type[:7] != "friend_":
                 continue
 
             pos = int(link.type[7:])
             friend = self.get_profile(link.other_userid)
             play_stats = self.get_play_statistics(link.other_userid)
             if friend is not None:
-                friendnode = Node.void('friend')
+                friendnode = Node.void("friend")
                 root.add_child(friendnode)
-                friendnode.set_attribute('pos', str(pos))
-                friendnode.set_attribute('vs', '0')
-                friendnode.set_attribute('up', '0')
-                friendnode.add_child(Node.u32('code', friend.extid))
-                friendnode.add_child(Node.string('name', friend.get_str('name')))
-                friendnode.add_child(Node.u8('area', friend.get_int('area', self.get_machine_region())))
-                friendnode.add_child(Node.u32('exp', play_stats.get_int('exp')))
-                friendnode.add_child(Node.u32('star', friend.get_int('star')))
+                friendnode.set_attribute("pos", str(pos))
+                friendnode.set_attribute("vs", "0")
+                friendnode.set_attribute("up", "0")
+                friendnode.add_child(Node.u32("code", friend.extid))
+                friendnode.add_child(Node.string("name", friend.get_str("name")))
+                friendnode.add_child(
+                    Node.u8("area", friend.get_int("area", self.get_machine_region()))
+                )
+                friendnode.add_child(Node.u32("exp", play_stats.get_int("exp")))
+                friendnode.add_child(Node.u32("star", friend.get_int("star")))
 
                 # Drill rankings
-                if 'title' in friend:
-                    title = Node.void('title')
+                if "title" in friend:
+                    title = Node.void("title")
                     friendnode.add_child(title)
-                    titledict = friend.get_dict('title')
-                    if 't' in titledict:
-                        title.set_attribute('t', str(titledict.get_int('t')))
-                    if 's' in titledict:
-                        title.set_attribute('s', str(titledict.get_int('s')))
-                    if 'd' in titledict:
-                        title.set_attribute('d', str(titledict.get_int('d')))
+                    titledict = friend.get_dict("title")
+                    if "t" in titledict:
+                        title.set_attribute("t", str(titledict.get_int("t")))
+                    if "s" in titledict:
+                        title.set_attribute("s", str(titledict.get_int("s")))
+                    if "d" in titledict:
+                        title.set_attribute("d", str(titledict.get_int("d")))
 
-                if 'title_gr' in friend:
-                    title_gr = Node.void('title_gr')
+                if "title_gr" in friend:
+                    title_gr = Node.void("title_gr")
                     friendnode.add_child(title_gr)
-                    title_grdict = friend.get_dict('title_gr')
-                    if 't' in title_grdict:
-                        title_gr.set_attribute('t', str(title_grdict.get_int('t')))
-                    if 's' in title_grdict:
-                        title_gr.set_attribute('s', str(title_grdict.get_int('s')))
-                    if 'd' in title_grdict:
-                        title_gr.set_attribute('d', str(title_grdict.get_int('d')))
+                    title_grdict = friend.get_dict("title_gr")
+                    if "t" in title_grdict:
+                        title_gr.set_attribute("t", str(title_grdict.get_int("t")))
+                    if "s" in title_grdict:
+                        title_gr.set_attribute("s", str(title_grdict.get_int("s")))
+                    if "d" in title_grdict:
+                        title_gr.set_attribute("d", str(title_grdict.get_int("d")))
 
                 # Groove gauge level-ups
-                gr_s = Node.void('gr_s')
+                gr_s = Node.void("gr_s")
                 friendnode.add_child(gr_s)
                 index = 1
-                for entry in friend.get_int_array('gr_s', 5):
-                    gr_s.set_attribute(f'gr{index}', str(entry))
+                for entry in friend.get_int_array("gr_s", 5):
+                    gr_s.set_attribute(f"gr{index}", str(entry))
                     index = index + 1
 
-                gr_d = Node.void('gr_d')
+                gr_d = Node.void("gr_d")
                 friendnode.add_child(gr_d)
                 index = 1
-                for entry in friend.get_int_array('gr_d', 5):
-                    gr_d.set_attribute(f'gr{index}', str(entry))
+                for entry in friend.get_int_array("gr_d", 5):
+                    gr_d.set_attribute(f"gr{index}", str(entry))
                     index = index + 1
 
         # Target stuff
-        target = Node.void('target')
+        target = Node.void("target")
         root.add_child(target)
-        target.set_attribute('flag', str(profile.get_int('target_flag')))
-        target.set_attribute('setnum', str(profile.get_int('target_setnum')))
+        target.set_attribute("flag", str(profile.get_int("target_flag")))
+        target.set_attribute("setnum", str(profile.get_int("target_setnum")))
 
         # Play area
-        areas = profile.get_int_array('play_area', 55)
-        play_area = Node.void('play_area')
+        areas = profile.get_int_array("play_area", 55)
+        play_area = Node.void("play_area")
         root.add_child(play_area)
         for i in range(len(areas)):
-            play_area.set_attribute(f'play_cnt{i}', str(areas[i]))
+            play_area.set_attribute(f"play_cnt{i}", str(areas[i]))
 
         return root
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
         # Grab last node and accessories so we can make decisions based on type
-        last = request.child('last')
-        lastdict = newprofile.get_dict('last')
-        mode = int(last.attribute('mode'))
-        style = int(last.attribute('style'))
+        last = request.child("last")
+        lastdict = newprofile.get_dict("last")
+        mode = int(last.attribute("mode"))
+        style = int(last.attribute("style"))
         is_dp = style == self.GAME_STYLE_DOUBLE
 
         # Drill rankings
-        title = request.child('title')
-        title_gr = request.child('title_gr')
-        titledict = newprofile.get_dict('title')
-        title_grdict = newprofile.get_dict('title_gr')
+        title = request.child("title")
+        title_gr = request.child("title_gr")
+        titledict = newprofile.get_dict("title")
+        title_grdict = newprofile.get_dict("title_gr")
 
         # Groove radar level ups
-        gr = request.child('gr')
+        gr = request.child("gr")
 
         # Set the correct values depending on if we're single or double play
         if is_dp:
-            play_stats.increment_int('double_plays')
+            play_stats.increment_int("double_plays")
             if gr is not None:
                 newprofile.replace_int_array(
-                    'gr_d',
+                    "gr_d",
                     5,
                     [
-                        intish(gr.attribute('gr1')),
-                        intish(gr.attribute('gr2')),
-                        intish(gr.attribute('gr3')),
-                        intish(gr.attribute('gr4')),
-                        intish(gr.attribute('gr5')),
+                        intish(gr.attribute("gr1")),
+                        intish(gr.attribute("gr2")),
+                        intish(gr.attribute("gr3")),
+                        intish(gr.attribute("gr4")),
+                        intish(gr.attribute("gr5")),
                     ],
                 )
             if title is not None:
-                titledict.replace_int('d', title.value)
-                newprofile.replace_dict('title', titledict)
+                titledict.replace_int("d", title.value)
+                newprofile.replace_dict("title", titledict)
             if title_gr is not None:
-                title_grdict.replace_int('d', title.value)
-                newprofile.replace_dict('title_gr', title_grdict)
+                title_grdict.replace_int("d", title.value)
+                newprofile.replace_dict("title_gr", title_grdict)
         else:
-            play_stats.increment_int('single_plays')
+            play_stats.increment_int("single_plays")
             if gr is not None:
                 newprofile.replace_int_array(
-                    'gr_s',
+                    "gr_s",
                     5,
                     [
-                        intish(gr.attribute('gr1')),
-                        intish(gr.attribute('gr2')),
-                        intish(gr.attribute('gr3')),
-                        intish(gr.attribute('gr4')),
-                        intish(gr.attribute('gr5')),
+                        intish(gr.attribute("gr1")),
+                        intish(gr.attribute("gr2")),
+                        intish(gr.attribute("gr3")),
+                        intish(gr.attribute("gr4")),
+                        intish(gr.attribute("gr5")),
                     ],
                 )
             if title is not None:
-                titledict.replace_int('s', title.value)
-                newprofile.replace_dict('title', titledict)
+                titledict.replace_int("s", title.value)
+                newprofile.replace_dict("title", titledict)
             if title_gr is not None:
-                title_grdict.replace_int('s', title.value)
-                newprofile.replace_dict('title_gr', title_grdict)
-        play_stats.increment_int(f'cnt_m{mode}')
+                title_grdict.replace_int("s", title.value)
+                newprofile.replace_dict("title_gr", title_grdict)
+        play_stats.increment_int(f"cnt_m{mode}")
 
         # Result stars
-        result_star = request.child('result_star')
+        result_star = request.child("result_star")
         if result_star is not None:
             newprofile.replace_int_array(
-                'result_stars',
+                "result_stars",
                 9,
                 [
-                    intish(result_star.attribute('slot1')),
-                    intish(result_star.attribute('slot2')),
-                    intish(result_star.attribute('slot3')),
-                    intish(result_star.attribute('slot4')),
-                    intish(result_star.attribute('slot5')),
-                    intish(result_star.attribute('slot6')),
-                    intish(result_star.attribute('slot7')),
-                    intish(result_star.attribute('slot8')),
-                    intish(result_star.attribute('slot9')),
+                    intish(result_star.attribute("slot1")),
+                    intish(result_star.attribute("slot2")),
+                    intish(result_star.attribute("slot3")),
+                    intish(result_star.attribute("slot4")),
+                    intish(result_star.attribute("slot5")),
+                    intish(result_star.attribute("slot6")),
+                    intish(result_star.attribute("slot7")),
+                    intish(result_star.attribute("slot8")),
+                    intish(result_star.attribute("slot9")),
                 ],
             )
 
         # Target stuff
-        target = request.child('target')
+        target = request.child("target")
         if target is not None:
-            newprofile.replace_int('target_flag', intish(target.attribute('flag')))
-            newprofile.replace_int('target_setnum', intish(target.attribute('setnum')))
+            newprofile.replace_int("target_flag", intish(target.attribute("flag")))
+            newprofile.replace_int("target_setnum", intish(target.attribute("setnum")))
 
         # Update last attributes
-        lastdict.replace_int('rival1', intish(last.attribute('rival1')))
-        lastdict.replace_int('rival2', intish(last.attribute('rival2')))
-        lastdict.replace_int('rival3', intish(last.attribute('rival3')))
-        lastdict.replace_int('style', intish(last.attribute('style')))
-        lastdict.replace_int('mode', intish(last.attribute('mode')))
-        lastdict.replace_int('cate', intish(last.attribute('cate')))
-        lastdict.replace_int('sort', intish(last.attribute('sort')))
-        lastdict.replace_int('mid', intish(last.attribute('mid')))
-        lastdict.replace_int('mtype', intish(last.attribute('mtype')))
-        lastdict.replace_int('cid', intish(last.attribute('cid')))
-        lastdict.replace_int('ctype', intish(last.attribute('ctype')))
-        lastdict.replace_int('sid', intish(last.attribute('sid')))
-        newprofile.replace_dict('last', lastdict)
+        lastdict.replace_int("rival1", intish(last.attribute("rival1")))
+        lastdict.replace_int("rival2", intish(last.attribute("rival2")))
+        lastdict.replace_int("rival3", intish(last.attribute("rival3")))
+        lastdict.replace_int("style", intish(last.attribute("style")))
+        lastdict.replace_int("mode", intish(last.attribute("mode")))
+        lastdict.replace_int("cate", intish(last.attribute("cate")))
+        lastdict.replace_int("sort", intish(last.attribute("sort")))
+        lastdict.replace_int("mid", intish(last.attribute("mid")))
+        lastdict.replace_int("mtype", intish(last.attribute("mtype")))
+        lastdict.replace_int("cid", intish(last.attribute("cid")))
+        lastdict.replace_int("ctype", intish(last.attribute("ctype")))
+        lastdict.replace_int("sid", intish(last.attribute("sid")))
+        newprofile.replace_dict("last", lastdict)
 
         # Grab character options
-        chara = request.child('chara')
+        chara = request.child("chara")
         if chara is not None:
-            newprofile.replace_int('chara', intish(chara.attribute('my')))
-        chara_opt = request.child('chara_opt')
+            newprofile.replace_int("chara", intish(chara.attribute("my")))
+        chara_opt = request.child("chara_opt")
         if chara_opt is not None:
             # A bug in old versions of AVS returns the wrong number for set
-            newprofile.replace_int_array('chara_opt', 96, chara_opt.value[:96])
+            newprofile.replace_int_array("chara_opt", 96, chara_opt.value[:96])
 
         # Options
-        option_02 = request.child('option_02')
+        option_02 = request.child("option_02")
         if option_02 is not None:
             # A bug in old versions of AVS returns the wrong number for set
-            newprofile.replace_int_array('option_02', 24, option_02.value[:24])
+            newprofile.replace_int_array("option_02", 24, option_02.value[:24])
 
         # Experience and stars
-        exp = request.child_value('exp')
+        exp = request.child_value("exp")
         if exp is not None:
-            play_stats.replace_int('exp', play_stats.get_int('exp') + exp)
-        star = request.child_value('star')
+            play_stats.replace_int("exp", play_stats.get_int("exp") + exp)
+        star = request.child_value("star")
         if star is not None:
-            newprofile.replace_int('star', newprofile.get_int('star') + star)
-        star_c = request.child_value('star_c')
+            newprofile.replace_int("star", newprofile.get_int("star") + star)
+        star_c = request.child_value("star_c")
         if star_c is not None:
-            newprofile.replace_int('star_c', newprofile.get_int('star_c') + exp)
+            newprofile.replace_int("star_c", newprofile.get_int("star_c") + exp)
 
         # Update game flags
         for child in request.children:
-            if child.name not in ['flag', 'flag_ex']:
+            if child.name not in ["flag", "flag_ex"]:
                 continue
             try:
-                value = int(child.attribute('data'))
-                offset = int(child.attribute('no'))
+                value = int(child.attribute("data"))
+                offset = int(child.attribute("no"))
             except ValueError:
                 continue
 
-            flags = newprofile.get_int_array('flag', 512, [1] * 512)
+            flags = newprofile.get_int_array("flag", 512, [1] * 512)
             if offset < 0 or offset >= len(flags):
                 continue
             flags[offset] = value
-            newprofile.replace_int_array('flag', 512, flags)
+            newprofile.replace_int_array("flag", 512, flags)
 
         # Workout mode support
         newweight = -1
-        oldweight = newprofile.get_int('weight')
+        oldweight = newprofile.get_int("weight")
         for child in request.children:
-            if child.name != 'weight':
+            if child.name != "weight":
                 continue
             newweight = child.value
         if newweight < 0:
@@ -686,14 +714,14 @@ class DDR2014(
         # Either update or unset the weight depending on the game
         if newweight == 0:
             # Weight is unset or we declined to use this feature, remove from profile
-            if 'weight' in newprofile:
-                del newprofile['weight']
+            if "weight" in newprofile:
+                del newprofile["weight"]
         else:
             # Weight has been set or previously retrieved, we should save calories
-            newprofile.replace_int('weight', newweight)
+            newprofile.replace_int("weight", newweight)
             total = 0
             for child in request.children:
-                if child.name != 'calory':
+                if child.name != "calory":
                     continue
                 total += child.value
             self.data.local.user.put_time_based_achievement(
@@ -701,10 +729,10 @@ class DDR2014(
                 self.version,
                 userid,
                 0,
-                'workout',
+                "workout",
                 {
-                    'calories': total,
-                    'weight': newweight,
+                    "calories": total,
+                    "weight": newweight,
                 },
             )
 
@@ -712,7 +740,7 @@ class DDR2014(
         oldfriends: List[Optional[UserID]] = [None] * 10
         links = self.data.local.user.get_links(self.game, self.version, userid)
         for link in links:
-            if link.type[:7] != 'friend_':
+            if link.type[:7] != "friend_":
                 continue
 
             pos = int(link.type[7:])
@@ -721,11 +749,11 @@ class DDR2014(
         # Save any rivals that were added/removed/changed
         newfriends = oldfriends[:]
         for child in request.children:
-            if child.name != 'friend':
+            if child.name != "friend":
                 continue
 
-            code = int(child.attribute('code'))
-            pos = int(child.attribute('pos'))
+            code = int(child.attribute("code"))
+            pos = int(child.attribute("pos"))
 
             if pos >= 0 and pos < 10:
                 if code == 0:
@@ -733,7 +761,9 @@ class DDR2014(
                     newfriends[pos] = None
                 else:
                     # Try looking up the userid
-                    newfriends[pos] = self.data.remote.user.from_extid(self.game, self.version, code)
+                    newfriends[pos] = self.data.remote.user.from_extid(
+                        self.game, self.version, code
+                    )
 
         # Diff the set of links to determine updates
         for i in range(10):
@@ -746,7 +776,7 @@ class DDR2014(
                     self.game,
                     self.version,
                     userid,
-                    f'friend_{i}',
+                    f"friend_{i}",
                     oldfriends[i],
                 )
             elif oldfriends[i] is None:
@@ -755,7 +785,7 @@ class DDR2014(
                     self.game,
                     self.version,
                     userid,
-                    f'friend_{i}',
+                    f"friend_{i}",
                     newfriends[i],
                     {},
                 )
@@ -765,24 +795,24 @@ class DDR2014(
                     self.game,
                     self.version,
                     userid,
-                    f'friend_{i}',
+                    f"friend_{i}",
                     oldfriends[i],
                 )
                 self.data.local.user.put_link(
                     self.game,
                     self.version,
                     userid,
-                    f'friend_{i}',
+                    f"friend_{i}",
                     newfriends[i],
                     {},
                 )
 
         # Play area counter
-        shop_area = int(request.attribute('shop_area'))
+        shop_area = int(request.attribute("shop_area"))
         if shop_area >= 0 and shop_area < 55:
-            areas = newprofile.get_int_array('play_area', 55)
+            areas = newprofile.get_int_array("play_area", 55)
             areas[shop_area] = areas[shop_area] + 1
-            newprofile.replace_int_array('play_area', 55, areas)
+            newprofile.replace_int_array("play_area", 55, areas)
 
         # Keep track of play statistics
         self.update_play_statistics(userid, play_stats)
