@@ -3,7 +3,7 @@ import signal
 from PIL import Image  # type: ignore
 from typing import Any, Callable, List, Optional, Sequence, Union
 
-from ..types import Color, Matrix, Point, AAMode
+from ..types import Color, HSL, Matrix, Point, AAMode
 from .perspective import perspective_calculate
 
 
@@ -186,6 +186,7 @@ def blend_mask_combine(
 def blend_point(
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     # This should be a sequence of exactly 4 values, either bytes or a tuple.
     src_color: Sequence[int],
     # This should be a sequence of exactly 4 values, either bytes or a tuple.
@@ -199,6 +200,23 @@ def blend_point(
         clamp((src_color[2] * mult_color.b) + (255 * add_color.b)),
         clamp((src_color[3] * mult_color.a) + (255 * add_color.a)),
     )
+
+    # Only add in HSL shift effects if they exist, since its expensive to
+    # convert and shift. Also I'm not sure if this should be done before or
+    # after the add and multiply.
+    if not hsl_shift.is_identity:
+        hslcolor = Color(
+            src_color[0] / 255, src_color[1] / 255, src_color[2] / 255, 1.0
+        ).as_hsl()
+        hslcolor = hslcolor.add(hsl_shift)
+        newcolor = hslcolor.as_rgb()
+
+        src_color = (
+            clamp(newcolor.r * 255),
+            clamp(newcolor.g * 255),
+            clamp(newcolor.b * 255),
+            src_color[3],
+        )
 
     if blendfunc == 3:
         return blend_multiply(dest_color, src_color)
@@ -240,6 +258,7 @@ def pixel_renderer(
     callback: Callable[[Point], Optional[Point]],
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
@@ -422,7 +441,12 @@ def pixel_renderer(
 
         # Finally, blend it with the destination.
         return blend_point(
-            add_color, mult_color, average, imgbytes[imgoff : (imgoff + 4)], blendfunc
+            add_color,
+            mult_color,
+            hsl_shift,
+            average,
+            imgbytes[imgoff : (imgoff + 4)],
+            blendfunc,
         )
     else:
         # Calculate what texture pixel data goes here.
@@ -441,6 +465,7 @@ def pixel_renderer(
         return blend_point(
             add_color,
             mult_color,
+            hsl_shift,
             texbytes[texoff : (texoff + 4)],
             imgbytes[imgoff : (imgoff + 4)],
             blendfunc,
@@ -459,6 +484,7 @@ def affine_line_renderer(
     inverse: Matrix,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
@@ -491,6 +517,7 @@ def affine_line_renderer(
                     lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -505,6 +532,7 @@ def affine_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     mask: Optional[Image.Image],
     blendfunc: int,
@@ -577,6 +605,7 @@ def affine_composite(
                     lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -623,6 +652,7 @@ def affine_composite(
                     inverse,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -676,6 +706,7 @@ def perspective_line_renderer(
     inverse: Matrix,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
@@ -716,6 +747,7 @@ def perspective_line_renderer(
                     perspective_inverse,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -730,6 +762,7 @@ def perspective_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     camera: Point,
     focal_length: float,
@@ -804,6 +837,7 @@ def perspective_composite(
                     perspective_inverse,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -852,6 +886,7 @@ def perspective_composite(
                     inverse_matrix,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,

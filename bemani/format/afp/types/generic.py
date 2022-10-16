@@ -1,3 +1,4 @@
+import colorsys
 import math
 
 from typing import Any, Dict, List, Tuple
@@ -37,6 +38,10 @@ class Color:
             a=self.a + other.a,
         )
 
+    def as_hsl(self) -> "HSL":
+        h, l, s = colorsys.rgb_to_hls(self.r, self.g, self.b)
+        return HSL(h, s, l)
+
     def as_tuple(self) -> Tuple[int, int, int, int]:
         return (
             int(self.r * 255),
@@ -47,6 +52,61 @@ class Color:
 
     def __repr__(self) -> str:
         return f"r: {round(self.r, 5)}, g: {round(self.g, 5)}, b: {round(self.b, 5)}, a: {round(self.a, 5)}"
+
+
+class HSL:
+    # A hue/saturation/lightness color shift, represented as a series of floats between
+    # -1.0 and 1.0. The hue represents a percentage along the polar coordinates,
+    # 0.0 being 0 degrees, -1.0 being -360 degrees and 1.0 being 360 degrees. The
+    # saturation and lightness values representing actual normalized percentages where
+    # a lightness of 100 would be written as 1.0.
+    def __init__(self, h: float, s: float, l: float) -> None:
+        self.h = h
+        self.s = s
+        self.l = l
+
+    @property
+    def is_identity(self) -> bool:
+        return self.h == 0.0 and self.s == 0.0 and self.l == 0.0
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            "h": self.h,
+            "s": self.s,
+            "l": self.l,
+        }
+
+    def add(self, other: "HSL") -> "HSL":
+        # Not entirely sure this is correct, but we don't have any animations to compare to.
+        # Basically, not sure if HSL colorspace is linear in this way, but as long as no
+        # animations try to stack multiple HSL shift effects this shouldn't matter.
+        return HSL(h=self.h + other.h, s=self.s + other.s, l=self.l + other.l)
+
+    def as_rgb(self) -> "Color":
+        h = self.h
+        while h < 0.0:
+            h += 1.0
+        while h > 1.0:
+            h -= 1.0
+
+        s = min(max(self.s, 0.0), 1.0)
+        l = min(max(self.l, 0.0), 1.0)
+        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        return Color(r, g, b, 1.0)
+
+    def as_tuple(self) -> Tuple[int, int, int]:
+        h = int(self.h * 360)
+        while h < 0:
+            h += 360
+        while h > 360:
+            h -= 360
+
+        s = min(max(int(self.s), -100), 100)
+        l = min(max(int(self.l), -100), 100)
+        return (h, s, l)
+
+    def __repr__(self) -> str:
+        return f"h: {round(self.h, 5)}, s: {round(self.s, 5)}, l: {round(self.l, 5)}"
 
 
 class Point:

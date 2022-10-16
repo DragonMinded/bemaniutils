@@ -20,6 +20,7 @@ from .swf import (
 from .decompile import ByteCode
 from .types import (
     Color,
+    HSL,
     Matrix,
     Point,
     Rectangle,
@@ -120,6 +121,7 @@ class PlacedObject:
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
     ) -> None:
@@ -130,6 +132,7 @@ class PlacedObject:
         self.projection = projection
         self.mult_color = mult_color
         self.add_color = add_color
+        self.hsl_shift = hsl_shift
         self.blend = blend
         self.mask = mask
         self.visible: bool = True
@@ -164,6 +167,7 @@ class PlacedShape(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredShape,
@@ -176,6 +180,7 @@ class PlacedShape(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -201,6 +206,7 @@ class PlacedClip(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredClip,
@@ -213,6 +219,7 @@ class PlacedClip(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -375,6 +382,7 @@ class PlacedImage(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredImage,
@@ -387,6 +395,7 @@ class PlacedImage(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -411,6 +420,7 @@ class PlacedDummy(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredDummy,
@@ -423,6 +433,7 @@ class PlacedDummy(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -1059,6 +1070,7 @@ class AFPRenderer(VerboseOutput):
                     if obj.object_id == tag.object_id and obj.depth == tag.depth:
                         new_mult_color = tag.mult_color or obj.mult_color
                         new_add_color = tag.add_color or obj.add_color
+                        new_hsl_shift = tag.hsl_shift or obj.hsl_shift
                         new_transform = (
                             obj.transform.update(tag.transform)
                             if tag.transform is not None
@@ -1092,6 +1104,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1108,6 +1121,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1124,6 +1138,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1141,6 +1156,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1160,6 +1176,7 @@ class AFPRenderer(VerboseOutput):
                             )
                             obj.mult_color = new_mult_color
                             obj.add_color = new_add_color
+                            obj.hsl_shift = new_hsl_shift
                             obj.transform = new_transform
                             obj.rotation_origin = new_rotation_origin
                             obj.projection = new_projection
@@ -1194,6 +1211,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                                 tag.blend or 0,
                                 None,
                                 newobj,
@@ -1212,6 +1230,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                                 tag.blend or 0,
                                 None,
                                 newobj,
@@ -1229,6 +1248,7 @@ class AFPRenderer(VerboseOutput):
                             tag.projection,
                             tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                             tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                            tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                             tag.blend or 0,
                             None,
                             newobj,
@@ -1258,6 +1278,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                                 tag.blend or 0,
                                 None,
                                 newobj,
@@ -1386,6 +1407,7 @@ class AFPRenderer(VerboseOutput):
                 ),
                 Color(0.0, 0.0, 0.0, 0.0),
                 Color(1.0, 1.0, 1.0, 1.0),
+                HSL(0.0, 0.0, 0.0),
                 Matrix.identity().translate(Point(mask.bounds.left, mask.bounds.top)),
                 None,
                 0,
@@ -1406,6 +1428,7 @@ class AFPRenderer(VerboseOutput):
                 ),
                 Color(0.0, 0.0, 0.0, 0.0),
                 Color(1.0, 1.0, 1.0, 1.0),
+                HSL(0.0, 0.0, 0.0),
                 transform,
                 None,
                 257,
@@ -1424,6 +1447,7 @@ class AFPRenderer(VerboseOutput):
                     ),
                     Color(0.0, 0.0, 0.0, 0.0),
                     Color(1.0, 1.0, 1.0, 1.0),
+                    HSL(0.0, 0.0, 0.0),
                     transform,
                     None,
                     257,
@@ -1438,6 +1462,7 @@ class AFPRenderer(VerboseOutput):
                     ),
                     Color(0.0, 0.0, 0.0, 0.0),
                     Color(1.0, 1.0, 1.0, 1.0),
+                    HSL(0.0, 0.0, 0.0),
                     transform,
                     self.__camera.center,
                     self.__camera.focal_length,
@@ -1453,6 +1478,7 @@ class AFPRenderer(VerboseOutput):
             parent_mask.copy(),
             Color(0.0, 0.0, 0.0, 0.0),
             Color(1.0, 1.0, 1.0, 1.0),
+            HSL(0.0, 0.0, 0.0),
             Matrix.identity(),
             None,
             256,
@@ -1470,6 +1496,7 @@ class AFPRenderer(VerboseOutput):
         parent_mask: Image.Image,
         parent_mult_color: Color,
         parent_add_color: Color,
+        parent_hsl_shift: HSL,
         parent_blend: int,
         only_depths: Optional[List[int]] = None,
         prefix: str = "",
@@ -1505,6 +1532,7 @@ class AFPRenderer(VerboseOutput):
             .multiply(parent_mult_color)
             .add(parent_add_color)
         )
+        hsl_shift = renderable.hsl_shift or HSL(0.0, 0.0, 0.0).add(parent_hsl_shift)
         blend = renderable.blend or 0
         if parent_blend not in {0, 1, 2} and blend in {0, 1, 2}:
             blend = parent_blend
@@ -1541,6 +1569,7 @@ class AFPRenderer(VerboseOutput):
                         mask,
                         mult_color,
                         add_color,
+                        hsl_shift,
                         blend,
                         only_depths=new_only_depths,
                         prefix=prefix + " ",
@@ -1631,6 +1660,7 @@ class AFPRenderer(VerboseOutput):
                             img,
                             add_color,
                             mult_color,
+                            hsl_shift,
                             transform,
                             mask,
                             blend,
@@ -1656,6 +1686,7 @@ class AFPRenderer(VerboseOutput):
                                 img,
                                 add_color,
                                 mult_color,
+                                hsl_shift,
                                 transform,
                                 mask,
                                 blend,
@@ -1677,6 +1708,7 @@ class AFPRenderer(VerboseOutput):
                                 img,
                                 add_color,
                                 mult_color,
+                                hsl_shift,
                                 transform,
                                 self.__camera.center,
                                 self.__camera.focal_length,
@@ -1699,6 +1731,7 @@ class AFPRenderer(VerboseOutput):
                     img,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     transform,
                     mask,
                     blend,
@@ -1717,6 +1750,7 @@ class AFPRenderer(VerboseOutput):
                         img,
                         add_color,
                         mult_color,
+                        hsl_shift,
                         transform,
                         mask,
                         blend,
@@ -1731,6 +1765,7 @@ class AFPRenderer(VerboseOutput):
                         img,
                         add_color,
                         mult_color,
+                        hsl_shift,
                         transform,
                         self.__camera.center,
                         self.__camera.focal_length,
@@ -2051,6 +2086,7 @@ class AFPRenderer(VerboseOutput):
             AP2PlaceObjectTag.PROJECTION_AFFINE,
             Color(1.0, 1.0, 1.0, 1.0),
             Color(0.0, 0.0, 0.0, 0.0),
+            HSL(0.0, 0.0, 0.0),
             0,
             None,
             RegisteredClip(
@@ -2106,6 +2142,7 @@ class AFPRenderer(VerboseOutput):
                 AP2PlaceObjectTag.PROJECTION_AFFINE,
                 Color(1.0, 1.0, 1.0, 1.0),
                 Color(0.0, 0.0, 0.0, 0.0),
+                HSL(0.0, 0.0, 0.0),
                 0,
                 None,
                 background_object,
@@ -2120,6 +2157,7 @@ class AFPRenderer(VerboseOutput):
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
         actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
+        actual_hsl_shift = HSL(0.0, 0.0, 0.0)
         actual_blend = 0
 
         max_frame: Optional[int] = None
@@ -2206,6 +2244,7 @@ class AFPRenderer(VerboseOutput):
                         movie_mask,
                         actual_mult_color,
                         actual_add_color,
+                        actual_hsl_shift,
                         actual_blend,
                         only_depths=only_depths,
                     )
