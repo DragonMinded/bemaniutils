@@ -1,7 +1,7 @@
 """Add custom area string to arcade configuration.
 
 Revision ID: f64d138962e0
-Revises: a1f4a09a1f90
+Revises: 3433293952c5
 Create Date: 2022-10-15 21:23:02.461661
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'f64d138962e0'
-down_revision = 'a1f4a09a1f90'
+down_revision = '3433293952c5'
 branch_labels = None
 depends_on = None
 
