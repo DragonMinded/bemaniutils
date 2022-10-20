@@ -22,9 +22,9 @@ class AP2Object:
     STRING: Final[int] = 0x7
     POINTER: Final[int] = 0x8
     OBJECT: Final[int] = 0x9
-    INFINITY: Final[int] = 0xa
-    CONST_STRING: Final[int] = 0xb
-    BUILT_IN_FUNCTION: Final[int] = 0xc
+    INFINITY: Final[int] = 0xA
+    CONST_STRING: Final[int] = 0xB
+    BUILT_IN_FUNCTION: Final[int] = 0xC
 
 
 class AP2Pointer:
@@ -52,12 +52,12 @@ class AP2Pointer:
     xmlNode_W: Final[int] = 0x57
     textFormat_W: Final[int] = 0x58
     sharedObject_W: Final[int] = 0x59
-    sharedObjectData_W: Final[int] = 0x5a
-    textField_W: Final[int] = 0x5b
-    xmlAttrib_W: Final[int] = 0x5c
-    bitmapdata_W: Final[int] = 0x5d
-    matrix_W: Final[int] = 0x5e
-    point_W: Final[int] = 0x5f
+    sharedObjectData_W: Final[int] = 0x5A
+    textField_W: Final[int] = 0x5B
+    xmlAttrib_W: Final[int] = 0x5C
+    bitmapdata_W: Final[int] = 0x5D
+    matrix_W: Final[int] = 0x5E
+    point_W: Final[int] = 0x5F
     ColorMatrixFilter_W: Final[int] = 0x60
     String_W: Final[int] = 0x61
     Boolean_W: Final[int] = 0x62
@@ -67,27 +67,27 @@ class AP2Pointer:
     super_W: Final[int] = 0x66
     transform_W: Final[int] = 0x68
     colorTransform_W: Final[int] = 0x69
-    rectangle_W: Final[int] = 0x6a
+    rectangle_W: Final[int] = 0x6A
 
     # All of these can have prototypes, not sure what the "C" stands for.
     Object_C: Final[int] = 0x78
     MovieClip_C: Final[int] = 0x79
-    Sound_C: Final[int] = 0x7a
-    Color_C: Final[int] = 0x7b
-    Date_C: Final[int] = 0x7c
-    Array_C: Final[int] = 0x7d
-    XML_C: Final[int] = 0x7e
-    XMLNode_C: Final[int] = 0x7f
+    Sound_C: Final[int] = 0x7A
+    Color_C: Final[int] = 0x7B
+    Date_C: Final[int] = 0x7C
+    Array_C: Final[int] = 0x7D
+    XML_C: Final[int] = 0x7E
+    XMLNode_C: Final[int] = 0x7F
     TextFormat_C: Final[int] = 0x80
     TextField_C: Final[int] = 0x83
     BitmapData_C: Final[int] = 0x85
     matrix_C: Final[int] = 0x86
     point_C: Final[int] = 0x87
     String_C: Final[int] = 0x89
-    Boolean_C: Final[int] = 0x8a
-    Number_C: Final[int] = 0x8b
-    Function_C: Final[int] = 0x8c
-    aplib_C: Final[int] = 0x8f
+    Boolean_C: Final[int] = 0x8A
+    Number_C: Final[int] = 0x8B
+    Function_C: Final[int] = 0x8C
+    aplib_C: Final[int] = 0x8F
     transform_C: Final[int] = 0x90
     colorTransform_C: Final[int] = 0x91
     rectangle_C: Final[int] = 0x92
@@ -95,18 +95,18 @@ class AP2Pointer:
     XMLController_C: Final[int] = 0x94
     eManager_C: Final[int] = 0x95
 
-    stage_O: Final[int] = 0xa0
-    math_O: Final[int] = 0xa1
-    key_O: Final[int] = 0xa2
-    mouse_O: Final[int] = 0xa3
-    system_O: Final[int] = 0xa4
-    sharedObject_O: Final[int] = 0xa5
-    flash_O: Final[int] = 0xa6
-    global_O: Final[int] = 0xa7
+    stage_O: Final[int] = 0xA0
+    math_O: Final[int] = 0xA1
+    key_O: Final[int] = 0xA2
+    mouse_O: Final[int] = 0xA3
+    system_O: Final[int] = 0xA4
+    sharedObject_O: Final[int] = 0xA5
+    flash_O: Final[int] = 0xA6
+    global_O: Final[int] = 0xA7
 
-    display_P: Final[int] = 0xb4
-    geom_P: Final[int] = 0xb5
-    filtesr_P: Final[int] = 0xb6
+    display_P: Final[int] = 0xB4
+    geom_P: Final[int] = 0xB5
+    filtesr_P: Final[int] = 0xB6
 
 
 class AP2Trigger:
@@ -139,12 +139,12 @@ class AP2Tag:
     DEFINE_BUTTON: Final[int] = 0x7
     JPEG_TABLES: Final[int] = 0x8
     BACKGROUND_COLOR: Final[int] = 0x9
-    DEFINE_FONT: Final[int] = 0xa
-    DEFINE_TEXT: Final[int] = 0xb
-    DO_ACTION: Final[int] = 0xc
-    DEFINE_FONT_INFO: Final[int] = 0xd
-    DEFINE_SOUND: Final[int] = 0xe
-    START_SOUND: Final[int] = 0xf
+    DEFINE_FONT: Final[int] = 0xA
+    DEFINE_TEXT: Final[int] = 0xB
+    DO_ACTION: Final[int] = 0xC
+    DEFINE_FONT_INFO: Final[int] = 0xD
+    DEFINE_SOUND: Final[int] = 0xE
+    START_SOUND: Final[int] = 0xF
     DEFINE_BUTTON_SOUND: Final[int] = 0x11
     SOUND_STREAM_HEAD: Final[int] = 0x12
     SOUND_STREAM_BLOCK: Final[int] = 0x13
@@ -153,8 +153,8 @@ class AP2Tag:
     DEFINE_SHAPE2: Final[int] = 0x16
     DEFINE_BUTTON_CXFORM: Final[int] = 0x17
     PROTECT: Final[int] = 0x18
-    PLACE_OBJECT2: Final[int] = 0x1a
-    REMOVE_OBJECT2: Final[int] = 0x1c
+    PLACE_OBJECT2: Final[int] = 0x1A
+    REMOVE_OBJECT2: Final[int] = 0x1C
     DEFINE_SHAPE3: Final[int] = 0x20
     DEFINE_TEXT2: Final[int] = 0x21
     DEFINE_BUTTON2: Final[int] = 0x22
@@ -162,24 +162,24 @@ class AP2Tag:
     DEFINE_BITS_LOSSLESS2: Final[int] = 0x24
     DEFINE_EDIT_TEXT: Final[int] = 0x25
     DEFINE_SPRITE: Final[int] = 0x27
-    FRAME_LABEL: Final[int] = 0x2b
-    SOUND_STREAM_HEAD2: Final[int] = 0x2d
-    DEFINE_MORPH_SHAPE: Final[int] = 0x2e
+    FRAME_LABEL: Final[int] = 0x2B
+    SOUND_STREAM_HEAD2: Final[int] = 0x2D
+    DEFINE_MORPH_SHAPE: Final[int] = 0x2E
     DEFINE_FONT2: Final[int] = 0x30
     EXPORT_ASSETS: Final[int] = 0x38
     IMPORT_ASSETS: Final[int] = 0x39
-    DO_INIT_ACTION: Final[int] = 0x3b
-    DEFINE_VIDEO_STREAM: Final[int] = 0x3c
-    VIDEO_FRAME: Final[int] = 0x3d
-    DEFINE_FONT_INFO2: Final[int] = 0x3e
+    DO_INIT_ACTION: Final[int] = 0x3B
+    DEFINE_VIDEO_STREAM: Final[int] = 0x3C
+    VIDEO_FRAME: Final[int] = 0x3D
+    DEFINE_FONT_INFO2: Final[int] = 0x3E
     ENABLE_DEBUGGER2: Final[int] = 0x40
     SCRIPT_LIMITS: Final[int] = 0x41
     SET_TAB_INDEX: Final[int] = 0x42
     PLACE_OBJECT3: Final[int] = 0x46
     IMPORT_ASSETS2: Final[int] = 0x47
-    DEFINE_FONT3: Final[int] = 0x4b
-    METADATA: Final[int] = 0x4d
-    DEFINE_SCALING_GRID: Final[int] = 0x4e
+    DEFINE_FONT3: Final[int] = 0x4B
+    METADATA: Final[int] = 0x4D
+    DEFINE_SCALING_GRID: Final[int] = 0x4E
     DEFINE_SHAPE4: Final[int] = 0x53
     DEFINE_MORPH_SHAPE2: Final[int] = 0x54
     SCENE_LABEL: Final[int] = 0x56
@@ -188,15 +188,15 @@ class AP2Tag:
     AFP_SOUND_STREAM_BLOCK: Final[int] = 0x66
     AFP_DEFINE_FONT: Final[int] = 0x67
     AFP_DEFINE_SHAPE: Final[int] = 0x68
-    AEP_PLACE_OBJECT: Final[int] = 0x6e
+    AEP_PLACE_OBJECT: Final[int] = 0x6E
     AP2_DEFINE_FONT: Final[int] = 0x78
     AP2_DEFINE_SPRITE: Final[int] = 0x79
-    AP2_DO_ACTION: Final[int] = 0x7a
-    AP2_DEFINE_BUTTON: Final[int] = 0x7b
-    AP2_DEFINE_BUTTON_SOUND: Final[int] = 0x7c
-    AP2_DEFINE_TEXT: Final[int] = 0x7d
-    AP2_DEFINE_EDIT_TEXT: Final[int] = 0x7e
-    AP2_PLACE_OBJECT: Final[int] = 0x7f
+    AP2_DO_ACTION: Final[int] = 0x7A
+    AP2_DEFINE_BUTTON: Final[int] = 0x7B
+    AP2_DEFINE_BUTTON_SOUND: Final[int] = 0x7C
+    AP2_DEFINE_TEXT: Final[int] = 0x7D
+    AP2_DEFINE_EDIT_TEXT: Final[int] = 0x7E
+    AP2_PLACE_OBJECT: Final[int] = 0x7F
     AP2_REMOVE_OBJECT: Final[int] = 0x80
     AP2_START_SOUND: Final[int] = 0x81
     AP2_DEFINE_MORPH_SHAPE: Final[int] = 0x82
@@ -210,82 +210,82 @@ class AP2Tag:
     @classmethod
     def tag_to_name(cls, tagid: int) -> str:
         resources: Dict[int, str] = {
-            cls.END: 'END',
-            cls.SHOW_FRAME: 'SHOW_FRAME',
-            cls.DEFINE_SHAPE: 'DEFINE_SHAPE',
-            cls.PLACE_OBJECT: 'PLACE_OBJECT',
-            cls.REMOVE_OBJECT: 'REMOVE_OBJECT',
-            cls.DEFINE_BITS: 'DEFINE_BITS',
-            cls.DEFINE_BUTTON: 'DEFINE_BUTTON',
-            cls.JPEG_TABLES: 'JPEG_TABLES',
-            cls.BACKGROUND_COLOR: 'BACKGROUND_COLOR',
-            cls.DEFINE_FONT: 'DEFINE_FONT',
-            cls.DEFINE_TEXT: 'DEFINE_TEXT',
-            cls.DO_ACTION: 'DO_ACTION',
-            cls.DEFINE_FONT_INFO: 'DEFINE_FONT_INFO',
-            cls.DEFINE_SOUND: 'DEFINE_SOUND',
-            cls.START_SOUND: 'START_SOUND',
-            cls.DEFINE_BUTTON_SOUND: 'DEFINE_BUTTON_SOUND',
-            cls.SOUND_STREAM_HEAD: 'SOUND_STREAM_HEAD',
-            cls.SOUND_STREAM_BLOCK: 'SOUND_STREAM_BLOCK',
-            cls.DEFINE_BITS_LOSSLESS: 'DEFINE_BITS_LOSSLESS',
-            cls.DEFINE_BITS_JPEG2: 'DEFINE_BITS_JPEG2',
-            cls.DEFINE_SHAPE2: 'DEFINE_SHAPE2',
-            cls.DEFINE_BUTTON_CXFORM: 'DEFINE_BUTTON_CXFORM',
-            cls.PROTECT: 'PROTECT',
-            cls.PLACE_OBJECT2: 'PLACE_OBJECT2',
-            cls.REMOVE_OBJECT2: 'REMOVE_OBJECT2',
-            cls.DEFINE_SHAPE3: 'DEFINE_SHAPE3',
-            cls.DEFINE_TEXT2: 'DEFINE_TEXT2',
-            cls.DEFINE_BUTTON2: 'DEFINE_BUTTON2',
-            cls.DEFINE_BITS_JPEG3: 'DEFINE_BITS_JPEG3',
-            cls.DEFINE_BITS_LOSSLESS2: 'DEFINE_BITS_LOSSLESS2',
-            cls.DEFINE_EDIT_TEXT: 'DEFINE_EDIT_TEXT',
-            cls.DEFINE_SPRITE: 'DEFINE_SPRITE',
-            cls.FRAME_LABEL: 'FRAME_LABEL',
-            cls.SOUND_STREAM_HEAD2: 'SOUND_STREAM_HEAD2',
-            cls.DEFINE_MORPH_SHAPE: 'DEFINE_MORPH_SHAPE',
-            cls.DEFINE_FONT2: 'DEFINE_FONT2',
-            cls.EXPORT_ASSETS: 'EXPORT_ASSETS',
-            cls.IMPORT_ASSETS: 'IMPORT_ASSETS',
-            cls.DO_INIT_ACTION: 'DO_INIT_ACTION',
-            cls.DEFINE_VIDEO_STREAM: 'DEFINE_VIDEO_STREAM',
-            cls.VIDEO_FRAME: 'VIDEO_FRAME',
-            cls.DEFINE_FONT_INFO2: 'DEFINE_FONT_INFO2',
-            cls.ENABLE_DEBUGGER2: 'ENABLE_DEBUGGER2',
-            cls.SCRIPT_LIMITS: 'SCRIPT_LIMITS',
-            cls.SET_TAB_INDEX: 'SET_TAB_INDEX',
-            cls.PLACE_OBJECT3: 'PLACE_OBJECT3',
-            cls.IMPORT_ASSETS2: 'IMPORT_ASSETS2',
-            cls.DEFINE_FONT3: 'DEFINE_FONT3',
-            cls.DEFINE_SCALING_GRID: 'DEFINE_SCALING_GRID',
-            cls.METADATA: 'METADATA',
-            cls.DEFINE_SHAPE4: 'DEFINE_SHAPE4',
-            cls.DEFINE_MORPH_SHAPE2: 'DEFINE_MORPH_SHAPE2',
-            cls.SCENE_LABEL: 'SCENE_LABEL',
-            cls.AFP_IMAGE: 'AFP_IMAGE',
-            cls.AFP_DEFINE_SOUND: 'AFP_DEFINE_SOUND',
-            cls.AFP_SOUND_STREAM_BLOCK: 'AFP_SOUND_STREAM_BLOCK',
-            cls.AFP_DEFINE_FONT: 'AFP_DEFINE_FONT',
-            cls.AFP_DEFINE_SHAPE: 'AFP_DEFINE_SHAPE',
-            cls.AEP_PLACE_OBJECT: 'AEP_PLACE_OBJECT',
-            cls.AP2_DEFINE_FONT: 'AP2_DEFINE_FONT',
-            cls.AP2_DEFINE_SPRITE: 'AP2_DEFINE_SPRITE',
-            cls.AP2_DO_ACTION: 'AP2_DO_ACTION',
-            cls.AP2_DEFINE_BUTTON: 'AP2_DEFINE_BUTTON',
-            cls.AP2_DEFINE_BUTTON_SOUND: 'AP2_DEFINE_BUTTON_SOUND',
-            cls.AP2_DEFINE_TEXT: 'AP2_DEFINE_TEXT',
-            cls.AP2_DEFINE_EDIT_TEXT: 'AP2_DEFINE_EDIT_TEXT',
-            cls.AP2_PLACE_OBJECT: 'AP2_PLACE_OBJECT',
-            cls.AP2_REMOVE_OBJECT: 'AP2_REMOVE_OBJECT',
-            cls.AP2_START_SOUND: 'AP2_START_SOUND',
-            cls.AP2_DEFINE_MORPH_SHAPE: 'AP2_DEFINE_MORPH_SHAPE',
-            cls.AP2_IMAGE: 'AP2_IMAGE',
-            cls.AP2_SHAPE: 'AP2_SHAPE',
-            cls.AP2_SOUND: 'AP2_SOUND',
-            cls.AP2_VIDEO: 'AP2_VIDEO',
-            cls.AP2_PLACE_CAMERA: 'AP2_PLACE_CAMERA',
-            cls.AP2_SCALING_GRID: 'AP2_SCALING_GRID',
+            cls.END: "END",
+            cls.SHOW_FRAME: "SHOW_FRAME",
+            cls.DEFINE_SHAPE: "DEFINE_SHAPE",
+            cls.PLACE_OBJECT: "PLACE_OBJECT",
+            cls.REMOVE_OBJECT: "REMOVE_OBJECT",
+            cls.DEFINE_BITS: "DEFINE_BITS",
+            cls.DEFINE_BUTTON: "DEFINE_BUTTON",
+            cls.JPEG_TABLES: "JPEG_TABLES",
+            cls.BACKGROUND_COLOR: "BACKGROUND_COLOR",
+            cls.DEFINE_FONT: "DEFINE_FONT",
+            cls.DEFINE_TEXT: "DEFINE_TEXT",
+            cls.DO_ACTION: "DO_ACTION",
+            cls.DEFINE_FONT_INFO: "DEFINE_FONT_INFO",
+            cls.DEFINE_SOUND: "DEFINE_SOUND",
+            cls.START_SOUND: "START_SOUND",
+            cls.DEFINE_BUTTON_SOUND: "DEFINE_BUTTON_SOUND",
+            cls.SOUND_STREAM_HEAD: "SOUND_STREAM_HEAD",
+            cls.SOUND_STREAM_BLOCK: "SOUND_STREAM_BLOCK",
+            cls.DEFINE_BITS_LOSSLESS: "DEFINE_BITS_LOSSLESS",
+            cls.DEFINE_BITS_JPEG2: "DEFINE_BITS_JPEG2",
+            cls.DEFINE_SHAPE2: "DEFINE_SHAPE2",
+            cls.DEFINE_BUTTON_CXFORM: "DEFINE_BUTTON_CXFORM",
+            cls.PROTECT: "PROTECT",
+            cls.PLACE_OBJECT2: "PLACE_OBJECT2",
+            cls.REMOVE_OBJECT2: "REMOVE_OBJECT2",
+            cls.DEFINE_SHAPE3: "DEFINE_SHAPE3",
+            cls.DEFINE_TEXT2: "DEFINE_TEXT2",
+            cls.DEFINE_BUTTON2: "DEFINE_BUTTON2",
+            cls.DEFINE_BITS_JPEG3: "DEFINE_BITS_JPEG3",
+            cls.DEFINE_BITS_LOSSLESS2: "DEFINE_BITS_LOSSLESS2",
+            cls.DEFINE_EDIT_TEXT: "DEFINE_EDIT_TEXT",
+            cls.DEFINE_SPRITE: "DEFINE_SPRITE",
+            cls.FRAME_LABEL: "FRAME_LABEL",
+            cls.SOUND_STREAM_HEAD2: "SOUND_STREAM_HEAD2",
+            cls.DEFINE_MORPH_SHAPE: "DEFINE_MORPH_SHAPE",
+            cls.DEFINE_FONT2: "DEFINE_FONT2",
+            cls.EXPORT_ASSETS: "EXPORT_ASSETS",
+            cls.IMPORT_ASSETS: "IMPORT_ASSETS",
+            cls.DO_INIT_ACTION: "DO_INIT_ACTION",
+            cls.DEFINE_VIDEO_STREAM: "DEFINE_VIDEO_STREAM",
+            cls.VIDEO_FRAME: "VIDEO_FRAME",
+            cls.DEFINE_FONT_INFO2: "DEFINE_FONT_INFO2",
+            cls.ENABLE_DEBUGGER2: "ENABLE_DEBUGGER2",
+            cls.SCRIPT_LIMITS: "SCRIPT_LIMITS",
+            cls.SET_TAB_INDEX: "SET_TAB_INDEX",
+            cls.PLACE_OBJECT3: "PLACE_OBJECT3",
+            cls.IMPORT_ASSETS2: "IMPORT_ASSETS2",
+            cls.DEFINE_FONT3: "DEFINE_FONT3",
+            cls.DEFINE_SCALING_GRID: "DEFINE_SCALING_GRID",
+            cls.METADATA: "METADATA",
+            cls.DEFINE_SHAPE4: "DEFINE_SHAPE4",
+            cls.DEFINE_MORPH_SHAPE2: "DEFINE_MORPH_SHAPE2",
+            cls.SCENE_LABEL: "SCENE_LABEL",
+            cls.AFP_IMAGE: "AFP_IMAGE",
+            cls.AFP_DEFINE_SOUND: "AFP_DEFINE_SOUND",
+            cls.AFP_SOUND_STREAM_BLOCK: "AFP_SOUND_STREAM_BLOCK",
+            cls.AFP_DEFINE_FONT: "AFP_DEFINE_FONT",
+            cls.AFP_DEFINE_SHAPE: "AFP_DEFINE_SHAPE",
+            cls.AEP_PLACE_OBJECT: "AEP_PLACE_OBJECT",
+            cls.AP2_DEFINE_FONT: "AP2_DEFINE_FONT",
+            cls.AP2_DEFINE_SPRITE: "AP2_DEFINE_SPRITE",
+            cls.AP2_DO_ACTION: "AP2_DO_ACTION",
+            cls.AP2_DEFINE_BUTTON: "AP2_DEFINE_BUTTON",
+            cls.AP2_DEFINE_BUTTON_SOUND: "AP2_DEFINE_BUTTON_SOUND",
+            cls.AP2_DEFINE_TEXT: "AP2_DEFINE_TEXT",
+            cls.AP2_DEFINE_EDIT_TEXT: "AP2_DEFINE_EDIT_TEXT",
+            cls.AP2_PLACE_OBJECT: "AP2_PLACE_OBJECT",
+            cls.AP2_REMOVE_OBJECT: "AP2_REMOVE_OBJECT",
+            cls.AP2_START_SOUND: "AP2_START_SOUND",
+            cls.AP2_DEFINE_MORPH_SHAPE: "AP2_DEFINE_MORPH_SHAPE",
+            cls.AP2_IMAGE: "AP2_IMAGE",
+            cls.AP2_SHAPE: "AP2_SHAPE",
+            cls.AP2_SOUND: "AP2_SOUND",
+            cls.AP2_VIDEO: "AP2_VIDEO",
+            cls.AP2_PLACE_CAMERA: "AP2_PLACE_CAMERA",
+            cls.AP2_SCALING_GRID: "AP2_SCALING_GRID",
         }
 
         return resources.get(tagid, f"<UNKNOWN {hex(tagid)}>")
@@ -557,80 +557,80 @@ class AP2Action:
     @classmethod
     def action_to_name(cls, actionid: int) -> str:
         resources: Dict[int, str] = {
-            cls.END: 'END',
-            cls.NEXT_FRAME: 'NEXT_FRAME',
-            cls.PREVIOUS_FRAME: 'PREVIOUS_FRAME',
-            cls.PLAY: 'PLAY',
-            cls.STOP: 'STOP',
-            cls.STOP_SOUND: 'STOP_SOUND',
-            cls.SUBTRACT: 'SUBTRACT',
-            cls.MULTIPLY: 'MULTIPLY',
-            cls.DIVIDE: 'DIVIDE',
-            cls.NOT: 'NOT',
-            cls.POP: 'POP',
-            cls.GET_VARIABLE: 'GET_VARIABLE',
-            cls.SET_VARIABLE: 'SET_VARIABLE',
-            cls.GET_PROPERTY: 'GET_PROPERTY',
-            cls.SET_PROPERTY: 'SET_PROPERTY',
-            cls.CLONE_SPRITE: 'CLONE_SPRITE',
-            cls.REMOVE_SPRITE: 'REMOVE_SPRITE',
-            cls.TRACE: 'TRACE',
-            cls.START_DRAG: 'START_DRAG',
-            cls.END_DRAG: 'END_DRAG',
-            cls.THROW: 'THROW',
-            cls.CAST_OP: 'CAST_OP',
-            cls.IMPLEMENTS_OP: 'IMPLEMENTS_OP',
-            cls.GET_TIME: 'GET_TIME',
-            cls.DELETE: 'DELETE',
-            cls.DELETE2: 'DELETE2',
-            cls.DEFINE_LOCAL: 'DEFINE_LOCAL',
-            cls.CALL_FUNCTION: 'CALL_FUNCTION',
-            cls.RETURN: 'RETURN',
-            cls.MODULO: 'MODULO',
-            cls.NEW_OBJECT: 'NEW_OBJECT',
-            cls.DEFINE_LOCAL2: 'DEFINE_LOCAL2',
-            cls.INIT_ARRAY: 'INIT_ARRAY',
-            cls.INIT_OBJECT: 'INIT_OBJECT',
-            cls.TYPEOF: 'TYPEOF',
-            cls.TARGET_PATH: 'TARGET_PATH',
-            cls.ADD2: 'ADD2',
-            cls.LESS2: 'LESS2',
-            cls.EQUALS2: 'EQUALS2',
-            cls.TO_NUMBER: 'TO_NUMBER',
-            cls.TO_STRING: 'TO_STRING',
-            cls.PUSH_DUPLICATE: 'PUSH_DUPLICATE',
-            cls.STACK_SWAP: 'STACK_SWAP',
-            cls.GET_MEMBER: 'GET_MEMBER',
-            cls.SET_MEMBER: 'SET_MEMBER',
-            cls.INCREMENT: 'INCREMENT',
-            cls.DECREMENT: 'DECREMENT',
-            cls.CALL_METHOD: 'CALL_METHOD',
-            cls.NEW_METHOD: 'NEW_METHOD',
-            cls.INSTANCEOF: 'INSTANCEOF',
-            cls.ENUMERATE2: 'ENUMERATE2',
-            cls.BIT_AND: 'BIT_AND',
-            cls.BIT_OR: 'BIT_OR',
-            cls.BIT_XOR: 'BIT_XOR',
-            cls.BIT_L_SHIFT: 'BIT_L_SHIFT',
-            cls.BIT_R_SHIFT: 'BIT_R_SHIFT',
-            cls.BIT_U_R_SHIFT: 'BIT_U_R_SHIFT',
-            cls.STRICT_EQUALS: 'STRICT_EQUALS',
-            cls.GREATER: 'GREATER',
-            cls.EXTENDS: 'EXTENDS',
-            cls.STORE_REGISTER: 'STORE_REGISTER',
-            cls.DEFINE_FUNCTION2: 'DEFINE_FUNCTION2',
-            cls.WITH: 'WITH',
-            cls.PUSH: 'PUSH',
-            cls.JUMP: 'JUMP',
-            cls.GET_URL2: 'GET_URL2',
-            cls.IF: 'IF',
-            cls.GOTO_FRAME2: 'GOTO_FRAME2',
-            cls.GET_TARGET: 'GET_TARGET',
-            cls.IF2: 'IF2',
-            cls.STORE_REGISTER2: 'STORE_REGISTER2',
-            cls.INIT_REGISTER: 'INIT_REGISTER',
-            cls.ADD_NUM_REGISTER: 'ADD_NUM_REGISTER',
-            cls.ADD_NUM_VARIABLE: 'ADD_NUM_VARIABLE',
+            cls.END: "END",
+            cls.NEXT_FRAME: "NEXT_FRAME",
+            cls.PREVIOUS_FRAME: "PREVIOUS_FRAME",
+            cls.PLAY: "PLAY",
+            cls.STOP: "STOP",
+            cls.STOP_SOUND: "STOP_SOUND",
+            cls.SUBTRACT: "SUBTRACT",
+            cls.MULTIPLY: "MULTIPLY",
+            cls.DIVIDE: "DIVIDE",
+            cls.NOT: "NOT",
+            cls.POP: "POP",
+            cls.GET_VARIABLE: "GET_VARIABLE",
+            cls.SET_VARIABLE: "SET_VARIABLE",
+            cls.GET_PROPERTY: "GET_PROPERTY",
+            cls.SET_PROPERTY: "SET_PROPERTY",
+            cls.CLONE_SPRITE: "CLONE_SPRITE",
+            cls.REMOVE_SPRITE: "REMOVE_SPRITE",
+            cls.TRACE: "TRACE",
+            cls.START_DRAG: "START_DRAG",
+            cls.END_DRAG: "END_DRAG",
+            cls.THROW: "THROW",
+            cls.CAST_OP: "CAST_OP",
+            cls.IMPLEMENTS_OP: "IMPLEMENTS_OP",
+            cls.GET_TIME: "GET_TIME",
+            cls.DELETE: "DELETE",
+            cls.DELETE2: "DELETE2",
+            cls.DEFINE_LOCAL: "DEFINE_LOCAL",
+            cls.CALL_FUNCTION: "CALL_FUNCTION",
+            cls.RETURN: "RETURN",
+            cls.MODULO: "MODULO",
+            cls.NEW_OBJECT: "NEW_OBJECT",
+            cls.DEFINE_LOCAL2: "DEFINE_LOCAL2",
+            cls.INIT_ARRAY: "INIT_ARRAY",
+            cls.INIT_OBJECT: "INIT_OBJECT",
+            cls.TYPEOF: "TYPEOF",
+            cls.TARGET_PATH: "TARGET_PATH",
+            cls.ADD2: "ADD2",
+            cls.LESS2: "LESS2",
+            cls.EQUALS2: "EQUALS2",
+            cls.TO_NUMBER: "TO_NUMBER",
+            cls.TO_STRING: "TO_STRING",
+            cls.PUSH_DUPLICATE: "PUSH_DUPLICATE",
+            cls.STACK_SWAP: "STACK_SWAP",
+            cls.GET_MEMBER: "GET_MEMBER",
+            cls.SET_MEMBER: "SET_MEMBER",
+            cls.INCREMENT: "INCREMENT",
+            cls.DECREMENT: "DECREMENT",
+            cls.CALL_METHOD: "CALL_METHOD",
+            cls.NEW_METHOD: "NEW_METHOD",
+            cls.INSTANCEOF: "INSTANCEOF",
+            cls.ENUMERATE2: "ENUMERATE2",
+            cls.BIT_AND: "BIT_AND",
+            cls.BIT_OR: "BIT_OR",
+            cls.BIT_XOR: "BIT_XOR",
+            cls.BIT_L_SHIFT: "BIT_L_SHIFT",
+            cls.BIT_R_SHIFT: "BIT_R_SHIFT",
+            cls.BIT_U_R_SHIFT: "BIT_U_R_SHIFT",
+            cls.STRICT_EQUALS: "STRICT_EQUALS",
+            cls.GREATER: "GREATER",
+            cls.EXTENDS: "EXTENDS",
+            cls.STORE_REGISTER: "STORE_REGISTER",
+            cls.DEFINE_FUNCTION2: "DEFINE_FUNCTION2",
+            cls.WITH: "WITH",
+            cls.PUSH: "PUSH",
+            cls.JUMP: "JUMP",
+            cls.GET_URL2: "GET_URL2",
+            cls.IF: "IF",
+            cls.GOTO_FRAME2: "GOTO_FRAME2",
+            cls.GET_TARGET: "GET_TARGET",
+            cls.IF2: "IF2",
+            cls.STORE_REGISTER2: "STORE_REGISTER2",
+            cls.INIT_REGISTER: "INIT_REGISTER",
+            cls.ADD_NUM_REGISTER: "ADD_NUM_REGISTER",
+            cls.ADD_NUM_VARIABLE: "ADD_NUM_VARIABLE",
         }
 
         return resources.get(actionid, f"<UNKNOWN {actionid}>")
@@ -706,8 +706,8 @@ class AP2Action:
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
-            'offset': self.offset,
-            'action': AP2Action.action_to_name(self.opcode),
+            "offset": self.offset,
+            "action": AP2Action.action_to_name(self.opcode),
         }
 
     def __repr__(self) -> str:
@@ -715,7 +715,9 @@ class AP2Action:
 
 
 class DefineFunction2Action(AP2Action):
-    def __init__(self, offset: int, name: Optional[str], flags: int, body: "ByteCode") -> None:
+    def __init__(
+        self, offset: int, name: Optional[str], flags: int, body: "ByteCode"
+    ) -> None:
         super().__init__(offset, AP2Action.DEFINE_FUNCTION2)
         self.name = name
         self.flags = flags
@@ -724,19 +726,21 @@ class DefineFunction2Action(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'name': self.name,
-            'flags': self.flags,
-            'body': self.body.as_dict(*args, **kwargs),
+            "name": self.name,
+            "flags": self.flags,
+            "body": self.body.as_dict(*args, **kwargs),
         }
 
     def __repr__(self) -> str:
         bytecode = [f"  {line}" for line in str(self.body).split(os.linesep)]
         action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}, Name: {self.name or '<anonymous function>'}, Flags: {hex(self.flags)}",
-            *bytecode,
-            f"END_{action_name}",
-        ])
+        return os.linesep.join(
+            [
+                f"{self.offset}: {action_name}, Name: {self.name or '<anonymous function>'}, Flags: {hex(self.flags)}",
+                *bytecode,
+                f"END_{action_name}",
+            ]
+        )
 
 
 class PushAction(AP2Action):
@@ -749,17 +753,19 @@ class PushAction(AP2Action):
             **super().as_dict(*args, **kwargs),
             # TODO: We need to do better than this when exporting objects,
             # we should preserve their type.
-            'objects': [repr(o) for o in self.objects],
+            "objects": [repr(o) for o in self.objects],
         }
 
     def __repr__(self) -> str:
         objects = [f"  {repr(obj)}" for obj in self.objects]
         action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}",
-            *objects,
-            f"END_{action_name}",
-        ])
+        return os.linesep.join(
+            [
+                f"{self.offset}: {action_name}",
+                *objects,
+                f"END_{action_name}",
+            ]
+        )
 
 
 class InitRegisterAction(AP2Action):
@@ -770,21 +776,25 @@ class InitRegisterAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'registers': [r.no for r in self.registers],
+            "registers": [r.no for r in self.registers],
         }
 
     def __repr__(self) -> str:
         registers = [f"  {reg}" for reg in self.registers]
         action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}",
-            *registers,
-            f"END_{action_name}",
-        ])
+        return os.linesep.join(
+            [
+                f"{self.offset}: {action_name}",
+                *registers,
+                f"END_{action_name}",
+            ]
+        )
 
 
 class StoreRegisterAction(AP2Action):
-    def __init__(self, offset: int, registers: List[Register], preserve_stack: bool) -> None:
+    def __init__(
+        self, offset: int, registers: List[Register], preserve_stack: bool
+    ) -> None:
         super().__init__(offset, AP2Action.STORE_REGISTER)
         self.registers = registers
         self.preserve_stack = preserve_stack
@@ -792,17 +802,19 @@ class StoreRegisterAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'registers': [r.no for r in self.registers],
+            "registers": [r.no for r in self.registers],
         }
 
     def __repr__(self) -> str:
         registers = [f"  {reg}" for reg in self.registers]
         action_name = AP2Action.action_to_name(self.opcode)
-        return os.linesep.join([
-            f"{self.offset}: {action_name}, Preserve Stack: {self.preserve_stack}",
-            *registers,
-            f"END_{action_name}",
-        ])
+        return os.linesep.join(
+            [
+                f"{self.offset}: {action_name}, Preserve Stack: {self.preserve_stack}",
+                *registers,
+                f"END_{action_name}",
+            ]
+        )
 
 
 class IfAction(AP2Action):
@@ -848,8 +860,8 @@ class IfAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'comparison': IfAction.comparison_to_str(self.comparison),
-            'jump_if_true_offset': self.jump_if_true_offset,
+            "comparison": IfAction.comparison_to_str(self.comparison),
+            "jump_if_true_offset": self.jump_if_true_offset,
         }
 
     def __repr__(self) -> str:
@@ -864,7 +876,7 @@ class JumpAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'jump_offset': self.jump_offset,
+            "jump_offset": self.jump_offset,
         }
 
     def __repr__(self) -> str:
@@ -881,7 +893,7 @@ class WithAction(AP2Action):
             **super().as_dict(*args, **kwargs),
             # TODO: We need to do better than this, so I guess it comes down to having
             # a better idea how WITH works.
-            'unknown': str(self.unknown),
+            "unknown": str(self.unknown),
         }
 
     def __repr__(self) -> str:
@@ -897,8 +909,8 @@ class GotoFrame2Action(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'additiona_frames': self.additional_frames,
-            'stop': self.stop,
+            "additiona_frames": self.additional_frames,
+            "stop": self.stop,
         }
 
     def __repr__(self) -> str:
@@ -913,7 +925,7 @@ class AddNumVariableAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'amount_to_add': self.amount_to_add,
+            "amount_to_add": self.amount_to_add,
         }
 
     def __repr__(self) -> str:
@@ -929,8 +941,8 @@ class AddNumRegisterAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'register': self.register.no,
-            'amount_to_add': self.amount_to_add,
+            "register": self.register.no,
+            "amount_to_add": self.amount_to_add,
         }
 
     def __repr__(self) -> str:
@@ -945,7 +957,7 @@ class GetURL2Action(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'action': self.action,
+            "action": self.action,
         }
 
     def __repr__(self) -> str:
@@ -960,7 +972,7 @@ class StartDragAction(AP2Action):
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
             **super().as_dict(*args, **kwargs),
-            'constrain': self.constrain,
+            "constrain": self.constrain,
         }
 
     def __repr__(self) -> str:

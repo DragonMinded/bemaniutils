@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.rivals);
 var pagenav = new History(valid_versions);
 
-var rivals_view = React.createClass({
+var rivals_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.rivals);
@@ -145,7 +145,7 @@ var rivals_view = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 {avail ?
                     <Add
                         title="Add Rival"
@@ -155,7 +155,7 @@ var rivals_view = React.createClass({
                     /> :
                     null
                 }
-            </span>
+            </>
         );
     },
 
@@ -196,7 +196,7 @@ var rivals_view = React.createClass({
                         }.bind(this))}
                     </div>
                     <div className="section">
-                        <form onSubmit={this.searchForPlayers}>
+                        <form onSubmit={this.searchForPlayers} className="padded">
                             <label for="search">Name or DDR ID:</label>
                             <br />
                             <input
@@ -298,7 +298,7 @@ var rivals_view = React.createClass({
                                     return (
                                         <tr>
                                             <td>
-                                                <td><Rival userid={rival.userid} player={player} /></td>
+                                                <Rival userid={rival.userid} player={player} />
                                                 { rival.active ?
                                                     <div className="pill">active</div> :
                                                     null

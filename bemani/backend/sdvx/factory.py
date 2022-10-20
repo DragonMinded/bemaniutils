@@ -24,12 +24,17 @@ class SoundVoltexFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for gamecode in ['KFC']:
+        for gamecode in ["KFC"]:
             Base.register(gamecode, SoundVoltexFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
-
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional[Base]:
         def version_from_date(date: int) -> Optional[int]:
             if date < 2013060500:
                 return VersionConstants.SDVX_BOOTH
@@ -45,14 +50,14 @@ class SoundVoltexFactory(Factory):
                 return VersionConstants.SDVX_EXCEED_GEAR
             return None
 
-        if model.gamecode == 'KFC':
+        if model.gamecode == "KFC":
             if model.version is None:
                 if parentmodel is None:
                     return None
 
                 # We have no way to tell apart newer versions. However, we can make
                 # an educated guess if we happen to be summoned for old profile lookup.
-                if parentmodel.gamecode != 'KFC':
+                if parentmodel.gamecode != "KFC":
                     return None
 
                 parentversion = version_from_date(parentmodel.version)

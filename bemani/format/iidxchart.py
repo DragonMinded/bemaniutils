@@ -23,7 +23,7 @@ class IIDXChart:
     def __parse_header(self, data: bytes) -> List[Tuple[int, int]]:
         header: List[Tuple[int, int]] = []
         for i in range(12):
-            offset, length = struct.unpack('<II', data[(i * 8):((i + 1) * 8)])
+            offset, length = struct.unpack("<II", data[(i * 8) : ((i + 1) * 8)])
             header.append((offset, length))
         return header
 
@@ -32,7 +32,7 @@ class IIDXChart:
 
         for chart in [0, 1, 2, 3, 4, 5]:
             offset, length = header[self.CHART_POSITIONS[chart]]
-            chartdata = data[offset:(offset + length)]
+            chartdata = data[offset : (offset + length)]
             position = 0
 
             if length == 0:
@@ -40,7 +40,9 @@ class IIDXChart:
                 continue
 
             while True:
-                time, event, side, value = struct.unpack('<iBBH', chartdata[(position * 8):((position + 1) * 8)])
+                time, event, side, value = struct.unpack(
+                    "<iBBH", chartdata[(position * 8) : ((position + 1) * 8)]
+                )
                 position += 1
 
                 if time == 0x7FFFFFFF:

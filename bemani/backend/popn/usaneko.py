@@ -36,76 +36,76 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
         Return all of our front-end modifiably settings.
         """
         return {
-            'ints': [
+            "ints": [
                 {
-                    'name': 'Music Open Phase',
-                    'tip': 'Default music phase for all players.',
-                    'category': 'game_config',
-                    'setting': 'music_phase',
-                    'values': {
-                        0: 'No music unlocks',
-                        1: 'Phase 1',
-                        2: 'Phase 2',
-                        3: 'Phase 3',
-                        4: 'Phase 4',
-                        5: 'Phase 5',
-                        6: 'Phase 6',
-                        7: 'Phase 7',
-                        8: 'Phase 8',
-                        9: 'Phase 9',
-                        10: 'Phase 10',
-                        11: 'Phase MAX',
-                    }
+                    "name": "Music Open Phase",
+                    "tip": "Default music phase for all players.",
+                    "category": "game_config",
+                    "setting": "music_phase",
+                    "values": {
+                        0: "No music unlocks",
+                        1: "Phase 1",
+                        2: "Phase 2",
+                        3: "Phase 3",
+                        4: "Phase 4",
+                        5: "Phase 5",
+                        6: "Phase 6",
+                        7: "Phase 7",
+                        8: "Phase 8",
+                        9: "Phase 9",
+                        10: "Phase 10",
+                        11: "Phase MAX",
+                    },
                 },
                 {
-                    'name': 'NAVI-Kun Event Phase',
-                    'tip': 'NAVI-Kun event phase for all players.',
-                    'category': 'game_config',
-                    'setting': 'navikun_phase',
-                    'values': {
-                        0: 'Phase 1',
-                        1: 'Phase 2',
-                        2: 'Phase 3',
-                        3: 'Phase 4',
-                        4: 'Phase 5',
-                        5: 'Phase 6',
-                        6: 'Phase 7',
-                        7: 'Phase 8',
-                        8: 'Phase 9',
-                        9: 'Phase 10',
-                        10: 'Phase 11',
-                        11: 'Phase 12',
-                        12: 'Phase 13',
-                        13: 'Phase 14',
-                        14: 'Phase 15',
-                        15: 'Phase MAX',
+                    "name": "NAVI-Kun Event Phase",
+                    "tip": "NAVI-Kun event phase for all players.",
+                    "category": "game_config",
+                    "setting": "navikun_phase",
+                    "values": {
+                        0: "Phase 1",
+                        1: "Phase 2",
+                        2: "Phase 3",
+                        3: "Phase 4",
+                        4: "Phase 5",
+                        5: "Phase 6",
+                        6: "Phase 7",
+                        7: "Phase 8",
+                        8: "Phase 9",
+                        9: "Phase 10",
+                        10: "Phase 11",
+                        11: "Phase 12",
+                        12: "Phase 13",
+                        13: "Phase 14",
+                        14: "Phase 15",
+                        15: "Phase MAX",
                     },
                 },
                 {
                     # For festive times, it's possible to change the welcome greeting.  I'm not sure why you would want to change this, but now you can.
-                    'name': 'Holiday Greeting',
-                    'tip': 'Changes the payment selection confirmation sound.',
-                    'category': 'game_config',
-                    'setting': 'holiday_greeting',
-                    'values': {
-                        0: 'Okay!',
-                        1: 'Merry Christmas!',
-                        2: 'Happy New Year!',
-                    }
+                    "name": "Holiday Greeting",
+                    "tip": "Changes the payment selection confirmation sound.",
+                    "category": "game_config",
+                    "setting": "holiday_greeting",
+                    "values": {
+                        0: "Okay!",
+                        1: "Merry Christmas!",
+                        2: "Happy New Year!",
+                    },
                 },
                 {
-                    'name': 'Active Event',
-                    'tip': 'Active event for all players.',
-                    'category': 'game_config',
-                    'setting': 'active_event',
-                    'values': {
-                        0: 'No event',
-                        1: 'NAVI-Kun event',
-                        2: 'Daily Mission event',
+                    "name": "Active Event",
+                    "tip": "Active event for all players.",
+                    "category": "game_config",
+                    "setting": "active_event",
+                    "values": {
+                        0: "No event",
+                        1: "NAVI-Kun event",
+                        2: "Daily Mission event",
                     },
                 },
             ],
-            'bools': [
+            "bools": [
                 # We don't currently support lobbies or anything, so this is commented out until
                 # somebody gets around to implementing it.
                 # {
@@ -115,20 +115,20 @@ class PopnMusicUsaNeko(PopnMusicModernBase):
                 #     'setting': 'enable_net_taisen',
                 # },
                 {
-                    'name': 'Force Song Unlock',
-                    'tip': 'Force unlock all songs.',
-                    'category': 'game_config',
-                    'setting': 'force_unlock_songs',
+                    "name": "Force Song Unlock",
+                    "tip": "Force unlock all songs.",
+                    "category": "game_config",
+                    "setting": "force_unlock_songs",
                 },
             ],
         }
 
     def get_common_config(self) -> Tuple[Dict[int, int], bool]:
         game_config = self.get_game_config()
-        music_phase = game_config.get_int('music_phase')
-        holiday_greeting = game_config.get_int('holiday_greeting')
-        active_event = game_config.get_int('active_event')
-        navikun_phase = game_config.get_int('navikun_phase')
+        music_phase = game_config.get_int("music_phase")
+        holiday_greeting = game_config.get_int("holiday_greeting")
+        active_event = game_config.get_int("active_event")
+        navikun_phase = game_config.get_int("navikun_phase")
         enable_net_taisen = False  # game_config.get_bool('enable_net_taisen')
 
         navikun_enabled = active_event == 1

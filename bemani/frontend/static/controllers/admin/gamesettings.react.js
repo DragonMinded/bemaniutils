@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var gamesettings = React.createClass({
+var gamesettings = createReactClass({
     render: function() {
         return (
             <div>

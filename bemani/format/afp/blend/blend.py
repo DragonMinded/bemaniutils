@@ -3,7 +3,7 @@ import signal
 from PIL import Image  # type: ignore
 from typing import Any, Callable, List, Optional, Sequence, Union
 
-from ..types import Color, Matrix, Point, AAMode
+from ..types import Color, HSL, Matrix, Point, AAMode
 from .perspective import perspective_calculate
 
 
@@ -36,10 +36,16 @@ def blend_normal(
     srcremainder = 1.0 - srcpercent
     new_alpha = max(min(0.0, srcpercent + destpercent * srcremainder), 1.0)
     return (
-        clamp(((dest[0] * destpercent * srcremainder) + (src[0] * srcpercent)) / new_alpha),
-        clamp(((dest[1] * destpercent * srcremainder) + (src[1] * srcpercent)) / new_alpha),
-        clamp(((dest[2] * destpercent * srcremainder) + (src[2] * srcpercent)) / new_alpha),
-        clamp(255 * new_alpha)
+        clamp(
+            ((dest[0] * destpercent * srcremainder) + (src[0] * srcpercent)) / new_alpha
+        ),
+        clamp(
+            ((dest[1] * destpercent * srcremainder) + (src[1] * srcpercent)) / new_alpha
+        ),
+        clamp(
+            ((dest[2] * destpercent * srcremainder) + (src[2] * srcpercent)) / new_alpha
+        ),
+        clamp(255 * new_alpha),
     )
 
 
@@ -114,9 +120,18 @@ def blend_multiply(
     src_alpha = src[3] / 255.0
     src_remainder = 1.0 - src_alpha
     return (
-        clamp((255 * ((dest[0] / 255.0) * (src[0] / 255.0) * src_alpha)) + (dest[0] * src_remainder)),
-        clamp((255 * ((dest[1] / 255.0) * (src[1] / 255.0) * src_alpha)) + (dest[1] * src_remainder)),
-        clamp((255 * ((dest[2] / 255.0) * (src[2] / 255.0) * src_alpha)) + (dest[2] * src_remainder)),
+        clamp(
+            (255 * ((dest[0] / 255.0) * (src[0] / 255.0) * src_alpha))
+            + (dest[0] * src_remainder)
+        ),
+        clamp(
+            (255 * ((dest[1] / 255.0) * (src[1] / 255.0) * src_alpha))
+            + (dest[1] * src_remainder)
+        ),
+        clamp(
+            (255 * ((dest[2] / 255.0) * (src[2] / 255.0) * src_alpha))
+            + (dest[2] * src_remainder)
+        ),
         dest[3],
     )
 
@@ -171,6 +186,7 @@ def blend_mask_combine(
 def blend_point(
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     # This should be a sequence of exactly 4 values, either bytes or a tuple.
     src_color: Sequence[int],
     # This should be a sequence of exactly 4 values, either bytes or a tuple.
@@ -184,6 +200,23 @@ def blend_point(
         clamp((src_color[2] * mult_color.b) + (255 * add_color.b)),
         clamp((src_color[3] * mult_color.a) + (255 * add_color.a)),
     )
+
+    # Only add in HSL shift effects if they exist, since its expensive to
+    # convert and shift. Also I'm not sure if this should be done before or
+    # after the add and multiply.
+    if not hsl_shift.is_identity:
+        hslcolor = Color(
+            src_color[0] / 255, src_color[1] / 255, src_color[2] / 255, 1.0
+        ).as_hsl()
+        hslcolor = hslcolor.add(hsl_shift)
+        newcolor = hslcolor.as_rgb()
+
+        src_color = (
+            clamp(newcolor.r * 255),
+            clamp(newcolor.g * 255),
+            clamp(newcolor.b * 255),
+            src_color[3],
+        )
 
     if blendfunc == 3:
         return blend_multiply(dest_color, src_color)
@@ -225,6 +258,7 @@ def pixel_renderer(
     callback: Callable[[Point], Optional[Point]],
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
@@ -237,7 +271,7 @@ def pixel_renderer(
 
     if maskbytes is not None and maskbytes[maskoff] == 0:
         # This pixel is masked off!
-        return imgbytes[imgoff:(imgoff + 4)]
+        return imgbytes[imgoff : (imgoff + 4)]
 
     if aa_mode != AAMode.NONE:
         r = 0
@@ -257,8 +291,20 @@ def pixel_renderer(
             xswing = 0.5 * max(1.0, xscale)
             yswing = 0.5 * max(1.0, yscale)
 
-        xpoints = [0.5 - xswing, 0.5 - (xswing / 2.0), 0.5, 0.5 + (xswing / 2.0), 0.5 + xswing]
-        ypoints = [0.5 - yswing, 0.5 - (yswing / 2.0), 0.5, 0.5 + (yswing / 2.0), 0.5 + yswing]
+        xpoints = [
+            0.5 - xswing,
+            0.5 - (xswing / 2.0),
+            0.5,
+            0.5 + (xswing / 2.0),
+            0.5 + xswing,
+        ]
+        ypoints = [
+            0.5 - yswing,
+            0.5 - (yswing / 2.0),
+            0.5,
+            0.5 + (yswing / 2.0),
+            0.5 + yswing,
+        ]
 
         # First, figure out if we can use bilinear resampling.
         bilinear = False
@@ -266,7 +312,12 @@ def pixel_renderer(
             aaloc = callback(Point(imgx + 0.5, imgy + 0.5))
             if aaloc is not None:
                 aax, aay, _ = aaloc.as_tuple()
-                if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
+                if not (
+                    aax <= 0
+                    or aay <= 0
+                    or aax >= (texwidth - 1)
+                    or aay >= (texheight - 1)
+                ):
                     bilinear = True
 
         # Now perform the desired AA operation.
@@ -300,13 +351,25 @@ def pixel_renderer(
                 average = [255, 255, 255, 0]
             else:
                 # Interpolate in the X direction on both Y axis.
-                y0r = ((texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10] * tex10percent * aaxrem))
-                y0g = ((texbytes[tex00 + 1] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 1] * tex10percent * aaxrem))
-                y0b = ((texbytes[tex00 + 2] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10 + 2] * tex10percent * aaxrem))
+                y0r = (texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (
+                    texbytes[tex10] * tex10percent * aaxrem
+                )
+                y0g = (texbytes[tex00 + 1] * tex00percent * (1.0 - aaxrem)) + (
+                    texbytes[tex10 + 1] * tex10percent * aaxrem
+                )
+                y0b = (texbytes[tex00 + 2] * tex00percent * (1.0 - aaxrem)) + (
+                    texbytes[tex10 + 2] * tex10percent * aaxrem
+                )
 
-                y1r = ((texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11] * tex11percent * aaxrem))
-                y1g = ((texbytes[tex01 + 1] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 1] * tex11percent * aaxrem))
-                y1b = ((texbytes[tex01 + 2] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11 + 2] * tex11percent * aaxrem))
+                y1r = (texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (
+                    texbytes[tex11] * tex11percent * aaxrem
+                )
+                y1g = (texbytes[tex01 + 1] * tex01percent * (1.0 - aaxrem)) + (
+                    texbytes[tex11 + 1] * tex11percent * aaxrem
+                )
+                y1b = (texbytes[tex01 + 2] * tex01percent * (1.0 - aaxrem)) + (
+                    texbytes[tex11 + 2] * tex11percent * aaxrem
+                )
 
                 # Now interpolate the Y direction to get the final pixel value.
                 average = [
@@ -320,7 +383,12 @@ def pixel_renderer(
                 for addx in xpoints:
                     xloc = imgx + addx
                     yloc = imgy + addy
-                    if xloc < 0.0 or yloc < 0.0 or xloc >= imgwidth or yloc >= imgheight:
+                    if (
+                        xloc < 0.0
+                        or yloc < 0.0
+                        or xloc >= imgwidth
+                        or yloc >= imgheight
+                    ):
                         continue
 
                     texloc = callback(Point(xloc, yloc))
@@ -355,7 +423,7 @@ def pixel_renderer(
 
             if count == 0:
                 # None of the samples existed in-bounds.
-                return imgbytes[imgoff:(imgoff + 4)]
+                return imgbytes[imgoff : (imgoff + 4)]
 
             # Average the pixels. Make sure to divide out the alpha in preparation for blending.
             alpha = a // denom
@@ -364,25 +432,44 @@ def pixel_renderer(
                 average = [255, 255, 255, alpha]
             else:
                 apercent = alpha / 255.0
-                average = [int((r / denom) / apercent), int((g / denom) / apercent), int((b / denom) / apercent), alpha]
+                average = [
+                    int((r / denom) / apercent),
+                    int((g / denom) / apercent),
+                    int((b / denom) / apercent),
+                    alpha,
+                ]
 
         # Finally, blend it with the destination.
-        return blend_point(add_color, mult_color, average, imgbytes[imgoff:(imgoff + 4)], blendfunc)
+        return blend_point(
+            add_color,
+            mult_color,
+            hsl_shift,
+            average,
+            imgbytes[imgoff : (imgoff + 4)],
+            blendfunc,
+        )
     else:
         # Calculate what texture pixel data goes here.
         texloc = callback(Point(imgx + 0.5, imgy + 0.5))
         if texloc is None:
-            return imgbytes[imgoff:(imgoff + 4)]
+            return imgbytes[imgoff : (imgoff + 4)]
 
         texx, texy, _ = texloc.as_tuple()
 
         # If we're out of bounds, don't update.
         if texx < 0 or texy < 0 or texx >= texwidth or texy >= texheight:
-            return imgbytes[imgoff:(imgoff + 4)]
+            return imgbytes[imgoff : (imgoff + 4)]
 
         # Blend it.
         texoff = (texx + (texy * texwidth)) * 4
-        return blend_point(add_color, mult_color, texbytes[texoff:(texoff + 4)], imgbytes[imgoff:(imgoff + 4)], blendfunc)
+        return blend_point(
+            add_color,
+            mult_color,
+            hsl_shift,
+            texbytes[texoff : (texoff + 4)],
+            imgbytes[imgoff : (imgoff + 4)],
+            blendfunc,
+        )
 
 
 def affine_line_renderer(
@@ -397,6 +484,7 @@ def affine_line_renderer(
     inverse: Matrix,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
@@ -408,14 +496,16 @@ def affine_line_renderer(
         if imgy is None:
             return
 
-        rowbytes = bytearray(imgbytes[(imgy * imgwidth * 4):((imgy + 1) * imgwidth * 4)])
+        rowbytes = bytearray(
+            imgbytes[(imgy * imgwidth * 4) : ((imgy + 1) * imgwidth * 4)]
+        )
         for imgx in range(imgwidth):
             if imgx < minx or imgx >= maxx:
                 # No need to even consider this pixel.
                 continue
             else:
                 # Blit new pixel into the correct range.
-                rowbytes[(imgx * 4):((imgx + 1) * 4)] = pixel_renderer(
+                rowbytes[(imgx * 4) : ((imgx + 1) * 4)] = pixel_renderer(
                     imgx,
                     imgy,
                     imgwidth,
@@ -427,6 +517,7 @@ def affine_line_renderer(
                     lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -441,6 +532,7 @@ def affine_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     mask: Optional[Image.Image],
     blendfunc: int,
@@ -488,11 +580,11 @@ def affine_composite(
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:
         # Get the data in an easier to manipulate and faster to update fashion.
-        imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
-        texbytes = texture.tobytes('raw', 'RGBA')
+        imgbytes = bytearray(img.tobytes("raw", "RGBA"))
+        texbytes = texture.tobytes("raw", "RGBA")
         if mask:
             alpha = mask.split()[-1]
-            maskbytes = alpha.tobytes('raw', 'L')
+            maskbytes = alpha.tobytes("raw", "L")
         else:
             maskbytes = None
 
@@ -501,7 +593,7 @@ def affine_composite(
             for imgx in range(minx, maxx):
                 # Determine offset
                 imgoff = (imgx + (imgy * imgwidth)) * 4
-                imgbytes[imgoff:(imgoff + 4)] = pixel_renderer(
+                imgbytes[imgoff : (imgoff + 4)] = pixel_renderer(
                     imgx,
                     imgy,
                     imgwidth,
@@ -513,6 +605,7 @@ def affine_composite(
                     lambda point: inverse.multiply_point(point),
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -520,13 +613,13 @@ def affine_composite(
                     aa_mode,
                 )
 
-        img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
+        img = Image.frombytes("RGBA", (imgwidth, imgheight), bytes(imgbytes))
     else:
-        imgbytes = img.tobytes('raw', 'RGBA')
-        texbytes = texture.tobytes('raw', 'RGBA')
+        imgbytes = img.tobytes("raw", "RGBA")
+        texbytes = texture.tobytes("raw", "RGBA")
         if mask:
             alpha = mask.split()[-1]
-            maskbytes = alpha.tobytes('raw', 'L')
+            maskbytes = alpha.tobytes("raw", "L")
         else:
             maskbytes = None
 
@@ -559,6 +652,7 @@ def affine_composite(
                     inverse,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -574,7 +668,7 @@ def affine_composite(
             expected += 1
 
         lines: List[bytes] = [
-            imgbytes[x:(x + (imgwidth * 4))]
+            imgbytes[x : (x + (imgwidth * 4))]
             for x in range(
                 0,
                 imgwidth * imgheight * 4,
@@ -594,7 +688,7 @@ def affine_composite(
         if interrupted:
             raise KeyboardInterrupt()
 
-        img = Image.frombytes('RGBA', (imgwidth, imgheight), b''.join(lines))
+        img = Image.frombytes("RGBA", (imgwidth, imgheight), b"".join(lines))
     return img
 
 
@@ -612,6 +706,7 @@ def perspective_line_renderer(
     inverse: Matrix,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     blendfunc: int,
     imgbytes: Union[bytes, bytearray],
     texbytes: Union[bytes, bytearray],
@@ -631,14 +726,16 @@ def perspective_line_renderer(
         if imgy is None:
             return
 
-        rowbytes = bytearray(imgbytes[(imgy * imgwidth * 4):((imgy + 1) * imgwidth * 4)])
+        rowbytes = bytearray(
+            imgbytes[(imgy * imgwidth * 4) : ((imgy + 1) * imgwidth * 4)]
+        )
         for imgx in range(imgwidth):
             if imgx < minx or imgx >= maxx:
                 # No need to even consider this pixel.
                 continue
             else:
                 # Blit new pixel into the correct range.
-                rowbytes[(imgx * 4):((imgx + 1) * 4)] = pixel_renderer(
+                rowbytes[(imgx * 4) : ((imgx + 1) * 4)] = pixel_renderer(
                     imgx,
                     imgy,
                     imgwidth,
@@ -650,6 +747,7 @@ def perspective_line_renderer(
                     perspective_inverse,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -664,6 +762,7 @@ def perspective_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     camera: Point,
     focal_length: float,
@@ -686,17 +785,19 @@ def perspective_composite(
     texheight = texture.height
 
     # Get the perspective-correct inverse matrix for looking up texture coordinates.
-    inverse_matrix, minx, miny, maxx, maxy = perspective_calculate(imgwidth, imgheight, texwidth, texheight, transform, camera, focal_length)
+    inverse_matrix, minx, miny, maxx, maxy = perspective_calculate(
+        imgwidth, imgheight, texwidth, texheight, transform, camera, focal_length
+    )
     if inverse_matrix is None:
         # This texture is entirely off of the screen.
         return img
 
     # Get the data in an easier to manipulate and faster to update fashion.
-    imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
-    texbytes = texture.tobytes('raw', 'RGBA')
+    imgbytes = bytearray(img.tobytes("raw", "RGBA"))
+    texbytes = texture.tobytes("raw", "RGBA")
     if mask:
         alpha = mask.split()[-1]
-        maskbytes = alpha.tobytes('raw', 'L')
+        maskbytes = alpha.tobytes("raw", "L")
     else:
         maskbytes = None
 
@@ -711,11 +812,11 @@ def perspective_composite(
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:
         # Get the data in an easier to manipulate and faster to update fashion.
-        imgbytes = bytearray(img.tobytes('raw', 'RGBA'))
-        texbytes = texture.tobytes('raw', 'RGBA')
+        imgbytes = bytearray(img.tobytes("raw", "RGBA"))
+        texbytes = texture.tobytes("raw", "RGBA")
         if mask:
             alpha = mask.split()[-1]
-            maskbytes = alpha.tobytes('raw', 'L')
+            maskbytes = alpha.tobytes("raw", "L")
         else:
             maskbytes = None
 
@@ -724,7 +825,7 @@ def perspective_composite(
             for imgx in range(minx, maxx):
                 # Determine offset
                 imgoff = (imgx + (imgy * imgwidth)) * 4
-                imgbytes[imgoff:(imgoff + 4)] = pixel_renderer(
+                imgbytes[imgoff : (imgoff + 4)] = pixel_renderer(
                     imgx,
                     imgy,
                     imgwidth,
@@ -736,6 +837,7 @@ def perspective_composite(
                     perspective_inverse,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -743,13 +845,13 @@ def perspective_composite(
                     aa_mode,
                 )
 
-        img = Image.frombytes('RGBA', (imgwidth, imgheight), bytes(imgbytes))
+        img = Image.frombytes("RGBA", (imgwidth, imgheight), bytes(imgbytes))
     else:
-        imgbytes = img.tobytes('raw', 'RGBA')
-        texbytes = texture.tobytes('raw', 'RGBA')
+        imgbytes = img.tobytes("raw", "RGBA")
+        texbytes = texture.tobytes("raw", "RGBA")
         if mask:
             alpha = mask.split()[-1]
-            maskbytes = alpha.tobytes('raw', 'L')
+            maskbytes = alpha.tobytes("raw", "L")
         else:
             maskbytes = None
 
@@ -784,6 +886,7 @@ def perspective_composite(
                     inverse_matrix,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     blendfunc,
                     imgbytes,
                     texbytes,
@@ -799,7 +902,7 @@ def perspective_composite(
             expected += 1
 
         lines: List[bytes] = [
-            imgbytes[x:(x + (imgwidth * 4))]
+            imgbytes[x : (x + (imgwidth * 4))]
             for x in range(
                 0,
                 imgwidth * imgheight * 4,
@@ -819,5 +922,5 @@ def perspective_composite(
         if interrupted:
             raise KeyboardInterrupt()
 
-        img = Image.frombytes('RGBA', (imgwidth, imgheight), b''.join(lines))
+        img = Image.frombytes("RGBA", (imgwidth, imgheight), b"".join(lines))
     return img

@@ -6,7 +6,6 @@ from bemani.data.types import Item
 
 
 class GlobalGameData(BaseGlobalData):
-
     def __translate_sdvx_song_unlock(self, entry: Dict[str, Any]) -> Item:
         return Item(
             "song_unlock",
@@ -46,7 +45,7 @@ class GlobalGameData(BaseGlobalData):
                 "identifier": entry["identifier"],
                 "name": entry["name"],
                 "type": entry["type"],
-            }
+            },
         )
 
     def get_items(self, game: GameConstants, version: int) -> List[Item]:
@@ -61,9 +60,7 @@ class GlobalGameData(BaseGlobalData):
             A list of item objects.
         """
         catalogs: List[Dict[str, List[Dict[str, Any]]]] = Parallel.call(
-            [client.get_catalog for client in self.clients],
-            game,
-            version
+            [client.get_catalog for client in self.clients], game, version
         )
         retval: List[Item] = []
         seen: Set[str] = set()
@@ -103,7 +100,9 @@ class GlobalGameData(BaseGlobalData):
                     seen.add(key)
         return retval
 
-    def get_item(self, game: GameConstants, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
+    def get_item(
+        self, game: GameConstants, version: int, catid: int, cattype: str
+    ) -> Optional[ValidatedDict]:
         """
         Given a game/userid and catalog id/type, find that catalog entry.
 

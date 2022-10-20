@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var user_management = React.createClass({
+var user_management = createReactClass({
     getInitialState: function(props) {
         var credits = {};
         Object.keys(window.arcades).map(function(arcadeid) {
@@ -195,7 +195,7 @@ var user_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="Username">{
                 !this.state.editing_username ?
-                    <span>
+                    <>
                         {
                             this.state.username ?
                                 <span>{ this.state.username }</span> :
@@ -206,7 +206,7 @@ var user_management = React.createClass({
                                 this.setState({editing_username: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveUsername}>
                         <input
                             type="text"
@@ -242,14 +242,14 @@ var user_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="Password">{
                 !this.state.editing_password ?
-                    <span>
+                    <>
                         <span>&bull;&bull;&bull;&bull;&bull;&bull;</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_password: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePassword}>
                         <div>
                             <label htmlFor="new1">New password:</label>
@@ -301,7 +301,7 @@ var user_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="Email Address">{
                 !this.state.editing_email ?
-                    <span>
+                    <>
                         {
                             this.state.email ?
                                 <span>{ this.state.email }</span> :
@@ -312,7 +312,7 @@ var user_management = React.createClass({
                                 this.setState({editing_email: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveEmail}>
                         <input
                             type="text"
@@ -348,14 +348,14 @@ var user_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="PIN">{
                 !this.state.editing_pin ?
-                    <span>
+                    <>
                         <span>&bull;&bull;&bull;&bull;</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_pin: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePin}>
                         <input
                             type="text"

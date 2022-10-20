@@ -54,6 +54,14 @@ div.navigation {
     }
 }
 
+@media only screen and (min-width: 600px) {
+    div.jconfirm-box-container {
+        margin-left: 25%;
+        margin-right: 25%;
+        width: 50%;
+    }
+}
+
 @media only screen and (hover: none) {
     .tinynav {
         display: inline-block;
@@ -125,6 +133,7 @@ ul.navigation {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    z-index: 1;
 }
 
 ul.navigation li {
@@ -272,4 +281,50 @@ span.sort {
 span.checkbox {
     padding-right: 5px;
     cursor: default;
+}
+
+div.slider {
+    display: inline-flex;
+    height: 18px;
+    border-radius: 10px;
+}
+
+div.slider.on {
+    background: #6eb9f7;
+    border: 1px solid #3da2f5;
+}
+
+div.slider.off {
+    background: #cccccc;
+    border: 1px solid #a0a0a0;
+}
+
+div.slider span.label {
+    width: 70px;
+    font-weight: normal;
+    font-size: small;
+    height: 16px;
+    display: inline-block;
+}
+
+div.slider span.label.on {
+    text-align: center;
+}
+
+div.slider span.label.off {
+    text-align: center;
+}
+
+div.slider span.ball {
+    position: absolute;
+    display: inline-block;
+    border-radius: 8px;
+    background: white;
+    width: 14px;
+    height: 14px;
+    margin: 2px;
+}
+
+div.slider span.ball.off {
+    margin-left: 54px;
 }

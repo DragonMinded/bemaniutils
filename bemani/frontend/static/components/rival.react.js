@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Rival = React.createClass({
+var Rival = createReactClass({
     render: function() {
         if (this.props.player.remote) {
             return <span>{ this.props.player.name }</span>;

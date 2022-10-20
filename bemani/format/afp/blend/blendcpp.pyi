@@ -1,13 +1,14 @@
 from PIL import Image  # type: ignore
 from typing import Optional
 
-from ..types import Color, Point, Matrix
+from ..types import Color, HSL, Point, Matrix
 
 
 def affine_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     mask: Optional[Image.Image],
     blendfunc: int,
@@ -22,6 +23,7 @@ def perspective_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     camera: Point,
     focal_length: float,

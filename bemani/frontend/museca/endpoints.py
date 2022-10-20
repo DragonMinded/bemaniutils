@@ -13,42 +13,42 @@ from bemani.frontend.types import g
 
 
 museca_pages = Blueprint(
-    'museca_pages',
+    "museca_pages",
     __name__,
-    url_prefix=f'/{GameConstants.MUSECA.value}',
+    url_prefix=f"/{GameConstants.MUSECA.value}",
     template_folder=templates_location,
     static_folder=static_location,
 )
 
 
-@museca_pages.route('/scores')
+@museca_pages.route("/scores")
 @loginrequired
 def viewnetworkscores() -> Response:
     # Only load the last 100 results for the initial fetch, so we can render faster
     frontend = MusecaFrontend(g.data, g.config, g.cache)
     network_scores = frontend.get_network_scores(limit=100)
-    if len(network_scores['attempts']) > 10:
-        network_scores['attempts'] = frontend.round_to_ten(network_scores['attempts'])
+    if len(network_scores["attempts"]) > 10:
+        network_scores["attempts"] = frontend.round_to_ten(network_scores["attempts"])
 
     return render_react(
-        'Global MÚSECA Scores',
-        'museca/scores.react.js',
+        "Global MÚSECA Scores",
+        "museca/scores.react.js",
         {
-            'attempts': network_scores['attempts'],
-            'songs': frontend.get_all_songs(),
-            'players': network_scores['players'],
-            'shownames': True,
-            'shownewrecords': False,
+            "attempts": network_scores["attempts"],
+            "songs": frontend.get_all_songs(),
+            "players": network_scores["players"],
+            "shownames": True,
+            "shownewrecords": False,
         },
         {
-            'refresh': url_for('museca_pages.listnetworkscores'),
-            'player': url_for('museca_pages.viewplayer', userid=-1),
-            'individual_score': url_for('museca_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("museca_pages.listnetworkscores"),
+            "player": url_for("museca_pages.viewplayer", userid=-1),
+            "individual_score": url_for("museca_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@museca_pages.route('/scores/list')
+@museca_pages.route("/scores/list")
 @jsonify
 @loginrequired
 def listnetworkscores() -> Dict[str, Any]:
@@ -56,7 +56,7 @@ def listnetworkscores() -> Dict[str, Any]:
     return frontend.get_network_scores()
 
 
-@museca_pages.route('/scores/<int:userid>')
+@museca_pages.route("/scores/<int:userid>")
 @loginrequired
 def viewscores(userid: UserID) -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
@@ -70,34 +70,34 @@ def viewscores(userid: UserID) -> Response:
 
     return render_react(
         f'{info["name"]}\'s MÚSECA Scores',
-        'museca/scores.react.js',
+        "museca/scores.react.js",
         {
-            'attempts': scores,
-            'songs': frontend.get_all_songs(),
-            'players': {},
-            'shownames': False,
-            'shownewrecords': True,
+            "attempts": scores,
+            "songs": frontend.get_all_songs(),
+            "players": {},
+            "shownames": False,
+            "shownewrecords": True,
         },
         {
-            'refresh': url_for('museca_pages.listscores', userid=userid),
-            'player': url_for('museca_pages.viewplayer', userid=-1),
-            'individual_score': url_for('museca_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("museca_pages.listscores", userid=userid),
+            "player": url_for("museca_pages.viewplayer", userid=-1),
+            "individual_score": url_for("museca_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@museca_pages.route('/scores/<int:userid>/list')
+@museca_pages.route("/scores/<int:userid>/list")
 @jsonify
 @loginrequired
 def listscores(userid: UserID) -> Dict[str, Any]:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
     return {
-        'attempts': frontend.get_scores(userid),
-        'players': {},
+        "attempts": frontend.get_scores(userid),
+        "players": {},
     }
 
 
-@museca_pages.route('/records')
+@museca_pages.route("/records")
 @loginrequired
 def viewnetworkrecords() -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
@@ -105,26 +105,26 @@ def viewnetworkrecords() -> Response:
     versions = {version: name for (game, version, name) in frontend.all_games()}
 
     return render_react(
-        'Global MÚSECA Records',
-        'museca/records.react.js',
+        "Global MÚSECA Records",
+        "museca/records.react.js",
         {
-            'records': network_records['records'],
-            'songs': frontend.get_all_songs(),
-            'players': network_records['players'],
-            'versions': versions,
-            'shownames': True,
-            'showpersonalsort': False,
-            'filterempty': False,
+            "records": network_records["records"],
+            "songs": frontend.get_all_songs(),
+            "players": network_records["players"],
+            "versions": versions,
+            "shownames": True,
+            "showpersonalsort": False,
+            "filterempty": False,
         },
         {
-            'refresh': url_for('museca_pages.listnetworkrecords'),
-            'player': url_for('museca_pages.viewplayer', userid=-1),
-            'individual_score': url_for('museca_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("museca_pages.listnetworkrecords"),
+            "player": url_for("museca_pages.viewplayer", userid=-1),
+            "individual_score": url_for("museca_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@museca_pages.route('/records/list')
+@museca_pages.route("/records/list")
 @jsonify
 @loginrequired
 def listnetworkrecords() -> Dict[str, Any]:
@@ -132,7 +132,7 @@ def listnetworkrecords() -> Dict[str, Any]:
     return frontend.get_network_records()
 
 
-@museca_pages.route('/records/<int:userid>')
+@museca_pages.route("/records/<int:userid>")
 @loginrequired
 def viewrecords(userid: UserID) -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
@@ -143,36 +143,36 @@ def viewrecords(userid: UserID) -> Response:
 
     return render_react(
         f'{info["name"]}\'s MÚSECA Records',
-        'museca/records.react.js',
+        "museca/records.react.js",
         {
-            'records': frontend.get_records(userid),
-            'songs': frontend.get_all_songs(),
-            'players': {},
-            'versions': versions,
-            'shownames': False,
-            'showpersonalsort': True,
-            'filterempty': True,
+            "records": frontend.get_records(userid),
+            "songs": frontend.get_all_songs(),
+            "players": {},
+            "versions": versions,
+            "shownames": False,
+            "showpersonalsort": True,
+            "filterempty": True,
         },
         {
-            'refresh': url_for('museca_pages.listrecords', userid=userid),
-            'player': url_for('museca_pages.viewplayer', userid=-1),
-            'individual_score': url_for('museca_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("museca_pages.listrecords", userid=userid),
+            "player": url_for("museca_pages.viewplayer", userid=-1),
+            "individual_score": url_for("museca_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@museca_pages.route('/records/<int:userid>/list')
+@museca_pages.route("/records/<int:userid>/list")
 @jsonify
 @loginrequired
 def listrecords(userid: UserID) -> Dict[str, Any]:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
     return {
-        'records': frontend.get_records(userid),
-        'players': {},
+        "records": frontend.get_records(userid),
+        "players": {},
     }
 
 
-@museca_pages.route('/topscores/<int:musicid>')
+@museca_pages.route("/topscores/<int:musicid>")
 @loginrequired
 def viewtopscores(musicid: int) -> Response:
     # We just want to find the latest mix that this song exists in
@@ -188,14 +188,16 @@ def viewtopscores(musicid: int) -> Response:
     for version in versions:
         for omniadd in [0, 10000]:
             for chart in [0, 1, 2, 3, 4]:
-                details = g.data.local.music.get_song(GameConstants.MUSECA, version + omniadd, musicid, chart)
+                details = g.data.local.music.get_song(
+                    GameConstants.MUSECA, version + omniadd, musicid, chart
+                )
                 if details is not None:
                     if name is None:
                         name = details.name
                     if artist is None:
                         artist = details.artist
                     if difficulties[chart] == 0:
-                        difficulties[chart] = details.data.get_int('difficulty')
+                        difficulties[chart] = details.data.get_int("difficulty")
 
     if name is None:
         # Not a real song!
@@ -204,23 +206,23 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        f'Top MÚSECA Scores for {artist} - {name}',
-        'museca/topscores.react.js',
+        f"Top MÚSECA Scores for {artist} - {name}",
+        "museca/topscores.react.js",
         {
-            'name': name,
-            'artist': artist,
-            'difficulties': difficulties,
-            'players': top_scores['players'],
-            'topscores': top_scores['topscores'],
+            "name": name,
+            "artist": artist,
+            "difficulties": difficulties,
+            "players": top_scores["players"],
+            "topscores": top_scores["topscores"],
         },
         {
-            'refresh': url_for('museca_pages.listtopscores', musicid=musicid),
-            'player': url_for('museca_pages.viewplayer', userid=-1),
+            "refresh": url_for("museca_pages.listtopscores", musicid=musicid),
+            "player": url_for("museca_pages.viewplayer", userid=-1),
         },
     )
 
 
-@museca_pages.route('/topscores/<int:musicid>/list')
+@museca_pages.route("/topscores/<int:musicid>/list")
 @jsonify
 @loginrequired
 def listtopscores(musicid: int) -> Dict[str, Any]:
@@ -228,34 +230,32 @@ def listtopscores(musicid: int) -> Dict[str, Any]:
     return frontend.get_top_scores(musicid)
 
 
-@museca_pages.route('/players')
+@museca_pages.route("/players")
 @loginrequired
 def viewplayers() -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
     return render_react(
-        'All MÚSECA Players',
-        'museca/allplayers.react.js',
+        "All MÚSECA Players",
+        "museca/allplayers.react.js",
+        {"players": frontend.get_all_players()},
         {
-            'players': frontend.get_all_players()
-        },
-        {
-            'refresh': url_for('museca_pages.listplayers'),
-            'player': url_for('museca_pages.viewplayer', userid=-1),
+            "refresh": url_for("museca_pages.listplayers"),
+            "player": url_for("museca_pages.viewplayer", userid=-1),
         },
     )
 
 
-@museca_pages.route('/players/list')
+@museca_pages.route("/players/list")
 @jsonify
 @loginrequired
 def listplayers() -> Dict[str, Any]:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
     return {
-        'players': frontend.get_all_players(),
+        "players": frontend.get_all_players(),
     }
 
 
-@museca_pages.route('/players/<int:userid>')
+@museca_pages.route("/players/<int:userid>")
 @loginrequired
 def viewplayer(userid: UserID) -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
@@ -266,22 +266,24 @@ def viewplayer(userid: UserID) -> Response:
 
     return render_react(
         f'{info[latest_version]["name"]}\'s MÚSECA Profile',
-        'museca/player.react.js',
+        "museca/player.react.js",
         {
-            'playerid': userid,
-            'own_profile': userid == g.userID,
-            'player': info,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "playerid": userid,
+            "own_profile": userid == g.userID,
+            "player": info,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'refresh': url_for('museca_pages.listplayer', userid=userid),
-            'records': url_for('museca_pages.viewrecords', userid=userid),
-            'scores': url_for('museca_pages.viewscores', userid=userid),
+            "refresh": url_for("museca_pages.listplayer", userid=userid),
+            "records": url_for("museca_pages.viewrecords", userid=userid),
+            "scores": url_for("museca_pages.viewscores", userid=userid),
         },
     )
 
 
-@museca_pages.route('/players/<int:userid>/list')
+@museca_pages.route("/players/<int:userid>/list")
 @jsonify
 @loginrequired
 def listplayer(userid: UserID) -> Dict[str, Any]:
@@ -289,11 +291,11 @@ def listplayer(userid: UserID) -> Dict[str, Any]:
     info = frontend.get_all_player_info([userid])[userid]
 
     return {
-        'player': info,
+        "player": info,
     }
 
 
-@museca_pages.route('/options')
+@museca_pages.route("/options")
 @loginrequired
 def viewsettings() -> Response:
     frontend = MusecaFrontend(g.data, g.config, g.cache)
@@ -303,48 +305,49 @@ def viewsettings() -> Response:
         abort(404)
 
     return render_react(
-        'MÚSECA Game Settings',
-        'museca/settings.react.js',
+        "MÚSECA Game Settings",
+        "museca/settings.react.js",
         {
-            'player': info,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "player": info,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'updatename': url_for('museca_pages.updatename'),
+            "updatename": url_for("museca_pages.updatename"),
         },
     )
 
 
-@museca_pages.route('/options/name/update', methods=['POST'])
+@museca_pages.route("/options/name/update", methods=["POST"])
 @jsonify
 @loginrequired
 def updatename() -> Dict[str, Any]:
-    version = int(request.get_json()['version'])
-    name = request.get_json()['name']
+    version = int(request.get_json()["version"])
+    name = request.get_json()["name"]
     user = g.data.local.user.get_user(g.userID)
     if user is None:
-        raise Exception('Unable to find user to update!')
+        raise Exception("Unable to find user to update!")
 
     # Grab profile and update name
     profile = g.data.local.user.get_profile(GameConstants.MUSECA, version, user.id)
     if profile is None:
-        raise Exception('Unable to find profile to update!')
+        raise Exception("Unable to find profile to update!")
     if len(name) == 0 or len(name) > 8:
-        raise Exception('Invalid profile name!')
-    if re.match(
-        "^[" +
-        "0-9" +
-        "A-Z" +
-        "!?#$&*-. " +
-        "]*$",
-        name,
-    ) is None:
-        raise Exception('Invalid profile name!')
-    profile.replace_str('name', name)
+        raise Exception("Invalid profile name!")
+    if (
+        re.match(
+            "^[" + "0-9" + "A-Z" + "!?#$&*-. " + "]*$",
+            name,
+        )
+        is None
+    ):
+        raise Exception("Invalid profile name!")
+    profile.replace_str("name", name)
     g.data.local.user.put_profile(GameConstants.MUSECA, version, user.id, profile)
 
     # Return that we updated
     return {
-        'version': version,
-        'name': name,
+        "version": version,
+        "name": name,
     }

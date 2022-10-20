@@ -20,7 +20,7 @@ var sort_names = {
 };
 var chart_map = [0, 1, 2, 3, 4, 6, 7, 8, 9];
 
-var HighScore = React.createClass({
+var HighScore = createReactClass({
     render: function() {
         if (!this.props.score) {
             return null;
@@ -32,7 +32,7 @@ var HighScore = React.createClass({
                     <span className="grade">{this.props.score.rank}</span>
                     <span className="score">{this.props.score.points}</span>
                 </div>
-                { this.props.score.combo > 0 ?
+                { this.props.score.combo >= 0 ?
                     <div>
                         <span className="label">Combo</span>
                         <span className="score">{this.props.score.combo}</span>
@@ -51,7 +51,7 @@ var HighScore = React.createClass({
     },
 });
 
-var network_records = React.createClass({
+var network_records = createReactClass({
 
     sortRecords: function(records) {
         var sorted_records = {};
@@ -174,9 +174,9 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 { paginate ?
-                    <div className="section">
+                    <div className="section" key="paginatebuttons">
                         {songids.map(function(songid) {
                             if (songid < 0) {
                                 curbutton = curbutton + 1;
@@ -199,7 +199,7 @@ var network_records = React.createClass({
                     </div> :
                     null
                 }
-                <div className="section">
+                <div className="section" key="contents">
                     <table className="list records">
                         <thead></thead>
                         <tbody>
@@ -210,8 +210,10 @@ var network_records = React.createClass({
                                     if (paginate && curpage != this.state.subtab) { return null; }
 
                                     return (
-                                        <tr key={(-songid).toString()}>
-                                            <td className="subheader">{ this.state.versions[-songid] }</td>
+                                        <tr key={(-songid).toString()} className="header">
+                                            <td className="subheader">{
+                                                !paginate ? this.state.versions[-songid] : "Song / Artist / Difficulties"
+                                            }</td>
                                             <td className="subheader">SP Beginner</td>
                                             <td className="subheader">SP Basic</td>
                                             <td className="subheader">SP Difficult</td>
@@ -341,7 +343,7 @@ var network_records = React.createClass({
                         </tbody>
                     </table>
                 </div>
-            </span>
+            </>
         );
     },
 
@@ -415,7 +417,7 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -432,7 +434,7 @@ var network_records = React.createClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -467,7 +469,7 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -484,172 +486,174 @@ var network_records = React.createClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
 
     renderBySongIDList: function(songids, showplays) {
         return (
-            <table className="list records">
-                <thead>
-                    <tr>
-                        <th className="subheader">Song</th>
-                        <th className="subheader">SP Beginner</th>
-                        <th className="subheader">SP Basic</th>
-                        <th className="subheader">SP Difficult</th>
-                        <th className="subheader">SP Expert</th>
-                        <th className="subheader">SP Challenge</th>
-                        <th className="subheader">DP Basic</th>
-                        <th className="subheader">DP Difficult</th>
-                        <th className="subheader">DP Expert</th>
-                        <th className="subheader">DP Challenge</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {songids.map(function(songid, index) {
-                        if (index < this.state.offset || index >= this.state.offset + this.state.limit) {
-                            return null;
-                        }
-
-                        var records = this.state.records[songid];
-                        if (!records) {
-                            records = {};
-                        }
-
-                        var difficulties = this.state.songs[songid].difficulties;
-                        var plays = this.getPlays(records);
-                        return (
-                            <tr key={songid.toString()}>
-                                <td className="center">
-                                    <div>
-                                        <a href={Link.get('individual_score', songid)}>
-                                            <div className="songname">{ this.state.songs[songid].name }</div>
-                                            <div className="songartist">{ this.state.songs[songid].artist }</div>
-                                        </a>
-                                    </div>
-                                    <div className="songdifficulties">
-                                        <span>SP </span>
-                                        {this.renderDifficulty(songid, 0)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 1)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 2)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 3)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 4)}
-                                    </div>
-                                    <div className="songdifficulties">
-                                        <span>DP </span>
-                                        {this.renderDifficulty(songid, 6)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 7)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 8)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 9)}
-                                    </div>
-                                    { showplays ? <div className="songplays">#{index + 1} - {plays}{plays == 1 ? ' play' : ' plays'}</div> : null }
-                                </td>
-                                <td className={difficulties[0] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={0}
-                                        score={records[0]}
-                                    />
-                                </td>
-                                <td className={difficulties[1] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={1}
-                                        score={records[1]}
-                                    />
-                                </td>
-                                <td className={difficulties[2] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={2}
-                                        score={records[2]}
-                                    />
-                                </td>
-                                <td className={difficulties[3] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={3}
-                                        score={records[3]}
-                                    />
-                                </td>
-                                <td className={difficulties[4] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={4}
-                                        score={records[4]}
-                                    />
-                                </td>
-                                <td className={difficulties[6] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={6}
-                                        score={records[6]}
-                                    />
-                                </td>
-                                <td className={difficulties[7] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={7}
-                                        score={records[7]}
-                                    />
-                                </td>
-                                <td className={difficulties[8] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={8}
-                                        score={records[8]}
-                                    />
-                                </td>
-                                <td className={difficulties[9] > 0 ? "" : "nochart"}>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={9}
-                                        score={records[9]}
-                                    />
-                                </td>
-                            </tr>
-                        );
-                    }.bind(this))}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colSpan={10}>
-                            { this.state.offset > 0 ?
-                                <Prev onClick={function(event) {
-                                     var page = this.state.offset - this.state.limit;
-                                     if (page < 0) { page = 0; }
-                                     this.setState({offset: page});
-                                }.bind(this)}/> : null
+            <div className="section">
+                <table className="list records">
+                    <thead>
+                        <tr>
+                            <th className="subheader">Song / Artist / Difficulties</th>
+                            <th className="subheader">SP Beginner</th>
+                            <th className="subheader">SP Basic</th>
+                            <th className="subheader">SP Difficult</th>
+                            <th className="subheader">SP Expert</th>
+                            <th className="subheader">SP Challenge</th>
+                            <th className="subheader">DP Basic</th>
+                            <th className="subheader">DP Difficult</th>
+                            <th className="subheader">DP Expert</th>
+                            <th className="subheader">DP Challenge</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {songids.map(function(songid, index) {
+                            if (index < this.state.offset || index >= this.state.offset + this.state.limit) {
+                                return null;
                             }
-                            { (this.state.offset + this.state.limit) < songids.length ?
-                                <Next style={ {float: 'right'} } onClick={function(event) {
-                                     var page = this.state.offset + this.state.limit;
-                                     if (page >= songids.length) { return }
-                                     this.setState({offset: page});
-                                }.bind(this)}/> :
-                                null
+
+                            var records = this.state.records[songid];
+                            if (!records) {
+                                records = {};
                             }
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+
+                            var difficulties = this.state.songs[songid].difficulties;
+                            var plays = this.getPlays(records);
+                            return (
+                                <tr key={songid.toString()}>
+                                    <td className="center">
+                                        <div>
+                                            <a href={Link.get('individual_score', songid)}>
+                                                <div className="songname">{ this.state.songs[songid].name }</div>
+                                                <div className="songartist">{ this.state.songs[songid].artist }</div>
+                                            </a>
+                                        </div>
+                                        <div className="songdifficulties">
+                                            <span>SP </span>
+                                            {this.renderDifficulty(songid, 0)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 1)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 2)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 3)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 4)}
+                                        </div>
+                                        <div className="songdifficulties">
+                                            <span>DP </span>
+                                            {this.renderDifficulty(songid, 6)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 7)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 8)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 9)}
+                                        </div>
+                                        { showplays ? <div className="songplays">#{index + 1} - {plays}{plays == 1 ? ' play' : ' plays'}</div> : null }
+                                    </td>
+                                    <td className={difficulties[0] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={0}
+                                            score={records[0]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[1] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={1}
+                                            score={records[1]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[2] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={2}
+                                            score={records[2]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[3] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={3}
+                                            score={records[3]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[4] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={4}
+                                            score={records[4]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[6] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={6}
+                                            score={records[6]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[7] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={7}
+                                            score={records[7]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[8] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={8}
+                                            score={records[8]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[9] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={9}
+                                            score={records[9]}
+                                        />
+                                    </td>
+                                </tr>
+                            );
+                        }.bind(this))}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colSpan={10}>
+                                { this.state.offset > 0 ?
+                                    <Prev onClick={function(event) {
+                                         var page = this.state.offset - this.state.limit;
+                                         if (page < 0) { page = 0; }
+                                         this.setState({offset: page});
+                                    }.bind(this)}/> : null
+                                }
+                                { (this.state.offset + this.state.limit) < songids.length ?
+                                    <Next style={ {float: 'right'} } onClick={function(event) {
+                                         var page = this.state.offset + this.state.limit;
+                                         if (page >= songids.length) { return }
+                                         this.setState({offset: page});
+                                    }.bind(this)}/> :
+                                    null
+                                }
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         );
     },
 

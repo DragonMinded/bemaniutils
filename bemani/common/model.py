@@ -6,7 +6,9 @@ class Model:
     Object representing a parsed Model String.
     """
 
-    def __init__(self, gamecode: str, dest: str, spec: str, rev: str, version: Optional[int]) -> None:
+    def __init__(
+        self, gamecode: str, dest: str, spec: str, rev: str, version: Optional[int]
+    ) -> None:
         """
         Initialize a Model object.
 
@@ -25,7 +27,7 @@ class Model:
         self.version = version
 
     @staticmethod
-    def from_modelstring(model: str) -> 'Model':
+    def from_modelstring(model: str) -> "Model":
         """
         Parse a modelstring and return a Model
 
@@ -36,17 +38,17 @@ class Model:
         Returns:
             A Model object.
         """
-        parts = model.split(':')
+        parts = model.split(":")
         if len(parts) == 5:
             gamecode, dest, spec, rev, version = parts
             return Model(gamecode, dest, spec, rev, int(version))
         elif len(parts) == 4:
             gamecode, dest, spec, rev = parts
             return Model(gamecode, dest, spec, rev, None)
-        raise Exception(f'Couldn\'t parse model {model}')
+        raise Exception(f"Couldn't parse model {model}")
 
     def __str__(self) -> str:
         if self.version is None:
-            return f'{self.gamecode}:{self.dest}:{self.spec}:{self.rev}'
+            return f"{self.gamecode}:{self.dest}:{self.spec}:{self.rev}"
         else:
-            return f'{self.gamecode}:{self.dest}:{self.spec}:{self.rev}:{self.version}'
+            return f"{self.gamecode}:{self.dest}:{self.spec}:{self.rev}:{self.version}"

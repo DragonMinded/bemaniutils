@@ -5,7 +5,11 @@ var Link = {
     get: function(name, param, anchor) {
         var uri = window.uris[name];
         if (!param || !uri) {
-            return uri;
+            if (!anchor) {
+                return uri;
+            } else {
+                return uri + '#' + anchor.toString();
+            }
         } else if (!anchor) {
             return uri.replace("/-1", "/" + param.toString());
         } else {

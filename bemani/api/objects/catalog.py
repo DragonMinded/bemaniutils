@@ -7,77 +7,107 @@ from bemani.data import Song
 
 
 class CatalogObject(BaseObject):
-
     def __format_ddr_song(self, song: Song) -> Dict[str, Any]:
-        groove = song.data.get_dict('groove')
+        groove = song.data.get_dict("groove")
         return {
-            'editid': str(song.data.get_int('edit_id')),
-            'difficulty': song.data.get_int('difficulty'),
-            'bpm_min': song.data.get_int('bpm_min'),
-            'bpm_max': song.data.get_int('bpm_max'),
-            'category': str(song.data.get_int('category')),
-            'groove': {
-                'air': groove.get_int('air'),
-                'chaos': groove.get_int('chaos'),
-                'freeze': groove.get_int('freeze'),
-                'stream': groove.get_int('stream'),
-                'voltage': groove.get_int('voltage'),
+            "editid": str(song.data.get_int("edit_id")),
+            "difficulty": song.data.get_int("difficulty"),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
+            "category": str(song.data.get_int("category")),
+            "groove": {
+                "air": groove.get_int("air"),
+                "chaos": groove.get_int("chaos"),
+                "freeze": groove.get_int("freeze"),
+                "stream": groove.get_int("stream"),
+                "voltage": groove.get_int("voltage"),
             },
         }
 
     def __format_iidx_song(self, song: Song) -> Dict[str, Any]:
         return {
-            'difficulty': song.data.get_int('difficulty'),
-            'bpm_min': song.data.get_int('bpm_min'),
-            'bpm_max': song.data.get_int('bpm_max'),
-            'notecount': song.data.get_int('notecount'),
-            'category': str(int(song.id / 1000)),
+            "difficulty": song.data.get_int("difficulty"),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
+            "notecount": song.data.get_int("notecount"),
+            "category": str(int(song.id / 1000)),
         }
 
     def __format_jubeat_song(self, song: Song) -> Dict[str, Any]:
+        # Map a default if the user hasn't imported the version DB. This is a nasty
+        # hack but we don't want to break existing installations.
+        defaultcategory = {
+            1: VersionConstants.JUBEAT,
+            2: VersionConstants.JUBEAT_RIPPLES,
+            3: VersionConstants.JUBEAT_KNIT,
+            4: VersionConstants.JUBEAT_COPIOUS,
+            5: VersionConstants.JUBEAT_SAUCER,
+            6: VersionConstants.JUBEAT_PROP,
+            7: VersionConstants.JUBEAT_QUBELL,
+            8: VersionConstants.JUBEAT_CLAN,
+            9: VersionConstants.JUBEAT_FESTO,
+        }.get(int(song.id / 10000000), VersionConstants.JUBEAT)
+        # Map the category to the version numbers defined on BEMAPI.
+        categorymapping = {
+            VersionConstants.JUBEAT: "1",
+            VersionConstants.JUBEAT_RIPPLES: "2",
+            VersionConstants.JUBEAT_RIPPLES_APPEND: "2a",
+            VersionConstants.JUBEAT_KNIT: "3",
+            VersionConstants.JUBEAT_KNIT_APPEND: "3a",
+            VersionConstants.JUBEAT_COPIOUS: "4",
+            VersionConstants.JUBEAT_COPIOUS_APPEND: "4a",
+            VersionConstants.JUBEAT_SAUCER: "5",
+            VersionConstants.JUBEAT_SAUCER_FULFILL: "5a",
+            VersionConstants.JUBEAT_PROP: "6",
+            VersionConstants.JUBEAT_QUBELL: "7",
+            VersionConstants.JUBEAT_CLAN: "8",
+            VersionConstants.JUBEAT_FESTO: "9",
+        }
         return {
-            'difficulty': song.data.get_int('difficulty'),
-            'category': song.data.get_int('version'),
-            'bpm_min': song.data.get_int('bpm_min'),
-            'bpm_max': song.data.get_int('bpm_max'),
+            "difficulty": song.data.get_int("difficulty"),
+            "category": categorymapping.get(
+                song.data.get_int("version", defaultcategory), "1"
+            ),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
         }
 
     def __format_museca_song(self, song: Song) -> Dict[str, Any]:
         return {
-            'difficulty': song.data.get_int('difficulty'),
-            'bpm_min': song.data.get_int('bpm_min'),
-            'bpm_max': song.data.get_int('bpm_max'),
-            'limited': song.data.get_int('limited'),
+            "difficulty": song.data.get_int("difficulty"),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
+            "limited": song.data.get_int("limited"),
         }
 
     def __format_popn_song(self, song: Song) -> Dict[str, Any]:
         return {
-            'difficulty': song.data.get_int('difficulty'),
-            'category': song.data.get_str('category'),
+            "difficulty": song.data.get_int("difficulty"),
+            "category": song.data.get_str("category"),
         }
 
     def __format_reflec_song(self, song: Song) -> Dict[str, Any]:
         return {
-            'difficulty': song.data.get_int('difficulty'),
-            'category': str(song.data.get_int('folder')),
-            'musicid': song.data.get_str('chart_id'),
+            "difficulty": song.data.get_int("difficulty"),
+            "category": str(song.data.get_int("folder")),
+            "musicid": song.data.get_str("chart_id"),
         }
 
     def __format_sdvx_song(self, song: Song) -> Dict[str, Any]:
         return {
-            'difficulty': song.data.get_int('difficulty'),
-            'bpm_min': song.data.get_int('bpm_min'),
-            'bpm_max': song.data.get_int('bpm_max'),
-            'limited': song.data.get_int('limited'),
+            "difficulty": song.data.get_int("difficulty"),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
+            "limited": song.data.get_int("limited"),
         }
 
     def __format_song(self, song: Song) -> Dict[str, Any]:
         base = {
-            'song': str(song.id),
-            'chart': str(song.chart),
-            'title': song.name or "",
-            'artist': song.artist or "",
-            'genre': song.genre or "",
+            "song": str(song.id),
+            "chart": str(song.chart),
+            "title": song.name or "",
+            "artist": song.artist or "",
+            "genre": song.genre or "",
         }
 
         if self.game == GameConstants.DDR:
@@ -169,7 +199,7 @@ class CatalogObject(BaseObject):
                     "type": item.type[3:],
                 }
                 for item in items
-                if item.type in ['qp_body', 'qp_face', 'qp_hair', 'qp_hand', 'qp_head']
+                if item.type in ["qp_body", "qp_face", "qp_hair", "qp_hand", "qp_head"]
             ],
         }
 
@@ -193,17 +223,22 @@ class CatalogObject(BaseObject):
         else:
             return self.version
 
-    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    def fetch_v1(
+        self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         # Verify IDs
         if idtype != APIConstants.ID_TYPE_SERVER:
             raise APIException(
-                'Unsupported ID for lookup!',
+                "Unsupported ID for lookup!",
                 405,
             )
 
         # Fetch the songs
         songs = self.data.local.music.get_all_songs(self.game, self.music_version)
-        if self.game == GameConstants.JUBEAT and self.version == VersionConstants.JUBEAT_CLAN:
+        if (
+            self.game == GameConstants.JUBEAT
+            and self.version == VersionConstants.JUBEAT_CLAN
+        ):
             # There's always a special case. We don't store all music IDs since those in
             # the range of 80000301-80000347 are actually the same song, but copy-pasted
             # for different prefectures and slightly different charts. So, we need to copy
@@ -226,7 +261,7 @@ class CatalogObject(BaseObject):
                         )
             songs.extend(additions)
         retval = {
-            'songs': [self.__format_song(song) for song in songs],
+            "songs": [self.__format_song(song) for song in songs],
         }
 
         # Fetch any optional extras per-game, return

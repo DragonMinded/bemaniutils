@@ -11,16 +11,16 @@ class AESCipher:
 
     def __init__(self, key: str) -> None:
         self.__padamt = 16
-        self.__key = hashlib.sha256(key.encode('utf-8')).digest()
+        self.__key = hashlib.sha256(key.encode("utf-8")).digest()
 
     def _pad(self, s: str) -> str:
         intermediate = f"{len(s)}.{s}"
         while len(intermediate) % self.__padamt != 0:
-            intermediate = intermediate + '-'
+            intermediate = intermediate + "-"
         return intermediate
 
     def _unpad(self, s: str) -> str:
-        length, string = s.split('.', 1)
+        length, string = s.split(".", 1)
         intlength = int(length)
         return string[:intlength]
 
@@ -29,10 +29,12 @@ class AESCipher:
         random = Random.new()
         iv = random.read(AES.block_size)
         cipher = AES.new(self.__key, AES.MODE_CBC, iv)
-        return base64.b64encode(iv + cipher.encrypt(raw.encode('utf-8')), altchars=b"._").decode('utf-8')
+        return base64.b64encode(
+            iv + cipher.encrypt(raw.encode("utf-8")), altchars=b"._"
+        ).decode("utf-8")
 
     def decrypt(self, encoded: str) -> str:
-        enc = base64.b64decode(encoded.encode('utf-8'), altchars=b"._")
-        iv = enc[:AES.block_size]
+        enc = base64.b64decode(encoded.encode("utf-8"), altchars=b"._")
+        iv = enc[: AES.block_size]
         cipher = AES.new(self.__key, AES.MODE_CBC, iv)
-        return self._unpad(cipher.decrypt(enc[AES.block_size:]).decode('utf-8'))
+        return self._unpad(cipher.decrypt(enc[AES.block_size :]).decode("utf-8"))

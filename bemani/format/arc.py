@@ -20,19 +20,21 @@ class ARC:
     def __parse_file(self, data: bytes) -> None:
         # Check file header
         if data[0:4] != bytes([0x20, 0x11, 0x75, 0x19]):
-            raise Exception('Unknown file format!')
+            raise Exception("Unknown file format!")
 
         # Grab header offsets
-        (_, numfiles, _) = struct.unpack('<III', data[4:16])
+        (_, numfiles, _) = struct.unpack("<III", data[4:16])
 
         for fno in range(numfiles):
             start = 16 + (16 * fno)
             end = start + 16
-            (nameoffset, fileoffset, uncompressedsize, compressedsize) = struct.unpack('<IIII', data[start:end])
+            (nameoffset, fileoffset, uncompressedsize, compressedsize) = struct.unpack(
+                "<IIII", data[start:end]
+            )
             name = ""
 
             while data[nameoffset] != 0:
-                name = name + data[nameoffset:(nameoffset + 1)].decode('ascii')
+                name = name + data[nameoffset : (nameoffset + 1)].decode("ascii")
                 nameoffset = nameoffset + 1
 
             self.__files[name] = (fileoffset, uncompressedsize, compressedsize)
@@ -46,8 +48,10 @@ class ARC:
 
         if compressedsize == uncompressedsize:
             # Just stored
-            return self.__data[fileoffset:(fileoffset + compressedsize)]
+            return self.__data[fileoffset : (fileoffset + compressedsize)]
         else:
             # Compressed
             lz77 = Lz77()
-            return lz77.decompress(self.__data[fileoffset:(fileoffset + compressedsize)])
+            return lz77.decompress(
+                self.__data[fileoffset : (fileoffset + compressedsize)]
+            )

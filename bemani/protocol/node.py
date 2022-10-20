@@ -21,7 +21,10 @@ class Node:
     supported for a node to not have a value or children. This also includes a decent amount of
     constructor helper classmethods to make constructing a tree from source code easier.
     """
-    NODE_NAME_CHARS: Final[str] = "0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+
+    NODE_NAME_CHARS: Final[
+        str
+    ] = "0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
     NODE_TYPE_VOID: Final[int] = 1
     NODE_TYPE_S8: Final[int] = 2
@@ -76,280 +79,280 @@ class Node:
 
     NODE_TYPES: Final[Dict[int, Dict[str, Any]]] = {
         NODE_TYPE_VOID: {
-            'name': 'void',
-            'enc': '',
-            'int': False,
-            'composite': False,
+            "name": "void",
+            "enc": "",
+            "int": False,
+            "composite": False,
         },
         NODE_TYPE_S8: {
-            'name': 's8',
-            'enc': 'b',
-            'int': True,
-            'composite': False,
+            "name": "s8",
+            "enc": "b",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_U8: {
-            'name': 'u8',
-            'enc': 'B',
-            'int': True,
-            'composite': False,
+            "name": "u8",
+            "enc": "B",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_S16: {
-            'name': 's16',
-            'enc': 'h',
-            'int': True,
-            'composite': False,
+            "name": "s16",
+            "enc": "h",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_U16: {
-            'name': 'u16',
-            'enc': 'H',
-            'int': True,
-            'composite': False,
+            "name": "u16",
+            "enc": "H",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_S32: {
-            'name': 's32',
-            'enc': 'i',
-            'int': True,
-            'composite': False,
+            "name": "s32",
+            "enc": "i",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_U32: {
-            'name': 'u32',
-            'enc': 'I',
-            'int': True,
-            'composite': False,
+            "name": "u32",
+            "enc": "I",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_S64: {
-            'name': 's64',
-            'enc': 'q',
-            'int': True,
-            'composite': False,
+            "name": "s64",
+            "enc": "q",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_U64: {
-            'name': 'u64',
-            'enc': 'Q',
-            'int': True,
-            'composite': False,
+            "name": "u64",
+            "enc": "Q",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_BIN: {
-            'name': 'bin',
-            'enc': 's',
-            'int': False,
-            'composite': False,
+            "name": "bin",
+            "enc": "s",
+            "int": False,
+            "composite": False,
         },
         NODE_TYPE_STR: {
-            'name': 'str',
-            'enc': 's',
-            'int': False,
-            'composite': False,
+            "name": "str",
+            "enc": "s",
+            "int": False,
+            "composite": False,
         },
         NODE_TYPE_IP4: {
-            'name': 'ip4',
-            'enc': '4s',
-            'int': False,
-            'composite': False,
+            "name": "ip4",
+            "enc": "4s",
+            "int": False,
+            "composite": False,
         },
         NODE_TYPE_TIME: {
-            'name': 'time',
-            'enc': 'I',
-            'int': True,
-            'composite': False,
+            "name": "time",
+            "enc": "I",
+            "int": True,
+            "composite": False,
         },
         NODE_TYPE_FLOAT: {
-            'name': 'float',
-            'enc': 'f',
-            'int': False,
-            'composite': False,
+            "name": "float",
+            "enc": "f",
+            "int": False,
+            "composite": False,
         },
         NODE_TYPE_DOUBLE: {
-            'name': 'double',
-            'enc': 'd',
-            'int': False,
-            'composite': False,
+            "name": "double",
+            "enc": "d",
+            "int": False,
+            "composite": False,
         },
         NODE_TYPE_2S8: {
-            'name': '2s8',
-            'enc': 'bb',
-            'int': True,
-            'composite': True,
+            "name": "2s8",
+            "enc": "bb",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2U8: {
-            'name': '2u8',
-            'enc': 'BB',
-            'int': True,
-            'composite': True,
+            "name": "2u8",
+            "enc": "BB",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2S16: {
-            'name': '2s16',
-            'enc': 'hh',
-            'int': True,
-            'composite': True,
+            "name": "2s16",
+            "enc": "hh",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2U16: {
-            'name': '2u16',
-            'enc': 'HH',
-            'int': True,
-            'composite': True,
+            "name": "2u16",
+            "enc": "HH",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2S32: {
-            'name': '2s32',
-            'enc': 'ii',
-            'int': True,
-            'composite': True,
+            "name": "2s32",
+            "enc": "ii",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2U32: {
-            'name': '2u32',
-            'enc': 'II',
-            'int': True,
-            'composite': True,
+            "name": "2u32",
+            "enc": "II",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2S64: {
-            'name': '2s64',
-            'enc': 'qq',
-            'int': True,
-            'composite': True,
+            "name": "2s64",
+            "enc": "qq",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2U64: {
-            'name': '2u64',
-            'enc': 'QQ',
-            'int': True,
-            'composite': True,
+            "name": "2u64",
+            "enc": "QQ",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_2FLOAT: {
-            'name': '2float',
-            'enc': 'ff',
-            'int': False,
-            'composite': True,
+            "name": "2float",
+            "enc": "ff",
+            "int": False,
+            "composite": True,
         },
         NODE_TYPE_2DOUBLE: {
-            'name': '2double',
-            'enc': 'dd',
-            'int': False,
-            'composite': True,
+            "name": "2double",
+            "enc": "dd",
+            "int": False,
+            "composite": True,
         },
         NODE_TYPE_3S8: {
-            'name': '3s8',
-            'enc': 'bbb',
-            'int': True,
-            'composite': True,
+            "name": "3s8",
+            "enc": "bbb",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3U8: {
-            'name': '3u8',
-            'enc': 'BBB',
-            'int': True,
-            'composite': True,
+            "name": "3u8",
+            "enc": "BBB",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3S16: {
-            'name': '3s16',
-            'enc': 'hhh',
-            'int': True,
-            'composite': True,
+            "name": "3s16",
+            "enc": "hhh",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3U16: {
-            'name': '3u16',
-            'enc': 'HHH',
-            'int': True,
-            'composite': True,
+            "name": "3u16",
+            "enc": "HHH",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3S32: {
-            'name': '3s32',
-            'enc': 'iii',
-            'int': True,
-            'composite': True,
+            "name": "3s32",
+            "enc": "iii",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3U32: {
-            'name': '3u32',
-            'enc': 'III',
-            'int': True,
-            'composite': True,
+            "name": "3u32",
+            "enc": "III",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3S64: {
-            'name': '3s64',
-            'enc': 'qqq',
-            'int': True,
-            'composite': True,
+            "name": "3s64",
+            "enc": "qqq",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3U64: {
-            'name': '3u64',
-            'enc': 'QQQ',
-            'int': True,
-            'composite': True,
+            "name": "3u64",
+            "enc": "QQQ",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_3FLOAT: {
-            'name': '3float',
-            'enc': 'fff',
-            'int': False,
-            'composite': True,
+            "name": "3float",
+            "enc": "fff",
+            "int": False,
+            "composite": True,
         },
         NODE_TYPE_3DOUBLE: {
-            'name': '3double',
-            'enc': 'ddd',
-            'int': False,
-            'composite': True,
+            "name": "3double",
+            "enc": "ddd",
+            "int": False,
+            "composite": True,
         },
         NODE_TYPE_4U8: {
-            'name': '4u8',
-            'enc': 'BBBB',
-            'int': True,
-            'composite': True,
+            "name": "4u8",
+            "enc": "BBBB",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4S8: {
-            'name': '4s8',
-            'enc': 'bbbb',
-            'int': True,
-            'composite': True,
+            "name": "4s8",
+            "enc": "bbbb",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4U16: {
-            'name': '4u16',
-            'enc': 'HHHH',
-            'int': True,
-            'composite': True,
+            "name": "4u16",
+            "enc": "HHHH",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4S16: {
-            'name': '4s16',
-            'enc': 'hhhh',
-            'int': True,
-            'composite': True,
+            "name": "4s16",
+            "enc": "hhhh",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4S32: {
-            'name': '4s32',
-            'enc': 'iiii',
-            'int': True,
-            'composite': True,
+            "name": "4s32",
+            "enc": "iiii",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4U32: {
-            'name': '4u32',
-            'enc': 'IIII',
-            'int': True,
-            'composite': True,
+            "name": "4u32",
+            "enc": "IIII",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4S64: {
-            'name': '4s64',
-            'enc': 'qqqq',
-            'int': True,
-            'composite': True,
+            "name": "4s64",
+            "enc": "qqqq",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4U64: {
-            'name': '4u64',
-            'enc': 'QQQQ',
-            'int': True,
-            'composite': True,
+            "name": "4u64",
+            "enc": "QQQQ",
+            "int": True,
+            "composite": True,
         },
         NODE_TYPE_4FLOAT: {
-            'name': '4float',
-            'enc': 'ffff',
-            'int': False,
-            'composite': True,
+            "name": "4float",
+            "enc": "ffff",
+            "int": False,
+            "composite": True,
         },
         NODE_TYPE_4DOUBLE: {
-            'name': '4double',
-            'enc': 'dddd',
-            'int': False,
-            'composite': True,
+            "name": "4double",
+            "enc": "dddd",
+            "int": False,
+            "composite": True,
         },
         NODE_TYPE_BOOL: {
-            'name': 'bool',
-            'enc': 'b',
-            'int': False,
-            'composite': False,
+            "name": "bool",
+            "enc": "b",
+            "int": False,
+            "composite": False,
         },
     }
     ARRAY_BIT: Final[int] = 0x40
@@ -358,135 +361,135 @@ class Node:
     END_OF_DOCUMENT: Final[int] = 0xFF
 
     @staticmethod
-    def void(name: str) -> 'Node':
+    def void(name: str) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_VOID)
 
     @staticmethod
-    def string(name: str, value: str) -> 'Node':
+    def string(name: str, value: str) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_STR, value=value)
 
     @staticmethod
-    def binary(name: str, value: bytes) -> 'Node':
+    def binary(name: str, value: bytes) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_BIN, value=value)
 
     @staticmethod
-    def float(name: str, value: _renamed_float) -> 'Node':
+    def float(name: str, value: _renamed_float) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_FLOAT, value=value)
 
     @staticmethod
-    def bool(name: str, value: _renamed_bool) -> 'Node':
+    def bool(name: str, value: _renamed_bool) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_BOOL, value=value)
 
     @staticmethod
-    def ipv4(name: str, value: str) -> 'Node':
+    def ipv4(name: str, value: str) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_IP4, value=value)
 
     @staticmethod
-    def time(name: str, value: int) -> 'Node':
+    def time(name: str, value: int) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_TIME, value=value)
 
     @staticmethod
-    def u8(name: str, value: int) -> 'Node':
+    def u8(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_U8, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U8, value=value)
 
     @staticmethod
-    def s8(name: str, value: int) -> 'Node':
+    def s8(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_S8, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S8, value=value)
 
     @staticmethod
-    def u16(name: str, value: int) -> 'Node':
+    def u16(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_U16, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U16, value=value)
 
     @staticmethod
-    def s16(name: str, value: int) -> 'Node':
+    def s16(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_S16, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S16, value=value)
 
     @staticmethod
-    def u32(name: str, value: int) -> 'Node':
+    def u32(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_U32, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U32, value=value)
 
     @staticmethod
-    def s32(name: str, value: int) -> 'Node':
+    def s32(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_S32, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S32, value=value)
 
     @staticmethod
-    def u64(name: str, value: int) -> 'Node':
+    def u64(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_U64, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U64, value=value)
 
     @staticmethod
-    def s64(name: str, value: int) -> 'Node':
+    def s64(name: str, value: int) -> "Node":
         Node.__validate(Node.NODE_TYPE_S64, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S64, value=value)
 
     @staticmethod
-    def time_array(name: str, values: List[int]) -> 'Node':
+    def time_array(name: str, values: List[int]) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_TIME, array=True, value=values)
 
     @staticmethod
-    def float_array(name: str, values: List[_renamed_float]) -> 'Node':
+    def float_array(name: str, values: List[_renamed_float]) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_FLOAT, array=True, value=values)
 
     @staticmethod
-    def bool_array(name: str, values: List[_renamed_bool]) -> 'Node':
+    def bool_array(name: str, values: List[_renamed_bool]) -> "Node":
         return Node(name=name, type=Node.NODE_TYPE_BOOL, array=True, value=values)
 
     @staticmethod
-    def u8_array(name: str, values: List[int]) -> 'Node':
+    def u8_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_U8, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U8, array=True, value=values)
 
     @staticmethod
-    def s8_array(name: str, values: List[int]) -> 'Node':
+    def s8_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_S8, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S8, array=True, value=values)
 
     @staticmethod
-    def u16_array(name: str, values: List[int]) -> 'Node':
+    def u16_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_U16, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U16, array=True, value=values)
 
     @staticmethod
-    def s16_array(name: str, values: List[int]) -> 'Node':
+    def s16_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_S16, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S16, array=True, value=values)
 
     @staticmethod
-    def u32_array(name: str, values: List[int]) -> 'Node':
+    def u32_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_U32, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U32, array=True, value=values)
 
     @staticmethod
-    def s32_array(name: str, values: List[int]) -> 'Node':
+    def s32_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_S32, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S32, array=True, value=values)
 
     @staticmethod
-    def u64_array(name: str, values: List[int]) -> 'Node':
+    def u64_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_U64, name, value)
         return Node(name=name, type=Node.NODE_TYPE_U64, array=True, value=values)
 
     @staticmethod
-    def s64_array(name: str, values: List[int]) -> 'Node':
+    def s64_array(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_S64, name, value)
         return Node(name=name, type=Node.NODE_TYPE_S64, array=True, value=values)
 
     @staticmethod
-    def fouru8(name: str, values: List[int]) -> 'Node':
+    def fouru8(name: str, values: List[int]) -> "Node":
         for value in values:
             Node.__validate(Node.NODE_TYPE_U8, name, value)
         return Node(name=name, type=Node.NODE_TYPE_4U8, value=values)
@@ -505,7 +508,7 @@ class Node:
             An integer specifying the node type or None if not found.
         """
         for nodetype in Node.NODE_TYPES:
-            if typename.lower() == Node.NODE_TYPES[nodetype]['name']:
+            if typename.lower() == Node.NODE_TYPES[nodetype]["name"]:
                 return nodetype
 
         return None
@@ -514,30 +517,36 @@ class Node:
     def __validate(nodetype: int, name: str, value: int) -> None:
         if nodetype == Node.NODE_TYPE_U8:
             if value < 0 or value > 255:
-                raise NodeException(f'Invalid value {value} for u8 {name}')
+                raise NodeException(f"Invalid value {value} for u8 {name}")
         elif nodetype == Node.NODE_TYPE_S8:
             if value < -128 or value > 127:
-                raise NodeException(f'Invalid value {value} for s8 {name}')
+                raise NodeException(f"Invalid value {value} for s8 {name}")
         elif nodetype == Node.NODE_TYPE_U16:
             if value < 0 or value > 65535:
-                raise NodeException(f'Invalid value {value} for u16 {name}')
+                raise NodeException(f"Invalid value {value} for u16 {name}")
         elif nodetype == Node.NODE_TYPE_S16:
             if value < -32768 or value > 32767:
-                raise NodeException(f'Invalid value {value} for s16 {name}')
+                raise NodeException(f"Invalid value {value} for s16 {name}")
         elif nodetype == Node.NODE_TYPE_U32:
             if value < 0 or value > 4294967295:
-                raise NodeException(f'Invalid value {value} for u32 {name}')
+                raise NodeException(f"Invalid value {value} for u32 {name}")
         elif nodetype == Node.NODE_TYPE_S32:
             if value < -2147483648 or value > 2147483647:
-                raise NodeException(f'Invalid value {value} for s32 {name}')
+                raise NodeException(f"Invalid value {value} for s32 {name}")
         elif nodetype == Node.NODE_TYPE_U64:
             if value < 0 or value > 18446744073709551615:
-                raise NodeException(f'Invalid value {value} for u64 {name}')
+                raise NodeException(f"Invalid value {value} for u64 {name}")
         elif nodetype == Node.NODE_TYPE_S64:
             if value < -9223372036854775808 or value > 9223372036854775807:
-                raise NodeException(f'Invalid value {value} for s32 {name}')
+                raise NodeException(f"Invalid value {value} for s32 {name}")
 
-    def __init__(self, name: Optional[str]=None, type: Optional[int]=None, array: Optional[_renamed_bool]=None, value: Optional[Any]=None) -> None:
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        type: Optional[int] = None,
+        array: Optional[_renamed_bool] = None,
+        value: Optional[Any] = None,
+    ) -> None:
         """
         Initialize a node, with an optional name and type.
 
@@ -578,7 +587,7 @@ class Node:
         # Ensure it isn't a violation
         for char in name:
             if char not in Node.NODE_NAME_CHARS:
-                raise NodeException(f'Invalid node name {name}')
+                raise NodeException(f"Invalid node name {name}")
 
         self.__name = name
 
@@ -591,10 +600,10 @@ class Node:
             A string node name.
         """
         if self.__name is None:
-            raise Exception('Logic error, tried to fetch name before setting!')
+            raise Exception("Logic error, tried to fetch name before setting!")
         return self.__name
 
-    def set_type(self, type: int, array: Optional[_renamed_bool]=None) -> None:
+    def set_type(self, type: int, array: Optional[_renamed_bool] = None) -> None:
         """
         Set the type of the node to a new integer type, as specified in Node.NODE_TYPES.
 
@@ -616,7 +625,7 @@ class Node:
             self.__translated_type = Node.NODE_TYPES[type & (~Node.ARRAY_BIT)]
             self.__type = type
         except KeyError:
-            raise NodeException(f'Unknown node type {type} on node name {self.__name}')
+            raise NodeException(f"Unknown node type {type} on node name {self.__name}")
 
     @property
     def type(self) -> int:
@@ -628,7 +637,7 @@ class Node:
             bit ARRAY_BIT might be set.
         """
         if self.__type is None:
-            raise Exception('Logic error, tried to fetch type before setting!')
+            raise Exception("Logic error, tried to fetch type before setting!")
         return self.__type
 
     @property
@@ -640,8 +649,10 @@ class Node:
             A string data type name. This string can be fed to typename_to_type to get the original type back.
         """
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to fetch data type before setting type!')
-        return self.__translated_type['name']
+            raise Exception(
+                "Logic error, tried to fetch data type before setting type!"
+            )
+        return self.__translated_type["name"]
 
     @property
     def data_length(self) -> Optional[int]:
@@ -653,10 +664,12 @@ class Node:
             An integer data length, or None if this node's element has variable length.
         """
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to fetch data length before setting type!')
-        if self.__translated_type['name'] in {'bin', 'str'}:
+            raise Exception(
+                "Logic error, tried to fetch data length before setting type!"
+            )
+        if self.__translated_type["name"] in {"bin", "str"}:
             return None
-        return struct.calcsize(self.__translated_type['enc'])
+        return struct.calcsize(self.__translated_type["enc"])
 
     @property
     def data_encoding(self) -> str:
@@ -667,10 +680,12 @@ class Node:
             A character that can be passed to struct.pack or struct.unpack.
         """
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to fetch data encoding before setting type!')
-        return self.__translated_type['enc']
+            raise Exception(
+                "Logic error, tried to fetch data encoding before setting type!"
+            )
+        return self.__translated_type["enc"]
 
-    def set_attribute(self, attr: str, val: str='') -> None:
+    def set_attribute(self, attr: str, val: str = "") -> None:
         """
         Set an attribute to a particular string value on this node.
 
@@ -681,7 +696,7 @@ class Node:
         """
         self.__attrs[attr] = val
 
-    def attribute(self, attr: str, default: Optional[str]=None) -> Optional[str]:
+    def attribute(self, attr: str, default: Optional[str] = None) -> Optional[str]:
         """
         Get an attribute based on a string, or None if nonexistent.
 
@@ -693,7 +708,7 @@ class Node:
         """
         return self.__attrs.get(attr, default)
 
-    def add_child(self, child: 'Node') -> None:
+    def add_child(self, child: "Node") -> None:
         """
         Add a child Node to this node.
 
@@ -701,11 +716,11 @@ class Node:
             child - A Node to set as a child to this node.
         """
         if not isinstance(child, Node):
-            raise NodeException('Invalid child')
+            raise NodeException("Invalid child")
 
         self.__children.append(child)
 
-    def child(self, name: str) -> Optional['Node']:
+    def child(self, name: str) -> Optional["Node"]:
         """
         Find a child by name.
 
@@ -717,7 +732,7 @@ class Node:
         Returns:
             A Node if a child was found by name, or None if not.
         """
-        tree = name.split('/', 1)
+        tree = name.split("/", 1)
         for child in self.__children:
             if child.name == tree[0]:
                 if len(tree) == 1:
@@ -748,7 +763,7 @@ class Node:
         return child.value
 
     @property
-    def children(self) -> List['Node']:
+    def children(self) -> List["Node"]:
         """
         Wrapper for accessing children.
 
@@ -787,8 +802,10 @@ class Node:
             True if this Node is a composite type, False otherwise.
         """
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to fetch composite determination before setting type!')
-        return self.__translated_type['composite']
+            raise Exception(
+                "Logic error, tried to fetch composite determination before setting type!"
+            )
+        return self.__translated_type["composite"]
 
     def set_value(self, val: Any) -> None:
         """
@@ -801,50 +818,54 @@ class Node:
         is_array = isinstance(val, (list, tuple))
 
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to set value before setting type!')
+            raise Exception("Logic error, tried to set value before setting type!")
         translated_type: Dict[str, Any] = self.__translated_type
 
         # Handle composite types
-        if translated_type['composite']:
+        if translated_type["composite"]:
             if not is_array:
-                raise NodeException('Input is not array, expected array')
-            if len(val) != len(translated_type['enc']):
-                raise NodeException(f'Input array for {translated_type["name"]} expected to be {len(translated_type["enc"])} elements!')
+                raise NodeException("Input is not array, expected array")
+            if len(val) != len(translated_type["enc"]):
+                raise NodeException(
+                    f'Input array for {translated_type["name"]} expected to be {len(translated_type["enc"])} elements!'
+                )
             is_array = False
         if is_array != self.__array:
-            raise NodeException(f'Input {"is" if is_array else "is not"} array, expected {"array" if self.__array else "scalar"}')
+            raise NodeException(
+                f'Input {"is" if is_array else "is not"} array, expected {"array" if self.__array else "scalar"}'
+            )
 
         def val_to_str(val: Any) -> Union[str, bytes]:
-            if translated_type['name'] == 'bool':
+            if translated_type["name"] == "bool":
                 # Support user-built boolean types
                 if val is True:
-                    return 'true'
+                    return "true"
                 if val is False:
-                    return 'false'
+                    return "false"
 
                 # Support construction from binary
-                return 'true' if val != 0 else 'false'
-            elif translated_type['name'] == 'float':
+                return "true" if val != 0 else "false"
+            elif translated_type["name"] == "float":
                 return str(val)
-            elif translated_type['name'] == 'ip4':
+            elif translated_type["name"] == "ip4":
                 try:
                     # Support construction from binary
-                    ip = struct.unpack('BBBB', val)
-                    return f'{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}'
+                    ip = struct.unpack("BBBB", val)
+                    return f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
                 except (struct.error, TypeError):
                     # Assume that its user-built string?
                     if isinstance(val, str):
-                        if len(val.split('.')) == 4:
+                        if len(val.split(".")) == 4:
                             return val
 
-                    raise NodeException(f'Invalid value {val} for IP4 type')
-            elif translated_type['int']:
+                    raise NodeException(f"Invalid value {val} for IP4 type")
+            elif translated_type["int"]:
                 return str(val)
             else:
                 # This could return either a string or bytes.
                 return val
 
-        if is_array or translated_type['composite']:
+        if is_array or translated_type["composite"]:
             self.__value = [val_to_str(v) for v in val]
         else:
             self.__value = val_to_str(val)
@@ -858,26 +879,26 @@ class Node:
             A mixed value corresponding to this node's value. The returned value will be of the correct data type.
         """
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to get value before setting type!')
+            raise Exception("Logic error, tried to get value before setting type!")
         translated_type: Dict[str, Any] = self.__translated_type
 
         def str_to_val(string: Union[str, bytes]) -> Any:
-            if translated_type['name'] == 'bool':
-                return True if string == 'true' else False
-            elif translated_type['name'] == 'float':
+            if translated_type["name"] == "bool":
+                return True if string == "true" else False
+            elif translated_type["name"] == "float":
                 return float(string)
-            elif translated_type['name'] == 'ip4':
+            elif translated_type["name"] == "ip4":
                 if not isinstance(string, str):
-                    raise Exception('Logic error, expected a string!')
-                ip = [int(tup) for tup in string.split('.')]
-                return struct.pack('BBBB', ip[0], ip[1], ip[2], ip[3])
-            elif translated_type['int']:
+                    raise Exception("Logic error, expected a string!")
+                ip = [int(tup) for tup in string.split(".")]
+                return struct.pack("BBBB", ip[0], ip[1], ip[2], ip[3])
+            elif translated_type["int"]:
                 return int(string)
             else:
                 # At this point, we could be a string or bytes.
                 return string
 
-        if self.__array or translated_type['composite']:
+        if self.__array or translated_type["composite"]:
             return [str_to_val(v) for v in self.__value]
         else:
             return str_to_val(self.__value)
@@ -894,7 +915,9 @@ class Node:
             A string representing the XML-like data for this node and all children.
         """
         if self.__translated_type is None:
-            raise Exception('Logic error, tried to get XML representation before setting type!')
+            raise Exception(
+                "Logic error, tried to get XML representation before setting type!"
+            )
         translated_type: Dict[str, Any] = self.__translated_type
 
         attrs_dict = copy.deepcopy(self.__attrs)
@@ -903,50 +926,52 @@ class Node:
             # Represent type and length
             if self.__array:
                 if self.__value is None:
-                    attrs_dict['__count'] = '0'
+                    attrs_dict["__count"] = "0"
                 else:
-                    attrs_dict['__count'] = str(len(self.__value))
-                order.insert(0, '__count')
-            attrs_dict['__type'] = translated_type['name']
-            order.insert(0, '__type')
+                    attrs_dict["__count"] = str(len(self.__value))
+                order.insert(0, "__count")
+            attrs_dict["__type"] = translated_type["name"]
+            order.insert(0, "__type")
 
-        def escape(val: Any, attr: _renamed_bool=False) -> str:
+        def escape(val: Any, attr: _renamed_bool = False) -> str:
             if isinstance(val, str):
-                val = val.replace('&', '&amp;')
-                val = val.replace('<', '&lt;')
-                val = val.replace('>', '&gt;')
-                val = val.replace('\'', '&apos;')
-                val = val.replace('\"', '&quot;')
+                val = val.replace("&", "&amp;")
+                val = val.replace("<", "&lt;")
+                val = val.replace(">", "&gt;")
+                val = val.replace("'", "&apos;")
+                val = val.replace('"', "&quot;")
                 if attr:
-                    val = val.replace('\r', '&#13;')
-                    val = val.replace('\n', '&#10;')
+                    val = val.replace("\r", "&#13;")
+                    val = val.replace("\n", "&#10;")
 
                 return val
             else:
                 return str(val)
 
         if attrs_dict:
-            attrs = ' ' + ' '.join([f'{attr}="{escape(attrs_dict[attr], attr=True)}"' for attr in order])
+            attrs = " " + " ".join(
+                [f'{attr}="{escape(attrs_dict[attr], attr=True)}"' for attr in order]
+            )
         else:
-            attrs = ''
+            attrs = ""
 
         def get_val() -> str:
-            if self.__array or translated_type['composite']:
+            if self.__array or translated_type["composite"]:
                 if self.__value is None:
-                    vals = ''
+                    vals = ""
                 else:
-                    vals = ' '.join([val for val in self.__value])
-            elif translated_type['name'] == 'str':
+                    vals = " ".join([val for val in self.__value])
+            elif translated_type["name"] == "str":
                 vals = escape(self.__value)
-            elif translated_type['name'] == 'bin':
+            elif translated_type["name"] == "bin":
                 # Convert to a hex string
                 def bin_to_hex(binary: int) -> str:
                     val = hex(binary)[2:]
                     while len(val) < 2:
-                        val = '0' + val
+                        val = "0" + val
                     return val
 
-                vals = ''.join([bin_to_hex(v) for v in self.__value])
+                vals = "".join([bin_to_hex(v) for v in self.__value])
             else:
                 vals = str(self.__value)
             return vals

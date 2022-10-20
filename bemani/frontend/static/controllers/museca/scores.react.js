@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var network_scores = React.createClass({
+var network_scores = createReactClass({
     getInitialState: function(props) {
         return {
             songs: window.songs,
@@ -58,17 +58,27 @@ var network_scores = React.createClass({
     },
 
     renderScore: function(score) {
+        has_stats = (
+            score.stats.critical > 0 ||
+            score.stats.near > 0 ||
+            score.stats.error > 0
+        );
         return (
             <div className="score">
                 <div>
                     <span className="label">Score</span>
                     <span className="score">{score.points}</span>
-                    <span className="status">{score.grade}</span>
-                <div>
-                </div>
                     <span className="label">Combo</span>
                     <span className="score">{score.combo < 0 ? '-' : score.combo}</span>
+                    <span className="status">{score.grade}</span>
                 </div>
+                {has_stats ? <div title="critical / near / error">
+                    {score.stats.critical}
+                    <span> / </span>
+                    {score.stats.near}
+                    <span> / </span>
+                    {score.stats.error}
+                </div> : null}
                 <div>
                     <span className="status">{score.clear_type}</span>
                 </div>
@@ -84,8 +94,8 @@ var network_scores = React.createClass({
                         <tr>
                             { window.shownames ? <th>Name</th> : null }
                             <th>Timestamp</th>
-                            <th>Song</th>
-                            <th>Chart</th>
+                            <th>Song / Artist</th>
+                            <th>Difficulty</th>
                             <th>Score</th>
                         </tr>
                     </thead>

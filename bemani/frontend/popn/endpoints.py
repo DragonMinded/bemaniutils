@@ -13,42 +13,42 @@ from bemani.frontend.types import g
 
 
 popn_pages = Blueprint(
-    'popn_pages',
+    "popn_pages",
     __name__,
-    url_prefix=f'/{GameConstants.POPN_MUSIC.value}',
+    url_prefix=f"/{GameConstants.POPN_MUSIC.value}",
     template_folder=templates_location,
     static_folder=static_location,
 )
 
 
-@popn_pages.route('/scores')
+@popn_pages.route("/scores")
 @loginrequired
 def viewnetworkscores() -> Response:
     # Only load the last 100 results for the initial fetch, so we can render faster
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     network_scores = frontend.get_network_scores(limit=100)
-    if len(network_scores['attempts']) > 10:
-        network_scores['attempts'] = frontend.round_to_ten(network_scores['attempts'])
+    if len(network_scores["attempts"]) > 10:
+        network_scores["attempts"] = frontend.round_to_ten(network_scores["attempts"])
 
     return render_react(
-        'Global Pop\'n Music Scores',
-        'popn/scores.react.js',
+        "Global Pop'n Music Scores",
+        "popn/scores.react.js",
         {
-            'attempts': network_scores['attempts'],
-            'songs': frontend.get_all_songs(),
-            'players': network_scores['players'],
-            'shownames': True,
-            'shownewrecords': False,
+            "attempts": network_scores["attempts"],
+            "songs": frontend.get_all_songs(),
+            "players": network_scores["players"],
+            "shownames": True,
+            "shownewrecords": False,
         },
         {
-            'refresh': url_for('popn_pages.listnetworkscores'),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
-            'individual_score': url_for('popn_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("popn_pages.listnetworkscores"),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
+            "individual_score": url_for("popn_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@popn_pages.route('/scores/list')
+@popn_pages.route("/scores/list")
 @jsonify
 @loginrequired
 def listnetworkscores() -> Dict[str, Any]:
@@ -56,7 +56,7 @@ def listnetworkscores() -> Dict[str, Any]:
     return frontend.get_network_scores()
 
 
-@popn_pages.route('/scores/<int:userid>')
+@popn_pages.route("/scores/<int:userid>")
 @loginrequired
 def viewscores(userid: UserID) -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
@@ -70,34 +70,34 @@ def viewscores(userid: UserID) -> Response:
 
     return render_react(
         f'{info["name"]}\'s Pop\'n Music Scores',
-        'popn/scores.react.js',
+        "popn/scores.react.js",
         {
-            'attempts': scores,
-            'songs': frontend.get_all_songs(),
-            'players': {},
-            'shownames': False,
-            'shownewrecords': True,
+            "attempts": scores,
+            "songs": frontend.get_all_songs(),
+            "players": {},
+            "shownames": False,
+            "shownewrecords": True,
         },
         {
-            'refresh': url_for('popn_pages.listscores', userid=userid),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
-            'individual_score': url_for('popn_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("popn_pages.listscores", userid=userid),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
+            "individual_score": url_for("popn_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@popn_pages.route('/scores/<int:userid>/list')
+@popn_pages.route("/scores/<int:userid>/list")
 @jsonify
 @loginrequired
 def listscores(userid: UserID) -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     return {
-        'attempts': frontend.get_scores(userid),
-        'players': {},
+        "attempts": frontend.get_scores(userid),
+        "players": {},
     }
 
 
-@popn_pages.route('/records')
+@popn_pages.route("/records")
 @loginrequired
 def viewnetworkrecords() -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
@@ -105,26 +105,26 @@ def viewnetworkrecords() -> Response:
     versions = {version: name for (game, version, name) in frontend.all_games()}
 
     return render_react(
-        'Global Pop\'n Music Records',
-        'popn/records.react.js',
+        "Global Pop'n Music Records",
+        "popn/records.react.js",
         {
-            'records': network_records['records'],
-            'songs': frontend.get_all_songs(),
-            'players': network_records['players'],
-            'versions': versions,
-            'shownames': True,
-            'showpersonalsort': False,
-            'filterempty': False,
+            "records": network_records["records"],
+            "songs": frontend.get_all_songs(),
+            "players": network_records["players"],
+            "versions": versions,
+            "shownames": True,
+            "showpersonalsort": False,
+            "filterempty": False,
         },
         {
-            'refresh': url_for('popn_pages.listnetworkrecords'),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
-            'individual_score': url_for('popn_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("popn_pages.listnetworkrecords"),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
+            "individual_score": url_for("popn_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@popn_pages.route('/records/list')
+@popn_pages.route("/records/list")
 @jsonify
 @loginrequired
 def listnetworkrecords() -> Dict[str, Any]:
@@ -132,7 +132,7 @@ def listnetworkrecords() -> Dict[str, Any]:
     return frontend.get_network_records()
 
 
-@popn_pages.route('/records/<int:userid>')
+@popn_pages.route("/records/<int:userid>")
 @loginrequired
 def viewrecords(userid: UserID) -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
@@ -143,36 +143,36 @@ def viewrecords(userid: UserID) -> Response:
 
     return render_react(
         f'{info["name"]}\'s Pop\'n Music Records',
-        'popn/records.react.js',
+        "popn/records.react.js",
         {
-            'records': frontend.get_records(userid),
-            'songs': frontend.get_all_songs(),
-            'players': {},
-            'versions': versions,
-            'shownames': False,
-            'showpersonalsort': True,
-            'filterempty': True,
+            "records": frontend.get_records(userid),
+            "songs": frontend.get_all_songs(),
+            "players": {},
+            "versions": versions,
+            "shownames": False,
+            "showpersonalsort": True,
+            "filterempty": True,
         },
         {
-            'refresh': url_for('popn_pages.listrecords', userid=userid),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
-            'individual_score': url_for('popn_pages.viewtopscores', musicid=-1),
+            "refresh": url_for("popn_pages.listrecords", userid=userid),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
+            "individual_score": url_for("popn_pages.viewtopscores", musicid=-1),
         },
     )
 
 
-@popn_pages.route('/records/<int:userid>/list')
+@popn_pages.route("/records/<int:userid>/list")
 @jsonify
 @loginrequired
 def listrecords(userid: UserID) -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     return {
-        'records': frontend.get_records(userid),
-        'players': {},
+        "records": frontend.get_records(userid),
+        "players": {},
     }
 
 
-@popn_pages.route('/topscores/<int:musicid>')
+@popn_pages.route("/topscores/<int:musicid>")
 @loginrequired
 def viewtopscores(musicid: int) -> Response:
     # We just want to find the latest mix that this song exists in
@@ -188,7 +188,9 @@ def viewtopscores(musicid: int) -> Response:
 
     for version in versions:
         for chart in [0, 1, 2, 3]:
-            details = g.data.local.music.get_song(GameConstants.POPN_MUSIC, version, musicid, chart)
+            details = g.data.local.music.get_song(
+                GameConstants.POPN_MUSIC, version, musicid, chart
+            )
             if details is not None:
                 if name is None:
                     name = details.name
@@ -197,7 +199,7 @@ def viewtopscores(musicid: int) -> Response:
                 if genre is None:
                     genre = details.genre
                 if difficulties[chart] == 0:
-                    difficulties[chart] = details.data.get_int('difficulty')
+                    difficulties[chart] = details.data.get_int("difficulty")
 
     if name is None:
         # Not a real song!
@@ -206,24 +208,24 @@ def viewtopscores(musicid: int) -> Response:
     top_scores = frontend.get_top_scores(musicid)
 
     return render_react(
-        f'Top Pop\'n Music Scores for {artist} - {name}',
-        'popn/topscores.react.js',
+        f"Top Pop'n Music Scores for {artist} - {name}",
+        "popn/topscores.react.js",
         {
-            'name': name,
-            'artist': artist,
-            'genre': genre,
-            'difficulties': difficulties,
-            'players': top_scores['players'],
-            'topscores': top_scores['topscores'],
+            "name": name,
+            "artist": artist,
+            "genre": genre,
+            "difficulties": difficulties,
+            "players": top_scores["players"],
+            "topscores": top_scores["topscores"],
         },
         {
-            'refresh': url_for('popn_pages.listtopscores', musicid=musicid),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
+            "refresh": url_for("popn_pages.listtopscores", musicid=musicid),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
         },
     )
 
 
-@popn_pages.route('/topscores/<int:musicid>/list')
+@popn_pages.route("/topscores/<int:musicid>/list")
 @jsonify
 @loginrequired
 def listtopscores(musicid: int) -> Dict[str, Any]:
@@ -231,34 +233,32 @@ def listtopscores(musicid: int) -> Dict[str, Any]:
     return frontend.get_top_scores(musicid)
 
 
-@popn_pages.route('/players')
+@popn_pages.route("/players")
 @loginrequired
 def viewplayers() -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     return render_react(
-        'All Pop\'n Music Players',
-        'popn/allplayers.react.js',
+        "All Pop'n Music Players",
+        "popn/allplayers.react.js",
+        {"players": frontend.get_all_players()},
         {
-            'players': frontend.get_all_players()
-        },
-        {
-            'refresh': url_for('popn_pages.listplayers'),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
+            "refresh": url_for("popn_pages.listplayers"),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
         },
     )
 
 
-@popn_pages.route('/players/list')
+@popn_pages.route("/players/list")
 @jsonify
 @loginrequired
 def listplayers() -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
     return {
-        'players': frontend.get_all_players(),
+        "players": frontend.get_all_players(),
     }
 
 
-@popn_pages.route('/players/<int:userid>')
+@popn_pages.route("/players/<int:userid>")
 @loginrequired
 def viewplayer(userid: UserID) -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
@@ -269,22 +269,24 @@ def viewplayer(userid: UserID) -> Response:
 
     return render_react(
         f'{info[latest_version]["name"]}\'s Pop\'n Music Profile',
-        'popn/player.react.js',
+        "popn/player.react.js",
         {
-            'playerid': userid,
-            'own_profile': userid == g.userID,
-            'player': info,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "playerid": userid,
+            "own_profile": userid == g.userID,
+            "player": info,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'refresh': url_for('popn_pages.listplayer', userid=userid),
-            'records': url_for('popn_pages.viewrecords', userid=userid),
-            'scores': url_for('popn_pages.viewscores', userid=userid),
+            "refresh": url_for("popn_pages.listplayer", userid=userid),
+            "records": url_for("popn_pages.viewrecords", userid=userid),
+            "scores": url_for("popn_pages.viewscores", userid=userid),
         },
     )
 
 
-@popn_pages.route('/players/<int:userid>/list')
+@popn_pages.route("/players/<int:userid>/list")
 @jsonify
 @loginrequired
 def listplayer(userid: UserID) -> Dict[str, Any]:
@@ -292,11 +294,11 @@ def listplayer(userid: UserID) -> Dict[str, Any]:
     info = frontend.get_all_player_info([userid])[userid]
 
     return {
-        'player': info,
+        "player": info,
     }
 
 
-@popn_pages.route('/options')
+@popn_pages.route("/options")
 @loginrequired
 def viewsettings() -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
@@ -306,57 +308,62 @@ def viewsettings() -> Response:
         abort(404)
 
     return render_react(
-        'Pop\'n Music Game Settings',
-        'popn/settings.react.js',
+        "Pop'n Music Game Settings",
+        "popn/settings.react.js",
         {
-            'player': info,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "player": info,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'updatename': url_for('popn_pages.updatename'),
+            "updatename": url_for("popn_pages.updatename"),
         },
     )
 
 
-@popn_pages.route('/options/name/update', methods=['POST'])
+@popn_pages.route("/options/name/update", methods=["POST"])
 @jsonify
 @loginrequired
 def updatename() -> Dict[str, Any]:
-    version = int(request.get_json()['version'])
-    name = request.get_json()['name']
+    version = int(request.get_json()["version"])
+    name = request.get_json()["name"]
     user = g.data.local.user.get_user(g.userID)
     if user is None:
-        raise Exception('Unable to find user to update!')
+        raise Exception("Unable to find user to update!")
 
     # Grab profile and update name
     profile = g.data.local.user.get_profile(GameConstants.POPN_MUSIC, version, user.id)
     if profile is None:
-        raise Exception('Unable to find profile to update!')
+        raise Exception("Unable to find profile to update!")
     if len(name) == 0 or len(name) > 6:
-        raise Exception('Invalid profile name!')
-    if re.match(
-        "^[" +
-        "\uFF20-\uFF3A" +  # widetext A-Z and @
-        "\uFF41-\uFF5A" +  # widetext a-z
-        "\uFF10-\uFF19" +  # widetext 0-9
-        "\uFF0C\uFF0E\uFF3F" +  # widetext ,._
-        "\u3041-\u308D\u308F\u3092\u3093" +  # hiragana
-        "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC" +  # katakana
-        "]*$",
-        name,
-    ) is None:
-        raise Exception('Invalid profile name!')
-    profile.replace_str('name', name)
+        raise Exception("Invalid profile name!")
+    if (
+        re.match(
+            "^["
+            + "\uFF20-\uFF3A"
+            + "\uFF41-\uFF5A"  # widetext A-Z and @
+            + "\uFF10-\uFF19"  # widetext a-z
+            + "\uFF0C\uFF0E\uFF3F"  # widetext 0-9
+            + "\u3041-\u308D\u308F\u3092\u3093"  # widetext ,._
+            + "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC"  # hiragana
+            + "]*$",  # katakana
+            name,
+        )
+        is None
+    ):
+        raise Exception("Invalid profile name!")
+    profile.replace_str("name", name)
     g.data.local.user.put_profile(GameConstants.POPN_MUSIC, version, user.id, profile)
 
     # Return that we updated
     return {
-        'version': version,
-        'name': name,
+        "version": version,
+        "name": name,
     }
 
 
-@popn_pages.route('/rivals')
+@popn_pages.route("/rivals")
 @loginrequired
 def viewrivals() -> Response:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
@@ -367,26 +374,28 @@ def viewrivals() -> Response:
         del rivals[VersionConstants.POPN_MUSIC_TUNE_STREET]
 
     return render_react(
-        'Pop\'n Music Rivals',
-        'popn/rivals.react.js',
+        "Pop'n Music Rivals",
+        "popn/rivals.react.js",
         {
-            'userid': str(g.userID),
-            'rivals': rivals,
-            'max_active_rivals': frontend.max_active_rivals,
-            'players': playerinfo,
-            'versions': {version: name for (game, version, name) in frontend.all_games()},
+            "userid": str(g.userID),
+            "rivals": rivals,
+            "max_active_rivals": frontend.max_active_rivals,
+            "players": playerinfo,
+            "versions": {
+                version: name for (game, version, name) in frontend.all_games()
+            },
         },
         {
-            'refresh': url_for('popn_pages.listrivals'),
-            'search': url_for('popn_pages.searchrivals'),
-            'player': url_for('popn_pages.viewplayer', userid=-1),
-            'addrival': url_for('popn_pages.addrival'),
-            'removerival': url_for('popn_pages.removerival'),
+            "refresh": url_for("popn_pages.listrivals"),
+            "search": url_for("popn_pages.searchrivals"),
+            "player": url_for("popn_pages.viewplayer", userid=-1),
+            "addrival": url_for("popn_pages.addrival"),
+            "removerival": url_for("popn_pages.removerival"),
         },
     )
 
 
-@popn_pages.route('/rivals/list')
+@popn_pages.route("/rivals/list")
 @jsonify
 @loginrequired
 def listrivals() -> Dict[str, Any]:
@@ -398,18 +407,18 @@ def listrivals() -> Dict[str, Any]:
         del rivals[VersionConstants.POPN_MUSIC_TUNE_STREET]
 
     return {
-        'rivals': rivals,
-        'players': playerinfo,
+        "rivals": rivals,
+        "players": playerinfo,
     }
 
 
-@popn_pages.route('/rivals/search', methods=['POST'])
+@popn_pages.route("/rivals/search", methods=["POST"])
 @jsonify
 @loginrequired
 def searchrivals() -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
-    version = int(request.get_json()['version'])
-    name = request.get_json()['term']
+    version = int(request.get_json()["version"])
+    name = request.get_json()["term"]
     print(name)
 
     # Try to treat the term as an extid
@@ -418,34 +427,36 @@ def searchrivals() -> Dict[str, Any]:
     matches = set()
     profiles = g.data.remote.user.get_all_profiles(GameConstants.POPN_MUSIC, version)
     for (userid, profile) in profiles:
-        if profile.extid == extid or profile.get_str('name').lower() == name.lower():
+        if profile.extid == extid or profile.get_str("name").lower() == name.lower():
             matches.add(userid)
 
     playerinfo = frontend.get_all_player_info(list(matches), allow_remote=True)
     return {
-        'results': playerinfo,
+        "results": playerinfo,
     }
 
 
-@popn_pages.route('/rivals/add', methods=['POST'])
+@popn_pages.route("/rivals/add", methods=["POST"])
 @jsonify
 @loginrequired
 def addrival() -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
-    version = int(request.get_json()['version'])
-    other_userid = UserID(int(request.get_json()['userid']))
+    version = int(request.get_json()["version"])
+    other_userid = UserID(int(request.get_json()["userid"]))
     userid = g.userID
 
     # Add this rival link
-    profile = g.data.remote.user.get_profile(GameConstants.POPN_MUSIC, version, other_userid)
+    profile = g.data.remote.user.get_profile(
+        GameConstants.POPN_MUSIC, version, other_userid
+    )
     if profile is None:
-        raise Exception('Unable to find profile for rival!')
+        raise Exception("Unable to find profile for rival!")
 
     g.data.local.user.put_link(
         GameConstants.POPN_MUSIC,
         version,
         userid,
-        'rival',
+        "rival",
         other_userid,
         {},
     )
@@ -454,18 +465,18 @@ def addrival() -> Dict[str, Any]:
     rivals, playerinfo = frontend.get_rivals(userid)
 
     return {
-        'rivals': rivals,
-        'players': playerinfo,
+        "rivals": rivals,
+        "players": playerinfo,
     }
 
 
-@popn_pages.route('/rivals/remove', methods=['POST'])
+@popn_pages.route("/rivals/remove", methods=["POST"])
 @jsonify
 @loginrequired
 def removerival() -> Dict[str, Any]:
     frontend = PopnMusicFrontend(g.data, g.config, g.cache)
-    version = int(request.get_json()['version'])
-    other_userid = UserID(int(request.get_json()['userid']))
+    version = int(request.get_json()["version"])
+    other_userid = UserID(int(request.get_json()["userid"]))
     userid = g.userID
 
     # Remove this rival link
@@ -473,7 +484,7 @@ def removerival() -> Dict[str, Any]:
         GameConstants.POPN_MUSIC,
         version,
         userid,
-        'rival',
+        "rival",
         other_userid,
     )
 
@@ -481,6 +492,6 @@ def removerival() -> Dict[str, Any]:
     rivals, playerinfo = frontend.get_rivals(userid)
 
     return {
-        'rivals': rivals,
-        'players': playerinfo,
+        "rivals": rivals,
+        "players": playerinfo,
     }

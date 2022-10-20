@@ -4,9 +4,8 @@ function makeGameSettingName(game_settings) {
     return game_settings.game + '-' + game_settings.version;
 }
 
-var GameSettings = React.createClass({
+var GameSettings = createReactClass({
     getInitialState: function() {
-        console.log(this.props);
         var valid_settings = this.props.game_settings.map(function(setting) {
             return makeGameSettingName(setting);
         });
@@ -197,11 +196,11 @@ var GameSettings = React.createClass({
                     />
                     { this.state.settings_saving[this.state.current_setting] ?
                         <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
+                        null
                     }
                     { this.state.settings_saved[this.state.current_setting] ?
                         <span>{ "\u2713" }</span> :
-                            null
+                        null
                     }
                 </div>
             </div>

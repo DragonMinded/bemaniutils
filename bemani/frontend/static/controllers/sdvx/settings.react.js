@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.versions);
 var pagenav = new History(valid_versions);
 
-var settings_view = React.createClass({
+var settings_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.player);
@@ -54,14 +54,14 @@ var settings_view = React.createClass({
         return (
             <LabelledSection vertical={true} label="Name">{
                 !this.state.editing_name ?
-                    <span>
+                    <>
                         <span>{player.name}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_name: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveName}>
                         <input
                             type="text"

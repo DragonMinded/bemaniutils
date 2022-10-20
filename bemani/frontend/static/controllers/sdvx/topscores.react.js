@@ -5,7 +5,7 @@ var valid_charts = ['Novice', 'Advanced', 'Exhaust', 'Infinite', 'Maximum'].filt
 });
 var pagenav = new History(valid_charts);
 
-var top_scores = React.createClass({
+var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
         var newscores = [[], [], [], [], []];
@@ -87,7 +87,7 @@ var top_scores = React.createClass({
                     }.bind(this))}
                 </div>
                 <div className="section">
-               		<Table
+                    <Table
                         className="list topscores"
                         columns={[
                             {
@@ -100,14 +100,14 @@ var top_scores = React.createClass({
                                     );
                                 }.bind(this),
                                 sort: function(a, b) {
-                                    var an = this.state.players[a.userid].name;
+                                        var an = this.state.players[a.userid].name;
                                     var bn = this.state.players[b.userid].name;
                                     return an.localeCompare(bn);
                                 }.bind(this),
                             },
                             {
                                 name: 'Grade',
-                                render: function(topscore) { return topscore.grade; },
+                                render: function(topscore) { return <span className="grade">{topscore.grade}</span>; },
                             },
                             {
                                 name: 'Clear Type',
@@ -123,7 +123,28 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Combo',
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
+                                render: function(topscore) { return topscore.combo >= 0 ? topscore.combo : '-'; },
+                                sort: function(a, b) {
+                                    return a.combo - b.combo;
+                                },
+                                reverse: true,
+                            },
+                            {
+                                name: 'Judgement Stats',
+                                render: function(topscore) {
+                                    has_stats = (
+                                        topscore.stats.critical > 0 ||
+                                        topscore.stats.near > 0 ||
+                                        topscore.stats.error > 0
+                                    );
+                                    return has_stats ? <div title="critical / near / error">
+                                        {topscore.stats.critical}
+                                        <span> / </span>
+                                        {topscore.stats.near}
+                                        <span> / </span>
+                                        {topscore.stats.error}
+                                    </div> : null;
+                                }
                             },
                         ]}
                         defaultsort='Score'

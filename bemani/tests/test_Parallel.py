@@ -6,7 +6,6 @@ from bemani.common import Parallel
 
 
 class TestParallel(unittest.TestCase):
-
     def test_empty(self) -> None:
         results = Parallel.execute([])
         self.assertEqual(results, [])
@@ -18,26 +17,30 @@ class TestParallel(unittest.TestCase):
         self.assertEqual(results, [])
 
     def test_basic(self) -> None:
-        results = Parallel.execute([
-            lambda: 1,
-            lambda: 2,
-            lambda: 3,
-            lambda: 4,
-            lambda: 5,
-        ])
+        results = Parallel.execute(
+            [
+                lambda: 1,
+                lambda: 2,
+                lambda: 3,
+                lambda: 4,
+                lambda: 5,
+            ]
+        )
         self.assertEqual(results, [1, 2, 3, 4, 5])
 
     def test_function(self) -> None:
         def fun(x: int) -> int:
             return -x
 
-        results = Parallel.execute([
-            lambda: fun(1),
-            lambda: fun(2),
-            lambda: fun(3),
-            lambda: fun(4),
-            lambda: fun(5),
-        ])
+        results = Parallel.execute(
+            [
+                lambda: fun(1),
+                lambda: fun(2),
+                lambda: fun(3),
+                lambda: fun(4),
+                lambda: fun(5),
+            ]
+        )
         self.assertEqual(results, [-1, -2, -3, -4, -5])
 
     def test_map(self) -> None:

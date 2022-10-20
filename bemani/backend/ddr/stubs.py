@@ -7,7 +7,7 @@ from bemani.common import VersionConstants
 
 class DDRX(DDRBase):
 
-    name: str = 'DanceDanceRevolution X'
+    name: str = "DanceDanceRevolution X"
     version: int = VersionConstants.DDR_X
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -16,7 +16,7 @@ class DDRX(DDRBase):
 
 class DDRSuperNova2(DDRBase):
 
-    name: str = 'DanceDanceRevolution SuperNova 2'
+    name: str = "DanceDanceRevolution SuperNova 2"
     version: int = VersionConstants.DDR_SUPERNOVA_2
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -25,7 +25,7 @@ class DDRSuperNova2(DDRBase):
 
 class DDRSuperNova(DDRBase):
 
-    name: str = 'DanceDanceRevolution SuperNova'
+    name: str = "DanceDanceRevolution SuperNova"
     version: int = VersionConstants.DDR_SUPERNOVA
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -34,7 +34,7 @@ class DDRSuperNova(DDRBase):
 
 class DDRExtreme(DDRBase):
 
-    name: str = 'DanceDanceRevolution Extreme'
+    name: str = "DanceDanceRevolution Extreme"
     version: int = VersionConstants.DDR_EXTREME
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -43,7 +43,7 @@ class DDRExtreme(DDRBase):
 
 class DDR7thMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 7thMix'
+    name: str = "DanceDanceRevolution 7thMix"
     version: int = VersionConstants.DDR_7THMIX
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -52,7 +52,7 @@ class DDR7thMix(DDRBase):
 
 class DDR6thMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 6thMix'
+    name: str = "DanceDanceRevolution 6thMix"
     version: int = VersionConstants.DDR_6THMIX
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -61,7 +61,7 @@ class DDR6thMix(DDRBase):
 
 class DDR5thMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 5thMix'
+    name: str = "DanceDanceRevolution 5thMix"
     version: int = VersionConstants.DDR_5THMIX
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -70,7 +70,7 @@ class DDR5thMix(DDRBase):
 
 class DDR4thMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 4thMix'
+    name: str = "DanceDanceRevolution 4thMix"
     version: int = VersionConstants.DDR_4THMIX
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -79,7 +79,7 @@ class DDR4thMix(DDRBase):
 
 class DDR3rdMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 3rdMix'
+    name: str = "DanceDanceRevolution 3rdMix"
     version: int = VersionConstants.DDR_3RDMIX
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -88,7 +88,7 @@ class DDR3rdMix(DDRBase):
 
 class DDR2ndMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 2ndMix'
+    name: str = "DanceDanceRevolution 2ndMix"
     version: int = VersionConstants.DDR_2NDMIX
 
     def previous_version(self) -> Optional[DDRBase]:
@@ -97,5 +97,5 @@ class DDR2ndMix(DDRBase):
 
 class DDR1stMix(DDRBase):
 
-    name: str = 'DanceDanceRevolution 1stMix'
+    name: str = "DanceDanceRevolution 1stMix"
     version: int = VersionConstants.DDR_1STMIX

@@ -24,18 +24,19 @@ class TCPStream:
     SYN -> SYNACK -> ACK flow followed by some data followed by a FIN -> FINACK -> ACK
     flow. Luckily, this is exactly what most HTTP requests look like.
     """
-    INBOUND: Final[str] = 'inbound'
-    OUTBOUND: Final[str] = 'outbound'
+
+    INBOUND: Final[str] = "inbound"
+    OUTBOUND: Final[str] = "outbound"
 
     def __init__(self, packet: Dict[str, Any]) -> None:
         """
         Initialize a new stream with a packet that belongs in this stream. Expects a packet
         dictionary as returned by Sniffer.recv_raw().
         """
-        self.source_address = packet['ip_header']['source_address']
-        self.source_port = packet['tcp_header']['source_port']
-        self.destination_address = packet['ip_header']['destination_address']
-        self.destination_port = packet['tcp_header']['destination_port']
+        self.source_address = packet["ip_header"]["source_address"]
+        self.source_port = packet["tcp_header"]["source_port"]
+        self.destination_address = packet["ip_header"]["destination_address"]
+        self.destination_port = packet["tcp_header"]["destination_port"]
 
         self.packets = [(TCPStream.INBOUND, packet)]
 
@@ -49,20 +50,19 @@ class TCPStream:
             False - If this packet doesn't belong and should go elsewhere.
         """
         if (
-            packet['tcp_header']['source_port'] == self.source_port and
-            packet['tcp_header']['destination_port'] == self.destination_port and
-            packet['ip_header']['source_address'] == self.source_address and
-            packet['ip_header']['destination_address'] == self.destination_address
+            packet["tcp_header"]["source_port"] == self.source_port
+            and packet["tcp_header"]["destination_port"] == self.destination_port
+            and packet["ip_header"]["source_address"] == self.source_address
+            and packet["ip_header"]["destination_address"] == self.destination_address
         ):
             self.packets.append((TCPStream.INBOUND, packet))
             return True
 
         if (
-            packet['tcp_header']['source_port'] == self.destination_port and
-            packet['tcp_header']['destination_port'] == self.source_port and
-            packet['ip_header']['source_address'] == self.destination_address and
-            packet['ip_header']['destination_address'] == self.source_address
-
+            packet["tcp_header"]["source_port"] == self.destination_port
+            and packet["tcp_header"]["destination_port"] == self.source_port
+            and packet["ip_header"]["source_address"] == self.destination_address
+            and packet["ip_header"]["destination_address"] == self.source_address
         ):
             self.packets.append((TCPStream.OUTBOUND, packet))
             return True
@@ -88,13 +88,13 @@ class TCPStream:
         # This is really crude, just make sure that we get a SYN -> SYN/AC -> ACK, then a FIN -> FIN/ACK -> ACK
         state: Dict[str, Dict[str, Optional[str]]] = {
             TCPStream.INBOUND: {
-                'syn': None,
-                'fin': None,
+                "syn": None,
+                "fin": None,
             },
             TCPStream.OUTBOUND: {
-                'syn': None,
-                'fin': None,
-            }
+                "syn": None,
+                "fin": None,
+            },
         }
         sequence = {
             TCPStream.INBOUND: 0,
@@ -112,34 +112,34 @@ class TCPStream:
         for packet in self.packets:
             direction = packet[0]
             other = other_direction(direction)
-            syn = packet[1]['tcp_header']['flags']['syn']
-            fin = packet[1]['tcp_header']['flags']['fin']
-            ack = packet[1]['tcp_header']['flags']['ack']
-            seq = packet[1]['tcp_header']['sequence']
+            syn = packet[1]["tcp_header"]["flags"]["syn"]
+            fin = packet[1]["tcp_header"]["flags"]["fin"]
+            ack = packet[1]["tcp_header"]["flags"]["ack"]
+            seq = packet[1]["tcp_header"]["sequence"]
 
             if syn:
-                if state[direction]['syn'] is None:
-                    state[direction]['syn'] = 'sent'
+                if state[direction]["syn"] is None:
+                    state[direction]["syn"] = "sent"
                     sequence[direction] = seq
             if fin:
-                if state[direction]['fin'] is None:
-                    state[direction]['fin'] = 'sent'
+                if state[direction]["fin"] is None:
+                    state[direction]["fin"] = "sent"
             if ack:
-                if state[other]['syn'] == 'sent':
-                    state[other]['syn'] = 'ackd'
-                if state[other]['fin'] == 'sent':
-                    state[other]['fin'] = 'ackd'
+                if state[other]["syn"] == "sent":
+                    state[other]["syn"] = "ackd"
+                if state[other]["fin"] == "sent":
+                    state[other]["fin"] = "ackd"
 
         if (
-            state[TCPStream.INBOUND]['syn'] == 'ackd' and
-            state[TCPStream.INBOUND]['fin'] == 'ackd' and
-            state[TCPStream.OUTBOUND]['syn'] == 'ackd' and
-            state[TCPStream.OUTBOUND]['fin'] == 'ackd'
+            state[TCPStream.INBOUND]["syn"] == "ackd"
+            and state[TCPStream.INBOUND]["fin"] == "ackd"
+            and state[TCPStream.OUTBOUND]["syn"] == "ackd"
+            and state[TCPStream.OUTBOUND]["fin"] == "ackd"
         ):
             # This stream is finished, can be reassembled
             data = {
-                TCPStream.INBOUND: b'',
-                TCPStream.OUTBOUND: b'',
+                TCPStream.INBOUND: b"",
+                TCPStream.OUTBOUND: b"",
             }
 
             def add_data(packet: bytes, data: bytes, offset: int) -> bytes:
@@ -147,7 +147,7 @@ class TCPStream:
 
                 if len(packet) < offset:
                     # Pad out, then add
-                    packet = packet + b'\0' * (offset - len(packet))
+                    packet = packet + b"\0" * (offset - len(packet))
                     return packet + data
                 if len(packet) == offset:
                     # Add to end
@@ -158,33 +158,33 @@ class TCPStream:
                     return packet + data
                 if len(packet) > (offset + length):
                     before = packet[:offset]
-                    after = packet[offset + length:]
+                    after = packet[offset + length :]
                     return before + data + after
 
-                raise Exception('Logic error!')
+                raise Exception("Logic error!")
 
             for packet in self.packets:
                 dir = packet[0]
-                syn = packet[1]['tcp_header']['flags']['syn']
-                fin = packet[1]['tcp_header']['flags']['fin']
-                ack = packet[1]['tcp_header']['flags']['ack']
-                seq = packet[1]['tcp_header']['sequence']
+                syn = packet[1]["tcp_header"]["flags"]["syn"]
+                fin = packet[1]["tcp_header"]["flags"]["fin"]
+                ack = packet[1]["tcp_header"]["flags"]["ack"]
+                seq = packet[1]["tcp_header"]["sequence"]
 
                 if syn:
                     continue
 
                 # Figure out what this packet has
-                length = len(packet[1]['data'])
+                length = len(packet[1]["data"])
                 position = seq - sequence[dir] - 1
 
                 if length > 0:
-                    data[dir] = add_data(data[dir], packet[1]['data'], position)
+                    data[dir] = add_data(data[dir], packet[1]["data"], position)
 
             return {
-                'source_address': self.source_address,
-                'destination_address': self.destination_address,
-                'source_port': self.source_port,
-                'destination_port': self.destination_port,
+                "source_address": self.source_address,
+                "destination_address": self.destination_address,
+                "source_port": self.source_port,
+                "destination_port": self.destination_port,
                 TCPStream.INBOUND: data[TCPStream.INBOUND],
                 TCPStream.OUTBOUND: data[TCPStream.OUTBOUND],
             }
@@ -197,12 +197,15 @@ class Sniffer:
     A generic python sniffer. Listens to all raw traffic on the machine and parses packets
     down to TCP chunks to be reassembled.
     """
+
     RECEIVE_SIZE: Final[int] = 1048576
     ETH_HEADER_LENGTH: Final[int] = 14
     IP_HEADER_LENGTH: Final[int] = 20
     TCP_HEADER_LENGTH: Final[int] = 20
 
-    def __init__(self, address: Optional[str]=None, port: Optional[int]=None) -> None:
+    def __init__(
+        self, address: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Initialize the sniffer. Can be told to filter by address, port or both. If address or
         port is not provided, it defaults to all addresses or ports.
@@ -233,12 +236,12 @@ class Sniffer:
                 - header_length - The actual length in bytes of this header as an integer
                 - protocol - An integer representing the protocol encapsulated in this header
         """
-        eth = struct.unpack('!6s6sH', eth_header)
+        eth = struct.unpack("!6s6sH", eth_header)
         eth_protocol = socket.ntohs(eth[2])
 
         return {
-            'header_length': Sniffer.ETH_HEADER_LENGTH,
-            'protocol': eth_protocol,
+            "header_length": Sniffer.ETH_HEADER_LENGTH,
+            "protocol": eth_protocol,
         }
 
     def __process_ipframe(self, ip_header: bytes) -> Dict[str, Any]:
@@ -259,7 +262,7 @@ class Sniffer:
                 - destination_address - A string representing the destination IPv4 address
         """
         # Extract the 20 bytes IP header, ignoring the IP options
-        iph = struct.unpack('!BBHHHBBH4s4s', ip_header)
+        iph = struct.unpack("!BBHHHBBH4s4s", ip_header)
         version = (iph[0] >> 4) & 0xF
         length = iph[2]
         ihl = (iph[0] & 0xF) * 4
@@ -268,25 +271,25 @@ class Sniffer:
 
         if ihl < Sniffer.IP_HEADER_LENGTH:
             raise InvalidPacketException(
-                f'Invalid IP length {ihl}',
+                f"Invalid IP length {ihl}",
             )
 
         if version != 4:
             raise UnknownPacketException(
-                f'Unknown IP version {version}',
+                f"Unknown IP version {version}",
             )
 
         s_addr = socket.inet_ntoa(iph[8])
         d_addr = socket.inet_ntoa(iph[9])
 
         return {
-            'header_length': ihl,
-            'version': version,
-            'length': length,
-            'ttl': ttl,
-            'protocol': proto,
-            'source_address': s_addr,
-            'destination_address': d_addr,
+            "header_length": ihl,
+            "version": version,
+            "length": length,
+            "ttl": ttl,
+            "protocol": proto,
+            "source_address": s_addr,
+            "destination_address": d_addr,
         }
 
     def __process_flags(self, flags: int) -> Dict[str, bool]:
@@ -295,18 +298,20 @@ class Sniffer:
         by the flag name who's value is True if set and False otherwise.
         """
         return {
-            'ns': True if flags & 0x100 else False,
-            'cwr': True if flags & 0x080 else False,
-            'ece': True if flags & 0x040 else False,
-            'urg': True if flags & 0x020 else False,
-            'ack': True if flags & 0x010 else False,
-            'psh': True if flags & 0x008 else False,
-            'rst': True if flags & 0x004 else False,
-            'syn': True if flags & 0x002 else False,
-            'fin': True if flags & 0x001 else False,
+            "ns": True if flags & 0x100 else False,
+            "cwr": True if flags & 0x080 else False,
+            "ece": True if flags & 0x040 else False,
+            "urg": True if flags & 0x020 else False,
+            "ack": True if flags & 0x010 else False,
+            "psh": True if flags & 0x008 else False,
+            "rst": True if flags & 0x004 else False,
+            "syn": True if flags & 0x002 else False,
+            "fin": True if flags & 0x001 else False,
         }
 
-    def __process_address(self, address: Tuple[int, int, int, int, int]) -> Dict[str, int]:
+    def __process_address(
+        self, address: Tuple[int, int, int, int, int]
+    ) -> Dict[str, int]:
         """
         Given an address tuple from Linux's recvfrom syscall, return a dict which represents this
         address.
@@ -323,11 +328,11 @@ class Sniffer:
                 - address - The hardware address that received this
         """
         return {
-            'interface': address[0],
-            'protocol': address[1],
-            'type': address[2],
-            'hardware_type': address[3],
-            'address': address[4],
+            "interface": address[0],
+            "protocol": address[1],
+            "type": address[2],
+            "hardware_type": address[3],
+            "address": address[4],
         }
 
     def __process_tcpframe(self, tcp_header: bytes) -> Dict[str, Any]:
@@ -346,7 +351,7 @@ class Sniffer:
                 - acknowledgement - An integer representing the current acknowledgement of this packet
                 - flags - A dictionary as defined in Sniffer.__process_flags()
         """
-        tcph = struct.unpack('!HHLLBBHHH', tcp_header)
+        tcph = struct.unpack("!HHLLBBHHH", tcp_header)
 
         # Normal stuff
         source_port = tcph[0]
@@ -359,12 +364,12 @@ class Sniffer:
         flags = ((tcph[4] & 1) << 8) | tcph[5]
 
         return {
-            'header_length': tcphl,
-            'source_port': source_port,
-            'destination_port': dest_port,
-            'sequence': sequence,
-            'acknowledgement': acknowledgement,
-            'flags': self.__process_flags(flags),
+            "header_length": tcphl,
+            "source_port": source_port,
+            "destination_port": dest_port,
+            "sequence": sequence,
+            "acknowledgement": acknowledgement,
+            "flags": self.__process_flags(flags),
         }
 
     def __recv_frame(self) -> Dict[str, Any]:
@@ -386,40 +391,48 @@ class Sniffer:
         offset = 0
 
         # Make sure its a valid packet
-        eth_header = self.__process_ethframe(packet[offset:(offset + Sniffer.ETH_HEADER_LENGTH)])
-        offset = offset + eth_header['header_length']
+        eth_header = self.__process_ethframe(
+            packet[offset : (offset + Sniffer.ETH_HEADER_LENGTH)]
+        )
+        offset = offset + eth_header["header_length"]
 
-        if eth_header['protocol'] != 8:
+        if eth_header["protocol"] != 8:
             # Not IP
-            raise UnknownPacketException(
-                f'Unknown frame {eth_header["protocol"]}'
-            )
+            raise UnknownPacketException(f'Unknown frame {eth_header["protocol"]}')
 
         # Get the IP header
-        ip_header = self.__process_ipframe(packet[offset:(offset + Sniffer.IP_HEADER_LENGTH)])
-        offset = offset + ip_header['header_length']
+        ip_header = self.__process_ipframe(
+            packet[offset : (offset + Sniffer.IP_HEADER_LENGTH)]
+        )
+        offset = offset + ip_header["header_length"]
 
-        if ip_header['protocol'] != 6:
+        if ip_header["protocol"] != 6:
             # Not TCP
             raise UnknownPacketException(
                 f'Unknown protocol {ip_header["protocol"]}',
             )
 
         # Get TCP header
-        tcp_header = self.__process_tcpframe(packet[offset:(offset + Sniffer.TCP_HEADER_LENGTH)])
-        offset = offset + tcp_header['header_length']
+        tcp_header = self.__process_tcpframe(
+            packet[offset : (offset + Sniffer.TCP_HEADER_LENGTH)]
+        )
+        offset = offset + tcp_header["header_length"]
 
         # Get payload length
-        payload_length = ip_header['length'] - ip_header['header_length'] - tcp_header['header_length']
+        payload_length = (
+            ip_header["length"]
+            - ip_header["header_length"]
+            - tcp_header["header_length"]
+        )
 
         # Get payload
-        data = packet[offset:offset + payload_length]
+        data = packet[offset : offset + payload_length]
 
         return {
-            'ip_header': ip_header,
-            'tcp_header': tcp_header,
-            'data': data,
-            'address': address,
+            "ip_header": ip_header,
+            "tcp_header": tcp_header,
+            "data": data,
+            "address": address,
         }
 
     def recv_raw(self) -> Dict[str, Any]:
@@ -436,30 +449,33 @@ class Sniffer:
                 continue
 
             # Hack for sniffing on localhost
-            if packet['address']['interface'] == 'lo' and packet['address']['type'] != 4:
+            if (
+                packet["address"]["interface"] == "lo"
+                and packet["address"]["type"] != 4
+            ):
                 continue
 
             if self.address and self.port:
                 if (
-                    packet['ip_header']['source_address'] == self.address and
-                    packet['tcp_header']['source_port'] == self.port
+                    packet["ip_header"]["source_address"] == self.address
+                    and packet["tcp_header"]["source_port"] == self.port
                 ):
                     return packet
                 if (
-                    packet['ip_header']['destination_address'] == self.address and
-                    packet['tcp_header']['destination_port'] == self.port
+                    packet["ip_header"]["destination_address"] == self.address
+                    and packet["tcp_header"]["destination_port"] == self.port
                 ):
                     return packet
             elif self.address:
                 if (
-                    packet['ip_header']['source_address'] == self.address or
-                    packet['ip_header']['destination_address'] == self.address
+                    packet["ip_header"]["source_address"] == self.address
+                    or packet["ip_header"]["destination_address"] == self.address
                 ):
                     return packet
             elif self.port:
                 if (
-                    packet['tcp_header']['source_port'] == self.port or
-                    packet['tcp_header']['destination_port'] == self.port
+                    packet["tcp_header"]["source_port"] == self.port
+                    or packet["tcp_header"]["destination_port"] == self.port
                 ):
                     return packet
             else:

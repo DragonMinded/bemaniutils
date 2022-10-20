@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Tip = React.createClass({
+var Tip = createReactClass({
     render: function() {
         return (
             <div className="tooltip">

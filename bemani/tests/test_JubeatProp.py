@@ -8,7 +8,6 @@ from bemani.data.types import Achievement, UserID
 
 
 class TestJubeatProp(unittest.TestCase):
-
     def test_increment_class(self) -> None:
         # Verify normal increase
         self.assertEqual(JubeatProp._increment_class(1, 5), (1, 4))
@@ -154,11 +153,7 @@ class TestJubeatProp(unittest.TestCase):
 
         # Test correct behavior on empty input
         self.assertEqual(
-            JubeatProp._get_league_scores(
-                None,
-                999,
-                []
-            ),
+            JubeatProp._get_league_scores(None, 999, []),
             (
                 [],
                 [],
@@ -166,7 +161,7 @@ class TestJubeatProp(unittest.TestCase):
         )
 
         # Test that we can load last week's score if it exists for a user
-        data.local.user.get_achievement = Mock(return_value={'score': [123, 456, 789]})
+        data.local.user.get_achievement = Mock(return_value={"score": [123, 456, 789]})
         self.assertEqual(
             JubeatProp._get_league_scores(
                 data,
@@ -183,7 +178,7 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp.version,
             1337,
             998,
-            'league',
+            "league",
         )
         data.local.user.get_achievement.reset_mock()
 
@@ -205,7 +200,7 @@ class TestJubeatProp(unittest.TestCase):
             JubeatProp.version,
             1337,
             998,
-            'league',
+            "league",
         )
         data.local.user.get_achievement.reset_mock()
 
@@ -242,9 +237,11 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user.get_achievements.reset_mock()
 
         # Test that a user who only skipped last week doesn't get flagged absentee
-        data.local.user.get_achievements = Mock(return_value=[
-            Achievement(997, 'league', None, {}),
-        ])
+        data.local.user.get_achievements = Mock(
+            return_value=[
+                Achievement(997, "league", None, {}),
+            ]
+        )
         self.assertEqual(
             JubeatProp._get_league_absentees(
                 data,
@@ -261,9 +258,11 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user.get_achievements.reset_mock()
 
         # Test that a user who skipped last two week gets flagged absentee
-        data.local.user.get_achievements = Mock(return_value=[
-            Achievement(996, 'league', None, {}),
-        ])
+        data.local.user.get_achievements = Mock(
+            return_value=[
+                Achievement(996, "league", None, {}),
+            ]
+        )
         self.assertEqual(
             JubeatProp._get_league_absentees(
                 data,
@@ -281,9 +280,11 @@ class TestJubeatProp(unittest.TestCase):
 
         # Test that a user who skipped last three week doesn't get flagged
         # (they got flagged last week)
-        data.local.user.get_achievements = Mock(return_value=[
-            Achievement(995, 'league', None, {}),
-        ])
+        data.local.user.get_achievements = Mock(
+            return_value=[
+                Achievement(995, "league", None, {}),
+            ]
+        )
         self.assertEqual(
             JubeatProp._get_league_absentees(
                 data,
@@ -300,9 +301,11 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user.get_achievements.reset_mock()
 
         # Test that a user who skipped last four week gets flagged absentee
-        data.local.user.get_achievements = Mock(return_value=[
-            Achievement(994, 'league', None, {}),
-        ])
+        data.local.user.get_achievements = Mock(
+            return_value=[
+                Achievement(994, "league", None, {}),
+            ]
+        )
         self.assertEqual(
             JubeatProp._get_league_absentees(
                 data,
@@ -324,139 +327,149 @@ class TestJubeatProp(unittest.TestCase):
         data.local.user = Mock()
 
         # Test demoting a user at the bottom does nothing.
-        data.local.user.get_profile = Mock(return_value=Profile(
-            JubeatProp.game,
-            JubeatProp.version,
-            "",
-            0,
-            {
-                'league_class': 1,
-                'league_subclass': 5,
-            },
-        ))
+        data.local.user.get_profile = Mock(
+            return_value=Profile(
+                JubeatProp.game,
+                JubeatProp.version,
+                "",
+                0,
+                {
+                    "league_class": 1,
+                    "league_subclass": 5,
+                },
+            )
+        )
         JubeatProp._modify_profile(
             data,
             UserID(1337),
-            'demote',
+            "demote",
         )
         self.assertFalse(data.local.user.put_profile.called)
 
         # Test promoting a user at the top does nothing.
-        data.local.user.get_profile = Mock(return_value=Profile(
-            JubeatProp.game,
-            JubeatProp.version,
-            "",
-            0,
-            {
-                'league_class': 4,
-                'league_subclass': 1,
-            },
-        ))
+        data.local.user.get_profile = Mock(
+            return_value=Profile(
+                JubeatProp.game,
+                JubeatProp.version,
+                "",
+                0,
+                {
+                    "league_class": 4,
+                    "league_subclass": 1,
+                },
+            )
+        )
         JubeatProp._modify_profile(
             data,
             UserID(1337),
-            'promote',
+            "promote",
         )
         self.assertFalse(data.local.user.put_profile.called)
 
         # Test regular promotion updates profile properly
-        data.local.user.get_profile = Mock(return_value=Profile(
-            JubeatProp.game,
-            JubeatProp.version,
-            "",
-            0,
-            {
-                'league_class': 1,
-                'league_subclass': 5,
-                'league_is_checked': True,
-            },
-        ))
+        data.local.user.get_profile = Mock(
+            return_value=Profile(
+                JubeatProp.game,
+                JubeatProp.version,
+                "",
+                0,
+                {
+                    "league_class": 1,
+                    "league_subclass": 5,
+                    "league_is_checked": True,
+                },
+            )
+        )
         JubeatProp._modify_profile(
             data,
             UserID(1337),
-            'promote',
+            "promote",
         )
         data.local.user.put_profile.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
             UserID(1337),
             {
-                'league_class': 1,
-                'league_subclass': 4,
-                'league_is_checked': False,
-                'last': {
-                    'league_class': 1,
-                    'league_subclass': 5,
+                "league_class": 1,
+                "league_subclass": 4,
+                "league_is_checked": False,
+                "last": {
+                    "league_class": 1,
+                    "league_subclass": 5,
                 },
             },
         )
         data.local.user.put_profile.reset_mock()
 
         # Test regular demote updates profile properly
-        data.local.user.get_profile = Mock(return_value=Profile(
-            JubeatProp.game,
-            JubeatProp.version,
-            "",
-            0,
-            {
-                'league_class': 1,
-                'league_subclass': 3,
-                'league_is_checked': True,
-            },
-        ))
+        data.local.user.get_profile = Mock(
+            return_value=Profile(
+                JubeatProp.game,
+                JubeatProp.version,
+                "",
+                0,
+                {
+                    "league_class": 1,
+                    "league_subclass": 3,
+                    "league_is_checked": True,
+                },
+            )
+        )
         JubeatProp._modify_profile(
             data,
             UserID(1337),
-            'demote',
+            "demote",
         )
         data.local.user.put_profile.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
             UserID(1337),
             {
-                'league_class': 1,
-                'league_subclass': 4,
-                'league_is_checked': False,
-                'last': {
-                    'league_class': 1,
-                    'league_subclass': 3,
+                "league_class": 1,
+                "league_subclass": 4,
+                "league_is_checked": False,
+                "last": {
+                    "league_class": 1,
+                    "league_subclass": 3,
                 },
             },
         )
         data.local.user.put_profile.reset_mock()
 
         # Test demotion after not checking doesn't update old values
-        data.local.user.get_profile = Mock(return_value=Profile(
-            JubeatProp.game,
-            JubeatProp.version,
-            "",
-            0,
-            {
-                'league_class': 1,
-                'league_subclass': 4,
-                'league_is_checked': False,
-                'last': {
-                    'league_class': 1,
-                    'league_subclass': 3,
+        data.local.user.get_profile = Mock(
+            return_value=Profile(
+                JubeatProp.game,
+                JubeatProp.version,
+                "",
+                0,
+                {
+                    "league_class": 1,
+                    "league_subclass": 4,
+                    "league_is_checked": False,
+                    "last": {
+                        "league_class": 1,
+                        "league_subclass": 3,
+                    },
                 },
-            },
-        ))
+            )
+        )
         JubeatProp._modify_profile(
             data,
             UserID(1337),
-            'demote',
+            "demote",
         )
         data.local.user.put_profile.assert_called_once_with(
             JubeatProp.game,
             JubeatProp.version,
             UserID(1337),
             {
-                'league_class': 1,
-                'league_subclass': 5,
-                'league_is_checked': False,
-                'last': {
-                    'league_class': 1,
-                    'league_subclass': 3,
+                "league_class": 1,
+                "league_subclass": 5,
+                "league_is_checked": False,
+                "last": {
+                    "league_class": 1,
+                    "league_subclass": 3,
                 },
             },
         )

@@ -26,23 +26,31 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CLEAR_TYPE_NO_PLAY: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY
     CLEAR_TYPE_FAILED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED
     CLEAR_TYPE_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_CLEARED
-    CLEAR_TYPE_HARD_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_HARD_CLEARED
-    CLEAR_TYPE_S_HARD_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_S_HARD_CLEARED
+    CLEAR_TYPE_HARD_CLEARED: Final[
+        int
+    ] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_HARD_CLEARED
+    CLEAR_TYPE_S_HARD_CLEARED: Final[
+        int
+    ] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_S_HARD_CLEARED
 
     # Combo types, as saved/loaded from the DB
     COMBO_TYPE_NONE: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_NONE
-    COMBO_TYPE_ALMOST_COMBO: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_ALMOST_COMBO
+    COMBO_TYPE_ALMOST_COMBO: Final[
+        int
+    ] = DBConstants.REFLEC_BEAT_COMBO_TYPE_ALMOST_COMBO
     COMBO_TYPE_FULL_COMBO: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO
-    COMBO_TYPE_FULL_COMBO_ALL_JUST: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
+    COMBO_TYPE_FULL_COMBO_ALL_JUST: Final[
+        int
+    ] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
 
     # Return the local2 and lobby2 service so that matching will work on newer
     # Reflec Beat games.
     extra_services: List[str] = [
-        'local2',
-        'lobby2',
+        "local2",
+        "lobby2",
     ]
 
-    def previous_version(self) -> Optional['ReflecBeatBase']:
+    def previous_version(self) -> Optional["ReflecBeatBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
@@ -54,9 +62,11 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('pc')
+        return Node.void("pc")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -84,7 +94,9 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
         return self.format_profile(userid, profile)
 
-    def put_profile_by_refid(self, refid: Optional[str], request: Node) -> Optional[Profile]:
+    def put_profile_by_refid(
+        self, refid: Optional[str], request: Node
+    ) -> Optional[Profile]:
         """
         Given a RefID and a request node, unformat the profile and save it.
         """
@@ -121,10 +133,10 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         clear_type: int,
         combo_type: int,
         miss_count: int,
-        combo: Optional[int]=None,
-        stats: Optional[Dict[str, int]]=None,
-        param: Optional[int]=None,
-        kflag: Optional[int]=None,
+        combo: Optional[int] = None,
+        stats: Optional[Dict[str, int]] = None,
+        param: Optional[int] = None,
+        kflag: Optional[int] = None,
     ) -> None:
         """
         Given various pieces of a score, update the user's high score and score
@@ -176,53 +188,66 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Update the last played time
-        scoredata.replace_int('last_played_time', now)
+        scoredata.replace_int("last_played_time", now)
 
         # Replace clear type with highest value and timestamps
-        if clear_type >= scoredata.get_int('clear_type'):
-            scoredata.replace_int('clear_type', max(scoredata.get_int('clear_type'), clear_type))
-            scoredata.replace_int('best_clear_type_time', now)
-        history.replace_int('clear_type', clear_type)
+        if clear_type >= scoredata.get_int("clear_type"):
+            scoredata.replace_int(
+                "clear_type", max(scoredata.get_int("clear_type"), clear_type)
+            )
+            scoredata.replace_int("best_clear_type_time", now)
+        history.replace_int("clear_type", clear_type)
 
         # Replace combo type with highest value and timestamps
-        if combo_type >= scoredata.get_int('combo_type'):
-            scoredata.replace_int('combo_type', max(scoredata.get_int('combo_type'), combo_type))
-            scoredata.replace_int('best_clear_type_time', now)
-        history.replace_int('combo_type', combo_type)
+        if combo_type >= scoredata.get_int("combo_type"):
+            scoredata.replace_int(
+                "combo_type", max(scoredata.get_int("combo_type"), combo_type)
+            )
+            scoredata.replace_int("best_clear_type_time", now)
+        history.replace_int("combo_type", combo_type)
 
         # Update the combo for this song
         if combo is not None:
-            scoredata.replace_int('combo', max(scoredata.get_int('combo'), combo))
-            history.replace_int('combo', combo)
+            scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+            history.replace_int("combo", combo)
 
         # Update the param for this song
         if param is not None:
-            scoredata.replace_int('param', max(scoredata.get_int('param'), param))
-            history.replace_int('param', param)
+            scoredata.replace_int("param", max(scoredata.get_int("param"), param))
+            history.replace_int("param", param)
 
         # Update the kflag for this song
         if kflag is not None:
-            scoredata.replace_int('kflag', max(scoredata.get_int('kflag'), kflag))
-            history.replace_int('kflag', kflag)
+            scoredata.replace_int("kflag", max(scoredata.get_int("kflag"), kflag))
+            history.replace_int("kflag", kflag)
 
         # Update win/lost/draw stats for this song
         if stats is not None:
-            scoredata.replace_dict('stats', stats)
-            history.replace_dict('stats', stats)
+            scoredata.replace_dict("stats", stats)
+            history.replace_dict("stats", stats)
 
         # Update the achievement rate with timestamps
-        if achievement_rate >= scoredata.get_int('achievement_rate'):
-            scoredata.replace_int('achievement_rate', max(scoredata.get_int('achievement_rate'), achievement_rate))
-            scoredata.replace_int('best_achievement_rate_time', now)
-        history.replace_int('achievement_rate', achievement_rate)
+        if achievement_rate >= scoredata.get_int("achievement_rate"):
+            scoredata.replace_int(
+                "achievement_rate",
+                max(scoredata.get_int("achievement_rate"), achievement_rate),
+            )
+            scoredata.replace_int("best_achievement_rate_time", now)
+        history.replace_int("achievement_rate", achievement_rate)
 
         # Update the miss count with timestamps, either if it was lowered, or if the old value was blank.
         # If the new value is -1 (we didn't get a miss count this time), never update the old value.
         if miss_count >= 0:
-            if miss_count <= scoredata.get_int('miss_count', 999999) or scoredata.get_int('miss_count') == -1:
-                scoredata.replace_int('miss_count', min(scoredata.get_int('miss_count', 999999), miss_count))
-                scoredata.replace_int('best_miss_count_time', now)
-        history.replace_int('miss_count', miss_count)
+            if (
+                miss_count <= scoredata.get_int("miss_count", 999999)
+                or scoredata.get_int("miss_count") == -1
+            ):
+                scoredata.replace_int(
+                    "miss_count",
+                    min(scoredata.get_int("miss_count", 999999), miss_count),
+                )
+                scoredata.replace_int("best_miss_count_time", now)
+        history.replace_int("miss_count", miss_count)
 
         # Look up where this score was earned
         lid = self.get_machine_id()

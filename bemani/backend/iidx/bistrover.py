@@ -8,7 +8,7 @@ from bemani.common import VersionConstants
 
 class IIDXBistrover(IIDXBase):
 
-    name: str = 'Beatmania IIDX BISTROVER'
+    name: str = "Beatmania IIDX BISTROVER"
     version: int = VersionConstants.IIDX_BISTROVER
 
     requires_extended_regions: bool = True

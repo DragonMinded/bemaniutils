@@ -9,7 +9,9 @@ from bemani.protocol import Node
 from bemani.utils.responsegen import generate_lines
 
 
-def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False) -> Node:
+def parse_psmap(
+    pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
+) -> Node:
     root = Node.void(rootname)
     base = int(offset, 16)
 
@@ -28,7 +30,7 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
             offset = offset + 1
 
         # Its shift-jis encoded, so decode it now
-        return bytes(bytestring).decode('shift_jisx0213')
+        return bytes(bytestring).decode("shift_jisx0213")
 
     # For recursing into nodes
     saved_root: List[Node] = []
@@ -37,17 +39,23 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
     while True:
         readbase = base
         if pe.is_64bit():  # 64 bit
-            chunk = pe.data[base:(base + 24)]
+            chunk = pe.data[base : (base + 24)]
             base = base + 24
 
-            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack('<BBHIQQ', chunk)
+            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack(
+                "<BBHIQQ", chunk
+            )
         else:  # 32 bit
-            chunk = pe.data[base:(base + 16)]
+            chunk = pe.data[base : (base + 16)]
             base = base + 16
 
-            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack('<BBHIII', chunk)
+            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack(
+                "<BBHIII", chunk
+            )
 
-        if nodetype == 0xFF or nodetype == 0x00:  # if nodetype is 0 then we probably read garbage
+        if (
+            nodetype == 0xFF or nodetype == 0x00
+        ):  # if nodetype is 0 then we probably read garbage
             # End of nodes, see if we should exit
             if len(saved_root) == 0:
                 break
@@ -61,8 +69,8 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
         # Grab name, get rid of parse numbers
         name = read_string(nameptr)
         try:
-            if name.index('#') >= 0:
-                name = name[:name.index('#')]
+            if name.index("#") >= 0:
+                name = name[: name.index("#")]
         except ValueError:
             pass
 
@@ -76,16 +84,16 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
         if verbose:
             space = "    " * len(saved_root)
             print(
-                f"{space}Node offset: {hex(readbase)}{os.linesep}" +
-                f"{space}  Type: {hex(nodetype)}{os.linesep}" +
-                f"{space}  Mandatory: {'yes' if mandatory != 0 else 'no'}{os.linesep}" +
-                f"{space}  Name: {name}{os.linesep}" +
-                f"{space}  Parse Offset: {outoffset}{os.linesep}" +
-                f"{space}  Data Width: {width}{os.linesep}" +
-                (
+                f"{space}Node offset: {hex(readbase)}{os.linesep}"
+                + f"{space}  Type: {hex(nodetype)}{os.linesep}"
+                + f"{space}  Mandatory: {'yes' if mandatory != 0 else 'no'}{os.linesep}"
+                + f"{space}  Name: {name}{os.linesep}"
+                + f"{space}  Parse Offset: {outoffset}{os.linesep}"
+                + f"{space}  Data Width: {width}{os.linesep}"
+                + (
                     f"{space}  Data Pointer: {'null' if defaultptr == 0 else hex(defaultptr)}"
-                    if nodetype == 0x01 else
-                    f"{space}  Default: {default}"
+                    if nodetype == 0x01
+                    else f"{space}  Default: {default}"
                 ),
                 file=sys.stderr,
             )
@@ -179,7 +187,7 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
             else:
                 node = Node.u64(name, 0)
         elif nodetype == 0x0A:
-            node = Node.string(name, '')
+            node = Node.string(name, "")
         elif nodetype == 0x0D:
             node = Node.float(name, 0.0)
         elif nodetype == 0x32 or nodetype == 0x6D:
@@ -193,12 +201,12 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
                 node = Node.bool(name, False)
         elif nodetype == 0x2F:
             # Special case, this is an attribute
-            if name[-1] != '@':
-                raise Exception(f'Attribute name {name} expected to end with @')
-            root.set_attribute(name[:-1], '')
+            if name[-1] != "@":
+                raise Exception(f"Attribute name {name} expected to end with @")
+            root.set_attribute(name[:-1], "")
             continue
         else:
-            raise Exception(f'Unimplemented node type 0x{nodetype:02x}')
+            raise Exception(f"Unimplemented node type 0x{nodetype:02x}")
 
         # Append it
         root.add_child(node)
@@ -207,7 +215,9 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="A utility to extract psmap node lists and generate code.")
+    parser = argparse.ArgumentParser(
+        description="A utility to extract psmap node lists and generate code."
+    )
     parser.add_argument(
         "--file",
         help="DLL file to extract from.",
@@ -245,7 +255,7 @@ def main() -> None:
             "If multiple sections must be emulated you can specify this multiple times."
         ),
         type=str,
-        action='append',
+        action="append",
         default=[],
     )
     parser.add_argument(
@@ -257,7 +267,7 @@ def main() -> None:
             "can specify this multiple times."
         ),
         type=str,
-        action='append',
+        action="append",
         default=[],
     )
     parser.add_argument(
@@ -269,7 +279,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    fp = open(args.file, 'rb')
+    fp = open(args.file, "rb")
     data = fp.read()
     fp.close()
 
@@ -278,7 +288,7 @@ def main() -> None:
     # If asked, attempt to emulate code which dynamically constructs a psmap structure.
     if args.emulate_code:
         for chunk in args.emulate_code:
-            emulate_start, emulate_end = chunk.split(':', 1)
+            emulate_start, emulate_end = chunk.split(":", 1)
             start = int(emulate_start, 16)
             end = int(emulate_end, 16)
             pe.emulate_code(start, end, verbose=args.verbose)
@@ -291,9 +301,9 @@ def main() -> None:
     layout = parse_psmap(pe, args.offset, args.root, verbose=args.verbose)
 
     # Walk through, outputting each node and attaching it to its parent
-    code = '\n'.join(generate_lines(layout, {}))
+    code = "\n".join(generate_lines(layout, {}))
 
-    if args.outfile == '-':
+    if args.outfile == "-":
         print(code)
     else:
         with open(args.outfile, mode="a") as outfp:
@@ -301,5 +311,5 @@ def main() -> None:
             outfp.close
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

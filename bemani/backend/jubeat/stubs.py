@@ -7,13 +7,13 @@ from bemani.common import VersionConstants
 
 class Jubeat(JubeatBase):
 
-    name: str = 'Jubeat'
+    name: str = "Jubeat"
     version: int = VersionConstants.JUBEAT
 
 
 class JubeatRipples(JubeatBase):
 
-    name: str = 'Jubeat Ripples'
+    name: str = "Jubeat Ripples"
     version: int = VersionConstants.JUBEAT_RIPPLES
 
     def previous_version(self) -> Optional[JubeatBase]:
@@ -22,7 +22,7 @@ class JubeatRipples(JubeatBase):
 
 class JubeatRipplesAppend(JubeatBase):
 
-    name: str = 'Jubeat Ripples Append'
+    name: str = "Jubeat Ripples Append"
     version: int = VersionConstants.JUBEAT_RIPPLES_APPEND
 
     def previous_version(self) -> Optional[JubeatBase]:
@@ -31,7 +31,7 @@ class JubeatRipplesAppend(JubeatBase):
 
 class JubeatKnit(JubeatBase):
 
-    name: str = 'Jubeat Knit'
+    name: str = "Jubeat Knit"
     version: int = VersionConstants.JUBEAT_KNIT
 
     def previous_version(self) -> Optional[JubeatBase]:
@@ -40,7 +40,7 @@ class JubeatKnit(JubeatBase):
 
 class JubeatKnitAppend(JubeatBase):
 
-    name: str = 'Jubeat Knit Append'
+    name: str = "Jubeat Knit Append"
     version: int = VersionConstants.JUBEAT_KNIT_APPEND
 
     def previous_version(self) -> Optional[JubeatBase]:
@@ -49,7 +49,7 @@ class JubeatKnitAppend(JubeatBase):
 
 class JubeatCopious(JubeatBase):
 
-    name: str = 'Jubeat Copious'
+    name: str = "Jubeat Copious"
     version: int = VersionConstants.JUBEAT_COPIOUS
 
     def previous_version(self) -> Optional[JubeatBase]:
@@ -58,7 +58,7 @@ class JubeatCopious(JubeatBase):
 
 class JubeatCopiousAppend(JubeatBase):
 
-    name: str = 'Jubeat Copious Append'
+    name: str = "Jubeat Copious Append"
     version: int = VersionConstants.JUBEAT_COPIOUS_APPEND
 
     def previous_version(self) -> Optional[JubeatBase]:

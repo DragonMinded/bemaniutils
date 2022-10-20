@@ -5,7 +5,9 @@ from bemani.format import TwoDX
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="A utility to extract/build 2dx files.")
+    parser = argparse.ArgumentParser(
+        description="A utility to extract/build 2dx files."
+    )
     parser.add_argument(
         "file",
         help="2dx file to extract/build.",
@@ -39,26 +41,26 @@ def main() -> None:
 
     if args.directory is not None:
         root = args.directory
-        if root[-1] != '/':
-            root = root + '/'
+        if root[-1] != "/":
+            root = root + "/"
         root = os.path.realpath(root)
 
-        rfp = open(args.file, 'rb')
+        rfp = open(args.file, "rb")
         data = rfp.read()
         rfp.close()
 
         twodx = TwoDX(data)
 
         for fn in twodx.filenames:
-            print(f'Extracting {fn} to disk...')
+            print(f"Extracting {fn} to disk...")
             realfn = os.path.join(root, fn)
             dirof = os.path.dirname(realfn)
             os.makedirs(dirof, exist_ok=True)
-            with open(realfn, 'wb') as wfp:
+            with open(realfn, "wb") as wfp:
                 wfp.write(twodx.read_file(fn))
     elif len(args.wavfile) > 0:
         try:
-            rfp = open(args.file, 'rb')
+            rfp = open(args.file, "rb")
             data = rfp.read()
             rfp.close()
 
@@ -71,18 +73,20 @@ def main() -> None:
                 twodx.set_name(os.path.splitext(os.path.basename(args.file))[0])
 
         for fn in args.wavfile:
-            rfp = open(fn, 'rb')
+            rfp = open(fn, "rb")
             data = rfp.read()
             rfp.close()
 
             twodx.write_file(os.path.basename(fn), data)
 
-        wfp = open(args.file, 'wb')
+        wfp = open(args.file, "wb")
         wfp.write(twodx.get_new_data())
         wfp.close()
     else:
-        raise Exception("Please provide either a directory to extract to, or a wav file to build into a 2dx file!")
+        raise Exception(
+            "Please provide either a directory to extract to, or a wav file to build into a 2dx file!"
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

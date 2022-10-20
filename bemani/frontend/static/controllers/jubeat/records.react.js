@@ -1,7 +1,7 @@
 /*** @jsx React.DOM */
 
 var valid_sorts = ['series', 'name', 'popularity'];
-var valid_charts = ['Basic', 'Advanced', 'Extreme'];
+var valid_charts = ['Basic', 'Advanced', 'Extreme', 'Hard Mode Basic', 'Hard Mode Advanced', 'Hard Mode Extreme'];
 var valid_mixes = Object.keys(window.versions).map(function(mix) {
     return (parseInt(mix) - 1).toString();
 });
@@ -19,11 +19,19 @@ var sort_names = {
     'clear': 'Clear Medal',
 };
 
-var HighScore = React.createClass({
+var HighScore = createReactClass({
     render: function() {
         if (!this.props.score) {
             return null;
         }
+        has_stats = (
+            this.props.score.stats.perfect > 0 ||
+            this.props.score.stats.great > 0 ||
+            this.props.score.stats.good > 0 ||
+            this.props.score.stats.poor > 0 ||
+            this.props.score.stats.miss > 0
+        );
+
 
         return (
             <div className="score">
@@ -33,6 +41,21 @@ var HighScore = React.createClass({
                     <span className="label">Combo</span>
                     <span className="score">{this.props.score.combo < 0 ? '-' : this.props.score.combo}</span>
                 </div>
+                {this.props.score.music_rate >= 0 ? <div>
+                    <span className="label">Music Rate</span>
+                    <span className="score">{this.props.score.music_rate}%</span>
+                </div> : null}
+                {has_stats ? <div title="perfect / great / good / poor / miss">
+                    {this.props.score.stats.perfect}
+                    <span> / </span>
+                    {this.props.score.stats.great}
+                    <span> / </span>
+                    {this.props.score.stats.good}
+                    <span> / </span>
+                    {this.props.score.stats.poor}
+                    <span> / </span>
+                    {this.props.score.stats.miss}
+                </div> : null}
                 <div>
                     <span className="status">{this.props.score.status}</span>
                 </div>
@@ -46,7 +69,7 @@ var HighScore = React.createClass({
     },
 });
 
-var network_records = React.createClass({
+var network_records = createReactClass({
 
     sortRecords: function(records) {
         var sorted_records = {};
@@ -120,10 +143,16 @@ var network_records = React.createClass({
     },
 
     renderDifficulty: function(songid, chart) {
-        if (this.state.songs[songid].difficulties[chart] == 0) {
+        var diff = this.state.songs[songid].difficulties[chart];
+        var new_rating = (
+            this.state.songs[songid].difficulties[3] > 0 ||
+            this.state.songs[songid].difficulties[4] > 0 ||
+            this.state.songs[songid].difficulties[5] > 0
+        );
+        if (this.state.songs[songid].difficulties[chart] < 1) {
             return <span className="difficulty">--</span>;
         } else {
-            return <span className="difficulty">{this.state.songs[songid].difficulties[chart]}★</span>;
+            return <span className="difficulty">{diff >= 9 && new_rating ? diff.toFixed(1) : diff.toFixed(0)}★</span>;
         }
     },
 
@@ -167,9 +196,9 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 { paginate ?
-                    <div className="section">
+                    <div className="section" key="paginatebuttons">
                         {songids.map(function(songid) {
                             if (songid < 10000000) {
                                 curbutton = curbutton + 1;
@@ -192,7 +221,7 @@ var network_records = React.createClass({
                     </div> :
                     null
                 }
-                <div className="section">
+                <div className="section" key="contents">
                     <table className="list records">
                         <thead></thead>
                         <tbody>
@@ -203,11 +232,16 @@ var network_records = React.createClass({
                                     if (paginate && curpage != this.state.subtab) { return null; }
 
                                     return (
-                                        <tr key={songid.toString()}>
-                                            <td className="subheader">{ this.state.versions[songid] }</td>
+                                        <tr key={songid.toString()} className="header">
+                                            <td className="subheader">{
+                                                !paginate ? this.state.versions[songid] : "Song / Artist / Difficulties"
+                                            }</td>
                                             <td className="subheader">Basic</td>
                                             <td className="subheader">Advanced</td>
                                             <td className="subheader">Extreme</td>
+                                            <td className="subheader">Hard Mode Basic</td>
+                                            <td className="subheader">Hard Mode Advanced</td>
+                                            <td className="subheader">Hard Mode Extreme</td>
                                         </tr>
                                     );
                                 } else {
@@ -234,7 +268,7 @@ var network_records = React.createClass({
                                                 {this.renderDifficulty(songid, 2)}
                                             </div>
                                             </td>
-                                            <td>
+                                            <td className={difficulties[0] > 0 ? "" : "nochart"}>
                                                 <HighScore
                                                     players={this.state.players}
                                                     songid={songid}
@@ -242,7 +276,7 @@ var network_records = React.createClass({
                                                     score={records[0]}
                                                 />
                                             </td>
-                                            <td>
+                                            <td className={difficulties[1] > 0 ? "" : "nochart"}>
                                                 <HighScore
                                                     players={this.state.players}
                                                     songid={songid}
@@ -250,12 +284,36 @@ var network_records = React.createClass({
                                                     score={records[1]}
                                                 />
                                             </td>
-                                            <td>
+                                            <td className={difficulties[2] > 0 ? "" : "nochart"}>
                                                 <HighScore
                                                     players={this.state.players}
                                                     songid={songid}
                                                     chart={2}
                                                     score={records[2]}
+                                                />
+                                            </td>
+                                            <td className={difficulties[3] > 0 ? "" : "nochart"}>
+                                                <HighScore
+                                                    players={this.state.players}
+                                                    songid={songid}
+                                                    chart={3}
+                                                    score={records[3]}
+                                                />
+                                            </td>
+                                            <td className={difficulties[4] > 0 ? "" : "nochart"}>
+                                                <HighScore
+                                                    players={this.state.players}
+                                                    songid={songid}
+                                                    chart={4}
+                                                    score={records[4]}
+                                                />
+                                            </td>
+                                            <td className={difficulties[5] > 0 ? "" : "nochart"}>
+                                                <HighScore
+                                                    players={this.state.players}
+                                                    songid={songid}
+                                                    chart={5}
+                                                    score={records[5]}
                                                 />
                                             </td>
                                         </tr>
@@ -265,7 +323,7 @@ var network_records = React.createClass({
                         </tbody>
                     </table>
                 </div>
-            </span>
+            </>
         );
     },
 
@@ -337,7 +395,7 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -354,7 +412,7 @@ var network_records = React.createClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -387,7 +445,7 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -404,103 +462,132 @@ var network_records = React.createClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
 
     renderBySongIDList: function(songids, showplays) {
         return (
-            <table className="list records">
-                <thead>
-                    <tr>
-                        <th className="subheader">Song</th>
-                        <th className="subheader">Basic</th>
-                        <th className="subheader">Advanced</th>
-                        <th className="subheader">Extreme</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {songids.map(function(songid, index) {
-                        if (index < this.state.offset || index >= this.state.offset + this.state.limit) {
-                            return null;
-                        }
-
-                        var records = this.state.records[songid];
-                        if (!records) {
-                            records = {};
-                        }
-
-                        var plays = this.getPlays(records);
-                        var difficulties = this.state.songs[songid].difficulties;
-                        return (
-                            <tr key={songid.toString()}>
-                                <td className="center">
-                                    <div>
-                                        <a href={Link.get('individual_score', songid)}>
-                                            <div className="songname">{ this.state.songs[songid].name }</div>
-                                            <div className="songartist">{ this.state.songs[songid].artist }</div>
-                                        </a>
-                                    </div>
-                                    <div className="songdifficulties">
-                                        {this.renderDifficulty(songid, 0)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 1)}
-                                        <span> / </span>
-                                        {this.renderDifficulty(songid, 2)}
-                                    </div>
-                                    { showplays ? <div className="songplays">#{index + 1} - {plays}{plays == 1 ? ' play' : ' plays'}</div> : null }
-                                </td>
-                                <td>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={0}
-                                        score={records[0]}
-                                    />
-                                </td>
-                                <td>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={1}
-                                        score={records[1]}
-                                    />
-                                </td>
-                                <td>
-                                    <HighScore
-                                        players={this.state.players}
-                                        songid={songid}
-                                        chart={2}
-                                        score={records[2]}
-                                    />
-                                </td>
-                            </tr>
-                        );
-                    }.bind(this))}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colSpan={4}>
-                            { this.state.offset > 0 ?
-                                <Prev onClick={function(event) {
-                                     var page = this.state.offset - this.state.limit;
-                                     if (page < 0) { page = 0; }
-                                     this.setState({offset: page});
-                                }.bind(this)}/> : null
+            <div className="section">
+                <table className="list records">
+                    <thead>
+                        <tr>
+                            <th className="subheader">Song / Artist / Difficulties</th>
+                            <th className="subheader">Basic</th>
+                            <th className="subheader">Advanced</th>
+                            <th className="subheader">Extreme</th>
+                            <th className="subheader">Hard Mode Basic</th>
+                            <th className="subheader">Hard Mode Advanced</th>
+                            <th className="subheader">Hard Mode Extreme</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {songids.map(function(songid, index) {
+                            if (index < this.state.offset || index >= this.state.offset + this.state.limit) {
+                                return null;
                             }
-                            { (this.state.offset + this.state.limit) < songids.length ?
-                                <Next style={ {float: 'right'} } onClick={function(event) {
-                                     var page = this.state.offset + this.state.limit;
-                                     if (page >= songids.length) { return }
-                                     this.setState({offset: page});
-                                }.bind(this)}/> :
-                                null
+
+                            var records = this.state.records[songid];
+                            if (!records) {
+                                records = {};
                             }
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+
+                            var plays = this.getPlays(records);
+                            var difficulties = this.state.songs[songid].difficulties;
+                            return (
+                                <tr key={songid.toString()}>
+                                    <td className="center">
+                                        <div>
+                                            <a href={Link.get('individual_score', songid)}>
+                                                <div className="songname">{ this.state.songs[songid].name }</div>
+                                                <div className="songartist">{ this.state.songs[songid].artist }</div>
+                                            </a>
+                                        </div>
+                                        <div className="songdifficulties">
+                                            {this.renderDifficulty(songid, 0)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 1)}
+                                            <span> / </span>
+                                            {this.renderDifficulty(songid, 2)}
+                                        </div>
+                                        { showplays ? <div className="songplays">#{index + 1} - {plays}{plays == 1 ? ' play' : ' plays'}</div> : null }
+                                    </td>
+                                    <td className={difficulties[0] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={0}
+                                            score={records[0]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[1] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={1}
+                                            score={records[1]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[2] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={2}
+                                            score={records[2]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[3] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={3}
+                                            score={records[3]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[4] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={4}
+                                            score={records[4]}
+                                        />
+                                    </td>
+                                    <td className={difficulties[5] > 0 ? "" : "nochart"}>
+                                        <HighScore
+                                            players={this.state.players}
+                                            songid={songid}
+                                            chart={5}
+                                            score={records[5]}
+                                        />
+                                    </td>
+                                </tr>
+                            );
+                        }.bind(this))}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colSpan={7}>
+                                { this.state.offset > 0 ?
+                                    <Prev onClick={function(event) {
+                                         var page = this.state.offset - this.state.limit;
+                                         if (page < 0) { page = 0; }
+                                         this.setState({offset: page});
+                                    }.bind(this)}/> : null
+                                }
+                                { (this.state.offset + this.state.limit) < songids.length ?
+                                    <Next style={ {float: 'right'} } onClick={function(event) {
+                                         var page = this.state.offset + this.state.limit;
+                                         if (page >= songids.length) { return }
+                                         this.setState({offset: page});
+                                    }.bind(this)}/> :
+                                    null
+                                }
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         );
     },
 
