@@ -18,9 +18,9 @@ class RemoteUser:
     def userid_to_card(userid: UserID) -> str:
         cardid = hex(abs(userid))[2:].upper()
         if len(cardid) <= 8:
-            raise Exception('Got invalid card back when converting from UserID!')
+            raise Exception("Got invalid card back when converting from UserID!")
         if len(cardid) < 16:
-            cardid = ('0' * (16 - len(cardid))) + cardid
+            cardid = ("0" * (16 - len(cardid))) + cardid
         return cardid
 
     @staticmethod

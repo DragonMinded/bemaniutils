@@ -9,7 +9,7 @@ from bemani.tests.helpers import get_fixture
 
 class TestLZ77Decompressor(unittest.TestCase):
     def test_ringbuffer_fuzz(self) -> None:
-        dec = Lz77Decompress(b'')
+        dec = Lz77Decompress(b"")
 
         for _ in range(100):
             amount = random.randint(1, Lz77Decompress.RING_LENGTH)
@@ -20,7 +20,7 @@ class TestLZ77Decompressor(unittest.TestCase):
             dec._ring_write(data)
 
             # Read a chunk of data back from that buffer, see its the same
-            newdata = b''.join(dec._ring_read(readpos, amount))
+            newdata = b"".join(dec._ring_read(readpos, amount))
             self.assertEqual(data, newdata)
 
             # Verify integrity of ringbuffer

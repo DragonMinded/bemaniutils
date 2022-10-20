@@ -11,12 +11,26 @@ from .. import package_root
 try:
     clib = None
     clib_path = os.path.join(package_root, "protocol")
-    files = [f for f in os.listdir(clib_path) if f.startswith("lz77cpp") and f.endswith(".so")]
+    files = [
+        f
+        for f in os.listdir(clib_path)
+        if f.startswith("lz77cpp") and f.endswith(".so")
+    ]
     if len(files) > 0:
         clib = ctypes.cdll.LoadLibrary(os.path.join(clib_path, files[0]))
-        clib.decompress.argtypes = (ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)
+        clib.decompress.argtypes = (
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_int,
+        )
         clib.decompress.restype = ctypes.c_int
-        clib.compress.argtypes = (ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)
+        clib.compress.argtypes = (
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_int,
+        )
         clib.compress.restype = ctypes.c_int
 except Exception:
     clib = None
@@ -35,6 +49,7 @@ class Lz77Decompress:
     over-the-wire compression of XML data, as well as compression inside a decent
     amount of file formats found in various Konami games.
     """
+
     RING_LENGTH: Final[int] = 0x1000
 
     FLAG_COPY: Final[int] = 1
@@ -57,7 +72,7 @@ class Lz77Decompress:
         self.pending_copy_pos: int = 0
         self.pending_copy_max: int = 0
         self.ringlength: int = backref or self.RING_LENGTH
-        self.ring: bytes = b'\x00' * self.ringlength
+        self.ring: bytes = b"\x00" * self.ringlength
 
     def _ring_read(self, copy_pos: int, copy_len: int) -> Generator[bytes, None, None]:
         """
@@ -74,7 +89,7 @@ class Lz77Decompress:
                 # Copy the whole thing out, we have enough space to do so
                 amount = copy_len
 
-            ret = self.ring[copy_pos:(copy_pos + amount)]
+            ret = self.ring[copy_pos : (copy_pos + amount)]
             self._ring_write(ret)
             yield ret
 
@@ -95,7 +110,11 @@ class Lz77Decompress:
             if amount > (self.ringlength - self.write_pos):
                 amount = self.ringlength - self.write_pos
 
-            self.ring = self.ring[:self.write_pos] + bytedata[:amount] + self.ring[(self.write_pos + amount):]
+            self.ring = (
+                self.ring[: self.write_pos]
+                + bytedata[:amount]
+                + self.ring[(self.write_pos + amount) :]
+            )
             bytedata = bytedata[amount:]
             self.write_pos = (self.write_pos + amount) % self.ringlength
 
@@ -151,7 +170,7 @@ class Lz77Decompress:
                         amount += 1
 
                     # Grab chunk right out of the data source
-                    b = self.data[self.read_pos:(self.read_pos + amount)]
+                    b = self.data[self.read_pos : (self.read_pos + amount)]
                     self._ring_write(b)
                     yield b
 
@@ -179,7 +198,7 @@ class Lz77Decompress:
             self.eof = True
             return
         if self.left == 1:
-            raise LzException('Unexpected EOF mid-backref')
+            raise LzException("Unexpected EOF mid-backref")
 
         hi = self.data[self.read_pos]
         lo = self.data[self.read_pos + 1]
@@ -203,7 +222,7 @@ class Lz77Decompress:
                 # Only copy the available bytes
                 copy_len = copy_pos
 
-            copy_pos = (self.write_pos - copy_pos)
+            copy_pos = self.write_pos - copy_pos
             while copy_pos < 0:
                 copy_pos += self.ringlength
             copy_pos = copy_pos % self.ringlength
@@ -322,7 +341,7 @@ class Lz77Compress:
                         # a backref.
                         flags |= self.FLAG_COPY << flagpos
 
-                        chunk = self.data[self.read_pos:(self.read_pos + 1)]
+                        chunk = self.data[self.read_pos : (self.read_pos + 1)]
                         data[flagpos] = chunk
                         self._ring_write(chunk)
 
@@ -335,19 +354,22 @@ class Lz77Compress:
 
                     # Iterate over all spots where the first byte equals, and is in range.
                     earliest = max(0, self.bytes_written - (self.ringlength - 1))
-                    index = self.data[self.read_pos:(self.read_pos + 3)]
+                    index = self.data[self.read_pos : (self.read_pos + 3)]
                     updated_backref_locations: Set[int] = set(
-                        absolute_pos for absolute_pos in self.starts[index]
+                        absolute_pos
+                        for absolute_pos in self.starts[index]
                         if absolute_pos >= earliest
                     )
                     self.starts[index] = updated_backref_locations
-                    possible_backref_locations: List[int] = list(updated_backref_locations)
+                    possible_backref_locations: List[int] = list(
+                        updated_backref_locations
+                    )
 
                     # Output the data as a copy if we couldn't find a backref
                     if not possible_backref_locations:
                         flags |= self.FLAG_COPY << flagpos
 
-                        chunk = self.data[self.read_pos:(self.read_pos + 1)]
+                        chunk = self.data[self.read_pos : (self.read_pos + 1)]
                         data[flagpos] = chunk
                         self._ring_write(chunk)
 
@@ -363,10 +385,15 @@ class Lz77Compress:
                     copy_amount = 3
                     while copy_amount < backref_amount:
                         # First, let's see if we have any 3-wide chunks to consume.
-                        index = self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 3)]
+                        index = self.data[
+                            (self.read_pos + copy_amount) : (
+                                self.read_pos + copy_amount + 3
+                            )
+                        ]
                         locations = self.starts[index]
                         new_backref_locations: List[int] = [
-                            absolute_pos for absolute_pos in possible_backref_locations
+                            absolute_pos
+                            for absolute_pos in possible_backref_locations
                             if absolute_pos + copy_amount in locations
                         ]
 
@@ -379,9 +406,12 @@ class Lz77Compress:
                             # Check our existing locations to figure out if we still have
                             # longest prefixes of 1 or 2 left.
                             while copy_amount < backref_amount:
-                                locations = self.locations[self.data[self.read_pos + copy_amount]]
+                                locations = self.locations[
+                                    self.data[self.read_pos + copy_amount]
+                                ]
                                 new_backref_locations = [
-                                    absolute_pos for absolute_pos in possible_backref_locations
+                                    absolute_pos
+                                    for absolute_pos in possible_backref_locations
                                     if absolute_pos + copy_amount in locations
                                 ]
 
@@ -391,7 +421,13 @@ class Lz77Compress:
                                     break
 
                                 # Mark that we're copying an extra byte from the backref.
-                                self._ring_write(self.data[(self.read_pos + copy_amount):(self.read_pos + copy_amount + 1)])
+                                self._ring_write(
+                                    self.data[
+                                        (self.read_pos + copy_amount) : (
+                                            self.read_pos + copy_amount + 1
+                                        )
+                                    ]
+                                )
                                 copy_amount += 1
                                 possible_backref_locations = new_backref_locations
 
@@ -455,7 +491,7 @@ class Lz77:
                 raise LzException("Unknown exception in C++ code!")
         else:
             lz = Lz77Decompress(data, backref=self.backref)
-            return b''.join(lz.decompress_bytes())
+            return b"".join(lz.decompress_bytes())
 
     def compress(self, data: bytes) -> bytes:
         """
@@ -485,4 +521,4 @@ class Lz77:
                 raise LzException("Unknown exception in C++ code!")
         else:
             lz = Lz77Compress(data, backref=self.backref)
-            return b''.join(lz.compress_bytes())
+            return b"".join(lz.compress_bytes())

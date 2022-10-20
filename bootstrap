@@ -13,6 +13,7 @@ set -e
 ./read --series pnm --version 23 "$@"
 ./read --series pnm --version 24 "$@"
 ./read --series pnm --version 25 "$@"
+./read --series pnm --version 26 "$@"
 
 # Init Jubeat
 ./read --series jubeat --version saucer "$@"
@@ -20,6 +21,7 @@ set -e
 ./read --series jubeat --version prop "$@"
 ./read --series jubeat --version qubell "$@"
 ./read --series jubeat --version clan "$@"
+./read --series jubeat --version festo "$@"
 
 # Init IIDX
 ./read --series iidx --version 20 "$@"

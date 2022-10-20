@@ -1,3 +1,4 @@
+# Core database settings, required so that the system can persist scores and accounts.
 database:
     # IP or DNS entry for MySQL instance.
     address: "localhost"
@@ -12,6 +13,8 @@ database:
     # Set this to False or delete this to run in production mode.
     read_only: False
 
+# Core server settings, required so that the backend knows what to tell games for core
+# routing and server URLs.
 server:
     # Advertised server IP or DNS entry games will connect to.
     address: "192.168.0.1"
@@ -38,6 +41,9 @@ server:
     # the 56 normal regions found in RegionConstants, and 1000 for "Europe" and
     # 2000 for "Other".
     region: 26
+    # The custom area code displayed in the system settings menu on various games.
+    # Delete this setting to force games to display "Unobtained" instead.
+    area: "京都"
 
 # Webhook URLs. These allow for game scores from games with scorecard support to be broadcasted to outside services.
 # Delete this to disable this support.
@@ -47,12 +53,16 @@ webhooks:
         - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
         pnm: 
         - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
+
+# Global PASESLI settings, which can be overridden on a per-arcade basis. These form the default settings.
 paseli:
     # Whether PASELI is enabled on the network.
     enabled: True
     # Whether infinite PASELI balance is enabled on the network.
     infinite: True
 
+# Game series to provide support for. Disabling something here hides it from the frontend and makes the backend
+# ignore games coming from that series.
 support:
     # Bishi Bashi frontend/backend enabled.
     bishi: True
@@ -84,5 +94,7 @@ cache_dir: '/tmp'
 # Number of seconds to preserve event logs before deleting them.
 # Set to zero or delete to disable deleting logs.
 event_log_duration: 2592000
+# Whether we log verbosely (full packet request and response) to web server logs or not.
+verbose: true
 # Frontend theme directory where sitewide CSS and favicon should be found.
 theme: "default"

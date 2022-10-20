@@ -4,7 +4,14 @@ from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import Profile, ValidatedDict, Time, GameConstants, DBConstants, BroadcastConstants
+from bemani.common import (
+    Profile,
+    ValidatedDict,
+    Time,
+    GameConstants,
+    DBConstants,
+    BroadcastConstants,
+)
 from bemani.data import UserID, Achievement, ScoreSaveException
 from bemani.protocol import Node
 
@@ -20,16 +27,30 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     # Play medals, as saved into/loaded from the DB
     PLAY_MEDAL_NO_PLAY: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_NO_PLAY
-    PLAY_MEDAL_CIRCLE_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
-    PLAY_MEDAL_DIAMOND_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
+    PLAY_MEDAL_CIRCLE_FAILED: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
+    PLAY_MEDAL_DIAMOND_FAILED: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
     PLAY_MEDAL_STAR_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FAILED
     PLAY_MEDAL_EASY_CLEAR: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_EASY_CLEAR
-    PLAY_MEDAL_CIRCLE_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_CLEARED
-    PLAY_MEDAL_DIAMOND_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_CLEARED
+    PLAY_MEDAL_CIRCLE_CLEARED: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_CLEARED
+    PLAY_MEDAL_DIAMOND_CLEARED: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_CLEARED
     PLAY_MEDAL_STAR_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_CLEARED
-    PLAY_MEDAL_CIRCLE_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO
-    PLAY_MEDAL_DIAMOND_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FULL_COMBO
-    PLAY_MEDAL_STAR_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FULL_COMBO
+    PLAY_MEDAL_CIRCLE_FULL_COMBO: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO
+    PLAY_MEDAL_DIAMOND_FULL_COMBO: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FULL_COMBO
+    PLAY_MEDAL_STAR_FULL_COMBO: Final[
+        int
+    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FULL_COMBO
     PLAY_MEDAL_PERFECT: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_PERFECT
 
     # Chart type, as saved into/loaded from the DB, and returned to game
@@ -47,7 +68,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     # properly.
     supports_expired_profiles: bool = False
 
-    def previous_version(self) -> Optional['PopnMusicBase']:
+    def previous_version(self) -> Optional["PopnMusicBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
@@ -59,7 +80,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('playerdata')
+        return Node.void("playerdata")
 
     def format_conversion(self, userid: UserID, profile: Profile) -> Node:
         """
@@ -70,9 +91,11 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         format_conversion on that previous version to get the profile to
         migrate.
         """
-        return Node.void('playerdata')
+        return Node.void("playerdata")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -80,7 +103,9 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return oldprofile
 
-    def get_profile_by_refid(self, refid: Optional[str], load_mode: int) -> Optional[Node]:
+    def get_profile_by_refid(
+        self, refid: Optional[str], load_mode: int
+    ) -> Optional[Node]:
         """
         Given a RefID, return a formatted profile node. Basically every game
         needs a profile lookup, even if it handles where that happens in
@@ -127,7 +152,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         self,
         refid: Optional[str],
         name: Optional[str],
-        chara: Optional[int]=None,
+        chara: Optional[int] = None,
         achievements: Sequence[Achievement] = (),
     ) -> Node:
         """
@@ -138,7 +163,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         if name is None:
-            name = 'なし'
+            name = "なし"
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
@@ -149,11 +174,11 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             refid,
             0,
             {
-                'name': name,
+                "name": name,
             },
         )
         if chara is not None:
-            profile.replace_int('chara', chara)
+            profile.replace_int("chara", chara)
         self.put_profile(userid, profile)
         for achievement in achievements:
             self.data.local.user.put_achievement(
@@ -173,8 +198,8 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         chart: int,
         points: int,
         medal: int,
-        combo: Optional[int]=None,
-        stats: Optional[Dict[str, int]]=None,
+        combo: Optional[int] = None,
+        stats: Optional[Dict[str, int]] = None,
     ) -> None:
         """
         Given various pieces of a score, update the user's high score and score
@@ -227,19 +252,19 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Replace medal with highest value
-        scoredata.replace_int('medal', max(scoredata.get_int('medal'), medal))
-        history.replace_int('medal', medal)
+        scoredata.replace_int("medal", max(scoredata.get_int("medal"), medal))
+        history.replace_int("medal", medal)
 
         if stats is not None:
             if raised:
                 # We have stats, and there's a new high score, update the stats
-                scoredata.replace_dict('stats', stats)
-            history.replace_dict('stats', stats)
+                scoredata.replace_dict("stats", stats)
+            history.replace_dict("stats", stats)
 
         if combo is not None:
             # If we have a combo, replace it
-            scoredata.replace_int('combo', max(scoredata.get_int('combo'), combo))
-            history.replace_int('combo', combo)
+            scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+            history.replace_int("combo", combo)
 
         # Look up where this score was earned
         lid = self.get_machine_id()
@@ -290,44 +315,53 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # We saved successfully
             break
 
-    def broadcast_score(self, userid: UserID, songid: int, chart: int, medal: int, points: int, combo: int, stats: Dict[str, int]) -> None:
+    def broadcast_score(
+        self,
+        userid: UserID,
+        songid: int,
+        chart: int,
+        medal: int,
+        points: int,
+        combo: int,
+        stats: Dict[str, int],
+    ) -> None:
         # Generate scorecard
         profile = self.get_profile(userid)
         song = self.data.local.music.get_song(self.game, self.version, songid, chart)
 
         card_medal = {
-            self.PLAY_MEDAL_CIRCLE_FAILED: 'Failed',
-            self.PLAY_MEDAL_DIAMOND_FAILED: 'Failed',
-            self.PLAY_MEDAL_STAR_FAILED: 'Failed',
-            self.PLAY_MEDAL_EASY_CLEAR: 'Cleared',
-            self.PLAY_MEDAL_CIRCLE_CLEARED: 'Cleared',
-            self.PLAY_MEDAL_DIAMOND_CLEARED: 'Cleared',
-            self.PLAY_MEDAL_STAR_CLEARED: 'Cleared',
-            self.PLAY_MEDAL_CIRCLE_FULL_COMBO: 'Full Combo',
-            self.PLAY_MEDAL_DIAMOND_FULL_COMBO: 'Full Combo',
-            self.PLAY_MEDAL_STAR_FULL_COMBO: 'Full Combo',
-            self.PLAY_MEDAL_PERFECT: 'Perfect',
+            self.PLAY_MEDAL_CIRCLE_FAILED: "Failed",
+            self.PLAY_MEDAL_DIAMOND_FAILED: "Failed",
+            self.PLAY_MEDAL_STAR_FAILED: "Failed",
+            self.PLAY_MEDAL_EASY_CLEAR: "Cleared",
+            self.PLAY_MEDAL_CIRCLE_CLEARED: "Cleared",
+            self.PLAY_MEDAL_DIAMOND_CLEARED: "Cleared",
+            self.PLAY_MEDAL_STAR_CLEARED: "Cleared",
+            self.PLAY_MEDAL_CIRCLE_FULL_COMBO: "Full Combo",
+            self.PLAY_MEDAL_DIAMOND_FULL_COMBO: "Full Combo",
+            self.PLAY_MEDAL_STAR_FULL_COMBO: "Full Combo",
+            self.PLAY_MEDAL_PERFECT: "Perfect",
         }[medal]
 
         card_chart = {
-            self.CHART_TYPE_EASY: 'Easy',
-            self.CHART_TYPE_NORMAL: 'Normal',
-            self.CHART_TYPE_HYPER: 'Hyper',
-            self.CHART_TYPE_EX: 'Ex',
+            self.CHART_TYPE_EASY: "Easy",
+            self.CHART_TYPE_NORMAL: "Normal",
+            self.CHART_TYPE_HYPER: "Hyper",
+            self.CHART_TYPE_EX: "Ex",
         }[chart]
 
         # Construct the dictionary for the broadcast
         card_data = {
-            BroadcastConstants.PLAYER_NAME: profile.get_str('name', 'なし'),
+            BroadcastConstants.PLAYER_NAME: profile.get_str("name", "なし"),
             BroadcastConstants.SONG_NAME: song.name,
             BroadcastConstants.ARTIST_NAME: song.artist,
             BroadcastConstants.DIFFICULTY: card_chart,
             BroadcastConstants.SCORE: str(points),
             BroadcastConstants.MEDAL: card_medal,
-            BroadcastConstants.COOLS: str(stats['cool']),
-            BroadcastConstants.GREATS: str(stats['great']),
-            BroadcastConstants.GOODS: str(stats['good']),
-            BroadcastConstants.BADS: str(stats['bad']),
+            BroadcastConstants.COOLS: str(stats["cool"]),
+            BroadcastConstants.GREATS: str(stats["great"]),
+            BroadcastConstants.GOODS: str(stats["good"]),
+            BroadcastConstants.BADS: str(stats["bad"]),
             BroadcastConstants.COMBO: str(combo),
         }
 

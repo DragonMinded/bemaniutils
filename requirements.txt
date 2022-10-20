@@ -7,6 +7,7 @@ Requests
 psycopg2
 passlib
 mypy
+black
 typing-extensions
 types-python-dateutil
 types-requests

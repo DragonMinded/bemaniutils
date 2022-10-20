@@ -42,7 +42,7 @@ class InputStream:
         if blob_size <= 0:
             return None
         if blob_size <= self.left:
-            bytedata = self.data[self.pos:(self.pos + blob_size)]
+            bytedata = self.data[self.pos : (self.pos + blob_size)]
             self.pos += blob_size
             self.left -= blob_size
             return bytedata
@@ -58,7 +58,7 @@ class InputStream:
         """
         return self.read_blob(1)
 
-    def read_int(self, size: int=1, is_unsigned: bool=True) -> Optional[int]:
+    def read_int(self, size: int = 1, is_unsigned: bool = True) -> Optional[int]:
         """
         Grab the next integer of size 'size' at the current position. If not enough
         bytes are available to decode this integer, return None.
@@ -82,27 +82,27 @@ class InputStream:
                 # Fastpath, just use python's own decoder
                 return data[0]
             else:
-                return struct.unpack('>b', data)[0]
+                return struct.unpack(">b", data)[0]
         elif size == 2:
             data = self.read_blob(2)
             if data is None:
                 return None
 
             if is_unsigned:
-                return struct.unpack('>H', data)[0]
+                return struct.unpack(">H", data)[0]
             else:
-                return struct.unpack('>h', data)[0]
+                return struct.unpack(">h", data)[0]
         elif size == 4:
             data = self.read_blob(4)
             if data is None:
                 return None
 
             if is_unsigned:
-                return struct.unpack('>I', data)[0]
+                return struct.unpack(">I", data)[0]
             else:
-                return struct.unpack('>i', data)[0]
+                return struct.unpack(">i", data)[0]
         else:
-            raise StreamError(f'Unsupported size {size}')
+            raise StreamError(f"Unsupported size {size}")
 
 
 class OutputStream:
@@ -125,8 +125,22 @@ class OutputStream:
     @property
     def data(self) -> bytes:
         if self.__formatted_data is None:
-            self.__formatted_data = b''.join(self.__data)
+            self.__formatted_data = b"".join(self.__data)
         return self.__formatted_data
+
+    def write_blob(self, blob: bytes) -> int:
+        """
+        Write a binary blob of data to the stream
+
+        Parameters:
+            blob - An blob of data to write.
+
+        Returns:
+            the number of bytes written
+        """
+        self.__data.append(blob)
+        self.__data_len += len(blob)
+        return len(blob)
 
     def write_byte(self, byte: bytes) -> None:
         """
@@ -139,7 +153,7 @@ class OutputStream:
         self.__data_len = self.__data_len + 1
         self.__formatted_data = None
 
-    def write_int(self, integer: int, size: int=1, is_unsigned: bool=True) -> None:
+    def write_int(self, integer: int, size: int = 1, is_unsigned: bool = True) -> None:
         """
         Write an integer to the end of the output stream.
 
@@ -152,24 +166,24 @@ class OutputStream:
         """
         if size == 1:
             if is_unsigned:
-                self.__data.append(struct.pack('>B', integer))
+                self.__data.append(struct.pack(">B", integer))
             else:
-                self.__data.append(struct.pack('>b', integer))
+                self.__data.append(struct.pack(">b", integer))
             self.__data_len = self.__data_len + 1
         elif size == 2:
             if is_unsigned:
-                self.__data.append(struct.pack('>H', integer))
+                self.__data.append(struct.pack(">H", integer))
             else:
-                self.__data.append(struct.pack('>h', integer))
+                self.__data.append(struct.pack(">h", integer))
             self.__data_len = self.__data_len + 2
         elif size == 4:
             if is_unsigned:
-                self.__data.append(struct.pack('>I', integer))
+                self.__data.append(struct.pack(">I", integer))
             else:
-                self.__data.append(struct.pack('>i', integer))
+                self.__data.append(struct.pack(">i", integer))
             self.__data_len = self.__data_len + 4
         else:
-            raise StreamError(f'Unsupported size {size}')
+            raise StreamError(f"Unsupported size {size}")
         self.__formatted_data = None
 
     def write_pad(self, pad_to: int) -> None:
@@ -183,6 +197,6 @@ class OutputStream:
             be placed on a boundary compatible with the pad_to parameter.
         """
         while (self.__data_len & (pad_to - 1)) != 0:
-            self.__data.append(b'\0')
+            self.__data.append(b"\0")
             self.__data_len = self.__data_len + 1
         self.__formatted_data = None

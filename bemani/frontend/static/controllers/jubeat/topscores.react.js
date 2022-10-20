@@ -1,12 +1,14 @@
 /*** @jsx React.DOM */
 
-var valid_charts = ['Basic', 'Advanced', 'Extreme'];
+var valid_charts = window.new_rating ?
+    ['Basic', 'Advanced', 'Extreme', 'Hard Mode Basic', 'Hard Mode Advanced', 'Hard Mode Extreme'] :
+    ['Basic', 'Advanced', 'Extreme'];
 var pagenav = new History(valid_charts);
 
-var top_scores = React.createClass({
+var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
-        var newscores = [[], [], [], []];
+        var newscores = [[], [], [], [], [], []];
         topscores.map(function(score) {
             newscores[score.chart].push(score);
         }.bind(this));
@@ -50,6 +52,12 @@ var top_scores = React.createClass({
                 return 1;
             case 'Extreme':
                 return 2;
+            case 'Hard Mode Basic':
+                return 3;
+            case 'Hard Mode Advanced':
+                return 4;
+            case 'Hard Mode Extreme':
+                return 5;
             default:
                 return null;
         }
@@ -57,13 +65,14 @@ var top_scores = React.createClass({
 
     render: function() {
         var chart = this.convertChart(this.state.chart);
+        var diff = window.difficulties[chart];
 
         return (
             <div>
                 <div className="section">
                     <div className="songname">{window.name}</div>
                     <div className="songartist">{window.artist}</div>
-                    <div className="songdifficulty">{window.difficulties[chart]}★</div>
+                    <div className="songdifficulty">{diff >= 9 && window.new_rating ? diff.toFixed(1) : diff.toFixed(0)}★</div>
                 </div>
                 <div className="section">
                     {valid_charts.map(function(chart) {
@@ -113,7 +122,42 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Combo',
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : '-'; },
+                                render: function(topscore) { return topscore.combo >= 0 ? topscore.combo : '-'; },
+                                sort: function(a, b) {
+                                    return a.combo - b.combo;
+                                },
+                                reverse: true,
+                            },
+                            {
+                                name: 'Music Rate',
+                                render: function(topscore) { return topscore.music_rate >= 0 ? topscore.music_rate + "%" : '-'; },
+                                sort: function(a, b) {
+                                    return a.music_rate - b.music_rate;
+                                },
+                                reverse: true,
+                            },
+                            {
+                                name: 'Judgement Stats',
+                                render: function(topscore) {
+                                    has_stats = (
+                                        topscore.stats.perfect > 0 ||
+                                        topscore.stats.great > 0 ||
+                                        topscore.stats.good > 0 ||
+                                        topscore.stats.poor > 0 ||
+                                        topscore.stats.miss > 0
+                                    );
+                                    return has_stats ? <div title="perfect / great / good / poor / miss">
+                                        {topscore.stats.perfect}
+                                        <span> / </span>
+                                        {topscore.stats.great}
+                                        <span> / </span>
+                                        {topscore.stats.good}
+                                        <span> / </span>
+                                        {topscore.stats.poor}
+                                        <span> / </span>
+                                        {topscore.stats.miss}
+                                    </div> : null;
+                                }
                             },
                         ]}
                         defaultsort='Score'

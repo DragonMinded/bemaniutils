@@ -6,7 +6,7 @@ var valid_charts = ['SP Beginner', 'SP Basic', 'SP Difficult', 'SP Expert', 'SP 
 });
 var pagenav = new History(valid_charts);
 
-var top_scores = React.createClass({
+var top_scores = createReactClass({
 
     sortTopScores: function(topscores) {
         var newscores = [[], [], [], [], [], [], [], [], [], []];
@@ -180,7 +180,7 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Grade',
-                                render: function(topscore) { return topscore.rank; },
+                                render: function(topscore) { return <span className="grade">{topscore.rank}</span>; },
                             },
                             {
                                 name: 'Score',
@@ -192,7 +192,11 @@ var top_scores = React.createClass({
                             },
                             {
                                 name: 'Combo',
-                                render: function(topscore) { return topscore.combo > 0 ? topscore.combo : ''; },
+                                sort: function(a, b) {
+                                    return a.combo - b.combo;
+                                },
+                                reverse: true,
+                                render: function(topscore) { return topscore.combo >= 0 ? topscore.combo : '-'; },
                             },
                             {
                                 name: 'Halo',

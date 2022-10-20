@@ -8,7 +8,7 @@ function count_pcbids(machines) {
     return count;
 }
 
-var arcade_management = React.createClass({
+var arcade_management = createReactClass({
     getInitialState: function(props) {
         var credits = {};
         Object.keys(window.users).map(function(userid) {
@@ -27,6 +27,9 @@ var arcade_management = React.createClass({
             region: window.arcade.region,
             editing_region: false,
             new_region: '',
+            area: window.arcade.area,
+            editing_area: false,
+            new_area: '',
             paseli_enabled_saving: false,
             paseli_infinite_saving: false,
             mask_services_url_saving: false,
@@ -105,7 +108,22 @@ var arcade_management = React.createClass({
         event.preventDefault();
     },
 
-    togglePaseliEnabled: function(event) {
+    saveArea: function(event) {
+        AJAX.post(
+            Link.get('update_area'),
+            {area: this.state.new_area},
+            function(response) {
+                this.setState({
+                    area: response.area,
+                    new_area: '',
+                    editing_area: false,
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
+    togglePaseliEnabled: function() {
         this.setState({paseli_enabled_saving: true})
         AJAX.post(
             Link.get('paseli_enabled'),
@@ -117,10 +135,9 @@ var arcade_management = React.createClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
-    togglePaseliInfinite: function(event) {
+    togglePaseliInfinite: function() {
         this.setState({paseli_infinite_saving: true})
         AJAX.post(
             Link.get('paseli_infinite'),
@@ -132,10 +149,9 @@ var arcade_management = React.createClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
-    toggleMaskServicesURL: function(event) {
+    toggleMaskServicesURL: function() {
         this.setState({mask_services_url_saving: true})
         AJAX.post(
             Link.get('mask_services_url'),
@@ -147,7 +163,6 @@ var arcade_management = React.createClass({
                 });
             }.bind(this)
         );
-        event.preventDefault();
     },
 
     addBalance: function(event) {
@@ -166,7 +181,6 @@ var arcade_management = React.createClass({
                 Object.keys(response.users).map(function(userid) {
                     credits[userid] = '';
                 });
-                console.log('huh?');
                 this.setState({
                     users: response.users,
                     balances: response.balances,
@@ -211,14 +225,14 @@ var arcade_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="PIN">{
                 !this.state.editing_pin ?
-                    <span>
+                    <>
                         <span>{this.state.pin}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_pin: true, new_pin: this.state.pin});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePin}>
                         <input
                             type="text"
@@ -259,14 +273,14 @@ var arcade_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="Region">{
                 !this.state.editing_region ?
-                    <span>
+                    <>
                         <span>{ window.regions[this.state.region] }</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_region: true, new_region: this.state.region});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveRegion}>
                         <SelectInt
                             name="region"
@@ -287,6 +301,51 @@ var arcade_management = React.createClass({
                                 this.setState({
                                     new_region: '',
                                     editing_region: false,
+                                });
+                            }.bind(this)}
+                        />
+                    </form>
+            }</LabelledSection>
+        );
+    },
+
+    renderArea: function() {
+        return (
+            <LabelledSection vertical={true} label="Custom Area">{
+                !this.state.editing_area ?
+                    <>
+                        <span>{ this.state.area ? this.state.area : <i>unset</i> }</span>
+                        <Edit
+                            onClick={function(event) {
+                                this.setState({editing_area: true, new_area: this.state.area});
+                            }.bind(this)}
+                        />
+                    </> :
+                    <form className="inline" onSubmit={this.saveArea}>
+                        <input
+                            type="text"
+                            className="inline"
+                            autofocus="true"
+                            ref={c => (this.focus_element = c)}
+                            value={this.state.new_area}
+                            onChange={function(event) {
+                                if (event.target.value.length <= 63) {
+                                    this.setState({new_area: event.target.value});
+                                }
+                            }.bind(this)}
+                            name="area"
+                        />
+                        <input
+                            type="submit"
+                            value="save"
+                        />
+                        <input
+                            type="button"
+                            value="cancel"
+                            onClick={function(event) {
+                                this.setState({
+                                    new_area: '',
+                                    editing_area: false,
                                 });
                             }.bind(this)}
                         />
@@ -417,7 +476,7 @@ var arcade_management = React.createClass({
         if (this.state.editing_machine) {
             if (this.state.editing_machine.pcbid == machine.pcbid) {
                 return (
-                    <span>
+                    <>
                         <input
                             type="submit"
                             value="save"
@@ -431,15 +490,15 @@ var arcade_management = React.createClass({
                                 });
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         } else {
             if (window.max_pcbids > 0 && machine.editable) {
                 return (
-                    <span>
+                    <>
                         <Edit
                             onClick={function(event) {
                                 var editing_machine = null;
@@ -458,10 +517,10 @@ var arcade_management = React.createClass({
                                 this.deleteExistingMachine(event, machine.pcbid);
                             }.bind(this)}
                         />
-                    </span>
+                    </>
                 );
             } else {
-                return <span></span>;
+                return null;
             }
         }
     },
@@ -478,29 +537,63 @@ var arcade_management = React.createClass({
                     }</LabelledSection>
                     {this.renderPIN()}
                     {this.renderRegion()}
-                    <LabelledSection vertical={true} label="PASELI Enabled">
-                        <span>{ this.state.paseli_enabled ? 'yes' : 'no' }</span>
-                        <Toggle onClick={this.togglePaseliEnabled.bind(this)} />
-                        { this.state.paseli_enabled_saving ?
-                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
-                        }
+                    {this.renderArea()}
+                    <LabelledSection vertical={true} label={
+                        <>
+                            PASELI Enabled
+                            { this.state.paseli_enabled_saving ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </>
+                    }>
+                        <Slider
+                            on="yes"
+                            off="no"
+                            className="padded"
+                            value={this.state.paseli_enabled}
+                            onChange={function(value) {
+                                this.togglePaseliEnabled();
+                            }.bind(this)}
+                        />
                     </LabelledSection>
-                    <LabelledSection vertical={true} label="PASELI Infinite">
-                        <span>{ this.state.paseli_infinite ? 'yes' : 'no' }</span>
-                        <Toggle onClick={this.togglePaseliInfinite.bind(this)} />
-                        { this.state.paseli_infinite_saving ?
-                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
-                        }
+                    <LabelledSection vertical={true} label={
+                        <>
+                            PASELI Infinite
+                            { this.state.paseli_infinite_saving ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </>
+                    }>
+                        <Slider
+                            on="yes"
+                            off="no"
+                            className="padded"
+                            value={this.state.paseli_infinite}
+                            onChange={function(value) {
+                                this.togglePaseliInfinite();
+                            }.bind(this)}
+                        />
                     </LabelledSection>
-                    <LabelledSection vertical={true} label="Mask Web Address">
-                        <span>{ this.state.mask_services_url ? 'yes' : 'no' }</span>
-                        <Toggle onClick={this.toggleMaskServicesURL.bind(this)} />
-                        { this.state.mask_services_url_saving ?
-                            <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
-                            null
-                        }
+                    <LabelledSection vertical={true} label={
+                        <>
+                            Mask Web Address
+                            { this.state.mask_services_url_saving ?
+                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                null
+                            }
+                        </>
+                    }>
+                        <Slider
+                            on="yes"
+                            off="no"
+                            className="padded"
+                            value={this.state.mask_services_url}
+                            onChange={function(value) {
+                                this.toggleMaskServicesURL();
+                            }.bind(this)}
+                        />
                     </LabelledSection>
                 </div>
                 <div className="section">

@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Prev = React.createClass({
+var Prev = createReactClass({
     render: function() {
         return (
             <Nav

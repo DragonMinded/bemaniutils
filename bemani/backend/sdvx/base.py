@@ -21,7 +21,9 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CLEAR_TYPE_CLEAR: Final[int] = DBConstants.SDVX_CLEAR_TYPE_CLEAR
     CLEAR_TYPE_HARD_CLEAR: Final[int] = DBConstants.SDVX_CLEAR_TYPE_HARD_CLEAR
     CLEAR_TYPE_ULTIMATE_CHAIN: Final[int] = DBConstants.SDVX_CLEAR_TYPE_ULTIMATE_CHAIN
-    CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[int] = DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN
+    CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[
+        int
+    ] = DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN
 
     GRADE_NO_PLAY: Final[int] = DBConstants.SDVX_GRADE_NO_PLAY
     GRADE_D: Final[int] = DBConstants.SDVX_GRADE_D
@@ -41,7 +43,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_TYPE_INFINITE: Final[int] = 3
     CHART_TYPE_MAXIMUM: Final[int] = 4
 
-    def previous_version(self) -> Optional['SoundVoltexBase']:
+    def previous_version(self) -> Optional["SoundVoltexBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
@@ -66,7 +68,9 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now, return it
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], locid: Optional[int]) -> Node:
+    def new_profile_by_refid(
+        self, refid: Optional[str], name: Optional[str], locid: Optional[int]
+    ) -> Node:
         """
         Given a RefID and an optional name, create a profile and then return
         a formatted profile node. Similar rationale to get_profile_by_refid.
@@ -75,7 +79,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         if name is None:
-            name = 'NONAME'
+            name = "NONAME"
 
         # First, create and save the default profile
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
@@ -85,8 +89,8 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             refid,
             0,
             {
-                'name': name,
-                'loc': locid,
+                "name": name,
+                "loc": locid,
             },
         )
         self.put_profile(userid, profile)
@@ -97,9 +101,11 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('game')
+        return Node.void("game")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -121,16 +127,18 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             },
         }
         """
-        all_attempts, remote_attempts = Parallel.execute([
-            lambda: self.data.local.music.get_all_attempts(
-                game=self.game,
-                version=self.version,
-            ),
-            lambda: self.data.remote.music.get_clear_rates(
-                game=self.game,
-                version=self.version,
-            )
-        ])
+        all_attempts, remote_attempts = Parallel.execute(
+            [
+                lambda: self.data.local.music.get_all_attempts(
+                    game=self.game,
+                    version=self.version,
+                ),
+                lambda: self.data.remote.music.get_clear_rates(
+                    game=self.game,
+                    version=self.version,
+                ),
+            ]
+        )
         attempts: Dict[int, Dict[int, Dict[str, int]]] = {}
         for (_, attempt) in all_attempts:
             # Terrible temporary structure is terrible.
@@ -138,26 +146,33 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 attempts[attempt.id] = {}
             if attempt.chart not in attempts[attempt.id]:
                 attempts[attempt.id][attempt.chart] = {
-                    'total': 0,
-                    'clears': 0,
-                    'average': 0,
+                    "total": 0,
+                    "clears": 0,
+                    "average": 0,
                 }
 
             # We saw an attempt, keep the total attempts in sync.
-            attempts[attempt.id][attempt.chart]['average'] = int(
+            attempts[attempt.id][attempt.chart]["average"] = int(
                 (
-                    (attempts[attempt.id][attempt.chart]['average'] * attempts[attempt.id][attempt.chart]['total']) +
-                    attempt.points
-                ) / (attempts[attempt.id][attempt.chart]['total'] + 1)
+                    (
+                        attempts[attempt.id][attempt.chart]["average"]
+                        * attempts[attempt.id][attempt.chart]["total"]
+                    )
+                    + attempt.points
+                )
+                / (attempts[attempt.id][attempt.chart]["total"] + 1)
             )
-            attempts[attempt.id][attempt.chart]['total'] += 1
+            attempts[attempt.id][attempt.chart]["total"] += 1
 
-            if attempt.data.get_int('clear_type', self.CLEAR_TYPE_NO_PLAY) in [self.CLEAR_TYPE_NO_PLAY, self.CLEAR_TYPE_FAILED]:
+            if attempt.data.get_int("clear_type", self.CLEAR_TYPE_NO_PLAY) in [
+                self.CLEAR_TYPE_NO_PLAY,
+                self.CLEAR_TYPE_FAILED,
+            ]:
                 # This attempt was a failure, so don't count it against clears of full combos
                 continue
 
             # It was at least a clear
-            attempts[attempt.id][attempt.chart]['clears'] += 1
+            attempts[attempt.id][attempt.chart]["clears"] += 1
 
         # Merge in remote attempts
         for songid in remote_attempts:
@@ -167,13 +182,17 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             for songchart in remote_attempts[songid]:
                 if songchart not in attempts[songid]:
                     attempts[songid][songchart] = {
-                        'total': 0,
-                        'clears': 0,
-                        'average': 0,
+                        "total": 0,
+                        "clears": 0,
+                        "average": 0,
                     }
 
-                attempts[songid][songchart]['total'] += remote_attempts[songid][songchart]['plays']
-                attempts[songid][songchart]['clears'] += remote_attempts[songid][songchart]['clears']
+                attempts[songid][songchart]["total"] += remote_attempts[songid][
+                    songchart
+                ]["plays"]
+                attempts[songid][songchart]["clears"] += remote_attempts[songid][
+                    songchart
+                ]["clears"]
 
         return attempts
 
@@ -186,7 +205,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         clear_type: int,
         grade: int,
         combo: int,
-        stats: Optional[Dict[str, int]]=None,
+        stats: Optional[Dict[str, int]] = None,
     ) -> None:
         """
         Given various pieces of a score, update the user's high score and score
@@ -248,21 +267,23 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Replace clear type and grade
-        scoredata.replace_int('clear_type', max(scoredata.get_int('clear_type'), clear_type))
-        history.replace_int('clear_type', clear_type)
-        scoredata.replace_int('grade', max(scoredata.get_int('grade'), grade))
-        history.replace_int('grade', grade)
+        scoredata.replace_int(
+            "clear_type", max(scoredata.get_int("clear_type"), clear_type)
+        )
+        history.replace_int("clear_type", clear_type)
+        scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
+        history.replace_int("grade", grade)
 
         # If we have a combo, replace it
-        scoredata.replace_int('combo', max(scoredata.get_int('combo'), combo))
-        history.replace_int('combo', combo)
+        scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+        history.replace_int("combo", combo)
 
         # If we have play stats, replace it
         if stats is not None:
             if raised:
                 # We have stats, and there's a new high score, update the stats
-                scoredata.replace_dict('stats', stats)
-            history.replace_dict('stats', stats)
+                scoredata.replace_dict("stats", stats)
+            history.replace_dict("stats", stats)
 
         # Look up where this score was earned
         lid = self.get_machine_id()

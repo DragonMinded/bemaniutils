@@ -29,6 +29,10 @@ table.list tbody td, table.add tbody td {
     vertical-align: top;
 }
 
+table.list tr.header td {
+    vertical-align: middle ! important;
+}
+
 table.list tbody td {
     border: 1px solid #6a6a6a;
     padding: 10px;
@@ -41,6 +45,9 @@ table td.center {
 
 table.list input[type="text"], table.add input[type="text"] {
     width: 100%;
+    box-sizing: border-box;
+    -webkit-box-sizing:border-box;
+    -moz-box-sizing: border-box;
 }
 
 table.list select, table.add select {
@@ -68,7 +75,29 @@ table.records, table.attempts, table.topscores, table.players, table.events {
     width: 100%;
 }
 
-table.records a, table.attempts a, table.topscores a, table.players a {
+table.jubility {
+    width: 100%;
+    width: calc(100% - 15px);
+    float: left;
+    margin: 5px;
+}
+
+.row {
+    display: flex;
+}
+
+.column {
+    flex: 50%;
+    padding: 5px;
+}
+
+@media screen and (max-width: 600px) {
+    .row {
+        display: inline;
+    }
+}
+
+table.records a, table.attempts a, table.topscores a, table.players a, table.jubility a {
     text-decoration: none;
 }
 

@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.rivals);
 var pagenav = new History(valid_versions);
 
-var rivals_view = React.createClass({
+var rivals_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.rivals);
@@ -118,7 +118,7 @@ var rivals_view = React.createClass({
         if (dp_count >= 5) { dp_avail = false; }
 
         return (
-            <span>
+            <>
                 {sp_avail ?
                     <Add
                         title="Add SP Rival"
@@ -137,7 +137,7 @@ var rivals_view = React.createClass({
                     /> :
                     null
                 }
-            </span>
+            </>
         );
     },
 
@@ -171,7 +171,7 @@ var rivals_view = React.createClass({
                         }.bind(this))}
                     </div>
                     <div className="section">
-                        <form onSubmit={this.searchForPlayers}>
+                        <form onSubmit={this.searchForPlayers} className="padded">
                             <label for="search">DJ Name or IIDX ID:</label>
                             <br />
                             <input

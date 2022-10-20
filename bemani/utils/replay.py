@@ -6,27 +6,40 @@ import sys
 from bemani.protocol import EAmuseProtocol, Node
 
 
-def hex_string(length: int, caps: bool=False) -> str:
+def hex_string(length: int, caps: bool = False) -> str:
     if caps:
-        string = '0123456789ABCDEF'
+        string = "0123456789ABCDEF"
     else:
-        string = '0123456789abcdef'
-    return ''.join([random.choice(string) for x in range(length)])
+        string = "0123456789abcdef"
+    return "".join([random.choice(string) for x in range(length)])
 
 
 class Protocol:
-    def __init__(self, address: str, port: int, encryption: bool, compression: bool, verbose: bool) -> None:
+    def __init__(
+        self,
+        address: str,
+        port: int,
+        encryption: bool,
+        compression: bool,
+        verbose: bool,
+    ) -> None:
         self.__address = address
         self.__port = port
         self.__encryption = encryption
         self.__compression = compression
         self.__verbose = verbose
 
-    def exchange(self, uri: str, tree: Node, text_encoding: str="shift-jis", packet_encoding: str="binary") -> Node:
+    def exchange(
+        self,
+        uri: str,
+        tree: Node,
+        text_encoding: str = "shift-jis",
+        packet_encoding: str = "binary",
+    ) -> Node:
         headers = {}
 
         if self.__verbose:
-            print('Outgoing request:')
+            print("Outgoing request:")
             print(tree)
 
         # Handle encoding
@@ -39,17 +52,17 @@ class Protocol:
 
         # Handle encryption
         if self.__encryption:
-            encryption = f'1-{hex_string(8)}-{hex_string(4)}'
-            headers['X-Eamuse-Info'] = encryption
+            encryption = f"1-{hex_string(8)}-{hex_string(4)}"
+            headers["X-Eamuse-Info"] = encryption
         else:
             encryption = None
 
         # Handle compression
         if self.__compression:
-            compression = 'lz77'
+            compression = "lz77"
         else:
             compression = None
-        headers['X-Compress'] = compression
+        headers["X-Compress"] = compression
 
         # Convert it
         proto = EAmuseProtocol()
@@ -69,8 +82,8 @@ class Protocol:
         )
 
         # Get the compression and encryption
-        encryption = headers.get('X-Eamuse-Info')
-        compression = headers.get('X-Compress')
+        encryption = headers.get("X-Eamuse-Info")
+        compression = headers.get("X-Compress")
 
         # Decode it
         packet = proto.decode(
@@ -79,21 +92,50 @@ class Protocol:
             r.content,
         )
         if self.__verbose:
-            print('Incoming response:')
+            print("Incoming response:")
             print(packet)
         return packet
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="A utility to replay a packet from a log or binary dump.")
-    parser.add_argument("-i", "--infile", help="File containing an XML or binary node structure. Use - for stdin.", type=str, default=None, required=True)
-    parser.add_argument("-e", "--encoding", help="Encoding for the packet, defaults to UTF-8.", type=str, default='utf-8')
-    parser.add_argument("-p", "--port", help="Port to talk to. Defaults to 80", type=int, default=80)
-    parser.add_argument("-a", "--address", help="Address to talk to. Defaults to 127.0.0.1", type=str, default="127.0.0.1")
-    parser.add_argument("-u", "--path", help="URI that we should post to. Defaults to '/'", type=str, default="/")
+    parser = argparse.ArgumentParser(
+        description="A utility to replay a packet from a log or binary dump."
+    )
+    parser.add_argument(
+        "-i",
+        "--infile",
+        help="File containing an XML or binary node structure. Use - for stdin.",
+        type=str,
+        default=None,
+        required=True,
+    )
+    parser.add_argument(
+        "-e",
+        "--encoding",
+        help="Encoding for the packet, defaults to UTF-8.",
+        type=str,
+        default="utf-8",
+    )
+    parser.add_argument(
+        "-p", "--port", help="Port to talk to. Defaults to 80", type=int, default=80
+    )
+    parser.add_argument(
+        "-a",
+        "--address",
+        help="Address to talk to. Defaults to 127.0.0.1",
+        type=str,
+        default="127.0.0.1",
+    )
+    parser.add_argument(
+        "-u",
+        "--path",
+        help="URI that we should post to. Defaults to '/'",
+        type=str,
+        default="/",
+    )
     args = parser.parse_args()
 
-    if args.infile == '-':
+    if args.infile == "-":
         # Load from stdin
         packet = sys.stdin.buffer.read()
     else:
@@ -103,10 +145,12 @@ def main() -> None:
 
     # Add an XML special node to force encoding (will be overwritten if there
     # is one in the packet).
-    packet = b''.join([
-        f'<?xml encoding="{args.encoding}"?>'.encode(args.encoding),
-        packet,
-    ])
+    packet = b"".join(
+        [
+            f'<?xml encoding="{args.encoding}"?>'.encode(args.encoding),
+            packet,
+        ]
+    )
 
     # Attempt to decode it
     proto = EAmuseProtocol()
@@ -120,16 +164,16 @@ def main() -> None:
         # Can't decode, exit
         raise Exception("Unable to decode packet!")
 
-    model = tree.attribute('model')
+    model = tree.attribute("model")
     module = tree.children[0].name
-    method = tree.children[0].attribute('method')
+    method = tree.children[0].attribute("method")
 
     server = Protocol(args.address, args.port, False, False, False)
     server.exchange(
-        f'{args.path}?model={model}&module={module}&method={method}',
+        f"{args.path}?model={model}&module={module}&method={method}",
         tree,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

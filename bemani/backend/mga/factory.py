@@ -14,13 +14,19 @@ class MetalGearArcadeFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for gamecode in ['I36']:
+        for gamecode in ["I36"]:
             Base.register(gamecode, MetalGearArcadeFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional[Base]:
 
-        if model.gamecode == 'I36':
+        if model.gamecode == "I36":
             return MetalGearArcade(data, config, model)
 
         # Unknown game version

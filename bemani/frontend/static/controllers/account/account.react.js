@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var account_management = React.createClass({
+var account_management = createReactClass({
     getInitialState: function(props) {
         return {
             email: window.email,
@@ -87,14 +87,14 @@ var account_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="Password">{
                 !this.state.editing_password ?
-                    <span>
+                    <>
                         <span>&bull;&bull;&bull;&bull;&bull;&bull;</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_password: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePassword}>
                         <div>
                             <label for="old">Current password:</label>
@@ -158,14 +158,14 @@ var account_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="Email Address">{
                 !this.state.editing_email ?
-                    <span>
+                    <>
                         <span>{ this.state.email }</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_email: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveEmail}>
                         <div>
                             <label for="old">Current password:</label>
@@ -217,14 +217,14 @@ var account_management = React.createClass({
         return (
             <LabelledSection vertical={true} label="PIN">{
                 !this.state.editing_pin ?
-                    <span>
+                    <>
                         <span>&bull;&bull;&bull;&bull;</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_pin: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.savePin}>
                         <input
                             type="text"

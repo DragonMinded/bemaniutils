@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Add = React.createClass({
+var Add = createReactClass({
     render: function() {
         return (
             <Button

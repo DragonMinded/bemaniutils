@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var UnknownEvent = React.createClass({
+var UnknownEvent = createReactClass({
     render: function() {
         return (
             <tr key={event.id}>
@@ -15,7 +15,7 @@ var UnknownEvent = React.createClass({
     },
 });
 
-var ExceptionEvent = React.createClass({
+var ExceptionEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var location = 'Unknown Service';
@@ -23,44 +23,44 @@ var ExceptionEvent = React.createClass({
         if (event.data.service == 'frontend') {
             location = 'Web UI';
             details = (
-                <span>
+                <>
                     <div>
                         <div className="inline">URI:</div>
                         <pre className="inline">{event.data.request}</pre>
                     </div>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         } else if(event.data.service == 'xrpc') {
             location = 'Game Services';
             details = (
-                <span>
+                <>
                     <div>Request:</div>
                     <LongMessage>{event.data.request}</LongMessage>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         } else if(event.data.service == 'scheduler') {
             location = 'Work Scheduler';
             details = (
-                <span>
+                <>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         } else if (event.data.service == 'api') {
             location = 'Data Exchange API';
             details = (
-                <span>
+                <>
                     <div>
                         <div className="inline">URI:</div>
                         <pre className="inline">{event.data.request}</pre>
                     </div>
                     <div>Exception:</div>
                     <LongMessage>{event.data.traceback}</LongMessage>
-                </span>
+                </>
             );
         }
 
@@ -77,7 +77,7 @@ var ExceptionEvent = React.createClass({
     },
 });
 
-var UnhandledPacketEvent = React.createClass({
+var UnhandledPacketEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         return (
@@ -96,7 +96,7 @@ var UnhandledPacketEvent = React.createClass({
     },
 });
 
-var UnauthorizedClientEvent = React.createClass({
+var UnauthorizedClientEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         return (
@@ -125,7 +125,7 @@ var UnauthorizedClientEvent = React.createClass({
     },
 });
 
-var PCBEvent = React.createClass({
+var PCBEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         return (
@@ -162,7 +162,7 @@ var PCBEvent = React.createClass({
     },
 });
 
-var PASELITransactionEvent = React.createClass({
+var PASELITransactionEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var username = null;
@@ -228,7 +228,7 @@ var PASELITransactionEvent = React.createClass({
     },
 });
 
-var JubeatLeagueCourseEvent = React.createClass({
+var JubeatLeagueCourseEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -256,7 +256,7 @@ var JubeatLeagueCourseEvent = React.createClass({
     },
 });
 
-var JubeatFCChallengeEvent = React.createClass({
+var JubeatFCChallengeEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -290,7 +290,37 @@ var JubeatFCChallengeEvent = React.createClass({
     },
 });
 
-var IIDXDailyChartsEvent = React.createClass({
+var JubeatRandomCourseEvent = createReactClass({
+    render: function() {
+        var event = this.props.event;
+        var game = this.props.versions[event.data.version];
+        var charts = ["Basic", "Advanced", "Extreme"];
+
+        return (
+            <tr key={event.id}>
+                <td><Timestamp timestamp={event.timestamp} /></td>
+                <td className="scheduled">
+                    <div className="circle" />
+                    Generated New {game} Random 10s Course
+                </td>
+                <td className="details">
+                    <div>Songs:</div>
+                    {[event.data.song1, event.data.song2, event.data.song3].map(function(song) {
+                        return (
+                            <div>
+                                <a href={Link.get('jubeatsong', song.id) + "#" + charts[song.chart]}>
+                                    {this.props.songs[song.id].artist}{this.props.songs[song.id].artist ? " - " : ""}{this.props.songs[song.id].name}
+                                </a> ({charts[song.chart]})
+                            </div>
+                        );
+                    }.bind(this))}
+                </td>
+            </tr>
+        );
+    },
+});
+
+var IIDXDailyChartsEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -318,7 +348,7 @@ var IIDXDailyChartsEvent = React.createClass({
     },
 });
 
-var PopnMusicCourseEvent = React.createClass({
+var PopnMusicCourseEvent = createReactClass({
     render: function() {
         var event = this.props.event;
         var game = this.props.versions[event.data.version];
@@ -342,7 +372,7 @@ var PopnMusicCourseEvent = React.createClass({
     },
 });
 
-var DDRProfilePurge = React.createClass({
+var DDRProfilePurge = createReactClass({
     render: function() {
         var event = this.props.event;
         var username = null;

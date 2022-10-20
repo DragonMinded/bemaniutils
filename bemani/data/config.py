@@ -13,32 +13,36 @@ class Database:
 
     @property
     def address(self) -> str:
-        return str(self.__config.get('database', {}).get('address', 'localhost'))
+        return str(self.__config.get("database", {}).get("address", "localhost"))
 
     @property
     def database(self) -> str:
-        return str(self.__config.get('database', {}).get('database', 'bemani'))
+        return str(self.__config.get("database", {}).get("database", "bemani"))
 
     @property
     def user(self) -> str:
-        return str(self.__config.get('database', {}).get('user', 'bemani'))
+        return str(self.__config.get("database", {}).get("user", "bemani"))
 
     @property
     def password(self) -> str:
-        return str(self.__config.get('database', {}).get('password', 'bemani'))
+        return str(self.__config.get("database", {}).get("password", "bemani"))
 
     @property
     def engine(self) -> Engine:
-        engine = self.__config.get('database', {}).get('engine')
+        engine = self.__config.get("database", {}).get("engine")
         if engine is None:
-            raise Exception("Config object is not instantiated properly, no SQLAlchemy engine present!")
+            raise Exception(
+                "Config object is not instantiated properly, no SQLAlchemy engine present!"
+            )
         if not isinstance(engine, Engine):
-            raise Exception("Config object is not instantiated properly, engine property is not a SQLAlchemy Engine!")
+            raise Exception(
+                "Config object is not instantiated properly, engine property is not a SQLAlchemy Engine!"
+            )
         return engine
 
     @property
     def read_only(self) -> bool:
-        return bool(self.__config.get('database', {}).get('read_only', False))
+        return bool(self.__config.get("database", {}).get("read_only", False))
 
 
 class Server:
@@ -47,41 +51,41 @@ class Server:
 
     @property
     def address(self) -> str:
-        return str(self.__config.get('server', {}).get('address', '127.0.0.1'))
+        return str(self.__config.get("server", {}).get("address", "127.0.0.1"))
 
     @property
     def keepalive(self) -> str:
-        return str(self.__config.get('server', {}).get('keepalive', self.address))
+        return str(self.__config.get("server", {}).get("keepalive", self.address))
 
     @property
     def port(self) -> int:
-        return int(self.__config.get('server', {}).get('port', 80))
+        return int(self.__config.get("server", {}).get("port", 80))
 
     @property
     def https(self) -> bool:
-        return bool(self.__config.get('server', {}).get('https', False))
+        return bool(self.__config.get("server", {}).get("https", False))
 
     @property
     def uri(self) -> Optional[str]:
-        uri = self.__config.get('server', {}).get('uri')
+        uri = self.__config.get("server", {}).get("uri")
         return str(uri) if uri else None
 
     @property
     def redirect(self) -> Optional[str]:
-        redirect = self.__config.get('server', {}).get('redirect')
+        redirect = self.__config.get("server", {}).get("redirect")
         return str(redirect) if redirect else None
 
     @property
     def enforce_pcbid(self) -> bool:
-        return bool(self.__config.get('server', {}).get('enforce_pcbid', False))
+        return bool(self.__config.get("server", {}).get("enforce_pcbid", False))
 
     @property
     def pcbid_self_grant_limit(self) -> int:
-        return int(self.__config.get('server', {}).get('pcbid_self_grant_limit', 0))
+        return int(self.__config.get("server", {}).get("pcbid_self_grant_limit", 0))
 
     @property
     def region(self) -> int:
-        region = int(self.__config.get('server', {}).get('region', RegionConstants.USA))
+        region = int(self.__config.get("server", {}).get("region", RegionConstants.USA))
         if region in {RegionConstants.EUROPE, RegionConstants.NO_MAPPING}:
             # Bogus values we support.
             return region
@@ -91,6 +95,11 @@ class Server:
         # Region was fine.
         return region
 
+    @property
+    def area(self) -> Optional[str]:
+        area = self.__config.get("server", {}).get("area")
+        return str(area) if area else None
+
 
 class Client:
     def __init__(self, parent_config: "Config") -> None:
@@ -98,9 +107,11 @@ class Client:
 
     @property
     def address(self) -> str:
-        address = self.__config.get('client', {}).get('address')
+        address = self.__config.get("client", {}).get("address")
         if address is None:
-            raise Exception("Config object is not instantiated properly, no client address present!")
+            raise Exception(
+                "Config object is not instantiated properly, no client address present!"
+            )
         return str(address)
 
 
@@ -110,14 +121,16 @@ class Machine:
 
     @property
     def pcbid(self) -> str:
-        pcbid = self.__config.get('machine', {}).get('pcbid')
+        pcbid = self.__config.get("machine", {}).get("pcbid")
         if pcbid is None:
-            raise Exception("Config object is not instantiated properly, no machine pcbid present!")
+            raise Exception(
+                "Config object is not instantiated properly, no machine pcbid present!"
+            )
         return str(pcbid)
 
     @property
     def arcade(self) -> Optional[ArcadeID]:
-        return self.__config.get('machine', {}).get('arcade')
+        return self.__config.get("machine", {}).get("arcade")
 
 
 class PASELI:
@@ -126,11 +139,11 @@ class PASELI:
 
     @property
     def enabled(self) -> bool:
-        return bool(self.__config.get('paseli', {}).get('enabled', False))
+        return bool(self.__config.get("paseli", {}).get("enabled", False))
 
     @property
     def infinite(self) -> bool:
-        return bool(self.__config.get('paseli', {}).get('infinite', False))
+        return bool(self.__config.get("paseli", {}).get("infinite", False))
 
 
 class WebHooks:
@@ -143,7 +156,7 @@ class DiscordWebHooks:
         self.__config = parent_config
 
     def __getitem__(self, key: GameConstants) -> Optional[str]:
-        uri = self.__config.get('webhooks', {}).get('discord', {}).get(key.value)
+        uri = self.__config.get("webhooks", {}).get("discord", {}).get(key.value)
         return str(uri) if uri else None
 
 
@@ -161,55 +174,61 @@ class Config(dict):
     def clone(self) -> "Config":
         # Somehow its not possible to clone this object if an instantiated Engine is present,
         # so we do a little shenanigans here.
-        engine = self.get('database', {}).get('engine')
+        engine = self.get("database", {}).get("engine")
         if engine is not None:
-            self['database']['engine'] = None
+            self["database"]["engine"] = None
 
         clone = Config(copy.deepcopy(self))
 
         if engine is not None:
-            self['database']['engine'] = engine
-            clone['database']['engine'] = engine
+            self["database"]["engine"] = engine
+            clone["database"]["engine"] = engine
 
         return clone
 
     @property
     def filename(self) -> str:
-        filename = self.get('filename')
+        filename = self.get("filename")
         if filename is None:
-            raise Exception("Config object is not instantiated properly, no filename present!")
+            raise Exception(
+                "Config object is not instantiated properly, no filename present!"
+            )
         return os.path.abspath(str(filename))
 
     @property
     def support(self) -> Set[GameConstants]:
-        support = self.get('support')
+        support = self.get("support")
         if support is None:
-            raise Exception("Config object is not instantiated properly, no support list present!")
+            raise Exception(
+                "Config object is not instantiated properly, no support list present!"
+            )
         if not isinstance(support, set):
-            raise Exception("Config object is not instantiated properly, support property is not a Set!")
+            raise Exception(
+                "Config object is not instantiated properly, support property is not a Set!"
+            )
         return support
 
     @property
     def secret_key(self) -> str:
-        return str(self.get('secret_key', 'youdidntchangethisatalldidyou?'))
+        return str(self.get("secret_key", "youdidntchangethisatalldidyou?"))
 
     @property
     def name(self) -> str:
-        return str(self.get('name', 'e-AMUSEMENT Network'))
+        return str(self.get("name", "e-AMUSEMENT Network"))
 
     @property
     def email(self) -> str:
-        return str(self.get('email', 'nobody@nowhere.com'))
+        return str(self.get("email", "nobody@nowhere.com"))
 
     @property
     def cache_dir(self) -> str:
-        return os.path.abspath(str(self.get('cache_dir', '/tmp')))
+        return os.path.abspath(str(self.get("cache_dir", "/tmp")))
 
     @property
     def theme(self) -> str:
-        return str(self.get('theme', 'default'))
+        return str(self.get("theme", "default"))
 
     @property
     def event_log_duration(self) -> Optional[int]:
-        duration = self.get('event_log_duration')
+        duration = self.get("event_log_duration")
         return int(duration) if duration else None

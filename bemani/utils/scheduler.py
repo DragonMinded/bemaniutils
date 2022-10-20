@@ -67,24 +67,37 @@ def run_scheduled_work(config: Config) -> None:
         cache.preload(data, config)
 
     # Now, possibly delete old log entries
-    keep_duration = config.get('event_log_duration', 0)
+    keep_duration = config.get("event_log_duration", 0)
     if keep_duration > 0:
         # Calculate timestamp of events we should delete
         oldest_event = Time.now() - keep_duration
         data.local.network.delete_events(oldest_event)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="A scheduler for work that needs to be done periodically.")
-    parser.add_argument("-c", "--config", help="Core configuration. Defaults to server.yaml", type=str, default="server.yaml")
-    parser.add_argument("-o", "--read-only", action="store_true", help="Force the database into read-only mode.")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="A scheduler for work that needs to be done periodically."
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Core configuration. Defaults to server.yaml",
+        type=str,
+        default="server.yaml",
+    )
+    parser.add_argument(
+        "-o",
+        "--read-only",
+        action="store_true",
+        help="Force the database into read-only mode.",
+    )
     args = parser.parse_args()
 
     # Set up global configuration
     config = Config()
     load_config(args.config, config)
     if args.read_only:
-        config['database']['read_only'] = True
+        config["database"]["read_only"] = True
 
     # Run out of band work
     run_scheduled_work(config)

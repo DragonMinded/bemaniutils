@@ -26,6 +26,12 @@ extern "C"
         double a;
     } floatcolor_t;
 
+    typedef struct hslcolor {
+        double h;
+        double s;
+        double l;
+    } hslcolor_t;
+
     typedef struct point {
         double x;
         double y;
@@ -81,6 +87,7 @@ extern "C"
         int use_perspective;
         floatcolor_t add_color;
         floatcolor_t mult_color;
+        hslcolor_t hsl_shift;
         int blendfunc;
         pthread_t *thread;
         int aa_mode;
@@ -88,6 +95,101 @@ extern "C"
 
     inline unsigned char clamp(double color) {
         return fmin(fmax(0.0, roundf(color)), 255.0);
+    }
+
+    inline unsigned int min(unsigned int x, unsigned int y) {
+        return x < y ? x : y;
+    }
+
+    inline unsigned int max(unsigned int x, unsigned int y) {
+        return x > y ? x : y;
+    }
+
+    void rgb_to_hsl(int r, int g, int b, double *h, double *s, double *l) {
+        int cmax = max(max(r, g), b);
+        int cmin = min(min(r, g), b);
+        double sum = (double)(cmin + cmax);
+
+        // First, calculate luminance, which is the sum divided by 2. We
+        // also need to scale down by 255 since RGB values are integers!
+        *l = sum / (2.0 * 255.0);
+        if (cmax == cmin) {
+            // No point in calculating anything else, its just luminance.
+            *h = 0.0;
+            *s = 0.0;
+            return;
+        }
+
+        // Second, calculate saturation.
+        double delta = (double)(cmax - cmin);
+        if (*l <= 0.5) {
+            // 255 scaling appears on both sides, so no need to handle it.
+            *s = delta / sum;
+        } else {
+            // We need to remember to scale by 255 here, so let's factor it out.
+            *s = delta / ((2.0 * 255) - sum);
+        }
+
+        // Finaly, calculate hue. This can theoretically go above 1.0 or below
+        // 0.0 and most equations show it being clamped, but we need to clamp
+        // again when converting back so don't bother wasting time.
+        if (r == cmax) {
+            *h = ((double)(g - b) / 6.0) / delta;
+        } else if (g == cmax) {
+            *h = (1.0 / 3.0) + ((double)(b - r) / 6.0) / delta;
+        } else {
+            *h = (2.0 / 3.0) + ((double)(r - g) / 6.0) / delta;
+        }
+    }
+
+    inline double hue_to_rgb(double v1, double v2, double vh) {
+        // Clamp hue value to 0.0/1.0, respecting the fact that 361 degrees is
+        // equivalent to 1 degree, and negative 1 degree is equivalent to 359.
+        if (vh < 0.0) {
+            vh += 1.0;
+        }
+        if (vh >= 1.0) {
+            vh -= 1.0;
+        }
+
+        // Split back into 3 quadrants since RGB isn't linear with in these,
+        // there's a step function where at some point the slope goes from positive
+        // to negative non-continuously.
+        if ((6.0 * vh) < 1.0) {
+            return v1 + ((v2 - v1) * 6.0 * vh);
+        }
+        if ((2.0 * vh) < 1.0) {
+            return v2;
+        }
+        if ((3.0 * vh) < 2.0) {
+            return v1 + ((v2 - v1) * ((2.0 / 3.0) - vh) * 6.0);
+        }
+
+        return v1;
+    }
+
+    void hsl_to_rgb(double h, double s, double l, unsigned char *r, unsigned char *g, unsigned char *b) {
+        // Clamp hue value to 0.0/1.0, respecting the fact that 361 degrees is
+        // equivalent to 1 degree, and negative 1 degree is equivalent to 359.
+        while (h < 0.0) {
+            h += 1.0;
+        }
+        while (h >= 1.0) {
+            h -= 1.0;
+        }
+        s = fmin(fmax(s, 0.0), 1.0);
+        l = fmin(fmax(l, 0.0), 1.0);
+
+        if (s == 0.0) {
+            *r = *g = *b = (int)(l * 255.0);
+        } else {
+            double v2 = (l < 0.5) ? (l * (1.0 + s)) : ((l + s) - (l * s));
+            double v1 = (2.0 * l) - v2;
+
+            *r = (unsigned char)(255.0 * hue_to_rgb(v1, v2, h + (1.0 / 3.0)));
+            *g = (unsigned char)(255.0 * hue_to_rgb(v1, v2, h));
+            *b = (unsigned char)(255.0 * hue_to_rgb(v1, v2, h - (1.0 / 3.0)));
+        }
     }
 
     intcolor_t blend_normal(
@@ -242,6 +344,7 @@ extern "C"
     intcolor_t blend_point(
         floatcolor_t add_color,
         floatcolor_t mult_color,
+        hslcolor_t hsl_shift,
         intcolor_t src_color,
         intcolor_t dest_color,
         int blendfunc
@@ -253,6 +356,32 @@ extern "C"
             clamp((src_color.b * mult_color.b) + (255 * add_color.b)),
             clamp((src_color.a * mult_color.a) + (255 * add_color.a)),
         };
+
+        // Add in hsl shift if there is anything to do.
+        if (hsl_shift.h != 0.0 || hsl_shift.s != 0.0 || hsl_shift.l != 0.0) {
+            hslcolor_t hslcolor;
+            rgb_to_hsl(
+                src_color.r,
+                src_color.g,
+                src_color.b,
+                &hslcolor.h,
+                &hslcolor.s,
+                &hslcolor.l
+            );
+
+            hslcolor.h += hsl_shift.h;
+            hslcolor.s += hsl_shift.s;
+            hslcolor.l += hsl_shift.l;
+
+            hsl_to_rgb(
+                hslcolor.h,
+                hslcolor.s,
+                hslcolor.l,
+                &src_color.r,
+                &src_color.g,
+                &src_color.b
+            );
+        }
 
         if (blendfunc == 3) {
             return blend_multiply(dest_color, src_color);
@@ -485,7 +614,7 @@ extern "C"
                     }
 
                     // Blend it.
-                    work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, average, work->imgdata[imgoff], work->blendfunc);
+                    work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->hsl_shift, average, work->imgdata[imgoff], work->blendfunc);
                 } else {
                     // Grab the center of the pixel to get the color.
                     int texx = -1;
@@ -510,7 +639,7 @@ extern "C"
 
                     // Blend it.
                     unsigned int texoff = texx + (texy * work->texwidth);
-                    work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->texdata[texoff], work->imgdata[imgoff], work->blendfunc);
+                    work->imgdata[imgoff] = blend_point(work->add_color, work->mult_color, work->hsl_shift, work->texdata[texoff], work->imgdata[imgoff], work->blendfunc);
                 }
             }
         }
@@ -533,6 +662,7 @@ extern "C"
         unsigned int maxy,
         floatcolor_t add_color,
         floatcolor_t mult_color,
+        hslcolor_t hsl_shift,
         double xscale,
         double yscale,
         matrix_t inverse,
@@ -567,6 +697,7 @@ extern "C"
             work.inverse = inverse;
             work.add_color = add_color;
             work.mult_color = mult_color;
+            work.hsl_shift = hsl_shift;
             work.blendfunc = blendfunc;
             work.aa_mode = aa_mode;
             work.use_perspective = use_perspective;
@@ -614,6 +745,7 @@ extern "C"
                 work->inverse = inverse;
                 work->add_color = add_color;
                 work->mult_color = mult_color;
+                work->hsl_shift = hsl_shift;
                 work->blendfunc = blendfunc;
                 work->thread = thread;
                 work->aa_mode = aa_mode;

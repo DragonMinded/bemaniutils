@@ -24,12 +24,17 @@ class ReflecBeatFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for gamecode in ['KBR', 'LBR', 'MBR']:
+        for gamecode in ["KBR", "LBR", "MBR"]:
             Base.register(gamecode, ReflecBeatFactory)
 
     @classmethod
-    def create(cls, data: Data, config: Config, model: Model, parentmodel: Optional[Model]=None) -> Optional[Base]:
-
+    def create(
+        cls,
+        data: Data,
+        config: Config,
+        model: Model,
+        parentmodel: Optional[Model] = None,
+    ) -> Optional[Base]:
         def version_from_date(date: int) -> Optional[int]:
             if date < 2014060400:
                 return VersionConstants.REFLEC_BEAT_COLETTE
@@ -43,16 +48,16 @@ class ReflecBeatFactory(Factory):
                 return VersionConstants.REFLEC_BEAT_REFLESIA
             return None
 
-        if model.gamecode == 'KBR':
+        if model.gamecode == "KBR":
             return ReflecBeat(data, config, model)
-        if model.gamecode == 'LBR':
+        if model.gamecode == "LBR":
             return ReflecBeatLimelight(data, config, model)
-        if model.gamecode == 'MBR':
+        if model.gamecode == "MBR":
             if model.version is None:
                 if parentmodel is None:
                     return None
 
-                if parentmodel.gamecode not in ['KBR', 'LBR', 'MBR']:
+                if parentmodel.gamecode not in ["KBR", "LBR", "MBR"]:
                     return None
                 parentversion = version_from_date(parentmodel.version)
                 if parentversion == VersionConstants.REFLEC_BEAT_COLETTE:

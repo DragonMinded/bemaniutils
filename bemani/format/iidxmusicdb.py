@@ -28,7 +28,6 @@ class IIDXSong:
 
 
 class IIDXMusicDB:
-
     def __init__(self, data: bytes) -> None:
         self.__songs: Dict[int, Tuple[IIDXSong, int]] = {}
         self.__data = data
@@ -39,13 +38,13 @@ class IIDXMusicDB:
         data = copy.deepcopy(self.__data)
 
         def format_string(string: str) -> bytes:
-            bdata = string.encode('shift-jis')
+            bdata = string.encode("shift-jis")
             if len(bdata) < 64:
-                bdata = bdata + (b'\0' * (64 - len(bdata)))
+                bdata = bdata + (b"\0" * (64 - len(bdata)))
             return bdata
 
         def copy_over(dst: bytes, src: bytes, base: int, offset: int) -> bytes:
-            return dst[:(base + offset)] + src + dst[(base + offset + len(src)):]
+            return dst[: (base + offset)] + src + dst[(base + offset + len(src)) :]
 
         for mid in self.__songs:
             song, offset = self.__songs[mid]
@@ -66,19 +65,19 @@ class IIDXMusicDB:
         )
         # Offset and difference lookup (not sure this is always right)
         if data[4] == 0x14:
-            offset = 0xa420
+            offset = 0xA420
             leap = 0x320
         elif data[4] == 0x15:
-            offset = 0xabf0
+            offset = 0xABF0
             leap = 0x320
         elif data[4] == 0x16:
-            offset = 0xb3c0
+            offset = 0xB3C0
             leap = 0x340
         elif data[4] == 0x17:
-            offset = 0xbb90
+            offset = 0xBB90
             leap = 0x340
         elif data[4] == 0x18:
-            offset = 0xc360
+            offset = 0xC360
             leap = 0x340
         elif data[4] == 0x19:
             offset = 0xCB30
@@ -87,8 +86,8 @@ class IIDXMusicDB:
             offset = 0xD300
             leap = 0x344
 
-        if sig[0] != b'IIDX':
-            raise Exception(f'Invalid signature \'{sig[0]}\' found!')
+        if sig[0] != b"IIDX":
+            raise Exception(f"Invalid signature '{sig[0]}' found!")
 
         def parse_string(string: bytes) -> str:
             for i in range(len(string)):
@@ -96,7 +95,7 @@ class IIDXMusicDB:
                     string = string[:i]
                     break
 
-            return string.decode('shift-jis')
+            return string.decode("shift-jis")
 
         # Load songs
         while True:
@@ -118,16 +117,25 @@ class IIDXMusicDB:
                 parse_string(songdata[1]),
                 parse_string(songdata[2]),
                 parse_string(songdata[3]),
-                [songdata[5], songdata[6], songdata[7], songdata[8], songdata[9], songdata[10]],
+                [
+                    songdata[5],
+                    songdata[6],
+                    songdata[7],
+                    songdata[8],
+                    songdata[9],
+                    songdata[10],
+                ],
                 songdata[4],
             )
-            if song.artist == 'event_data' and song.genre == 'event_data':
+            if song.artist == "event_data" and song.genre == "event_data":
                 continue
             self.__songs[songdata[11]] = (song, songoffset)
 
     @property
     def songs(self) -> List[IIDXSong]:
-        return sorted([self.__songs[mid][0] for mid in self.__songs], key=lambda song: song.id)
+        return sorted(
+            [self.__songs[mid][0] for mid in self.__songs], key=lambda song: song.id
+        )
 
     @property
     def songids(self) -> List[int]:

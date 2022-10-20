@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 
-var Table = React.createClass({
+var Table = createReactClass({
     getInitialState: function(props) {
         var sortCol = -1;
         var sortDir = -1;

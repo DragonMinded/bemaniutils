@@ -7,24 +7,23 @@ from bemani.data import UserID
 
 
 class ProfileObject(BaseObject):
-
     def __format_ddr_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
-            'area': profile.get_int('area', -1) if exact else -1,
+            "area": profile.get_int("area", -1) if exact else -1,
         }
 
     def __format_iidx_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
-        qpro = profile.get_dict('qpro')
+        qpro = profile.get_dict("qpro")
 
         return {
-            'area': profile.get_int('pid', -1),
-            'qpro': {
-                'head': qpro.get_int('head', -1) if exact else -1,
-                'hair': qpro.get_int('hair', -1) if exact else -1,
-                'face': qpro.get_int('face', -1) if exact else -1,
-                'body': qpro.get_int('body', -1) if exact else -1,
-                'hand': qpro.get_int('hand', -1) if exact else -1,
-            }
+            "area": profile.get_int("pid", -1),
+            "qpro": {
+                "head": qpro.get_int("head", -1) if exact else -1,
+                "hair": qpro.get_int("hair", -1) if exact else -1,
+                "face": qpro.get_int("face", -1) if exact else -1,
+                "body": qpro.get_int("body", -1) if exact else -1,
+                "hand": qpro.get_int("hand", -1) if exact else -1,
+            },
         }
 
     def __format_jubeat_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
@@ -35,25 +34,27 @@ class ProfileObject(BaseObject):
 
     def __format_popn_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
-            'character': profile.get_int('chara', -1) if exact else -1,
+            "character": profile.get_int("chara", -1) if exact else -1,
         }
 
     def __format_reflec_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
-            'icon': profile.get_dict('config').get_int('icon_id', -1) if exact else -1,
+            "icon": profile.get_dict("config").get_int("icon_id", -1) if exact else -1,
         }
 
     def __format_sdvx_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {}
 
-    def __format_profile(self, cardids: List[str], profile: Profile, settings: ValidatedDict, exact: bool) -> Dict[str, Any]:
+    def __format_profile(
+        self, cardids: List[str], profile: Profile, settings: ValidatedDict, exact: bool
+    ) -> Dict[str, Any]:
         base = {
-            'name': profile.get_str('name'),
-            'cards': cardids,
-            'registered': settings.get_int('first_play_timestamp', -1),
-            'updated': settings.get_int('last_play_timestamp', -1),
-            'plays': settings.get_int('total_plays', -1),
-            'match': 'exact' if exact else 'partial',
+            "name": profile.get_str("name"),
+            "cards": cardids,
+            "registered": settings.get_int("first_play_timestamp", -1),
+            "updated": settings.get_int("last_play_timestamp", -1),
+            "plays": settings.get_int("total_plays", -1),
+            "match": "exact" if exact else "partial",
         }
 
         if self.game == GameConstants.DDR:
@@ -73,19 +74,23 @@ class ProfileObject(BaseObject):
 
         return base
 
-    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def fetch_v1(
+        self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         # Fetch the profiles
         profiles: List[Tuple[UserID, Profile]] = []
         if idtype == APIConstants.ID_TYPE_SERVER:
-            profiles.extend(self.data.local.user.get_all_profiles(self.game, self.version))
+            profiles.extend(
+                self.data.local.user.get_all_profiles(self.game, self.version)
+            )
         elif idtype == APIConstants.ID_TYPE_SONG:
             raise APIException(
-                'Unsupported ID for lookup!',
+                "Unsupported ID for lookup!",
                 405,
             )
         elif idtype == APIConstants.ID_TYPE_INSTANCE:
             raise APIException(
-                'Unsupported ID for lookup!',
+                "Unsupported ID for lookup!",
                 405,
             )
         elif idtype == APIConstants.ID_TYPE_CARD:
@@ -103,11 +108,13 @@ class ProfileObject(BaseObject):
                     # in the case that we returned scores for a user that doesn't have a
                     # profile on a particular version. We allow that on this network, so in
                     # order to not break remote networks, try our best to return any profile.
-                    profile = self.data.local.user.get_any_profile(self.game, self.version, userid)
+                    profile = self.data.local.user.get_any_profile(
+                        self.game, self.version, userid
+                    )
                     if profile is not None:
                         profiles.append((userid, profile))
         else:
-            raise APIException('Invalid ID type!')
+            raise APIException("Invalid ID type!")
 
         # Now, fetch the users, and filter out profiles belonging to orphaned users
         retval: List[Dict[str, Any]] = []
@@ -126,6 +133,13 @@ class ProfileObject(BaseObject):
             if settings is None:
                 settings = ValidatedDict({})
 
-            retval.append(self.__format_profile(id_to_cards[userid], profile, settings, profile.version == self.version))
+            retval.append(
+                self.__format_profile(
+                    id_to_cards[userid],
+                    profile,
+                    settings,
+                    profile.version == self.version,
+                )
+            )
 
         return retval

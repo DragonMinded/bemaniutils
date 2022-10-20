@@ -13,12 +13,12 @@ Table for storing registered clients to a data exchange API, as added
 by an admin.
 """
 client = Table(
-    'client',
+    "client",
     metadata,
-    Column('id', Integer, nullable=False, primary_key=True),
-    Column('timestamp', Integer, nullable=False, index=True),
-    Column('name', String(255), nullable=False),
-    Column('token', String(36), nullable=False)
+    Column("id", Integer, nullable=False, primary_key=True),
+    Column("timestamp", Integer, nullable=False, index=True),
+    Column("name", String(255), nullable=False),
+    Column("token", String(36), nullable=False),
 )
 
 """
@@ -26,18 +26,17 @@ Table for storing remote servers to a data exchange API, as added
 by an admin.
 """
 server = Table(
-    'server',
+    "server",
     metadata,
-    Column('id', Integer, nullable=False, primary_key=True),
-    Column('timestamp', Integer, nullable=False, index=True),
-    Column('uri', String(1024), nullable=False),
-    Column('token', String(64), nullable=False),
-    Column('config', Integer, nullable=False)
+    Column("id", Integer, nullable=False, primary_key=True),
+    Column("timestamp", Integer, nullable=False, index=True),
+    Column("uri", String(1024), nullable=False),
+    Column("token", String(64), nullable=False),
+    Column("config", Integer, nullable=False),
 )
 
 
 class APIData(APIProviderInterface, BaseData):
-
     def get_all_clients(self) -> List[Client]:
         """
         Grab all authorized clients in the system.
@@ -49,11 +48,12 @@ class APIData(APIProviderInterface, BaseData):
         cursor = self.execute(sql)
         return [
             Client(
-                result['id'],
-                result['timestamp'],
-                result['name'],
-                result['token'],
-            ) for result in cursor.fetchall()
+                result["id"],
+                result["timestamp"],
+                result["name"],
+                result["token"],
+            )
+            for result in cursor.fetchall()
         ]
 
     def validate_client(self, token: str) -> bool:
@@ -67,8 +67,8 @@ class APIData(APIProviderInterface, BaseData):
             True if the client is authorized, False otherwise.
         """
         sql = "SELECT count(*) AS count FROM client WHERE token = :token"
-        cursor = self.execute(sql, {'token': token})
-        return cursor.fetchone()['count'] == 1
+        cursor = self.execute(sql, {"token": token})
+        return cursor.fetchone()["count"] == 1
 
     def create_client(self, name: str) -> int:
         """
@@ -84,9 +84,9 @@ class APIData(APIProviderInterface, BaseData):
         cursor = self.execute(
             sql,
             {
-                'timestamp': Time.now(),
-                'name': name,
-                'token': str(uuid.uuid4()),
+                "timestamp": Time.now(),
+                "name": name,
+                "token": str(uuid.uuid4()),
             },
         )
 
@@ -103,7 +103,7 @@ class APIData(APIProviderInterface, BaseData):
             A Client object if the client entry was found or None otherwise.
         """
         sql = "SELECT timestamp, name, token FROM client WHERE id = :id"
-        cursor = self.execute(sql, {'id': clientid})
+        cursor = self.execute(sql, {"id": clientid})
         if cursor.rowcount != 1:
             # Couldn't find an entry with this ID
             return None
@@ -111,9 +111,9 @@ class APIData(APIProviderInterface, BaseData):
         result = cursor.fetchone()
         return Client(
             clientid,
-            result['timestamp'],
-            result['name'],
-            result['token'],
+            result["timestamp"],
+            result["name"],
+            result["token"],
         )
 
     def put_client(self, client: Client) -> None:
@@ -124,7 +124,7 @@ class APIData(APIProviderInterface, BaseData):
             client - A Client object to be updated.
         """
         sql = "UPDATE client SET name = :name WHERE id = :id"
-        self.execute(sql, {'id': client.id, 'name': client.name})
+        self.execute(sql, {"id": client.id, "name": client.name})
 
     def destroy_client(self, clientid: int) -> None:
         """
@@ -134,7 +134,7 @@ class APIData(APIProviderInterface, BaseData):
             clientid - Integer specifying client ID.
         """
         sql = "DELETE FROM client WHERE id = :id"
-        self.execute(sql, {'id': clientid})
+        self.execute(sql, {"id": clientid})
 
     def get_all_servers(self) -> List[Server]:
         """
@@ -143,14 +143,15 @@ class APIData(APIProviderInterface, BaseData):
         Returns:
             A list of Server objects sorted by add time.
         """
+
         def format_result(result: Dict[str, Any]) -> Server:
-            allow_stats = (result['config'] & 0x1) == 0
-            allow_scores = (result['config'] & 0x2) == 0
+            allow_stats = (result["config"] & 0x1) == 0
+            allow_scores = (result["config"] & 0x2) == 0
             return Server(
-                result['id'],
-                result['timestamp'],
-                result['uri'],
-                result['token'],
+                result["id"],
+                result["timestamp"],
+                result["uri"],
+                result["token"],
                 allow_stats,
                 allow_scores,
             )
@@ -174,9 +175,9 @@ class APIData(APIProviderInterface, BaseData):
         cursor = self.execute(
             sql,
             {
-                'timestamp': Time.now(),
-                'uri': uri,
-                'token': token,
+                "timestamp": Time.now(),
+                "uri": uri,
+                "token": token,
             },
         )
         return cursor.fetchone()[0]
@@ -192,19 +193,19 @@ class APIData(APIProviderInterface, BaseData):
             A Server object if the server entry was found or None otherwise.
         """
         sql = "SELECT timestamp, uri, token, config FROM server WHERE id = :id"
-        cursor = self.execute(sql, {'id': serverid})
+        cursor = self.execute(sql, {"id": serverid})
         if cursor.rowcount != 1:
             # Couldn't find an entry with this ID
             return None
 
         result = cursor.fetchone()
-        allow_stats = (result['config'] & 0x1) == 0
-        allow_scores = (result['config'] & 0x2) == 0
+        allow_stats = (result["config"] & 0x1) == 0
+        allow_scores = (result["config"] & 0x2) == 0
         return Server(
             serverid,
-            result['timestamp'],
-            result['uri'],
-            result['token'],
+            result["timestamp"],
+            result["uri"],
+            result["token"],
             allow_stats,
             allow_scores,
         )
@@ -222,7 +223,15 @@ class APIData(APIProviderInterface, BaseData):
         if not server.allow_scores:
             config = config | 0x2
         sql = "UPDATE server SET uri = :uri, token = :token, config = :config WHERE id = :id"
-        self.execute(sql, {'id': server.id, 'uri': server.uri, 'token': server.token, 'config': config})
+        self.execute(
+            sql,
+            {
+                "id": server.id,
+                "uri": server.uri,
+                "token": server.token,
+                "config": config,
+            },
+        )
 
     def destroy_server(self, serverid: int) -> None:
         """
@@ -232,4 +241,4 @@ class APIData(APIProviderInterface, BaseData):
             serverid - Integer specifying server ID.
         """
         sql = "DELETE FROM server WHERE id = :id"
-        self.execute(sql, {'id': serverid})
+        self.execute(sql, {"id": serverid})

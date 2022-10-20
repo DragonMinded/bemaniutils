@@ -1,0 +1,3 @@
+#! /bin/bash
+
+black --extend-exclude "setup\.py|\.pyi|bemani\/data\/migrations\/" .

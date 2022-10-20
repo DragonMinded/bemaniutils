@@ -5,7 +5,14 @@ from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import Profile, ValidatedDict, Model, GameConstants, DBConstants, Parallel
+from bemani.common import (
+    Profile,
+    ValidatedDict,
+    Model,
+    GameConstants,
+    DBConstants,
+    Parallel,
+)
 from bemani.data import Config, Data, Score, Machine, UserID
 from bemani.protocol import Node
 
@@ -62,8 +69,8 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     DAN_RANK_CHUDEN: Final[int] = DBConstants.IIDX_DAN_RANK_CHUDEN
     DAN_RANK_KAIDEN: Final[int] = DBConstants.IIDX_DAN_RANK_KAIDEN
 
-    DAN_RANKING_SINGLE: Final[str] = 'sgrade'
-    DAN_RANKING_DOUBLE: Final[str] = 'dgrade'
+    DAN_RANKING_SINGLE: Final[str] = "sgrade"
+    DAN_RANKING_DOUBLE: Final[str] = "dgrade"
 
     GHOST_TYPE_NONE: Final[int] = 0
     GHOST_TYPE_RIVAL: Final[int] = 100
@@ -78,12 +85,12 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     # Return the local2 service so that Copula and above will send certain packets.
     extra_services: List[str] = [
-        'local2',
+        "local2",
     ]
 
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         super().__init__(data, config, model)
-        if model.rev == 'X':
+        if model.rev == "X":
             self.omnimix = True
         else:
             self.omnimix = False
@@ -94,7 +101,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return DBConstants.OMNIMIX_VERSION_BUMP + self.version
         return self.version
 
-    def previous_version(self) -> Optional['IIDXBase']:
+    def previous_version(self) -> Optional["IIDXBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
@@ -106,9 +113,11 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('pc')
+        return Node.void("pc")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -136,7 +145,9 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], pid: Optional[int]) -> Profile:
+    def new_profile_by_refid(
+        self, refid: Optional[str], name: Optional[str], pid: Optional[int]
+    ) -> Profile:
         """
         Given a RefID and an optional name, create a profile and then return
         that newly created profile.
@@ -145,7 +156,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         if name is None:
-            name = 'なし'
+            name = "なし"
         if pid is None:
             pid = self.get_machine_region()
 
@@ -156,10 +167,10 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             refid,
             0,
             {
-                'name': name,
-                'pid': pid,
-                'settings': {
-                    'flags': 223  # Default to turning on all optional folders
+                "name": name,
+                "pid": pid,
+                "settings": {
+                    "flags": 223  # Default to turning on all optional folders
                 },
             },
         )
@@ -192,8 +203,8 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     def get_clear_rates(
         self,
-        songid: Optional[int]=None,
-        songchart: Optional[int]=None,
+        songid: Optional[int] = None,
+        songchart: Optional[int] = None,
     ) -> Dict[int, Dict[int, Dict[str, int]]]:
         """
         Returns a dictionary similar to the following:
@@ -208,24 +219,26 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             },
         }
         """
-        all_attempts, remote_attempts = Parallel.execute([
-            lambda: self.data.local.music.get_all_attempts(
-                game=self.game,
-                version=self.music_version,
-                songid=songid,
-                songchart=songchart,
-            ),
-            lambda: self.data.remote.music.get_clear_rates(
-                game=self.game,
-                version=self.music_version,
-                songid=songid,
-                songchart=songchart,
-            ),
-        ])
+        all_attempts, remote_attempts = Parallel.execute(
+            [
+                lambda: self.data.local.music.get_all_attempts(
+                    game=self.game,
+                    version=self.music_version,
+                    songid=songid,
+                    songchart=songchart,
+                ),
+                lambda: self.data.remote.music.get_clear_rates(
+                    game=self.game,
+                    version=self.music_version,
+                    songid=songid,
+                    songchart=songchart,
+                ),
+            ]
+        )
 
         attempts: Dict[int, Dict[int, Dict[str, int]]] = {}
         for (_, attempt) in all_attempts:
-            if attempt.data.get_int('clear_status') == self.CLEAR_STATUS_NO_PLAY:
+            if attempt.data.get_int("clear_status") == self.CLEAR_STATUS_NO_PLAY:
                 # This attempt was outside of the clear infra, so don't bother with it.
                 continue
 
@@ -234,24 +247,33 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 attempts[attempt.id] = {}
             if attempt.chart not in attempts[attempt.id]:
                 attempts[attempt.id][attempt.chart] = {
-                    'total': 0,
-                    'clears': 0,
-                    'fcs': 0,
+                    "total": 0,
+                    "clears": 0,
+                    "fcs": 0,
                 }
 
             # We saw an attempt, keep the total attempts in sync.
-            attempts[attempt.id][attempt.chart]['total'] = attempts[attempt.id][attempt.chart]['total'] + 1
+            attempts[attempt.id][attempt.chart]["total"] = (
+                attempts[attempt.id][attempt.chart]["total"] + 1
+            )
 
-            if attempt.data.get_int('clear_status', self.CLEAR_STATUS_FAILED) == self.CLEAR_STATUS_FAILED:
+            if (
+                attempt.data.get_int("clear_status", self.CLEAR_STATUS_FAILED)
+                == self.CLEAR_STATUS_FAILED
+            ):
                 # This attempt was a failure, so don't count it against clears of full combos
                 continue
 
             # It was at least a clear
-            attempts[attempt.id][attempt.chart]['clears'] = attempts[attempt.id][attempt.chart]['clears'] + 1
+            attempts[attempt.id][attempt.chart]["clears"] = (
+                attempts[attempt.id][attempt.chart]["clears"] + 1
+            )
 
-            if attempt.data.get_int('clear_status') == self.CLEAR_STATUS_FULL_COMBO:
+            if attempt.data.get_int("clear_status") == self.CLEAR_STATUS_FULL_COMBO:
                 # This was a full combo clear, so it also counts here
-                attempts[attempt.id][attempt.chart]['fcs'] = attempts[attempt.id][attempt.chart]['fcs'] + 1
+                attempts[attempt.id][attempt.chart]["fcs"] = (
+                    attempts[attempt.id][attempt.chart]["fcs"] + 1
+                )
 
         # Merge in remote attempts
         for songid in remote_attempts:
@@ -261,14 +283,20 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             for songchart in remote_attempts[songid]:
                 if songchart not in attempts[songid]:
                     attempts[songid][songchart] = {
-                        'total': 0,
-                        'clears': 0,
-                        'fcs': 0,
+                        "total": 0,
+                        "clears": 0,
+                        "fcs": 0,
                     }
 
-                attempts[songid][songchart]['total'] += remote_attempts[songid][songchart]['plays']
-                attempts[songid][songchart]['clears'] += remote_attempts[songid][songchart]['clears']
-                attempts[songid][songchart]['fcs'] += remote_attempts[songid][songchart]['combos']
+                attempts[songid][songchart]["total"] += remote_attempts[songid][
+                    songchart
+                ]["plays"]
+                attempts[songid][songchart]["clears"] += remote_attempts[songid][
+                    songchart
+                ]["clears"]
+                attempts[songid][songchart]["fcs"] += remote_attempts[songid][
+                    songchart
+                ]["combos"]
 
         # If requesting a specific song/chart, make sure its in the dict
         if songid is not None:
@@ -278,9 +306,9 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             if songchart is not None:
                 if songchart not in attempts[songid]:
                     attempts[songid][songchart] = {
-                        'total': 0,
-                        'clears': 0,
-                        'fcs': 0,
+                        "total": 0,
+                        "clears": 0,
+                        "fcs": 0,
                     }
 
         return attempts
@@ -339,26 +367,30 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             oldscore = None
 
         # Score history is verbatum, instead of highest score
-        history = ValidatedDict({
-            'clear_status': clear_status,
-            'miss_count': miss_count,
-        })
+        history = ValidatedDict(
+            {
+                "clear_status": clear_status,
+                "miss_count": miss_count,
+            }
+        )
         old_ex_score = ex_score
 
         if ghost is not None:
-            history['ghost'] = ghost
+            history["ghost"] = ghost
 
         if oldscore is None:
             # If it is a new score, create a new dictionary to add to
-            scoredata = ValidatedDict({
-                'clear_status': clear_status,
-                'pgreats': pgreats,
-                'greats': greats,
-            })
+            scoredata = ValidatedDict(
+                {
+                    "clear_status": clear_status,
+                    "pgreats": pgreats,
+                    "greats": greats,
+                }
+            )
             if miss_count != -1:
-                scoredata.replace_int('miss_count', miss_count)
+                scoredata.replace_int("miss_count", miss_count)
             if ghost is not None:
-                scoredata['ghost'] = ghost
+                scoredata["ghost"] = ghost
             raised = True
             highscore = True
         else:
@@ -367,21 +399,25 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             highscore = ex_score >= oldscore.points
             ex_score = max(ex_score, oldscore.points)
             scoredata = oldscore.data
-            scoredata.replace_int('clear_status', max(scoredata.get_int('clear_status'), clear_status))
+            scoredata.replace_int(
+                "clear_status", max(scoredata.get_int("clear_status"), clear_status)
+            )
             if miss_count != -1:
-                if scoredata.get_int('miss_count', -1) == -1:
-                    scoredata.replace_int('miss_count', miss_count)
+                if scoredata.get_int("miss_count", -1) == -1:
+                    scoredata.replace_int("miss_count", miss_count)
                 else:
-                    scoredata.replace_int('miss_count', min(scoredata.get_int('miss_count'), miss_count))
+                    scoredata.replace_int(
+                        "miss_count", min(scoredata.get_int("miss_count"), miss_count)
+                    )
             if raised:
-                scoredata.replace_int('pgreats', pgreats)
-                scoredata.replace_int('greats', greats)
+                scoredata.replace_int("pgreats", pgreats)
+                scoredata.replace_int("greats", greats)
                 if ghost is not None:
-                    scoredata.replace_bytes('ghost', ghost)
+                    scoredata.replace_bytes("ghost", ghost)
 
         if shop is not None:
-            history.replace_int('shop', shop)
-            scoredata.replace_int('shop', shop)
+            history.replace_int("shop", shop)
+            scoredata.replace_int("shop", shop)
 
         # Look up where this score was earned
         lid = self.get_machine_id()
@@ -477,30 +513,41 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         )
         if dan_score is None:
             dan_score = ValidatedDict()
-        dan_score.replace_int('percent', max(percent, dan_score.get_int('percent')))
-        dan_score.replace_int('stages_cleared', max(stages_cleared, dan_score.get_int('stages_cleared')))
+        dan_score.replace_int("percent", max(percent, dan_score.get_int("percent")))
+        dan_score.replace_int(
+            "stages_cleared", max(stages_cleared, dan_score.get_int("stages_cleared"))
+        )
         self.data.local.user.put_achievement(
-            self.game,
-            self.version,
-            userid,
-            rank,
-            dantype,
-            dan_score
+            self.game, self.version, userid, rank, dantype, dan_score
         )
 
     def db_to_game_status(self, db_status: int) -> int:
         """
         Given a DB status, translate to a game clear status.
         """
-        raise Exception('Implement in specific game class!')
+        raise Exception("Implement in specific game class!")
 
     def game_to_db_status(self, game_status: int) -> int:
         """
         Given a game clear status, translate to DB status.
         """
-        raise Exception('Implement in specific game class!')
+        raise Exception("Implement in specific game class!")
 
-    def make_score_struct(self, scores: List[Score], cltype: int, index: int) -> List[List[int]]:
+    def game_to_db_chart(self, game_chart: int) -> int:
+        """
+        Given a game's chart for a song, return the chart as defined above.
+        """
+        raise Exception("Implement in sub-class!")
+
+    def db_to_game_chart(self, db_chart: int) -> int:
+        """
+        Given a chart as defined above, return the game's chart constant.
+        """
+        raise Exception("Implement in sub-class!")
+
+    def make_score_struct(
+        self, scores: List[Score], cltype: int, index: int
+    ) -> List[List[int]]:
         scorestruct: Dict[int, List[int]] = {}
 
         for score in scores:
@@ -548,9 +595,11 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                     -1,  # Miss count another,
                 ]
 
-            scorestruct[musicid][chartindex + 2] = self.db_to_game_status(score.data.get_int('clear_status'))
+            scorestruct[musicid][chartindex + 2] = self.db_to_game_status(
+                score.data.get_int("clear_status")
+            )
             scorestruct[musicid][chartindex + 5] = score.points
-            scorestruct[musicid][chartindex + 8] = score.data.get_int('miss_count', -1)
+            scorestruct[musicid][chartindex + 8] = score.data.get_int("miss_count", -1)
 
         return [scorestruct[s] for s in scorestruct]
 
@@ -565,10 +614,12 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             if chart != self.CHART_TYPE_B7:
                 continue
 
-            scorelist.append([
-                musicid,
-                self.db_to_game_status(score.data.get_int('clear_status')),
-            ])
+            scorelist.append(
+                [
+                    musicid,
+                    self.db_to_game_status(score.data.get_int("clear_status")),
+                ]
+            )
 
         return scorelist
 
@@ -585,7 +636,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         # Sum up for each bucket
         for score in scores:
-            ghost = score.data.get_bytes('ghost')
+            ghost = score.data.get_bytes("ghost")
             for i in range(len(ghost)):
                 total_ghost[i] = total_ghost[i] + ghost[i]
             count = count + 1
@@ -612,16 +663,16 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         delta_ghost = [total_ghost[i] - reference_ghost[i] for i in range(ghost_length)]
 
         # Return averages
-        return new_ex_score, struct.pack('b' * ghost_length, *delta_ghost)
+        return new_ex_score, struct.pack("b" * ghost_length, *delta_ghost)
 
     def user_joined_arcade(self, machine: Machine, profile: Optional[Profile]) -> bool:
         if profile is None:
             return False
 
-        if 'shop_location' not in profile:
+        if "shop_location" not in profile:
             return False
 
-        machineid = profile.get_int('shop_location')
+        machineid = profile.get_int("shop_location")
         if machineid == machine.id:
             # We can short-circuit arcade lookup because their machine
             # is the current machine.
@@ -647,30 +698,39 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         if ghost_type == self.GHOST_TYPE_RIVAL:
             rival_extid = int(parameter)
-            rival_userid = self.data.remote.user.from_extid(self.game, self.version, rival_extid)
+            rival_userid = self.data.remote.user.from_extid(
+                self.game, self.version, rival_extid
+            )
             if rival_userid is not None:
                 rival_profile = self.get_profile(rival_userid)
-                rival_score = self.data.remote.music.get_score(self.game, self.music_version, rival_userid, musicid, chart)
+                rival_score = self.data.remote.music.get_score(
+                    self.game, self.music_version, rival_userid, musicid, chart
+                )
                 if rival_score is not None and rival_profile is not None:
                     ghost_score = {
-                        'score': rival_score.points,
-                        'ghost': rival_score.data.get_bytes('ghost'),
-                        'name': rival_profile.get_str('name'),
-                        'pid': rival_profile.get_int('pid'),
+                        "score": rival_score.points,
+                        "ghost": rival_score.data.get_bytes("ghost"),
+                        "name": rival_profile.get_str("name"),
+                        "pid": rival_profile.get_int("pid"),
                     }
 
         if (
-            ghost_type == self.GHOST_TYPE_GLOBAL_TOP or
-            ghost_type == self.GHOST_TYPE_LOCAL_TOP or
-            ghost_type == self.GHOST_TYPE_GLOBAL_AVERAGE or
-            ghost_type == self.GHOST_TYPE_LOCAL_AVERAGE
+            ghost_type == self.GHOST_TYPE_GLOBAL_TOP
+            or ghost_type == self.GHOST_TYPE_LOCAL_TOP
+            or ghost_type == self.GHOST_TYPE_GLOBAL_AVERAGE
+            or ghost_type == self.GHOST_TYPE_LOCAL_AVERAGE
         ):
             if (
-                ghost_type == self.GHOST_TYPE_LOCAL_TOP or
-                ghost_type == self.GHOST_TYPE_LOCAL_AVERAGE
+                ghost_type == self.GHOST_TYPE_LOCAL_TOP
+                or ghost_type == self.GHOST_TYPE_LOCAL_AVERAGE
             ):
                 all_scores = sorted(
-                    self.data.local.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart),
+                    self.data.local.music.get_all_scores(
+                        game=self.game,
+                        version=self.music_version,
+                        songid=musicid,
+                        songchart=chart,
+                    ),
                     key=lambda s: s[1].points,
                     reverse=True,
                 )
@@ -686,30 +746,38 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                         0,
                     )
 
-                if 'shop_location' in my_profile:
-                    shop_id = my_profile.get_int('shop_location')
+                if "shop_location" in my_profile:
+                    shop_id = my_profile.get_int("shop_location")
                     machine = self.get_machine_by_id(shop_id)
                 else:
                     machine = None
 
                 if machine is not None:
                     all_scores = [
-                        score for score in all_scores
-                        if self.user_joined_arcade(machine, self.get_any_profile(score[0]))
+                        score
+                        for score in all_scores
+                        if self.user_joined_arcade(
+                            machine, self.get_any_profile(score[0])
+                        )
                     ]
                 else:
                     # Not joined an arcade, so nobody matches our scores
                     all_scores = []
             else:
                 all_scores = sorted(
-                    self.data.remote.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart),
+                    self.data.remote.music.get_all_scores(
+                        game=self.game,
+                        version=self.music_version,
+                        songid=musicid,
+                        songchart=chart,
+                    ),
                     key=lambda s: s[1].points,
                     reverse=True,
                 )
 
             if (
-                ghost_type == self.GHOST_TYPE_GLOBAL_TOP or
-                ghost_type == self.GHOST_TYPE_LOCAL_TOP
+                ghost_type == self.GHOST_TYPE_GLOBAL_TOP
+                or ghost_type == self.GHOST_TYPE_LOCAL_TOP
             ):
                 for potential_top in all_scores:
                     top_userid = potential_top[0]
@@ -717,28 +785,30 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                     top_profile = self.get_any_profile(top_userid)
                     if top_profile is not None:
                         ghost_score = {
-                            'score': top_score.points,
-                            'ghost': top_score.data.get_bytes('ghost'),
-                            'name': top_profile.get_str('name'),
-                            'pid': top_profile.get_int('pid'),
-                            'extid': top_profile.extid,
+                            "score": top_score.points,
+                            "ghost": top_score.data.get_bytes("ghost"),
+                            "name": top_profile.get_str("name"),
+                            "pid": top_profile.get_int("pid"),
+                            "extid": top_profile.extid,
                         }
                         break
 
             if (
-                ghost_type == self.GHOST_TYPE_GLOBAL_AVERAGE or
-                ghost_type == self.GHOST_TYPE_LOCAL_AVERAGE
+                ghost_type == self.GHOST_TYPE_GLOBAL_AVERAGE
+                or ghost_type == self.GHOST_TYPE_LOCAL_AVERAGE
             ):
-                average_score, delta_ghost = self.delta_score([score[1] for score in all_scores], ghost_length)
+                average_score, delta_ghost = self.delta_score(
+                    [score[1] for score in all_scores], ghost_length
+                )
                 if average_score is not None and delta_ghost is not None:
                     ghost_score = {
-                        'score': average_score,
-                        'ghost': bytes([0] * ghost_length),
+                        "score": average_score,
+                        "ghost": bytes([0] * ghost_length),
                     }
 
         if (
-            ghost_type == self.GHOST_TYPE_DAN_TOP or
-            ghost_type == self.GHOST_TYPE_DAN_AVERAGE
+            ghost_type == self.GHOST_TYPE_DAN_TOP
+            or ghost_type == self.GHOST_TYPE_DAN_AVERAGE
         ):
             is_dp = chart not in [
                 self.CHART_TYPE_N7,
@@ -760,18 +830,28 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
             if dan_rank != -1:
                 all_scores = sorted(
-                    self.data.local.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart),
+                    self.data.local.music.get_all_scores(
+                        game=self.game,
+                        version=self.music_version,
+                        songid=musicid,
+                        songchart=chart,
+                    ),
                     key=lambda s: s[1].points,
                     reverse=True,
                 )
-                all_profiles = self.data.local.user.get_all_profiles(self.game, self.version)
+                all_profiles = self.data.local.user.get_all_profiles(
+                    self.game, self.version
+                )
                 relevant_userids = {
-                    profile[0] for profile in all_profiles
-                    if profile[1].get_int(self.DAN_RANKING_DOUBLE if is_dp else self.DAN_RANKING_SINGLE) == dan_rank
+                    profile[0]
+                    for profile in all_profiles
+                    if profile[1].get_int(
+                        self.DAN_RANKING_DOUBLE if is_dp else self.DAN_RANKING_SINGLE
+                    )
+                    == dan_rank
                 }
                 relevant_scores = [
-                    score for score in all_scores
-                    if score[0] in relevant_userids
+                    score for score in all_scores if score[0] in relevant_userids
                 ]
                 if ghost_type == self.GHOST_TYPE_DAN_TOP:
                     for potential_top in relevant_scores:
@@ -780,27 +860,29 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                         top_profile = self.get_any_profile(top_userid)
                         if top_profile is not None:
                             ghost_score = {
-                                'score': top_score.points,
-                                'ghost': top_score.data.get_bytes('ghost'),
-                                'name': top_profile.get_str('name'),
-                                'pid': top_profile.get_int('pid'),
-                                'extid': top_profile.extid,
+                                "score": top_score.points,
+                                "ghost": top_score.data.get_bytes("ghost"),
+                                "name": top_profile.get_str("name"),
+                                "pid": top_profile.get_int("pid"),
+                                "extid": top_profile.extid,
                             }
                             break
 
                 if ghost_type == self.GHOST_TYPE_DAN_AVERAGE:
-                    average_score, delta_ghost = self.delta_score([score[1] for score in relevant_scores], ghost_length)
+                    average_score, delta_ghost = self.delta_score(
+                        [score[1] for score in relevant_scores], ghost_length
+                    )
                     if average_score is not None and delta_ghost is not None:
                         ghost_score = {
-                            'score': average_score,
-                            'ghost': bytes([0] * ghost_length),
+                            "score": average_score,
+                            "ghost": bytes([0] * ghost_length),
                         }
 
         if (
-            ghost_type == self.GHOST_TYPE_RIVAL_TOP or
-            ghost_type == self.GHOST_TYPE_RIVAL_AVERAGE
+            ghost_type == self.GHOST_TYPE_RIVAL_TOP
+            or ghost_type == self.GHOST_TYPE_RIVAL_AVERAGE
         ):
-            rival_extids = [int(e[1:-1]) for e in parameter.split(',')]
+            rival_extids = [int(e[1:-1]) for e in parameter.split(",")]
             rival_userids = [
                 self.data.remote.user.from_extid(self.game, self.version, rival_extid)
                 for rival_extid in rival_extids
@@ -808,8 +890,13 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
             all_scores = sorted(
                 [
-                    score for score in
-                    self.data.remote.music.get_all_scores(game=self.game, version=self.music_version, songid=musicid, songchart=chart)
+                    score
+                    for score in self.data.remote.music.get_all_scores(
+                        game=self.game,
+                        version=self.music_version,
+                        songid=musicid,
+                        songchart=chart,
+                    )
                     if score[0] in rival_userids
                 ],
                 key=lambda s: s[1].points,
@@ -822,20 +909,22 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                     top_profile = self.get_any_profile(top_userid)
                     if top_profile is not None:
                         ghost_score = {
-                            'score': top_score.points,
-                            'ghost': top_score.data.get_bytes('ghost'),
-                            'name': top_profile.get_str('name'),
-                            'pid': top_profile.get_int('pid'),
-                            'extid': top_profile.extid,
+                            "score": top_score.points,
+                            "ghost": top_score.data.get_bytes("ghost"),
+                            "name": top_profile.get_str("name"),
+                            "pid": top_profile.get_int("pid"),
+                            "extid": top_profile.extid,
                         }
                         break
 
             if ghost_type == self.GHOST_TYPE_RIVAL_AVERAGE:
-                average_score, delta_ghost = self.delta_score([score[1] for score in all_scores], ghost_length)
+                average_score, delta_ghost = self.delta_score(
+                    [score[1] for score in all_scores], ghost_length
+                )
                 if average_score is not None and delta_ghost is not None:
                     ghost_score = {
-                        'score': average_score,
-                        'ghost': bytes([0] * ghost_length),
+                        "score": average_score,
+                        "ghost": bytes([0] * ghost_length),
                     }
 
         return ghost_score
