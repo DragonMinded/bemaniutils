@@ -209,6 +209,9 @@ class ImportBase:
                 "INSERT INTO music (id, songid, chart, game, version, name, artist, genre, data) "
                 + "VALUES (:id, :songid, :chart, :game, :version, :name, :artist, :genre, :data)"
             )
+            if self.update:
+                sql += "ON CONFLICT ON CONSTRAINT songid_chart_game_version DO UPDATE SET name=EXCLUDED.name, artist=EXCLUDED.artist, data=EXCLUDED.data, genre=EXCLUDED.genre"
+
             self.execute(
                 sql,
                 {
