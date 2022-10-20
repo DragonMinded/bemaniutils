@@ -336,6 +336,8 @@ class ImportBase:
                 "INSERT INTO catalog (game, version, type, id, data) "
                 + "VALUES (:game, :version, :type, :id, :data)"
             )
+            if self.update:
+                sql += "ON CONFLICT ON CONSTRAINT game_version_id_type DO UPDATE SET data=EXCLUDED.data"
             self.execute(
                 sql,
                 {

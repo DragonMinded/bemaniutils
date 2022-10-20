@@ -15,7 +15,7 @@ from bemani.data import Config, Data
 
 
 def load_config(filename: str, config: Config) -> None:
-    config.update(yaml.safe_load(open(filename)))
+    config.update(yaml.safe_load(open(filename, encoding='utf8')))
     config["database"]["engine"] = Data.create_engine(config)
     config["filename"] = filename
 
