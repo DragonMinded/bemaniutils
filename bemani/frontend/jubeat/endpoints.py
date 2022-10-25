@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort
 
-from bemani.common import ID, GameConstants, VersionConstants
+from bemani.common import ID, GameConstants, VersionConstants, DBConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.jubeat.jubeat import JubeatFrontend
@@ -195,22 +195,23 @@ def viewtopscores(musicid: int) -> Response:
     difficulties = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     for version in versions:
-        for chart in [0, 1, 2, 3, 4, 5]:
-            details = g.data.local.music.get_song(
-                GameConstants.JUBEAT, version, musicid, chart
-            )
-            if details is not None:
-                name = details.name
-                artist = details.artist
-                genre = details.genre
-                if category < version:
-                    category = version
-                if difficulties[chart] == 0.0:
-                    difficulties[chart] = details.data.get_float("difficulty", 13)
-                    if difficulties[chart] >= 13.0:
-                        difficulties[chart] = float(
-                            details.data.get_int("difficulty", 13)
-                        )
+        for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
+            for chart in [0, 1, 2, 3, 4, 5]:
+                details = g.data.local.music.get_song(
+                    GameConstants.JUBEAT, version, musicid, chart
+                )
+                if details is not None:
+                    name = details.name
+                    artist = details.artist
+                    genre = details.genre
+                    if category < version:
+                        category = version
+                    if difficulties[chart] == 0.0:
+                        difficulties[chart] = details.data.get_float("difficulty", 13)
+                        if difficulties[chart] >= 13.0:
+                            difficulties[chart] = float(
+                                details.data.get_int("difficulty", 13)
+                            )
 
     if name is None:
         # Not a real song!
