@@ -3117,6 +3117,7 @@ class ImportSDVX(ImportBase):
             "2": VersionConstants.SDVX_INFINITE_INFECTION,
             "3": VersionConstants.SDVX_GRAVITY_WARS,
             "4": VersionConstants.SDVX_HEAVENLY_HAVEN,
+            "6": VersionConstants.SDVX_EXCEED_GEAR,
         }.get(version, -1)
         if actual_version == VersionConstants.SDVX_BOOTH:
             self.charts = [0, 1, 2]
@@ -3125,11 +3126,14 @@ class ImportSDVX(ImportBase):
             VersionConstants.SDVX_GRAVITY_WARS,
         ]:
             self.charts = [0, 1, 2, 3]
-        elif actual_version == VersionConstants.SDVX_HEAVENLY_HAVEN:
+        elif actual_version == [
+            VersionConstants.SDVX_HEAVENLY_HAVEN,
+            VersionConstants.SDVX_EXCEED_GEAR,
+        ]:
             self.charts = [0, 1, 2, 3, 4]
         else:
             raise Exception(
-                "Unsupported SDVX version, expected one of the following: 1, 2, 3, 4!"
+                "Unsupported SDVX version, expected one of the following: 1, 2, 3, 4, 6!"
             )
 
         super().__init__(config, GameConstants.SDVX, actual_version, no_combine, update)
@@ -3312,7 +3316,10 @@ class ImportSDVX(ImportBase):
 
                     difficulties[offset] = int(difficulty.find("difnum").text)
                     limited[offset] = int(difficulty.find("limited").text)
-            elif self.version == VersionConstants.SDVX_HEAVENLY_HAVEN:
+            elif self.version in [
+                VersionConstants.SDVX_HEAVENLY_HAVEN,
+                VersionConstants.SDVX_EXCEED_GEAR,
+            ]:
                 # Find normal info about the song
                 info = music_entry.find("info")
                 title = info.find("title_name").text

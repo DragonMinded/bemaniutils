@@ -289,6 +289,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
                 "2": VersionConstants.SDVX_INFINITE_INFECTION,
                 "3": VersionConstants.SDVX_GRAVITY_WARS,
                 "4": VersionConstants.SDVX_HEAVENLY_HAVEN,
+                "6": VersionConstants.SDVX_EXCEED_GEAR,
             },
         }
         .get(game, {})
