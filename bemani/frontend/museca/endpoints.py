@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort
 
-from bemani.common import GameConstants
+from bemani.common import DBConstants, GameConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.museca.museca import MusecaFrontend
@@ -186,7 +186,7 @@ def viewtopscores(musicid: int) -> Response:
     difficulties = [0, 0, 0, 0, 0]
 
     for version in versions:
-        for omniadd in [0, 10000]:
+        for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
             for chart in [0, 1, 2, 3, 4]:
                 details = g.data.local.music.get_song(
                     GameConstants.MUSECA, version + omniadd, musicid, chart
