@@ -808,7 +808,7 @@ repo is meant to facilitate preservation and personal enjoyment of otherwise los
 of various arcade games. Do not attempt to check in anything legally owned by a business
 or personal entity including source code, images, siterips, game files or anything
 similar. Do not attempt to check in support for games currently being offered for sale
-or games which have not reached their end-of-life.
+by the original manufacturer or games which have not reached their support end-of-life.
 
 Similarly, while I cannot control what you decide to do with this software, it would be
 very, very stupid to attempt to run this in a public arcade or convention, or to attempt
