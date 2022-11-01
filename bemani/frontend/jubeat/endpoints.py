@@ -198,7 +198,7 @@ def viewtopscores(musicid: int) -> Response:
         for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
             for chart in [0, 1, 2, 3, 4, 5]:
                 details = g.data.local.music.get_song(
-                    GameConstants.JUBEAT, version, musicid, chart
+                    GameConstants.JUBEAT, version + omniadd, musicid, chart
                 )
                 if details is not None:
                     name = details.name
