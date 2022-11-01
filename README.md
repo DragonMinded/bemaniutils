@@ -705,6 +705,19 @@ workaround is to specify the zstd library path manually in the pip install line.
 running the following (or a variation of the following if you've modified your pip
 install line already): `LDFLAGS="-L$(brew --prefix zstd)/lib" pip install -r requirements.txt`.
 
+### JSX files fail to compile, music databases fail to read from game files on Windows
+
+Apparently on Windows, the default encoding is unset for Python in some installations.
+This can lead to some incredibly confusing errors as JSX files will fail to compile when
+you attempt to load the front-end, and importing music databases from various games will
+crash with encoding errors. If you run into this problem, you can set a few environment
+variables to fix the issue. Make sure that the following are set:
+
+```
+export PYTHONIOENCODING=utf-8
+export PYTHONLEGACYWINDOWSSTDIO=utf-8
+```
+
 ## Production Setup
 
 As alluded to several times in this README, the recommended way to run a production
