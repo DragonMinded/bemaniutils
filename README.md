@@ -797,3 +797,22 @@ If you are modifying files that have an equivalent C++ implementation and it cha
 their semantics, make sure to test both paths! If you are modifying code that is
 cythonized and you've compiled, make sure to re-run the above command or delete the
 compiled `.so` files, otherwise your changes will not show up when you test.
+
+# License and Usage
+
+All of the code in this repository is released under public domain. No attribution or
+releasing of source code is required. No warranty of the code or functionality is implied.
+However, open source would not flourish without contributions from users the world across.
+Pull requests are therefore appreciated! Please note, however, that the code contained in this
+repo is meant to facilitate preservation and personal enjoyment of otherwise lost versions
+of various arcade games. Do not attempt to check in anything legally owned by a business
+or personal entity including source code, images, siterips, game files or anything
+similar. Do not attempt to check in support for games currently being offered for sale
+or games which have not reached their end-of-life.
+
+Similarly, while I cannot control what you decide to do with this software, it would be
+very, very stupid to attempt to run this in a public arcade or convention, or to attempt
+to use this with games that you or another person or business are charging money for. If
+you do decide to do this anyway, do not advertise association with any of this software in
+any form whatsoever. Attempting to use this software for commercial gain or to compete
+publicly with official game support goes directly against the stated goals of this software.
