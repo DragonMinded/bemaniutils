@@ -223,7 +223,7 @@ def render_react(
             "react.html",
             **{
                 "title": title,
-                "reactbase": os.path.join("controllers", controller),
+                "reactbase": f"controllers/{controller}",
                 "inits": inits,
                 "links": links,
             },
@@ -321,8 +321,10 @@ def jinja2_theme(filename: str) -> str:
 @app.context_processor
 def navigation() -> Dict[str, Any]:
     # Look up JSX components we should provide for every page load
+    # Intentionally always use / to join for the top level since this
+    # is returning a URI.
     components = [
-        os.path.join("components", f)
+        f"components/{f}"
         for f in os.listdir(os.path.join(static_location, "components"))
         if re.search(r"\.react\.js$", f)
     ]
