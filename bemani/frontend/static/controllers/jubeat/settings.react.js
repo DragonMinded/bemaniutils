@@ -154,10 +154,46 @@ var settings_view = createReactClass({
         );
     },
 
+    getDefaultEmblem: function() {
+        // A hack for displaying defaults when they aren't set.
+        var items = window.emblems[this.state.version].filter(function (emblem) {
+            return emblem.rarity == 1 && emblem.layer == 2;
+        }.bind(this));
+
+        if (items.length > 0) {
+            return items[0].index;
+        }
+
+        return 0;
+    },
+
     renderEmblem: function(player) {
         return (
             <div className="section">
                 <h3>Emblem</h3>
+                {
+                    window.assets_available ?
+                        <div className="emblem">
+                        {
+                            valid_emblem_options.map(function(emblem_option) {
+                                var player = this.state.player[this.state.version];
+                                var emblem = player.emblem[emblem_option];
+                                if (emblem_option == "main" && emblem == 0) {
+                                    emblem = this.getDefaultEmblem();
+                                }
+
+                                if (emblem == 0) {
+                                    // Emblem part isn't set.
+                                    return null;
+                                }
+
+                                var player = this.state.player[this.state.version]
+                                var src = `/assets/jubeat/emblems/${this.state.version}/${emblem}.png`
+                                return <div><img src={src}/></div>;
+                            }.bind(this))
+                        }
+                        </div> : null
+                }
                 {
                     valid_emblem_options.map(function(emblem_option) {
                         var player = this.state.player[this.state.version]

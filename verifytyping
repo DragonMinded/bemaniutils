@@ -4,6 +4,7 @@ declare -a arr=(
     "api"
     "afputils"
     "arcutils"
+    "assetparse"
     "bemanishark"
     "binutils"
     "cardconvert"

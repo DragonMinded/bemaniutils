@@ -363,6 +363,7 @@ def viewsettings() -> Response:
                 version: name for (game, version, name) in frontend.all_games()
             },
             "emblems": all_emblems,
+            "assets_available": g.config.assets.jubeat.emblems is not None,
         },
         {
             "updatename": url_for("jubeat_pages.updatename"),

@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import re
 import traceback
@@ -10,6 +11,7 @@ from flask import (
     redirect,
     Response,
     url_for,
+    abort,
     render_template,
     got_request_exception,
     jsonify as flask_jsonify,
@@ -152,6 +154,10 @@ def cacheable(max_age: int) -> Callable:
     return __cache
 
 
+# Note that this should really only be used for debug builds. In production, you should use
+# the "jsx" utility to bulk convert your JSX files and put them in a directory where your
+# actual webserver (nginx, apache, etc) can find them and serve them without going through
+# this endpoint.
 @app.route("/jsx/<path:filename>")
 @cacheable(86400)
 def jsx(filename: str) -> Response:
@@ -198,6 +204,36 @@ def jsx(filename: str) -> Response:
         else:
             # Just pass it forward like normal for production.
             raise
+
+
+# Note that this should really only be used for debug builds. In production, you should use
+# the "assetparse" utility to bulk convert your game asset files and put them in directories
+# where your actual webserver (nginx, apache, etc) can find them and serve them without
+# going through this endpoint.
+@app.route("/assets/<path:filename>")
+@cacheable(86400)
+def assets(filename: str) -> Response:
+    # Map of all assets. We could walk the config using reflection, but meh.
+    assetdirs: Dict[str, str] = {
+        "jubeat/emblems/": config.assets.jubeat.emblems,
+    }
+
+    # Figure out what asset pack this is from.
+    for prefix, directory in assetdirs.items():
+        if filename.startswith(prefix):
+            filename = filename[len(prefix) :]
+            normalized_path = os.path.join(directory, filename)
+
+            # Check for path traversal exploit
+            if not normalized_path.startswith(directory):
+                raise IOError("Path traversal exploit detected!")
+
+            mimetype, _ = mimetypes.guess_type(normalized_path)
+            with open(normalized_path, "rb") as f:
+                return Response(f.read(), mimetype=mimetype)
+    else:
+        # No asset for this.
+        abort(404)
 
 
 def polyfill_fragments(jsx: str) -> str:

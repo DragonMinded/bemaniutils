@@ -59,6 +59,14 @@ A utility for unpacking `.arc` files. This does not currently repack files. Howe
 the format is so trivial that adding such a feature would be fairly easy. Run it
 like `./arcutils --help` to see help output and determine how to use this.
 
+## assetparse
+
+A utility which takes a particular game's asset directory and converts files for use
+on the frontend. This optionally enables things such as customization previews on the
+frontend. Much like "read", this requires a properly setup config file which points
+the frontend as well as this utility at the correct location to store converted
+assets. See `config/server.yaml` for an example file that you can modify.
+
 ## bemanishark
 
 A wire sniffer that can decode eAmuse packets and print them. Run it on a computer
@@ -463,6 +471,16 @@ will not work properly. An example is as follows:
       --xml data/emblem-info/emblem-info.xml
 ```
 
+If you wish to display emblem graphics on the frontend, you will also need to convert the
+emblem assets. Failing to do so will disable the emblem graphics rendering feature for the
+frontend. Note that this only applies to versions where you have also imported the emblem
+DB. An example is as follows:
+
+```
+./assetparse --config config/server.yaml --series jubeat --version prop \
+      --xml data/emblem-info/emblem-info.xml --assets data/emblem-textures/
+```
+
 ### IIDX
 
 For IIDX, you will need the data directory of the mix you wish to support. The import
@@ -735,7 +753,9 @@ can set up a nginx directory to serve the static resources directly by pointing 
 static directory inside your virtualenv.
 
 For example configurations, an example install script, and an example script to back
-up your MySQL instance, see the `examples/` directory.
+up your MySQL instance, see the `examples/` directory. Note that several files have
+sections where you are expected to substitute your own values so please read over them
+carefully.
 
 # Contributing
 

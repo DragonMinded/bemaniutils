@@ -160,6 +160,21 @@ class DiscordWebHooks:
         return str(uri) if uri else None
 
 
+class Assets:
+    def __init__(self, parent_config: "Config") -> None:
+        self.jubeat = JubeatAssets(parent_config)
+
+
+class JubeatAssets:
+    def __init__(self, parent_config: "Config") -> None:
+        self.__config = parent_config
+
+    @property
+    def emblems(self) -> Optional[str]:
+        directory = self.__config.get("assets", {}).get("jubeat", {}).get("emblems")
+        return str(directory) if directory else None
+
+
 class Config(dict):
     def __init__(self, existing_contents: Dict[str, Any] = {}) -> None:
         super().__init__(existing_contents or {})
@@ -169,6 +184,7 @@ class Config(dict):
         self.client = Client(self)
         self.paseli = PASELI(self)
         self.webhooks = WebHooks(self)
+        self.assets = Assets(self)
         self.machine = Machine(self)
 
     def clone(self) -> "Config":

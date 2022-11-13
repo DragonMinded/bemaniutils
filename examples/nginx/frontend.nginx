@@ -19,4 +19,14 @@ server {
         include  /etc/nginx/mime.types;
         root /path/to/your/virtualenv/lib/python3.6/site-packages/bemani/frontend/;
     }
+
+    location ^~ /jsx/ {
+        include  /etc/nginx/mime.types;
+        root /path/to/your/converted/jsx/files/;
+    }
+
+    location ^~ /assets/ {
+        include  /etc/nginx/mime.types;
+        root /path/to/your/converted/asset/files/;
+    }
 }
