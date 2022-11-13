@@ -324,7 +324,18 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 if gameitem.data.get_int("rarity") in {4, 5}:
                     premiumemblems.add(gameitem.id)
 
-        # Default to some emblems in case the catalog is not available.
+        # If they've earned all the premium emblems, give them normal emblems instead.
+        if normalemblems and not premiumemblems:
+            premiumemblems = normalemblems
+
+        # Now, try to default to the default emblem, in the case that the person
+        # has earned every single part (unlikely).
+        if not normalemblems:
+            normalemblems = self.default_select_jbox()
+        if not premiumemblems:
+            premiumemblems = self.default_select_jbox()
+
+        # Default to some hand-picked emblems in case the catalog is not available.
         normalindex = 2
         premiumindex = 1
         if normalemblems:
