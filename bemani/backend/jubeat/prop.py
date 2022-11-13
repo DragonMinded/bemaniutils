@@ -896,6 +896,21 @@ class JubeatProp(
         root = Node.void("gametop")
         data = Node.void("data")
         root.add_child(data)
+
+        # Allow figuring out owned emblems.
+        achievements = self.data.local.user.get_achievements(
+            self.game, self.version, userid
+        )
+        owned_emblems: Set[int] = set()
+        for achievement in achievements:
+            if achievement.type == "emblem":
+                owned_emblems.add(achievement.id)
+
+        # Make sure we grant ownership of default main parts.
+        default_emblems = self.default_select_jbox()
+        owned_emblems.update(default_emblems)
+        default_main = next(iter(default_emblems)) if default_emblems else 0
+
         # Jubeat Prop appears to allow full event overrides per-player
         data.add_child(self.__get_global_info())
 
@@ -967,12 +982,15 @@ class JubeatProp(
         settings.add_child(Node.s16("parts", lastdict.get_int("parts")))
         settings.add_child(Node.s8("rank_sort", lastdict.get_int("rank_sort")))
         settings.add_child(Node.s8("combo_disp", lastdict.get_int("combo_disp")))
-        settings.add_child(
-            Node.s16_array("emblem", lastdict.get_int_array("emblem", 5))
-        )
         settings.add_child(Node.s8("matching", lastdict.get_int("matching")))
         settings.add_child(Node.s8("hazard", lastdict.get_int("hazard")))
         settings.add_child(Node.s8("hard", lastdict.get_int("hard")))
+
+        # Hack to make the default emblem appear properly.
+        partslist = lastdict.get_int_array("emblem", 5, [0, default_main, 0, 0, 0])
+        if partslist[1] == 0:
+            partslist[1] = default_main
+        settings.add_child(Node.s16_array("emblem", partslist))
 
         # Secret unlocks
         item = Node.void("item")
@@ -1004,9 +1022,7 @@ class JubeatProp(
             )
         )
         item.add_child(
-            Node.s32_array(
-                "emblem_list", profile.get_int_array("emblem_list", 96, [-1] * 96)
-            )
+            Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96))
         )
 
         new = Node.void("new")
@@ -1045,9 +1061,6 @@ class JubeatProp(
         # Player status for events
         event_info = Node.void("event_info")
         player.add_child(event_info)
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
         for achievement in achievements:
             if achievement.type == "event":
                 # There are two significant bits here, 0x1 and 0x2, I think the first
@@ -1172,24 +1185,7 @@ class JubeatProp(
 
         # Calculate a random index for normal and premium to give to player
         # as a gatcha.
-        gameitems = self.data.local.game.get_items(self.game, self.version)
-        normalemblems: Set[int] = set()
-        premiumemblems: Set[int] = set()
-        for gameitem in gameitems:
-            if gameitem.type == "emblem":
-                if gameitem.data.get_int("rarity") in {1, 2, 3}:
-                    normalemblems.add(gameitem.id)
-                if gameitem.data.get_int("rarity") in {3, 4, 5}:
-                    premiumemblems.add(gameitem.id)
-
-        # Default to some emblems in case the catalog is not available.
-        normalindex = 2
-        premiumindex = 1
-        if normalemblems:
-            normalindex = random.sample(normalemblems, 1)[0]
-        if premiumemblems:
-            premiumindex = random.sample(premiumemblems, 1)[0]
-
+        normalindex, premiumindex = self.random_select_jbox(owned_emblems)
         normal.add_child(Node.s16("index", normalindex))
         premium.add_child(Node.s16("index", premiumindex))
 
@@ -1220,8 +1216,8 @@ class JubeatProp(
         # Emblem list stuff?
         eapass_privilege = Node.void("eapass_privilege")
         player.add_child(eapass_privilege)
-        emblem_list = Node.void("emblem_list")
-        eapass_privilege.add_child(emblem_list)
+        emblem_node = Node.void("emblem_list")
+        eapass_privilege.add_child(emblem_node)
 
         # Bonus music stuff?
         bonus_music = Node.void("bonus_music")
@@ -1349,9 +1345,17 @@ class JubeatProp(
             newprofile.replace_int_array(
                 "music_list", 32, item.child_value("music_list")
             )
-            newprofile.replace_int_array(
-                "emblem_list", 96, item.child_value("emblem_list")
-            )
+
+            owned_emblems = self.calculate_owned_items(item.child_value("emblem_list"))
+            for index in owned_emblems:
+                self.data.local.user.put_achievement(
+                    self.game,
+                    self.version,
+                    userid,
+                    index,
+                    "emblem",
+                    {},
+                )
 
             newitem = item.child("new")
             if newitem is not None:
