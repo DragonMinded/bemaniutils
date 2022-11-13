@@ -161,7 +161,7 @@ class JubeatFrontend(FrontendBase):
             profile.get_dict("last").get_int_array("emblem", 5)
         )
         formatted_profile["owned_emblems"] = [
-            ach.id for ach in achievements if ach.type == "emblem"
+            str(ach.id) for ach in achievements if ach.type == "emblem"
         ]
         formatted_profile["jubility"] = (
             profile.get_int("jubility")
