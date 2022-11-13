@@ -163,8 +163,14 @@ var settings_view = createReactClass({
                         var player = this.state.player[this.state.version]
                         var layer = valid_emblem_options.indexOf(emblem_option) + 1
                         var items = window.emblems[this.state.version].filter(function (emblem) {
-                            return emblem.layer == layer
-                        });
+                            return (
+                               emblem.layer == layer &&
+                               (
+                                   this.state.player[this.state.version].owned_emblems.indexOf(emblem.index) >= 0 ||
+                                   emblem.rarity == 1 && emblem.layer == 2
+                               )
+                            );
+                        }.bind(this));
                         var results = {};
                         items
                             .map(function(item) { return { 'index': item.index, 'name': `${item.name} (★${item.rarity})` } })
@@ -244,7 +250,7 @@ var settings_view = createReactClass({
                         {this.renderName(player)}
                     </div>
                     {
-                        this.state.version > 9 ? this.renderEmblem(player) : null
+                        (this.state.version > 9 && window.emblems[this.state.version].length > 0) ? this.renderEmblem(player) : null
                     }
                 </div>
             );
