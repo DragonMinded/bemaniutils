@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 import random
+import struct
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 from typing_extensions import Final
 
@@ -366,4 +367,4 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
             items_list[bucket] |= offset
 
-        return items_list
+        return [struct.unpack("i", struct.pack("I", item))[0] for item in items_list]
