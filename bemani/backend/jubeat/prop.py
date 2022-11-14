@@ -81,6 +81,22 @@ class JubeatProp(
         return JubeatSaucerFulfill(self.data, self.config, self.model)
 
     @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            "bools": [
+                {
+                    "name": "Force Unlock All Songs",
+                    "tip": "Forces all songs to be available by default",
+                    "category": "game_config",
+                    "setting": "force_song_unlock",
+                },
+            ],
+        }
+
+    @classmethod
     def __class_to_rank(cls, cur_class: int, cur_subclass: int) -> int:
         """
         Given a class and subclass, return an integer rank for that class.
@@ -897,14 +913,24 @@ class JubeatProp(
         data = Node.void("data")
         root.add_child(data)
 
+        # Figure out if we're force-unlocking songs.
+        game_config = self.get_game_config()
+        force_unlock = game_config.get_bool("force_song_unlock")
+
         # Allow figuring out owned emblems.
         achievements = self.data.local.user.get_achievements(
             self.game, self.version, userid
         )
+        owned_songs: Set[int] = set()
+        owned_secrets: Set[int] = set()
         owned_emblems: Set[int] = set()
         for achievement in achievements:
             if achievement.type == "emblem":
                 owned_emblems.add(achievement.id)
+            elif achievement.type == "song":
+                owned_songs.add(achievement.id)
+            elif achievement.type == "secret":
+                owned_secrets.add(achievement.id)
 
         # Make sure we grant ownership of default main parts.
         default_emblems = self.default_select_jbox()
@@ -1002,7 +1028,10 @@ class JubeatProp(
         )
         item.add_child(
             Node.s32_array(
-                "secret_list", profile.get_int_array("secret_list", 32, [-1] * 32)
+                "secret_list",
+                ([-1] * 32)
+                if force_unlock
+                else self.create_owned_items(owned_songs, 32),
             )
         )
         item.add_child(Node.s16("theme_list", profile.get_int("theme_list", -1)))
@@ -1029,7 +1058,10 @@ class JubeatProp(
         item.add_child(new)
         new.add_child(
             Node.s32_array(
-                "secret_list", profile.get_int_array("secret_list_new", 32, [-1] * 32)
+                "secret_list",
+                ([-1] * 32)
+                if force_unlock
+                else self.create_owned_items(owned_secrets, 32),
             )
         )
         new.add_child(Node.s16("theme_list", profile.get_int("theme_list_new", -1)))
@@ -1264,6 +1296,11 @@ class JubeatProp(
         newprofile.replace_bool("saved", True)
         data = request.child("data")
 
+        # Figure out if we're force-unlocking songs. If we are, we don't want to persist
+        # secret stuff otherwise the game will accidentally unlock everything in the profile.
+        game_config = self.get_game_config()
+        force_unlock = game_config.get_bool("force_song_unlock")
+
         # Grab system information
         sysinfo = data.child("info")
 
@@ -1330,9 +1367,6 @@ class JubeatProp(
         item = player.child("item")
         if item is not None:
             newprofile.replace_int_array(
-                "secret_list", 32, item.child_value("secret_list")
-            )
-            newprofile.replace_int_array(
                 "title_list", 160, item.child_value("title_list")
             )
             newprofile.replace_int("theme_list", item.child_value("theme_list"))
@@ -1345,6 +1379,21 @@ class JubeatProp(
             newprofile.replace_int_array(
                 "music_list", 32, item.child_value("music_list")
             )
+
+            if not force_unlock:
+                # Don't persist if we're force-unlocked, this data will be bogus.
+                owned_songs = self.calculate_owned_items(
+                    item.child_value("secret_list")
+                )
+                for index in owned_songs:
+                    self.data.local.user.put_achievement(
+                        self.game,
+                        self.version,
+                        userid,
+                        index,
+                        "song",
+                        {},
+                    )
 
             owned_emblems = self.calculate_owned_items(item.child_value("emblem_list"))
             for index in owned_emblems:
@@ -1359,15 +1408,27 @@ class JubeatProp(
 
             newitem = item.child("new")
             if newitem is not None:
-                newprofile.replace_int_array(
-                    "secret_list_new", 32, newitem.child_value("secret_list")
-                )
                 newprofile.replace_int(
                     "theme_list_new", newitem.child_value("theme_list")
                 )
                 newprofile.replace_int_array(
                     "marker_list_new", 2, newitem.child_value("marker_list")
                 )
+
+                if not force_unlock:
+                    # Don't persist if we're force-unlocked, this data will be bogus.
+                    owned_secrets = self.calculate_owned_items(
+                        newitem.child_value("secret_list")
+                    )
+                    for index in owned_secrets:
+                        self.data.local.user.put_achievement(
+                            self.game,
+                            self.version,
+                            userid,
+                            index,
+                            "secret",
+                            {},
+                        )
 
         # Career progression
         career = player.child("career")
