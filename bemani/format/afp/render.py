@@ -1552,7 +1552,7 @@ class AFPRenderer(VerboseOutput):
             .multiply(parent_mult_color)
             .add(parent_add_color)
         )
-        hsl_shift = renderable.hsl_shift or HSL(0.0, 0.0, 0.0).add(parent_hsl_shift)
+        hsl_shift = (renderable.hsl_shift or HSL(0.0, 0.0, 0.0)).add(parent_hsl_shift)
         blend = renderable.blend or 0
         if parent_blend not in {0, 1, 2} and blend in {0, 1, 2}:
             blend = parent_blend
@@ -1564,6 +1564,24 @@ class AFPRenderer(VerboseOutput):
         else:
             mask = parent_mask
 
+        if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
+            projection_string = "affine projection"
+        elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
+            projection_string = "perspective projection"
+        else:
+            projection_string = "no projection"
+
+        if blend == 3:
+            blend_string = "multiply"
+        elif blend == 8:
+            blend_string = "addition"
+        elif blend == 9 or blend == 70:
+            blend_string = "subtraction"
+        elif blend == 13:
+            blend_string = "overlay"
+        else:
+            blend_string = "normal"
+
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
             new_only_depths: Optional[List[int]] = None
@@ -1573,6 +1591,19 @@ class AFPRenderer(VerboseOutput):
                         # Not on the correct depth plane.
                         return img
                     new_only_depths = only_depths
+
+            self.vprint(
+                f"{prefix}    Rendered object uses {projection_string} with transform [{transform}]",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object uses {blend_string} with {mult_color} and {add_color} colors",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object applies a HSL shift of {hsl_shift}",
+                component="render",
+            )
 
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
@@ -1592,12 +1623,25 @@ class AFPRenderer(VerboseOutput):
                         hsl_shift,
                         blend,
                         only_depths=new_only_depths,
-                        prefix=prefix + " ",
+                        prefix=prefix + "  ",
                     )
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
                 return img
+
+            self.vprint(
+                f"{prefix}    Rendered object uses {projection_string} with transform [{transform}]",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object uses {blend_string} with {mult_color} and {add_color} colors",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object applies a HSL shift of {hsl_shift}",
+                component="render",
+            )
 
             # This is a shape draw reference.
             shape = renderable.source
@@ -1743,6 +1787,19 @@ class AFPRenderer(VerboseOutput):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
                 return img
+
+            self.vprint(
+                f"{prefix}    Rendered object uses {projection_string} with transform [{transform}]",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object uses {blend_string} with {mult_color} and {add_color} colors",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object applies a HSL shift of {hsl_shift}",
+                component="render",
+            )
 
             # This is a shape draw reference.
             texture = self.textures[renderable.source.reference]
