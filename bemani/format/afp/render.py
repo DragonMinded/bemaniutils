@@ -63,26 +63,41 @@ class RegisteredClip:
     def __repr__(self) -> str:
         return f"RegisteredClip(tag_id={self.tag_id})"
 
+    @property
+    def reference(self) -> str:
+        return "anonymous sprite"
+
 
 class RegisteredShape:
     # A shape that we are rendering, as placed by some placed clip somewhere.
     def __init__(
         self,
         tag_id: int,
+        reference: str,
         vertex_points: List[Point],
         tex_points: List[Point],
         tex_colors: List[Color],
         draw_params: List[DrawParams],
     ) -> None:
         self.tag_id = tag_id
+        self.__reference = reference
         self.vertex_points: List[Point] = vertex_points
         self.tex_points: List[Point] = tex_points
         self.tex_colors: List[Color] = tex_colors
         self.draw_params: List[DrawParams] = draw_params
         self.rectangle: Optional[Image.image] = None
 
+    @property
+    def reference(self) -> str:
+        textures = {dp.region for dp in self.draw_params if dp.region is not None}
+        if textures:
+            vals = ", ".join(textures)
+            return f"{self.__reference}, {vals}"
+        else:
+            return f"{self.__reference}, untextured"
+
     def __repr__(self) -> str:
-        return f"RegisteredShape(tag_id={self.tag_id}, vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
+        return f"RegisteredShape(tag_id={self.tag_id}, reference={self.reference} vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
 
 
 class RegisteredImage:
@@ -102,6 +117,10 @@ class RegisteredDummy:
 
     def __repr__(self) -> str:
         return f"RegisteredDummy(tag_id={self.tag_id})"
+
+    @property
+    def reference(self) -> str:
+        return "anonymous dummy"
 
 
 class Mask:
@@ -1003,7 +1022,7 @@ class AFPRenderer(VerboseOutput):
         # such as defining a shape (registering it with our shape list) or adding/removing an object.
         if isinstance(tag, AP2ShapeTag):
             self.vprint(
-                f"{prefix}    Loading {tag.reference} into object slot {tag.id}",
+                f"{prefix}    Loading {tag.reference} shape into object slot {tag.id}",
                 component="tags",
             )
 
@@ -1012,6 +1031,7 @@ class AFPRenderer(VerboseOutput):
 
             self.__registered_objects[tag.id] = RegisteredShape(
                 tag.id,
+                tag.reference,
                 self.shapes[tag.reference].vertex_points,
                 self.shapes[tag.reference].tex_points,
                 self.shapes[tag.reference].tex_colors,
@@ -1023,7 +1043,7 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2ImageTag):
             self.vprint(
-                f"{prefix}    Loading {tag.reference} into object slot {tag.id}",
+                f"{prefix}    Loading {tag.reference} image into object slot {tag.id}",
                 component="tags",
             )
 
@@ -1040,7 +1060,7 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DefineSpriteTag):
             self.vprint(
-                f"{prefix}    Loading Sprite into object slot {tag.id}",
+                f"{prefix}    Loading anonymous sprite into object slot {tag.id}",
                 component="tags",
             )
 
@@ -1089,12 +1109,12 @@ class AFPRenderer(VerboseOutput):
                             and tag.source_tag_id != obj.source.tag_id
                         ):
                             # This completely updates the pointed-at object.
+                            newobj = self.__registered_objects[tag.source_tag_id]
                             self.vprint(
-                                f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}",
+                                f"{prefix}    Replacing Object source {obj.source.tag_id} ({obj.source.reference}) with {tag.source_tag_id} ({newobj.reference}) on object with Object ID {tag.object_id} onto Depth {tag.depth}",
                                 component="tags",
                             )
 
-                            newobj = self.__registered_objects[tag.source_tag_id]
                             if isinstance(newobj, RegisteredShape):
                                 operating_clip.placed_objects[i] = PlacedShape(
                                     obj.object_id,
@@ -1171,7 +1191,7 @@ class AFPRenderer(VerboseOutput):
                         else:
                             # As far as I can tell, pretty much only color and matrix stuff can be updated.
                             self.vprint(
-                                f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}",
+                                f"{prefix}    Updating Object ID {tag.object_id} ({obj.source.reference}) on Depth {tag.depth}",
                                 component="tags",
                             )
                             obj.mult_color = new_mult_color
@@ -1195,12 +1215,12 @@ class AFPRenderer(VerboseOutput):
                     )
 
                 if tag.source_tag_id in self.__registered_objects:
+                    newobj = self.__registered_objects[tag.source_tag_id]
                     self.vprint(
-                        f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}",
+                        f"{prefix}    Placing Object {tag.source_tag_id} ({newobj.reference}) with Object ID {tag.object_id} onto Depth {tag.depth}",
                         component="tags",
                     )
 
-                    newobj = self.__registered_objects[tag.source_tag_id]
                     if isinstance(newobj, RegisteredShape):
                         operating_clip.placed_objects.append(
                             PlacedShape(
@@ -1503,13 +1523,13 @@ class AFPRenderer(VerboseOutput):
     ) -> Image.Image:
         if not renderable.visible:
             self.vprint(
-                f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}",
+                f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} ({renderable.source.reference}) on Depth {renderable.depth}",
                 component="render",
             )
             return img
 
         self.vprint(
-            f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}",
+            f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} ({renderable.source.reference}) onto Depth {renderable.depth}",
             component="render",
         )
 
@@ -1884,7 +1904,7 @@ class AFPRenderer(VerboseOutput):
                 for tagno, tag in enumerate(tags):
                     # Perform the action of this tag.
                     self.vprint(
-                        f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}",
+                        f"{prefix}  Sprite Tag ID: {clip.source.tag_id} ({clip.source.reference}), Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}",
                         component="tags",
                     )
                     new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
@@ -2013,6 +2033,7 @@ class AFPRenderer(VerboseOutput):
                         # This matched, so this is the import.
                         return RegisteredShape(
                             tag.id,
+                            tag.reference,
                             self.shapes[tag.reference].vertex_points,
                             self.shapes[tag.reference].tex_points,
                             self.shapes[tag.reference].tex_colors,
