@@ -273,6 +273,33 @@ class Matrix:
             a43=0.0,
         )
 
+    def to_affine(self) -> "Matrix":
+        # Copy over just the affine bits.
+        new = Matrix(
+            a11=self.a11,
+            a12=self.a12,
+            a13=0.0,
+            a21=self.a21,
+            a22=self.a22,
+            a23=0.0,
+            a31=0.0,
+            a32=0.0,
+            a33=1.0,
+            a41=self.a41,
+            a42=self.a42,
+            a43=0.0,
+        )
+
+        # Copy over tracking flags for affine, but unset the perspective ones.
+        new.__scale_set = self.__scale_set
+        new.__rotate_set = self.__rotate_set
+        new.__translate_xy_set = self.__translate_xy_set
+        new.__3d_grid_set = False
+        new.__translate_z_set = False
+
+        # Now return the new affine transform.
+        return new
+
     @property
     def __is_affine(self) -> bool:
         return (
@@ -310,7 +337,7 @@ class Matrix:
                 "tz": self.__a43,
             }
 
-    def update(self, other: "Matrix") -> "Matrix":
+    def update(self, other: "Matrix", is_perspective: bool) -> "Matrix":
         new = Matrix(
             a11=self.__a11,
             a12=self.__a12,
@@ -326,29 +353,62 @@ class Matrix:
             a43=self.__a43,
         )
 
-        if other.__3d_grid_set:
-            new.__a11 = other.__a11
-            new.__a12 = other.__a12
-            new.__a13 = other.__a13
-            new.__a21 = other.__a21
-            new.__a22 = other.__a22
-            new.__a23 = other.__a23
-            new.__a31 = other.__a31
-            new.__a32 = other.__a32
-            new.__a33 = other.__a33
-        else:
-            if other.__scale_set:
+        if not (
+            other.__scale_set
+            or other.__rotate_set
+            or other.__3d_grid_set
+            or other.__translate_xy_set
+            or other.__translate_z_set
+        ):
+            # Special case for uninitialized matrix that might need updating.
+            if is_perspective:
+                # Full perspective copy-over.
+                new.__a11 = other.__a11
+                new.__a12 = other.__a12
+                new.__a13 = other.__a13
+                new.__a21 = other.__a21
+                new.__a22 = other.__a22
+                new.__a23 = other.__a23
+                new.__a31 = other.__a31
+                new.__a32 = other.__a32
+                new.__a33 = other.__a33
+                new.__a41 = other.__a41
+                new.__a42 = other.__a42
+                new.__a43 = other.__a43
+            else:
+                # Simple affine copy-over.
                 new.__a11 = other.__a11
                 new.__a22 = other.__a22
-            if other.__rotate_set:
                 new.__a12 = other.__a12
                 new.__a21 = other.__a21
+                new.__a41 = other.__a41
+                new.__a42 = other.__a42
 
-        if other.__translate_xy_set:
-            new.__a41 = other.__a41
-            new.__a42 = other.__a42
-        if other.__translate_z_set:
-            new.__a43 = other.__a43
+        else:
+            # Use object tracking to set only what changed.
+            if other.__3d_grid_set and is_perspective:
+                new.__a11 = other.__a11
+                new.__a12 = other.__a12
+                new.__a13 = other.__a13
+                new.__a21 = other.__a21
+                new.__a22 = other.__a22
+                new.__a23 = other.__a23
+                new.__a31 = other.__a31
+                new.__a32 = other.__a32
+                new.__a33 = other.__a33
+            else:
+                if other.__scale_set:
+                    new.__a11 = other.__a11
+                    new.__a22 = other.__a22
+                if other.__rotate_set:
+                    new.__a12 = other.__a12
+                    new.__a21 = other.__a21
+
+            if other.__translate_xy_set:
+                new.__a41 = other.__a41
+                new.__a42 = other.__a42
+            if other.__translate_z_set and is_perspective:
+                new.__a43 = other.__a43
 
         return new
 

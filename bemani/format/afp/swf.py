@@ -2174,12 +2174,7 @@ class SWF(VerboseOutput, TrackedCoverage):
                 # Unset any previously set 3D transforms. Files shouldn't include both 3D
                 # transforms AND the old 2D transform flag, but let's respect that bit.
                 rotation_origin.z = 0.0
-                transform.a13 = 0.0
-                transform.a23 = 0.0
-                transform.a31 = 0.0
-                transform.a32 = 0.0
-                transform.a33 = 1.0
-                transform.a43 = 0.0
+                transform = transform.to_affine()
 
             self.vprint(f"{prefix}    Final transform: {transform}", component="tags")
 

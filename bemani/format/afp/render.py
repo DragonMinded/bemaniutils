@@ -1092,8 +1092,15 @@ class AFPRenderer(VerboseOutput):
                         new_add_color = tag.add_color or obj.add_color
                         new_hsl_shift = tag.hsl_shift or obj.hsl_shift
                         new_transform = (
-                            obj.transform.update(tag.transform)
-                            if tag.transform is not None
+                            obj.transform.update(
+                                tag.transform,
+                                tag.projection
+                                == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE,
+                            )
+                            if (
+                                tag.transform is not None
+                                and tag.projection != AP2PlaceObjectTag.PROJECTION_NONE
+                            )
                             else obj.transform
                         )
                         new_rotation_origin = tag.rotation_origin or obj.rotation_origin
