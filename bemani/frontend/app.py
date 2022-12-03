@@ -374,6 +374,7 @@ def navigation() -> Dict[str, Any]:
             return {
                 "components": components,
                 "any": jinja2_any,
+                "assets": f"themes/{config.theme}/",
                 "theme_url": jinja2_theme,
                 "cache_bust": f"v={FRONTEND_CACHE_BUST}",
             }
@@ -384,6 +385,7 @@ def navigation() -> Dict[str, Any]:
         return {
             "components": components,
             "any": jinja2_any,
+            "assets": f"themes/{config.theme}/",
             "theme_url": jinja2_theme,
             "cache_bust": f"v={FRONTEND_CACHE_BUST}",
         }
@@ -938,6 +940,7 @@ def navigation() -> Dict[str, Any]:
         "navigation": pages,
         "components": components,
         "any": jinja2_any,
+        "assets": f"themes/{config.theme}/",
         "theme_url": jinja2_theme,
         "cache_bust": f"v={FRONTEND_CACHE_BUST}",
     }

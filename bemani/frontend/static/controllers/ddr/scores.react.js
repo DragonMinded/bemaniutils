@@ -151,7 +151,7 @@ var network_scores = createReactClass({
                                         <span className="loading" style={ {float: 'right' } }>
                                             <img
                                                 className="loading"
-                                                src={Link.get('static', 'loading-16.gif')}
+                                                src={Link.get('static', window.assets + 'loading-16.gif')}
                                             /> loading more scores...
                                         </span> : null
                                 }

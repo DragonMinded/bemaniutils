@@ -542,7 +542,7 @@ var arcade_management = createReactClass({
                         <>
                             PASELI Enabled
                             { this.state.paseli_enabled_saving ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </>
@@ -561,7 +561,7 @@ var arcade_management = createReactClass({
                         <>
                             PASELI Infinite
                             { this.state.paseli_infinite_saving ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </>
@@ -580,7 +580,7 @@ var arcade_management = createReactClass({
                         <>
                             Mask Web Address
                             { this.state.mask_services_url_saving ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </>

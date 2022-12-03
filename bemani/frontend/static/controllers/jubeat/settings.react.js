@@ -246,7 +246,7 @@ var settings_view = createReactClass({
                     }.bind(this)}
                 />
                 { this.state.emblem_saving[this.state.version] ?
-                    <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                    <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                     null
                 }
                 { this.state.emblem_saved[this.state.version] ?

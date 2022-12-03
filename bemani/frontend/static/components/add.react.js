@@ -5,6 +5,7 @@ var Add = createReactClass({
         return (
             <Button
                 className="add"
+                style={this.props.style}
                 disabled={this.props.disabled}
                 onClick={function(event) {
                     this.props.onClick(event);

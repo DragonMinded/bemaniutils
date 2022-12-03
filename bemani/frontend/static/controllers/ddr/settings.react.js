@@ -323,7 +323,7 @@ var settings_view = createReactClass({
                             <>
                                 Fast/Slow Display
                                 { this.state.saving_early_late ?
-                                    <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                    <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                     null
                                 }
                             </>
@@ -342,7 +342,7 @@ var settings_view = createReactClass({
                             <>
                                 Combo Position
                                 { this.state.saving_background_combo ?
-                                    <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                    <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                     null
                                 }
                             </>
@@ -395,7 +395,7 @@ var settings_view = createReactClass({
                                 }.bind(this)}
                             />
                             { this.state.options_saving[this.state.version] ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                             { this.state.options_saved[this.state.version] ?

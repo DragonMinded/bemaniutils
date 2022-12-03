@@ -150,6 +150,7 @@
                     window.{{name}} = {{ val|tojson|safe }};
                 {% endfor %}
             {% endif %}
+            window.assets = {{ assets|tojson|safe }};
         </script>
         <script type="text/javascript">
             $(function () {

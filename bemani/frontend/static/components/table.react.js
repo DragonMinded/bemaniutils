@@ -139,7 +139,7 @@ var Table = createReactClass({
                                         <span className="loading" style={ {float: 'right' } }>
                                             <img
                                                 className="loading"
-                                                src={Link.get('static', 'loading-16.gif')}
+                                                src={Link.get('static', window.assets + 'loading-16.gif')}
                                             /> loading more data...
                                         </span> : null
                                 }
