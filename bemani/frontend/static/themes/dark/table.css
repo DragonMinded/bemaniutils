@@ -16,11 +16,11 @@ table.list th {
     font-weight: bold;
     padding: 10px;
     text-align: left;
-    border: 1px solid #6a6a6a;
+    border: 1px solid #535353;
 }
 
 table.list th.action {
-    background-color: #1f1f1f;
+    background-color: #121212;
     border: none;
 }
 
@@ -34,7 +34,7 @@ table.list tr.header td {
 }
 
 table.list tbody td {
-    border: 1px solid #6a6a6a;
+    border: 1px solid #535353;
     padding: 10px;
 }
 
@@ -102,7 +102,7 @@ table.records a, table.attempts a, table.topscores a, table.players a, table.jub
 }
 
 td.edit {
-    background-color: #1f1f1f ! important;
+    background-color: #121212 ! important;
     border: none ! important;
 }
 
