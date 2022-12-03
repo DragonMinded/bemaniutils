@@ -7,7 +7,7 @@ body {
 }
 
 a {
-	color: #878889;
+	color: #80addb;;
 }
 
 div.messages {
@@ -290,13 +290,13 @@ div.slider {
 }
 
 div.slider.on {
-    background: #6eb9f7;
-    border: 1px solid #3da2f5;
+    background: #1f649b;
+    border: 1px solid #2577b9;
 }
 
 div.slider.off {
-    background: #cccccc;
-    border: 1px solid #a0a0a0;
+    background: #242526;
+    border: 1px solid #535353;
 }
 
 div.slider span.label {
