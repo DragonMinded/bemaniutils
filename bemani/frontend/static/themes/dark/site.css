@@ -95,30 +95,34 @@ ul.messages div.close {
     font-size: smaller;
     text-decoration: none;
     display: inline-block;
-    color: #000000;
+    color: #eee;
     float: right;
     cursor: pointer;
     margin-right: 3px;
 }
 
 ul.messages li.error {
-    border: 1px solid #e2afb6;
-    background-color: #ffced5;
+    border: 1px solid #976067;
+    background-color: #6f454b;
+    color: #eee;
 }
 
 ul.messages li.warning {
-    border: 1px solid #e6deb4;
-    background-color: #fff7ce;
+    border: 1px solid #978b49;
+    background-color: #6c6333;
+    color: #eee;
 }
 
 ul.messages li.success {
-    border: 1px solid #cddcc1;
-    background: #e7ffd4;
+    border: 1px solid #608046;
+    background: #475e34;
+    color: #eee;
 }
 
 ul.messages li.info {
-    border: 1px solid #b0b0d2;
-    background-color: #d0d0ff;
+    border: 1px solid #7b7ba6;
+    background-color: #565673;
+    color: #eee;
 }
 
 ul.navigation {
