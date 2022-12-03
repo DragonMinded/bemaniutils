@@ -62,6 +62,10 @@ div.navigation {
     }
 }
 
+div.jconfirm-box {
+    background: #2d2d2d ! important;
+}
+
 @media only screen and (hover: none) {
     .tinynav {
         display: inline-block;

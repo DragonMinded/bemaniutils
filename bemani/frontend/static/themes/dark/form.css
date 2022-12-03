@@ -59,6 +59,11 @@ input[type="button"], button.nav, button.toggle, button.edit, button.add, button
     margin-right: 5px;
 }
 
+button.btn-default {
+    color: #b0b1b2 ! important;
+    background: #3c3c3c ! important;
+}
+
 input[type="submit"], input[type="button"], button {
     border-radius: 0px;
     padding-top: 4px;
