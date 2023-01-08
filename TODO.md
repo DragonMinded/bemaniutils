@@ -7,3 +7,4 @@ Things that I have not gotten around to doing.
  - Make the frontend work better on mobile. It works well enough, but it could be a much better experience.
  - Support for DanEvo. I meant to do this but my DanEvo ended up in storage before I could tackle it, so the only thing that exists at the moment is a rudimentary music DB parser.
  - Figure out phase/unlock/etc bits for some older IIDX versions and hook them up to the Arcade panel to allow switching events.
+ - Gitadora Playerboard Page and Player Skills Pages.
