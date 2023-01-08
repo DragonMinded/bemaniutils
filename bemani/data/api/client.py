@@ -143,6 +143,7 @@ class APIClient:
             GameConstants.POPN_MUSIC: "popnmusic",
             GameConstants.REFLEC_BEAT: "reflecbeat",
             GameConstants.SDVX: "soundvoltex",
+            GameConstants.GITADORA: "gitadora",
         }.get(game)
         if servergame is None:
             raise UnsupportedRequestAPIException(
@@ -207,6 +208,9 @@ class APIClient:
                     VersionConstants.SDVX_INFINITE_INFECTION: "2",
                     VersionConstants.SDVX_GRAVITY_WARS: "3",
                     VersionConstants.SDVX_HEAVENLY_HAVEN: "4",
+                },
+                GameConstants.GITADORA: {
+                    VersionConstants.GITADORA_NEXTAGE: "7",
                 },
             }
             .get(game, {})

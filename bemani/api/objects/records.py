@@ -192,6 +192,32 @@ class RecordsObject(BaseObject):
             "longrate": record.data.get_dict("stats").get_int("long_rate"),
             "volrate": record.data.get_dict("stats").get_int("vol_rate"),
         }
+    
+    def __format_gitadora_record(self, record: Score) -> Dict[str, Any]:
+        rank = {
+            DBConstants.GITADORA_GRADE_E: "E",
+            DBConstants.GITADORA_GRADE_D: "D",
+            DBConstants.GITADORA_GRADE_C: "C",
+            DBConstants.GITADORA_GRADE_B: "B",
+            DBConstants.GITADORA_GRADE_A: "A",
+            DBConstants.GITADORA_GRADE_S: "S",
+            DBConstants.GITADORA_GRADE_SS: "SS",
+            DBConstants.GITADORA_GRADE_EXCELLENT: "EX",
+        }.get(record.data.get_int("rank"), "E")
+
+        return {
+            "skill": record.data.get_int('skill'),
+            "rank": rank,
+            "combo": record.data.get_int("combo"),
+            "miss": record.data.get_int("miss"),
+            "perc": record.data.get_int("perc"),
+            "new_skill": record.data.get_int("new_skill"),
+            "fullcombo": record.data.get_int("fullcombo"),
+            "clear": record.data.get_int("clear"),
+            "excellent": record.data.get_int("excellent"),
+            "meter": record.data.get_int("meter"),
+            "meter_prog": record.data.get_int("meter_prog"),
+        }
 
     def __format_record(self, cardids: List[str], record: Score) -> Dict[str, Any]:
         base = {
@@ -217,6 +243,8 @@ class RecordsObject(BaseObject):
             base.update(self.__format_reflec_record(record))
         if self.game == GameConstants.SDVX:
             base.update(self.__format_sdvx_record(record))
+        if self.game == GameConstants.GITADORA:
+            base.update(self.__format_gitadora_record(record))
 
         return base
 

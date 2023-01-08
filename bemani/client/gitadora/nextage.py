@@ -123,7 +123,7 @@ class GitadoraNextageClient(BaseClient):
         self.assert_path(resp, "response/nextage_shopinfo/temperature/is_send")
         self.assert_path(resp, "response/nextage_shopinfo/tax/tax_phase")
 
-    def verify_nextage_gameinfo(self) -> None:
+    def verify_nextage_gameinfo_get(self) -> None:
         call = self.call_node()
 
         nextage_gameinfo = Node.void('nextage_gameinfo')
@@ -224,3 +224,105 @@ class GitadoraNextageClient(BaseClient):
         self.assert_path(resp, "response/nextage_gametop/player/ranking")
         self.assert_path(resp, "response/nextage_gametop/player/stage_result")
         self.assert_path(resp, "response/nextage_gametop/player/musiclist")
+
+    def verify_nextage_cardutil_check(self, card_id: str) -> None:
+        call = self.call_node()
+
+        nextage_cardutil = Node.void('nextage_nextage_cardutil')
+        nextage_cardutil.set_attribute('method', 'check')
+        data_version = Node.s32('data_version', 158)
+        nextage_cardutil.add_child(data_version)
+        player = Node.void('player')
+        player.set_attribute('no', '1')
+        nextage_cardutil.add_child(player)
+        refid = Node.string('refid', card_id)
+        player.add_child(refid)
+
+        # Swap with server
+        resp = self.exchange('', call)
+
+        self.assert_path(resp, "response/nextage_cardutil")
+
+    def verify(self, cardid: Optional[str]) -> None:
+        # Verify boot sequence is okay
+        self.verify_services_get(
+            expected_services=[
+                "pcbtracker",
+                "pcbevent",
+                "message",
+                "facility",
+                "cardmng",
+                "package",
+                "posevent",
+                "dlstatus",
+                "eacoin",
+                "lobby",
+                "ntp",
+                "keepalive",
+            ]
+        )
+        paseli_enabled = self.verify_pcbtracker_alive()
+        self.verify_message_get()
+        self.verify_package_list()
+        self.verify_pcbevent_put()
+        self.verify_facility_get()
+        self.verify_nextage_gameinfo_get()
+        self.verify_nextage_shopinfo_regist_request()
+        self.verify_nextage_playablemusic()
+        self.verify_nextage_gametop()
+
+        # Verify card registration and profile lookup
+        if cardid is not None:
+            card = cardid
+        else:
+            card = self.random_card()
+            print(f"Generated random card ID {card} for use.")
+
+        if cardid is None:
+            self.verify_cardmng_inquire(
+                card, msg_type="unregistered", paseli_enabled=paseli_enabled
+            )
+            ref_id = self.verify_cardmng_getrefid(card)
+            if len(ref_id) != 16:
+                raise Exception(
+                    f"Invalid refid '{ref_id}' returned when registering card"
+                )
+            if ref_id != self.verify_cardmng_inquire(
+                card, msg_type="new", paseli_enabled=paseli_enabled
+            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
+            self.verify_nextage_cardutil_check(card)
+        else:
+            print("Skipping new card checks for existing card")
+            ref_id = self.verify_cardmng_inquire(
+                card, msg_type="query", paseli_enabled=paseli_enabled
+            )
+
+        # Verify paseli handling
+        if paseli_enabled:
+            print("PASELI enabled for this PCBID, executing PASELI checks")
+        else:
+            print("PASELI disabled for this PCBID, skipping PASELI checks")
+            return
+
+        # Verify pin handling and return card handling
+        self.verify_cardmng_authpass(ref_id, correct=True)
+        self.verify_cardmng_authpass(ref_id, correct=False)
+        if ref_id != self.verify_cardmng_inquire(
+            card, msg_type="query", paseli_enabled=paseli_enabled
+        ):
+            raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
+
+        # Verify paseli handling
+        if paseli_enabled:
+            print("PASELI enabled for this PCBID, executing PASELI checks")
+        else:
+            print("PASELI disabled for this PCBID, skipping PASELI checks")
+            return
+
+        sessid, balance = self.verify_eacoin_checkin(card)
+        if balance == 0:
+            print("Skipping PASELI consume check because card has 0 balance")
+        else:
+            self.verify_eacoin_consume(sessid, balance, random.randint(0, balance))
+        self.verify_eacoin_checkout(sessid)

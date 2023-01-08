@@ -101,6 +101,14 @@ class CatalogObject(BaseObject):
             "limited": song.data.get_int("limited"),
         }
 
+    def __format_gitadora_song(self, song: Song) -> Dict[str, Any]:
+        return {
+            "difficulty": song.data.get_int("difficulty"),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
+            "data_ver": song.data.get_int("data_ver"),
+        }
+
     def __format_song(self, song: Song) -> Dict[str, Any]:
         base = {
             "song": str(song.id),
@@ -124,6 +132,8 @@ class CatalogObject(BaseObject):
             base.update(self.__format_reflec_song(song))
         if self.game == GameConstants.SDVX:
             base.update(self.__format_sdvx_song(song))
+        if self.game == GameConstants.GITADORA:
+            base.update(self.__format_gitadora_song(song))
 
         return base
 

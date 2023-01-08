@@ -431,7 +431,7 @@ class GitadoraNextage(
         ea_pass_propel.add_child(Node.u8('term',1))
 
         # demomusic
-        demomusic_dict = [(2640,1,69410,97663),(2534,1,56334,86667),(2645,1,47929,78024)]
+        demomusic_dict = [(2640,1,69410,97663)]
         demomusic = Node.void('demomusic')
         root.add_child(demomusic)
         demomusic.set_attribute('nr',str(len(demomusic_dict)))
@@ -461,7 +461,7 @@ class GitadoraNextage(
         # event_skill
         event_skill = Node.void('event_skill')
         root.add_child(event_skill)
-        event_skill_item = [(1, 1, 0, 1, 400), (2, 2, 0, 2, 400), (3, 4, 0, 4, 0), (4, 4, 0, 4, 0), (5, 5, 0, 5, 450), (6, 6, 0, 6, 450), (7, 7, 0, 7, 460), (8, 8, 1, 8, 500), (9, 3, 1, 3, 600), (10, 8, 2, 8, 500), (11, 9, 0, 9, 460), (12, 10, 0, 10, 470)]
+        event_skill_item = [(1, 1, 0, 1, 400)]
         for event_item in event_skill_item:
             event = Node.void('event')
             event_skill.add_child(event)
@@ -491,15 +491,15 @@ class GitadoraNextage(
         # first. 50th konami logo.
         termdata.add_child(Node.string('type','general_50th_konami_logo'))
         termdata.add_child(Node.u8('term',0))
-        termdata.add_child(Node.u64('start_date_ms',1546268400000))
-        termdata.add_child(Node.u64('end_date_ms',1577804399000))
+        termdata.add_child(Node.u64('start_date_ms',1000 * Time.now()))
+        termdata.add_child(Node.u64('end_date_ms',1000 * (Time.now() + 86400 * 30)))
         # second. otobear birthday
         termdata = Node.void('termdata')
         general_term.add_child(termdata)
         termdata.add_child(Node.string('type','general_otobear_birthday'))
         termdata.add_child(Node.u8('term',0))
-        termdata.add_child(Node.u64('start_date_ms',1604156400000))
-        termdata.add_child(Node.u64('end_date_ms',1605020400000))
+        termdata.add_child(Node.u64('start_date_ms',1000 * Time.now()))
+        termdata.add_child(Node.u64('end_date_ms',1000 * (Time.now() + 86400 * 30)))
         # third. ultimate mobile 2019.
         termdata = Node.void('termdata')
         general_term.add_child(termdata)
@@ -540,7 +540,7 @@ class GitadoraNextage(
         general_term.add_child(termdata)
         termdata.add_child(Node.string('type','general_premium_encore'))
         termdata.add_child(Node.u8('term',1))
-        termdata.add_child(Node.u64('start_date_ms',1599613200000))
+        termdata.add_child(Node.u64('start_date_ms',1000 * Time.now()))
         termdata.add_child(Node.u64('end_date_ms',18446744073709551615))
 
         # jubeat_omiyage_challenge
@@ -564,8 +564,8 @@ class GitadoraNextage(
         thanksgiving = Node.void('thanksgiving')
         root.add_child(thanksgiving)
         thanksgiving.add_child(Node.u8('term',0))
-        thanksgiving.add_child(Node.u64('start_date_ms',1583283600000))
-        thanksgiving.add_child(Node.u64('end_date_ms',1609426799000))
+        thanksgiving.add_child(Node.u64('start_date_ms',1000 * Time.now()))
+        thanksgiving.add_child(Node.u64('end_date_ms',1000 * (Time.now() + 86400 * 30)))
         box_term = Node.void('box_term')
         thanksgiving.add_child(box_term)
         box_term.add_child(Node.u8('state',0))
@@ -574,8 +574,8 @@ class GitadoraNextage(
         lotterybox = Node.void('lotterybox')
         root.add_child(lotterybox)
         lotterybox.add_child(Node.u8('term',0))
-        lotterybox.add_child(Node.u64('start_date_ms',Time.now()*1000))
-        lotterybox.add_child(Node.u64('end_date_ms',(Time.now() +86400)*1000))
+        lotterybox.add_child(Node.u64('start_date_ms',1000 * Time.now()))
+        lotterybox.add_child(Node.u64('end_date_ms',1000 * (Time.now() + 86400)))
         box_term = Node.void('box_term')
         lotterybox.add_child(box_term)
         box_term.add_child(Node.u8('state',0))
@@ -706,7 +706,7 @@ class GitadoraNextage(
         #musicinfo. should been import the musicdb at first.
         all_songs =self.data.local.music.get_all_songs(self.game, self.music_version)
         songs = list(set([song.id for song in all_songs]))
-        secret_music = [413,516,532,608,705,1100,1114,1130,1133,1462,1508,1547,1623,2531,2539,]
+        secret_music = [413,516,532,608,705,1100,1114,1130,1133,1462,1508,1547,1623,2531,2539,2661,2662,2663,2664,2665,2666,2667,2668,2669,2670,2678,2679,2680,2684,2686,2695,2697,2698,2699,2711]
         musicinfo = Node.void('musicinfo')
         root.add_child(musicinfo)
         musicinfo.set_attribute('nr',str(len(songs)))
@@ -725,14 +725,13 @@ class GitadoraNextage(
                 music.add_child(Node.s32('id',song.id))
                 music.add_child(Node.bool('cont_gf',True))
                 music.add_child(Node.bool('cont_dm',True))
-                music.add_child(Node.bool('is_secret',False))#unlock all
-                if song.id in secret_music or 2590<= song.id <=2711:#hot music
+                music.add_child(Node.bool('is_secret',False)) # unlock all
+                if song.id in secret_music or 2590<= song.id <=2659: # hot music
                     music.add_child(Node.bool('is_hot',True))
                 else:
                     music.add_child(Node.bool('is_hot',False))
-                music.add_child(Node.s32('data_ver',-1))
+                music.add_child(Node.s32('data_ver',song.data.get_int('data_ver')))
                 music.add_child(Node.u16_array('diff',chart))
-
 
         musicinfo = Node.void('musicinfo')
         root.add_child(musicinfo)
@@ -792,6 +791,7 @@ class GitadoraNextage(
             sticker.add_child(Node.float('scale_y',stickers['sticker_scale_y']))
             sticker.add_child(Node.float('rotate',stickers['sticker_rotate']))
         '''
+        # TODO: Add custom playerboard here. max range its 10.
         sticker_list = [
             {"sticker_id": 1368,"sticker_pos_x":160.000000,"sticker_pos_y":236.000000,"sticker_scale_x":1.000000,"sticker_scale_y":1.000000,"sticker_rotate":0.000000},
         ]

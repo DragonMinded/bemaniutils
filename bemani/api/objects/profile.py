@@ -44,6 +44,9 @@ class ProfileObject(BaseObject):
 
     def __format_sdvx_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {}
+    
+    def __format_gitadora_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
+        return {}
 
     def __format_profile(
         self, cardids: List[str], profile: Profile, settings: ValidatedDict, exact: bool
@@ -71,6 +74,8 @@ class ProfileObject(BaseObject):
             base.update(self.__format_reflec_profile(profile, exact))
         if self.game == GameConstants.SDVX:
             base.update(self.__format_sdvx_profile(profile, exact))
+        if self.game == GameConstants.GITADORA:
+            base.update(self.__format_gitadora_profile(profile, exact))
 
         return base
 
