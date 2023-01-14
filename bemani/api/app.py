@@ -293,6 +293,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
             },
             GameConstants.GITADORA: {
                 "7": VersionConstants.GITADORA_NEXTAGE,
+                "8": VersionConstants.GITADORA_HIGH_VOLTAGE,
             },
         }
         .get(game, {})

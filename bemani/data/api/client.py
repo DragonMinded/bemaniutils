@@ -211,6 +211,7 @@ class APIClient:
                 },
                 GameConstants.GITADORA: {
                     VersionConstants.GITADORA_NEXTAGE: "7",
+                    VersionConstants.GITADORA_HIGH_VOLTAGE: "8",
                 },
             }
             .get(game, {})

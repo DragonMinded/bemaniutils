@@ -68,3 +68,4 @@ set -e
 
 # Gitadora
 ./read --series gitadora --version 7 "$@"
+./read --series gitadora --version 8 "$@"

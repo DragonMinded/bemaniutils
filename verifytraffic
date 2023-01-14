@@ -45,6 +45,7 @@ declare -a arr=(
     "reflec-6"
     "mga"
     "gitadora-7"
+    "gitadora-8"
 )
 
 for project in "${arr[@]}"

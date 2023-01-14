@@ -147,6 +147,7 @@ class VersionConstants:
     GITADORA_EXCHAIN: Final[int] = 6
     GITADORA_NEXTAGE: Final[int] = 7
     GITADORA_HIGH_VOLTAGE: Final[int] = 8
+    GITADORA_FUZZ_UP: Final[int] = 9
 
 
 class APIConstants(Enum):

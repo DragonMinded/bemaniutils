@@ -589,9 +589,11 @@ For Gitadora, you will need the `mdb_**.xml` file from the game you wish to impo
 Then, run the following command, modifying the version parameter as required. Also do the same on omnimix.
 
 * Nextage:       mdb_nt.xml
+* High Voltage:  mdb_hv.xml
 
 ```
 ./read --config config/server.yaml --series gitadora --version 7 --xml data/product/xml/mdb_nt.xml
+./read --config config/server.yaml --series gitadora --version 8 --xml data/product/xml/mdb_hv.xml
 ```
 
 ## Running Locally

@@ -48,8 +48,10 @@ class GitadoraFactory(Factory):
                 return VersionConstants.GITADORA_EXCHAIN
             elif date >= 2019100200 and date < 2021042100:
                 return VersionConstants.GITADORA_NEXTAGE
-            elif date >= 2021042100:
+            elif date >= 2021042100 and date < 2022121400:
                 return VersionConstants.GITADORA_HIGH_VOLTAGE
+            elif date >= 2022121400:
+                return VersionConstants.GITADORA_FUZZ_UP
             return None   
 
         if model.gamecode == 'M32':
