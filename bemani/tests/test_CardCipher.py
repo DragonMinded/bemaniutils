@@ -20,11 +20,11 @@ class TestCardCipher(unittest.TestCase):
         for pair in test_ciphers:
             inp = bytes(pair[0])
             out = bytes(pair[1])
-            encoded = CardCipher._encode(inp)
+            encoded = CardCipher.INTERNAL_CIPHER.encrypt(inp)
             self.assertEqual(
                 encoded, out, f"Card encode {encoded!r} doesn't match expected {out!r}"
             )
-            decoded = CardCipher._decode(out)
+            decoded = CardCipher.INTERNAL_CIPHER.decrypt(out)
             self.assertEqual(
                 decoded, inp, f"Card decode {decoded!r} doesn't match expected {inp!r}"
             )
