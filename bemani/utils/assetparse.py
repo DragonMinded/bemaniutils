@@ -3,7 +3,7 @@
 import argparse
 import os
 import xml.etree.ElementTree as ET
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Dict, Optional
 
 from bemani.common import GameConstants, VersionConstants

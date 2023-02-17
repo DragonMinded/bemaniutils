@@ -1,5 +1,5 @@
 from datetime import datetime
-from discord_webhook import DiscordWebhook, DiscordEmbed  # type: ignore
+from discord_webhook import DiscordWebhook, DiscordEmbed
 from typing import Dict
 
 from bemani.common.constants import GameConstants, BroadcastConstants

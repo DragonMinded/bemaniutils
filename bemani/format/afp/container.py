@@ -1,7 +1,7 @@
 import io
 import os
 import struct
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.format.dxt import DXTBuffer

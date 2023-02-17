@@ -1,6 +1,6 @@
 import multiprocessing
 import signal
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Any, Callable, List, Optional, Sequence, Union
 
 from ..types import Color, HSL, Matrix, Point, AAMode
@@ -580,7 +580,7 @@ def affine_composite(
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:
         # Get the data in an easier to manipulate and faster to update fashion.
-        imgbytes = bytearray(img.tobytes("raw", "RGBA"))
+        imgbytearray = bytearray(img.tobytes("raw", "RGBA"))
         texbytes = texture.tobytes("raw", "RGBA")
         if mask:
             alpha = mask.split()[-1]
@@ -593,7 +593,7 @@ def affine_composite(
             for imgx in range(minx, maxx):
                 # Determine offset
                 imgoff = (imgx + (imgy * imgwidth)) * 4
-                imgbytes[imgoff : (imgoff + 4)] = pixel_renderer(
+                imgbytearray[imgoff : (imgoff + 4)] = pixel_renderer(
                     imgx,
                     imgy,
                     imgwidth,
@@ -607,13 +607,13 @@ def affine_composite(
                     mult_color,
                     hsl_shift,
                     blendfunc,
-                    imgbytes,
+                    imgbytearray,
                     texbytes,
                     maskbytes,
                     aa_mode,
                 )
 
-        img = Image.frombytes("RGBA", (imgwidth, imgheight), bytes(imgbytes))
+        img = Image.frombytes("RGBA", (imgwidth, imgheight), bytes(imgbytearray))
     else:
         imgbytes = img.tobytes("raw", "RGBA")
         texbytes = texture.tobytes("raw", "RGBA")
@@ -792,15 +792,6 @@ def perspective_composite(
         # This texture is entirely off of the screen.
         return img
 
-    # Get the data in an easier to manipulate and faster to update fashion.
-    imgbytes = bytearray(img.tobytes("raw", "RGBA"))
-    texbytes = texture.tobytes("raw", "RGBA")
-    if mask:
-        alpha = mask.split()[-1]
-        maskbytes = alpha.tobytes("raw", "L")
-    else:
-        maskbytes = None
-
     def perspective_inverse(imgpoint: Point) -> Optional[Point]:
         # Calculate the texture coordinate with our perspective interpolation.
         texdiv = inverse_matrix.multiply_point(imgpoint)
@@ -812,7 +803,7 @@ def perspective_composite(
     cores = multiprocessing.cpu_count()
     if single_threaded or cores < 2:
         # Get the data in an easier to manipulate and faster to update fashion.
-        imgbytes = bytearray(img.tobytes("raw", "RGBA"))
+        imgbytearray = bytearray(img.tobytes("raw", "RGBA"))
         texbytes = texture.tobytes("raw", "RGBA")
         if mask:
             alpha = mask.split()[-1]
@@ -825,7 +816,7 @@ def perspective_composite(
             for imgx in range(minx, maxx):
                 # Determine offset
                 imgoff = (imgx + (imgy * imgwidth)) * 4
-                imgbytes[imgoff : (imgoff + 4)] = pixel_renderer(
+                imgbytearray[imgoff : (imgoff + 4)] = pixel_renderer(
                     imgx,
                     imgy,
                     imgwidth,
@@ -839,13 +830,13 @@ def perspective_composite(
                     mult_color,
                     hsl_shift,
                     blendfunc,
-                    imgbytes,
+                    imgbytearray,
                     texbytes,
                     maskbytes,
                     aa_mode,
                 )
 
-        img = Image.frombytes("RGBA", (imgwidth, imgheight), bytes(imgbytes))
+        img = Image.frombytes("RGBA", (imgwidth, imgheight), bytes(imgbytearray))
     else:
         imgbytes = img.tobytes("raw", "RGBA")
         texbytes = texture.tobytes("raw", "RGBA")

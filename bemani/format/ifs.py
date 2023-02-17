@@ -2,7 +2,7 @@ import hashlib
 import io
 import os
 import struct
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Callable, Dict, List, Optional, Tuple
 
 from bemani.format.dxt import DXTBuffer

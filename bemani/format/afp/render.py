@@ -1,5 +1,5 @@
 from typing import Any, Dict, Generator, List, Set, Tuple, Optional, Union
-from PIL import Image  # type: ignore
+from PIL import Image
 
 from .blend import affine_composite, perspective_composite
 from .swf import (
@@ -85,7 +85,7 @@ class RegisteredShape:
         self.tex_points: List[Point] = tex_points
         self.tex_colors: List[Color] = tex_colors
         self.draw_params: List[DrawParams] = draw_params
-        self.rectangle: Optional[Image.image] = None
+        self.rectangle: Optional[Image.Image] = None
 
     @property
     def reference(self) -> str:

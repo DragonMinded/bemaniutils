@@ -1,5 +1,5 @@
 import multiprocessing
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Optional, Tuple
 
 from ..types import Color, HSL, Matrix, Point, AAMode
