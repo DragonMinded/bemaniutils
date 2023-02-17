@@ -9,7 +9,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class DDRFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.DDR
 
     version: int = 0  # We use a virtual version for DDR to tie charts together

@@ -9,7 +9,6 @@ from bemani.protocol import Node
 
 
 class ReflecBeat(ReflecBeatBase):
-
     name: str = "REFLEC BEAT"
     version: int = VersionConstants.REFLEC_BEAT
 
@@ -129,7 +128,7 @@ class ReflecBeat(ReflecBeatBase):
     def __add_event_info(self, request: Node) -> None:
         events: Dict[int, int] = {}
 
-        for (_eventid, _phase) in events.items():
+        for _eventid, _phase in events.items():
             data = Node.void("data")
             request.add_child(data)
             data.add_child(Node.s32("type", -1))
@@ -210,7 +209,7 @@ class ReflecBeat(ReflecBeatBase):
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
-            for (user, lobby) in lobbies:
+            for user, lobby in lobbies:
                 if limit <= 0:
                     break
 

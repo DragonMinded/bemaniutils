@@ -6,13 +6,11 @@ from bemani.common import VersionConstants
 
 
 class IIDX1stStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 1st style & substream"
     version: int = VersionConstants.IIDX
 
 
 class IIDX2ndStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 2nd style"
     version: int = VersionConstants.IIDX_2ND_STYLE
 
@@ -21,7 +19,6 @@ class IIDX2ndStyle(IIDXBase):
 
 
 class IIDX3rdStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 3rd style"
     version: int = VersionConstants.IIDX_3RD_STYLE
 
@@ -30,7 +27,6 @@ class IIDX3rdStyle(IIDXBase):
 
 
 class IIDX4thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 4th style"
     version: int = VersionConstants.IIDX_4TH_STYLE
 
@@ -39,7 +35,6 @@ class IIDX4thStyle(IIDXBase):
 
 
 class IIDX5thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 5th style"
     version: int = VersionConstants.IIDX_5TH_STYLE
 
@@ -48,7 +43,6 @@ class IIDX5thStyle(IIDXBase):
 
 
 class IIDX6thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 6th style"
     version: int = VersionConstants.IIDX_6TH_STYLE
 
@@ -57,7 +51,6 @@ class IIDX6thStyle(IIDXBase):
 
 
 class IIDX7thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 7th style"
     version: int = VersionConstants.IIDX_7TH_STYLE
 
@@ -66,7 +59,6 @@ class IIDX7thStyle(IIDXBase):
 
 
 class IIDX8thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 8th style"
     version: int = VersionConstants.IIDX_8TH_STYLE
 
@@ -75,7 +67,6 @@ class IIDX8thStyle(IIDXBase):
 
 
 class IIDX9thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 9th style"
     version: int = VersionConstants.IIDX_9TH_STYLE
 
@@ -84,7 +75,6 @@ class IIDX9thStyle(IIDXBase):
 
 
 class IIDX10thStyle(IIDXBase):
-
     name: str = "Beatmania IIDX 10th style"
     version: int = VersionConstants.IIDX_10TH_STYLE
 
@@ -93,7 +83,6 @@ class IIDX10thStyle(IIDXBase):
 
 
 class IIDXRed(IIDXBase):
-
     name: str = "Beatmania IIDX RED"
     version: int = VersionConstants.IIDX_RED
 
@@ -102,7 +91,6 @@ class IIDXRed(IIDXBase):
 
 
 class IIDXHappySky(IIDXBase):
-
     name: str = "Beatmania IIDX HAPPY SKY"
     version: int = VersionConstants.IIDX_HAPPY_SKY
 
@@ -111,7 +99,6 @@ class IIDXHappySky(IIDXBase):
 
 
 class IIDXDistorted(IIDXBase):
-
     name: str = "Beatmania IIDX DistorteD"
     version: int = VersionConstants.IIDX_DISTORTED
 
@@ -120,7 +107,6 @@ class IIDXDistorted(IIDXBase):
 
 
 class IIDXGold(IIDXBase):
-
     name: str = "Beatmania IIDX GOLD"
     version: int = VersionConstants.IIDX_GOLD
 
@@ -129,7 +115,6 @@ class IIDXGold(IIDXBase):
 
 
 class IIDXDJTroopers(IIDXBase):
-
     name: str = "Beatmania IIDX DJ TROOPERS"
     version: int = VersionConstants.IIDX_DJ_TROOPERS
 
@@ -138,7 +123,6 @@ class IIDXDJTroopers(IIDXBase):
 
 
 class IIDXEmpress(IIDXBase):
-
     name: str = "Beatmania IIDX EMPRESS"
     version: int = VersionConstants.IIDX_EMPRESS
 
@@ -147,7 +131,6 @@ class IIDXEmpress(IIDXBase):
 
 
 class IIDXSirius(IIDXBase):
-
     name: str = "Beatmania IIDX SIRIUS"
     version: int = VersionConstants.IIDX_SIRIUS
 
@@ -156,7 +139,6 @@ class IIDXSirius(IIDXBase):
 
 
 class IIDXResortAnthem(IIDXBase):
-
     name: str = "Beatmania IIDX Resort Anthem"
     version: int = VersionConstants.IIDX_RESORT_ANTHEM
 
@@ -165,7 +147,6 @@ class IIDXResortAnthem(IIDXBase):
 
 
 class IIDXLincle(IIDXBase):
-
     name: str = "Beatmania IIDX Lincle"
     version: int = VersionConstants.IIDX_LINCLE
 

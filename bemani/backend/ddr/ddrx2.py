@@ -42,7 +42,6 @@ class DDRX2(
     DDRGameTraceHandler,
     DDRBase,
 ):
-
     name: str = "DanceDanceRevolution X2"
     version: int = VersionConstants.DDR_X2
 
@@ -161,7 +160,7 @@ class DDRX2(
             self.game, self.music_version, self.GAME_MAX_SONGS
         )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
-        for (reflink, plays) in hit_chart:
+        for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
         game.add_child(Node.u32_array("cnt_music", counts_by_reflink))
@@ -176,7 +175,7 @@ class DDRX2(
 
         sortedrecords: Dict[int, Dict[int, Tuple[UserID, Score]]] = {}
         missing_profiles = []
-        for (userid, score) in records:
+        for userid, score in records:
             if score.id not in sortedrecords:
                 sortedrecords[score.id] = {}
             sortedrecords[score.id][score.chart] = (userid, score)

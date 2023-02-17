@@ -12,7 +12,6 @@ from bemani.protocol import Node
 
 
 class PopnMusicEclale(PopnMusicBase):
-
     name: str = "Pop'n Music éclale"
     version: int = VersionConstants.POPN_MUSIC_ECLALE
 
@@ -184,7 +183,7 @@ class PopnMusicEclale(PopnMusicBase):
         # Calculate most popular characters
         profiles = self.data.remote.user.get_all_profiles(self.game, self.version)
         charas: Dict[int, int] = {}
-        for (_userid, profile) in profiles:
+        for _userid, profile in profiles:
             chara = profile.get_int("chara", -1)
             if chara <= 0:
                 continue
@@ -202,7 +201,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         # Output the top 20 of them
         rank = 1
-        for (charaid, _usecount) in charamap[:20]:
+        for charaid, _usecount in charamap[:20]:
             popular = Node.void("popular")
             root.add_child(popular)
             popular.add_child(Node.s16("rank", rank))
@@ -210,7 +209,7 @@ class PopnMusicEclale(PopnMusicBase):
             rank = rank + 1
 
         # Output the hit chart
-        for (songid, _plays) in self.data.local.music.get_hit_chart(
+        for songid, _plays in self.data.local.music.get_hit_chart(
             self.game, self.version, 500
         ):
             popular_music = Node.void("popular_music")

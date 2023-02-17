@@ -83,7 +83,6 @@ class ArcadeCreationException(Exception):
 
 
 class MachineData(BaseData):
-
     # This relies on the fact that arcadeid in the arcade_settings table is auto-increment
     # and thus will start at 1.
     DEFAULT_SETTINGS_ARCADE: Final[ArcadeID] = ArcadeID(-1)

@@ -29,7 +29,6 @@ class Museca1Plus(
     MusecaGameShopHandler,
     MusecaBase,
 ):
-
     name: str = "MÚSECA 1+1/2"
     version: int = VersionConstants.MUSECA_1_PLUS
 
@@ -137,7 +136,7 @@ class Museca1Plus(
                 ):
                     ids.add((song.id, song.chart))
 
-            for (songid, chart) in ids:
+            for songid, chart in ids:
                 info = Node.void("info")
                 limited.add_child(info)
                 info.add_child(Node.s32("music_id", songid))

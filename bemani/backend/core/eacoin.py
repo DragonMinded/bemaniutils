@@ -422,7 +422,7 @@ class PASELIHandler(Base):
             )
             topic.add_child(Node.string("sumto", Time.format(this_month, date_format)))
 
-            for (start, end) in [(month_before, last_month), (last_month, this_month)]:
+            for start, end in [(month_before, last_month), (last_month, this_month)]:
                 year, month, _ = Time.date_from_timestamp(start)
 
                 items = []

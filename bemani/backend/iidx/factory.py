@@ -36,7 +36,6 @@ from bemani.data import Config, Data
 
 
 class IIDXFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         IIDX1stStyle,
         IIDX2ndStyle,

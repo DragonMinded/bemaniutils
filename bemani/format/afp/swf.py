@@ -3302,7 +3302,6 @@ class SWF(VerboseOutput, TrackedCoverage):
         # This appears to be bytecode to execute on a per-frame basis. We execute this every frame and
         # only execute up to the point where we equal the current frame.
         if imported_tag_initializers_offset is not None:
-
             unk1, length = struct.unpack(
                 "<HH",
                 data[

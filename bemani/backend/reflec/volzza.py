@@ -10,7 +10,6 @@ from bemani.protocol import Node
 
 
 class ReflecBeatVolzza(ReflecBeatVolzzaBase):
-
     name: str = "REFLEC BEAT VOLZZA"
     version: int = VersionConstants.REFLEC_BEAT_VOLZZA
 
@@ -168,7 +167,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
                         scores_by_musicid[score.id] = [None, None, None, None]
                     scores_by_musicid[score.id][score.chart] = score
 
-                for (mid, scores) in scores_by_musicid.items():
+                for mid, scores in scores_by_musicid.items():
                     points = [
                         score.points << 32 if score is not None else 0
                         for score in scores

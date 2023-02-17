@@ -8,7 +8,6 @@ from bemani.data import Config, Data
 
 
 class MusecaFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         Museca1,
         Museca1Plus,

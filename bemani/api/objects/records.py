@@ -306,7 +306,7 @@ class RecordsObject(BaseObject):
         # Now, fetch the users, and filter out scores belonging to orphaned users
         id_to_cards: Dict[UserID, List[str]] = {}
         retval: List[Dict[str, Any]] = []
-        for (userid, record) in records:
+        for userid, record in records:
             # Postfilter for queries that can't filter. This will save on data transferred.
             if since is not None:
                 if record.update < since:

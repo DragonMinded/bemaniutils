@@ -21,7 +21,6 @@ class TheStarBishiBashi(
     EventLogHandler,
     BishiBashiBase,
 ):
-
     name: str = "The★BishiBashi"
     version: int = VersionConstants.BISHI_BASHI_TSBB
 

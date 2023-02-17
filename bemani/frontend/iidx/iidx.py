@@ -10,7 +10,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class IIDXFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.IIDX
 
     valid_charts: List[int] = [

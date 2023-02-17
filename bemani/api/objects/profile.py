@@ -119,7 +119,7 @@ class ProfileObject(BaseObject):
         # Now, fetch the users, and filter out profiles belonging to orphaned users
         retval: List[Dict[str, Any]] = []
         id_to_cards: Dict[UserID, List[str]] = {}
-        for (userid, profile) in profiles:
+        for userid, profile in profiles:
             if userid not in id_to_cards:
                 cards = self.data.local.user.get_cards(userid)
                 if len(cards) == 0:

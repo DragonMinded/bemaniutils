@@ -237,7 +237,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         )
 
         attempts: Dict[int, Dict[int, Dict[str, int]]] = {}
-        for (_, attempt) in all_attempts:
+        for _, attempt in all_attempts:
             if attempt.data.get_int("clear_status") == self.CLEAR_STATUS_NO_PLAY:
                 # This attempt was outside of the clear infra, so don't bother with it.
                 continue

@@ -182,7 +182,7 @@ class StatisticsObject(BaseObject):
     ) -> List[Dict[str, Any]]:
         stats: Dict[UserID, Dict[int, Dict[int, Dict[str, int]]]] = {}
 
-        for (userid, attempt) in attempts:
+        for userid, attempt in attempts:
             if userid not in stats:
                 stats[userid] = {}
             if attempt.id not in stats[userid]:

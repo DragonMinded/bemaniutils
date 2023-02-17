@@ -725,7 +725,7 @@ class GlobalMusicData(BaseGlobalData):
             return allscores.get(userid, {}).get(songid, {}).get(songchart)
 
         # First, seed with local scores
-        for (userid, score) in localscores:
+        for userid, score in localscores:
             add_score(userid, score)
 
         # Second, merge in remote scorse
@@ -830,7 +830,7 @@ class GlobalMusicData(BaseGlobalData):
             return allscores.get(songid, {}).get(songchart, (None, None))
 
         # First, seed with local records
-        for (userid, score) in localscores:
+        for userid, score in localscores:
             add_score(userid, score)
 
         # Second, merge in remote records

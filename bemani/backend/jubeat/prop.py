@@ -31,7 +31,6 @@ class JubeatProp(
     JubeatCourse,
     JubeatBase,
 ):
-
     name: str = "Jubeat Prop"
     version: int = VersionConstants.JUBEAT_PROP
 
@@ -1621,7 +1620,6 @@ class JubeatProp(
     def format_scores(
         self, userid: UserID, profile: Profile, scores: List[Score]
     ) -> Node:
-
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)

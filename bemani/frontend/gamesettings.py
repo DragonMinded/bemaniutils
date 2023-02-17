@@ -10,14 +10,14 @@ def get_game_settings(data: Data, arcadeid: ArcadeID) -> List[Dict[str, Any]]:
     settings_lut: Dict[GameConstants, Dict[int, Dict[str, Any]]] = {}
     all_settings = []
 
-    for (game, version, name) in Base.all_games():
+    for game, version, name in Base.all_games():
         if game not in game_lut:
             game_lut[game] = {}
             settings_lut[game] = {}
         game_lut[game][version] = name
         settings_lut[game][version] = {}
 
-    for (game, version, settings) in Base.all_settings():
+    for game, version, settings in Base.all_settings():
         if not settings:
             continue
 

@@ -12,7 +12,6 @@ from bemani.data import Config, Data
 
 
 class SoundVoltexFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         SoundVoltexBooth,
         SoundVoltexInfiniteInfection,

@@ -207,7 +207,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
 
     # Figure out what games we support based on config, and map those.
     gamemapping = {}
-    for (gameid, constant) in [
+    for gameid, constant in [
         ("ddr", GameConstants.DDR),
         ("iidx", GameConstants.IIDX),
         ("jubeat", GameConstants.JUBEAT),

@@ -20,7 +20,6 @@ from bemani.protocol import Node
 
 
 class IIDXSpada(IIDXBase):
-
     name: str = "Beatmania IIDX SPADA"
     version: int = VersionConstants.IIDX_SPADA
 
@@ -655,7 +654,7 @@ class IIDXSpada(IIDXBase):
                 reverse=True,
             )
             missing_players = [uid for (uid, _) in all_scores if uid not in all_players]
-            for (uid, prof) in self.get_any_profiles(missing_players):
+            for uid, prof in self.get_any_profiles(missing_players):
                 all_players[uid] = prof
 
             if not global_scores:

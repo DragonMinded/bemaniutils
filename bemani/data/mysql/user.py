@@ -174,7 +174,6 @@ class AccountCreationException(Exception):
 
 
 class UserData(BaseData):
-
     REF_ID_LENGTH: Final[int] = 16
 
     def from_cardid(self, cardid: str) -> Optional[UserID]:

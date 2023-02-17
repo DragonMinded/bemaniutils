@@ -29,7 +29,6 @@ class JubeatFesto(
     JubeatLoggerReportHandler,
     JubeatBase,
 ):
-
     name: str = "Jubeat Festo"
     version: int = VersionConstants.JUBEAT_FESTO
 

@@ -285,7 +285,7 @@ def viewarcades() -> Response:
 @adminrequired
 def viewmachines() -> Response:
     games: Dict[str, Dict[int, str]] = {}
-    for (game, version, name) in Base.all_games():
+    for game, version, name in Base.all_games():
         if game.value not in games:
             games[game.value] = {}
         games[game.value][version] = name

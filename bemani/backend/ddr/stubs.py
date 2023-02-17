@@ -6,7 +6,6 @@ from bemani.common import VersionConstants
 
 
 class DDRX(DDRBase):
-
     name: str = "DanceDanceRevolution X"
     version: int = VersionConstants.DDR_X
 
@@ -15,7 +14,6 @@ class DDRX(DDRBase):
 
 
 class DDRSuperNova2(DDRBase):
-
     name: str = "DanceDanceRevolution SuperNova 2"
     version: int = VersionConstants.DDR_SUPERNOVA_2
 
@@ -24,7 +22,6 @@ class DDRSuperNova2(DDRBase):
 
 
 class DDRSuperNova(DDRBase):
-
     name: str = "DanceDanceRevolution SuperNova"
     version: int = VersionConstants.DDR_SUPERNOVA
 
@@ -33,7 +30,6 @@ class DDRSuperNova(DDRBase):
 
 
 class DDRExtreme(DDRBase):
-
     name: str = "DanceDanceRevolution Extreme"
     version: int = VersionConstants.DDR_EXTREME
 
@@ -42,7 +38,6 @@ class DDRExtreme(DDRBase):
 
 
 class DDR7thMix(DDRBase):
-
     name: str = "DanceDanceRevolution 7thMix"
     version: int = VersionConstants.DDR_7THMIX
 
@@ -51,7 +46,6 @@ class DDR7thMix(DDRBase):
 
 
 class DDR6thMix(DDRBase):
-
     name: str = "DanceDanceRevolution 6thMix"
     version: int = VersionConstants.DDR_6THMIX
 
@@ -60,7 +54,6 @@ class DDR6thMix(DDRBase):
 
 
 class DDR5thMix(DDRBase):
-
     name: str = "DanceDanceRevolution 5thMix"
     version: int = VersionConstants.DDR_5THMIX
 
@@ -69,7 +62,6 @@ class DDR5thMix(DDRBase):
 
 
 class DDR4thMix(DDRBase):
-
     name: str = "DanceDanceRevolution 4thMix"
     version: int = VersionConstants.DDR_4THMIX
 
@@ -78,7 +70,6 @@ class DDR4thMix(DDRBase):
 
 
 class DDR3rdMix(DDRBase):
-
     name: str = "DanceDanceRevolution 3rdMix"
     version: int = VersionConstants.DDR_3RDMIX
 
@@ -87,7 +78,6 @@ class DDR3rdMix(DDRBase):
 
 
 class DDR2ndMix(DDRBase):
-
     name: str = "DanceDanceRevolution 2ndMix"
     version: int = VersionConstants.DDR_2NDMIX
 
@@ -96,6 +86,5 @@ class DDR2ndMix(DDRBase):
 
 
 class DDR1stMix(DDRBase):
-
     name: str = "DanceDanceRevolution 1stMix"
     version: int = VersionConstants.DDR_1STMIX

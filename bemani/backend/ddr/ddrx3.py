@@ -48,7 +48,6 @@ class DDRX3(
     DDRGameTraceHandler,
     DDRBase,
 ):
-
     name: str = "DanceDanceRevolution X3 VS 2ndMIX"
     version: int = VersionConstants.DDR_X3_VS_2NDMIX
 
@@ -170,7 +169,7 @@ class DDRX3(
             self.game, self.music_version, self.GAME_MAX_SONGS
         )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
-        for (reflink, plays) in hit_chart:
+        for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
         game.add_child(Node.u32_array("cnt_music", counts_by_reflink))

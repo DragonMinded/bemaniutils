@@ -8,7 +8,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class JubeatFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.JUBEAT
 
     valid_charts: List[int] = [
@@ -38,7 +37,7 @@ class JubeatFrontend(FrontendBase):
             VersionConstants.JUBEAT_FESTO: 9,
         }
 
-        for (game, version, name) in self.all_games():
+        for game, version, name in self.all_games():
             if version in mapping:
                 yield (game, mapping[version], name)
 

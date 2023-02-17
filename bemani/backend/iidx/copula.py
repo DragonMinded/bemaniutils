@@ -21,7 +21,6 @@ from bemani.protocol import Node
 
 
 class IIDXCopula(IIDXCourse, IIDXBase):
-
     name: str = "Beatmania IIDX copula"
     version: int = VersionConstants.IIDX_COPULA
 
@@ -721,7 +720,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 reverse=True,
             )
             missing_players = [uid for (uid, _) in all_scores if uid not in all_players]
-            for (uid, prof) in self.get_any_profiles(missing_players):
+            for uid, prof in self.get_any_profiles(missing_players):
                 all_players[uid] = prof
 
             if not global_scores:

@@ -21,7 +21,7 @@ def perspective_calculate(
     uvz: Dict[Point, Point] = {}
     minz: Optional[float] = None
     maxz: Optional[float] = None
-    for (texx, texy) in [
+    for texx, texy in [
         (0, 0),
         (texwidth, 0),
         (0, texheight),

@@ -29,7 +29,6 @@ class JubeatQubell(
     JubeatLoggerReportHandler,
     JubeatBase,
 ):
-
     name: str = "Jubeat Qubell"
     version: int = VersionConstants.JUBEAT_QUBELL
 

@@ -3842,7 +3842,7 @@ class SoundVoltexGravityWarsSeason2(
 
         hitchart = Node.void("hit")
         game.add_child(hitchart)
-        for (songid, count) in playcounts:
+        for songid, count in playcounts:
             info = Node.void("d")
             hitchart.add_child(info)
             info.add_child(Node.u32("id", songid))
@@ -3866,10 +3866,10 @@ class SoundVoltexGravityWarsSeason2(
         missing_users = [
             userid for (userid, _) in global_records if userid not in users
         ] + [userid for (userid, _) in area_records if userid not in users]
-        for (userid, profile) in self.get_any_profiles(missing_users):
+        for userid, profile in self.get_any_profiles(missing_users):
             users[userid] = profile
 
-        for (userid, score) in global_records:
+        for userid, score in global_records:
             if userid not in users:
                 raise Exception("Logic error, missing profile for user!")
             if score.id not in records:
@@ -3878,7 +3878,7 @@ class SoundVoltexGravityWarsSeason2(
                 records[score.id][score.chart] = {}
             records[score.id][score.chart]["global"] = (userid, score)
 
-        for (userid, score) in area_records:
+        for userid, score in area_records:
             if userid not in users:
                 raise Exception("Logic error, missing profile for user!")
             if score.id not in records:

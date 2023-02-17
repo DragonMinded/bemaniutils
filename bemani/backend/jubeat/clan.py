@@ -29,7 +29,6 @@ class JubeatClan(
     JubeatLoggerReportHandler,
     JubeatBase,
 ):
-
     name: str = "Jubeat Clan"
     version: int = VersionConstants.JUBEAT_CLAN
 

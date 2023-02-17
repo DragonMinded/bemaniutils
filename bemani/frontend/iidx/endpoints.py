@@ -605,7 +605,7 @@ def searchrivals() -> Dict[str, Any]:
 
     matches = set()
     profiles = g.data.remote.user.get_all_profiles(GameConstants.IIDX, version)
-    for (userid, profile) in profiles:
+    for userid, profile in profiles:
         if profile.extid == extid or profile.get_str("name").lower() == djname.lower():
             matches.add(userid)
 

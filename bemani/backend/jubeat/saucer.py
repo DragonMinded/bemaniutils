@@ -27,7 +27,6 @@ class JubeatSaucer(
     JubeatLoggerReportHandler,
     JubeatBase,
 ):
-
     name: str = "Jubeat Saucer"
     version: int = VersionConstants.JUBEAT_SAUCER
 
@@ -905,7 +904,6 @@ class JubeatSaucer(
     def format_scores(
         self, userid: UserID, profile: Profile, scores: List[Score]
     ) -> Node:
-
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)

@@ -7,7 +7,6 @@ from bemani.backend.jubeat.base import JubeatBase
 
 
 class JubeatCourse(JubeatBase):
-
     COURSE_RATING_FAILED: Final[int] = 100
     COURSE_RATING_BRONZE: Final[int] = 200
     COURSE_RATING_SILVER: Final[int] = 300

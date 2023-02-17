@@ -7,7 +7,6 @@ from bemani.data import Config, Data
 
 
 class BishiBashiFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         TheStarBishiBashi,
     ]
@@ -25,7 +24,6 @@ class BishiBashiFactory(Factory):
         model: Model,
         parentmodel: Optional[Model] = None,
     ) -> Optional[Base]:
-
         if model.gamecode == "IBB":
             return TheStarBishiBashi(data, config, model)
 

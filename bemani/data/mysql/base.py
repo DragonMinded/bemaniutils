@@ -38,7 +38,6 @@ class _BytesEncoder(json.JSONEncoder):
 
 
 class BaseData:
-
     SESSION_LENGTH: Final[int] = 32
 
     def __init__(self, config: Config, conn: Connection) -> None:

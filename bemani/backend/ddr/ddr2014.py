@@ -46,7 +46,6 @@ class DDR2014(
     DDRGameTaxInfoHandler,
     DDRBase,
 ):
-
     name: str = "DanceDanceRevolution 2014"
     version: int = VersionConstants.DDR_2014
 
@@ -171,7 +170,7 @@ class DDR2014(
             self.game, self.music_version, self.GAME_MAX_SONGS, 30
         )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
-        for (reflink, plays) in hit_chart:
+        for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
         game.add_child(Node.u32_array("cnt_music_monthly", counts_by_reflink))
@@ -181,7 +180,7 @@ class DDR2014(
             self.game, self.music_version, self.GAME_MAX_SONGS, 7
         )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
-        for (reflink, plays) in hit_chart:
+        for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
         game.add_child(Node.u32_array("cnt_music_weekly", counts_by_reflink))
@@ -191,7 +190,7 @@ class DDR2014(
             self.game, self.music_version, self.GAME_MAX_SONGS, 1
         )
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
-        for (reflink, plays) in hit_chart:
+        for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
                 counts_by_reflink[reflink] = plays
         game.add_child(Node.u32_array("cnt_music_daily", counts_by_reflink))

@@ -10,7 +10,6 @@ from bemani.protocol import Node
 
 
 class ReflecBeatGroovin(ReflecBeatBase):
-
     name: str = "REFLEC BEAT groovin'!!"
     version: int = VersionConstants.REFLEC_BEAT_GROOVIN
 
@@ -203,7 +202,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
-            for (user, lobby) in lobbies:
+            for user, lobby in lobbies:
                 if limit <= 0:
                     break
 
@@ -318,7 +317,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
             profile for profile in all_profiles if profile[1].get_int("lid", -1) in lids
         ]
 
-        for (rootnode, timeoffset) in [
+        for rootnode, timeoffset in [
             (today, 0),
             (yesterday, Time.SECONDS_IN_DAY),
         ]:
@@ -334,7 +333,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
             # Calculate scores based on attempt
             scores_by_user: Dict[UserID, Dict[int, Dict[int, Attempt]]] = {}
-            for (userid, attempt) in relevant_attempts:
+            for userid, attempt in relevant_attempts:
                 if userid not in scores_by_user:
                     scores_by_user[userid] = {}
                 if attempt.id not in scores_by_user[userid]:
@@ -362,7 +361,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
                         )
 
             # Output that day's earned points
-            for (userid, profile) in relevant_profiles:
+            for userid, profile in relevant_profiles:
                 data = Node.void("data")
                 rootnode.add_child(data)
                 data.add_child(
@@ -409,7 +408,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
             new = Node.void("new")
             base.add_child(new)
 
-            for (mid, plays) in hitchart:
+            for mid, plays in hitchart:
                 d = Node.void("d")
                 new.add_child(d)
                 d.add_child(Node.s16("mid", mid))
@@ -546,7 +545,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         )
 
         def add_comments(name: str, selected: List[Tuple[UserID, Achievement]]) -> None:
-            for (uid, ach) in selected:
+            for uid, ach in selected:
                 cmnt = Node.void(name)
                 root.add_child(cmnt)
                 cmnt.add_child(Node.s32("uid", uid_mapping[uid].extid))

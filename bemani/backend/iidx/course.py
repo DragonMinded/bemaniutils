@@ -8,7 +8,6 @@ from bemani.data import UserID
 
 
 class IIDXCourse(IIDXBase):
-
     COURSE_TYPE_SECRET: Final[str] = "secret_course"
     COURSE_TYPE_INTERNET_RANKING: Final[str] = "ir_course"
     COURSE_TYPE_CLASSIC: Final[str] = "classic_course"

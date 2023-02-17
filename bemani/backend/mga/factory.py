@@ -7,7 +7,6 @@ from bemani.data import Config, Data
 
 
 class MetalGearArcadeFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         MetalGearArcade,
     ]
@@ -25,7 +24,6 @@ class MetalGearArcadeFactory(Factory):
         model: Model,
         parentmodel: Optional[Model] = None,
     ) -> Optional[Base]:
-
         if model.gamecode == "I36":
             return MetalGearArcade(data, config, model)
 

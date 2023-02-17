@@ -12,7 +12,6 @@ from bemani.protocol import Node
 
 
 class IIDXTricoro(IIDXBase):
-
     name: str = "Beatmania IIDX Tricoro"
     version: int = VersionConstants.IIDX_TRICORO
 
@@ -647,7 +646,7 @@ class IIDXTricoro(IIDXBase):
                 reverse=True,
             )
             missing_players = [uid for (uid, _) in all_scores if uid not in all_players]
-            for (uid, prof) in self.get_any_profiles(missing_players):
+            for uid, prof in self.get_any_profiles(missing_players):
                 all_players[uid] = prof
 
             if not global_scores:

@@ -12,7 +12,6 @@ from bemani.data import Config, Data
 
 
 class ReflecBeatFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         ReflecBeat,
         ReflecBeatLimelight,

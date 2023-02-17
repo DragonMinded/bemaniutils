@@ -30,7 +30,6 @@ class JubeatSaucerFulfill(
     JubeatCourse,
     JubeatBase,
 ):
-
     name: str = "Jubeat Saucer Fulfill"
     version: int = VersionConstants.JUBEAT_SAUCER_FULFILL
 
@@ -1018,7 +1017,6 @@ class JubeatSaucerFulfill(
     def format_scores(
         self, userid: UserID, profile: Profile, scores: List[Score]
     ) -> Node:
-
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)
