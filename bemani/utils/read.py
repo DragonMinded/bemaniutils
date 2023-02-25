@@ -9,6 +9,7 @@ import json
 import os
 import struct
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from sqlalchemy.engine import CursorResult  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 from sqlalchemy.sql import text  # type: ignore
@@ -415,6 +416,124 @@ class ImportPopn(ImportBase):
         super().__init__(
             config, GameConstants.POPN_MUSIC, actual_version, no_combine, update
         )
+    
+    def scrape_xml(self, xmlfile: str, songs: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
+       
+        with open(xmlfile, 'rb') as xmlhandle:
+            xmldata = xmlhandle.read().decode('shift_jisx0213')
+            root = ET.fromstring(xmldata)
+
+        for music_entry in root.findall('music'):
+            difficulties = [0, 0, 0, 0, 0, 0]
+            filenames = ['', '', '', '', '', '']
+            diff_map = {
+                'ep': 0,
+                'np': 1,
+                'hp': 2,
+                'op': 3,
+                'bp_n': 4,
+                'bp_h': 5,
+            }
+            charts = music_entry.find('charts')
+            if charts is not None:
+                for chart in charts.findall('chart'):
+                    chart_idx = diff_map.get(chart.attrib['idx'])
+                    if chart.find('diff') is not None:
+                        difficulties[chart_idx] = int(chart.find('diff').text)
+                        filenames[chart_idx] = f'{chart.find("folder").text}/{chart.find("filename").text}'
+            songinfo: Dict
+            # Check if song metadata is in this entry
+            if music_entry.find('fw_title') is not None:
+                songinfo = {
+                    'id': int(music_entry.attrib['id']),
+                    'title': music_entry.find('fw_title').text,
+                    'artist': music_entry.find('fw_artist').text,
+                    'genre': music_entry.find('fw_genre').text,
+                    'comment': music_entry.find('genre').text,
+                    'title_en': music_entry.find('title').text,
+                    'artist_en': music_entry.find('artist').text,
+                    'long_genre': '',
+                    'folder': music_entry.find('folder').text,
+                    'difficulty': {
+                        'standard': {
+                            'easy': difficulties[0],
+                            'normal': difficulties[1],
+                            'hyper': difficulties[2],
+                            'ex': difficulties[3],
+                        },
+                        'battle': {
+                            'normal': difficulties[4],
+                            'hyper': difficulties[5],
+                        }
+                    },
+                    'file': {
+                        'standard': {
+                            'easy': filenames[0],
+                            'normal': filenames[1],
+                            'hyper': filenames[2],
+                            'ex': filenames[3],
+                        },
+                        'battle': {
+                            'normal': filenames[4],
+                            'hyper': filenames[5],
+                        },
+                    },
+                }
+            # It's not here so find the entry at the current song id
+            else:
+                for song in songs:
+                    if song['id'] == int(music_entry.attrib['id']):
+                        if difficulties is not None:
+                            for diff, i in zip(['easy', 'normal', 'hyper', 'ex'], range(4)):
+                                song['difficulty']['standard'][diff] = difficulties[i] if difficulties[i] else song['difficulty']['standard'][diff]
+                                song['file']['standard'][diff] = filenames[i] if filenames[i] else song['file']['standard'][diff]
+
+                            song['difficulty']['battle']['normal'] = difficulties[4] if difficulties[4] else song['difficulty']['battle']['normal']
+                            song['difficulty']['battle']['hyper'] = difficulties[5] if difficulties[5] else song['difficulty']['battle']['hyper']
+                            song['file']['battle']['normal'] = filenames[4] if filenames[4] else song['file']['battle']['normal']
+                            song['file']['battle']['hyper'] = filenames[5] if filenames[5] else song['file']['battle']['hyper']
+                        else:
+                            song['genre'] = music_entry.find('fw_genre').text
+                            song['comment'] = music_entry.find('genre').text
+                        break
+                continue
+
+            # Fix accent issues with title/artist
+            accent_lut: Dict[str, str] = {
+                "鵝": "7",
+                "圄": "à",
+                "圉": "ä",
+                "鵤": "Ä",
+                "鵑": "👁",
+                "鶤": "©",
+                "圈": "é",
+                "鵐": "ê",
+                "鵙": "Ə",
+                "鵲": "ë",
+                "！": "!",
+                "囿": "♥",
+                "鶚": "㊙",
+                "鶉": "ó",
+                "鶇": "ö",
+                "鶲": "Ⓟ",
+                "鶫": "²",
+                "圍": "@",
+                "圖": "ţ",
+                "鵺": "Ü",
+                "囎": ":",
+                "囂": "♡",
+                "釁": "🐾",
+            }
+
+            for orig, rep in accent_lut.items():
+                songinfo['title'] = songinfo['title'].replace(orig, rep)
+                songinfo['artist'] = songinfo['artist'].replace(orig, rep)
+                songinfo['title_en'] = songinfo['title_en'].replace(orig, rep)
+                songinfo['artist_en'] = songinfo['artist_en'].replace(orig, rep)
+                songinfo['genre'] = songinfo['genre'].replace(orig, rep)
+            songs.append(songinfo)
+
+        return songs
 
     def scrape(self, infile: str) -> List[Dict[str, Any]]:
         with open(infile, mode="rb") as myfile:
@@ -4105,6 +4224,13 @@ if __name__ == "__main__":
         type=str,
         help="The access token to use with the remote BEMAPI server.",
     )
+    parser.add_argument(
+        '--folder',
+        dest='folder',
+        action='store',
+        type=str,
+        help='The path were a folder of files are stored.',   
+    )
 
     # Parse args, validate invariants.
     args = parser.parse_args()
@@ -4131,6 +4257,15 @@ if __name__ == "__main__":
         popn = ImportPopn(config, args.version, args.no_combine, args.update)
         if args.bin:
             songs = popn.scrape(args.bin)
+            if args.xml:
+             songs = popn.scrape_xml(args.xml, songs)
+            elif args.folder:
+             files = Path(args.folder).glob('*xml')
+             for file in files:
+                 try:
+                  songs = popn.scrape_xml(file, songs)
+                 except:
+                   raise Exception("Invalid XML (" + str(file) +")" )
         elif args.server and args.token:
             songs = popn.lookup(args.server, args.token)
         else:
