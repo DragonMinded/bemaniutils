@@ -437,6 +437,18 @@ command once for every version, giving the correct DLL file:
 ./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll
 ```
 
+For add songs of a XML from omnimix v2, run a command like this:
+
+```
+./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll --xml your_songs_db.xml
+```
+
+If you have more than one XML you want to add, you can run this command with a folder with all your XML files:
+
+```
+./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll --folder my_path_with_xmls
+```
+
 ### Jubeat
 
 For Jubeat, get the music XML out of the data directory of the mix you are importing,
