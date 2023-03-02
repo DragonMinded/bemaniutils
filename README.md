@@ -446,7 +446,7 @@ For add songs of a XML from omnimix v2, run a command like this:
 If you have more than one XML you want to add, you can run this command with a folder with all your XML files:
 
 ```
-./read --config config/server.yaml --series pnm --version omni-24 --bin popn24.dll --folder my_path_with_xmls
+./read --config config/server.yaml --series pnm --version omni-24 --bin popn24.dll --folder my_xmls_path
 ```
 
 ### Jubeat
