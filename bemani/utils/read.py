@@ -398,6 +398,9 @@ class ImportPopn(ImportBase):
             "24": VersionConstants.POPN_MUSIC_USANEKO,
             "25": VersionConstants.POPN_MUSIC_PEACE,
             "26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES,
+            "omni-24": VersionConstants.POPN_MUSIC_USANEKO + DBConstants.OMNIMIX_VERSION_BUMP,  #Omnimix v2 only works for 24 - 26
+            "omni-25": VersionConstants.POPN_MUSIC_PEACE + DBConstants.OMNIMIX_VERSION_BUMP ,
+            "omni-26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES + DBConstants.OMNIMIX_VERSION_BUMP,
         }.get(version, -1)
 
         if actual_version == VersionConstants.POPN_MUSIC_TUNE_STREET:
@@ -990,7 +993,7 @@ class ImportPopn(ImportBase):
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
 
-        elif self.version == VersionConstants.POPN_MUSIC_USANEKO:
+        elif self.version == VersionConstants.POPN_MUSIC_USANEKO or self.version == (VersionConstants.POPN_MUSIC_USANEKO + DBConstants.OMNIMIX_VERSION_BUMP):
             # Based on M39:J:A:A:2018101500
 
             # Normal offset for music DB, size
@@ -1080,7 +1083,7 @@ class ImportPopn(ImportBase):
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
 
-        elif self.version == VersionConstants.POPN_MUSIC_PEACE:
+        elif self.version == VersionConstants.POPN_MUSIC_PEACE or self.version == (VersionConstants.POPN_MUSIC_PEACE + DBConstants.OMNIMIX_VERSION_BUMP):
             # Based on M39:J:A:A:2020092800
 
             # Normal offset for music DB, size
@@ -1170,7 +1173,7 @@ class ImportPopn(ImportBase):
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
 
-        elif self.version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES:
+        elif self.version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES or self.version == (VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES + DBConstants.OMNIMIX_VERSION_BUMP):
             # Based on M39:J:A:A:2022061300
 
             # Normal offset for music DB, size

@@ -2,8 +2,7 @@
 import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort
-
-from bemani.common import ID, GameConstants, VersionConstants
+from bemani.common import ID, GameConstants, VersionConstants, DBConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.popn.popn import PopnMusicFrontend
@@ -187,19 +186,20 @@ def viewtopscores(musicid: int) -> Response:
     difficulties = [0, 0, 0, 0]
 
     for version in versions:
-        for chart in [0, 1, 2, 3]:
-            details = g.data.local.music.get_song(
-                GameConstants.POPN_MUSIC, version, musicid, chart
-            )
-            if details is not None:
-                if name is None:
-                    name = details.name
-                if artist is None:
-                    artist = details.artist
-                if genre is None:
-                    genre = details.genre
-                if difficulties[chart] == 0:
-                    difficulties[chart] = details.data.get_int("difficulty")
+      for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
+           for chart in [0, 1, 2, 3]:
+               details = g.data.local.music.get_song(
+                   GameConstants.POPN_MUSIC, version + omniadd, musicid, chart
+               )
+               if details is not None:
+                   if name is None:
+                       name = details.name
+                   if artist is None:
+                       artist = details.artist
+                   if genre is None:
+                       genre = details.genre
+                   if difficulties[chart] == 0:
+                       difficulties[chart] = details.data.get_int("difficulty")
 
     if name is None:
         # Not a real song!
