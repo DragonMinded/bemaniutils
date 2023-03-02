@@ -30,6 +30,7 @@ class StatisticsObject(BaseObject):
             GameConstants.IIDX,
             GameConstants.MUSECA,
             GameConstants.JUBEAT,
+            GameConstants.POPN_MUSIC,
         }:
             if self.omnimix:
                 return self.version + DBConstants.OMNIMIX_VERSION_BUMP

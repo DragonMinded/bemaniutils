@@ -11,8 +11,9 @@ from bemani.common import (
     GameConstants,
     DBConstants,
     BroadcastConstants,
+    Model,
 )
-from bemani.data import UserID, Achievement, ScoreSaveException
+from bemani.data import UserID, Achievement, ScoreSaveException, Config, Data
 from bemani.protocol import Node
 
 
@@ -67,6 +68,19 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     # Pop'n Music in particular requires non-expired profiles to do conversions
     # properly.
     supports_expired_profiles: bool = False
+
+    def __init__(self, data: Data, config: Config, model: Model) -> None:
+        super().__init__(data, config, model)
+        if model.rev == "X":
+            self.omnimix = True
+        else:
+            self.omnimix = False
+
+    @property
+    def music_version(self) -> int:
+        if self.omnimix:
+            return DBConstants.OMNIMIX_VERSION_BUMP + self.version
+        return self.version
 
     def previous_version(self) -> Optional["PopnMusicBase"]:
         """
@@ -229,7 +243,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         oldscore = self.data.local.music.get_score(
             self.game,
-            self.version,
+            self.music_version,
             userid,
             songid,
             chart,
@@ -283,7 +297,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # Write the new score back
             self.data.local.music.put_score(
                 self.game,
-                self.version,
+                self.music_version,
                 userid,
                 songid,
                 chart,
@@ -298,7 +312,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 # Save the history of this score too
                 self.data.local.music.put_attempt(
                     self.game,
-                    self.version,
+                    self.music_version,
                     userid,
                     songid,
                     chart,
@@ -327,7 +341,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     ) -> None:
         # Generate scorecard
         profile = self.get_profile(userid)
-        song = self.data.local.music.get_song(self.game, self.version, songid, chart)
+        song = self.data.local.music.get_song(self.game, self.music_version, songid, chart)
 
         card_medal = {
             self.PLAY_MEDAL_CIRCLE_FAILED: "Failed",
