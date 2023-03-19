@@ -1,6 +1,6 @@
 /*** @jsx React.DOM */
 
-var network_scores = React.createClass({
+var network_scores = createReactClass({
     getInitialState: function(props) {
         return {
             songs: window.songs,
@@ -195,7 +195,7 @@ var network_scores = React.createClass({
                                         <span className="loading" style={ {float: 'right' } }>
                                             <img
                                                 className="loading"
-                                                src={Link.get('static', 'loading-16.gif')}
+                                                src={Link.get('static', window.assets + 'loading-16.gif')}
                                             /> loading more scores...
                                         </span> : null
                                 }

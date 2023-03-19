@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.versions);
 var pagenav = new History(valid_versions);
 
-var profile_view = React.createClass({
+var profile_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.player);
@@ -60,8 +60,6 @@ var profile_view = React.createClass({
                     <div className="section">
                         <LabelledSection label="User ID">{player.extid}</LabelledSection>
                         <LabelledSection label="Total Skills">{(player.gf_skills + player.dm_skills) / 100}</LabelledSection>
-                        <LabelledSection label="GuitarFreaks Skills">{player.gf_skills / 100}</LabelledSection>
-                        <LabelledSection label="DrumMania Skills">{player.dm_skills / 100}</LabelledSection>
                         <LabelledSection label="Register Time">
                             <Timestamp timestamp={player.first_play_time}/>
                         </LabelledSection>
@@ -73,14 +71,36 @@ var profile_view = React.createClass({
                         </LabelledSection>
                     </div>
                     <div className="section">
-                        <a href={Link.get('records')}>{ window.own_profile ?
-                            <span>view your records</span> :
-                            <span>view {player.name}'s records</span>
-                        }</a>
+                        <b>
+                            <a href={Link.get('skills', null, this.state.version)}>{ window.own_profile ?
+                                <span>Your Play Skills &rarr;</span> :
+                                <span>{player.name}'s Play Skills &rarr;</span>
+                            }</a>
+                        </b>
+                    </div>
+                    <div className="section">
                         <span className="separator">&middot;</span>
                         <a href={Link.get('scores')}>{ window.own_profile ?
                             <span>view all your scores</span> :
                             <span>view all {player.name}'s scores</span>
+                        }</a>
+                    </div>
+                    <div>
+                        {window.own_profile ? 
+                            <br/>
+                            : null
+                        }
+                        <a href={Link.get('tachi-GF')}>{window.own_profile ?
+                            <span>export your GuitarFreaks records</span>
+                            : null
+                        }</a>
+                        {window.own_profile ? 
+                            <span className="separator">&middot;</span>
+                            : null
+                        }
+                        <a href={Link.get('tachi-DM')}>{window.own_profile ?
+                            <span>export your Drummania records</span>
+                            : null
                         }</a>
                     </div>
                 </div>

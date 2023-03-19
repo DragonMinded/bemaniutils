@@ -1,12 +1,20 @@
-#  vim: set fileencoding=utf-8
-from typing import Optional, Dict, List
+# vim: set fileencoding=utf-8
+from typing import Optional, Dict, List, Any
 from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import Profile, ValidatedDict, Model, GameConstants, DBConstants, Parallel
+from bemani.common import (
+    Profile,
+    ValidatedDict,
+    Model,
+    GameConstants,
+    DBConstants,
+    Parallel,
+)
 from bemani.data import Config, Data, Score, UserID
 from bemani.protocol import Node
+
 
 class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     """
@@ -17,11 +25,11 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     game = GameConstants.GITADORA
 
-    CHART_TYPE_GF: Final[int] = 1 
+    CHART_TYPE_GF: Final[int] = 1
     CHART_TYPE_DM: Final[int] = 2
     # Bass is the same score as GF thus do been divide it.
 
-    # gitadora clear types. ["NO PLAY","FAILED","CLEAR","FULL COMBO EXCELLENT"] 
+    # gitadora clear types. ["NO PLAY","FAILED","CLEAR","FULL COMBO EXCELLENT"]
     GITADORA_NO_PLAY: Final[int] = DBConstants.GITADORA_CLEAR_TYPE_NO_PLAY
     GITADORA_FAILED: Final[int] = DBConstants.GITADORA_CLEAR_TYPE_FAILED
     GITADORA_CLEAR: Final[int] = DBConstants.GITADORA_CLEAR_TYPE_CLEAR
@@ -38,7 +46,6 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     GITADORA_GRADE_SS: Final[int] = DBConstants.GITADORA_GRADE_SS
     GITADORA_GRADE_EXCELLENT: Final[int] = DBConstants.GITADORA_GRADE_EXCELLENT
 
-
     # gitadora chart types. ["BASIC","ADVANCE","EXTREME","MASTER"]
     GITUAR_CHART_TYPE_BASIC: Final[int] = 1
     GITUAR_CHART_TYPE_ADVANCE: Final[int] = 2
@@ -53,13 +60,28 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     BASS_CHART_TYPE_EXTREME: Final[int] = 13
     BASS_CHART_TYPE_MASTER: Final[int] = 14
 
+    tachi_difficulty_map: Dict[int, str] = {
+        GITUAR_CHART_TYPE_BASIC: "BASIC",
+        GITUAR_CHART_TYPE_ADVANCE: "ADVANCED",
+        GITUAR_CHART_TYPE_EXTREME: "EXTREME",
+        GITUAR_CHART_TYPE_MASTER: "MASTER",
+        DRUM_CHART_TYPE_BASIC: "BASIC",
+        DRUM_CHART_TYPE_ADVANCE: "ADVANCED",
+        DRUM_CHART_TYPE_EXTREME: "EXTREME",
+        DRUM_CHART_TYPE_MASTER: "MASTER",
+        BASS_CHART_TYPE_BASIC: "BASS BASIC",
+        BASS_CHART_TYPE_ADVANCE: "BASS ADVANCED",
+        BASS_CHART_TYPE_EXTREME: "BASS EXTREME",
+        BASS_CHART_TYPE_MASTER: "BASS MASTER",
+    }
+
     def __init__(self, data: Data, config: Config, model: Model) -> None:
-        # only divide omnimix in here. 
+        # only divide omnimix in here.
         # model.spec == 'A': gf;
-        # model.spec == 'B': dm. 
+        # model.spec == 'B': dm.
         # and the only difference is the saving score and the record.
         super().__init__(data, config, model)
-        if model.rev == 'X':
+        if model.rev == "X":
             self.omnimix = True
         else:
             self.omnimix = False
@@ -69,36 +91,86 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         if self.omnimix:
             return DBConstants.OMNIMIX_VERSION_BUMP + self.version
         return self.version
-    
-    def previous_version(self) -> Optional['GitadoraBase']:
+
+    def previous_version(self) -> Optional["GitadoraBase"]:
         """
         Returns the previous version of the game, based on this game. Should
         be overridden.
         """
         return None
 
+    def format_tachi_score(
+        self,
+        scoredata: ValidatedDict,
+        clear_status: int,
+        timestamp: int,
+        song_chart: int,
+        songid: int,
+    ) -> Dict[str, Any]:
+        difficulty = GitadoraBase.tachi_difficulty_map.get(song_chart)
+        perfect = (
+            scoredata.get_int("perc") / 100 if scoredata.get_int("perc") >= 0 else 0
+        )
+        if scoredata.get_bool("clear") is False:
+            lamp = "FAILED"
+        if scoredata.get_bool("clear") is True:
+            lamp = "CLEAR"
+        if scoredata.get_bool("fullcombo") is True:
+            lamp = "FULL COMBO"
+        if scoredata.get_bool("excellent") is True:
+            lamp = "EXCELLENT"
+        return {
+            "percent": perfect,
+            "lamp": lamp,
+            "matchType": "inGameID",
+            "identifier": str(songid),
+            "timeAchieved": timestamp * 1000,
+            "difficulty": difficulty,
+            "judgements": {
+                "perfect": scoredata.get_dict("stats").get_int("perfect")
+                if scoredata.get_dict("stats").get_int("perfect") >= 0
+                else 0,
+                "great": scoredata.get_dict("stats").get_int("great")
+                if scoredata.get_dict("stats").get_int("great") >= 0
+                else 0,
+                "good": scoredata.get_dict("stats").get_int("good")
+                if scoredata.get_dict("stats").get_int("good") >= 0
+                else 0,
+                "ok": scoredata.get_dict("stats").get_int("ok")
+                if scoredata.get_dict("stats").get_int("ok") >= 0
+                else 0,
+                "miss": scoredata.get_dict("stats").get_int("miss")
+                if scoredata.get_dict("stats").get_int("miss") >= 0
+                else 0,
+            },
+        }
+
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
         Base handler for a profile. Given a userid and a profile dictionary,
         return a Node representing a profile. Should be overridden.
         """
-        return Node.void('gametop')
+        return Node.void("gametop")
 
-    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
+    def format_scores(
+        self, userid: UserID, profile: Profile, scores: List[Score]
+    ) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
         """
-        return Node.void('gametop')
+        return Node.void("gametop")
 
-    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
+    def unformat_profile(
+        self, userid: UserID, request: Node, oldprofile: Profile
+    ) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
         Should be overridden.
         """
         return oldprofile
-    
+
     def get_profile_by_refid(self, refid: Optional[str]) -> Optional[Node]:
         """
         Given a RefID, return a formatted profile node. Basically every game
@@ -110,16 +182,18 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
-            #  User doesn't exist but should at this point
+            # User doesn't exist but should at this point
             return None
 
-        #  Trying to import from current version
+        # Trying to import from current version
         profile = self.get_profile(userid)
         if profile is None:
             return None
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str]) -> Profile:
+    def new_profile_by_refid(
+        self, refid: Optional[str], name: Optional[str]
+    ) -> Profile:
         """
         Given a RefID and an optional name, create a profile and then return
         that newly created profile.
@@ -128,7 +202,7 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         if name is None:
-            name = 'NONAME'
+            name = "NONAME"
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         defaultprofile = Profile(
@@ -137,7 +211,7 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             refid,
             0,
             {
-                'name': name,
+                "name": name,
             },
         )
         self.put_profile(userid, defaultprofile)
@@ -175,45 +249,54 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             },
         }
         """
-        all_attempts, remote_attempts = Parallel.execute([
-            lambda: self.data.local.music.get_all_scores(
-                game=self.game,
-                version=self.music_version,
-            ),
-            lambda: self.data.remote.music.get_clear_rates(
-                game=self.game,
-                version=self.music_version,
-            )
-        ])
+        all_attempts, remote_attempts = Parallel.execute(
+            [
+                lambda: self.data.local.music.get_music_crate(
+                    game=self.game,
+                    version=self.music_version,
+                ),
+                lambda: self.data.remote.music.get_clear_rates(
+                    game=self.game,
+                    version=self.music_version,
+                ),
+            ]
+        )
         attempts: Dict[int, Dict[int, Dict[str, int]]] = {}
         for (_, attempt) in all_attempts:
-            #  Terrible temporary structure is terrible.
+            # Terrible temporary structure is terrible.
             if attempt.id not in attempts:
                 attempts[attempt.id] = {}
             if attempt.chart not in attempts[attempt.id]:
                 attempts[attempt.id][attempt.chart] = {
-                    'total': 0,
-                    'clears': 0,
-                    'average': 0,
+                    "total": 0,
+                    "clears": 0,
+                    "average": 0,
                 }
 
-            #  We saw an attempt, keep the total attempts in sync.
-            attempts[attempt.id][attempt.chart]['average'] = int(
+            # We saw an attempt, keep the total attempts in sync.
+            attempts[attempt.id][attempt.chart]["average"] = int(
                 (
-                    (attempts[attempt.id][attempt.chart]['average'] * attempts[attempt.id][attempt.chart]['total']) +
-                    attempt.points
-                ) / (attempts[attempt.id][attempt.chart]['total'] + 1)
+                    (
+                        attempts[attempt.id][attempt.chart]["average"]
+                        * attempts[attempt.id][attempt.chart]["total"]
+                    )
+                    + attempt.points
+                )
+                / (attempts[attempt.id][attempt.chart]["total"] + 1)
             )
-            attempts[attempt.id][attempt.chart]['total'] += 1
+            attempts[attempt.id][attempt.chart]["total"] += 1
 
-            if attempt.data.get_int('clear_type', self.GITADORA_NO_PLAY) in [self.GITADORA_NO_PLAY, self.GITADORA_FAILED]:
-                #  This attempt was a failure, so don't count it against clears of full combos
+            if attempt.data.get_int("clear_type", self.GITADORA_NO_PLAY) in [
+                self.GITADORA_NO_PLAY,
+                self.GITADORA_FAILED,
+            ]:
+                # This attempt was a failure, so don't count it against clears of full combos
                 continue
 
-            #  It was at least a clear
-            attempts[attempt.id][attempt.chart]['clears'] += 1
+            # It was at least a clear
+            attempts[attempt.id][attempt.chart]["clears"] += 1
 
-        #  Merge in remote attempts
+        # Merge in remote attempts
         for songid in remote_attempts:
             if songid not in attempts:
                 attempts[songid] = {}
@@ -221,16 +304,21 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             for songchart in remote_attempts[songid]:
                 if songchart not in attempts[songid]:
                     attempts[songid][songchart] = {
-                        'total': 0,
-                        'clears': 0,
-                        'average': 0,
+                        "total": 0,
+                        "clears": 0,
+                        "average": 0,
                     }
 
-                attempts[songid][songchart]['total'] += remote_attempts[songid][songchart]['plays']
-                attempts[songid][songchart]['clears'] += remote_attempts[songid][songchart]['clears']
+                attempts[songid][songchart]["total"] += remote_attempts[songid][
+                    songchart
+                ]["plays"]
+                attempts[songid][songchart]["clears"] += remote_attempts[songid][
+                    songchart
+                ]["clears"]
 
         return attempts
 
+    # i think gitadora score struct it similiar to the sdvx score struct type.
     # {"score_type": "dm", "miss": 0, "perc": 9139, "skill": 8225, "new_skill": 8225, "fullcombo": true, "clear": true, "excellent": false, "meter": 18446744073709551615, "meter_prog": 64, "grade": 600, "combo": 354, "stats": {"score": 932330, "flags": 134217728, "perfect": 298, "perfect_perc": 84, "great": 49, "great_perc": 14, "good": 7, "good_perc": 2, "ok": 0, "ok_perc": 0, "miss": 0, "miss_perc": 0, "phrase_data_num": 7, "phrase_addr": [0, 3272, 8509, 13745, 18327, 23563, 26836, 30791, 0, 0, 0, 0, 0, 0, 0, 0, 0], "phrase_type": [1, 9, 2, 3, 10, 4, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "phrase_status": [2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "phrase_end_addr": 30791}}
     def update_score(
         self,
@@ -250,7 +338,7 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         excellent: bool,
         meter: int,
         meter_prog: int,
-        stats: Optional[Dict[str, int]]=None,
+        stats: Optional[Dict[str, int]] = None,
     ) -> None:
         """
         Given various pieces of a score, update the user's high score and score
@@ -267,7 +355,7 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             self.GITADORA_GRADE_SS,
             self.GITADORA_GRADE_EXCELLENT,
         ]:
-            raise Exception(f'Invalid rank value {grade}')
+            raise Exception(f"Invalid rank value {grade}")
 
         if userid is not None:
             oldscore = self.data.local.music.get_score(
@@ -280,77 +368,85 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         else:
             oldscore = None
 
-        #  Score history is verbatum, instead of highest score
-        history = ValidatedDict({
-            'score_type': score_type,
-            'miss': miss,
-            'perc': perc,
-            'new_skill': new_skill,
-            'fullcombo': fullcombo,
-            'clear': clear,
-            'excellent': excellent,
-            'meter': meter,
-            'meter_prog': meter_prog,
-        })
+        # Score history is verbatum, instead of highest score
+        history = ValidatedDict(
+            {
+                "score_type": score_type,
+                "miss": miss,
+                "perc": perc,
+                "new_skill": new_skill,
+                "fullcombo": fullcombo,
+                "clear": clear,
+                "excellent": excellent,
+                "meter": meter,
+                "meter_prog": meter_prog,
+            }
+        )
         oldpoints = points
 
         if oldscore is None:
-            #  If it is a new score, create a new dictionary to add to
-            scoredata = ValidatedDict({
-                'score_type': score_type,
-                'miss': miss,
-                'perc': perc,
-                'skill': points,
-                'new_skill': new_skill,
-                'fullcombo': fullcombo,
-                'clear': clear,
-                'excellent': excellent,
-                'meter': meter,
-                'meter_prog': meter_prog,
-            })
+            # If it is a new score, create a new dictionary to add to
+            scoredata = ValidatedDict(
+                {
+                    "score_type": score_type,
+                    "miss": miss,
+                    "perc": perc,
+                    "skill": points,
+                    "new_skill": new_skill,
+                    "fullcombo": fullcombo,
+                    "clear": clear,
+                    "excellent": excellent,
+                    "meter": meter,
+                    "meter_prog": meter_prog,
+                }
+            )
             raised = True
             highscore = True
         else:
-            #  Set the score to any new record achieved
+            # Set the score to any new record achieved
             raised = points > oldscore.points
             highscore = points >= oldscore.points
             points = max(oldscore.points, points)
             scoredata = oldscore.data
 
-        #  Replace clear type and grade
-        scoredata.replace_int('grade', max(scoredata.get_int('grade'), grade))
-        history.replace_int('grade', grade)
-        scoredata.replace_int('miss', min(scoredata.get_int('miss'), miss))
-        history.replace_int('miss', miss)
-        scoredata.replace_int('perc', max(scoredata.get_int('perc'), perc))
-        history.replace_int('perc', perc)
-        scoredata.replace_bool('fullcombo',max(scoredata.get_bool('fullcombo'), fullcombo))
-        history.replace_bool('fullcombo', fullcombo)
-        scoredata.replace_bool('clear',max(scoredata.get_bool('clear'), clear))
-        history.replace_bool('clear', clear)
-        scoredata.replace_bool('excellent',max(scoredata.get_bool('excellent'), excellent))
-        history.replace_bool('excellent', excellent)
+        # Replace clear type and grade
+        scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
+        history.replace_int("grade", grade)
+        scoredata.replace_int("miss", min(scoredata.get_int("miss"), miss))
+        history.replace_int("miss", miss)
+        scoredata.replace_int("perc", max(scoredata.get_int("perc"), perc))
+        history.replace_int("perc", perc)
+        scoredata.replace_bool(
+            "fullcombo", max(scoredata.get_bool("fullcombo"), fullcombo)
+        )
+        history.replace_bool("fullcombo", fullcombo)
+        scoredata.replace_bool("clear", max(scoredata.get_bool("clear"), clear))
+        history.replace_bool("clear", clear)
+        scoredata.replace_bool(
+            "excellent", max(scoredata.get_bool("excellent"), excellent)
+        )
+        history.replace_bool("excellent", excellent)
 
-        #  If we have a combo, replace it
-        scoredata.replace_int('combo', max(scoredata.get_int('combo'), combo))
-        history.replace_int('combo', combo)
+        # If we have a combo, replace it
+        scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+        history.replace_int("combo", combo)
 
-        #  If we have play stats, replace it
+        # If we have play stats, replace it
         if stats is not None:
             if raised:
-                #  We have stats, and there's a new high score, update the stats
-                scoredata.replace_int('skill', points)
-                scoredata.replace_int('new_skill', new_skill)
-                scoredata.replace_int('meter', meter)
-                scoredata.replace_int('meter_prog', meter_prog)
-                scoredata.replace_dict('stats', stats)
-            history.replace_dict('stats', stats)
+                # We have stats, and there's a new high score, update the stats
+                scoredata.replace_int("skill", points)
+                scoredata.replace_int("new_skill", new_skill)
+                scoredata.replace_int("meter", meter)
+                scoredata.replace_int("meter_prog", meter_prog)
+                scoredata.replace_dict("stats", stats)
+            history.replace_dict("stats", stats)
 
-        #  Look up where this score was earned
+        # Look up where this score was earned
         lid = self.get_machine_id()
 
         if userid is not None:
-            #  Write the new score back
+            # Write the new score back
             self.data.local.music.put_score(
                 self.game,
                 self.music_version,
@@ -364,7 +460,7 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 timestamp=timestamp,
             )
 
-        #  Save the history of this score too
+        # Save the history of this score too
         self.data.local.music.put_attempt(
             self.game,
             self.music_version,

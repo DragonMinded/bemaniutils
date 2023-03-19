@@ -6,14 +6,12 @@ from bemani.common import VersionConstants
 
 
 class Gitadora(GitadoraBase):
-
-    name = 'Gitadora'
+    name = "Gitadora"
     version = VersionConstants.GITADORA
 
 
 class GitadoraOverDrive(GitadoraBase):
-
-    name = 'GITADORA OverDrive'
+    name = "GITADORA OverDrive"
     version = VersionConstants.GITADORA_OVERDRIVE
 
     def previous_version(self) -> Optional[GitadoraBase]:
@@ -21,8 +19,7 @@ class GitadoraOverDrive(GitadoraBase):
 
 
 class GitadoraTriBoost(GitadoraBase):
-
-    name = 'GITADORA Tri-Boost'
+    name = "GITADORA Tri-Boost"
     version = VersionConstants.GITADORA_TRIBOOST
 
     def previous_version(self) -> Optional[GitadoraBase]:
@@ -30,8 +27,7 @@ class GitadoraTriBoost(GitadoraBase):
 
 
 class GitadoraTriBoostReEVOLVE(GitadoraBase):
-
-    name = 'GITADORA Tri-Boost Re:EVOLVE'
+    name = "GITADORA Tri-Boost Re:EVOLVE"
     version = VersionConstants.GITADORA_TRIBOOST_RE_EVOLVE
 
     def previous_version(self) -> Optional[GitadoraBase]:
@@ -39,8 +35,7 @@ class GitadoraTriBoostReEVOLVE(GitadoraBase):
 
 
 class GitadoraMatixx(GitadoraBase):
-
-    name = 'GITADORA Matixx'
+    name = "GITADORA Matixx"
     version = VersionConstants.GITADORA_MATIXX
 
     def previous_version(self) -> Optional[GitadoraBase]:
@@ -48,10 +43,8 @@ class GitadoraMatixx(GitadoraBase):
 
 
 class GitadoraExchain(GitadoraBase):
-
-    name = 'GITADORA EXCHAIN'
+    name = "GITADORA EXCHAIN"
     version = VersionConstants.GITADORA_EXCHAIN
 
     def previous_version(self) -> Optional[GitadoraBase]:
         return GitadoraMatixx(self.data, self.config, self.model)
-

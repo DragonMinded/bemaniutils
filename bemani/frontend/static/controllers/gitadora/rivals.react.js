@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.rivals);
 var pagenav = new History(valid_versions);
 
-var rivals_view = React.createClass({
+var rivals_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.rivals);
@@ -137,7 +137,7 @@ var rivals_view = React.createClass({
         if (dm_count >= 5) { dm_avail = false; }
 
         return (
-            <span>
+            <>
                 {gf_avail ?
                     <Add
                         title="Add GuitarFreaks Rival"
@@ -156,7 +156,7 @@ var rivals_view = React.createClass({
                     /> :
                     null
                 }
-            </span>
+            </>
         );
     },
 
@@ -190,7 +190,7 @@ var rivals_view = React.createClass({
                         }.bind(this))}
                     </div>
                     <div className="section">
-                        <form onSubmit={this.searchForPlayersName}>
+                        <form onSubmit={this.searchForPlayersName} className="padded">
                             <label for="search">Name:</label>
                             <br />
                             <input
@@ -240,11 +240,11 @@ var rivals_view = React.createClass({
                             />
                             <input type="submit" value="search" />
                             { this.state.searching ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </form>
-                        <form onSubmit={this.searchForPlayersID}>
+                        <form onSubmit={this.searchForPlayersID} className="padded">
                             <label for="search">GITADORA ID:</label>
                             <br />
                             <input
@@ -270,7 +270,7 @@ var rivals_view = React.createClass({
                             />
                             <input type="submit" value="search" />
                             { this.state.searching_id ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </form>

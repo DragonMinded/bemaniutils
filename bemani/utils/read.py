@@ -4042,7 +4042,7 @@ class ImportGitadora(ImportBase):
                 '6': VersionConstants.GITADORA_EXCHAIN,
                 '7': VersionConstants.GITADORA_NEXTAGE,
                 '8': VersionConstants.GITADORA_HIGH_VOLTAGE,
-                '9': VersionConstants.GITADORA_FUZZ_UP,
+                '9': VersionConstants.GITADORA_FUZZUP,
             }.get(version, -1)
 
         elif version in ['omni-5', 'omni-6', 'omni-7', 'omni-8', 'omni-9']:
@@ -4051,7 +4051,7 @@ class ImportGitadora(ImportBase):
                 'omni-6': VersionConstants.GITADORA_EXCHAIN,
                 'omni-7': VersionConstants.GITADORA_NEXTAGE,
                 'omni-8': VersionConstants.GITADORA_HIGH_VOLTAGE,
-                'omni-9': VersionConstants.GITADORA_FUZZ_UP,
+                'omni-9': VersionConstants.GITADORA_FUZZUP,
             }.get(version, -1) + DBConstants.OMNIMIX_VERSION_BUMP
             # <xg_diff_list __type="u16" __count="15">0 150 370 690 790 0 130 310 410 670 0 140 400 700 770</xg_diff_list>
             # <xg_diff_list __type="u16" __count="15">1 2 3 4 5 1 2 3 4 5 0 1 2 3 4</xg_diff_list>

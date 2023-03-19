@@ -3,7 +3,7 @@
 var valid_versions = Object.keys(window.versions);
 var pagenav = new History(valid_versions);
 
-var settings_view = React.createClass({
+var settings_view = createReactClass({
 
     getInitialState: function(props) {
         var profiles = Object.keys(window.player);
@@ -97,14 +97,14 @@ var settings_view = React.createClass({
         return (
             <LabelledSection vertical={true} label="Name">{
                 !this.state.editing_name ?
-                    <span>
+                    <>
                         <span>{player.name}</span>
                         <Edit
                             onClick={function(event) {
                                 this.setState({editing_name: true});
                             }.bind(this)}
                         />
-                    </span> :
+                    </> :
                     <form className="inline" onSubmit={this.saveName}>
                         <input
                             type="text"
@@ -205,7 +205,7 @@ var settings_view = React.createClass({
                             }.bind(this))}
                             <div className="field">
                             <input type="submit" value="Save" disabled={!this.state.title_changed[this.state.version]} />
-                                { this.state.title_saving[this.state.version] && <img className="loading" src={Link.get('static', 'loading-16.gif')} />}
+                                { this.state.title_saving[this.state.version] && <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} />}
                                 { this.state.title_saved[this.state.version] && <span>{ "\u2713" }</span>}
                             </div>
                         </div>

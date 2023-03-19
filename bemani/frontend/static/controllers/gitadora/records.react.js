@@ -19,7 +19,7 @@ var sort_names = {
 };
 var chart_map = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-var HighScore = React.createClass({
+var HighScore = createReactClass({
     render: function() {
         if (!this.props.score) {
             return null;
@@ -61,7 +61,7 @@ var HighScore = React.createClass({
     },
 });
 
-var network_records = React.createClass({
+var network_records = createReactClass({
 
     sortRecords: function(records) {
         var sorted_records = {};
@@ -184,9 +184,9 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 { paginate ?
-                    <div className="section">
+                    <div className="section" key="paginatebuttons">
                         {songids.map(function(songid) {
                             if (songid < 0) {
                                 curbutton = curbutton + 1;
@@ -209,7 +209,7 @@ var network_records = React.createClass({
                     </div> :
                     null
                 }
-                <div className="section">
+                <div className="section" key="contents">
                     <table className="list records">
                         <thead></thead>
                         <tbody>
@@ -386,7 +386,7 @@ var network_records = React.createClass({
                         </tbody>
                     </table>
                 </div>
-            </span>
+            </>
         );
     },
 
@@ -460,7 +460,7 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -477,7 +477,7 @@ var network_records = React.createClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
@@ -512,7 +512,7 @@ var network_records = React.createClass({
         }
 
         return (
-            <span>
+            <>
                 <div className="section">
                     {window.valid_charts.map(function(chartname, index) {
                         return (
@@ -529,7 +529,7 @@ var network_records = React.createClass({
                     }.bind(this))}
                 </div>
                 { this.renderBySongIDList(songids, false) }
-            </span>
+            </>
         );
     },
 
