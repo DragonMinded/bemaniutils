@@ -321,12 +321,6 @@ def viewplayer(userid: UserID) -> Response:
             "addrival": url_for("gitadora_pages.addrival"),
             "removerival": url_for("gitadora_pages.removerival"),
             "skills": url_for("gitadora_pages.showskills", userid=userid),
-            "tachi-GF": url_for(
-                "gitadora_pages.tachi_scores", userid=userid, playtype="Gita"
-            ),
-            "tachi-DM": url_for(
-                "gitadora_pages.tachi_scores", userid=userid, playtype="Dora"
-            ),
         },
     )
 
@@ -618,19 +612,3 @@ def showskills(userid: UserID) -> Response:
             "profile": url_for("gitadora_pages.viewplayer", userid=userid),
         },
     )
-
-
-@gitadora_pages.route("/tachi_scores/<string:playtype>/<int:userid>", methods=["GET"])
-@jsonify
-@loginrequired
-def tachi_scores(userid: UserID, playtype: str) -> Dict[str, Any]:
-    frontend = GitadoraFrontend(g.data, g.config, g.cache)
-    scores = frontend.get_tachi_scores(userid, playtype)
-    return {
-        "meta": {
-            "game": "gitadora",
-            "playtype": playtype,
-            "service": g.config.get("tachi", {}).get("service-id"),
-        },
-        "scores": scores,
-    }
