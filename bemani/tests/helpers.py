@@ -24,6 +24,7 @@ class FakeCursor:
     def __init__(self, rows: List[Dict[str, Any]]) -> None:
         self.__rows = rows
         self.rowcount = len(rows)
+        self.pos = -1
 
     def fetchone(self) -> Dict[str, Any]:
         if len(self.__rows) != 1:
@@ -32,8 +33,16 @@ class FakeCursor:
             )
         return self.__rows[0]
 
-    def fetchall(self) -> List[Dict[str, Any]]:
-        return self.__rows
+    def __iter__(self) -> "FakeCursor":
+        self.pos = -1
+        return self
+
+    def __next__(self) -> Dict[str, Any]:
+        self.pos += 1
+        if self.pos < self.rowcount:
+            return self.__rows[self.pos]
+        else:
+            raise StopIteration
 
 
 def get_fixture(name: str) -> bytes:

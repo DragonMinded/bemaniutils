@@ -115,13 +115,13 @@ class LobbyData(BaseData):
             },
         )
 
-        ret = []
-        for result in cursor.fetchall():
+        def format_result(result: Dict[str, Any]) -> ValidatedDict:
             data = ValidatedDict(self.deserialize(result["data"]))
             data["id"] = result["id"]
             data["time"] = result["time"]
-            ret.append((UserID(result["userid"]), data))
-        return ret
+            return data
+
+        return [(UserID(result["userid"]), format_result(result)) for result in cursor]
 
     def put_play_session_info(
         self, game: GameConstants, version: int, userid: UserID, data: Dict[str, Any]
@@ -251,13 +251,13 @@ class LobbyData(BaseData):
             },
         )
 
-        ret = []
-        for result in cursor.fetchall():
+        def format_result(result: Dict[str, Any]) -> ValidatedDict:
             data = ValidatedDict(self.deserialize(result["data"]))
             data["id"] = result["id"]
             data["time"] = result["time"]
-            ret.append((UserID(result["userid"]), data))
-        return ret
+            return data
+
+        return [(UserID(result["userid"]), format_result(result)) for result in cursor]
 
     def put_lobby(
         self, game: GameConstants, version: int, userid: UserID, data: Dict[str, Any]

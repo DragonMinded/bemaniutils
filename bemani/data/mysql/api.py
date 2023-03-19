@@ -55,7 +55,7 @@ class APIData(APIProviderInterface, BaseData):
                 result["name"],
                 result["token"],
             )
-            for result in cursor.fetchall()
+            for result in cursor
         ]
 
     def validate_client(self, token: str) -> bool:
@@ -159,7 +159,7 @@ class APIData(APIProviderInterface, BaseData):
 
         sql = "SELECT id, timestamp, uri, token, config FROM server ORDER BY timestamp ASC"
         cursor = self.execute(sql)
-        return [format_result(result) for result in cursor.fetchall()]
+        return [format_result(result) for result in cursor]
 
     def create_server(self, uri: str, token: str) -> int:
         """

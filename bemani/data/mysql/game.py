@@ -183,18 +183,15 @@ class GameData(BaseData):
         sql = "SELECT id, type, data FROM series_achievement WHERE game = :game AND userid = :userid"
         cursor = self.execute(sql, {"game": game.value, "userid": userid})
 
-        achievements = []
-        for result in cursor.fetchall():
-            achievements.append(
-                Achievement(
-                    result["id"],
-                    result["type"],
-                    None,
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Achievement(
+                result["id"],
+                result["type"],
+                None,
+                self.deserialize(result["data"]),
             )
-
-        return achievements
+            for result in cursor
+        ]
 
     def put_achievement(
         self,
@@ -292,13 +289,16 @@ class GameData(BaseData):
             # setting doesn't exist
             return []
 
-        settings = []
-        for result in cursor.fetchall():
-            retval = ValidatedDict(self.deserialize(result["data"]))
-            retval["start_time"] = result["start_time"]
-            retval["end_time"] = result["end_time"]
-            settings.append(retval)
-        return settings
+        return [
+            ValidatedDict(
+                {
+                    **self.deserialize(result["data"]),
+                    "start_time": result["start_time"],
+                    "end_time": result["end_time"],
+                }
+            )
+            for result in cursor
+        ]
 
     def put_time_sensitive_settings(
         self, game: GameConstants, version: int, name: str, settings: Dict[str, Any]
@@ -345,7 +345,7 @@ class GameData(BaseData):
                 "end_time": end_time,
             },
         )
-        for result in cursor.fetchall():
+        for result in cursor:
             if result["start_time"] == start_time and result["end_time"] == end_time:
                 # This is just this event being updated, that's fine.
                 continue
@@ -417,14 +417,11 @@ class GameData(BaseData):
         sql = "SELECT id, type, data FROM catalog WHERE game = :game AND version = :version"
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
-        catalog = []
-        for result in cursor.fetchall():
-            catalog.append(
-                Item(
-                    result["type"],
-                    result["id"],
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Item(
+                result["type"],
+                result["id"],
+                self.deserialize(result["data"]),
             )
-
-        return catalog
+            for result in cursor
+        ]
