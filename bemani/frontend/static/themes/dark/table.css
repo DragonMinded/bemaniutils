@@ -63,7 +63,7 @@ table.list tbody tr:nth-child(even) td {
 }
 
 table td.subheader {
-    background-color: #1f1f1f ! important;
+    background-color: #192021 ! important;
     font-weight: bold;
 }
 
@@ -114,10 +114,6 @@ table.list input[type="checkbox"], table.add input[type="checkbox"] {
     width: 26px;
     height: 26px;
     margin: 0px;
-}
-
-td.subheader {
-    color: 121212;
 }
 
 table.events div.circle {

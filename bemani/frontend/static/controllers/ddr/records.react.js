@@ -210,7 +210,7 @@ var network_records = createReactClass({
                                     if (paginate && curpage != this.state.subtab) { return null; }
 
                                     return (
-                                        <tr key={(-songid).toString()} className="header">
+                                        <tr key={songid.toString()} className="header">
                                             <td className="subheader">{
                                                 !paginate ? this.state.versions[-songid] : "Song / Artist / Difficulties"
                                             }</td>
