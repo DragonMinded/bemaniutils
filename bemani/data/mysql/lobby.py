@@ -62,11 +62,14 @@ class LobbyData(BaseData):
             always contain an 'id' field which is the play session ID, and a 'time' field
             which represents the timestamp when the play session began.
         """
-        sql = (
-            "SELECT id, time, data FROM playsession "
-            "WHERE game = :game AND version = :version AND userid = :userid "
-            "AND time > :time"
-        )
+        sql = """
+            SELECT id, time, data FROM playsession
+            WHERE
+                game = :game AND
+                version = :version AND
+                userid = :userid AND
+                time > :time
+        """
         cursor = self.execute(
             sql,
             {
@@ -101,11 +104,10 @@ class LobbyData(BaseData):
             A list of Tuples, consisting of a UserID and the dictionary that would be
             returned for that user if get_play_session_info() was called for that user.
         """
-        sql = (
-            "SELECT id, time, userid, data FROM playsession "
-            "WHERE game = :game AND version = :version "
-            "AND time > :time"
-        )
+        sql = """
+            SELECT id, time, userid, data FROM playsession
+            WHERE game = :game AND version = :version AND time > :time
+        """
         cursor = self.execute(
             sql,
             {
@@ -142,11 +144,11 @@ class LobbyData(BaseData):
             del data["time"]
 
         # Add json to player session
-        sql = (
-            "INSERT INTO playsession (game, version, userid, time, data) "
-            + "VALUES (:game, :version, :userid, :time, :data) "
-            + "ON DUPLICATE KEY UPDATE time=VALUES(time), data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO playsession (game, version, userid, time, data)
+            VALUES (:game, :version, :userid, :time, :data)
+            ON DUPLICATE KEY UPDATE time=VALUES(time), data=VALUES(data)
+        """
         self.execute(
             sql,
             {
@@ -200,11 +202,14 @@ class LobbyData(BaseData):
             always contain an 'id' field which is the lobby ID, and a 'time' field representing
             the timestamp the lobby was created.
         """
-        sql = (
-            "SELECT id, time, data FROM lobby "
-            "WHERE game = :game AND version = :version AND userid = :userid "
-            "AND time > :time"
-        )
+        sql = """
+            SELECT id, time, data FROM lobby
+            WHERE
+                game = :game AND
+                version = :version AND
+                userid = :userid AND
+                time > :time
+        """
         cursor = self.execute(
             sql,
             {
@@ -238,10 +243,10 @@ class LobbyData(BaseData):
         Returns:
             A list of dictionaries representing lobby info stored by a game class.
         """
-        sql = (
-            "SELECT userid, id, data FROM lobby "
-            "WHERE game = :game AND version = :version AND time > :time"
-        )
+        sql = """
+            SELECT userid, id, data FROM lobby
+            WHERE game = :game AND version = :version AND time > :time
+        """
         cursor = self.execute(
             sql,
             {
@@ -278,11 +283,11 @@ class LobbyData(BaseData):
             del data["time"]
 
         # Add json to lobby
-        sql = (
-            "INSERT INTO lobby (game, version, userid, time, data) "
-            + "VALUES (:game, :version, :userid, :time, :data) "
-            + "ON DUPLICATE KEY UPDATE time=VALUES(time), data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO lobby (game, version, userid, time, data)
+            VALUES (:game, :version, :userid, :time, :data)
+            ON DUPLICATE KEY UPDATE time=VALUES(time), data=VALUES(data)
+        """
         self.execute(
             sql,
             {

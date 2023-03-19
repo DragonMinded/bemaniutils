@@ -509,12 +509,17 @@ class UserData(BaseData):
         Returns:
             A dictionary previously stored by a game class if found, or None otherwise.
         """
-        sql = (
-            "SELECT refid.refid AS refid, extid.extid AS extid, profile.data AS data "
-            + "FROM refid, extid, profile "
-            + "WHERE refid.userid = :userid AND refid.game = :game AND refid.version = :version AND "
-            "extid.userid = refid.userid AND extid.game = refid.game AND profile.refid = refid.refid"
-        )
+        sql = """
+            SELECT refid.refid AS refid, extid.extid AS extid, profile.data AS data
+            FROM refid, extid, profile
+            WHERE
+                refid.userid = :userid AND
+                refid.game = :game AND
+                refid.version = :version AND
+                extid.userid = refid.userid AND
+                extid.game = refid.game AND
+                profile.refid = refid.refid
+        """
         cursor = self.execute(
             sql, {"userid": userid, "game": game.value, "version": version}
         )
@@ -650,12 +655,16 @@ class UserData(BaseData):
         Returns:
             A list of (UserID, dictionaries) previously stored by a game class for each profile.
         """
-        sql = (
-            "SELECT refid.userid AS userid, refid.refid AS refid, extid.extid AS extid, profile.data AS data "
-            "FROM refid, profile, extid "
-            "WHERE refid.game = :game AND refid.version = :version "
-            "AND refid.refid = profile.refid AND extid.game = refid.game AND extid.userid = refid.userid"
-        )
+        sql = """
+            SELECT refid.userid AS userid, refid.refid AS refid, extid.extid AS extid, profile.data AS data
+            FROM refid, profile, extid
+            WHERE
+                refid.game = :game AND
+                refid.version = :version AND
+                refid.refid = profile.refid AND
+                extid.game = refid.game AND
+                extid.userid = refid.userid
+        """
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
         return [
@@ -683,10 +692,10 @@ class UserData(BaseData):
         Returns:
             A list of UserIDs for users that played this version of this game.
         """
-        sql = (
-            "SELECT refid.userid AS userid FROM refid "
-            "WHERE refid.game = :game AND refid.version = :version"
-        )
+        sql = """
+            SELECT refid.userid AS userid FROM refid
+            WHERE refid.game = :game AND refid.version = :version
+        """
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
         return [UserID(result["userid"]) for result in cursor]
@@ -708,11 +717,18 @@ class UserData(BaseData):
         Returns:
             A list of (UserID, Achievement) objects.
         """
-        sql = (
-            "SELECT achievement.id AS id, achievement.type AS type, achievement.data AS data, "
-            "refid.userid AS userid FROM achievement, refid WHERE refid.game = :game AND "
-            "refid.version = :version AND refid.refid = achievement.refid"
-        )
+        sql = """
+            SELECT
+                achievement.id AS id,
+                achievement.type AS type,
+                achievement.data AS data,
+                refid.userid AS userid
+            FROM achievement, refid
+            WHERE
+                refid.game = :game AND
+                refid.version = :version AND
+                refid.refid = achievement.refid
+        """
         params: Dict[str, Any] = {"game": game.value, "version": version}
         if achievementtype is not None:
             sql += " AND achievement.type = :type"
@@ -750,11 +766,11 @@ class UserData(BaseData):
         refid = self.get_refid(game, version, userid)
 
         # Add profile json to game profile
-        sql = (
-            "INSERT INTO profile (refid, data) "
-            + "VALUES (:refid, :json) "
-            + "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO profile (refid, data)
+            VALUES (:refid, :json)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(sql, {"refid": refid, "json": self.serialize(profile)})
 
         # Update profile details just in case this was a new profile that was just saved.
@@ -866,11 +882,11 @@ class UserData(BaseData):
         refid = self.get_refid(game, version, userid)
 
         # Add achievement JSON to achievements
-        sql = (
-            "INSERT INTO achievement (refid, id, type, data) "
-            + "VALUES (:refid, :id, :type, :data) "
-            + "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO achievement (refid, id, type, data)
+            VALUES (:refid, :id, :type, :data)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(
             sql,
             {
@@ -902,9 +918,10 @@ class UserData(BaseData):
         refid = self.get_refid(game, version, userid)
 
         # Nuke the achievement from the user
-        sql = (
-            "DELETE FROM achievement WHERE refid = :refid AND id = :id AND type = :type"
-        )
+        sql = """
+            DELETE FROM achievement
+            WHERE refid = :refid AND id = :id AND type = :type
+        """
         self.execute(
             sql, {"refid": refid, "id": achievementid, "type": achievementtype}
         )
@@ -979,10 +996,10 @@ class UserData(BaseData):
         refid = self.get_refid(game, version, userid)
 
         # Add achievement JSON to achievements
-        sql = (
-            "INSERT INTO time_based_achievement (refid, id, type, timestamp, data) "
-            + "VALUES (:refid, :id, :type, :ts, :data)"
-        )
+        sql = """
+            INSERT INTO time_based_achievement (refid, id, type, timestamp, data)
+            VALUES (:refid, :id, :type, :ts, :data)
+        """
         self.execute(
             sql,
             {
@@ -1007,12 +1024,19 @@ class UserData(BaseData):
         Returns:
             A list of (UserID, Achievement) objects.
         """
-        sql = (
-            "SELECT time_based_achievement.id AS id, time_based_achievement.type AS type, "
-            "time_based_achievement.data AS data, time_based_achievement.timestamp AS timestamp, "
-            "refid.userid AS userid FROM time_based_achievement, refid WHERE refid.game = :game AND "
-            "refid.version = :version AND refid.refid = time_based_achievement.refid"
-        )
+        sql = """
+            SELECT
+                time_based_achievement.id AS id,
+                time_based_achievement.type AS type,
+                time_based_achievement.data AS data,
+                time_based_achievement.timestamp AS timestamp,
+                refid.userid AS userid
+            FROM time_based_achievement, refid
+            WHERE
+                refid.game = :game AND
+                refid.version = :version AND
+                refid.refid = time_based_achievement.refid
+        """
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
         return [
@@ -1052,7 +1076,16 @@ class UserData(BaseData):
         Returns:
             A dictionary as stored by a game class previously, or None if not found.
         """
-        sql = "SELECT data FROM link WHERE game = :game AND version = :version AND userid = :userid AND type = :type AND other_userid = :other_userid"
+        sql = """
+            SELECT data
+            FROM link
+            WHERE
+                game = :game AND
+                version = :version AND
+                userid = :userid AND
+                type = :type AND
+                other_userid = :other_userid
+        """
         cursor = self.execute(
             sql,
             {
@@ -1084,7 +1117,11 @@ class UserData(BaseData):
         Returns:
             A list of Link objects.
         """
-        sql = "SELECT type, other_userid, data FROM link WHERE game = :game AND version = :version AND userid = :userid"
+        sql = """
+            SELECT type, other_userid, data
+            FROM link
+            WHERE game = :game AND version = :version AND userid = :userid
+        """
         cursor = self.execute(
             sql, {"game": game.value, "version": version, "userid": userid}
         )
@@ -1120,11 +1157,11 @@ class UserData(BaseData):
             data - A dictionary of data that the game wishes to retrieve later.
         """
         # Add link JSON to link
-        sql = (
-            "INSERT INTO link (game, version, userid, type, other_userid, data) "
-            "VALUES (:game, :version, :userid, :type, :other_userid, :data) "
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO link (game, version, userid, type, other_userid, data)
+            VALUES (:game, :version, :userid, :type, :other_userid, :data)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(
             sql,
             {
@@ -1155,7 +1192,15 @@ class UserData(BaseData):
             linktype - The type of link.
             other_userid - Integer user ID of the account we're linked to.
         """
-        sql = "DELETE FROM link WHERE game = :game AND version = :version AND userid = :userid AND type = :type AND other_userid = :other_userid"
+        sql = """
+            DELETE FROM link
+            WHERE
+                game = :game AND
+                version = :version AND
+                userid = :userid AND
+                type = :type AND
+                other_userid = :other_userid
+        """
         self.execute(
             sql,
             {
@@ -1200,10 +1245,10 @@ class UserData(BaseData):
         Returns:
             The new PASELI balance if successful, or None if there wasn't enough to apply the delta.
         """
-        sql = (
-            "INSERT INTO balance (userid, arcadeid, balance) VALUES (:userid, :arcadeid, :delta) "
-            "ON DUPLICATE KEY UPDATE balance = balance + :delta"
-        )
+        sql = """
+            INSERT INTO balance (userid, arcadeid, balance) VALUES (:userid, :arcadeid, :delta)
+            ON DUPLICATE KEY UPDATE balance = balance + :delta
+        """
         self.execute(sql, {"delta": delta, "userid": userid, "arcadeid": arcadeid})
         newbalance = self.get_balance(userid, arcadeid)
         if newbalance < 0:
@@ -1318,10 +1363,10 @@ class UserData(BaseData):
                 break
 
         # Use that extid
-        sql = (
-            "INSERT INTO extid (game, extid, userid) "
-            + "VALUES (:game, :extid, :userid)"
-        )
+        sql = """
+            INSERT INTO extid (game, extid, userid)
+            VALUES (:game, :extid, :userid)
+        """
         try:
             cursor = self.execute(
                 sql, {"game": game.value, "extid": extid, "userid": userid}
@@ -1341,10 +1386,10 @@ class UserData(BaseData):
                 break
 
         # Use that refid
-        sql = (
-            "INSERT INTO refid (game, version, refid, userid) "
-            + "VALUES (:game, :version, :refid, :userid)"
-        )
+        sql = """
+            INSERT INTO refid (game, version, refid, userid)
+            VALUES (:game, :version, :refid, :userid)
+        """
         try:
             cursor = self.execute(
                 sql,

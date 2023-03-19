@@ -115,11 +115,11 @@ class GameData(BaseData):
             settings - A dictionary of settings that a game wishes to retrieve later.
         """
         # Add settings json to game settings
-        sql = (
-            "INSERT INTO game_settings (game, userid, data) "
-            + "VALUES (:game, :userid, :data) "
-            + "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO game_settings (game, userid, data)
+            VALUES (:game, :userid, :data)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(
             sql,
             {"game": game.value, "userid": userid, "data": self.serialize(settings)},
@@ -147,10 +147,10 @@ class GameData(BaseData):
         Returns:
             A dictionary as stored by a game class previously, or None if not found.
         """
-        sql = (
-            "SELECT data FROM series_achievement "
-            "WHERE game = :game AND userid = :userid AND id = :id AND type = :type"
-        )
+        sql = """
+            SELECT data FROM series_achievement
+            WHERE game = :game AND userid = :userid AND id = :id AND type = :type
+        """
         cursor = self.execute(
             sql,
             {
@@ -212,11 +212,11 @@ class GameData(BaseData):
             data - A dictionary of data that the game wishes to retrieve later.
         """
         # Add achievement JSON to achievements
-        sql = (
-            "INSERT INTO series_achievement (game, userid, id, type, data) "
-            + "VALUES (:game, :userid, :id, :type, :data) "
-            + "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO series_achievement (game, userid, id, type, data)
+            VALUES (:game, :userid, :id, :type, :data)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(
             sql,
             {
@@ -244,10 +244,15 @@ class GameData(BaseData):
             If settings were found, they are guaranteed to include the attributes 'start_time' and
             'end_time' which will both be seconds since the unix epoch (UTC).
         """
-        sql = (
-            "SELECT data, start_time, end_time FROM time_sensitive_settings WHERE "
-            "game = :game AND version = :version AND name = :name AND start_time <= :time AND end_time > :time"
-        )
+        sql = """
+            SELECT data, start_time, end_time FROM time_sensitive_settings
+            WHERE
+                game = :game AND
+                version = :version AND
+                name = :name AND
+                start_time <= :time AND
+                end_time > :time
+        """
         cursor = self.execute(
             sql,
             {"game": game.value, "version": version, "name": name, "time": Time.now()},
@@ -278,10 +283,10 @@ class GameData(BaseData):
             If settings were found, they are guaranteed to include the attributes 'start_time' and
             'end_time' which will both be seconds since the unix epoch (UTC).
         """
-        sql = (
-            "SELECT data, start_time, end_time FROM time_sensitive_settings WHERE "
-            "game = :game AND version = :version AND name = :name"
-        )
+        sql = """
+            SELECT data, start_time, end_time FROM time_sensitive_settings
+            WHERE game = :game AND version = :version AND name = :name
+        """
         cursor = self.execute(
             sql, {"game": game.value, "version": version, "name": name}
         )
@@ -327,12 +332,12 @@ class GameData(BaseData):
 
         # Verify that this isn't overlapping some event.
         sql = """
-            SELECT start_time, end_time FROM time_sensitive_settings WHERE
-            game = :game AND version = :version AND name = :name AND
+            SELECT start_time, end_time FROM time_sensitive_settings
+            WHERE game = :game AND version = :version AND name = :name AND
             (
-              (start_time >= :start_time AND start_time < :end_time) OR
-              (end_time > :start_time AND end_time <= :end_time) OR
-              (start_time < :start_time AND end_time > :end_time)
+                (start_time >= :start_time AND start_time < :end_time) OR
+                (end_time > :start_time AND end_time <= :end_time) OR
+                (start_time < :start_time AND end_time > :end_time)
             )
         """
         cursor = self.execute(
@@ -354,11 +359,11 @@ class GameData(BaseData):
             )
 
         # Insert or update this setting
-        sql = (
-            "INSERT INTO time_sensitive_settings (game, version, name, start_time, end_time, data) "
-            "VALUES (:game, :version, :name, :start_time, :end_time, :data) "
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO time_sensitive_settings (game, version, name, start_time, end_time, data)
+            VALUES (:game, :version, :name, :start_time, :end_time, :data)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(
             sql,
             {
@@ -389,10 +394,10 @@ class GameData(BaseData):
         Returns:
             A dictionary as stored by a game class previously, or None if not found.
         """
-        sql = (
-            "SELECT data FROM catalog "
-            "WHERE game = :game AND version = :version AND id = :id AND type = :type"
-        )
+        sql = """
+            SELECT data FROM catalog
+            WHERE game = :game AND version = :version AND id = :id AND type = :type
+        """
         cursor = self.execute(
             sql, {"game": game.value, "version": version, "id": catid, "type": cattype}
         )

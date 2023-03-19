@@ -170,11 +170,14 @@ class NetworkData(BaseData):
                 "Logic error, specify either 'daily' or 'weekly' for schedule type!"
             )
 
-        sql = (
-            "SELECT year, day FROM scheduled_work "
-            "WHERE game = :game AND version = :version AND "
-            "name = :name AND schedule = :schedule"
-        )
+        sql = """
+            SELECT year, day FROM scheduled_work
+            WHERE
+                game = :game AND
+                version = :version AND
+                name = :name AND
+                schedule = :schedule
+        """
         cursor = self.execute(
             sql,
             {
@@ -219,11 +222,11 @@ class NetworkData(BaseData):
 
         if schedule == "daily":
             year, day = Time.days_into_year()
-            sql = (
-                "INSERT INTO scheduled_work (game, version, name, schedule, year, day) "
-                + "VALUES (:game, :version, :name, :schedule, :year, :day) "
-                + "ON DUPLICATE KEY UPDATE year=VALUES(year), day=VALUES(day)"
-            )
+            sql = """
+                INSERT INTO scheduled_work (game, version, name, schedule, year, day)
+                VALUES (:game, :version, :name, :schedule, :year, :day)
+                ON DUPLICATE KEY UPDATE year=VALUES(year), day=VALUES(day)
+            """
             self.execute(
                 sql,
                 {
@@ -238,11 +241,11 @@ class NetworkData(BaseData):
 
         if schedule == "weekly":
             days = Time.week_in_days_since_epoch()
-            sql = (
-                "INSERT INTO scheduled_work (game, version, name, schedule, day) "
-                + "VALUES (:game, :version, :name, :schedule, :day) "
-                + "ON DUPLICATE KEY UPDATE day=VALUES(day)"
-            )
+            sql = """
+                INSERT INTO scheduled_work (game, version, name, schedule, day)
+                VALUES (:game, :version, :name, :schedule, :day)
+                ON DUPLICATE KEY UPDATE day=VALUES(day)
+            """
             self.execute(
                 sql,
                 {

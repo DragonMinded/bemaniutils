@@ -172,10 +172,10 @@ class BaseData:
                 expiration = Time.now() + expiration
 
                 # Use that session
-                sql = (
-                    "INSERT INTO session (id, session, type, expiration) "
-                    + "VALUES (:id, :session, :optype, :expiration)"
-                )
+                sql = """
+                    INSERT INTO session (id, session, type, expiration)
+                    VALUES (:id, :session, :optype, :expiration)
+                """
                 cursor = self.execute(
                     sql,
                     {

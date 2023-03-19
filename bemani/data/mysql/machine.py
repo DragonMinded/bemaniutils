@@ -166,7 +166,10 @@ class MachineData(BaseData):
         Returns:
             A Machine object representing a machine, or None if not found.
         """
-        sql = "SELECT name, description, arcadeid, id, port, game, version, data FROM machine WHERE pcbid = :pcbid"
+        sql = """
+            SELECT name, description, arcadeid, id, port, game, version, data
+            FROM machine WHERE pcbid = :pcbid
+        """
         cursor = self.execute(sql, {"pcbid": pcbid})
         if cursor.rowcount != 1:
             # Machine doesn't exist
@@ -222,10 +225,18 @@ class MachineData(BaseData):
             machine - A Machine object representing a machine.
         """
         # Update machine name based on game
-        sql = (
-            "UPDATE `machine` SET name = :name, description = :description, arcadeid = :arcadeid, "
-            + "port = :port, game = :game, version = :version, data = :data WHERE pcbid = :pcbid LIMIT 1"
-        )
+        sql = """
+            UPDATE `machine`
+            SET
+                name = :name,
+                description = :description,
+                arcadeid = :arcadeid,
+                port = :port,
+                game = :game,
+                version = :version,
+                data = :data
+            WHERE pcbid = :pcbid LIMIT 1
+        """
         self.execute(
             sql,
             {
@@ -280,10 +291,10 @@ class MachineData(BaseData):
 
             # Add new machine
             try:
-                sql = (
-                    "INSERT INTO `machine` (pcbid, name, description, port, arcadeid) "
-                    + "VALUES (:pcbid, :name, :description, :port, :arcadeid)"
-                )
+                sql = """
+                    INSERT INTO `machine` (pcbid, name, description, port, arcadeid)
+                    VALUES (:pcbid, :name, :description, :port, :arcadeid)
+                """
                 self.execute(
                     sql,
                     {
@@ -327,10 +338,10 @@ class MachineData(BaseData):
         Returns:
             An Arcade object representing this arcade
         """
-        sql = (
-            "INSERT INTO arcade (name, description, pref, area, data, pin) "
-            + "VALUES (:name, :desc, :pref, :area, :data, '00000000')"
-        )
+        sql = """
+            INSERT INTO arcade (name, description, pref, area, data, pin)
+            VALUES (:name, :desc, :pref, :area, :data, '00000000')
+        """
         cursor = self.execute(
             sql,
             {
@@ -345,9 +356,10 @@ class MachineData(BaseData):
             raise ArcadeCreationException("Failed to create arcade!")
         arcadeid = cursor.lastrowid
         for owner in owners:
-            sql = (
-                "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
-            )
+            sql = """
+                INSERT INTO arcade_owner (userid, arcadeid)
+                VALUES (:userid, :arcadeid)
+            """
             self.execute(sql, {"userid": owner, "arcadeid": arcadeid})
         new_arcade = self.get_arcade(arcadeid)
         if new_arcade is None:
@@ -364,9 +376,10 @@ class MachineData(BaseData):
         Returns:
             An Arcade object if this arcade was found, or None otherwise.
         """
-        sql = (
-            "SELECT name, description, pin, pref, area, data FROM arcade WHERE id = :id"
-        )
+        sql = """
+            SELECT name, description, pin, pref, area, data
+            FROM arcade WHERE id = :id
+        """
         cursor = self.execute(sql, {"id": arcadeid})
         if cursor.rowcount != 1:
             # Arcade doesn't exist
@@ -396,11 +409,17 @@ class MachineData(BaseData):
             arcade - An Arcade object that should be updated.
         """
         # Update machine name based on game
-        sql = (
-            "UPDATE `arcade` "
-            + "SET name = :name, description = :desc, pin = :pin, pref = :pref, area = :area, data = :data "
-            + "WHERE id = :arcadeid"
-        )
+        sql = """
+            UPDATE `arcade`
+            SET
+                name = :name,
+                description = :desc,
+                pin = :pin,
+                pref = :pref,
+                area = :area,
+                data = :data
+            WHERE id = :arcadeid
+        """
         self.execute(
             sql,
             {
@@ -416,9 +435,10 @@ class MachineData(BaseData):
         sql = "DELETE FROM `arcade_owner` WHERE arcadeid = :arcadeid"
         self.execute(sql, {"arcadeid": arcade.id})
         for owner in arcade.owners:
-            sql = (
-                "INSERT INTO arcade_owner (userid, arcadeid) VALUES(:userid, :arcadeid)"
-            )
+            sql = """
+                INSERT INTO arcade_owner (userid, arcadeid)
+                VALUES (:userid, :arcadeid)
+            """
             self.execute(sql, {"userid": owner, "arcadeid": arcade.id})
 
     def destroy_arcade(self, arcadeid: ArcadeID) -> None:
@@ -515,11 +535,11 @@ class MachineData(BaseData):
             setting - String identifying the particular setting we're interestsed in.
             data - A dictionary that should be saved for this setting.
         """
-        sql = (
-            "INSERT INTO arcade_settings (arcadeid, game, version, type, data) "
-            + "VALUES (:id, :game, :version, :type, :data) "
-            "ON DUPLICATE KEY UPDATE data=VALUES(data)"
-        )
+        sql = """
+            INSERT INTO arcade_settings (arcadeid, game, version, type, data)
+            VALUES (:id, :game, :version, :type, :data)
+            ON DUPLICATE KEY UPDATE data=VALUES(data)
+        """
         self.execute(
             sql,
             {
