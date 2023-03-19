@@ -60,21 +60,6 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     BASS_CHART_TYPE_EXTREME: Final[int] = 13
     BASS_CHART_TYPE_MASTER: Final[int] = 14
 
-    tachi_difficulty_map: Dict[int, str] = {
-        GITUAR_CHART_TYPE_BASIC: "BASIC",
-        GITUAR_CHART_TYPE_ADVANCE: "ADVANCED",
-        GITUAR_CHART_TYPE_EXTREME: "EXTREME",
-        GITUAR_CHART_TYPE_MASTER: "MASTER",
-        DRUM_CHART_TYPE_BASIC: "BASIC",
-        DRUM_CHART_TYPE_ADVANCE: "ADVANCED",
-        DRUM_CHART_TYPE_EXTREME: "EXTREME",
-        DRUM_CHART_TYPE_MASTER: "MASTER",
-        BASS_CHART_TYPE_BASIC: "BASS BASIC",
-        BASS_CHART_TYPE_ADVANCE: "BASS ADVANCED",
-        BASS_CHART_TYPE_EXTREME: "BASS EXTREME",
-        BASS_CHART_TYPE_MASTER: "BASS MASTER",
-    }
-
     def __init__(self, data: Data, config: Config, model: Model) -> None:
         # only divide omnimix in here.
         # model.spec == 'A': gf;
@@ -98,52 +83,6 @@ class GitadoraBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         be overridden.
         """
         return None
-
-    def format_tachi_score(
-        self,
-        scoredata: ValidatedDict,
-        clear_status: int,
-        timestamp: int,
-        song_chart: int,
-        songid: int,
-    ) -> Dict[str, Any]:
-        difficulty = GitadoraBase.tachi_difficulty_map.get(song_chart)
-        perfect = (
-            scoredata.get_int("perc") / 100 if scoredata.get_int("perc") >= 0 else 0
-        )
-        if scoredata.get_bool("clear") is False:
-            lamp = "FAILED"
-        if scoredata.get_bool("clear") is True:
-            lamp = "CLEAR"
-        if scoredata.get_bool("fullcombo") is True:
-            lamp = "FULL COMBO"
-        if scoredata.get_bool("excellent") is True:
-            lamp = "EXCELLENT"
-        return {
-            "percent": perfect,
-            "lamp": lamp,
-            "matchType": "inGameID",
-            "identifier": str(songid),
-            "timeAchieved": timestamp * 1000,
-            "difficulty": difficulty,
-            "judgements": {
-                "perfect": scoredata.get_dict("stats").get_int("perfect")
-                if scoredata.get_dict("stats").get_int("perfect") >= 0
-                else 0,
-                "great": scoredata.get_dict("stats").get_int("great")
-                if scoredata.get_dict("stats").get_int("great") >= 0
-                else 0,
-                "good": scoredata.get_dict("stats").get_int("good")
-                if scoredata.get_dict("stats").get_int("good") >= 0
-                else 0,
-                "ok": scoredata.get_dict("stats").get_int("ok")
-                if scoredata.get_dict("stats").get_int("ok") >= 0
-                else 0,
-                "miss": scoredata.get_dict("stats").get_int("miss")
-                if scoredata.get_dict("stats").get_int("miss") >= 0
-                else 0,
-            },
-        }
 
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         """
