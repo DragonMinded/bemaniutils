@@ -19,7 +19,6 @@ class GlobalUserData(BaseGlobalData):
             updates["area"] = area
 
     def __format_iidx_profile(self, updates: Profile, profile: Profile) -> None:
-
         area = profile.get_int("area", -1)
         if area != -1:
             updates["pid"] = area

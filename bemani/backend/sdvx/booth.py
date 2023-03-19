@@ -13,7 +13,6 @@ class SoundVoltexBooth(
     EventLogHandler,
     SoundVoltexBase,
 ):
-
     name: str = "SOUND VOLTEX BOOTH"
     version: int = VersionConstants.SDVX_BOOTH
 

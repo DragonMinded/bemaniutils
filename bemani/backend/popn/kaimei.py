@@ -13,7 +13,6 @@ from bemani.protocol.node import Node
 
 
 class PopnMusicKaimei(PopnMusicModernBase):
-
     name: str = "Pop'n Music 解明リドルズ"
     version: int = VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES
 

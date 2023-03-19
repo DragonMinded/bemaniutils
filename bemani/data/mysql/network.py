@@ -75,7 +75,7 @@ class NetworkData(BaseData):
                 result["title"],
                 result["body"],
             )
-            for result in cursor.fetchall()
+            for result in cursor
         ]
 
     def create_news(self, title: str, body: str) -> int:
@@ -318,27 +318,20 @@ class NetworkData(BaseData):
                 "until_id": until_id,
             },
         )
-        events = []
-        for result in cursor.fetchall():
-            if result["userid"] is not None:
-                userid = UserID(result["userid"])
-            else:
-                userid = None
-            if result["arcadeid"] is not None:
-                arcadeid = ArcadeID(result["arcadeid"])
-            else:
-                arcadeid = None
-            events.append(
-                Event(
-                    result["id"],
-                    result["timestamp"],
-                    userid,
-                    arcadeid,
-                    result["type"],
-                    self.deserialize(result["data"]),
-                ),
+
+        return [
+            Event(
+                result["id"],
+                result["timestamp"],
+                UserID(result["userid"]) if result["userid"] is not None else None,
+                ArcadeID(result["arcadeid"])
+                if result["arcadeid"] is not None
+                else None,
+                result["type"],
+                self.deserialize(result["data"]),
             )
-        return events
+            for result in cursor
+        ]
 
     def delete_events(self, oldest_event_ts: int) -> None:
         """

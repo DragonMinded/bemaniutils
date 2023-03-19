@@ -140,7 +140,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             ]
         )
         attempts: Dict[int, Dict[int, Dict[str, int]]] = {}
-        for (_, attempt) in all_attempts:
+        for _, attempt in all_attempts:
             # Terrible temporary structure is terrible.
             if attempt.id not in attempts:
                 attempts[attempt.id] = {}

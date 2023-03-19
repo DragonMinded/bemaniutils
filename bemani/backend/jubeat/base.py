@@ -1,5 +1,7 @@
 # vim: set fileencoding=utf-8
-from typing import Dict, List, Optional
+import random
+import struct
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 from typing_extensions import Final
 
 from bemani.backend.base import Base
@@ -293,3 +295,76 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             raised,
             timestamp=timestamp,
         )
+
+    def default_select_jbox(self) -> Set[int]:
+        gameitems = self.data.local.game.get_items(self.game, self.version)
+        default_main: Set[int] = set()
+
+        for gameitem in gameitems:
+            if gameitem.type == "emblem":
+                if (
+                    gameitem.data.get_int("layer") == 2
+                    and gameitem.data.get_int("rarity") == 1
+                ):
+                    default_main.add(gameitem.id)
+
+        return default_main
+
+    def random_select_jbox(self, owned_emblems: Set[int]) -> Tuple[int, int]:
+        gameitems = self.data.local.game.get_items(self.game, self.version)
+        normalemblems: Set[int] = set()
+        premiumemblems: Set[int] = set()
+        for gameitem in gameitems:
+            if gameitem.type == "emblem":
+                if gameitem.id in owned_emblems:
+                    # We don't want to give out random emblems that are already owned.
+                    continue
+
+                if gameitem.data.get_int("rarity") in {1, 2, 3}:
+                    normalemblems.add(gameitem.id)
+                if gameitem.data.get_int("rarity") in {4, 5}:
+                    premiumemblems.add(gameitem.id)
+
+        # If they've earned all the premium emblems, give them normal emblems instead.
+        if normalemblems and not premiumemblems:
+            premiumemblems = normalemblems
+
+        # Now, try to default to the default emblem, in the case that the person
+        # has earned every single part (unlikely).
+        if not normalemblems:
+            normalemblems = self.default_select_jbox()
+        if not premiumemblems:
+            premiumemblems = self.default_select_jbox()
+
+        # Default to some hand-picked emblems in case the catalog is not available.
+        normalindex = 2
+        premiumindex = 1
+        if normalemblems:
+            normalindex = random.sample(normalemblems, 1)[0]
+        if premiumemblems:
+            premiumindex = random.sample(premiumemblems, 1)[0]
+
+        return normalindex, premiumindex
+
+    def calculate_owned_items(self, item_list: List[int]) -> Set[int]:
+        owned_items: Set[int] = set()
+
+        for index in range(len(item_list) * 32):
+            offset = 1 << (index % 32)
+            bucket = index // 32
+
+            if (item_list[bucket] & offset) != 0:
+                owned_items.add(index)
+
+        return owned_items
+
+    def create_owned_items(self, items: Iterable[int], size: int) -> List[int]:
+        items_list = [0] * size
+
+        for index in items:
+            offset = 1 << (index % 32)
+            bucket = index // 32
+
+            items_list[bucket] |= offset
+
+        return [struct.unpack("i", struct.pack("I", item))[0] for item in items_list]

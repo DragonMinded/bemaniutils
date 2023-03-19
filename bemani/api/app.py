@@ -207,7 +207,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
 
     # Figure out what games we support based on config, and map those.
     gamemapping = {}
-    for (gameid, constant) in [
+    for gameid, constant in [
         ("ddr", GameConstants.DDR),
         ("iidx", GameConstants.IIDX),
         ("jubeat", GameConstants.JUBEAT),
@@ -238,6 +238,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
                 "14": VersionConstants.DDR_2013,
                 "15": VersionConstants.DDR_2014,
                 "16": VersionConstants.DDR_ACE,
+                "17": VersionConstants.DDR_A20,
             },
             GameConstants.IIDX: {
                 "20": VersionConstants.IIDX_TRICORO,
@@ -247,6 +248,8 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
                 "24": VersionConstants.IIDX_SINOBUZ,
                 "25": VersionConstants.IIDX_CANNON_BALLERS,
                 "26": VersionConstants.IIDX_ROOTAGE,
+                "27": VersionConstants.IIDX_HEROIC_VERSE,
+                "28": VersionConstants.IIDX_BISTROVER,
             },
             GameConstants.JUBEAT: {
                 "5": VersionConstants.JUBEAT_SAUCER,
@@ -255,6 +258,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
                 "7": VersionConstants.JUBEAT_QUBELL,
                 "8": VersionConstants.JUBEAT_CLAN,
                 "9": VersionConstants.JUBEAT_FESTO,
+                "10": VersionConstants.JUBEAT_AVENUE,
             },
             GameConstants.MUSECA: {
                 "1": VersionConstants.MUSECA,
@@ -267,6 +271,8 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
                 "22": VersionConstants.POPN_MUSIC_LAPISTORIA,
                 "23": VersionConstants.POPN_MUSIC_ECLALE,
                 "24": VersionConstants.POPN_MUSIC_USANEKO,
+                "25": VersionConstants.POPN_MUSIC_PEACE,
+                "26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES,
             },
             GameConstants.REFLEC_BEAT: {
                 "1": VersionConstants.REFLEC_BEAT,

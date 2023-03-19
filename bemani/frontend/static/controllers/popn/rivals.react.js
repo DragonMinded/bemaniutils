@@ -225,7 +225,7 @@ var rivals_view = createReactClass({
                             />
                             <input type="submit" value="search" />
                             { this.state.searching_name ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </form>
@@ -255,7 +255,7 @@ var rivals_view = createReactClass({
                             />
                             <input type="submit" value="search" />
                             { this.state.searching_id ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                                 null
                             }
                         </form>

@@ -14,7 +14,6 @@ class SoundVoltexHeavenlyHaven(
     EventLogHandler,
     SoundVoltexBase,
 ):
-
     name: str = "SOUND VOLTEX IV HEAVENLY HAVEN"
     version: int = VersionConstants.SDVX_HEAVENLY_HAVEN
 
@@ -3266,7 +3265,7 @@ class SoundVoltexHeavenlyHaven(
                 ):
                     ids.add((song.id, song.chart))
 
-            for (songid, chart) in ids:
+            for songid, chart in ids:
                 info = Node.void("info")
                 limited.add_child(info)
                 info.add_child(Node.s32("music_id", songid))
@@ -3478,10 +3477,10 @@ class SoundVoltexHeavenlyHaven(
         missing_users = [
             userid for (userid, _) in global_records if userid not in users
         ] + [userid for (userid, _) in area_records if userid not in users]
-        for (userid, profile) in self.get_any_profiles(missing_users):
+        for userid, profile in self.get_any_profiles(missing_users):
             users[userid] = profile
 
-        for (userid, score) in global_records:
+        for userid, score in global_records:
             if userid not in users:
                 raise Exception("Logic error, missing profile for user!")
             if score.id not in records:
@@ -3490,7 +3489,7 @@ class SoundVoltexHeavenlyHaven(
                 records[score.id][score.chart] = {}
             records[score.id][score.chart]["global"] = (userid, score)
 
-        for (userid, score) in area_records:
+        for userid, score in area_records:
             if userid not in users:
                 raise Exception("Logic error, missing profile for user!")
             if score.id not in records:

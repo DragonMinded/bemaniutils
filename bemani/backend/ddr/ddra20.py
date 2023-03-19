@@ -9,7 +9,6 @@ from bemani.common import VersionConstants
 class DDRA20(
     DDRBase,
 ):
-
     name: str = "DanceDanceRevolution A20"
     version: int = VersionConstants.DDR_A20
 

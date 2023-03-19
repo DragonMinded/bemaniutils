@@ -174,7 +174,6 @@ class AccountCreationException(Exception):
 
 
 class UserData(BaseData):
-
     REF_ID_LENGTH: Final[int] = 16
 
     def from_cardid(self, cardid: str) -> Optional[UserID]:
@@ -325,7 +324,7 @@ class UserData(BaseData):
                 result["email"],
                 result["admin"] == 1,
             )
-            for result in cursor.fetchall()
+            for result in cursor
         ]
 
     def get_all_usernames(self) -> List[str]:
@@ -340,7 +339,7 @@ class UserData(BaseData):
         """
         sql = "SELECT username FROM user WHERE username is not null"
         cursor = self.execute(sql)
-        return [res["username"] for res in cursor.fetchall()]
+        return [res["username"] for res in cursor]
 
     def get_all_cards(self) -> List[Tuple[str, UserID]]:
         """
@@ -351,9 +350,7 @@ class UserData(BaseData):
         """
         sql = "SELECT id, userid FROM card"
         cursor = self.execute(sql)
-        return [
-            (str(res["id"]).upper(), UserID(res["userid"])) for res in cursor.fetchall()
-        ]
+        return [(str(res["id"]).upper(), UserID(res["userid"])) for res in cursor]
 
     def get_cards(self, userid: UserID) -> List[str]:
         """
@@ -367,7 +364,7 @@ class UserData(BaseData):
         """
         sql = "SELECT id FROM card WHERE userid = :userid"
         cursor = self.execute(sql, {"userid": userid})
-        return [str(res["id"]).upper() for res in cursor.fetchall()]
+        return [str(res["id"]).upper() for res in cursor]
 
     def add_card(self, userid: UserID, cardid: str) -> None:
         """
@@ -582,7 +579,7 @@ class UserData(BaseData):
         cursor = self.execute(sql, {"game": game.value, "userids": userids})
         profilever: Dict[UserID, int] = {}
 
-        for result in cursor.fetchall():
+        for result in cursor:
             tuid = UserID(result["userid"])
             tver = result["version"]
 
@@ -628,10 +625,7 @@ class UserData(BaseData):
             vals["game"] = game.value
 
         cursor = self.execute(sql, vals)
-        profiles = []
-        for result in cursor.fetchall():
-            profiles.append((GameConstants(result["game"]), result["version"]))
-        return profiles
+        return [(GameConstants(result["game"]), result["version"]) for result in cursor]
 
     def get_all_profiles(
         self, game: GameConstants, version: int
@@ -654,22 +648,19 @@ class UserData(BaseData):
         )
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
-        profiles = []
-        for result in cursor.fetchall():
-            profiles.append(
-                (
-                    UserID(result["userid"]),
-                    Profile(
-                        game,
-                        version,
-                        result["refid"],
-                        result["extid"],
-                        self.deserialize(result["data"]),
-                    ),
-                )
+        return [
+            (
+                UserID(result["userid"]),
+                Profile(
+                    game,
+                    version,
+                    result["refid"],
+                    result["extid"],
+                    self.deserialize(result["data"]),
+                ),
             )
-
-        return profiles
+            for result in cursor
+        ]
 
     def get_all_players(self, game: GameConstants, version: int) -> List[UserID]:
         """
@@ -688,7 +679,7 @@ class UserData(BaseData):
         )
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
-        return [UserID(result["userid"]) for result in cursor.fetchall()]
+        return [UserID(result["userid"]) for result in cursor]
 
     def get_all_achievements(
         self,
@@ -721,21 +712,18 @@ class UserData(BaseData):
             params["id"] = achievementid
         cursor = self.execute(sql, params)
 
-        achievements = []
-        for result in cursor.fetchall():
-            achievements.append(
-                (
-                    UserID(result["userid"]),
-                    Achievement(
-                        result["id"],
-                        result["type"],
-                        None,
-                        self.deserialize(result["data"]),
-                    ),
-                )
+        return [
+            (
+                UserID(result["userid"]),
+                Achievement(
+                    result["id"],
+                    result["type"],
+                    None,
+                    self.deserialize(result["data"]),
+                ),
             )
-
-        return achievements
+            for result in cursor
+        ]
 
     def put_profile(
         self, game: GameConstants, version: int, userid: UserID, profile: Profile
@@ -835,18 +823,15 @@ class UserData(BaseData):
         sql = "SELECT id, type, data FROM achievement WHERE refid = :refid"
         cursor = self.execute(sql, {"refid": refid})
 
-        achievements = []
-        for result in cursor.fetchall():
-            achievements.append(
-                Achievement(
-                    result["id"],
-                    result["type"],
-                    None,
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Achievement(
+                result["id"],
+                result["type"],
+                None,
+                self.deserialize(result["data"]),
             )
-
-        return achievements
+            for result in cursor
+        ]
 
     def put_achievement(
         self,
@@ -950,18 +935,15 @@ class UserData(BaseData):
             {"refid": refid, "type": achievementtype, "since": since, "until": until},
         )
 
-        achievements = []
-        for result in cursor.fetchall():
-            achievements.append(
-                Achievement(
-                    result["id"],
-                    result["type"],
-                    result["timestamp"],
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Achievement(
+                result["id"],
+                result["type"],
+                result["timestamp"],
+                self.deserialize(result["data"]),
             )
-
-        return achievements
+            for result in cursor
+        ]
 
     def put_time_based_achievement(
         self,
@@ -1023,21 +1005,18 @@ class UserData(BaseData):
         )
         cursor = self.execute(sql, {"game": game.value, "version": version})
 
-        achievements = []
-        for result in cursor.fetchall():
-            achievements.append(
-                (
-                    UserID(result["userid"]),
-                    Achievement(
-                        result["id"],
-                        result["type"],
-                        result["timestamp"],
-                        self.deserialize(result["data"]),
-                    ),
-                )
+        return [
+            (
+                UserID(result["userid"]),
+                Achievement(
+                    result["id"],
+                    result["type"],
+                    result["timestamp"],
+                    self.deserialize(result["data"]),
+                ),
             )
-
-        return achievements
+            for result in cursor
+        ]
 
     def get_link(
         self,
@@ -1100,18 +1079,15 @@ class UserData(BaseData):
             sql, {"game": game.value, "version": version, "userid": userid}
         )
 
-        links = []
-        for result in cursor.fetchall():
-            links.append(
-                Link(
-                    userid,
-                    result["type"],
-                    UserID(result["other_userid"]),
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Link(
+                userid,
+                result["type"],
+                UserID(result["other_userid"]),
+                self.deserialize(result["data"]),
             )
-
-        return links
+            for result in cursor
+        ]
 
     def put_link(
         self,

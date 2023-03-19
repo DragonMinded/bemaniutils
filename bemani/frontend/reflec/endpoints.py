@@ -452,7 +452,7 @@ def searchrivals() -> Dict[str, Any]:
 
     matches = set()
     profiles = g.data.remote.user.get_all_profiles(GameConstants.REFLEC_BEAT, version)
-    for (userid, profile) in profiles:
+    for userid, profile in profiles:
         if profile.extid == extid or profile.get_str("name").lower() == name.lower():
             matches.add(userid)
 

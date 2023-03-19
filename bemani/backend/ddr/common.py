@@ -58,7 +58,7 @@ class DDRGameHiscoreHandler(DDRBase):
 
         sortedrecords: Dict[int, Dict[int, Tuple[UserID, Score]]] = {}
         missing_profiles = []
-        for (userid, score) in records:
+        for userid, score in records:
             if score.id not in sortedrecords:
                 sortedrecords[score.id] = {}
             sortedrecords[score.id][score.chart] = (userid, score)
@@ -124,7 +124,7 @@ class DDRGameAreaHiscoreHandler(DDRBase):
         # to think about how to change this knowing that we only pulled
         # up area records.
         area_records: Dict[int, Dict[int, Tuple[UserID, Score]]] = {}
-        for (userid, score) in records:
+        for userid, score in records:
             if score.id not in area_records:
                 area_records[score.id] = {}
             area_records[score.id][score.chart] = (userid, score)

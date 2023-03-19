@@ -6,13 +6,11 @@ from bemani.common import VersionConstants
 
 
 class Jubeat(JubeatBase):
-
     name: str = "Jubeat"
     version: int = VersionConstants.JUBEAT
 
 
 class JubeatRipples(JubeatBase):
-
     name: str = "Jubeat Ripples"
     version: int = VersionConstants.JUBEAT_RIPPLES
 
@@ -21,7 +19,6 @@ class JubeatRipples(JubeatBase):
 
 
 class JubeatRipplesAppend(JubeatBase):
-
     name: str = "Jubeat Ripples Append"
     version: int = VersionConstants.JUBEAT_RIPPLES_APPEND
 
@@ -30,7 +27,6 @@ class JubeatRipplesAppend(JubeatBase):
 
 
 class JubeatKnit(JubeatBase):
-
     name: str = "Jubeat Knit"
     version: int = VersionConstants.JUBEAT_KNIT
 
@@ -39,7 +35,6 @@ class JubeatKnit(JubeatBase):
 
 
 class JubeatKnitAppend(JubeatBase):
-
     name: str = "Jubeat Knit Append"
     version: int = VersionConstants.JUBEAT_KNIT_APPEND
 
@@ -48,7 +43,6 @@ class JubeatKnitAppend(JubeatBase):
 
 
 class JubeatCopious(JubeatBase):
-
     name: str = "Jubeat Copious"
     version: int = VersionConstants.JUBEAT_COPIOUS
 
@@ -57,7 +51,6 @@ class JubeatCopious(JubeatBase):
 
 
 class JubeatCopiousAppend(JubeatBase):
-
     name: str = "Jubeat Copious Append"
     version: int = VersionConstants.JUBEAT_COPIOUS_APPEND
 

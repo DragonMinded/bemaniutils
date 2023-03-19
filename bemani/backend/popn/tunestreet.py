@@ -12,7 +12,6 @@ from bemani.protocol import Node
 
 
 class PopnMusicTuneStreet(PopnMusicBase):
-
     name: str = "Pop'n Music TUNE STREET"
     version: int = VersionConstants.POPN_MUSIC_TUNE_STREET
 

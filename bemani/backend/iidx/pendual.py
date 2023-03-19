@@ -21,7 +21,6 @@ from bemani.protocol import Node
 
 
 class IIDXPendual(IIDXCourse, IIDXBase):
-
     name: str = "Beatmania IIDX PENDUAL"
     version: int = VersionConstants.IIDX_PENDUAL
 
@@ -724,7 +723,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 reverse=True,
             )
             missing_players = [uid for (uid, _) in all_scores if uid not in all_players]
-            for (uid, prof) in self.get_any_profiles(missing_players):
+            for uid, prof in self.get_any_profiles(missing_players):
                 all_players[uid] = prof
 
             if not global_scores:
@@ -1301,7 +1300,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         # Ranking details in title screen
         rankingcharts = []
-        for (mid, _plays) in self.data.local.music.get_hit_chart(
+        for mid, _plays in self.data.local.music.get_hit_chart(
             self.game, self.music_version, 20
         ):
             rankingcharts.append(mid)

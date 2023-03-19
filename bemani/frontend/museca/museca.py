@@ -16,7 +16,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class MusecaFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.MUSECA
 
     valid_charts: List[int] = [

@@ -25,7 +25,6 @@ from bemani.data import Config, Data
 
 
 class DDRFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         DDR1stMix,
         DDR2ndMix,

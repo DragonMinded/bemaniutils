@@ -13,7 +13,6 @@ class MetalGearArcade(
     EventLogHandler,
     MetalGearArcadeBase,
 ):
-
     name: str = "Metal Gear Arcade"
     version: int = VersionConstants.MGA
 

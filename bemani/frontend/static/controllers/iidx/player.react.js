@@ -163,7 +163,7 @@ var profile_view = createReactClass({
                                 />
                             }
                             { this.state.updating_rivals ?
-                                <img className="loading" src={Link.get('static', 'loading-16.gif')} /> : null
+                                <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> : null
                             }
                         </div>
                     }

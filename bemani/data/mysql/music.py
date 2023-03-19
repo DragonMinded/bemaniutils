@@ -378,23 +378,20 @@ class MusicData(BaseData):
             },
         )
 
-        scores = []
-        for result in cursor.fetchall():
-            scores.append(
-                Score(
-                    result["scorekey"],
-                    result["songid"],
-                    result["chart"],
-                    result["points"],
-                    result["timestamp"],
-                    result["update"],
-                    result["lid"],
-                    result["plays"],
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Score(
+                result["scorekey"],
+                result["songid"],
+                result["chart"],
+                result["points"],
+                result["timestamp"],
+                result["update"],
+                result["lid"],
+                result["plays"],
+                self.deserialize(result["data"]),
             )
-
-        return scores
+            for result in cursor
+        ]
 
     def get_most_played(
         self, game: GameConstants, version: int, userid: UserID, count: int
@@ -422,11 +419,7 @@ class MusicData(BaseData):
             {"userid": userid, "game": game.value, "version": version, "count": count},
         )
 
-        most_played = []
-        for result in cursor.fetchall():
-            most_played.append((result["songid"], result["plays"]))
-
-        return most_played
+        return [(result["songid"], result["plays"]) for result in cursor]
 
     def get_last_played(
         self, game: GameConstants, version: int, userid: UserID, count: int
@@ -454,11 +447,7 @@ class MusicData(BaseData):
             {"userid": userid, "game": game.value, "version": version, "count": count},
         )
 
-        last_played = []
-        for result in cursor.fetchall():
-            last_played.append((result["songid"], result["timestamp"]))
-
-        return last_played
+        return [(result["songid"], result["timestamp"]) for result in cursor]
 
     def get_hit_chart(
         self,
@@ -499,11 +488,7 @@ class MusicData(BaseData):
             },
         )
 
-        most_played = []
-        for result in cursor.fetchall():
-            most_played.append((result["songid"], result["plays"]))
-
-        return most_played
+        return [(result["songid"], result["plays"]) for result in cursor]
 
     def get_song(
         self,
@@ -580,22 +565,19 @@ class MusicData(BaseData):
             sql += " ORDER BY music.version DESC"
         cursor = self.execute(sql, params)
 
-        all_songs = []
-        for result in cursor.fetchall():
-            all_songs.append(
-                Song(
-                    game,
-                    result["version"],
-                    result["songid"],
-                    result["chart"],
-                    result["name"],
-                    result["artist"],
-                    result["genre"],
-                    self.deserialize(result["data"]),
-                )
+        return [
+            Song(
+                game,
+                result["version"],
+                result["songid"],
+                result["chart"],
+                result["name"],
+                result["artist"],
+                result["genre"],
+                self.deserialize(result["data"]),
             )
-
-        return all_songs
+            for result in cursor
+        ]
 
     def get_all_versions_of_song(
         self,
@@ -625,21 +607,20 @@ class MusicData(BaseData):
         if interested_versions is not None:
             sql += f" AND music.version in ({','.join(str(int(v)) for v in interested_versions)})"
         cursor = self.execute(sql, {"musicid": musicid})
-        all_songs = []
-        for result in cursor.fetchall():
-            all_songs.append(
-                Song(
-                    game,
-                    result["version"],
-                    result["songid"],
-                    result["chart"],
-                    result["name"],
-                    result["artist"],
-                    result["genre"],
-                    self.deserialize(result["data"]),
-                )
+
+        return [
+            Song(
+                game,
+                result["version"],
+                result["songid"],
+                result["chart"],
+                result["name"],
+                result["artist"],
+                result["genre"],
+                self.deserialize(result["data"]),
             )
-        return all_songs
+            for result in cursor
+        ]
 
     def get_all_scores(
         self,
@@ -710,26 +691,23 @@ class MusicData(BaseData):
         )
 
         # Objectify result
-        scores = []
-        for result in cursor.fetchall():
-            scores.append(
-                (
-                    UserID(result["userid"]),
-                    Score(
-                        result["scorekey"],
-                        result["songid"],
-                        result["chart"],
-                        result["points"],
-                        result["timestamp"],
-                        result["update"],
-                        result["lid"],
-                        result["plays"],
-                        self.deserialize(result["data"]),
-                    ),
-                )
+        return [
+            (
+                UserID(result["userid"]),
+                Score(
+                    result["scorekey"],
+                    result["songid"],
+                    result["chart"],
+                    result["points"],
+                    result["timestamp"],
+                    result["update"],
+                    result["lid"],
+                    result["plays"],
+                    self.deserialize(result["data"]),
+                ),
             )
-
-        return scores
+            for result in cursor
+        ]
 
     def get_all_records(
         self,
@@ -801,26 +779,23 @@ class MusicData(BaseData):
         ).format(songidquery, chartquery, records_sql)
         cursor = self.execute(sql, params)
 
-        scores = []
-        for result in cursor.fetchall():
-            scores.append(
-                (
-                    UserID(result["userid"]),
-                    Score(
-                        result["scorekey"],
-                        result["songid"],
-                        result["chart"],
-                        result["points"],
-                        result["timestamp"],
-                        result["update"],
-                        result["lid"],
-                        result["plays"],
-                        self.deserialize(result["data"]),
-                    ),
-                )
+        return [
+            (
+                UserID(result["userid"]),
+                Score(
+                    result["scorekey"],
+                    result["songid"],
+                    result["chart"],
+                    result["points"],
+                    result["timestamp"],
+                    result["update"],
+                    result["lid"],
+                    result["plays"],
+                    self.deserialize(result["data"]),
+                ),
             )
-
-        return scores
+            for result in cursor
+        ]
 
     def get_attempt_by_key(
         self, game: GameConstants, version: int, key: int
@@ -863,7 +838,7 @@ class MusicData(BaseData):
                 result["points"],
                 result["timestamp"],
                 result["lid"],
-                True if result["new_record"] == 1 else False,
+                result["new_record"] == 1,
                 self.deserialize(result["data"]),
             ),
         )
@@ -939,22 +914,19 @@ class MusicData(BaseData):
         )
 
         # Now objectify the attempts
-        attempts = []
-        for result in cursor.fetchall():
-            attempts.append(
-                (
-                    UserID(result["userid"]) if result["userid"] > 0 else None,
-                    Attempt(
-                        result["scorekey"],
-                        result["songid"],
-                        result["chart"],
-                        result["points"],
-                        result["timestamp"],
-                        result["lid"],
-                        True if result["new_record"] == 1 else False,
-                        self.deserialize(result["data"]),
-                    ),
-                )
+        return [
+            (
+                UserID(result["userid"]) if result["userid"] > 0 else None,
+                Attempt(
+                    result["scorekey"],
+                    result["songid"],
+                    result["chart"],
+                    result["points"],
+                    result["timestamp"],
+                    result["lid"],
+                    result["new_record"] == 1,
+                    self.deserialize(result["data"]),
+                ),
             )
-
-        return attempts
+            for result in cursor
+        ]

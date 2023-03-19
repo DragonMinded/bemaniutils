@@ -8,7 +8,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class PopnMusicFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.POPN_MUSIC
 
     valid_charts: List[int] = [

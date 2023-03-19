@@ -5,7 +5,6 @@ from bemani.protocol import EAmuseProtocol, Node
 
 
 class TestProtocol(unittest.TestCase):
-
     # Define a function that just encrypts/decrypts and encode/decodes, verify
     # that we can get the same thing back.
     def assertLoopback(self, root: Node) -> None:

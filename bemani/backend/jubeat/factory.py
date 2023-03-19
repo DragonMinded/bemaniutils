@@ -22,7 +22,6 @@ from bemani.data import Config, Data
 
 
 class JubeatFactory(Factory):
-
     MANAGED_CLASSES: List[Type[Base]] = [
         Jubeat,
         JubeatRipples,

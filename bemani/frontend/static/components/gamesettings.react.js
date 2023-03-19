@@ -195,7 +195,7 @@ var GameSettings = createReactClass({
                         }.bind(this)}
                     />
                     { this.state.settings_saving[this.state.current_setting] ?
-                        <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                        <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                         null
                     }
                     { this.state.settings_saved[this.state.current_setting] ?

@@ -380,7 +380,7 @@ class ReflecBeatLimelight(BaseClient):
         blog = Node.void("blog")
         pdata.add_child(blog)
 
-        for (_, record) in sortedrecords.items():
+        for _, record in sortedrecords.items():
             rec = Node.void("rec")
             recordnode.add_child(rec)
             rec.add_child(Node.u16("mid", record["id"]))

@@ -26,7 +26,11 @@ class StatisticsObject(BaseObject):
 
     @property
     def music_version(self) -> int:
-        if self.game in {GameConstants.IIDX, GameConstants.MUSECA}:
+        if self.game in {
+            GameConstants.IIDX,
+            GameConstants.MUSECA,
+            GameConstants.JUBEAT,
+        }:
             if self.omnimix:
                 return self.version + DBConstants.OMNIMIX_VERSION_BUMP
             else:
@@ -178,7 +182,7 @@ class StatisticsObject(BaseObject):
     ) -> List[Dict[str, Any]]:
         stats: Dict[UserID, Dict[int, Dict[int, Dict[str, int]]]] = {}
 
-        for (userid, attempt) in attempts:
+        for userid, attempt in attempts:
             if userid not in stats:
                 stats[userid] = {}
             if attempt.id not in stats[userid]:

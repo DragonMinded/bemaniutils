@@ -1,4 +1,4 @@
-from .generic import Matrix, Color, Point, Rectangle
+from .generic import Matrix, Color, HSL, Point, Rectangle
 from .ap2 import (
     AP2Tag,
     AP2Action,
@@ -93,6 +93,7 @@ from .aa import AAMode
 __all__ = [
     "Matrix",
     "Color",
+    "HSL",
     "Point",
     "Rectangle",
     "AP2Tag",

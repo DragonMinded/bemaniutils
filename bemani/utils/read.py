@@ -1777,7 +1777,6 @@ class ImportJubeat(ImportBase):
 
 
 class ImportIIDX(ImportBase):
-
     # Tutorial charts that shouldn't be on the UI
     BANNED_CHARTS = [
         16070,
@@ -1837,7 +1836,7 @@ class ImportIIDX(ImportBase):
 
     def __gather_sound_files(self, directory: str) -> Dict[int, str]:
         files = {}
-        for (dirpath, dirnames, filenames) in os.walk(directory):
+        for dirpath, dirnames, filenames in os.walk(directory):
             for filename in filenames:
                 songid, extension = os.path.splitext(filename)
                 if extension == ".1" or extension == ".ifs":

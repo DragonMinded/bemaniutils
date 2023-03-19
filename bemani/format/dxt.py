@@ -78,7 +78,6 @@ class DXTBuffer:
         file = io.BytesIO(filedata)
         for row in range(self.block_county):
             for col in range(self.block_countx):
-
                 # Color 1 color 2, color look up table
                 c0, c1, ctable = struct.unpack(
                     "<HHI", self.swapbytes(file.read(8), swap)

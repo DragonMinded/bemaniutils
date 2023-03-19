@@ -10,7 +10,6 @@ from bemani.protocol import Node
 
 
 class ReflecBeatLimelight(ReflecBeatBase):
-
     name: str = "REFLEC BEAT limelight"
     version: int = VersionConstants.REFLEC_BEAT_LIMELIGHT
 
@@ -134,7 +133,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
     def __add_event_info(self, request: Node) -> None:
         events: Dict[int, int] = {}
 
-        for (_eventid, _phase) in events.items():
+        for _eventid, _phase in events.items():
             data = Node.void("data")
             request.add_child(data)
             data.add_child(Node.s32("type", -1))
@@ -163,7 +162,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         hitchart = self.data.local.music.get_hit_chart(self.game, self.version, 10)
         rank = 1
-        for (mid, _plays) in hitchart:
+        for mid, _plays in hitchart:
             record = Node.void("record")
             originals.add_child(record)
             record.add_child(Node.s16("id", mid))
@@ -211,7 +210,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
         commentnode = Node.void("comment")
         root.add_child(commentnode)
 
-        for (uid, comment) in comments:
+        for uid, comment in comments:
             lid = ID.parse_machine_id(comment.data.get_str("lid"))
 
             # Look up external data for the request
@@ -237,7 +236,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
             c.add_child(Node.string("comment", comment.data.get_str("comment")))
             c.add_child(Node.bool("is_tweet", comment.data.get_bool("tweet")))
 
-        for (uid, status) in statuses:
+        for uid, status in statuses:
             lid = ID.parse_machine_id(status.get_str("lid"))
 
             # Look up external data for the request
@@ -408,7 +407,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
-            for (user, lobby) in lobbies:
+            for user, lobby in lobbies:
                 if limit <= 0:
                     break
 

@@ -369,7 +369,7 @@ var api_management = createReactClass({
         if (this.state.info[server.id].loading) {
             return (
                 <>
-                     <img className="loading" src={Link.get('static', 'loading-16.gif')} />
+                     <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} />
                      {' querying server for info...'}
                  </>
              );

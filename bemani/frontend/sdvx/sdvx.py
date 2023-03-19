@@ -10,7 +10,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class SoundVoltexFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.SDVX
 
     valid_charts: List[int] = [

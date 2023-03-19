@@ -9,7 +9,6 @@ from bemani.protocol import Node
 
 
 class ReflecBeatVolzzaBase(ReflecBeatBase):
-
     # Clear types according to the game
     GAME_CLEAR_TYPE_NO_PLAY: Final[int] = 0
     GAME_CLEAR_TYPE_EARLY_FAILED: Final[int] = 1
@@ -99,7 +98,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
             profile for profile in all_profiles if profile[1].get_int("lid", -1) in lids
         ]
 
-        for (rootnode, timeoffset) in [
+        for rootnode, timeoffset in [
             (today, 0),
             (yesterday, Time.SECONDS_IN_DAY),
         ]:
@@ -115,7 +114,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
 
             # Calculate scores based on attempt
             scores_by_user: Dict[UserID, Dict[int, Dict[int, Attempt]]] = {}
-            for (userid, attempt) in relevant_attempts:
+            for userid, attempt in relevant_attempts:
                 if userid not in scores_by_user:
                     scores_by_user[userid] = {}
                 if attempt.id not in scores_by_user[userid]:
@@ -143,7 +142,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                         )
 
             # Output that day's earned points
-            for (userid, profile) in relevant_profiles:
+            for userid, profile in relevant_profiles:
                 data = Node.void("data")
                 rootnode.add_child(data)
                 data.add_child(
@@ -187,7 +186,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
             new = Node.void("new")
             base.add_child(new)
 
-            for (mid, plays) in hitchart:
+            for mid, plays in hitchart:
                 d = Node.void("d")
                 new.add_child(d)
                 d.add_child(Node.s16("mid", mid))
@@ -358,7 +357,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
-            for (user, lobby) in lobbies:
+            for user, lobby in lobbies:
                 if limit <= 0:
                     break
 

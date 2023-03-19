@@ -47,6 +47,7 @@ div.buttons {
 input[type="submit"] {
     border: 1px solid #cddcc1;
     background: #e7ffd4;
+    color: #003000;
     margin-right: 5px;
 }
 
@@ -73,7 +74,7 @@ input[type="text"], input[type="password"], textarea {
 
 select {
     border: 1px solid #dadada;
-    padding: 4px 4px 3px 4px;
+    padding: 4px 4px 4px 4px;
     border-radius: 0px;
 }
 
@@ -117,6 +118,7 @@ button.active {
 button.delete {
     border: 1px solid #d6caca;
     background: #ffe4e4;
+    color: #300000;
 }
 
 .popn-nav button, .settings-nav button {

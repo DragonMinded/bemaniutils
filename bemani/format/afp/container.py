@@ -1,7 +1,7 @@
 import io
 import os
 import struct
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Any, Dict, List, Optional, Tuple
 
 from bemani.format.dxt import DXTBuffer
@@ -1144,7 +1144,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         tuples: List[Tuple[str, int]] = [(name, strings[name]) for name in strings]
         tuples = sorted(tuples, key=lambda tup: tup[1])
 
-        for (string, offset) in tuples:
+        for string, offset in tuples:
             data = pad(data, offset)
             data += scramble_text(string, self.text_obfuscated)
 

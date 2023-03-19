@@ -3054,7 +3054,7 @@ class SoundVoltexGravityWarsSeason1(
 
         hitchart = Node.void("hitchart")
         game.add_child(hitchart)
-        for (songid, count) in playcounts:
+        for songid, count in playcounts:
             info = Node.void("info")
             hitchart.add_child(info)
             info.add_child(Node.u32("id", songid))
@@ -3072,7 +3072,7 @@ class SoundVoltexGravityWarsSeason1(
         game.add_child(hiscore_allover)
 
         # Output records
-        for (userid, score) in records:
+        for userid, score in records:
             info = Node.void("info")
 
             if userid not in users:
@@ -3100,14 +3100,14 @@ class SoundVoltexGravityWarsSeason1(
             self.game, self.version, userlist=area_users
         )
         missing_users = [userid for (userid, _) in records if userid not in users]
-        for (userid, profile) in self.get_any_profiles(missing_users):
+        for userid, profile in self.get_any_profiles(missing_users):
             users[userid] = profile
 
         hiscore_location = Node.void("hiscore_location")
         game.add_child(hiscore_location)
 
         # Output records
-        for (userid, score) in records:
+        for userid, score in records:
             info = Node.void("info")
 
             if userid not in users:

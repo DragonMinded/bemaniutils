@@ -1,5 +1,5 @@
 from typing import Any, Dict, Generator, List, Set, Tuple, Optional, Union
-from PIL import Image  # type: ignore
+from PIL import Image
 
 from .blend import affine_composite, perspective_composite
 from .swf import (
@@ -20,6 +20,7 @@ from .swf import (
 from .decompile import ByteCode
 from .types import (
     Color,
+    HSL,
     Matrix,
     Point,
     Rectangle,
@@ -62,26 +63,41 @@ class RegisteredClip:
     def __repr__(self) -> str:
         return f"RegisteredClip(tag_id={self.tag_id})"
 
+    @property
+    def reference(self) -> str:
+        return "anonymous sprite"
+
 
 class RegisteredShape:
     # A shape that we are rendering, as placed by some placed clip somewhere.
     def __init__(
         self,
         tag_id: int,
+        reference: str,
         vertex_points: List[Point],
         tex_points: List[Point],
         tex_colors: List[Color],
         draw_params: List[DrawParams],
     ) -> None:
         self.tag_id = tag_id
+        self.__reference = reference
         self.vertex_points: List[Point] = vertex_points
         self.tex_points: List[Point] = tex_points
         self.tex_colors: List[Color] = tex_colors
         self.draw_params: List[DrawParams] = draw_params
-        self.rectangle: Optional[Image.image] = None
+        self.rectangle: Optional[Image.Image] = None
+
+    @property
+    def reference(self) -> str:
+        textures = {dp.region for dp in self.draw_params if dp.region is not None}
+        if textures:
+            vals = ", ".join(textures)
+            return f"{self.__reference}, {vals}"
+        else:
+            return f"{self.__reference}, untextured"
 
     def __repr__(self) -> str:
-        return f"RegisteredShape(tag_id={self.tag_id}, vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
+        return f"RegisteredShape(tag_id={self.tag_id}, reference={self.reference} vertex_points={self.vertex_points}, tex_points={self.tex_points}, tex_colors={self.tex_colors}, draw_params={self.draw_params})"
 
 
 class RegisteredImage:
@@ -102,6 +118,10 @@ class RegisteredDummy:
     def __repr__(self) -> str:
         return f"RegisteredDummy(tag_id={self.tag_id})"
 
+    @property
+    def reference(self) -> str:
+        return "anonymous dummy"
+
 
 class Mask:
     def __init__(self, bounds: Rectangle) -> None:
@@ -120,6 +140,7 @@ class PlacedObject:
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
     ) -> None:
@@ -130,6 +151,7 @@ class PlacedObject:
         self.projection = projection
         self.mult_color = mult_color
         self.add_color = add_color
+        self.hsl_shift = hsl_shift
         self.blend = blend
         self.mask = mask
         self.visible: bool = True
@@ -164,6 +186,7 @@ class PlacedShape(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredShape,
@@ -176,6 +199,7 @@ class PlacedShape(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -201,6 +225,7 @@ class PlacedClip(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredClip,
@@ -213,6 +238,7 @@ class PlacedClip(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -375,6 +401,7 @@ class PlacedImage(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredImage,
@@ -387,6 +414,7 @@ class PlacedImage(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -411,6 +439,7 @@ class PlacedDummy(PlacedObject):
         projection: int,
         mult_color: Color,
         add_color: Color,
+        hsl_shift: HSL,
         blend: int,
         mask: Optional[Mask],
         source: RegisteredDummy,
@@ -423,6 +452,7 @@ class PlacedDummy(PlacedObject):
             projection,
             mult_color,
             add_color,
+            hsl_shift,
             blend,
             mask,
         )
@@ -992,7 +1022,7 @@ class AFPRenderer(VerboseOutput):
         # such as defining a shape (registering it with our shape list) or adding/removing an object.
         if isinstance(tag, AP2ShapeTag):
             self.vprint(
-                f"{prefix}    Loading {tag.reference} into object slot {tag.id}",
+                f"{prefix}    Loading {tag.reference} shape into object slot {tag.id}",
                 component="tags",
             )
 
@@ -1001,6 +1031,7 @@ class AFPRenderer(VerboseOutput):
 
             self.__registered_objects[tag.id] = RegisteredShape(
                 tag.id,
+                tag.reference,
                 self.shapes[tag.reference].vertex_points,
                 self.shapes[tag.reference].tex_points,
                 self.shapes[tag.reference].tex_colors,
@@ -1012,7 +1043,7 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2ImageTag):
             self.vprint(
-                f"{prefix}    Loading {tag.reference} into object slot {tag.id}",
+                f"{prefix}    Loading {tag.reference} image into object slot {tag.id}",
                 component="tags",
             )
 
@@ -1029,7 +1060,7 @@ class AFPRenderer(VerboseOutput):
 
         elif isinstance(tag, AP2DefineSpriteTag):
             self.vprint(
-                f"{prefix}    Loading Sprite into object slot {tag.id}",
+                f"{prefix}    Loading anonymous sprite into object slot {tag.id}",
                 component="tags",
             )
 
@@ -1059,9 +1090,17 @@ class AFPRenderer(VerboseOutput):
                     if obj.object_id == tag.object_id and obj.depth == tag.depth:
                         new_mult_color = tag.mult_color or obj.mult_color
                         new_add_color = tag.add_color or obj.add_color
+                        new_hsl_shift = tag.hsl_shift or obj.hsl_shift
                         new_transform = (
-                            obj.transform.update(tag.transform)
-                            if tag.transform is not None
+                            obj.transform.update(
+                                tag.transform,
+                                tag.projection
+                                == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE,
+                            )
+                            if (
+                                tag.transform is not None
+                                and tag.projection != AP2PlaceObjectTag.PROJECTION_NONE
+                            )
                             else obj.transform
                         )
                         new_rotation_origin = tag.rotation_origin or obj.rotation_origin
@@ -1077,12 +1116,12 @@ class AFPRenderer(VerboseOutput):
                             and tag.source_tag_id != obj.source.tag_id
                         ):
                             # This completely updates the pointed-at object.
+                            newobj = self.__registered_objects[tag.source_tag_id]
                             self.vprint(
-                                f"{prefix}    Replacing Object source {obj.source.tag_id} with {tag.source_tag_id} on object with Object ID {tag.object_id} onto Depth {tag.depth}",
+                                f"{prefix}    Replacing Object source {obj.source.tag_id} ({obj.source.reference}) with {tag.source_tag_id} ({newobj.reference}) on object with Object ID {tag.object_id} onto Depth {tag.depth}",
                                 component="tags",
                             )
 
-                            newobj = self.__registered_objects[tag.source_tag_id]
                             if isinstance(newobj, RegisteredShape):
                                 operating_clip.placed_objects[i] = PlacedShape(
                                     obj.object_id,
@@ -1092,6 +1131,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1108,6 +1148,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1124,6 +1165,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1141,6 +1183,7 @@ class AFPRenderer(VerboseOutput):
                                     new_projection,
                                     new_mult_color,
                                     new_add_color,
+                                    new_hsl_shift,
                                     new_blend,
                                     obj.mask,
                                     newobj,
@@ -1155,11 +1198,12 @@ class AFPRenderer(VerboseOutput):
                         else:
                             # As far as I can tell, pretty much only color and matrix stuff can be updated.
                             self.vprint(
-                                f"{prefix}    Updating Object ID {tag.object_id} on Depth {tag.depth}",
+                                f"{prefix}    Updating Object ID {tag.object_id} ({obj.source.reference}) on Depth {tag.depth}",
                                 component="tags",
                             )
                             obj.mult_color = new_mult_color
                             obj.add_color = new_add_color
+                            obj.hsl_shift = new_hsl_shift
                             obj.transform = new_transform
                             obj.rotation_origin = new_rotation_origin
                             obj.projection = new_projection
@@ -1178,12 +1222,12 @@ class AFPRenderer(VerboseOutput):
                     )
 
                 if tag.source_tag_id in self.__registered_objects:
+                    newobj = self.__registered_objects[tag.source_tag_id]
                     self.vprint(
-                        f"{prefix}    Placing Object {tag.source_tag_id} with Object ID {tag.object_id} onto Depth {tag.depth}",
+                        f"{prefix}    Placing Object {tag.source_tag_id} ({newobj.reference}) with Object ID {tag.object_id} onto Depth {tag.depth}",
                         component="tags",
                     )
 
-                    newobj = self.__registered_objects[tag.source_tag_id]
                     if isinstance(newobj, RegisteredShape):
                         operating_clip.placed_objects.append(
                             PlacedShape(
@@ -1194,6 +1238,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                                 tag.blend or 0,
                                 None,
                                 newobj,
@@ -1212,6 +1257,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                                 tag.blend or 0,
                                 None,
                                 newobj,
@@ -1229,6 +1275,7 @@ class AFPRenderer(VerboseOutput):
                             tag.projection,
                             tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                             tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                            tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                             tag.blend or 0,
                             None,
                             newobj,
@@ -1258,6 +1305,7 @@ class AFPRenderer(VerboseOutput):
                                 tag.projection,
                                 tag.mult_color or Color(1.0, 1.0, 1.0, 1.0),
                                 tag.add_color or Color(0.0, 0.0, 0.0, 0.0),
+                                tag.hsl_shift or HSL(0.0, 0.0, 0.0),
                                 tag.blend or 0,
                                 None,
                                 newobj,
@@ -1386,6 +1434,7 @@ class AFPRenderer(VerboseOutput):
                 ),
                 Color(0.0, 0.0, 0.0, 0.0),
                 Color(1.0, 1.0, 1.0, 1.0),
+                HSL(0.0, 0.0, 0.0),
                 Matrix.identity().translate(Point(mask.bounds.left, mask.bounds.top)),
                 None,
                 0,
@@ -1406,6 +1455,7 @@ class AFPRenderer(VerboseOutput):
                 ),
                 Color(0.0, 0.0, 0.0, 0.0),
                 Color(1.0, 1.0, 1.0, 1.0),
+                HSL(0.0, 0.0, 0.0),
                 transform,
                 None,
                 257,
@@ -1424,6 +1474,7 @@ class AFPRenderer(VerboseOutput):
                     ),
                     Color(0.0, 0.0, 0.0, 0.0),
                     Color(1.0, 1.0, 1.0, 1.0),
+                    HSL(0.0, 0.0, 0.0),
                     transform,
                     None,
                     257,
@@ -1438,6 +1489,7 @@ class AFPRenderer(VerboseOutput):
                     ),
                     Color(0.0, 0.0, 0.0, 0.0),
                     Color(1.0, 1.0, 1.0, 1.0),
+                    HSL(0.0, 0.0, 0.0),
                     transform,
                     self.__camera.center,
                     self.__camera.focal_length,
@@ -1453,6 +1505,7 @@ class AFPRenderer(VerboseOutput):
             parent_mask.copy(),
             Color(0.0, 0.0, 0.0, 0.0),
             Color(1.0, 1.0, 1.0, 1.0),
+            HSL(0.0, 0.0, 0.0),
             Matrix.identity(),
             None,
             256,
@@ -1470,19 +1523,20 @@ class AFPRenderer(VerboseOutput):
         parent_mask: Image.Image,
         parent_mult_color: Color,
         parent_add_color: Color,
+        parent_hsl_shift: HSL,
         parent_blend: int,
         only_depths: Optional[List[int]] = None,
         prefix: str = "",
     ) -> Image.Image:
         if not renderable.visible:
             self.vprint(
-                f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} on Depth {renderable.depth}",
+                f"{prefix}  Ignoring invisible placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} ({renderable.source.reference}) on Depth {renderable.depth}",
                 component="render",
             )
             return img
 
         self.vprint(
-            f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} onto Depth {renderable.depth}",
+            f"{prefix}  Rendering placed object ID {renderable.object_id} from sprite {renderable.source.tag_id} ({renderable.source.reference}) onto Depth {renderable.depth}",
             component="render",
         )
 
@@ -1505,6 +1559,7 @@ class AFPRenderer(VerboseOutput):
             .multiply(parent_mult_color)
             .add(parent_add_color)
         )
+        hsl_shift = (renderable.hsl_shift or HSL(0.0, 0.0, 0.0)).add(parent_hsl_shift)
         blend = renderable.blend or 0
         if parent_blend not in {0, 1, 2} and blend in {0, 1, 2}:
             blend = parent_blend
@@ -1516,6 +1571,24 @@ class AFPRenderer(VerboseOutput):
         else:
             mask = parent_mask
 
+        if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
+            projection_string = "affine projection"
+        elif projection == AP2PlaceObjectTag.PROJECTION_PERSPECTIVE:
+            projection_string = "perspective projection"
+        else:
+            projection_string = "no projection"
+
+        if blend == 3:
+            blend_string = "multiply"
+        elif blend == 8:
+            blend_string = "addition"
+        elif blend == 9 or blend == 70:
+            blend_string = "subtraction"
+        elif blend == 13:
+            blend_string = "overlay"
+        else:
+            blend_string = "normal"
+
         # Render individual shapes if this is a sprite.
         if isinstance(renderable, PlacedClip):
             new_only_depths: Optional[List[int]] = None
@@ -1525,6 +1598,19 @@ class AFPRenderer(VerboseOutput):
                         # Not on the correct depth plane.
                         return img
                     new_only_depths = only_depths
+
+            self.vprint(
+                f"{prefix}    Rendered object uses {projection_string} with transform [{transform}]",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object uses {blend_string} with {mult_color} and {add_color} colors",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object applies a HSL shift of {hsl_shift}",
+                component="render",
+            )
 
             # This is a sprite placement reference. Make sure that we render lower depths
             # first, but preserved placed order as well.
@@ -1541,14 +1627,28 @@ class AFPRenderer(VerboseOutput):
                         mask,
                         mult_color,
                         add_color,
+                        hsl_shift,
                         blend,
                         only_depths=new_only_depths,
-                        prefix=prefix + " ",
+                        prefix=prefix + "  ",
                     )
         elif isinstance(renderable, PlacedShape):
             if only_depths is not None and renderable.depth not in only_depths:
                 # Not on the correct depth plane.
                 return img
+
+            self.vprint(
+                f"{prefix}    Rendered object uses {projection_string} with transform [{transform}]",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object uses {blend_string} with {mult_color} and {add_color} colors",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object applies a HSL shift of {hsl_shift}",
+                component="render",
+            )
 
             # This is a shape draw reference.
             shape = renderable.source
@@ -1631,6 +1731,7 @@ class AFPRenderer(VerboseOutput):
                             img,
                             add_color,
                             mult_color,
+                            hsl_shift,
                             transform,
                             mask,
                             blend,
@@ -1656,6 +1757,7 @@ class AFPRenderer(VerboseOutput):
                                 img,
                                 add_color,
                                 mult_color,
+                                hsl_shift,
                                 transform,
                                 mask,
                                 blend,
@@ -1677,6 +1779,7 @@ class AFPRenderer(VerboseOutput):
                                 img,
                                 add_color,
                                 mult_color,
+                                hsl_shift,
                                 transform,
                                 self.__camera.center,
                                 self.__camera.focal_length,
@@ -1692,6 +1795,19 @@ class AFPRenderer(VerboseOutput):
                 # Not on the correct depth plane.
                 return img
 
+            self.vprint(
+                f"{prefix}    Rendered object uses {projection_string} with transform [{transform}]",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object uses {blend_string} with {mult_color} and {add_color} colors",
+                component="render",
+            )
+            self.vprint(
+                f"{prefix}    Rendered object applies a HSL shift of {hsl_shift}",
+                component="render",
+            )
+
             # This is a shape draw reference.
             texture = self.textures[renderable.source.reference]
             if projection == AP2PlaceObjectTag.PROJECTION_AFFINE:
@@ -1699,6 +1815,7 @@ class AFPRenderer(VerboseOutput):
                     img,
                     add_color,
                     mult_color,
+                    hsl_shift,
                     transform,
                     mask,
                     blend,
@@ -1717,6 +1834,7 @@ class AFPRenderer(VerboseOutput):
                         img,
                         add_color,
                         mult_color,
+                        hsl_shift,
                         transform,
                         mask,
                         blend,
@@ -1731,6 +1849,7 @@ class AFPRenderer(VerboseOutput):
                         img,
                         add_color,
                         mult_color,
+                        hsl_shift,
                         transform,
                         self.__camera.center,
                         self.__camera.focal_length,
@@ -1849,7 +1968,7 @@ class AFPRenderer(VerboseOutput):
                 for tagno, tag in enumerate(tags):
                     # Perform the action of this tag.
                     self.vprint(
-                        f"{prefix}  Sprite Tag ID: {clip.source.tag_id}, Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}",
+                        f"{prefix}  Sprite Tag ID: {clip.source.tag_id} ({clip.source.reference}), Current Tag: {frame.start_tag_offset + tagno}, Num Tags: {frame.num_tags}",
                         component="tags",
                     )
                     new_clip, clip_changed = self.__place(tag, clip, prefix=prefix)
@@ -1978,6 +2097,7 @@ class AFPRenderer(VerboseOutput):
                         # This matched, so this is the import.
                         return RegisteredShape(
                             tag.id,
+                            tag.reference,
                             self.shapes[tag.reference].vertex_points,
                             self.shapes[tag.reference].tex_points,
                             self.shapes[tag.reference].tex_colors,
@@ -2051,6 +2171,7 @@ class AFPRenderer(VerboseOutput):
             AP2PlaceObjectTag.PROJECTION_AFFINE,
             Color(1.0, 1.0, 1.0, 1.0),
             Color(0.0, 0.0, 0.0, 0.0),
+            HSL(0.0, 0.0, 0.0),
             0,
             None,
             RegisteredClip(
@@ -2106,6 +2227,7 @@ class AFPRenderer(VerboseOutput):
                 AP2PlaceObjectTag.PROJECTION_AFFINE,
                 Color(1.0, 1.0, 1.0, 1.0),
                 Color(0.0, 0.0, 0.0, 0.0),
+                HSL(0.0, 0.0, 0.0),
                 0,
                 None,
                 background_object,
@@ -2120,6 +2242,7 @@ class AFPRenderer(VerboseOutput):
         # These could possibly be overwritten from an external source of we wanted.
         actual_mult_color = Color(1.0, 1.0, 1.0, 1.0)
         actual_add_color = Color(0.0, 0.0, 0.0, 0.0)
+        actual_hsl_shift = HSL(0.0, 0.0, 0.0)
         actual_blend = 0
 
         max_frame: Optional[int] = None
@@ -2206,6 +2329,7 @@ class AFPRenderer(VerboseOutput):
                         movie_mask,
                         actual_mult_color,
                         actual_add_color,
+                        actual_hsl_shift,
                         actual_blend,
                         only_depths=only_depths,
                     )

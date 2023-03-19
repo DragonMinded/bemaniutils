@@ -7,7 +7,6 @@ from bemani.common import VersionConstants
 
 
 class IIDXHeroicVerse(IIDXBase):
-
     name: str = "Beatmania IIDX HEROIC VERSE"
     version: int = VersionConstants.IIDX_HEROIC_VERSE
 

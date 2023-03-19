@@ -154,17 +154,59 @@ var settings_view = createReactClass({
         );
     },
 
+    getDefaultEmblem: function() {
+        // A hack for displaying defaults when they aren't set.
+        var items = window.emblems[this.state.version].filter(function (emblem) {
+            return emblem.rarity == 1 && emblem.layer == 2;
+        }.bind(this));
+
+        if (items.length > 0) {
+            return items[0].index;
+        }
+
+        return 0;
+    },
+
     renderEmblem: function(player) {
         return (
             <div className="section">
                 <h3>Emblem</h3>
                 {
+                    window.assets_available ?
+                        <div className="emblem">
+                        {
+                            valid_emblem_options.map(function(emblem_option) {
+                                var player = this.state.player[this.state.version];
+                                var emblem = player.emblem[emblem_option];
+                                if (emblem_option == "main" && emblem == 0) {
+                                    emblem = this.getDefaultEmblem();
+                                }
+
+                                if (emblem == 0) {
+                                    // Emblem part isn't set.
+                                    return null;
+                                }
+
+                                var player = this.state.player[this.state.version]
+                                var src = `/assets/jubeat/emblems/${this.state.version}/${emblem}.png`
+                                return <div><img src={src}/></div>;
+                            }.bind(this))
+                        }
+                        </div> : null
+                }
+                {
                     valid_emblem_options.map(function(emblem_option) {
                         var player = this.state.player[this.state.version]
                         var layer = valid_emblem_options.indexOf(emblem_option) + 1
                         var items = window.emblems[this.state.version].filter(function (emblem) {
-                            return emblem.layer == layer
-                        });
+                            return (
+                               emblem.layer == layer &&
+                               (
+                                   this.state.player[this.state.version].owned_emblems.indexOf(emblem.index) >= 0 ||
+                                   emblem.rarity == 1 && emblem.layer == 2
+                               )
+                            );
+                        }.bind(this));
                         var results = {};
                         items
                             .map(function(item) { return { 'index': item.index, 'name': `${item.name} (★${item.rarity})` } })
@@ -204,7 +246,7 @@ var settings_view = createReactClass({
                     }.bind(this)}
                 />
                 { this.state.emblem_saving[this.state.version] ?
-                    <img className="loading" src={Link.get('static', 'loading-16.gif')} /> :
+                    <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
                     null
                 }
                 { this.state.emblem_saved[this.state.version] ?
@@ -244,7 +286,7 @@ var settings_view = createReactClass({
                         {this.renderName(player)}
                     </div>
                     {
-                        this.state.version > 9 ? this.renderEmblem(player) : null
+                        (this.state.version > 9 && window.emblems[this.state.version].length > 0) ? this.renderEmblem(player) : null
                     }
                 </div>
             );

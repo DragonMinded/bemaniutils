@@ -7,7 +7,6 @@ from bemani.common import VersionConstants
 
 
 class JubeatAvenue(JubeatBase):
-
     name: str = "Jubeat Avenue"
     version: int = VersionConstants.JUBEAT_AVENUE
 

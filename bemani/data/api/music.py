@@ -401,6 +401,10 @@ class GlobalMusicData(BaseGlobalData):
     def __merge_jubeat_score(
         self, version: int, oldscore: Score, newscore: Score
     ) -> Score:
+        rate = self.__max(
+            oldscore.data.get("music_rate", -1), newscore.data.get("music_rate", -1)
+        )
+
         return Score(
             -1,
             oldscore.id,
@@ -419,9 +423,8 @@ class GlobalMusicData(BaseGlobalData):
                 else newscore.data.get("ghost"),
                 "combo": self.__max(oldscore.data["combo"], newscore.data["combo"]),
                 "medal": self.__max(oldscore.data["medal"], newscore.data["medal"]),
-                "music_rate": self.__max(
-                    oldscore.data["music_rate"], newscore.data["music_rate"]
-                ),
+                # Conditionally include this if we have any info for it.
+                **({"music_rate": rate} if rate >= 0 else {}),
             },
         )
 
@@ -722,7 +725,7 @@ class GlobalMusicData(BaseGlobalData):
             return allscores.get(userid, {}).get(songid, {}).get(songchart)
 
         # First, seed with local scores
-        for (userid, score) in localscores:
+        for userid, score in localscores:
             add_score(userid, score)
 
         # Second, merge in remote scorse
@@ -827,7 +830,7 @@ class GlobalMusicData(BaseGlobalData):
             return allscores.get(songid, {}).get(songchart, (None, None))
 
         # First, seed with local records
-        for (userid, score) in localscores:
+        for userid, score in localscores:
             add_score(userid, score)
 
         # Second, merge in remote records

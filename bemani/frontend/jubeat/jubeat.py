@@ -8,7 +8,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class JubeatFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.JUBEAT
 
     valid_charts: List[int] = [
@@ -38,7 +37,7 @@ class JubeatFrontend(FrontendBase):
             VersionConstants.JUBEAT_FESTO: 9,
         }
 
-        for (game, version, name) in self.all_games():
+        for game, version, name in self.all_games():
             if version in mapping:
                 yield (game, mapping[version], name)
 
@@ -143,11 +142,26 @@ class JubeatFrontend(FrontendBase):
     def format_profile(
         self, profile: Profile, playstats: ValidatedDict
     ) -> Dict[str, Any]:
+        # Grab achievements for both jubility in festo, as well as emblem parts in
+        # prop onward.
+        userid = self.data.local.user.from_refid(
+            profile.game, profile.version, profile.refid
+        )
+        if userid is not None:
+            achievements = self.data.local.user.get_achievements(
+                profile.game, profile.version, userid
+            )
+        else:
+            achievements = []
+
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile["plays"] = playstats.get_int("total_plays")
         formatted_profile["emblem"] = self.format_emblem(
             profile.get_dict("last").get_int_array("emblem", 5)
         )
+        formatted_profile["owned_emblems"] = [
+            str(ach.id) for ach in achievements if ach.type == "emblem"
+        ]
         formatted_profile["jubility"] = (
             profile.get_int("jubility")
             if profile.version
@@ -181,16 +195,6 @@ class JubeatFrontend(FrontendBase):
             # Look up achievements which is where jubility was stored. This is a bit of a hack
             # due to the fact that this could be formatting remote profiles, but then they should
             # have no achievements.
-            userid = self.data.local.user.from_refid(
-                profile.game, profile.version, profile.refid
-            )
-            if userid is not None:
-                achievements = self.data.local.user.get_achievements(
-                    profile.game, profile.version, userid
-                )
-            else:
-                achievements = []
-
             jubeat_entries: List[ValidatedDict] = []
             for achievement in achievements:
                 if achievement.type != "jubility":

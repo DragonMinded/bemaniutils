@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from typing_extensions import Final
 
 from bemani.backend.base import Status
@@ -30,7 +30,6 @@ class JubeatSaucerFulfill(
     JubeatCourse,
     JubeatBase,
 ):
-
     name: str = "Jubeat Saucer Fulfill"
     version: int = VersionConstants.JUBEAT_SAUCER_FULFILL
 
@@ -92,6 +91,22 @@ class JubeatSaucerFulfill(
                     cls.game, cls.version, "fc_challenge", "daily"
                 )
         return events
+
+    @classmethod
+    def get_settings(cls) -> Dict[str, Any]:
+        """
+        Return all of our front-end modifiably settings.
+        """
+        return {
+            "bools": [
+                {
+                    "name": "Force Unlock All Songs",
+                    "tip": "Forces all songs to be available by default",
+                    "category": "game_config",
+                    "setting": "force_song_unlock",
+                },
+            ],
+        }
 
     def handle_shopinfo_regist_request(self, request: Node) -> Node:
         # Update the name of this cab for admin purposes
@@ -342,6 +357,22 @@ class JubeatSaucerFulfill(
         player = Node.void("player")
         data.add_child(player)
 
+        # Figure out if we're force-unlocking songs.
+        game_config = self.get_game_config()
+        force_unlock = game_config.get_bool("force_song_unlock")
+
+        # Allow figuring out owned songs.
+        achievements = self.data.local.user.get_achievements(
+            self.game, self.version, userid
+        )
+        owned_songs: Set[int] = set()
+        owned_secrets: Set[int] = set()
+        for achievement in achievements:
+            if achievement.type == "song":
+                owned_songs.add(achievement.id)
+            elif achievement.type == "secret":
+                owned_secrets.add(achievement.id)
+
         # Player info and statistics
         info = Node.void("info")
         player.add_child(info)
@@ -393,11 +424,9 @@ class JubeatSaucerFulfill(
         item.add_child(
             Node.s32_array(
                 "secret_list",
-                profile.get_int_array(
-                    "secret_list",
-                    32,
-                    [-1] * 32,
-                ),
+                ([-1] * 32)
+                if force_unlock
+                else self.create_owned_items(owned_songs, 32),
             )
         )
         item.add_child(
@@ -427,11 +456,9 @@ class JubeatSaucerFulfill(
         new.add_child(
             Node.s32_array(
                 "secret_list",
-                profile.get_int_array(
-                    "secret_list_new",
-                    32,
-                    [-1] * 32,
-                ),
+                ([-1] * 32)
+                if force_unlock
+                else self.create_owned_items(owned_secrets, 32),
             )
         )
         new.add_child(
@@ -771,6 +798,11 @@ class JubeatSaucerFulfill(
         newprofile.replace_bool("saved", True)
         data = request.child("data")
 
+        # Figure out if we're force-unlocking songs. If we are, we don't want to persist
+        # secret stuff otherwise the game will accidentally unlock everything in the profile.
+        game_config = self.get_game_config()
+        force_unlock = game_config.get_bool("force_song_unlock")
+
         # Grab player information
         player = data.child("player")
 
@@ -814,9 +846,6 @@ class JubeatSaucerFulfill(
         item = player.child("item")
         if item is not None:
             newprofile.replace_int_array(
-                "secret_list", 32, item.child_value("secret_list")
-            )
-            newprofile.replace_int_array(
                 "title_list", 96, item.child_value("title_list")
             )
             newprofile.replace_int("theme_list", item.child_value("theme_list"))
@@ -827,15 +856,40 @@ class JubeatSaucerFulfill(
                 "parts_list", 96, item.child_value("parts_list")
             )
             newprofile.replace_int_array(
-                "secret_list_new", 32, item.child_value("secret_new")
-            )
-            newprofile.replace_int_array(
                 "title_list_new", 96, item.child_value("title_new")
             )
             newprofile.replace_int("theme_list_new", item.child_value("theme_new"))
             newprofile.replace_int_array(
                 "marker_list_new", 2, item.child_value("marker_new")
             )
+
+            if not force_unlock:
+                # Don't persist if we're force-unlocked, this data will be bogus.
+                owned_songs = self.calculate_owned_items(
+                    item.child_value("secret_list")
+                )
+                for index in owned_songs:
+                    self.data.local.user.put_achievement(
+                        self.game,
+                        self.version,
+                        userid,
+                        index,
+                        "song",
+                        {},
+                    )
+
+                owned_secrets = self.calculate_owned_items(
+                    item.child_value("secret_new")
+                )
+                for index in owned_secrets:
+                    self.data.local.user.put_achievement(
+                        self.game,
+                        self.version,
+                        userid,
+                        index,
+                        "secret",
+                        {},
+                    )
 
         # Grab macchiato event
         macchiatodict = newprofile.get_dict("macchiato")
@@ -963,7 +1017,6 @@ class JubeatSaucerFulfill(
     def format_scores(
         self, userid: UserID, profile: Profile, scores: List[Score]
     ) -> Node:
-
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)

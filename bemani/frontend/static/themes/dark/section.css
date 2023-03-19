@@ -62,6 +62,10 @@ div.labelledsection.iidx.qprooption select {
     width: 300px;
 }
 
+div.labelledsection.jubeat.emblemoption select {
+    width: 300px;
+}
+
 div.labelledsection.ddr.option select {
     width: 200px;
 }
@@ -169,7 +173,7 @@ div.longmessage {
 
 div.longmessage pre {
     border: 1px solid rgba(128, 128, 128, 0.33);
-    background: rgb(232, 232, 232);
+    background: rgb(79, 79, 79);
     padding: 5px;
     margin-bottom: 0px;
 }
@@ -197,3 +201,19 @@ span.slider-label {
     margin-top: 1px;
     margin-bottom: -1px;
 } 
+
+div.emblem {
+    position: relative;
+    width: 256px;
+    height: 256px;
+    padding-bottom: 10px;
+}
+
+div.emblem div {
+    position: absolute;
+}
+
+div.emblem div img {
+    width: 256px;
+    height: 256px;
+}

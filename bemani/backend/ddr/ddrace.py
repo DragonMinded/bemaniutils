@@ -23,7 +23,6 @@ class DDRAce(
     DDRBase,
     EventLogHandler,
 ):
-
     name: str = "DanceDanceRevolution A"
     version: int = VersionConstants.DDR_ACE
 
@@ -623,7 +622,7 @@ class DDRAce(
         missing_users = [
             userid for (userid, _) in scores if userid not in profiles_by_userid
         ]
-        for (userid, profile) in self.get_any_profiles(missing_users):
+        for userid, profile in self.get_any_profiles(missing_users):
             profiles_by_userid[userid] = profile
 
         for userid, score in scores:

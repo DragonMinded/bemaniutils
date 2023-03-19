@@ -13,7 +13,6 @@ class SoundVoltexGravityWars(
     EventLogHandler,
     SoundVoltexBase,
 ):
-
     name: str = "SOUND VOLTEX III GRAVITY WARS"
     version: int = VersionConstants.SDVX_GRAVITY_WARS
 
@@ -171,7 +170,7 @@ class SoundVoltexGravityWars(
                 ):
                     ids.add((song.id, song.chart))
 
-            for (songid, chart) in ids:
+            for songid, chart in ids:
                 info = Node.void("info")
                 limited.add_child(info)
                 info.add_child(Node.s32("music_id", songid))

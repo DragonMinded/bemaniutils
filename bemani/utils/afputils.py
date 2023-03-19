@@ -7,7 +7,7 @@ import os
 import os.path
 import sys
 import textwrap
-from PIL import Image, ImageDraw  # type: ignore
+from PIL import Image, ImageDraw
 from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
 from bemani.format.afp import (
@@ -555,8 +555,8 @@ def load_containers(
 
                     # Load file, register it.
                     fdata = ifsfile.read_file(fname)
-                    tex = Image.open(io.BytesIO(fdata))
-                    renderer.add_texture(texname, tex)
+                    teximg = Image.open(io.BytesIO(fdata))
+                    renderer.add_texture(texname, teximg)
 
                     if verbose:
                         print(
@@ -872,7 +872,7 @@ def render_path(
         # Write all the frames out in one file.
         duration = renderer.compute_path_frame_duration(path)
         frames = renderer.compute_path_frames(path)
-        images: List[Image] = []
+        images: List[Image.Image] = []
         for i, img in enumerate(
             renderer.render_path(
                 path,

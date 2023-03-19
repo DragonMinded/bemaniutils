@@ -54,6 +54,11 @@ webhooks:
         pnm: 
         - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
 
+# Assets URLs. These allow for in-game asset rendering on the front end. Delete this to disable asset rendering.
+assets:
+    jubeat:
+        emblems: "/directory/where/you/output/emblem/assets"
+
 # Global PASESLI settings, which can be overridden on a per-arcade basis. These form the default settings.
 paseli:
     # Whether PASELI is enabled on the network.

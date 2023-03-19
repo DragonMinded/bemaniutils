@@ -12,7 +12,6 @@ from bemani.protocol import Node
 
 
 class PopnMusicLapistoria(PopnMusicBase):
-
     name: str = "Pop'n Music ラピストリア"
     version: int = VersionConstants.POPN_MUSIC_LAPISTORIA
 

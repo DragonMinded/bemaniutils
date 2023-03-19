@@ -1,13 +1,13 @@
 body {
     font-family: Helvetica;
-    color: #b3b3b3;
+    color: #cecece;
     margin: 0px;
     padding-bottom: 30px;
     background-color: #121212;
 }
 
 a {
-	color: #878889;
+	color: #80addb;;
 }
 
 div.messages {
@@ -29,11 +29,11 @@ div.container {
 div.loading {
     margin-left: 50%;
     margin-right: 50%;
-    height: 20px;
+    height: 24px;
 }
 
 div.navigation {
-    background-color: #b3b4b5;
+    background-color: #1f1f1f;
     padding-left: 10px;
     padding-right: 10px;
 }
@@ -60,6 +60,10 @@ div.navigation {
         margin-right: 25%;
         width: 50%;
     }
+}
+
+div.jconfirm-box {
+    background: #2d2d2d ! important;
 }
 
 @media only screen and (hover: none) {
@@ -91,30 +95,34 @@ ul.messages div.close {
     font-size: smaller;
     text-decoration: none;
     display: inline-block;
-    color: #000000;
+    color: #eee;
     float: right;
     cursor: pointer;
     margin-right: 3px;
 }
 
 ul.messages li.error {
-    border: 1px solid #e2afb6;
-    background-color: #ffced5;
+    border: 1px solid #976067;
+    background-color: #6f454b;
+    color: #eee;
 }
 
 ul.messages li.warning {
-    border: 1px solid #e6deb4;
-    background-color: #fff7ce;
+    border: 1px solid #978b49;
+    background-color: #6c6333;
+    color: #eee;
 }
 
 ul.messages li.success {
-    border: 1px solid #cddcc1;
-    background: #e7ffd4;
+    border: 1px solid #608046;
+    background: #475e34;
+    color: #eee;
 }
 
 ul.messages li.info {
-    border: 1px solid #b0b0d2;
-    background-color: #d0d0ff;
+    border: 1px solid #7b7ba6;
+    background-color: #565673;
+    color: #eee;
 }
 
 ul.navigation {
@@ -124,7 +132,7 @@ ul.navigation {
     padding-left: 10px;
     padding-right: 10px;
     margin: 0px;
-    background-color: #b3b4b5;
+    background-color: #1f1f1f;
     position: relative;
     text-align: right;
     -webkit-touch-callout: none;
@@ -144,7 +152,7 @@ ul.navigation li {
 ul.navigation_sub {
     display: none;
     position: absolute;
-    background-color: #e4e4e4;
+    background-color: #2d2d2d;
     padding: 10px;
     margin: 0;
     padding: 0;
@@ -186,15 +194,15 @@ ul.navigation li a {
     display: block;
     text-decoration: none;
     padding: 10px;
-    color: #121212;
+    color: #b5b5b5;
 }
 
 ul.navigation li a:hover {
-    background-color: #d2d2d2;
+    background-color: #343434;
 }
 
 ul.navigation li a:active {
-    background-color: #d2d2d2;
+    background-color: #343434;
 }
 
 ul.navigation > li > a.current {
@@ -290,13 +298,13 @@ div.slider {
 }
 
 div.slider.on {
-    background: #6eb9f7;
-    border: 1px solid #3da2f5;
+    background: #1f649b;
+    border: 1px solid #2577b9;
 }
 
 div.slider.off {
-    background: #cccccc;
-    border: 1px solid #a0a0a0;
+    background: #242526;
+    border: 1px solid #535353;
 }
 
 div.slider span.label {

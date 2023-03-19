@@ -10,7 +10,6 @@ from bemani.frontend.base import FrontendBase
 
 
 class ReflecBeatFrontend(FrontendBase):
-
     game: GameConstants = GameConstants.REFLEC_BEAT
 
     version: int = 0  # We use a virtual version for ReflecBeat to tie charts together

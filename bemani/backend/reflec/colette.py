@@ -10,7 +10,6 @@ from bemani.protocol import Node
 
 
 class ReflecBeatColette(ReflecBeatBase):
-
     name: str = "REFLEC BEAT colette"
     version: int = VersionConstants.REFLEC_BEAT_COLETTE
 
@@ -130,7 +129,7 @@ class ReflecBeatColette(ReflecBeatBase):
             9: 0,
         }
 
-        for (eventid, phase) in events.items():
+        for eventid, phase in events.items():
             data = Node.void("data")
             event_ctrl.add_child(data)
             data.add_child(Node.s32("type", eventid))
@@ -168,7 +167,7 @@ class ReflecBeatColette(ReflecBeatBase):
             new = Node.void("new")
             base.add_child(new)
 
-            for (mid, plays) in hitchart:
+            for mid, plays in hitchart:
                 d = Node.void("d")
                 new.add_child(d)
                 d.add_child(Node.s16("mid", mid))
@@ -247,7 +246,7 @@ class ReflecBeatColette(ReflecBeatBase):
         )
 
         def add_comments(name: str, selected: List[Tuple[UserID, Achievement]]) -> None:
-            for (uid, ach) in selected:
+            for uid, ach in selected:
                 cmnt = Node.void(name)
                 root.add_child(cmnt)
                 cmnt.add_child(Node.s32("uid", uid_mapping[uid].extid))
@@ -431,7 +430,7 @@ class ReflecBeatColette(ReflecBeatBase):
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
-            for (user, lobby) in lobbies:
+            for user, lobby in lobbies:
                 if limit <= 0:
                     break
 

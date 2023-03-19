@@ -59,6 +59,14 @@ A utility for unpacking `.arc` files. This does not currently repack files. Howe
 the format is so trivial that adding such a feature would be fairly easy. Run it
 like `./arcutils --help` to see help output and determine how to use this.
 
+## assetparse
+
+A utility which takes a particular game's asset directory and converts files for use
+on the frontend. This optionally enables things such as customization previews on the
+frontend. Much like "read", this requires a properly setup config file which points
+the frontend as well as this utility at the correct location to store converted
+assets. See `config/server.yaml` for an example file that you can modify.
+
 ## bemanishark
 
 A wire sniffer that can decode eAmuse packets and print them. Run it on a computer
@@ -463,6 +471,16 @@ will not work properly. An example is as follows:
       --xml data/emblem-info/emblem-info.xml
 ```
 
+If you wish to display emblem graphics on the frontend, you will also need to convert the
+emblem assets. Failing to do so will disable the emblem graphics rendering feature for the
+frontend. Note that this only applies to versions where you have also imported the emblem
+DB. An example is as follows:
+
+```
+./assetparse --config config/server.yaml --series jubeat --version prop \
+      --xml data/emblem-info/emblem-info.xml --assets data/emblem-textures/
+```
+
 ### IIDX
 
 For IIDX, you will need the data directory of the mix you wish to support. The import
@@ -718,6 +736,19 @@ workaround is to specify the zstd library path manually in the pip install line.
 running the following (or a variation of the following if you've modified your pip
 install line already): `LDFLAGS="-L$(brew --prefix zstd)/lib" pip install -r requirements.txt`.
 
+### JSX files fail to compile, music databases fail to read from game files on Windows
+
+Apparently on Windows, the default encoding is unset for Python in some installations.
+This can lead to some incredibly confusing errors as JSX files will fail to compile when
+you attempt to load the front-end, and importing music databases from various games will
+crash with encoding errors. If you run into this problem, you can set a few environment
+variables to fix the issue. Make sure that the following are set:
+
+```
+export PYTHONIOENCODING=utf-8
+export PYTHONLEGACYWINDOWSSTDIO=utf-8
+```
+
 ## Production Setup
 
 As alluded to several times in this README, the recommended way to run a production
@@ -735,7 +766,9 @@ can set up a nginx directory to serve the static resources directly by pointing 
 static directory inside your virtualenv.
 
 For example configurations, an example install script, and an example script to back
-up your MySQL instance, see the `examples/` directory.
+up your MySQL instance, see the `examples/` directory. Note that several files have
+sections where you are expected to substitute your own values so please read over them
+carefully.
 
 # Contributing
 
@@ -797,3 +830,22 @@ If you are modifying files that have an equivalent C++ implementation and it cha
 their semantics, make sure to test both paths! If you are modifying code that is
 cythonized and you've compiled, make sure to re-run the above command or delete the
 compiled `.so` files, otherwise your changes will not show up when you test.
+
+# License and Usage
+
+All of the code in this repository is released under public domain. No attribution or
+releasing of source code is required. No warranty of the code or functionality is implied.
+However, open source would not flourish without contributions from users the world across.
+Pull requests are therefore appreciated! Please note, however, that the code contained in this
+repo is meant to facilitate preservation and personal enjoyment of otherwise lost versions
+of various arcade games. Do not attempt to check in anything legally owned by a business
+or personal entity including source code, images, siterips, game files or anything
+similar. Do not attempt to check in support for games currently being offered for sale
+by the original manufacturer or games which have not reached their support end-of-life.
+
+Similarly, while I cannot control what you decide to do with this software, it would be
+very, very stupid to attempt to run this in a public arcade or convention, or to attempt
+to use this with games that you or another person or business are charging money for. If
+you do decide to do this anyway, do not advertise association with any of this software in
+any form whatsoever. Attempting to use this software for commercial gain or to compete
+publicly with official game support goes directly against the stated goals of this software.

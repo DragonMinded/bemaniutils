@@ -45,17 +45,23 @@ div.buttons {
 }
 
 input[type="submit"] {
-    border: 1px solid #19480a;
-	color: #242526;
-    background: #49B979;
+    border: 1px solid #55954a;
+    color: #242526;
+    background: #42763a;
+    color: #cedfce;
     margin-right: 5px;
 }
 
 input[type="button"], button.nav, button.toggle, button.edit, button.add, button.viewmore, button.btn-default {
-    border: 1px solid #6a6a6a;
-	color: #b0b1b2;
+    border: 1px solid #535353;
+    color: #b0b1b2;
     background: #282828;
     margin-right: 5px;
+}
+
+button.btn-default {
+    color: #b0b1b2 ! important;
+    background: #3c3c3c ! important;
 }
 
 input[type="submit"], input[type="button"], button {
@@ -68,20 +74,19 @@ input[type="submit"], input[type="button"], button {
 }
 
 input[type="text"], input[type="password"], textarea {
-    border: 1px solid #6a6a6a;
+    border: 1px solid #535353;
     padding: 4px;
     border-radius: 0px;
-	background-color: #b3b4b5;
+    background-color: #1f1f1f;
+    color: #cecece;
 }
 
 select {
-    border: 1px solid #6a6a6a;
-    padding: 4px 4px 3px 4px;
+    border: 1px solid #535353;
+    padding: 4px 4px 4px 4px;
     border-radius: 0px;
-	background: #b3b4b5;
-}
-input {
-	#b3b4b5
+    background: #1f1f1f;
+    color: #cecece;
 }
 
 input[type="button"] {
@@ -95,15 +100,18 @@ button.toggle:not(:last-child):not(:only-child), button.edit:not(:last-child):no
 span + button.edit, span + button.toggle, span + button.delete, span + button.add,
 div + button.edit, div + button.toggle, div + button.delete, div + button.add {
     margin-left: 15px;
-	border: 1px solid #6a6a6a;
+}
+
+span + button {
+    border: 1px solid #535353;
     background-color: #282828;
-	color: #b3b3b3;
+    color: #cecece;
 }
 
 button.nav {
     margin-bottom: 5px;
     margin-right: 0px;
-    border: 1px solid #6a6a6a;
+    border: 1px solid #535353;
     background-color: #282828;
 }
 
@@ -125,13 +133,14 @@ button.active {
 }
 
 button {
-	color: #b3b3b3;
-	background-color: #282828;
+    color: #cecece;
+    background-color: #282828;
 }
 
 button.delete {
-    border: 1px solid #5d5d5d;
-    background: #B94949;
+    border: 1px solid #9b3c3c;
+    background: #7a3030;
+    color: #dfcece;
 }
 
 .popn-nav button, .settings-nav button {

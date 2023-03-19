@@ -8,7 +8,6 @@ from bemani.common import VersionConstants
 
 
 class PopnMusicUsaNeko(PopnMusicModernBase):
-
     name: str = "Pop'n Music うさぎと猫と少年の夢"
     version: int = VersionConstants.POPN_MUSIC_USANEKO
 

@@ -8,6 +8,7 @@ from .decompile import ByteCode
 from .types import (
     Matrix,
     Color,
+    HSL,
     Point,
     Rectangle,
     AP2Action,
@@ -323,6 +324,7 @@ class AP2PlaceObjectTag(Tag):
         projection: int,
         mult_color: Optional[Color],
         add_color: Optional[Color],
+        hsl_shift: Optional[HSL],
         triggers: Dict[int, List[ByteCode]],
         unrecognized_options: bool,
     ) -> None:
@@ -364,6 +366,9 @@ class AP2PlaceObjectTag(Tag):
         # If there is a color to add with the sprite/shape when drawing.
         self.add_color = add_color
 
+        # If there is a hue/saturation/lightness shift effect when drawing.
+        self.hsl_shift = hsl_shift
+
         # List of triggers for this object, and their respective bytecodes to execute when the trigger
         # fires.
         self.triggers = triggers
@@ -397,6 +402,9 @@ class AP2PlaceObjectTag(Tag):
             else None,
             "add_color": self.add_color.as_dict(*args, **kwargs)
             if self.add_color is not None
+            else None,
+            "hsl_shift": self.hsl_shift.as_dict(*args, **kwargs)
+            if self.hsl_shift
             else None,
             "triggers": {
                 i: [b.as_dict(*args, **kwargs) for b in t]
@@ -2007,18 +2015,29 @@ class SWF(VerboseOutput, TrackedCoverage):
                     component="tags",
                 )
 
+            # HSL shift data.
+            hue: Optional[int] = None
+            saturation: Optional[int] = None
+            lightness: Optional[int] = None
+
             if flags & 0x20000000:
-                # TODO: Again, absolutely no idea, gets passed into a function and I don't see how its used.
+                # Looks like Hue/Lightness/Saturation shift, matching after effects in the limits.
+                # First value is degrees to shift the hue, second and third values I'm not sure if
+                # its saturation then lightness or lightness then saturation but both have limits of
+                # -100 to 100 in after effects and the file that I found with this option chooses
+                # 0 for each.
                 unhandled_flags &= ~0x20000000
-                unk_a, unk_b, unk_c = struct.unpack(
+                hue, saturation, lightness = struct.unpack(
                     "<hbb", datachunk[running_pointer : (running_pointer + 4)]
                 )
                 self.add_coverage(dataoffset + running_pointer, 4)
                 running_pointer += 4
-                unrecognized_options = True
 
+                # TODO: Need to confirm whether 2 and 3 options are saturation and lightness or
+                # lightness and saturation. Should be easy if we ever find an animation using either
+                # of these values.
                 self.vprint(
-                    f"{prefix}    Unknown Data: {unk_a}, {unk_b}, {unk_c}",
+                    f"{prefix}    HSL Shift: {hue}, {saturation}, {lightness}",
                     component="tags",
                 )
 
@@ -2155,12 +2174,7 @@ class SWF(VerboseOutput, TrackedCoverage):
                 # Unset any previously set 3D transforms. Files shouldn't include both 3D
                 # transforms AND the old 2D transform flag, but let's respect that bit.
                 rotation_origin.z = 0.0
-                transform.a13 = 0.0
-                transform.a23 = 0.0
-                transform.a31 = 0.0
-                transform.a32 = 0.0
-                transform.a33 = 1.0
-                transform.a43 = 0.0
+                transform = transform.to_affine()
 
             self.vprint(f"{prefix}    Final transform: {transform}", component="tags")
 
@@ -2186,6 +2200,9 @@ class SWF(VerboseOutput, TrackedCoverage):
                 projection=projection,
                 mult_color=multcolor if color_information else None,
                 add_color=addcolor if color_information else None,
+                hsl_shift=HSL(hue / 360.0, saturation / 100.0, lightness / 100.0)
+                if hue is not None
+                else None,
                 triggers=bytecodes,
                 unrecognized_options=unrecognized_options,
             )
@@ -3285,7 +3302,6 @@ class SWF(VerboseOutput, TrackedCoverage):
         # This appears to be bytecode to execute on a per-frame basis. We execute this every frame and
         # only execute up to the point where we equal the current frame.
         if imported_tag_initializers_offset is not None:
-
             unk1, length = struct.unpack(
                 "<HH",
                 data[

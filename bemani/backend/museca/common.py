@@ -26,7 +26,7 @@ class MusecaGameHiscoreHandler(MusecaBase):
 
         hitchart = Node.void("hitchart")
         game.add_child(hitchart)
-        for (songid, count) in playcounts:
+        for songid, count in playcounts:
             info = Node.void("info")
             hitchart.add_child(info)
             info.add_child(Node.u32("id", songid))
@@ -42,7 +42,7 @@ class MusecaGameHiscoreHandler(MusecaBase):
         game.add_child(hiscore_allover)
 
         # Output records
-        for (userid, score) in records:
+        for userid, score in records:
             info = Node.void("info")
 
             if userid not in users:
@@ -70,14 +70,14 @@ class MusecaGameHiscoreHandler(MusecaBase):
             self.game, self.version, userlist=area_users
         )
         missing_players = [uid for (uid, _) in records if uid not in users]
-        for (uid, prof) in self.get_any_profiles(missing_players):
+        for uid, prof in self.get_any_profiles(missing_players):
             users[uid] = prof
 
         hiscore_location = Node.void("hiscore_location")
         game.add_child(hiscore_location)
 
         # Output records
-        for (userid, score) in records:
+        for userid, score in records:
             info = Node.void("info")
 
             if userid not in users:

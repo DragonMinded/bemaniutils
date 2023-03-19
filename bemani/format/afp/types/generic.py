@@ -1,3 +1,4 @@
+import colorsys
 import math
 
 from typing import Any, Dict, List, Tuple
@@ -37,6 +38,10 @@ class Color:
             a=self.a + other.a,
         )
 
+    def as_hsl(self) -> "HSL":
+        h, l, s = colorsys.rgb_to_hls(self.r, self.g, self.b)
+        return HSL(h, s, l)
+
     def as_tuple(self) -> Tuple[int, int, int, int]:
         return (
             int(self.r * 255),
@@ -47,6 +52,61 @@ class Color:
 
     def __repr__(self) -> str:
         return f"r: {round(self.r, 5)}, g: {round(self.g, 5)}, b: {round(self.b, 5)}, a: {round(self.a, 5)}"
+
+
+class HSL:
+    # A hue/saturation/lightness color shift, represented as a series of floats between
+    # -1.0 and 1.0. The hue represents a percentage along the polar coordinates,
+    # 0.0 being 0 degrees, -1.0 being -360 degrees and 1.0 being 360 degrees. The
+    # saturation and lightness values representing actual normalized percentages where
+    # a lightness of 100 would be written as 1.0.
+    def __init__(self, h: float, s: float, l: float) -> None:
+        self.h = h
+        self.s = s
+        self.l = l
+
+    @property
+    def is_identity(self) -> bool:
+        return self.h == 0.0 and self.s == 0.0 and self.l == 0.0
+
+    def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            "h": self.h,
+            "s": self.s,
+            "l": self.l,
+        }
+
+    def add(self, other: "HSL") -> "HSL":
+        # Not entirely sure this is correct, but we don't have any animations to compare to.
+        # Basically, not sure if HSL colorspace is linear in this way, but as long as no
+        # animations try to stack multiple HSL shift effects this shouldn't matter.
+        return HSL(h=self.h + other.h, s=self.s + other.s, l=self.l + other.l)
+
+    def as_rgb(self) -> "Color":
+        h = self.h
+        while h < 0.0:
+            h += 1.0
+        while h > 1.0:
+            h -= 1.0
+
+        s = min(max(self.s, 0.0), 1.0)
+        l = min(max(self.l, 0.0), 1.0)
+        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        return Color(r, g, b, 1.0)
+
+    def as_tuple(self) -> Tuple[int, int, int]:
+        h = int(self.h * 360)
+        while h < 0:
+            h += 360
+        while h > 360:
+            h -= 360
+
+        s = min(max(int(self.s), -100), 100)
+        l = min(max(int(self.l), -100), 100)
+        return (h, s, l)
+
+    def __repr__(self) -> str:
+        return f"h: {round(self.h, 5)}, s: {round(self.s, 5)}, l: {round(self.l, 5)}"
 
 
 class Point:
@@ -213,6 +273,33 @@ class Matrix:
             a43=0.0,
         )
 
+    def to_affine(self) -> "Matrix":
+        # Copy over just the affine bits.
+        new = Matrix(
+            a11=self.a11,
+            a12=self.a12,
+            a13=0.0,
+            a21=self.a21,
+            a22=self.a22,
+            a23=0.0,
+            a31=0.0,
+            a32=0.0,
+            a33=1.0,
+            a41=self.a41,
+            a42=self.a42,
+            a43=0.0,
+        )
+
+        # Copy over tracking flags for affine, but unset the perspective ones.
+        new.__scale_set = self.__scale_set
+        new.__rotate_set = self.__rotate_set
+        new.__translate_xy_set = self.__translate_xy_set
+        new.__3d_grid_set = False
+        new.__translate_z_set = False
+
+        # Now return the new affine transform.
+        return new
+
     @property
     def __is_affine(self) -> bool:
         return (
@@ -250,7 +337,7 @@ class Matrix:
                 "tz": self.__a43,
             }
 
-    def update(self, other: "Matrix") -> "Matrix":
+    def update(self, other: "Matrix", is_perspective: bool) -> "Matrix":
         new = Matrix(
             a11=self.__a11,
             a12=self.__a12,
@@ -266,29 +353,62 @@ class Matrix:
             a43=self.__a43,
         )
 
-        if other.__3d_grid_set:
-            new.__a11 = other.__a11
-            new.__a12 = other.__a12
-            new.__a13 = other.__a13
-            new.__a21 = other.__a21
-            new.__a22 = other.__a22
-            new.__a23 = other.__a23
-            new.__a31 = other.__a31
-            new.__a32 = other.__a32
-            new.__a33 = other.__a33
-        else:
-            if other.__scale_set:
+        if not (
+            other.__scale_set
+            or other.__rotate_set
+            or other.__3d_grid_set
+            or other.__translate_xy_set
+            or other.__translate_z_set
+        ):
+            # Special case for uninitialized matrix that might need updating.
+            if is_perspective:
+                # Full perspective copy-over.
+                new.__a11 = other.__a11
+                new.__a12 = other.__a12
+                new.__a13 = other.__a13
+                new.__a21 = other.__a21
+                new.__a22 = other.__a22
+                new.__a23 = other.__a23
+                new.__a31 = other.__a31
+                new.__a32 = other.__a32
+                new.__a33 = other.__a33
+                new.__a41 = other.__a41
+                new.__a42 = other.__a42
+                new.__a43 = other.__a43
+            else:
+                # Simple affine copy-over.
                 new.__a11 = other.__a11
                 new.__a22 = other.__a22
-            if other.__rotate_set:
                 new.__a12 = other.__a12
                 new.__a21 = other.__a21
+                new.__a41 = other.__a41
+                new.__a42 = other.__a42
 
-        if other.__translate_xy_set:
-            new.__a41 = other.__a41
-            new.__a42 = other.__a42
-        if other.__translate_z_set:
-            new.__a43 = other.__a43
+        else:
+            # Use object tracking to set only what changed.
+            if other.__3d_grid_set and is_perspective:
+                new.__a11 = other.__a11
+                new.__a12 = other.__a12
+                new.__a13 = other.__a13
+                new.__a21 = other.__a21
+                new.__a22 = other.__a22
+                new.__a23 = other.__a23
+                new.__a31 = other.__a31
+                new.__a32 = other.__a32
+                new.__a33 = other.__a33
+            else:
+                if other.__scale_set:
+                    new.__a11 = other.__a11
+                    new.__a22 = other.__a22
+                if other.__rotate_set:
+                    new.__a12 = other.__a12
+                    new.__a21 = other.__a21
+
+            if other.__translate_xy_set:
+                new.__a41 = other.__a41
+                new.__a42 = other.__a42
+            if other.__translate_z_set and is_perspective:
+                new.__a43 = other.__a43
 
         return new
 

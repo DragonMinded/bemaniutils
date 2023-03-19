@@ -8,7 +8,6 @@ from bemani.common import VersionConstants
 
 
 class PopnMusicPeace(PopnMusicModernBase):
-
     name: str = "Pop'n Music peace"
     version: int = VersionConstants.POPN_MUSIC_PEACE
 

@@ -298,15 +298,15 @@ class Sniffer:
         by the flag name who's value is True if set and False otherwise.
         """
         return {
-            "ns": True if flags & 0x100 else False,
-            "cwr": True if flags & 0x080 else False,
-            "ece": True if flags & 0x040 else False,
-            "urg": True if flags & 0x020 else False,
-            "ack": True if flags & 0x010 else False,
-            "psh": True if flags & 0x008 else False,
-            "rst": True if flags & 0x004 else False,
-            "syn": True if flags & 0x002 else False,
-            "fin": True if flags & 0x001 else False,
+            "ns": bool(flags & 0x100),
+            "cwr": bool(flags & 0x080),
+            "ece": bool(flags & 0x040),
+            "urg": bool(flags & 0x020),
+            "ack": bool(flags & 0x010),
+            "psh": bool(flags & 0x008),
+            "rst": bool(flags & 0x004),
+            "syn": bool(flags & 0x002),
+            "fin": bool(flags & 0x001),
         }
 
     def __process_address(

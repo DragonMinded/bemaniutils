@@ -83,7 +83,6 @@ class ArcadeCreationException(Exception):
 
 
 class MachineData(BaseData):
-
     # This relies on the fact that arcadeid in the arcade_settings table is auto-increment
     # and thus will start at 1.
     DEFAULT_SETTINGS_ARCADE: Final[ArcadeID] = ArcadeID(-1)
@@ -140,7 +139,7 @@ class MachineData(BaseData):
         """
         sql = "SELECT arcadeid FROM arcade_owner WHERE userid = :userid"
         cursor = self.execute(sql, {"userid": userid})
-        return [ArcadeID(result["arcadeid"]) for result in cursor.fetchall()]
+        return [ArcadeID(result["arcadeid"]) for result in cursor]
 
     def from_session(self, session: str) -> Optional[ArcadeID]:
         """
@@ -212,7 +211,7 @@ class MachineData(BaseData):
                 result["version"],
                 self.deserialize(result["data"]),
             )
-            for result in cursor.fetchall()
+            for result in cursor
         ]
 
     def put_machine(self, machine: Machine) -> None:
@@ -386,7 +385,7 @@ class MachineData(BaseData):
             result["pref"],
             result["area"] or None,
             self.deserialize(result["data"]),
-            [owner["userid"] for owner in cursor.fetchall()],
+            [owner["userid"] for owner in cursor],
         )
 
     def put_arcade(self, arcade: Arcade) -> None:
@@ -447,7 +446,7 @@ class MachineData(BaseData):
         sql = "SELECT userid, arcadeid FROM arcade_owner"
         cursor = self.execute(sql)
         arcade_to_owners: Dict[int, List[UserID]] = {}
-        for row in cursor.fetchall():
+        for row in cursor:
             arcade = row["arcadeid"]
             owner = UserID(row["userid"])
             if arcade not in arcade_to_owners:
@@ -467,7 +466,7 @@ class MachineData(BaseData):
                 self.deserialize(result["data"]),
                 arcade_to_owners.get(result["id"], []),
             )
-            for result in cursor.fetchall()
+            for result in cursor
         ]
 
     def get_settings(
@@ -544,15 +543,13 @@ class MachineData(BaseData):
         """
         sql = "SELECT userid, balance FROM balance WHERE arcadeid = :arcadeid"
         cursor = self.execute(sql, {"arcadeid": arcadeid})
-        balances = []
-        for entry in cursor.fetchall():
-            balances.append(
-                (
-                    UserID(entry["userid"]),
-                    entry["balance"],
-                )
+        return [
+            (
+                UserID(entry["userid"]),
+                entry["balance"],
             )
-        return balances
+            for entry in cursor
+        ]
 
     def create_session(self, arcadeid: ArcadeID, expiration: int = (30 * 86400)) -> str:
         """

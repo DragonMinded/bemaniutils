@@ -7,7 +7,6 @@ from bemani.common import VersionConstants
 
 
 class IIDXBistrover(IIDXBase):
-
     name: str = "Beatmania IIDX BISTROVER"
     version: int = VersionConstants.IIDX_BISTROVER
 

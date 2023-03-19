@@ -12,7 +12,6 @@ from bemani.protocol import Node
 
 
 class PopnMusicModernBase(PopnMusicBase, ABC):
-
     # Chart type, as returned from the game
     GAME_CHART_TYPE_EASY: Final[int] = 0
     GAME_CHART_TYPE_NORMAL: Final[int] = 1
@@ -304,7 +303,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         # Calculate most popular characters
         profiles = self.data.remote.user.get_all_profiles(self.game, self.version)
         charas: Dict[int, int] = {}
-        for (_userid, profile) in profiles:
+        for _userid, profile in profiles:
             chara = profile.get_int("chara", -1)
             if chara <= 0:
                 continue
@@ -328,7 +327,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
             popular.add_child(Node.s16("chara_num", charaid))
 
         # Top 500 Popular music
-        for (songid, _plays) in self.data.local.music.get_hit_chart(
+        for songid, _plays in self.data.local.music.get_hit_chart(
             self.game, self.version, 500
         ):
             popular_music = Node.void("popular_music")

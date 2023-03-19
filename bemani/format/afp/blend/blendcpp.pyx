@@ -1,8 +1,8 @@
 import multiprocessing
-from PIL import Image  # type: ignore
+from PIL import Image
 from typing import Optional, Tuple
 
-from ..types import Color, Matrix, Point, AAMode
+from ..types import Color, HSL, Matrix, Point, AAMode
 from .perspective import perspective_calculate
 
 cdef extern struct floatcolor_t:
@@ -10,6 +10,11 @@ cdef extern struct floatcolor_t:
     double g;
     double b;
     double a;
+
+cdef extern struct hslcolor_t:
+    double h;
+    double s;
+    double l;
 
 cdef extern struct matrix_t:
     double a11;
@@ -36,6 +41,7 @@ cdef extern int composite_fast(
     unsigned int maxy,
     floatcolor_t add_color,
     floatcolor_t mult_color,
+    hslcolor_t hsl_shift,
     double xscale,
     double yscale,
     matrix_t inverse,
@@ -52,6 +58,7 @@ def affine_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     mask: Optional[Image.Image],
     blendfunc: int,
@@ -112,6 +119,7 @@ def affine_composite(
     # Convert classes to C structs.
     cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
+    cdef hslcolor_t c_hslcolor = hslcolor_t(h=hsl_shift.h, s=hsl_shift.s, l=hsl_shift.l)
     cdef matrix_t c_inverse = matrix_t(
         a11=inverse.a11, a12=inverse.a12, a13=inverse.a13,
         a21=inverse.a21, a22=inverse.a22, a23=inverse.a23,
@@ -132,6 +140,7 @@ def affine_composite(
         maxy,
         c_addcolor,
         c_multcolor,
+        c_hslcolor,
         transform.xscale,
         transform.yscale,
         c_inverse,
@@ -157,6 +166,7 @@ def perspective_composite(
     img: Image.Image,
     add_color: Color,
     mult_color: Color,
+    hsl_shift: HSL,
     transform: Matrix,
     camera: Point,
     focal_length: float,
@@ -200,6 +210,7 @@ def perspective_composite(
     # Convert classes to C structs.
     cdef floatcolor_t c_addcolor = floatcolor_t(r=add_color.r, g=add_color.g, b=add_color.b, a=add_color.a)
     cdef floatcolor_t c_multcolor = floatcolor_t(r=mult_color.r, g=mult_color.g, b=mult_color.b, a=mult_color.a)
+    cdef hslcolor_t c_hslcolor = hslcolor_t(h=hsl_shift.h, s=hsl_shift.s, l=hsl_shift.l)
     cdef matrix_t c_inverse = matrix_t(
         a11=inverse_matrix.a11, a12=inverse_matrix.a12, a13=inverse_matrix.a13,
         a21=inverse_matrix.a21, a22=inverse_matrix.a22, a23=inverse_matrix.a23,
@@ -220,6 +231,7 @@ def perspective_composite(
         maxy,
         c_addcolor,
         c_multcolor,
+        c_hslcolor,
         transform.xscale,
         transform.yscale,
         c_inverse,

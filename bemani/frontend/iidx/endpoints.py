@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict
 from flask import Blueprint, request, Response, url_for, abort
 
-from bemani.common import ID, GameConstants, RegionConstants
+from bemani.common import ID, GameConstants, RegionConstants, DBConstants
 from bemani.data import UserID
 from bemani.frontend.app import loginrequired, jsonify, render_react
 from bemani.frontend.iidx.iidx import IIDXFrontend
@@ -195,7 +195,7 @@ def viewtopscores(musicid: int) -> Response:
     notecounts = [0, 0, 0, 0, 0, 0]
 
     for version in versions:
-        for omniadd in [0, 10000]:
+        for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
             for chart in [0, 1, 2, 3, 4, 5]:
                 details = g.data.local.music.get_song(
                     GameConstants.IIDX, version + omniadd, musicid, chart
@@ -605,7 +605,7 @@ def searchrivals() -> Dict[str, Any]:
 
     matches = set()
     profiles = g.data.remote.user.get_all_profiles(GameConstants.IIDX, version)
-    for (userid, profile) in profiles:
+    for userid, profile in profiles:
         if profile.extid == extid or profile.get_str("name").lower() == djname.lower():
             matches.add(userid)
 

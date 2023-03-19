@@ -6,13 +6,11 @@ from bemani.common import VersionConstants
 
 
 class PopnMusic(PopnMusicBase):
-
     name: str = "Pop'n Music"
     version: int = VersionConstants.POPN_MUSIC
 
 
 class PopnMusic2(PopnMusicBase):
-
     name: str = "Pop'n Music 2"
     version: int = VersionConstants.POPN_MUSIC_2
 
@@ -21,7 +19,6 @@ class PopnMusic2(PopnMusicBase):
 
 
 class PopnMusic3(PopnMusicBase):
-
     name: str = "Pop'n Music 3"
     version: int = VersionConstants.POPN_MUSIC_3
 
@@ -30,7 +27,6 @@ class PopnMusic3(PopnMusicBase):
 
 
 class PopnMusic4(PopnMusicBase):
-
     name: str = "Pop'n Music 4"
     version: int = VersionConstants.POPN_MUSIC_4
 
@@ -39,7 +35,6 @@ class PopnMusic4(PopnMusicBase):
 
 
 class PopnMusic5(PopnMusicBase):
-
     name: str = "Pop'n Music 5"
     version: int = VersionConstants.POPN_MUSIC_5
 
@@ -48,7 +43,6 @@ class PopnMusic5(PopnMusicBase):
 
 
 class PopnMusic6(PopnMusicBase):
-
     name: str = "Pop'n Music 6"
     version: int = VersionConstants.POPN_MUSIC_6
 
@@ -57,7 +51,6 @@ class PopnMusic6(PopnMusicBase):
 
 
 class PopnMusic7(PopnMusicBase):
-
     name: str = "Pop'n Music 7"
     version: int = VersionConstants.POPN_MUSIC_7
 
@@ -66,7 +59,6 @@ class PopnMusic7(PopnMusicBase):
 
 
 class PopnMusic8(PopnMusicBase):
-
     name: str = "Pop'n Music 8"
     version: int = VersionConstants.POPN_MUSIC_8
 
@@ -75,7 +67,6 @@ class PopnMusic8(PopnMusicBase):
 
 
 class PopnMusic9(PopnMusicBase):
-
     name: str = "Pop'n Music 9"
     version: int = VersionConstants.POPN_MUSIC_9
 
@@ -84,7 +75,6 @@ class PopnMusic9(PopnMusicBase):
 
 
 class PopnMusic10(PopnMusicBase):
-
     name: str = "Pop'n Music 10"
     version: int = VersionConstants.POPN_MUSIC_10
 
@@ -93,7 +83,6 @@ class PopnMusic10(PopnMusicBase):
 
 
 class PopnMusic11(PopnMusicBase):
-
     name: str = "Pop'n Music 11"
     version: int = VersionConstants.POPN_MUSIC_11
 
@@ -102,7 +91,6 @@ class PopnMusic11(PopnMusicBase):
 
 
 class PopnMusicIroha(PopnMusicBase):
-
     name: str = "Pop'n Music いろは"
     version: int = VersionConstants.POPN_MUSIC_IROHA
 
@@ -111,7 +99,6 @@ class PopnMusicIroha(PopnMusicBase):
 
 
 class PopnMusicCarnival(PopnMusicBase):
-
     name: str = "Pop'n Music カーニバル"
     version: int = VersionConstants.POPN_MUSIC_CARNIVAL
 
@@ -120,7 +107,6 @@ class PopnMusicCarnival(PopnMusicBase):
 
 
 class PopnMusicFever(PopnMusicBase):
-
     name: str = "Pop'n Music FEVER!"
     version: int = VersionConstants.POPN_MUSIC_FEVER
 
@@ -129,7 +115,6 @@ class PopnMusicFever(PopnMusicBase):
 
 
 class PopnMusicAdventure(PopnMusicBase):
-
     name: str = "Pop'n Music ADVENTURE"
     version: int = VersionConstants.POPN_MUSIC_ADVENTURE
 
@@ -138,7 +123,6 @@ class PopnMusicAdventure(PopnMusicBase):
 
 
 class PopnMusicParty(PopnMusicBase):
-
     name: str = "Pop'n Music Party♪"
     version: int = VersionConstants.POPN_MUSIC_PARTY
 
@@ -147,7 +131,6 @@ class PopnMusicParty(PopnMusicBase):
 
 
 class PopnMusicTheMovie(PopnMusicBase):
-
     name: str = "Pop'n Music THE MOVIE"
     version: int = VersionConstants.POPN_MUSIC_THE_MOVIE
 
@@ -156,7 +139,6 @@ class PopnMusicTheMovie(PopnMusicBase):
 
 
 class PopnMusicSengokuRetsuden(PopnMusicBase):
-
     name: str = "Pop'n Music せんごく列伝"
     version: int = VersionConstants.POPN_MUSIC_SENGOKU_RETSUDEN
 
