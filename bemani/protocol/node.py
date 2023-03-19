@@ -884,7 +884,7 @@ class Node:
 
         def str_to_val(string: Union[str, bytes]) -> Any:
             if translated_type["name"] == "bool":
-                return True if string == "true" else False
+                return string == "true"
             elif translated_type["name"] == "float":
                 return float(string)
             elif translated_type["name"] == "ip4":

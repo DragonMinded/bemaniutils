@@ -838,7 +838,7 @@ class MusicData(BaseData):
                 result["points"],
                 result["timestamp"],
                 result["lid"],
-                True if result["new_record"] == 1 else False,
+                result["new_record"] == 1,
                 self.deserialize(result["data"]),
             ),
         )
@@ -924,7 +924,7 @@ class MusicData(BaseData):
                     result["points"],
                     result["timestamp"],
                     result["lid"],
-                    True if result["new_record"] == 1 else False,
+                    result["new_record"] == 1,
                     self.deserialize(result["data"]),
                 ),
             )
