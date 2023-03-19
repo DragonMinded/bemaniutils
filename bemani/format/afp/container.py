@@ -1127,9 +1127,14 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         else:
             self.vprint("Bit 0x040000 - modern lz mode off")
 
-        if feature_mask & 0xFFF80000:
+        if feature_mask & 0x80000:
+            self.vprint("Bit 0x080000 - unknown MGA flag on")
+        else:
+            self.vprint("Bit 0x080000 - unknown MGA flag off")
+
+        if feature_mask & 0xFFF00000:
             # We don't know these bits at all!
-            raise Exception("Invalid bits set in feature mask!")
+            raise Exception(f"Invalid bits set in feature mask {hex(feature_mask & 0xFFF80000)}!")
 
         if header_offset != header_length:
             raise Exception("Failed to parse bitfield of header correctly!")
