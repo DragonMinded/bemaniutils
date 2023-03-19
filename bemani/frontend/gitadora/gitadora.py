@@ -317,3 +317,84 @@ class GitadoraFrontend(FrontendBase):
         if existing["difficulties"][new.chart] == 0:
             new_song["difficulties"][new.chart] = new.data.get_int("difficulty")
         return new_song
+
+    def format_tachi_score(
+        self, attempt: Attempt, songs: Dict[int, Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        if attempt.data.get_bool("clear") is False:
+            lamp = "FAILED"
+        if attempt.data.get_bool("clear") is True:
+            lamp = "CLEAR"
+        if attempt.data.get_bool("fullcombo") is True:
+            lamp = "FULL COMBO"
+        if attempt.data.get_bool("excellent") is True:
+            lamp = "EXCELLENT"
+        perfect = (
+            attempt.data.get_int("perc") / 100
+            if attempt.data.get_int("perc") >= 0
+            else 0
+        )
+        return {
+            "percent": perfect,
+            "lamp": lamp,
+            "matchType": "inGameID",
+            "identifier": str(attempt.id),
+            "timeAchieved": attempt.timestamp * 1000,
+            "difficulty": GitadoraBase.tachi_difficulty_map.get(attempt.chart),
+            "judgements": {
+                "perfect": attempt.data.get_dict("stats").get_int("perfect"),
+                "great": attempt.data.get_dict("stats").get_int("great"),
+                "good": attempt.data.get_dict("stats").get_int("good"),
+                "ok": attempt.data.get_dict("stats").get_int("ok"),
+                "miss": attempt.data.get_dict("stats").get_int("miss"),
+            },
+        }
+
+    def get_tachi_scores(self, userid: UserID, playtype: str) -> List[Dict[str, Any]]:
+        if playtype == "Gita":
+            attempts = [
+                attempt
+                for attempt in self.data.local.music.get_all_scores(
+                    game=self.game, version=self.version, userid=userid
+                )
+                if attempt[0] is not None
+                and attempt[1].chart
+                in [
+                    GitadoraBase.GITUAR_CHART_TYPE_BASIC,
+                    GitadoraBase.GITUAR_CHART_TYPE_ADVANCE,
+                    GitadoraBase.GITUAR_CHART_TYPE_EXTREME,
+                    GitadoraBase.GITUAR_CHART_TYPE_MASTER,
+                    GitadoraBase.BASS_CHART_TYPE_BASIC,
+                    GitadoraBase.BASS_CHART_TYPE_ADVANCE,
+                    GitadoraBase.BASS_CHART_TYPE_EXTREME,
+                    GitadoraBase.BASS_CHART_TYPE_MASTER,
+                ]
+            ]
+        elif playtype == "Dora":
+            attempts = [
+                attempt
+                for attempt in self.data.local.music.get_all_scores(
+                    game=self.game, version=self.version, userid=userid
+                )
+                if attempt[0] is not None
+                and attempt[1].chart
+                in [
+                    GitadoraBase.DRUM_CHART_TYPE_BASIC,
+                    GitadoraBase.DRUM_CHART_TYPE_ADVANCE,
+                    GitadoraBase.DRUM_CHART_TYPE_EXTREME,
+                    GitadoraBase.DRUM_CHART_TYPE_MASTER,
+                ]
+            ]
+        else:
+            return [{}]
+        songs = self.get_all_songs()
+
+        return sorted(
+            [self.format_tachi_score(attempt[1], songs) for attempt in attempts],
+            reverse=True,
+            key=lambda attempt: (
+                attempt["timeAchieved"],
+                attempt["identifier"],
+                attempt["difficulty"],
+            ),
+        )
