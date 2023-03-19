@@ -606,13 +606,15 @@ class UserData(BaseData):
                 elif profilever[tuid] != version:
                     profilever[tuid] = max(profilever[tuid], tver)
 
-        result = []
-        for uid in userids:
-            if uid not in profilever:
-                result.append((uid, None))
-            else:
-                result.append((uid, self.get_profile(game, profilever[uid], uid)))
-        return result
+        return [
+            (
+                uid,
+                self.get_profile(game, profilever[uid], uid)
+                if uid in profilever
+                else None,
+            )
+            for uid in userids
+        ]
 
     def get_games_played(
         self, userid: UserID, game: Optional[GameConstants] = None
