@@ -603,15 +603,22 @@ will want to run this with versions 1-6 to completely initialize:
 
 ### Gitadora
 
-For Gitadora, you will need the `mdb_**.xml` file from the game you wish to import.
-Then, run the following command, modifying the version parameter as required. Also do the same on omnimix.
+For Gitadora, you will need the `mdb_nt.xml` ,  `trbitem-info.xml`file from the game you wish to import.
+Then, run the following command, modifying the version parameter as required.
 
-* Nextage:       mdb_nt.xml
-* High Voltage:  mdb_hv.xml
+* 7:          Gitadora Nex+age
+* 8:          Gitadora HighVoltage
+
+Hot musiclists for each version, you can grab <contain_stat> in musicdb. if all stats in odd number(e.g. :'1 1'). then we 
+can judge this song is hot music. else its not.
 
 ```
-./read --config config/server.yaml --series gitadora --version 7 --xml data/product/xml/mdb_nt.xml
-./read --config config/server.yaml --series gitadora --version 8 --xml data/product/xml/mdb_hv.xml
+./read config config/server.yaml --series gitadora --version 7  \
+      --xml data/product/xml/mdb_nt.xml
+./read config config/server.yaml --series gitadora --version omni-7  \
+      --xml data/product/xml/mdb_nt.xml
+./read --config config/server.yaml --series gitadora --version 7 \
+      --xml data/product/xml/trbitem-info.xml
 ```
 
 ## Running Locally
