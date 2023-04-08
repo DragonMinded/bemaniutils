@@ -47,7 +47,13 @@ var network_scores = createReactClass({
             case 5:
                 return 'DPA';
             case 6:
-                return 'BEGINNER';
+                return 'SPB';
+            case 7:
+                return 'SPL';
+            case 8:
+                return 'DPB';
+            case 9:
+                return 'DPL';
             default:
                 return 'u broke it';
         }
