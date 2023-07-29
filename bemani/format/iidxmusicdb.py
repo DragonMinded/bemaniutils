@@ -64,27 +64,30 @@ class IIDXMusicDB:
             0,
         )
         # Offset and difference lookup (not sure this is always right)
-        if data[4] == 0x14:
+        gameversion = data[4]
+        if gameversion == 20:
             offset = 0xA420
             leap = 0x320
-        elif data[4] == 0x15:
+        elif gameversion == 21:
             offset = 0xABF0
             leap = 0x320
-        elif data[4] == 0x16:
+        elif gameversion == 22:
             offset = 0xB3C0
             leap = 0x340
-        elif data[4] == 0x17:
+        elif gameversion == 23:
             offset = 0xBB90
             leap = 0x340
-        elif data[4] == 0x18:
+        elif gameversion == 24:
             offset = 0xC360
             leap = 0x340
-        elif data[4] == 0x19:
+        elif gameversion == 25:
             offset = 0xCB30
             leap = 0x340
-        elif data[4] == 0x1A:
+        elif gameversion == 26:
             offset = 0xD300
             leap = 0x344
+        else:
+            raise Exception(f"Unsupported game version {gameversion} found!")
 
         if sig[0] != b"IIDX":
             raise Exception(f"Invalid signature '{sig[0]}' found!")
