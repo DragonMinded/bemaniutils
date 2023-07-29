@@ -3613,6 +3613,10 @@ class ImportSDVX(ImportBase):
 
         pe = PEFile(data)
 
+        # Ideally we would have multiple configurations supported here, like we do for DDR,
+        # Pop'n, IIDX QPros and Reflec Beat. However, the chances that somebody is trying to
+        # import non-final SDVX Booth catalog items is low enough that it doesn't seem worth
+        # it to try to support this.
         if self.version == VersionConstants.SDVX_BOOTH:
             offset = 0xFFF28
             size = 163
