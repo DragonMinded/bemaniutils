@@ -341,7 +341,9 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     ) -> None:
         # Generate scorecard
         profile = self.get_profile(userid)
-        song = self.data.local.music.get_song(self.game, self.music_version, songid, chart)
+        song = self.data.local.music.get_song(
+            self.game, self.music_version, songid, chart
+        )
 
         card_medal = {
             self.PLAY_MEDAL_CIRCLE_FAILED: "Failed",

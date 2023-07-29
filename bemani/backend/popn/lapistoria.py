@@ -334,7 +334,9 @@ class PopnMusicLapistoria(PopnMusicBase):
             return root
         rivalid = links[no].other_userid
         rivalprofile = profiles[rivalid]
-        scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, rivalid
+        )
         achievements = self.data.local.user.get_achievements(
             self.game, self.version, rivalid
         )
@@ -658,13 +660,13 @@ class PopnMusicLapistoria(PopnMusicBase):
         last_played = [
             x[0]
             for x in self.data.local.music.get_last_played(
-                self.game, self.version, userid, 5
+                self.game, self.music_version, userid, 5
             )
         ]
         most_played = [
             x[0]
             for x in self.data.local.music.get_most_played(
-                self.game, self.version, userid, 10
+                self.game, self.music_version, userid, 10
             )
         ]
         while len(last_played) < 5:
@@ -675,7 +677,9 @@ class PopnMusicLapistoria(PopnMusicBase):
         account.add_child(Node.s16_array("my_best", most_played))
         account.add_child(Node.s16_array("latest_music", last_played))
 
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             # Skip any scores for chart types we don't support
             if score.chart not in [
@@ -822,7 +826,9 @@ class PopnMusicLapistoria(PopnMusicBase):
         if game_config.get_bool("force_unlock_songs"):
             songs = {
                 song.id
-                for song in self.data.local.music.get_all_songs(self.game, self.version)
+                for song in self.data.local.music.get_all_songs(
+                    self.game, self.music_version
+                )
             }
             for song in songs:
                 item = Node.void("item")
@@ -1082,7 +1088,9 @@ class PopnMusicLapistoria(PopnMusicBase):
         root.add_child(Node.s32("option", profile.get_int("option", 0)))
         root.add_child(Node.s8("result", 1))
 
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue

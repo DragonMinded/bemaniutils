@@ -204,13 +204,13 @@ class PopnMusicFantasia(PopnMusicBase):
         last_played = [
             x[0]
             for x in self.data.local.music.get_last_played(
-                self.game, self.version, userid, 3
+                self.game, self.music_version, userid, 3
             )
         ]
         most_played = [
             x[0]
             for x in self.data.local.music.get_most_played(
-                self.game, self.version, userid, 20
+                self.game, self.music_version, userid, 20
             )
         ]
         while len(last_played) < 3:
@@ -222,7 +222,9 @@ class PopnMusicFantasia(PopnMusicBase):
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
         clear_medal_sub = [0] * self.GAME_MAX_MUSIC_ID
 
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -329,7 +331,9 @@ class PopnMusicFantasia(PopnMusicBase):
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
         hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
 
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -643,7 +647,9 @@ class PopnMusicFantasia(PopnMusicBase):
         for rival in links[:2]:
             rivalid = rival.other_userid
             rivalprofile = profiles[rivalid]
-            scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+            scores = self.data.remote.music.get_scores(
+                self.game, self.music_version, rivalid
+            )
 
             # First, output general profile info.
             friend = Node.void("friend")
