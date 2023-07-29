@@ -5,6 +5,7 @@ if __name__ == "__main__":
 
     import sys
     sys.path.append(path)
+    os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
 
     import runpy
     runpy.run_module("bemani.utils.twodxutils", run_name="__main__")

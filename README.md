@@ -607,7 +607,15 @@ Then, run the following command, modifying the version parameter as required.
 
 For Reflec Beat, get the game DLL from the version of the game you want to import and
 run a command like so. This network supports Reflec Beat up through Volzza 2, so you
-will want to run this with versions 1-6 to completely initialize:
+will want to run this with versions 1-6 to completely initialize. Use the version
+corresponding to version in the following table:
+
+* Reflec Beat: 1
+* Limelight: 2
+* Colette: 3
+* Groovin'!!: 4
+* VOLZZA: 5
+* VOLZZA 2: 6
 
 ```
 ./read --config config/server.yaml --series reflec --version 1 --bin reflecbeat.dll

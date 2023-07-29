@@ -1713,7 +1713,6 @@ class ImportJubeat(ImportBase):
             VersionConstants.JUBEAT_FESTO,
         }:
             for emblem_entry in root.find("emblem_list") or []:
-                print(emblem_entry)
                 index = int(emblem_entry.find("index").text)
                 layer = int(emblem_entry.find("layer").text)
                 music_id = int(emblem_entry.find("music_id").text)
@@ -3775,6 +3774,37 @@ class ImportMuseca(ImportBase):
             self.finish_batch()
 
 
+class ReflecBeatScrapeConfiguration:
+    def __init__(
+        self,
+        *,
+        version: str,
+        offset: int,
+        stride: int,
+        max_songs: int,
+        max_difficulties: int,
+        song_offset: int,
+        song_length: int,
+        artist_offset: Optional[int],
+        artist_length: Optional[int],
+        chart_offset: int,
+        chart_length: int,
+        difficulties_offset: int,
+    ) -> None:
+        self.version = version
+        self.offset = offset
+        self.stride = stride
+        self.max_songs = max_songs
+        self.max_difficulties = max_difficulties
+        self.song_offset = song_offset
+        self.song_length = song_length
+        self.artist_offset = artist_offset
+        self.artist_length = artist_length
+        self.chart_offset = chart_offset
+        self.chart_length = chart_length
+        self.difficulties_offset = difficulties_offset
+
+
 class ImportReflecBeat(ImportBase):
     def __init__(
         self,
@@ -3810,92 +3840,117 @@ class ImportReflecBeat(ImportBase):
             data = myfile.read()
             myfile.close()
 
+        configurations: List[ReflecBeatScrapeConfiguration] = []
         if self.version == VersionConstants.REFLEC_BEAT:
             # Based on KBR:A:A:A:2011112300
-            offset = 0xBFBD0
-            stride = 280
-            max_songs = 93
-            max_difficulties = 3
-
-            song_offset = 0x4C
-            song_length = 0x40
-            # Artists aren't included in this mix.
-            artist_offset = None
-            artist_length = None
-            chart_offset = 0xD5
-            chart_length = 0x20
-            difficulties_offset = 0xD2
+            configurations.append(
+                ReflecBeatScrapeConfiguration(
+                    version="KBR:A:A:A:2011112300",
+                    offset=0xBFBD0,
+                    stride=280,
+                    max_songs=93,
+                    max_difficulties=3,
+                    song_offset=0x4C,
+                    song_length=0x40,
+                    # Artists aren't included in this mix.
+                    artist_offset=None,
+                    artist_length=None,
+                    chart_offset=0xD5,
+                    chart_length=0x20,
+                    difficulties_offset=0xD2,
+                )
+            )
         elif self.version == VersionConstants.REFLEC_BEAT_LIMELIGHT:
             # Based on LBR:A:A:A:2012082900
-            offset = 0x132C48
-            stride = 220
-            max_songs = 191
-            max_difficulties = 3
-
-            song_offset = 0x4C
-            song_length = 0x40
-            # Artists aren't included in this mix.
-            artist_offset = None
-            artist_length = None
-            chart_offset = 0x9B
-            chart_length = 0x20
-            difficulties_offset = 0x98
+            configurations.append(
+                ReflecBeatScrapeConfiguration(
+                    version="LBR:A:A:A:2012082900",
+                    offset=0x132C48,
+                    stride=220,
+                    max_songs=191,
+                    max_difficulties=3,
+                    song_offset=0x4C,
+                    song_length=0x40,
+                    # Artists aren't included in this mix.
+                    artist_offset=None,
+                    artist_length=None,
+                    chart_offset=0x9B,
+                    chart_length=0x20,
+                    difficulties_offset=0x98,
+                )
+            )
         elif self.version == VersionConstants.REFLEC_BEAT_COLETTE:
             # Based on MBR:J:A:A:2014011600
-            offset = 0x1E6880
-            stride = 468
-            max_songs = 443
-            max_difficulties = 3
-
-            song_offset = 0x34
-            song_length = 0x80
-            artist_offset = 0xB4
-            artist_length = 0x80
-            chart_offset = 0x1B4
-            chart_length = 0x20
-            difficulties_offset = 0x1A8
+            configurations.append(
+                ReflecBeatScrapeConfiguration(
+                    version="MBR:J:A:A:2014011600",
+                    offset=0x1E6880,
+                    stride=468,
+                    max_songs=443,
+                    max_difficulties=3,
+                    song_offset=0x34,
+                    song_length=0x80,
+                    artist_offset=0xB4,
+                    artist_length=0x80,
+                    chart_offset=0x1B4,
+                    chart_length=0x20,
+                    difficulties_offset=0x1A8,
+                )
+            )
         elif self.version == VersionConstants.REFLEC_BEAT_GROOVIN:
             # Based on MBR:J:A:A:2015102100
-            offset = 0x212EC0
-            stride = 524
-            max_songs = 698
-            max_difficulties = 4
-
-            song_offset = 0x3C
-            song_length = 0x80
-            artist_offset = 0xBC
-            artist_length = 0x80
-            chart_offset = 0x1E8
-            chart_length = 0x20
-            difficulties_offset = 0x1D0
+            configurations.append(
+                ReflecBeatScrapeConfiguration(
+                    version="MBR:J:A:A:2015102100",
+                    offset=0x212EC0,
+                    stride=524,
+                    max_songs=698,
+                    max_difficulties=4,
+                    song_offset=0x3C,
+                    song_length=0x80,
+                    artist_offset=0xBC,
+                    artist_length=0x80,
+                    chart_offset=0x1E8,
+                    chart_length=0x20,
+                    difficulties_offset=0x1D0,
+                )
+            )
         elif self.version == VersionConstants.REFLEC_BEAT_VOLZZA:
             # Based on MBR:J:A:A:2016030200
-            offset = 0x1A0EC8
-            stride = 552
-            max_songs = 805
-            max_difficulties = 4
-
-            song_offset = 0x38
-            song_length = 0x80
-            artist_offset = 0xB8
-            artist_length = 0x80
-            chart_offset = 0x1E4
-            chart_length = 0x20
-            difficulties_offset = 0x1CC
+            configurations.append(
+                ReflecBeatScrapeConfiguration(
+                    version="MBR:J:A:A:2016030200",
+                    offset=0x1A0EC8,
+                    stride=552,
+                    max_songs=805,
+                    max_difficulties=4,
+                    song_offset=0x38,
+                    song_length=0x80,
+                    artist_offset=0xB8,
+                    artist_length=0x80,
+                    chart_offset=0x1E4,
+                    chart_length=0x20,
+                    difficulties_offset=0x1CC,
+                )
+            )
         elif self.version == VersionConstants.REFLEC_BEAT_VOLZZA_2:
             # Based on MBR:J:A:A:2016100400
-            offset = 0x1CBC68
-            stride = 552
-            max_songs = 850
-            max_difficulties = 4
-
-            song_offset = 0x38
-            song_length = 0x80
-            artist_offset = 0xB8
-            artist_length = 0x80
-            chart_offset = 0x1E4
-            chart_length = 0x20
-            difficulties_offset = 0x1CC
+            configurations.append(
+                ReflecBeatScrapeConfiguration(
+                    version="MBR:J:A:A:2016100400",
+                    offset=0x1CBC68,
+                    stride=552,
+                    max_songs=850,
+                    max_difficulties=4,
+                    song_offset=0x38,
+                    song_length=0x80,
+                    artist_offset=0xB8,
+                    artist_length=0x80,
+                    chart_offset=0x1E4,
+                    chart_length=0x20,
+                    difficulties_offset=0x1CC,
+                )
+            )
         else:
             raise Exception(f"Unsupported ReflecBeat version {self.version}")
 
@@ -3906,7 +3961,7 @@ class ImportReflecBeat(ImportBase):
                     end = i
                     break
             if end is None:
-                raise Exception("Invalid string!")
+                raise UnicodeError("Invalid string!")
             if end == 0:
                 return ""
 
@@ -3925,48 +3980,80 @@ class ImportReflecBeat(ImportBase):
 
             return folder
 
-        songs = []
-        for i in range(max_songs):
-            start = offset + (stride * i)
-            end = start + stride
-            songdata = data[start:end]
+        for config in configurations:
+            try:
+                print(f"Trying configuration for game version {config.version}...")
 
-            title = convert_string(songdata[song_offset : (song_offset + song_length)])
-            if artist_offset is None:
-                artist = ""
-            else:
-                artist = convert_string(
-                    songdata[artist_offset : (artist_offset + artist_length)]
-                )
-            if title == "" and artist == "":
-                continue
-            songid = struct.unpack("<I", songdata[0:4])[0]
-            chart = convert_string(
-                songdata[chart_offset : (chart_offset + chart_length)]
-            )
-            difficulties = [
-                d
-                for d in songdata[
-                    difficulties_offset : (difficulties_offset + max_difficulties)
-                ]
-            ]
-            difficulties = [0 if d == 255 else d for d in difficulties]
-            folder = convert_version(songid, int(chart[0]))
+                songs = []
+                for i in range(config.max_songs):
+                    start = config.offset + (config.stride * i)
+                    end = start + config.stride
+                    songdata = data[start:end]
 
-            while len(difficulties) < 4:
-                difficulties.append(0)
+                    title = convert_string(
+                        songdata[
+                            config.song_offset : (
+                                config.song_offset + config.song_length
+                            )
+                        ]
+                    )
+                    if config.artist_offset is None:
+                        artist = ""
+                    else:
+                        artist = convert_string(
+                            songdata[
+                                config.artist_offset : (
+                                    config.artist_offset + config.artist_length
+                                )
+                            ]
+                        )
+                    if title == "" and artist == "":
+                        continue
+                    songid = struct.unpack("<I", songdata[0:4])[0]
+                    chart = convert_string(
+                        songdata[
+                            config.chart_offset : (
+                                config.chart_offset + config.chart_length
+                            )
+                        ]
+                    )
+                    difficulties = [
+                        d
+                        for d in songdata[
+                            config.difficulties_offset : (
+                                config.difficulties_offset + config.max_difficulties
+                            )
+                        ]
+                    ]
+                    difficulties = [0 if d == 255 else d for d in difficulties]
+                    folder = convert_version(songid, int(chart[0]))
 
-            songs.append(
-                {
-                    "id": songid,
-                    "title": title,
-                    "artist": artist,
-                    "chartid": chart[:4],
-                    "difficulties": difficulties,
-                    "folder": folder,
-                }
-            )
-        return songs
+                    while len(difficulties) < 4:
+                        difficulties.append(0)
+
+                    songs.append(
+                        {
+                            "id": songid,
+                            "title": title,
+                            "artist": artist,
+                            "chartid": chart[:4],
+                            "difficulties": difficulties,
+                            "folder": folder,
+                        }
+                    )
+
+                # If we got here, that means we ran into no issues and didn't have to attempt another offset.
+                print("Successfully parsed game DB!")
+
+                return songs
+            except UnicodeError:
+                # These offsets are possibly not correct, so try the next configuration.
+                print("Failed to parse game DB!")
+                pass
+
+        raise Exception(
+            "Could not determine correct binary parser configuration for ReflecBeat version {self.version}"
+        )
 
     def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
         # Grab music info from remote server

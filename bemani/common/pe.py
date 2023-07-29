@@ -71,6 +71,18 @@ class RetException(Exception):
     pass
 
 
+class InvalidOffsetException(Exception):
+    pass
+
+
+class InvalidVirtualOffsetException(InvalidOffsetException):
+    pass
+
+
+class InvalidPhysicalOffsetException(InvalidOffsetException):
+    pass
+
+
 class PEFile:
     def __init__(self, data: bytes) -> None:
         self.data = data
@@ -89,7 +101,7 @@ class PEFile:
             if offset == virtual:
                 return physical
 
-        raise Exception(
+        raise InvalidVirtualOffsetException(
             f"Couldn't find physical offset for virtual offset 0x{offset:08x}"
         )
 
@@ -109,7 +121,7 @@ class PEFile:
             if offset == physical:
                 return virtual
 
-        raise Exception(
+        raise InvalidPhysicalOffsetException(
             f"Couldn't find virtual offset for physical offset 0x{offset:08x}"
         )
 
