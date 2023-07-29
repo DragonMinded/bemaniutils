@@ -416,7 +416,7 @@ class ImportPopn(ImportBase):
             self.charts = [0, 1, 2, 3]
         else:
             raise Exception(
-                "Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24, 25, 26!"
+                "Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24, omni-24, 25, omni-25, 26, omni-26!"
             )
 
         super().__init__(
@@ -2566,6 +2566,67 @@ class ImportIIDX(ImportBase):
                 self.finish_batch()
 
 
+class DDRScrapeConfiguration:
+    def __init__(
+        self,
+        *,
+        version: str,
+        offset: int,
+        size: int,
+        length: int,
+        unpackfmt: str,
+        id_offset: int,
+        edit_offset: int,
+        bpm_min_offset: int,
+        bpm_max_offset: int,
+        folder_offset: int,
+        single_difficulties: int,
+        double_difficulties: int,
+        groove_single_beginner: int,
+        groove_single_basic: int,
+        groove_single_difficult: int,
+        groove_single_expert: int,
+        groove_single_challenge: int,
+        groove_double_basic: int,
+        groove_double_difficult: int,
+        groove_double_expert: int,
+        groove_double_challenge: int,
+        voltage: int,
+        stream: int,
+        air: int,
+        chaos: int,
+        freeze: int,
+        folder_start: int,
+    ) -> None:
+        self.version = version
+        self.offset = offset
+        self.size = size
+        self.length = length
+        self.unpackfmt = unpackfmt
+        self.id_offset = id_offset
+        self.edit_offset = edit_offset
+        self.bpm_min_offset = bpm_min_offset
+        self.bpm_max_offset = bpm_max_offset
+        self.folder_offset = folder_offset
+        self.single_difficulties = single_difficulties
+        self.double_difficulties = double_difficulties
+        self.groove_single_beginner = groove_single_beginner
+        self.groove_single_basic = groove_single_basic
+        self.groove_single_difficult = groove_single_difficult
+        self.groove_single_expert = groove_single_expert
+        self.groove_single_challenge = groove_single_challenge
+        self.groove_double_basic = groove_double_basic
+        self.groove_double_difficult = groove_double_difficult
+        self.groove_double_expert = groove_double_expert
+        self.groove_double_challenge = groove_double_challenge
+        self.voltage = voltage
+        self.stream = stream
+        self.air = air
+        self.chaos = chaos
+        self.freeze = freeze
+        self.folder_start = folder_start
+
+
 class ImportDDR(ImportBase):
     def __init__(
         self,
@@ -2595,312 +2656,423 @@ class ImportDDR(ImportBase):
             data = myfile.read()
             myfile.close()
 
+        def add_skew(unpackfmt: str, size: int, skew: int) -> str:
+            # Skew is because I'm too lazy to count the Hs in the format, so just
+            # pad it for ease of construction here.
+            return unpackfmt + ("x" * (size - len(unpackfmt) - skew))
+
+        configurations: List[DDRScrapeConfiguration] = []
         if self.version == VersionConstants.DDR_X2:
             # Based on JDX:J:A:A:2010111000
-            offset = 0x254FC0
-            size = 0x14C
-            length = 894
-            # Basic stuff like ID, bpm, chart difficulties
-            unpackfmt = "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
-            # Groove radar
-            unpackfmt += "HHHHHHHHH" * 5
-            if len(unpackfmt) < size:
-                # Skew is because I'm too lazy to count the Hs above
-                skew = 3 + (9 * 5)
-                # Just pad it for ease of construction
-                unpackfmt = unpackfmt + ("x" * (size - len(unpackfmt) - skew))
-            # Basic offsets
-            id_offset = 1
-            edit_offset = 0
-            bpm_min_offset = 3
-            bpm_max_offset = 2
-            folder_offset = 24  # This is a byte offset into the raw field
-
-            # Single/double difficulty array offsets
-            single_difficulties = 4
-            double_difficulties = 9
-
-            # Groove gauge offsets
-            groove_single_beginner = 22
-            groove_single_basic = 14
-            groove_single_difficult = 15
-            groove_single_expert = 16
-            groove_single_challenge = 17
-
-            groove_double_basic = 18
-            groove_double_difficult = 19
-            groove_double_expert = 20
-            groove_double_challenge = 21
-
-            # Relative offsets for each groove gauge value
-            voltage = 0
-            stream = 9
-            air = 18
-            chaos = 27
-            freeze = 36
-
-            # Folder start version
-            folder_start = 12
+            configurations.append(
+                DDRScrapeConfiguration(
+                    version="JDX:J:A:A:2010111000",
+                    offset=0x254FC0,
+                    size=0x14C,
+                    length=894,
+                    unpackfmt=add_skew(
+                        (
+                            # Basic stuff like ID, bpm, chart difficulties
+                            "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+                            # Groove radar
+                            + ("HHHHHHHHH" * 5)
+                        ),
+                        0x14C,
+                        3 + (9 * 5),
+                    ),
+                    # Basic offsets
+                    id_offset=1,
+                    edit_offset=0,
+                    bpm_min_offset=3,
+                    bpm_max_offset=2,
+                    folder_offset=24,  # This is a byte offset into the raw field
+                    # Single/double difficulty array offsets
+                    single_difficulties=4,
+                    double_difficulties=9,
+                    # Groove gauge offsets
+                    groove_single_beginner=22,
+                    groove_single_basic=14,
+                    groove_single_difficult=15,
+                    groove_single_expert=16,
+                    groove_single_challenge=17,
+                    groove_double_basic=18,
+                    groove_double_difficult=19,
+                    groove_double_expert=20,
+                    groove_double_challenge=21,
+                    # Relative offsets for each groove gauge value
+                    voltage=0,
+                    stream=9,
+                    air=18,
+                    chaos=27,
+                    freeze=36,
+                    # Folder start version
+                    folder_start=12,
+                )
+            )
         elif self.version == VersionConstants.DDR_X3_VS_2NDMIX:
             # Based on KDX:J:A:A:2012112600
-            offset = 0x27A4C8
-            size = 0x150
-            length = 1062
-            # Basic stuff like ID, bpm, chart difficulties
-            unpackfmt = (
-                "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+            configurations.append(
+                DDRScrapeConfiguration(
+                    version="KDX:J:A:A:2012112600",
+                    offset=0x27A4C8,
+                    size=0x150,
+                    length=1062,
+                    unpackfmt=add_skew(
+                        (
+                            # Basic stuff like ID, bpm, chart difficulties
+                            "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+                            # Groove radar
+                            + ("HHHHHHHHH" * 5)
+                        ),
+                        0x150,
+                        3 + (9 * 5),
+                    ),
+                    # Basic offsets
+                    id_offset=1,
+                    edit_offset=0,
+                    bpm_min_offset=3,
+                    bpm_max_offset=2,
+                    folder_offset=24,  # This is a byte offset into the raw field
+                    # Single/double difficulty array offsets
+                    single_difficulties=4,
+                    double_difficulties=9,
+                    # Groove gauge offsets
+                    groove_single_beginner=22,
+                    groove_single_basic=14,
+                    groove_single_difficult=15,
+                    groove_single_expert=16,
+                    groove_single_challenge=17,
+                    groove_double_basic=18,
+                    groove_double_difficult=19,
+                    groove_double_expert=20,
+                    groove_double_challenge=21,
+                    # Relative offsets for each groove gauge value
+                    voltage=0,
+                    stream=9,
+                    air=18,
+                    chaos=27,
+                    freeze=36,
+                    # Folder start version
+                    folder_start=13,
+                )
             )
-            # Groove radar
-            unpackfmt += "HHHHHHHHH" * 5
-            if len(unpackfmt) < size:
-                # Skew is because I'm too lazy to count the Hs above
-                skew = 3 + (9 * 5)
-                # Just pad it for ease of construction
-                unpackfmt = unpackfmt + ("x" * (size - len(unpackfmt) - skew))
-            # Basic offsets
-            id_offset = 1
-            edit_offset = 0
-            bpm_min_offset = 3
-            bpm_max_offset = 2
-            folder_offset = 24  # This is a byte offset into the raw field
-
-            # Single/double difficulty array offsets
-            single_difficulties = 4
-            double_difficulties = 9
-
-            # Groove gauge offsets
-            groove_single_beginner = 22
-            groove_single_basic = 14
-            groove_single_difficult = 15
-            groove_single_expert = 16
-            groove_single_challenge = 17
-
-            groove_double_basic = 18
-            groove_double_difficult = 19
-            groove_double_expert = 20
-            groove_double_challenge = 21
-
-            # Relative offsets for each groove gauge value
-            voltage = 0
-            stream = 9
-            air = 18
-            chaos = 27
-            freeze = 36
-
-            # Folder start version
-            folder_start = 13
         elif self.version == VersionConstants.DDR_2013:
             # Based on MDX:J:A:A:2014032700
-            offset = 0x2663D8
-            size = 0x1D0
-            length = 1238
-            # Basic stuff like ID, bpm, chart difficulties
-            unpackfmt = (
-                "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+            configurations.append(
+                DDRScrapeConfiguration(
+                    version="MDX:J:A:A:2014032700",
+                    offset=0x2663D8,
+                    size=0x1D0,
+                    length=1238,
+                    unpackfmt=add_skew(
+                        (
+                            # Basic stuff like ID, bpm, chart difficulties
+                            "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+                            # Groove radar
+                            + ("HHHHHHHHH" * 5)
+                        ),
+                        0x1D0,
+                        3 + (9 * 5),
+                    ),
+                    # Basic offsets
+                    id_offset=1,
+                    edit_offset=0,
+                    bpm_min_offset=3,
+                    bpm_max_offset=2,
+                    folder_offset=20,  # This is a byte offset into the raw field
+                    # Single/double difficulty array offsets
+                    single_difficulties=4,
+                    double_difficulties=9,
+                    # Groove gauge offsets
+                    groove_single_beginner=22,
+                    groove_single_basic=14,
+                    groove_single_difficult=15,
+                    groove_single_expert=16,
+                    groove_single_challenge=17,
+                    groove_double_basic=18,
+                    groove_double_difficult=19,
+                    groove_double_expert=20,
+                    groove_double_challenge=21,
+                    # Relative offsets for each groove gauge value
+                    voltage=0,
+                    stream=9,
+                    air=18,
+                    chaos=27,
+                    freeze=36,
+                    # Folder start version
+                    folder_start=14,
+                )
             )
-            # Groove radar
-            unpackfmt += "HHHHHHHHH" * 5
-            if len(unpackfmt) < size:
-                # Skew is because I'm too lazy to count the Hs above
-                skew = 3 + (9 * 5)
-                # Just pad it for ease of construction
-                unpackfmt = unpackfmt + ("x" * (size - len(unpackfmt) - skew))
-            # Basic offsets
-            id_offset = 1
-            edit_offset = 0
-            bpm_min_offset = 3
-            bpm_max_offset = 2
-            folder_offset = 20  # This is a byte offset into the raw field
-
-            # Single/double difficulty array offsets
-            single_difficulties = 4
-            double_difficulties = 9
-
-            # Groove gauge offsets
-            groove_single_beginner = 22
-            groove_single_basic = 14
-            groove_single_difficult = 15
-            groove_single_expert = 16
-            groove_single_challenge = 17
-
-            groove_double_basic = 18
-            groove_double_difficult = 19
-            groove_double_expert = 20
-            groove_double_challenge = 21
-
-            # Relative offsets for each groove gauge value
-            voltage = 0
-            stream = 9
-            air = 18
-            chaos = 27
-            freeze = 36
-
-            # Folder start version
-            folder_start = 14
         elif self.version == VersionConstants.DDR_2014:
             # Based on MDX:A:A:A:2015122100
-            offset = 0x2B72B0
-            size = 0x1D0
-            length = 1466
-            # Basic stuff like ID, bpm, chart difficulties
-            unpackfmt = (
-                "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+            configurations.append(
+                DDRScrapeConfiguration(
+                    version="MDX:A:A:A:2015122100",
+                    offset=0x2B72B0,
+                    size=0x1D0,
+                    length=1466,
+                    unpackfmt=add_skew(
+                        (
+                            # Basic stuff like ID, bpm, chart difficulties
+                            "<xxxxxxxxHHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxHHBBBBBBBBBB"
+                            # Groove radar
+                            + ("HHHHHHHHH" * 5)
+                        ),
+                        0x1D0,
+                        3 + (9 * 5),
+                    ),
+                    # Basic offsets
+                    id_offset=1,
+                    edit_offset=0,
+                    bpm_min_offset=3,
+                    bpm_max_offset=2,
+                    folder_offset=20,  # This is a byte offset into the raw field
+                    # Single/double difficulty array offsets
+                    single_difficulties=4,
+                    double_difficulties=9,
+                    # Groove gauge offsets
+                    groove_single_beginner=22,
+                    groove_single_basic=14,
+                    groove_single_difficult=15,
+                    groove_single_expert=16,
+                    groove_single_challenge=17,
+                    groove_double_basic=18,
+                    groove_double_difficult=19,
+                    groove_double_expert=20,
+                    groove_double_challenge=21,
+                    # Relative offsets for each groove gauge value
+                    voltage=0,
+                    stream=9,
+                    air=18,
+                    chaos=27,
+                    freeze=36,
+                    # Folder start version
+                    folder_start=15,
+                )
             )
-            # Groove radar
-            unpackfmt += "HHHHHHHHH" * 5
-            if len(unpackfmt) < size:
-                # Skew is because I'm too lazy to count the Hs above
-                skew = 3 + (9 * 5)
-                # Just pad it for ease of construction
-                unpackfmt = unpackfmt + ("x" * (size - len(unpackfmt) - skew))
-            # Basic offsets
-            id_offset = 1
-            edit_offset = 0
-            bpm_min_offset = 3
-            bpm_max_offset = 2
-            folder_offset = 20  # This is a byte offset into the raw field
-
-            # Single/double difficulty array offsets
-            single_difficulties = 4
-            double_difficulties = 9
-
-            # Groove gauge offsets
-            groove_single_beginner = 22
-            groove_single_basic = 14
-            groove_single_difficult = 15
-            groove_single_expert = 16
-            groove_single_challenge = 17
-
-            groove_double_basic = 18
-            groove_double_difficult = 19
-            groove_double_expert = 20
-            groove_double_challenge = 21
-
-            # Relative offsets for each groove gauge value
-            voltage = 0
-            stream = 9
-            air = 18
-            chaos = 27
-            freeze = 36
-
-            # Folder start version
-            folder_start = 15
         else:
             raise Exception("Unknown game version!")
-        songs = []
 
-        for i in range(length):
-            start = offset + (i * size)
-            end = offset + ((i + 1) * size)
-            chunk = data[start:end]
+        for config in configurations:
+            try:
+                print(f"Trying configuration for game version {config.version}...")
 
-            # First, figure out if it is actually a song
-            ssqcode = chunk[0:6].decode("ascii").replace("\0", "").strip()
-            if len(ssqcode) == 0:
-                continue
-            unpacked = struct.unpack(unpackfmt, chunk)
-            songinfo = {
-                "id": unpacked[id_offset],
-                "edit_id": unpacked[edit_offset],
-                "ssqcode": ssqcode,
-                "difficulty": {
-                    "single": {
-                        "beginner": unpacked[single_difficulties + 0],
-                        "basic": unpacked[single_difficulties + 1],
-                        "difficult": unpacked[single_difficulties + 2],
-                        "expert": unpacked[single_difficulties + 3],
-                        "challenge": unpacked[single_difficulties + 4],
-                    },
-                    "double": {
-                        "beginner": unpacked[double_difficulties + 0],
-                        "basic": unpacked[double_difficulties + 1],
-                        "difficult": unpacked[double_difficulties + 2],
-                        "expert": unpacked[double_difficulties + 3],
-                        "challenge": unpacked[double_difficulties + 4],
-                    },
-                },
-                "groove_gauge": {
-                    "single": {
-                        "beginner": {
-                            "voltage": unpacked[groove_single_beginner + voltage],
-                            "stream": unpacked[groove_single_beginner + stream],
-                            "air": unpacked[groove_single_beginner + air],
-                            "chaos": unpacked[groove_single_beginner + chaos],
-                            "freeze": unpacked[groove_single_beginner + freeze],
+                songs = []
+
+                for i in range(config.length):
+                    start = config.offset + (i * config.size)
+                    end = config.offset + ((i + 1) * config.size)
+                    chunk = data[start:end]
+
+                    # First, figure out if it is actually a song
+                    ssqcode = chunk[0:6].decode("ascii").replace("\0", "").strip()
+                    if len(ssqcode) == 0:
+                        continue
+                    unpacked = struct.unpack(config.unpackfmt, chunk)
+                    songinfo = {
+                        "id": unpacked[config.id_offset],
+                        "edit_id": unpacked[config.edit_offset],
+                        "ssqcode": ssqcode,
+                        "difficulty": {
+                            "single": {
+                                "beginner": unpacked[config.single_difficulties + 0],
+                                "basic": unpacked[config.single_difficulties + 1],
+                                "difficult": unpacked[config.single_difficulties + 2],
+                                "expert": unpacked[config.single_difficulties + 3],
+                                "challenge": unpacked[config.single_difficulties + 4],
+                            },
+                            "double": {
+                                "beginner": unpacked[config.double_difficulties + 0],
+                                "basic": unpacked[config.double_difficulties + 1],
+                                "difficult": unpacked[config.double_difficulties + 2],
+                                "expert": unpacked[config.double_difficulties + 3],
+                                "challenge": unpacked[config.double_difficulties + 4],
+                            },
                         },
-                        "basic": {
-                            "voltage": unpacked[groove_single_basic + voltage],
-                            "stream": unpacked[groove_single_basic + stream],
-                            "air": unpacked[groove_single_basic + air],
-                            "chaos": unpacked[groove_single_basic + chaos],
-                            "freeze": unpacked[groove_single_basic + freeze],
+                        "groove_gauge": {
+                            "single": {
+                                "beginner": {
+                                    "voltage": unpacked[
+                                        config.groove_single_beginner + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_single_beginner + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_single_beginner + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_single_beginner + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_single_beginner + config.freeze
+                                    ],
+                                },
+                                "basic": {
+                                    "voltage": unpacked[
+                                        config.groove_single_basic + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_single_basic + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_single_basic + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_single_basic + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_single_basic + config.freeze
+                                    ],
+                                },
+                                "difficult": {
+                                    "voltage": unpacked[
+                                        config.groove_single_difficult + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_single_difficult + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_single_difficult + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_single_difficult + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_single_difficult + config.freeze
+                                    ],
+                                },
+                                "expert": {
+                                    "voltage": unpacked[
+                                        config.groove_single_expert + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_single_expert + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_single_expert + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_single_expert + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_single_expert + config.freeze
+                                    ],
+                                },
+                                "challenge": {
+                                    "voltage": unpacked[
+                                        config.groove_single_challenge + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_single_challenge + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_single_challenge + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_single_challenge + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_single_challenge + config.freeze
+                                    ],
+                                },
+                            },
+                            "double": {
+                                "beginner": {
+                                    "voltage": 0,
+                                    "stream": 0,
+                                    "air": 0,
+                                    "chaos": 0,
+                                    "freeze": 0,
+                                },
+                                "basic": {
+                                    "voltage": unpacked[
+                                        config.groove_double_basic + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_double_basic + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_double_basic + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_double_basic + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_double_basic + config.freeze
+                                    ],
+                                },
+                                "difficult": {
+                                    "voltage": unpacked[
+                                        config.groove_double_difficult + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_double_difficult + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_double_difficult + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_double_difficult + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_double_difficult + config.freeze
+                                    ],
+                                },
+                                "expert": {
+                                    "voltage": unpacked[
+                                        config.groove_double_expert + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_double_expert + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_double_expert + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_double_expert + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_double_expert + config.freeze
+                                    ],
+                                },
+                                "challenge": {
+                                    "voltage": unpacked[
+                                        config.groove_double_challenge + config.voltage
+                                    ],
+                                    "stream": unpacked[
+                                        config.groove_double_challenge + config.stream
+                                    ],
+                                    "air": unpacked[
+                                        config.groove_double_challenge + config.air
+                                    ],
+                                    "chaos": unpacked[
+                                        config.groove_double_challenge + config.chaos
+                                    ],
+                                    "freeze": unpacked[
+                                        config.groove_double_challenge + config.freeze
+                                    ],
+                                },
+                            },
                         },
-                        "difficult": {
-                            "voltage": unpacked[groove_single_difficult + voltage],
-                            "stream": unpacked[groove_single_difficult + stream],
-                            "air": unpacked[groove_single_difficult + air],
-                            "chaos": unpacked[groove_single_difficult + chaos],
-                            "freeze": unpacked[groove_single_difficult + freeze],
-                        },
-                        "expert": {
-                            "voltage": unpacked[groove_single_expert + voltage],
-                            "stream": unpacked[groove_single_expert + stream],
-                            "air": unpacked[groove_single_expert + air],
-                            "chaos": unpacked[groove_single_expert + chaos],
-                            "freeze": unpacked[groove_single_expert + freeze],
-                        },
-                        "challenge": {
-                            "voltage": unpacked[groove_single_challenge + voltage],
-                            "stream": unpacked[groove_single_challenge + stream],
-                            "air": unpacked[groove_single_challenge + air],
-                            "chaos": unpacked[groove_single_challenge + chaos],
-                            "freeze": unpacked[groove_single_challenge + freeze],
-                        },
-                    },
-                    "double": {
-                        "beginner": {
-                            "voltage": 0,
-                            "stream": 0,
-                            "air": 0,
-                            "chaos": 0,
-                            "freeze": 0,
-                        },
-                        "basic": {
-                            "voltage": unpacked[groove_double_basic + voltage],
-                            "stream": unpacked[groove_double_basic + stream],
-                            "air": unpacked[groove_double_basic + air],
-                            "chaos": unpacked[groove_double_basic + chaos],
-                            "freeze": unpacked[groove_double_basic + freeze],
-                        },
-                        "difficult": {
-                            "voltage": unpacked[groove_double_difficult + voltage],
-                            "stream": unpacked[groove_double_difficult + stream],
-                            "air": unpacked[groove_double_difficult + air],
-                            "chaos": unpacked[groove_double_difficult + chaos],
-                            "freeze": unpacked[groove_double_difficult + freeze],
-                        },
-                        "expert": {
-                            "voltage": unpacked[groove_double_expert + voltage],
-                            "stream": unpacked[groove_double_expert + stream],
-                            "air": unpacked[groove_double_expert + air],
-                            "chaos": unpacked[groove_double_expert + chaos],
-                            "freeze": unpacked[groove_double_expert + freeze],
-                        },
-                        "challenge": {
-                            "voltage": unpacked[groove_double_challenge + voltage],
-                            "stream": unpacked[groove_double_challenge + stream],
-                            "air": unpacked[groove_double_challenge + air],
-                            "chaos": unpacked[groove_double_challenge + chaos],
-                            "freeze": unpacked[groove_double_challenge + freeze],
-                        },
-                    },
-                },
-                "bpm_min": unpacked[bpm_min_offset],
-                "bpm_max": unpacked[bpm_max_offset],
-                "folder": folder_start - chunk[folder_offset],
-            }
-            songs.append(songinfo)
-        return songs
+                        "bpm_min": unpacked[config.bpm_min_offset],
+                        "bpm_max": unpacked[config.bpm_max_offset],
+                        "folder": config.folder_start - chunk[config.folder_offset],
+                    }
+                    songs.append(songinfo)
+
+                # If we got here, that means we ran into no issues and didn't have to attempt another offset.
+                print("Successfully parsed game DB!")
+
+                return songs
+            except UnicodeError:
+                # These offsets are possibly not correct, so try the next configuration.
+                print("Failed to parse game DB!")
+                pass
+
+        raise Exception(
+            "Could not determine correct binary parser configuration for DDR version {self.version}"
+        )
 
     def hydrate(self, songs: List[Dict[str, Any]], infile: str) -> List[Dict[str, Any]]:
         tree = ET.parse(infile)
