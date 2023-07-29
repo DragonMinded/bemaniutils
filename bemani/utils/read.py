@@ -761,6 +761,79 @@ class ImportPopn(ImportBase):
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
 
+            # Based on L39:J:A:A:2011121400
+            configurations.append(
+                PopnScrapeConfiguration(
+                    version="L39:J:A:A:2011121400",
+                    # Normal offset for music DB, size
+                    offset=0x1797D0,
+                    step=160,
+                    length=1116,
+                    # Offset and step of file DB
+                    file_offset=0x238AD0,
+                    file_step=24,
+                    # Standard lookups
+                    genre_offset=0,
+                    title_offset=1,
+                    artist_offset=2,
+                    comment_offset=3,
+                    english_title_offset=None,
+                    english_artist_offset=None,
+                    extended_genre_offset=None,
+                    charts_offset=6,
+                    folder_offset=7,
+                    # Offsets for normal chart difficulties
+                    easy_offset=12,
+                    normal_offset=10,
+                    hyper_offset=11,
+                    ex_offset=13,
+                    # Offsets for battle chart difficulties
+                    battle_normal_offset=14,
+                    battle_hyper_offset=15,
+                    # Offsets into which offset to seek to for file lookups
+                    easy_file_offset=18,
+                    normal_file_offset=16,
+                    hyper_file_offset=17,
+                    ex_file_offset=19,
+                    battle_normal_file_offset=20,
+                    battle_hyper_file_offset=21,
+                    packedfmt=(
+                        "<"
+                        "I"  # Genre
+                        "I"  # Title
+                        "I"  # Artist
+                        "I"  # Comment
+                        "H"  # ??
+                        "H"  # ??
+                        "I"  # Available charts mask
+                        "I"  # Folder
+                        "I"  # Event flags?
+                        "B"  # Event flags?
+                        "B"  # Normal difficulty
+                        "B"  # Hyper difficulty
+                        "B"  # Easy difficulty
+                        "B"  # EX difficulty
+                        "B"  # Battle normal difficulty
+                        "B"  # Battle hyper difficulty
+                        "x"  # ??
+                        "x"  # ??
+                        "x"  # ??
+                        "H"  # Normal chart pointer
+                        "H"  # Hyper chart pointer
+                        "H"  # Easy chart pointer
+                        "H"  # EX chart pointer
+                        "H"  # Battle normal pointer
+                        "H"  # Battle hyper pointer
+                        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    ),
+                    # Offsets into file DB for finding file and folder.
+                    file_folder_offset=0,
+                    file_name_offset=1,
+                    filefmt="<" "I" "I" "I" "I" "I" "I",  # Folder  # Filename
+                    available_charts=available_charts,
+                )
+            )
+
             # Based on L39:J:A:A:2012091900
             configurations.append(
                 PopnScrapeConfiguration(
@@ -1104,6 +1177,79 @@ class ImportPopn(ImportBase):
                     True,  # Always a battle normal chart
                     mask & 0x4000000 > 0,  # Battle hyper chart bit
                 )
+
+            # Based on M39:J:A:A:2018082100
+            configurations.append(
+                PopnScrapeConfiguration(
+                    version="M39:J:A:A:2018082100",
+                    # Normal offset for music DB, size
+                    offset=0x299410,
+                    step=172,
+                    length=1704,
+                    # Offset and step of file DB
+                    file_offset=0x28B108,
+                    file_step=32,
+                    # Standard lookups
+                    genre_offset=0,
+                    title_offset=1,
+                    artist_offset=2,
+                    comment_offset=3,
+                    english_title_offset=4,
+                    english_artist_offset=5,
+                    extended_genre_offset=None,
+                    charts_offset=8,
+                    folder_offset=9,
+                    # Offsets for normal chart difficulties
+                    easy_offset=12,
+                    normal_offset=13,
+                    hyper_offset=14,
+                    ex_offset=15,
+                    # Offsets for battle chart difficulties
+                    battle_normal_offset=16,
+                    battle_hyper_offset=17,
+                    # Offsets into which offset to seek to for file lookups
+                    easy_file_offset=18,
+                    normal_file_offset=19,
+                    hyper_file_offset=20,
+                    ex_file_offset=21,
+                    battle_normal_file_offset=22,
+                    battle_hyper_file_offset=23,
+                    packedfmt=(
+                        "<"
+                        "I"  # Genre
+                        "I"  # Title
+                        "I"  # Artist
+                        "I"  # Comment
+                        "I"  # English Title
+                        "I"  # English Artist
+                        "H"  # ??
+                        "H"  # ??
+                        "I"  # Available charts mask
+                        "I"  # Folder
+                        "I"  # Event unlocks?
+                        "I"  # Event unlocks?
+                        "B"  # Easy difficulty
+                        "B"  # Normal difficulty
+                        "B"  # Hyper difficulty
+                        "B"  # EX difficulty
+                        "B"  # Battle normal difficulty
+                        "B"  # Battle hyper difficulty
+                        "xx"  # Unknown pointer
+                        "H"  # Easy chart pointer
+                        "H"  # Normal chart pointer
+                        "H"  # Hyper chart pointer
+                        "H"  # EX chart pointer
+                        "H"  # Battle normal pointer
+                        "H"  # Battle hyper pointer
+                        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    ),
+                    # Offsets into file DB for finding file and folder.
+                    file_folder_offset=0,
+                    file_name_offset=1,
+                    filefmt="<" "I" "I" "I" "I" "I" "I" "I" "I",  # Folder  # Filename
+                    available_charts=available_charts,
+                )
+            )
 
             # Based on M39:J:A:A:2018101500
             configurations.append(
