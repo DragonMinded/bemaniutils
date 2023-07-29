@@ -328,7 +328,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
 
         # Top 500 Popular music
         for songid, _plays in self.data.local.music.get_hit_chart(
-            self.game, self.version, 500
+            self.game, self.music_version, 500
         ):
             popular_music = Node.void("popular_music")
             root.add_child(popular_music)
@@ -575,7 +575,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
             return root
         rivalid = links[no].other_userid
         rivalprofile = profiles[rivalid]
-        scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, rivalid
+        )
 
         # First, output general profile info.
         friend = Node.void("friend")
@@ -673,7 +675,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
             return Node.void("player24")
 
         root = Node.void("player24")
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             # Skip any scores for chart types we don't support
             if score.chart not in [
@@ -829,7 +833,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         root.add_child(Node.s8("result", 1))
 
         # Scores
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             # Skip any scores for chart types we don't support
             if score.chart not in [
@@ -1036,13 +1042,13 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         last_played = [
             x[0]
             for x in self.data.local.music.get_last_played(
-                self.game, self.version, userid, 10
+                self.game, self.music_version, userid, 10
             )
         ]
         most_played = [
             x[0]
             for x in self.data.local.music.get_most_played(
-                self.game, self.version, userid, 20
+                self.game, self.music_version, userid, 20
             )
         ]
         while len(last_played) < 10:
@@ -1157,7 +1163,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         if game_config.get_bool("force_unlock_songs"):
             songs = {
                 song.id
-                for song in self.data.local.music.get_all_songs(self.game, self.version)
+                for song in self.data.local.music.get_all_songs(
+                    self.game, self.music_version
+                )
             }
             for song in songs:
                 item = Node.void("item")

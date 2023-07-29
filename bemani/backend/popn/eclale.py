@@ -210,7 +210,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         # Output the hit chart
         for songid, _plays in self.data.local.music.get_hit_chart(
-            self.game, self.version, 500
+            self.game, self.music_version, 500
         ):
             popular_music = Node.void("popular_music")
             root.add_child(popular_music)
@@ -360,7 +360,9 @@ class PopnMusicEclale(PopnMusicBase):
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
-            scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+            scores = self.data.remote.music.get_scores(
+                self.game, self.music_version, userid
+            )
         else:
             scores = []
 
@@ -451,7 +453,9 @@ class PopnMusicEclale(PopnMusicBase):
             return root
         rivalid = links[no].other_userid
         rivalprofile = profiles[rivalid]
-        scores = self.data.remote.music.get_scores(self.game, self.version, rivalid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, rivalid
+        )
 
         # First, output general profile info.
         friend = Node.void("friend")
@@ -573,7 +577,9 @@ class PopnMusicEclale(PopnMusicBase):
         root.add_child(Node.s8("result", 1))
 
         # Scores
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             # Skip any scores for chart types we don't support
             if score.chart not in [
@@ -684,13 +690,13 @@ class PopnMusicEclale(PopnMusicBase):
         last_played = [
             x[0]
             for x in self.data.local.music.get_last_played(
-                self.game, self.version, userid, 5
+                self.game, self.music_version, userid, 5
             )
         ]
         most_played = [
             x[0]
             for x in self.data.local.music.get_most_played(
-                self.game, self.version, userid, 10
+                self.game, self.music_version, userid, 10
             )
         ]
         while len(last_played) < 5:
@@ -794,7 +800,9 @@ class PopnMusicEclale(PopnMusicBase):
         if game_config.get_bool("force_unlock_songs"):
             songs = {
                 song.id
-                for song in self.data.local.music.get_all_songs(self.game, self.version)
+                for song in self.data.local.music.get_all_songs(
+                    self.game, self.music_version
+                )
             }
             for song in songs:
                 item = Node.void("item")

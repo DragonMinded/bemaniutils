@@ -227,7 +227,9 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         # Format Scores
         hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 7) * 17) + 7) / 8)
-        scores = self.data.remote.music.get_scores(self.game, self.version, userid)
+        scores = self.data.remote.music.get_scores(
+            self.game, self.music_version, userid
+        )
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -284,7 +286,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
         most_played = [
             x[0]
             for x in self.data.local.music.get_most_played(
-                self.game, self.version, userid, 20
+                self.game, self.music_version, userid, 20
             )
         ]
         while len(most_played) < 20:
