@@ -527,7 +527,7 @@ For Qpro editing to work properly, you will also need to import the Qpro databas
 the mix you wish to support. This does not need to be run separately for omnimix versions,
 the base version Qpros will be used for both that version and the omnimix of that version.
 This network supports editing Qpros for versions 20-26 so you will want to run this command
-once for every version, giving the correcct DLL file:
+once for every version, giving the correct DLL file:
 
 ```
 ./read --config config/server.yaml --series iidx --version 22 --bin bm2dx.dll
