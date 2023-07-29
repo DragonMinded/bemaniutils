@@ -32,15 +32,6 @@ set -e
 ./read --series iidx --version 25 "$@"
 ./read --series iidx --version 26 "$@"
 
-# Init IIDX Omnimix
-./read --series iidx --version omni-20 "$@"
-./read --series iidx --version omni-21 "$@"
-./read --series iidx --version omni-22 "$@"
-./read --series iidx --version omni-23 "$@"
-./read --series iidx --version omni-24 "$@"
-./read --series iidx --version omni-25 "$@"
-./read --series iidx --version omni-26 "$@"
-
 # Init DDR
 ./read --series ddr --version 12 "$@"
 ./read --series ddr --version 13 "$@"
