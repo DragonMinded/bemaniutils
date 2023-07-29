@@ -479,7 +479,12 @@ class PopnMusicFantasia(PopnMusicBase):
                     self.GAME_CHART_TYPE_NORMAL: self.CHART_TYPE_NORMAL,
                     self.GAME_CHART_TYPE_HYPER: self.CHART_TYPE_HYPER,
                     self.GAME_CHART_TYPE_EX: self.CHART_TYPE_EX,
-                }[node.child_value("sheet")]
+                }.get(node.child_value("sheet"))
+                if chart is None:
+                    # Some old versions of Fantasia still send empty chart data for Tune Street
+                    # charts that don't exist in the game. Ignore these or we end up crashing on
+                    # profile save.
+                    continue
                 medal = (node.child_value("n_data") >> (chart * 4)) & 0x000F
                 medal = {
                     self.GAME_PLAY_MEDAL_CIRCLE_FAILED: self.PLAY_MEDAL_CIRCLE_FAILED,

@@ -1134,7 +1134,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
         if feature_mask & 0xFFF00000:
             # We don't know these bits at all!
-            raise Exception(f"Invalid bits set in feature mask {hex(feature_mask & 0xFFF80000)}!")
+            raise Exception(
+                f"Invalid bits set in feature mask {hex(feature_mask & 0xFFF80000)}!"
+            )
 
         if header_offset != header_length:
             raise Exception("Failed to parse bitfield of header correctly!")
