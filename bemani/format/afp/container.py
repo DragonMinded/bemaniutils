@@ -527,14 +527,17 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
                         # Since the AFP file format can be found in both big and little endian, its
                         # possible that some of these loaders might need byteswapping on some platforms.
-                        # This has been tested on files intended for X86 (little endian).
+                        # This has been tested on files intended for X86 (little endian). I've found that
+                        # the "correct" thing to do is always treat data as little-endian instead of the
+                        # determined endianness of the file. But, this could also be broken per-game, so
+                        # I'm not entirely sure this is fully possible to do generically.
 
                         if fmt == 0x0B:
                             # 16-bit 565 color RGB format. Game references D3D9 texture format 23 (R5G6B5).
                             newdata = []
                             for i in range(width * height):
                                 pixel = struct.unpack(
-                                    f"{self.endian}H",
+                                    "<H",
                                     raw_data[(64 + (i * 2)) : (66 + (i * 2))],
                                 )[0]
 
@@ -581,7 +584,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             newdata = []
                             for i in range(width * height):
                                 pixel = struct.unpack(
-                                    f"{self.endian}H",
+                                    "<H",
                                     raw_data[(64 + (i * 2)) : (66 + (i * 2))],
                                 )[0]
 
@@ -661,7 +664,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             newdata = []
                             for i in range(width * height):
                                 pixel = struct.unpack(
-                                    f"{self.endian}H",
+                                    "<H",
                                     raw_data[(64 + (i * 2)) : (66 + (i * 2))],
                                 )[0]
 

@@ -26,7 +26,7 @@ from bemani.format.afp import (
 from bemani.format import IFS
 
 
-def write_bytecode(swf: SWF, directory: str, *, verbose: bool) -> None:
+def decompile_and_write_bytecode(swf: SWF, directory: str, *, verbose: bool) -> None:
     # Actually place the files down.
     os.makedirs(directory, exist_ok=True)
 
@@ -103,6 +103,7 @@ def extract_txp2(
     write_mappings: bool = False,
     write_raw: bool = False,
     write_binaries: bool = False,
+    write_bytecode: bool = False,
     pretend: bool = False,
     verbose: bool = False,
 ) -> int:
@@ -312,7 +313,7 @@ def extract_txp2(
                     announced[texturename] = True
     if write_bytecode:
         for swf in afpfile.swfdata:
-            write_bytecode(swf, output_dir, verbose=verbose)
+            decompile_and_write_bytecode(swf, output_dir, verbose=verbose)
 
     return 0
 
@@ -414,7 +415,7 @@ def decompile_afp(afp: str, bsi: str, output_dir: str, *, verbose: bool = False)
 
     # Now, decompile it
     swf.parse(verbose=verbose)
-    write_bytecode(swf, output_dir, verbose=verbose)
+    decompile_and_write_bytecode(swf, output_dir, verbose=verbose)
 
     return 0
 
@@ -1375,6 +1376,7 @@ def main() -> int:
             write_mappings=args.write_mappings,
             write_raw=args.write_raw,
             write_binaries=args.write_binaries,
+            write_bytecode=args.write_bytecode,
             pretend=args.pretend,
             verbose=args.verbose,
         )
