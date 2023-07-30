@@ -579,15 +579,14 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                                 "RGB",
                             )
                         elif fmt == 0x10:
-                            # Seems to be some sort of RGB with color swapping. Game references D3D9 texture
+                            # Seems to be some sort of RGBA with color swapping. Game references D3D9 texture
                             # format 21 (A8R8B8G8) but does manual byteswapping.
-                            # TODO: Not sure this is correct, need to find sample files.
                             img = Image.frombytes(
-                                "RGB",
+                                "RGBA",
                                 (width, height),
                                 raw_data[64:],
                                 "raw",
-                                "BGR",
+                                "BGRA",
                             )
                         elif fmt == 0x13:
                             # Some 16-bit texture format. Game references D3D9 texture format 25 (A1R5G5B5).
@@ -622,7 +621,6 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         elif fmt == 0x15:
                             # RGBA format. Game references D3D9 texture format 21 (A8R8G8B8).
                             # Looks like unlike 0x20 below, the game does some endianness swapping.
-                            # TODO: Not sure this is correct, need to find sample files.
                             img = Image.frombytes(
                                 "RGBA",
                                 (width, height),
