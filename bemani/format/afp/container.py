@@ -532,7 +532,17 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         # determined endianness of the file. But, this could also be broken per-game, so
                         # I'm not entirely sure this is fully possible to do generically.
 
-                        if fmt == 0x0B:
+                        if fmt == 0x01:
+                            # As far as I can tell, this is 8 bit grayscale. Decoding as such results in
+                            # images that are recognizeable and look correct.
+                            img = Image.frombytes(
+                                "L",
+                                (width, height),
+                                raw_data[64:],
+                                "raw",
+                                "L",
+                            )
+                        elif fmt == 0x0B:
                             # 16-bit 565 color RGB format. Game references D3D9 texture format 23 (R5G6B5).
                             newdata = []
                             for i in range(width * height):
