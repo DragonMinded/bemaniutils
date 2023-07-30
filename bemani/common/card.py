@@ -3,6 +3,7 @@ from typing_extensions import Final
 
 from Crypto.Cipher import DES3
 
+
 class CardCipherException(Exception):
     pass
 
