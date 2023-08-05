@@ -244,7 +244,7 @@ class LobbyData(BaseData):
             A list of dictionaries representing lobby info stored by a game class.
         """
         sql = """
-            SELECT userid, id, data FROM lobby
+            SELECT userid, id, time, data FROM lobby
             WHERE game = :game AND version = :version AND time > :time
         """
         cursor = self.execute(

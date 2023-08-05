@@ -4,7 +4,7 @@ from typing import List
 
 from bemani.backend.mga.base import MetalGearArcadeBase
 from bemani.backend.ess import EventLogHandler
-from bemani.common import Profile, VersionConstants, Time
+from bemani.common import ID, Profile, VersionConstants, Time
 from bemani.data import UserID
 from bemani.protocol import Node
 
@@ -120,6 +120,118 @@ class MetalGearArcade(
                 Node.s32("result", 1)
             )  # Unclear if this is the right thing to do here.
             return root
+
+    def handle_playerdata_usergamedata_scorerank_request(self, request: Node) -> Node:
+        # Not sure what this should do, looked like a thing to look up global rank
+        # but it doesn't always send the player's ID, so possibly useless?
+        #
+        # The request looks like this:
+        # <playerdata method="usergamedata_scorerank">
+        #     <data>
+        #         <eaid __type="str"></eaid>
+        #         <gamekind __type="str">I36</gamekind>
+        #         <vkey __type="str"></vkey>
+        #         <conditionkey __type="str">HISTATTR</conditionkey>
+        #         <score __type="s64">-1</score>
+        #     </data>
+        # </playerdata>
+        root = Node.void("playerdata")
+        root.add_child(Node.s32("result", 1))
+
+        rank = Node.void("rank")
+        root.add_child(rank)
+        rank.add_child(Node.s32("rank", -1))
+        rank.add_child(Node.u64("updatetime", Time.now() * 1000))
+        return root
+
+    def handle_matching_request_request(self, request: Node) -> Node:
+        # Stand up this client as a possible matching host in the future.
+        refid = request.child_value("data/eaid")
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is None:
+            root = Node.void("matching")
+            root.add_child(
+                Node.s32("result", 1)
+            )  # Set to guest mode so matching doesn't happen.
+            return root
+
+        # Create a lobby with this player as the "host".
+        shop_id = ID.parse_machine_id(request.child_value("data/locationid"))
+        self.data.local.lobby.put_lobby(
+            self.game,
+            self.version,
+            userid,
+            {
+                "matchgrp": request.child_value("data/matchgrp"),
+                "joinip": request.child_value("data/joinip"),
+                "joinport": request.child_value("data/joinport"),
+                "localip": request.child_value("data/localip"),
+                "localport": request.child_value("data/localport"),
+                "waituser": request.child_value("data/waituser"),
+                "waittime": request.child_value("data/waittime"),
+                "pcbid": self.config.machine.pcbid,
+                "lid": shop_id,
+            },
+        )
+        lobby = self.data.local.lobby.get_lobby(
+            self.game,
+            self.version,
+            userid,
+        )
+
+        # Now that we've created a lobby for ourselves, tell the game about our host ID.
+        root = Node.void("matching")
+        root.add_child(
+            Node.s32("result", 0)
+        )  # Setting this to 1 makes the game think we're a guest instead of host.
+        root.add_child(Node.s64("hostid", lobby.get_int("id")))
+        root.add_child(Node.string("hostip_g", lobby.get_str("joinip")))
+        root.add_child(Node.s32("hostport_g", lobby.get_int("joinport")))
+        root.add_child(Node.string("hostip_l", lobby.get_str("localip")))
+        root.add_child(Node.s32("hostport_l", lobby.get_int("localport")))
+        return root
+
+    def handle_matching_wait_request(self, request: Node) -> Node:
+        # Tell the client about up to 8 additional hosts that could be paired to us.
+
+        # If we want to only match against hosts in this shop, this is what we'd use to do it.
+        host_id = request.child_value("data/hostid")
+        shop_id = ID.parse_machine_id(request.child_value("data/locationid"))
+
+        # List all lobbies out, up to 8 of them. It's unclear whether the game wants to know
+        # about it's own lobby or not.
+        lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
+        lobbycount = 0
+
+        root = Node.void("matching")
+        root.add_child(Node.s32("result", 0))
+        root.add_child(Node.s32("prwtime", 60))
+        matchlist = Node.void("matchlist")
+        root.add_child(matchlist)
+
+        for _, lobby in lobbies:
+            # TODO: Possibly filter by only locationid matching, if this is enabled
+            # in server operator settings.
+
+            record = Node.void("record")
+            record.add_child(Node.string("pcbid", lobby.get_str("pcbid")))
+            record.add_child(Node.string("statusflg", ""))
+            record.add_child(Node.s32("matchgrp", lobby.get_int("matchgrp")))
+            record.add_child(Node.s64("hostid", host_id))
+            record.add_child(Node.u64("jointime", lobby.get_int("time") * 1000))
+            record.add_child(Node.string("connip_g", lobby.get_str("joinip")))
+            record.add_child(Node.s32("connport_g", lobby.get_int("joinport")))
+            record.add_child(Node.string("connip_l", lobby.get_str("localip")))
+            record.add_child(Node.s32("connport_l", lobby.get_int("localport")))
+            matchlist.add_child(record)
+
+            lobbycount += 1
+            if lobbycount >= 8:
+                break
+
+        matchlist.add_child(Node.u32("record_num", lobbycount))
+
+        return root
 
     def format_profile(
         self, userid: UserID, profiletypes: List[str], profile: Profile
