@@ -748,16 +748,20 @@ def _negative_absorb_and(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
 
     for val in right_ors:
         if neg_left == val:
-            return AndIf(
-                left,
-                _accum_or([o for o in right_ors if o is not val]),
-            ).simplify()
+            other_ors = [o for o in right_ors if o is not val]
+            if other_ors:
+                return AndIf(
+                    left,
+                    _accum_or(other_ors),
+                ).simplify()
     for val in left_ors:
         if neg_right == val:
-            return AndIf(
-                _accum_or([o for o in left_ors if o is not val]),
-                right,
-            ).simplify()
+            other_ors = [o for o in left_ors if o is not val]
+            if other_ors:
+                return AndIf(
+                    _accum_or(other_ors),
+                    right,
+                ).simplify()
 
     return None
 
@@ -811,16 +815,20 @@ def _negative_absorb_or(left: IfExpr, right: IfExpr) -> Optional[IfExpr]:
 
     for val in right_ands:
         if neg_left == val:
-            return OrIf(
-                left,
-                _accum_and([o for o in right_ands if o is not val]),
-            ).simplify()
+            other_ands = [o for o in right_ands if o is not val]
+            if other_ands:
+                return OrIf(
+                    left,
+                    _accum_and(other_ands),
+                ).simplify()
     for val in left_ands:
         if neg_right == val:
-            return OrIf(
-                _accum_and([o for o in left_ands if o is not val]),
-                right,
-            ).simplify()
+            other_ands = [o for o in left_ands if o is not val]
+            if other_ands:
+                return OrIf(
+                    _accum_and(other_ands),
+                    right,
+                ).simplify()
 
     return None
 

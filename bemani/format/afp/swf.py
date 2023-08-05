@@ -2232,7 +2232,9 @@ class SWF(VerboseOutput, TrackedCoverage):
                 ap2data[dataoffset : (dataoffset + 12)],
             )
             self.add_coverage(dataoffset, 12)
-            if flags != 0:
+
+            # TODO: There are some flags bits here that I do not understand.
+            if flags not in {0x0, 0x4}:
                 raise Exception(f"Unexpected flags {hex(flags)} in AP2_DEFINE_TEXT!")
 
             extra_data = 12 + (20 * text_data_count) + (4 * sub_data_total_count)
