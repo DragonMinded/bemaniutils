@@ -203,6 +203,9 @@ class MetalGearArcade(
         lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
         lobbycount = 0
 
+        # Find our own lobby.
+        our_lobby = [l[1] for l in lobbies if l[1].get_int("id") == host_id][0]
+
         root = Node.void("matching")
         root.add_child(Node.s32("result", 0))
         root.add_child(Node.s32("prwtime", 60))
@@ -210,14 +213,19 @@ class MetalGearArcade(
         root.add_child(matchlist)
 
         for _, lobby in lobbies:
+            if lobby.get_int("id") == host_id:
+                continue
+
             # TODO: Possibly filter by only locationid matching, if this is enabled
             # in server operator settings.
+
+            # TODO: Possibly need to link match groups?
 
             record = Node.void("record")
             record.add_child(Node.string("pcbid", lobby.get_str("pcbid")))
             record.add_child(Node.string("statusflg", ""))
             record.add_child(Node.s32("matchgrp", lobby.get_int("matchgrp")))
-            record.add_child(Node.s64("hostid", host_id))
+            record.add_child(Node.s64("hostid", lobby.get_int("id")))
             record.add_child(Node.u64("jointime", lobby.get_int("time") * 1000))
             record.add_child(Node.string("connip_g", lobby.get_str("joinip")))
             record.add_child(Node.s32("connport_g", lobby.get_int("joinport")))

@@ -7,7 +7,7 @@ from bemani.protocol import Node
 
 
 class MetalGearArcadeClient(BaseClient):
-    NAME = "ＴＥＳＴ"
+    NAME = "TEST"
 
     def verify_eventlog_write(self, location: str) -> None:
         call = self.call_node()
