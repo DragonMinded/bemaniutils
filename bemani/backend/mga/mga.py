@@ -173,7 +173,9 @@ class MetalGearArcade(
         # See if there's a random lobby we can be slotted into. Don't choose potentially
         # our old one, since it will be overwritten by a new entry, if we were ever a host.
         nonfull_lobbies = [
-            (uid, lobby) for uid, lobby in lobbies if len(lobby["participants"]) < 8
+            (uid, lobby)
+            for uid, lobby in lobbies
+            if len(lobby["participants"]) < lobby["lobbysize"]
         ]
 
         # Make sure to put our session information somewhere that we can find again.
@@ -249,6 +251,7 @@ class MetalGearArcade(
             userid,
             {
                 "matchgrp": request.child_value("data/matchgrp"),
+                "lobbysize": request.child_value("data/waituser"),
                 "waittime": wait_time,
                 "createtime": Time.now(),
                 "participants": [userid],
@@ -315,6 +318,11 @@ class MetalGearArcade(
                 continue
             uinfo = info_by_uid[uid]
 
+            # Technically, the game only takes up to 8 of these records, but we only
+            # let users join the lobbies based on the size that the game requests. So,
+            # we don't need to worry about that.
+            playercount += 1
+
             record = Node.void("record")
             record.add_child(Node.string("pcbid", uinfo.get_str("pcbid")))
             record.add_child(Node.string("statusflg", ""))
@@ -326,10 +334,6 @@ class MetalGearArcade(
             record.add_child(Node.string("connip_l", uinfo.get_str("localip")))
             record.add_child(Node.s32("connport_l", uinfo.get_int("localport")))
             matchlist.add_child(record)
-
-            playercount += 1
-            if playercount >= 8:
-                break
 
         matchlist.add_child(Node.u32("record_num", playercount))
 
