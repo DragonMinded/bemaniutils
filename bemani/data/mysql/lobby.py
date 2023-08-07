@@ -231,7 +231,7 @@ class LobbyData(BaseData):
         return data
 
     def get_all_lobbies(
-        self, game: GameConstants, version: int
+        self, game: GameConstants, version: int, max_age: int = Time.SECONDS_IN_HOUR
     ) -> List[Tuple[UserID, ValidatedDict]]:
         """
         Given a game and version, look up all active lobbies.
@@ -252,7 +252,7 @@ class LobbyData(BaseData):
             {
                 "game": game.value,
                 "version": version,
-                "time": Time.now() - Time.SECONDS_IN_HOUR,
+                "time": Time.now() - max_age,
             },
         )
 
