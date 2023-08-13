@@ -1,4 +1,5 @@
 import argparse
+from typing import Any
 
 from bemani.common import GameConstants
 from bemani.frontend import app, config  # noqa: F401
@@ -17,6 +18,7 @@ from bemani.frontend.reflec import reflec_pages
 from bemani.frontend.museca import museca_pages
 from bemani.utils.config import (
     load_config as base_load_config,
+    instantiate_cache as base_instantiate_cache,
     register_games as base_register_games,
 )
 
@@ -58,6 +60,11 @@ def load_config(filename: str) -> None:
     global config
     base_load_config(filename, config)
     app.secret_key = config.secret_key
+
+
+def instantiate_cache(app: Any) -> None:
+    global config
+    base_instantiate_cache(app, config)
 
 
 def main() -> None:
@@ -105,6 +112,7 @@ def main() -> None:
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=".")  # type: ignore
 
     # Run the app
+    instantiate_cache(app)
     app.run(host="0.0.0.0", port=args.port, debug=True)
 
 

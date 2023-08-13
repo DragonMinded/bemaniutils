@@ -1,12 +1,21 @@
 import argparse
+from typing import Any
 
 from bemani.api import app, config  # noqa: F401
-from bemani.utils.config import load_config as base_load_config
+from bemani.utils.config import (
+    load_config as base_load_config,
+    instantiate_cache as base_instantiate_cache,
+)
 
 
 def load_config(filename: str) -> None:
     global config
     base_load_config(filename, config)
+
+
+def instantiate_cache(app: Any) -> None:
+    global config
+    base_instantiate_cache(app, config)
 
 
 def main() -> None:
@@ -48,6 +57,7 @@ def main() -> None:
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=".")  # type: ignore
 
     # Run the app
+    instantiate_cache(app)
     app.run(host="0.0.0.0", port=args.port, debug=True)
 
 

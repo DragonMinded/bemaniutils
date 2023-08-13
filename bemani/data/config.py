@@ -237,8 +237,18 @@ class Config(dict):
         return str(self.get("email", "nobody@nowhere.com"))
 
     @property
-    def cache_dir(self) -> str:
-        return os.path.abspath(str(self.get("cache_dir", "/tmp")))
+    def cache_dir(self) -> Optional[str]:
+        cache_dir = self.get("cache_dir")
+        if cache_dir is None:
+            return None
+        return os.path.abspath(str(cache_dir))
+
+    @property
+    def memcached_server(self) -> Optional[str]:
+        server = self.get("memcached_server")
+        if server is None:
+            return None
+        return str(server)
 
     @property
     def theme(self) -> str:

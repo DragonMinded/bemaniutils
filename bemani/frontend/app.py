@@ -16,10 +16,9 @@ from flask import (
     got_request_exception,
     jsonify as flask_jsonify,
 )
-from flask_caching import Cache
 from functools import wraps
 
-from bemani.common import AESCipher, GameConstants
+from bemani.common import AESCipher, GameConstants, cache
 from bemani.data import Config, Data
 from bemani.frontend.types import g
 from bemani.frontend.templates import templates_location
@@ -40,18 +39,14 @@ FRONTEND_CACHE_BUST: str = "site.1.3.react.16.14"
 @app.before_request
 def before_request() -> None:
     global config
-    g.cache = Cache(
-        app,
-        config={
-            "CACHE_TYPE": "filesystem",
-            "CACHE_DIR": config.cache_dir,
-        },
-    )
+
+    g.cache = cache
+    g.config = config
+
     if request.endpoint in ["jsx", "static"]:
         # This is just serving cached compiled frontends, skip loading from DB
         return
 
-    g.config = config
     g.data = Data(config)
     g.sessionID = None
     g.userID = None

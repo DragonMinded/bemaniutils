@@ -1,4 +1,4 @@
-from bemani.utils.frontend import app, load_config, register_blueprints, register_games
+from bemani.utils.frontend import app, load_config, instantiate_cache, register_blueprints, register_games
 
 # Assumes a production server yaml in the same directory as this WSGI
 # file. Also assumes that your uWSGI instance is configured with a
@@ -6,3 +6,4 @@ from bemani.utils.frontend import app, load_config, register_blueprints, registe
 load_config('server.yaml')
 register_blueprints()
 register_games()
+instantiate_cache(app)

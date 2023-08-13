@@ -94,8 +94,12 @@ secret_key: 'this_is_a_secret_please_change_me'
 name: 'e-AMUSEMENT Network'
 # Administrative contact for this network.
 email: 'nobody@nowhere.com'
-# Cache DIR, should point somewhere other than /tmp for production instances.
+# Cache DIR, should point somewhere other than /tmp for production instances that wish
+# to use filesystem caching. For memcached, delete this value.
 cache_dir: '/tmp'
+# memcached server, should point somewhere other than this bogus value for production
+# instances that wish to use memcached backend. For filesystem caching, delete this value.
+memcached_server: 1.2.3.4:5678
 # Number of seconds to preserve event logs before deleting them.
 # Set to zero or delete to disable deleting logs.
 event_log_duration: 2592000

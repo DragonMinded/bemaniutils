@@ -1,12 +1,15 @@
 import argparse
 import traceback
 from flask import Flask, request, redirect, Response, make_response
+from typing import Any
+
 
 from bemani.protocol import EAmuseProtocol
 from bemani.backend import Dispatch, UnrecognizedPCBIDException
 from bemani.data import Config, Data
 from bemani.utils.config import (
     load_config as base_load_config,
+    instantiate_cache as base_instantiate_cache,
     register_games as base_register_games,
 )
 
@@ -125,6 +128,11 @@ def load_config(filename: str) -> None:
     base_load_config(filename, config)
 
 
+def instantiate_cache(app: Any) -> None:
+    global config
+    base_instantiate_cache(app, config)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="A backend services provider for eAmusement games"
@@ -171,4 +179,5 @@ if __name__ == "__main__":
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=".")  # type: ignore
 
     # Run the app
+    instantiate_cache(app)
     app.run(host="0.0.0.0", port=args.port, debug=True)

@@ -15,6 +15,7 @@ from bemani.common.aes import AESCipher
 from bemani.common.time import Time
 from bemani.common.parallel import Parallel
 from bemani.common.pe import PEFile, InvalidOffsetException
+from bemani.common.cache import cache
 
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "intish",
     "PEFile",
     "InvalidOffsetException",
+    "cache",
 ]
