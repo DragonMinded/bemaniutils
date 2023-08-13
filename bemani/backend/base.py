@@ -11,6 +11,7 @@ from bemani.common import (
     GameConstants,
     RegionConstants,
     Time,
+    cache,
 )
 from bemani.data import Config, Data, Arcade, Machine, UserID, RemoteUser
 
@@ -185,6 +186,10 @@ class Base(ABC):
         self.data = data
         self.config = config
         self.model = model
+
+        # Provided purely for convenience. You can also import cache directly from bemani.common
+        # in order to use the object for decorators such as @cache.memoize.
+        self.cache = cache
 
     @classmethod
     def create(
