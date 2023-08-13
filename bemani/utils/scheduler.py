@@ -1,5 +1,4 @@
 import argparse
-from flask import Flask
 from typing import Any, List
 
 from bemani.backend.popn import PopnMusicFactory
@@ -100,8 +99,8 @@ if __name__ == "__main__":
     if args.read_only:
         config["database"]["read_only"] = True
 
-    # Set up production cache, with a dummy app context because flask-caching needs it.
-    instantiate_cache(Flask(__name__), config)
+    # Set up production cache.
+    instantiate_cache(config)
 
     # Run out of band work
     run_scheduled_work(config)

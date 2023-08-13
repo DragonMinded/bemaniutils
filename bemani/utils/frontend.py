@@ -64,7 +64,7 @@ def load_config(filename: str) -> None:
 
 def instantiate_cache(app: Any) -> None:
     global config
-    base_instantiate_cache(app, config)
+    base_instantiate_cache(config, app)
 
 
 def main() -> None:

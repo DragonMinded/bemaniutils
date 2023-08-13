@@ -1,6 +1,6 @@
 import yaml
 from flask import Flask
-from typing import Set
+from typing import Optional, Set
 
 from bemani.backend.iidx import IIDXFactory
 from bemani.backend.popn import PopnMusicFactory
@@ -27,7 +27,11 @@ def load_config(filename: str, config: Config) -> None:
     config["support"] = supported_series
 
 
-def instantiate_cache(app: Flask, config: Config) -> None:
+def instantiate_cache(config: Config, app: Optional[Flask] = None) -> None:
+    # Possibly set up a dummy app context because flask-caching needs it.
+    if app is None:
+        app = Flask(__name__)
+
     # This could easily be extended to add support for any other backend that flask-caching
     # supports but right now the only demand is for in-memory, filesystem and memcached.
     if config.memcached_server is not None:
