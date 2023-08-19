@@ -12,6 +12,7 @@ class Time:
     standard unix timestamps at UTC timezone given various parameters.
     """
 
+    SECONDS_IN_SECOND: Final[int] = 1
     SECONDS_IN_MINUTE: Final[int] = 60
     SECONDS_IN_HOUR: Final[int] = 3600
     SECONDS_IN_DAY: Final[int] = 86400

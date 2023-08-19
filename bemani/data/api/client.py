@@ -9,6 +9,8 @@ from bemani.common import (
     VersionConstants,
     DBConstants,
     ValidatedDict,
+    Time,
+    cache,
 )
 
 
@@ -228,6 +230,8 @@ class APIClient:
 
         return (servergame, serverversion)
 
+    # Not caching this, as it is only hit when looking at the admin panel, and we want this to
+    # always be up-to-date.
     def get_server_info(self) -> ValidatedDict:
         resp = self.__exchange_data("", {})
         return ValidatedDict(
@@ -238,6 +242,9 @@ class APIClient:
             }
         )
 
+    # Not caching this, as we would have to go back and ensure that any code which got outdated
+    # profiles from a cache didn't end up with KeyError exceptions when trying to link profiles to
+    # records. This is the coward's way out, but whatever.
     def get_profiles(
         self, game: GameConstants, version: int, idtype: APIConstants, ids: List[str]
     ) -> List[Dict[str, Any]]:
@@ -260,6 +267,7 @@ class APIClient:
             # Couldn't talk to server, assume empty profiles
             return []
 
+    @cache.memoize(Time.SECONDS_IN_MINUTE * 1)
     def get_records(
         self,
         game: GameConstants,
@@ -293,6 +301,7 @@ class APIClient:
             # Couldn't talk to server, assume empty records
             return []
 
+    @cache.memoize(Time.SECONDS_IN_MINUTE * 5)
     def get_statistics(
         self, game: GameConstants, version: int, idtype: APIConstants, ids: List[str]
     ) -> List[Dict[str, Any]]:
@@ -315,6 +324,7 @@ class APIClient:
             # Couldn't talk to server, assume empty statistics
             return []
 
+    @cache.memoize(Time.SECONDS_IN_HOUR * 1)
     def get_catalog(
         self, game: GameConstants, version: int
     ) -> Dict[str, List[Dict[str, Any]]]:
