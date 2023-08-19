@@ -377,6 +377,10 @@ class UserData(BaseData):
             userid - Integer user ID, as looked up by one of the above functions.
             cardid - 16-digit card ID to add.
         """
+        if RemoteUser.is_remote(userid):
+            raise AccountCreationException(
+                "Should not add local cards to remote users!"
+            )
         sql = "INSERT INTO card (userid, id) VALUES (:userid, :cardid)"
         self.execute(sql, {"userid": userid, "cardid": cardid})
 
@@ -1315,7 +1319,9 @@ class UserData(BaseData):
             if extid is not None:
                 return extid
             else:
-                raise AccountCreationException()
+                raise AccountCreationException(
+                    "Failed to cteate a new refid/extid pair!"
+                )
 
     def create_session(self, userid: UserID, expiration: int = (30 * 86400)) -> str:
         """
@@ -1403,7 +1409,9 @@ class UserData(BaseData):
                 },
             )
             if cursor.rowcount != 1:
-                raise AccountCreationException()
+                raise AccountCreationException(
+                    "Failed to create and fetch a new refid!"
+                )
             return refid
         except IntegrityError:
             # We maybe lost the race? Look up the ID from another creation. Don't call get_refid
@@ -1416,7 +1424,7 @@ class UserData(BaseData):
                 result = cursor.fetchone()
                 return result["refid"]
             # Shouldn't be possible, but here we are
-            raise AccountCreationException()
+            raise AccountCreationException("Failed to recover lost race refid!")
 
     def create_account(self, cardid: str, pin: str) -> Optional[UserID]:
         """
