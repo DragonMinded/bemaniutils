@@ -357,50 +357,48 @@ class JubeatQubellClient(BaseClient):
         return self.__verify_profile(resp)
 
     def verify_gametop_get_mdata(self, jid: int) -> Dict[str, List[Dict[str, Any]]]:
-        call = self.call_node()
-
-        # Construct node
-        gametop = Node.void("gametop")
-        call.add_child(gametop)
-        gametop.set_attribute("method", "get_mdata")
-        retry = Node.s32("retry", 0)
-        gametop.add_child(retry)
-        data = Node.void("data")
-        gametop.add_child(data)
-        player = Node.void("player")
-        data.add_child(player)
-        player.add_child(Node.s32("jid", jid))
-        # Technically the game sends this same packet 3 times, one with
-        # each value 1, 2, 3 here. Unclear why, but we won't emulate it.
-        player.add_child(Node.s8("mdata_ver", 1))
-        player.add_child(Node.bool("rival", False))
-
-        # Swap with server
-        resp = self.exchange("", call)
-
-        # Parse out scores
-        self.assert_path(resp, "response/gametop/data/player/mdata_list")
-
         ret = {}
-        for musicdata in resp.child("gametop/data/player/mdata_list").children:
-            if musicdata.name != "musicdata":
-                raise Exception("Unexpected node in playdata!")
+        for ver in [1, 2, 3]:
+            # Construct node
+            call = self.call_node()
+            gametop = Node.void("gametop")
+            call.add_child(gametop)
+            gametop.set_attribute("method", "get_mdata")
+            retry = Node.s32("retry", 0)
+            gametop.add_child(retry)
+            data = Node.void("data")
+            gametop.add_child(data)
+            player = Node.void("player")
+            data.add_child(player)
+            player.add_child(Node.s32("jid", jid))
+            player.add_child(Node.s8("mdata_ver", ver))
+            player.add_child(Node.bool("rival", False))
 
-            music_id = musicdata.attribute("music_id")
-            scores_by_chart: List[Dict[str, int]] = [{}, {}, {}]
+            # Swap with server
+            resp = self.exchange("", call)
 
-            def extract_cnts(name: str, val: List[int]) -> None:
-                scores_by_chart[0][name] = val[0]
-                scores_by_chart[1][name] = val[1]
-                scores_by_chart[2][name] = val[2]
+            # Parse out scores
+            self.assert_path(resp, "response/gametop/data/player/mdata_list")
 
-            extract_cnts("plays", musicdata.child_value("play_cnt"))
-            extract_cnts("clears", musicdata.child_value("clear_cnt"))
-            extract_cnts("full_combos", musicdata.child_value("fc_cnt"))
-            extract_cnts("excellents", musicdata.child_value("ex_cnt"))
-            extract_cnts("score", musicdata.child_value("score"))
-            extract_cnts("medal", musicdata.child_value("clear"))
-            ret[music_id] = scores_by_chart
+            for musicdata in resp.child("gametop/data/player/mdata_list").children:
+                if musicdata.name != "musicdata":
+                    raise Exception("Unexpected node in playdata!")
+
+                music_id = musicdata.attribute("music_id")
+                scores_by_chart: List[Dict[str, int]] = [{}, {}, {}]
+
+                def extract_cnts(name: str, val: List[int]) -> None:
+                    scores_by_chart[0][name] = val[0]
+                    scores_by_chart[1][name] = val[1]
+                    scores_by_chart[2][name] = val[2]
+
+                extract_cnts("plays", musicdata.child_value("play_cnt"))
+                extract_cnts("clears", musicdata.child_value("clear_cnt"))
+                extract_cnts("full_combos", musicdata.child_value("fc_cnt"))
+                extract_cnts("excellents", musicdata.child_value("ex_cnt"))
+                extract_cnts("score", musicdata.child_value("score"))
+                extract_cnts("medal", musicdata.child_value("clear"))
+                ret[music_id] = scores_by_chart
 
         return ret
 

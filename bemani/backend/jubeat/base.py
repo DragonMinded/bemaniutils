@@ -176,14 +176,43 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         if profile is None:
             return None
 
-        if partition != 1:
-            scores = []
-        else:
+        cache_key = f"get_scores_by_extid-{extid}"
+        score: Optional[List[Score]]
+
+        if partition == 1:
+            # We fetch all scores on the first partition and then divy up
+            # the scores across total_partitions fetches. If it is small
+            # enough, we don't bother.
             scores = self.data.remote.music.get_scores(
                 self.game, self.music_version, userid
             )
-            if scores is None:
-                return None
+        else:
+            # We will want to fetch the remaining scores that were in our
+            # cache.
+            scores = self.cache.get(cache_key)  # type: ignore
+
+        if len(scores) < 50:
+            # We simply return the whole amount for this, and cache nothing.
+            rest = []
+        else:
+            groups = (total_partitions - partition) + 1
+            pivot = len(scores) // groups
+
+            rest = scores[pivot:]
+            scores = scores[:pivot]
+
+        # Cache the rest of the scores for next iteration, unless we're on the
+        # last iteration.
+        if partition == total_partitions:
+            if rest:
+                raise Exception(
+                    "Logic error, should not have gotten additional scores to cache on last iteration!"
+                )
+            self.cache.delete(cache_key)
+        else:
+            self.cache.set(cache_key, rest, timeout=60)
+
+        # Format the chunk of scores we have to send back to the client.
         return self.format_scores(userid, profile, scores)
 
     def update_score(

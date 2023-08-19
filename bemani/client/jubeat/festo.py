@@ -582,66 +582,61 @@ class JubeatFestoClient(BaseClient):
         return self.__verify_profile(resp, False)
 
     def verify_gametop_get_mdata(self, jid: int) -> Dict[str, List[Dict[str, Any]]]:
-        call = self.call_node()
-
-        # Construct node
-        gametop = Node.void("gametop")
-        call.add_child(gametop)
-        gametop.set_attribute("method", "get_mdata")
-        retry = Node.s32("retry", 0)
-        gametop.add_child(retry)
-        data = Node.void("data")
-        gametop.add_child(data)
-        player = Node.void("player")
-        data.add_child(player)
-        player.add_child(Node.s32("jid", jid))
-        # Technically the game sends this same packet 3 times, one with
-        # each value 1, 2, 3 here. This is for sharding across 3 requests,
-        # and the game will combine all 3 responses. Its up to the server to
-        # handle this the way it wants, and we just send everything back in the
-        # first request and ignore the rest.
-        player.add_child(Node.s8("mdata_ver", 1))
-        player.add_child(Node.bool("rival", False))
-
-        # Swap with server
-        resp = self.exchange("", call)
-
-        # Parse out scores
-        self.assert_path(resp, "response/gametop/data/player/jid")
-        self.assert_path(resp, "response/gametop/data/player/mdata_list")
-        if resp.child_value("gametop/data/player/jid") != jid:
-            raise Exception("Unexpected jid received from server!")
-
         ret = {}
-        for musicdata in resp.child("gametop/data/player/mdata_list").children:
-            if musicdata.name != "musicdata":
-                raise Exception("Unexpected node in playdata!")
+        for ver in [1, 2, 3]:
+            # Construct node
+            call = self.call_node()
+            gametop = Node.void("gametop")
+            call.add_child(gametop)
+            gametop.set_attribute("method", "get_mdata")
+            retry = Node.s32("retry", 0)
+            gametop.add_child(retry)
+            data = Node.void("data")
+            gametop.add_child(data)
+            player = Node.void("player")
+            data.add_child(player)
+            player.add_child(Node.s32("jid", jid))
+            player.add_child(Node.s8("mdata_ver", ver))
+            player.add_child(Node.bool("rival", False))
 
-            music_id = musicdata.attribute("music_id")
-            scores_by_chart: List[Dict[str, int]] = [{}, {}, {}, {}, {}, {}]
+            # Swap with server
+            resp = self.exchange("", call)
 
-            def extract_cnts(name: str, offset: int, val: List[int]) -> None:
-                scores_by_chart[offset + 0][name] = val[0]
-                scores_by_chart[offset + 1][name] = val[1]
-                scores_by_chart[offset + 2][name] = val[2]
+            # Parse out scores
+            self.assert_path(resp, "response/gametop/data/player/jid")
+            self.assert_path(resp, "response/gametop/data/player/mdata_list")
+            if resp.child_value("gametop/data/player/jid") != jid:
+                raise Exception("Unexpected jid received from server!")
 
-            for subdata in musicdata.children:
-                if subdata.name == "normal":
-                    offset = 0
-                elif subdata.name == "hard":
-                    offset = 3
-                else:
-                    raise Exception(f"Unexpected chart type {subdata.name}!")
+            for musicdata in resp.child("gametop/data/player/mdata_list").children:
+                if musicdata.name != "musicdata":
+                    raise Exception("Unexpected node in playdata!")
 
-                extract_cnts("plays", offset, subdata.child_value("play_cnt"))
-                extract_cnts("clears", offset, subdata.child_value("clear_cnt"))
-                extract_cnts("full_combos", offset, subdata.child_value("fc_cnt"))
-                extract_cnts("excellents", offset, subdata.child_value("ex_cnt"))
-                extract_cnts("score", offset, subdata.child_value("score"))
-                extract_cnts("medal", offset, subdata.child_value("clear"))
-                extract_cnts("rate", offset, subdata.child_value("music_rate"))
+                music_id = musicdata.attribute("music_id")
+                scores_by_chart: List[Dict[str, int]] = [{}, {}, {}, {}, {}, {}]
 
-            ret[music_id] = scores_by_chart
+                def extract_cnts(name: str, offset: int, val: List[int]) -> None:
+                    scores_by_chart[offset + 0][name] = val[0]
+                    scores_by_chart[offset + 1][name] = val[1]
+                    scores_by_chart[offset + 2][name] = val[2]
+
+                for subdata in musicdata.children:
+                    if subdata.name == "normal":
+                        offset = 0
+                    elif subdata.name == "hard":
+                        offset = 3
+                    else:
+                        raise Exception(f"Unexpected chart type {subdata.name}!")
+
+                    extract_cnts("plays", offset, subdata.child_value("play_cnt"))
+                    extract_cnts("clears", offset, subdata.child_value("clear_cnt"))
+                    extract_cnts("full_combos", offset, subdata.child_value("fc_cnt"))
+                    extract_cnts("excellents", offset, subdata.child_value("ex_cnt"))
+                    extract_cnts("score", offset, subdata.child_value("score"))
+                    extract_cnts("medal", offset, subdata.child_value("clear"))
+                    extract_cnts("rate", offset, subdata.child_value("music_rate"))
+
+                ret[music_id] = scores_by_chart
 
         return ret
 
