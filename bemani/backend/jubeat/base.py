@@ -159,23 +159,31 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         return self.format_profile(userid, profile)
 
-    def get_scores_by_extid(self, extid: Optional[int]) -> Optional[Node]:
+    def get_scores_by_extid(
+        self, extid: Optional[int], partition: int, total_partitions: int
+    ) -> Optional[Node]:
         """
         Given an ExtID, return a formatted score node. Similar rationale to
-        get_profile_by_refid.
+        get_profile_by_refid. Note that this takes into account the game's
+        desire to partition scores into separate fetches to ensure that we
+        don't make any one request too long. We handle the logic for that here.
         """
         if extid is None:
             return None
 
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
-        if scores is None:
-            return None
         profile = self.get_profile(userid)
         if profile is None:
             return None
+
+        if partition != 1:
+            scores = []
+        else:
+            scores = self.data.remote.music.get_scores(
+                self.game, self.music_version, userid
+            )
+            if scores is None:
+                return None
         return self.format_scores(userid, profile, scores)
 
     def update_score(
