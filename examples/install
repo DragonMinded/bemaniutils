@@ -8,10 +8,19 @@ set -e
 
 pushd /path/to/git/checkout
 source /path/to/your/virtualenv/bin/activate
+
+# Install dependencies, install this library.
 pip install --upgrade pip
 pip install . -U --force-reinstall
 
+# Copy the WSGI files over the old ones, recompile JSX.
+cp bemani/wsgi/*.wsgi /path/to/your/wsgi/files
+./jsx --output-directory /path/to/static/jsx/directory
+
+# Perform DB schema migrations
 ./dbutils --config /path/to/your/root/server.yaml upgrade
+
 deactivate
 popd
+
 sudo service uwsgi restart && ./preload

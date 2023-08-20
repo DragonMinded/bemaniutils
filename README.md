@@ -22,36 +22,42 @@ every goddamn night.
 
 ## 2dxutils
 
-A utility for unpacking and repacking `.2dx` files. This isn't the best utility and
-I think there are more complete and more accurate programs out there. However,
-they all lack source as far as I could tell, so I developed this. Run it like
+A utility for unpacking and repacking `.2dx` audio container files. Can extract
+RIFF WAV audio out of an existing `.2dx` file, update an existing file or create
+a new file from scratch given some WAV files. This isn't the best utility and I
+think there are more complete and more accurate programs out there. However, they
+all lack source as far as I could tell, so I developed this. Run it like
 `./2dxutils --help` to see help output and determine how to use this.
 
 ## afputils
 
 Utilities for working with several animation formats found across a vast range
-of games. This includes a TXP2 container parser, a GE2D shape parser and an
-AFP/BSI parser. Together, they make a set of utilities that attempts to work
+of games. This includes a TXP2 container parser and repacker, a GE2D shape parser
+and an AFP/BSI parser. Together, they make a set of utilities that attempts to work
 with AFP, the fork of SWF that handles animations in various games. This utility
 is capable of rendering animations out of IFS and TXP2 files as well as providing
-decompiled pseudocode for the flash-like bytecode found in many animation files.
-Note that this format is similar to SWF and thus very complicated. Therefore, it
+decompiled pseudocode for the flash-like bytecode found in many animation files. It
+is also capable of unpacking and repacking TXP2 containers with new texture files.
+Note that this format is based on SWF and thus very complicated. Therefore, it
 is unlikely that these tools will correctly handle all animations from all games
 that it encounters. Run it like `./afputils --help` to see help output and determine
 how to use it.
 
 ## api
 
-Development version of this repository's BEMAPI implementation. Run it like
-`./api --help` to see help output and determine how to use this. Much like
-"services" and "frontend", this should be pointed at the development version of
-your services config file, which holds information about the MySQL database that
+Development version of this repository's BEMAPI implementation. This serves as the
+REST-like API layer for inter-network federation of scores, profiles and rivals.
+Run it like `./api --help` to see help output and determine how to use this. Much
+like "services" and "frontend", this should be pointed at the development version
+of your services config file which holds information about the MySQL database that
 this should connect to as well as what game series are supported. See
 `config/server.yaml` for an example file that you can modify.
 
 Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with a Python
-virtualenv containing this project and its dependencies, uWSGI and nginx.
+virtualenv containing this project and its dependencies, uWSGI and nginx. Note that
+if you do not wish to make your network available for federation then this entire
+service can be omitted.
 
 ## arcutils
 
@@ -65,19 +71,22 @@ A utility which takes a particular game's asset directory and converts files for
 on the frontend. This optionally enables things such as customization previews on the
 frontend. Much like "read", this requires a properly setup config file which points
 the frontend as well as this utility at the correct location to store converted
-assets. See `config/server.yaml` for an example file that you can modify.
+assets. See `config/server.yaml` for an example file that you can modify. Unlike "read",
+this utility is entirely optional. However, if you do not convert assets for games that
+you are running, you will miss out on preview graphics on the frontend. Run it like
+`./assetparse --help` to see help output and determine how to use this.
 
 ## bemanishark
 
 A wire sniffer that can decode eAmuse packets and print them. Run it on a computer
 that can sniff traffic between an eAmusement server and a supported game and it will
-spit out the requests and responses XML-formatted identically to the legacy easerver
-XML output. This works on both binary and XML traffic. Note that it does not have the
-capability to sniff SSL-encrypted traffic, so don't even bother trying to run this
-at an arcade with official support.
+spit out the requests and responses XML-formatted identically to the XML output in
+the logs of "services". This works on both binary and XML traffic. Note that it does
+not have the capability to sniff SSL-encrypted traffic, so don't even bother trying
+to run this at an arcade with official support.
 
 Run it like `sudo ./bemanishark` to invoke. Will run indefinitely until killed
-(Ctrl-C will suffice). Run like `./bemanishark --help for options. Without options,
+(Ctrl-C will suffice). Run like `./bemanishark --help` for options. Without options,
 it assumes you want to sniff port 80 for all addresses. Note that it doesn't support
 the Base64 binary blob formats found in SN1 and 2. Note also that over time it will
 start to lose packets. This is a bug that I never figured out, and it appears to be
@@ -97,8 +106,12 @@ Run it like `./binutils --help` to see help and learn how to use this.
 ## bootstrap
 
 A utility for quickly bootstrapping a local setup's music database from an already
-running BEMAPI-compatible server. This is better documented in the below "Database
-Initialization" section.
+running BEMAPI-compatible server that has been set up for federation. This is better
+documented in the below "Database Initialization" section. Note that this utility assumes
+no omnimix support and will bootstrap only normal game databases. The BEMAPI federation
+protocol does support omnimix, so if you are bootstrapping against a running instance
+that has omnimix databases and you wish to support omnimixes as well, you can look at
+the source to this and manually run commands for the games in question.
 
 ## cardconvert
 
@@ -114,11 +127,11 @@ of the card.
 
 A command-line utility for working with the DB used by "api", "services" and "frontend".
 This utility includes options for creating tables in a newly-created DB, granting and
-revoking admin rights to the frontend, generating migration scripts for live DBs, and
-upgrading live DBs based on previously created migration scripts. Its driven by alembic
-under the hood. You will use `create` on initial setup to generate a working MySQL
-database. If you change the schema in code, you can use this again with the `generate`
-option to generate a migration sript. Whenever you run an upgrade to your production
+revoking admin rights to the frontend, generating migration scripts for production DBs,
+and upgrading production DBs based on previously created migration scripts. Its driven
+by alembic under the hood. You will use `create` on initial setup to generate a working
+MySQL database. If you change the schema in code, you can use this again with the `generate`
+option to generate a migration script. Whenever you run an upgrade to your production
 instance, you should run this against your production DB with the `upgrade` option to
 bring your production DB up to sync with the code you are deploying. Run it like
 `./dbutils --help` to see all options. The config file that this works on is the same
@@ -129,20 +142,22 @@ that is given to "api", "services" and "frontend".
 A simple wrapper frontend to black, the formatter used on this project. Running this will
 auto-format all of the python code that might need formatting, leaving the rest out. When
 submitting pull requests make sure to run this so that your code conforms to the style
-used by this project!
+used by this project! Run this like `./formatfiles` to fix up all files in the repository.
 
 ## frontend
 
 Development version of a frontend server allowing for account and server administration
 as well as score viewing and profile editing. Run it like `./frontend --help` to see
 help output and determine how to use this. Much like "services" and "api", this should
-be pointed at the development version of your services config file, which holds
+be pointed at the development version of your services config file which holds
 information about the MySQL database that this should connect to as well as what game
 series are supported. See `config/server.yaml` for an example file that you can modify.
 
 Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with a Python
-virtualenv containing this project and its dependencies, uWSGI and nginx.
+virtualenv containing this project and its dependencies, uWSGI and nginx. Note thati
+this shares a config file with "services" and "api" but is independent, sharing state
+with them using the production DB only.
 
 ## ifsutils
 
@@ -155,34 +170,45 @@ Run it like `./ifsutils --help` to see help output and learn how to use it.
 ## iidxutils
 
 A utility for patching IIDX music database files. Note that this currently can only
-apply a "hide leggendarias from normal folders" patch, although its probable that it
-can be extended for other uses.
+apply a "hide leggendarias from normal folders" patch, although it would be trivial
+to extend for other uses such as song renames, difficulty patches and other fixups.
+Run it like `./iidxutils --help` to see help output and learn how to use it.
 
 ## jsx
 
-A utility which takes the existing JSX files in the repository and builds them for
-you. This is offered purely as a way to serve JSX files in a production setup from
-nginx or similar instead of compiling them on-the-fly when they are requested. You
-can use this to lower cold-start load times of your frontend.
+A utility which takes the existing JSX files in the repository and compiles them to
+raw JS files for you. This is offered purely as a way to serve JSX files in a
+production setup from nginx or similar instead of compiling them on-the-fly when
+they are requested. You can use this to lower cold-start load times of your frontend.
+If you do not make use of this or you are running the developent version of "frontend"
+then JSX files are compiled on-the-fly when they are requested by the browser. This
+behavior makes fast iteration possible by treating JSX files the same way that the
+"frontend" debug utility treats python source files but removes the ability for a
+production webserver such as nginx to serve static files. Run it like `./jsx --help`
+to see help output and learn how to use it.
 
 ## proxy
 
-A utility to MITM an eAmuse session. Point a game at the port this listens on, and
-point it at another network to see the packets flowing between the two. Takes care
+A utility to MITM a network session. Point a game at the port this listens on, and
+point this at another network to see the packets flowing between the two. Takes care
 of rewriting the facility message to MITM all messages. Has the ability to rewrite
 a request/response on the fly which is not currently used except for facility rewriting.
 Its possible that this could be used to on-the-fly patch packets coming back from a
 network which you don't control to do things such as enable paseli and adjust other
-settings that you cannot normally access. Logs in an identical format to bemanishark.
+settings that you cannot normally access. Logs in an identical format to "bemanishark".
 Useful for black-box RE of other networks. Note that this does not have the ability
 to MITM SSL-encrypted traffic, so don't bother trying to use this on an official
 network.
 
 This also has the ability to route a packet to one of several known networks based on
 the PCBID, so this can also be used as a proxy for switching networks on the fly.
-With a config file, this can be used as a VIP of sorts, allowing you to point all of
-your games at a single server that runs this proxy, and forward games on a per-PCBID
-basis to various networks behind the scenes. For an example config file to use "proxy"
+With a config file, this can be used as a HTTP VIP of sorts, allowing you to point all of
+your games at a single server that runs this proxy and forward games on a per-PCBID
+basis to various networks behind the scenes. This can come in especially handy if you
+are serving traffic from the same network your games are on. The network will auto-detect
+the public-facing IP of games when they connect and use that info for matching support.
+This breaks for local connections, so you might want to set up an offsite proxy instance
+so that the correct public-facing IP is detected. For an example config file to use "proxy"
 as a VIP, see `config/proxy.yaml`. For a more reliable proxy, use the wsgi version
 of this utility located at `bemani/wsgi/proxy.wsgi` along with uWSGI and nginx.
 
@@ -190,11 +216,14 @@ Run it like `./proxy --help` to see how to use this utility.
 
 ## psmap
 
-A utility to take an offset from a DLL/EXE file and produce python code that would generate
-a suitable response that said DLL/EXE will properly parse. Essentially, if you are
-reversing a new game and they use the `psmap` function to decode all or part of a
-packet, you can grab either the physical offset into the DLL or the virtual address of
-the data and use this utility to generate the code necessary to service that request.
+A utility to take an offset from a DLL/EXE file pointing at a psmap structure and
+produce python code that would generate a suitable response that said DLL/EXE will
+properly parse. Essentially, if you are reversing a new game and they use the `psmap`
+function to decode all or part of a packet, you can grab either the physical offset
+into the DLL or the virtual address of the data and use this utility to generate
+the code necessary to service that request. Note that some psmap structures are
+dynamically generated at runtime. "psmap" supports this by emulating x86 and x64 code
+to reconstruct the final structure. This feature can be optionally enabled if needed.
 Run it like `./psmap --help` to see how to use this utility.
 
 ## read
@@ -208,22 +237,23 @@ below in the "Installation" section.
 
 ## replay
 
-A utility to take a packet as logged by proxy, services, trafficgen or bemanishark,
-and replay that packet against a particular server. Useful for quickly grabbing
-packets that caused a crash and debugging the crash (and verifying the fix). It is
-also compatible with the packet logs found on exception and unsupported packet
-messages in the Admin Event Logs page on the frontend. It also lets you replay that
-packet against your production instance once you fix the issue in case that packet
-was a score or profile update that you care about.
+A utility to take a packet as logged by "proxy", "services", "trafficgen" or
+"bemanishark", and replay that packet against a particular server. Useful for
+quickly grabbing packets that caused a crash and debugging the crash (and verifying
+the fix). It is also compatible with the packet logs found on exception and unsupported
+packet messages in the Admin Event Logs page on the frontend. It also lets you
+replay that packet against your production instance once you fix the issue in case
+that packet was a score or profile update that you care about. Run it like
+`./replay --help` to see all information and usage.
 
 ## responsegen
 
-A utility to take a packet as logged by proxy, services, trafficgen or bemanishark,
-and generate python code that would have generated that exact packet. Useful for
-quickly grabbing packets sniffed from another network and prototyping new game support.
-Think of this as a combination of "replay" and "psmap". This is also extremely useful
-when building new integration test clients. Run it like `./responsegen --help` to
-see all information and usage.
+A utility to take a packet as logged by "proxy", "services", "trafficgen" or
+"bemanishark", and generate python code that would have generated that exact packet.
+Useful for quickly grabbing packets sniffed from another network and prototyping new
+game support. Think of this as a combination of "replay" and "psmap". This is also
+extremely useful when building new integration test clients. Run it like
+`./responsegen --help` to see all information and usage.
 
 ## sampleclient
 
@@ -231,8 +261,8 @@ A very barebones sample client for the BEMAPI implementation contained in this r
 Run it like `./sampleclient --help` to see help output and determine how to use this.
 Essentially, this is provided as a barebones client that does nothing other than
 print fetched info to the screen. You can use this as a starting point for an
-application that uses BEMAPI to fetch info from an api instance or to test your
-production installation.
+application that uses BEMAPI to fetch info from an "api" instance or to test your
+production installation to make sure it is ready for federation.
 
 ## scheduler
 
@@ -249,11 +279,16 @@ This should be given the same config file as "api", "frontend" and "services".
 
 Development version of an eAmusement protocol server using flask and the protocol
 libraries also used in "bemanishark" and "trafficgen". Currently it lets most modern
-BEMANI games boot and supports full profile and events for Beatmania IIDX 20-26,
+BEMANI games boot and supports full scores, profile and events for Beatmania IIDX 20-26,
 Pop'n Music 19-26, Jubeat Saucer, Saucer Fulfill, Prop, Qubell, Clan and Festo, Sound
 Voltex 1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace,
 MÚSECA 1, MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper,
-Volzza 1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi.
+Volzza 1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi. Note that it also
+has matching support for all Reflec Beat versions as well as MGA. By default, this serves
+traffic based solely on the database it is configured against. If you federate with
+other networks using the "Data API" admin page, it will upgrade to serving traffic
+based on the profiles, scores and statistics of all connected networks as well as the
+local database. Run like `./services --help` to see how to use this.
 
 Do not use this utility to serve production traffic. Instead, see
 `bemani/wsgi/api.wsgi` for a ready-to-go WSGI file that can be used with a Python
@@ -263,7 +298,8 @@ virtualenv containing this project and its dependencies, uWSGI and nginx.
 
 A convenience wrapper to invoke a Python 3 shell that has paths set up to import the
 modules in this repository. If you want to tinker or write a quick one-off, this is
-probably the easiest way to do so.
+probably the easiest way to do so. Run this like `./shell` to drop into a Python REPL
+which has the paths set up for correct imports.
 
 ## struct
 
@@ -272,8 +308,9 @@ You can give this a physical DLL offset or a virtual memory address for the star
 end of the data as well as a python struct format (documentation at
 https://docs.python.org/3.6/library/struct.html) and this will print the decoded
 data to the screen one entry per line. It includes several enhancements for decoding
-pointers to sub-structures and pointers to C strings. Run it like `./struct --help`
-to see how to use this.
+pointers to sub-structures and pointers to C strings. Note that much like "psmap", this
+has the ability to print out structures that are dynamically constructed at runtime by
+emulating x86 and x64 instructions. Run it like `./struct --help` to see how to use this.
 
 ## trafficgen
 
@@ -286,8 +323,10 @@ currently generates traffic emulating Beatmania IIDX 20-26, Pop'n Music 19-26, J
 Saucer, Fulfill, Prop, Qubell, Clan and Festo, Sound Voltex 1, 2, 3 Season 1/2 and 4,
 Dance Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA
 1+1/2, Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper,
-Volzza 1 and Volzza 2 and can verify card events and score events, as well as PASELI
-transactions.
+Volzza 1 and Volzza 2 ad Metal Gear Arcade and can verify card events and score events
+as well as PASELI transactions. Run it like `./trafficgen --help` to see how to use this.
+Note tha this takes a config file which sets up how the clients behave. See
+`config/trafficgen.yaml` for a sample file that can be used.
 
 ## verifylibs
 
@@ -297,14 +336,15 @@ be useful to write a test first (placed in the `bemani/tests/` directory) and co
 from there. It is also useful when optimizing or profiling, and also to verify that
 you haven't regressed anything. Supports all options that nosetests does including
 filtering, verbose printing and such. Run it like `./verifylibs --help` to see how
-to do these things. When submitting pull requests make sure to run this so you know
-that all tests pass.
+to do these things. When submitting pull requests make sure to run this across all
+tests by running `./verifylibs` so you know that all tests pass.
 
 ## verifylint
 
 Lint invocation utility. This simply invokes flake8 with various options so that you
 can see you haven't introduced any lint errors. When submitting pull requests make sure
-to run this so you know you aren't introducing any lint errors into the codebase.
+to run this so you know you aren't introducing any lint errors into the codebase. Run
+it like `./verifylint` to print out any lint warnings your modifications have caused.
 
 ## verifytraffic
 
@@ -320,33 +360,33 @@ existing game implementations.
 
 ## verifytyping
 
-Typing invocation utility. Since this repository is fully typed, this verifies that you
-haven't introduced any type errors and often catches bugs far faster than attemping to
-play a round only to see that you misused a class or misspelled a variable. When
-submitting pull requests make sure to run this so you know you aren't introducing any
-type errors into the codebase.
+Type-checking invocation utility. Since this repository is fully typed, this verifies
+that you haven't introduced any type errors and often catches bugs far faster than
+attemping to play a round only to see that you misused a class or misspelled a variable.
+When submitting pull requests make sure to run this like `./verifytyping` so you know
+you aren't introducing any type errors into the codebase.
 
 # Installation
 
 ## Dependency Setup
 
-The code contained here assumes Python 3.6 as the base. If you don't have or don't
-want to install Python 3.6 as your system python, it is recommended to use
-virtualenv to create a virtual environment. The rest of the installation will assume
-you have Python 3.6 working properly (and are in an activated virtual environment if
-this is the route you've chosen to go). If you have a newer version of python available
-this code should be compatible with that as well. This code is designed to run on Linux.
-However, it has been tested successfully on Windows and OSX as it doesn't use any
-system libraries and contains pure Python implementations of all necessary pieces.
-YMMV in this regard, however, since the whole suite is built and tested using a
-Debian-based derivative and several critical pieces of code have much faster Cython
-implementations.
+The code contained here assumes Python 3.6 as the base although it should work with
+any newer version of python as well. If you don't have or don't want to install Python
+3.6 as your system python, it is recommended to use virtualenv to create a virtual
+environment. The rest of the installation will assume you have Python 3.6 working
+properly (and are in an activated virtual environment if this is the route you've
+chosen to go). If you have a newer version of python available this code should be
+compatible with that as well. This code is designed to run on Linux. However, it has
+been tested successfully on Windows and OSX as it doesn't use any system-specific
+libraries and contains pure Python implementations of all necessary pieces. YMMV in
+this regard, however, since the whole suite is built and tested using a Debian-based
+derivative and several critical pieces of code have much faster Cython implementations.
 
 To install the required libraries, run the following command out of the root of the
 repository. This should allow all of the programs to at least start, but it still
 requires a MySQL database for many of them to be useful. This step has a dependency
 on an isntalled MySQL server and client as well as MySQL client development libraries.
-It also assumes that you've installed the 'wheel' package already. In order to
+It also assumes that you've installed the 'wheel' python package already. In order to
 compile the mysql client libraries, you will need to have libssl and libcrypto on your
 system as well. To satisfy these requirements on a Debian-based install, run the
 following command:
@@ -378,17 +418,20 @@ above.
 
 In order to run the frontend, Python will need to find a javascript runtime. This
 is so it can precompile react components at render time so there doesn't need to be
-a compile step when developing. I found it absolutely bonkers that the backend could
-be on-the-fly reloaded but I had to go through an entire build process to produce
-interpreted JS code, so I went the route of self-contained services instead. Installing
-a JS runtime is also outside the scope of this document, but a quick way to get started
-is to install node.js.
+a compile step when developing the front-end. I found it absolutely bonkers that the
+backend could be on-the-fly reloaded but I had to go through an entire build process
+to produce interpreted JS code, so I went the route of self-contained services
+instead. Installing a JS runtime is also outside the scope of this document, but a
+quick way to get started is to install node.js.
 
-The default configuration points the frontend/backend cache at `/tmp`. It is recommended
-to change to a different directory, as using `/tmp` can cause some items not to be cached.
-This is due to the way `/tmp` on Linux restricts file access to the creator only, so
-if you share your cache with multiple utilities running under different users, it will
-fail to reuse the cache and drastically slow down the frontend.
+The default configuration points the frontend/backend cache at `/tmp`. If you are going
+to run with a filesystem cache in production then it is recommended to change to a
+different directory, as using `/tmp` can cause some items not to be cached. This is
+due to the way `/tmp` on Linux restricts file access to the creator only, so if you share
+your cache with multiple utilities running under different users, it will fail to reuse
+the cache and drastically slow down the frontend. Alternatively, you can set up a
+memcached server and point your production instance at that instead of using a filesystem
+cache.
 
 ## Database Initialization
 
@@ -415,29 +458,36 @@ of the same game.
 If you happen to already be an authorized client of a BEMAPI-compatible server, you can
 fast-track initializing your server by pointing it at the remote server and using its existing
 database to seed your own. If this is the case, run the following command to perform
-a complete initialization. If you wish to update your initial setup with newer data,
-perhaps because a new supported game is available, you can run the following script and
-append the `--update` flag to it. Otherwise, run the following command like so:
+a complete initialization. Note that the "bootstrap" script has entries for non-omnimix
+versions only. You can edit it to add omnimix versions as well if you wish to provide
+omnimix support and are pointing at another BEMAPI-compatible instance which also has
+support. If you wish to update your initial setup with newer data, perhaps because a
+new supported game is available, you can run the following script and append the
+`--update` flag to it. Otherwise, run the following command like so:
 
 ```
 ./bootstrap --config config/server.yaml --server http://some-server.here/ --token some-token-here
 ```
 
-If you do not have a BEMAPI-compatible server, you can initialize the server from the
-game files of the games you wish to run. See the following sections for how exactly to
-do that.
+If you are not federating with an existing BEMAPI-compatible server, you can initialize
+the server from the game files of the games you wish to run. See the following sections
+for how exactly to do that.
 
 ### Pop'n Music
 
 For Pop'n Music, get the game DLL from the version of the game you want to import and
 run a command like so. This network supports versions 19-26 so you will want to run this
-command once for every version, giving the correct DLL file:
+command once for every version, giving the correct DLL file. Note that there are several
+versions of each game floating around and the "read" script attempts to support as many
+as it can but you might encounter a version of the game which hasn't been mapped yet.
+
+An example is as follows:
 
 ```
 ./read --config config/server.yaml --series pnm --version 22 --bin popn22.dll
 ```
 
-For add songs of a XML from omnimix v2, run a command like this:
+If you are looking to support omnimix v2, you can add songs out of an XML like this:
 
 ```
 ./read --config config/server.yaml --series pnm --version omni-24 --bin popn24.dll --xml your_songs_db.xml
@@ -446,7 +496,7 @@ For add songs of a XML from omnimix v2, run a command like this:
 If you have more than one XML you want to add, you can run this command with a folder with all your XML files:
 
 ```
-./read --config config/server.yaml --series pnm --version omni-24 --bin popn24.dll --folder my_xmls_path
+./read --config config/server.yaml --series pnm --version omni-24 --bin popn24.dll --folder my/xmls/path
 ```
 
 ### Jubeat
@@ -642,6 +692,12 @@ You can start the BEMAPI REST server in debug mode using a command similar to:
 ./api --port 18573 --config config/server.yaml
 ```
 
+You can run scheduled work to generate dailies and other such things using a command like so:
+
+```
+./scheduler --config config/server.yaml
+```
+
 The network config for any particular game should look similar to the following, with
 the correct hostname or IP filled in for the services URL. No path is necessary. Note
 that if you wish to switch between an existing network and one you serve using the
@@ -672,7 +728,9 @@ You will want to set up a cron job or similar scheduling agent to call "schedule
 on a regular basis. It is recommended to call it every five minutes since there are cache
 warming portions for the front-end that expire every 10 minutes. Game code will register
 with internal handlers to perform daily/weekly actions which are kicked off by this script.
-An example invocation of the tool is as follows:
+Note that if you don't want to have this done automatically in your development environment,
+you can simply invoke it before testing with a game. An example invocation of the tool is
+as follows:
 
 ```
 ./scheduler --config config/server.yaml
@@ -756,6 +814,19 @@ export PYTHONIOENCODING=utf-8
 export PYTHONLEGACYWINDOWSSTDIO=utf-8
 ```
 
+### None of my own games pointing at my self-hosted network can be matched with
+
+This is due to the way routers handle internal connections to their public-facing IP.
+Even if you tell your games to connect to the DNS entry or public-facing IP of your
+network, the router will handle the request internally. Therefore, all of the games
+on your own local network will have their public-facing IP detected wrong. You can
+get around this by either hosting your network services off-site, or paying for cheap
+colocation somewhere and running a "proxy" instance there. The proxy utility (and its
+production wsgi counterpart) know how to forward the detected IP through any number of
+proxy hops. Once you have set up an external proxy relay or moved your network services
+off-site, your own games will get their public-facing IP detected correctly. Remember
+that you should still forward the port assigned to each game on the admin interface.
+
 ## Production Setup
 
 As alluded to several times in this README, the recommended way to run a production
@@ -770,7 +841,9 @@ a virtualenv inside it (outside the scope of this document). Then, the wsgi file
 in `bemani/wsgi/` can be placed in the directory, uWSGI pointed at them and nginx set up.
 The setup for the top-level package will include all of the frontend templates, so you
 can set up a nginx directory to serve the static resources directly by pointing at the
-static directory inside your virtualenv.
+static directory inside your virtualenv. If you use "assetparse" to extract assets or
+"jsx" to compile static JS, you'll want to add entries in your nginx config to serve
+those as well.
 
 For example configurations, an example install script, and an example script to back
 up your MySQL instance, see the `examples/` directory. Note that several files have
@@ -798,7 +871,7 @@ For documentation on how the protocol layer works, see "PROTOCOL". For documenta
 on how the eAmusement server is intended to work, see "BACKEND". Inside `bemani/data/`
 the various DB model files have comments detailing the intended usage of each of the
 tables. For documentation on how the BEMAPI REST API should respond, please see the
-BEMAPI specification repository at https://github.com/DragonMinded/bemapi.
+BEMAPI specification in `bemani/api/`.
 
 When updating DB schema in the various `bemani/data/` python files, you will most-likely
 want to generate a migration for others to use. For that, we've integrated with alembic
@@ -840,7 +913,7 @@ compiled `.so` files, otherwise your changes will not show up when you test.
 
 # License and Usage
 
-All of the code in this repository is released under public domain. No attribution or
+All of the code in this repository is released under the public domain. No attribution or
 releasing of source code is required. No warranty of the code or functionality is implied.
 However, open source would not flourish without contributions from users the world across.
 Pull requests are therefore appreciated! Please note, however, that the code contained in this
@@ -853,6 +926,6 @@ by the original manufacturer or games which have not reached their support end-o
 Similarly, while I cannot control what you decide to do with this software, it would be
 very, very stupid to attempt to run this in a public arcade or convention, or to attempt
 to use this with games that you or another person or business are charging money for. If
-you do decide to do this anyway, do not advertise association with any of this software in
+you decide to do this anyway, do not advertise association with any of this software in
 any form whatsoever. Attempting to use this software for commercial gain or to compete
 publicly with official game support goes directly against the stated goals of this software.

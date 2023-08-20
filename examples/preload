@@ -2,7 +2,8 @@
 # A utility that hits your web frontend, causing the cache for JSX
 # translations to be rendered. Call this after/during your installation
 # so that the first web request after an installation doesn't need to
-# warm the cache.
+# warm the cache. Note that this isn't necessary if you are compiling
+# JSX files for static serving via nginx.
 
 cd /path/to/your/virtualenv/lib/python3.6/site-packages/bemani/frontend/static
 for url in $(find -name "*.react.js" | sed 's,^\.,https://your-domain.com/jsx,'); do
