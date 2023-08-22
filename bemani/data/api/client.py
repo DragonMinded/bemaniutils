@@ -53,6 +53,19 @@ class APIClient:
         self.allow_stats = allow_stats
         self.allow_scores = allow_scores
 
+    def __repr__(self) -> str:
+        # Specifically defined so that two different instances of the same API client
+        # cache under the same key, as we want to share results from a given server
+        # to all local requests.
+        return (
+            "APIClient("
+            + f"base_uri={self.base_uri!r}, "
+            + f"token={self.token!r}, "
+            + f"allow_stats={self.allow_stats!r}, "
+            + f"allow_scores={self.allow_scores!r}"
+            + ")"
+        )
+
     def _content_type_valid(self, content_type: str) -> bool:
         if ";" in content_type:
             left, right = content_type.split(";", 1)
