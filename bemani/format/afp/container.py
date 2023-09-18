@@ -4,7 +4,7 @@ import struct
 from PIL import Image
 from typing import Any, Dict, List, Optional, Tuple
 
-from bemani.format.dxt import DXTBuffer
+from bemani.format.tdxt import TDXT
 from bemani.protocol.binary import BinaryEncoding
 from bemani.protocol.lz77 import Lz77
 from bemani.protocol.node import Node
@@ -48,28 +48,56 @@ class Texture:
     def __init__(
         self,
         name: str,
-        width: int,
-        height: int,
-        fmt: int,
-        header_flags1: int,
-        header_flags2: int,
-        header_flags3: int,
-        fmtflags: int,
-        rawdata: bytes,
+        tdxt: TDXT,
         compressed: Optional[bytes],
-        imgdata: Any,
     ) -> None:
         self.name = name
-        self.width = width
-        self.height = height
-        self.fmt = fmt
-        self.header_flags1 = header_flags1
-        self.header_flags2 = header_flags2
-        self.header_flags3 = header_flags3
-        self.fmtflags = fmtflags
-        self.raw = rawdata
+        self.tdxt = tdxt
         self.compressed = compressed
-        self.img = imgdata
+
+    @property
+    def width(self) -> int:
+        return self.tdxt.width
+
+    @property
+    def height(self) -> int:
+        return self.tdxt.height
+
+    @property
+    def fmt(self) -> int:
+        return self.tdxt.fmt
+
+    @property
+    def fmtflags(self) -> int:
+        return self.tdxt.fmtflags
+
+    @property
+    def header_flags1(self) -> int:
+        return self.tdxt.header_flags1
+
+    @property
+    def header_flags2(self) -> int:
+        return self.tdxt.header_flags2
+
+    @property
+    def header_flags3(self) -> int:
+        return self.tdxt.header_flags3
+
+    @property
+    def raw(self) -> bytes:
+        return self.tdxt.raw
+
+    @property
+    def img(self) -> Optional[Image.Image]:
+        return self.tdxt.img
+
+    @img.setter
+    def img(self, newdata: Image.Image) -> None:
+        # The TDXT magic container will update the raw for us as well, as long as it's supported.
+        self.tdxt.img = newdata
+
+        # Unset our cache, so we don't accidentally write the unmodified original data.
+        self.compressed = None
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return {
@@ -472,260 +500,20 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                             ]
                             self.add_coverage(texture_offset, deflated_size + 8)
 
-                        (
-                            magic,
-                            header_flags1,
-                            header_flags2,
-                            raw_length,
-                            width,
-                            height,
-                            fmtflags,
-                            expected_zero1,
-                            expected_zero2,
-                        ) = struct.unpack(
-                            f"{self.endian}4sIIIHHIII",
-                            raw_data[0:32],
-                        )
-                        if raw_length != len(raw_data):
-                            raise Exception("Invalid texture length!")
-                        # I have only ever observed the following values across two different games.
-                        # Don't want to keep the chunk around so let's assert our assumptions.
-                        if (expected_zero1 | expected_zero2) != 0:
-                            raise Exception(
-                                "Found unexpected non-zero value in texture header!"
-                            )
-                        if raw_data[32:44] != b"\0" * 12:
-                            raise Exception(
-                                "Found unexpected non-zero value in texture header!"
-                            )
-                        # This is almost ALWAYS 3, but I've seen it be 1 as well, so I guess we have to
-                        # round-trip it if we want to write files back out. I have no clue what it's for.
-                        # I've seen it be 1 only on files used for fonts so far, but I am not sure there
-                        # is any correlation there.
-                        header_flags3 = struct.unpack(
-                            f"{self.endian}I", raw_data[44:48]
-                        )[0]
-                        if raw_data[48:64] != b"\0" * 16:
-                            raise Exception(
-                                "Found unexpected non-zero value in texture header!"
-                            )
-                        fmt = fmtflags & 0xFF
-
-                        # Extract flags that the game cares about.
-                        # flags1 = (fmtflags >> 24) & 0xFF
-                        # flags2 = (fmtflags >> 16) & 0xFF
-
-                        # unk1 = 3 if (flags1 & 0xF == 1) else 1
-                        # unk2 = 3 if ((flags1 >> 4) & 0xF == 1) else 1
-                        # unk3 = 1 if (flags2 & 0xF == 1) else 2
-                        # unk4 = 1 if ((flags2 >> 4) & 0xF == 1) else 2
-
-                        if self.endian == "<" and magic != b"TDXT":
-                            raise Exception("Unexpected texture format!")
-                        if self.endian == ">" and magic != b"TXDT":
+                        tdxt = TDXT.fromBytes(raw_data)
+                        if tdxt.endian != self.endian:
                             raise Exception("Unexpected texture format!")
 
-                        # Since the AFP file format can be found in both big and little endian, its
-                        # possible that some of these loaders might need byteswapping on some platforms.
-                        # This has been tested on files intended for X86 (little endian). I've found that
-                        # the "correct" thing to do is always treat data as little-endian instead of the
-                        # determined endianness of the file. But, this could also be broken per-game, so
-                        # I'm not entirely sure this is fully possible to do generically.
-
-                        if fmt == 0x01:
-                            # As far as I can tell, this is 8 bit grayscale. Decoding as such results in
-                            # images that are recognizeable and look correct.
-                            img = Image.frombytes(
-                                "L",
-                                (width, height),
-                                raw_data[64:],
-                                "raw",
-                                "L",
-                            )
-                        elif fmt == 0x0B:
-                            # 16-bit 565 color RGB format. Game references D3D9 texture format 23 (R5G6B5).
-                            newdata = []
-                            for i in range(width * height):
-                                pixel = struct.unpack(
-                                    "<H",
-                                    raw_data[(64 + (i * 2)) : (66 + (i * 2))],
-                                )[0]
-
-                                # Extract the raw values
-                                red = ((pixel >> 0) & 0x1F) << 3
-                                green = ((pixel >> 5) & 0x3F) << 2
-                                blue = ((pixel >> 11) & 0x1F) << 3
-
-                                # Scale the colors so they fill the entire 8 bit range.
-                                red = red | (red >> 5)
-                                green = green | (green >> 6)
-                                blue = blue | (blue >> 5)
-
-                                newdata.append(struct.pack("<BBB", blue, green, red))
-                            img = Image.frombytes(
-                                "RGB",
-                                (width, height),
-                                b"".join(newdata),
-                                "raw",
-                                "RGB",
-                            )
-                        elif fmt == 0x0E:
-                            # RGB image, no alpha. Game references D3D9 texture format 22 (R8G8B8).
-                            img = Image.frombytes(
-                                "RGB",
-                                (width, height),
-                                raw_data[64:],
-                                "raw",
-                                "RGB",
-                            )
-                        elif fmt == 0x10:
-                            # Seems to be some sort of RGBA with color swapping. Game references D3D9 texture
-                            # format 21 (A8R8B8G8) but does manual byteswapping.
-                            img = Image.frombytes(
-                                "RGBA",
-                                (width, height),
-                                raw_data[64:],
-                                "raw",
-                                "BGRA",
-                            )
-                        elif fmt == 0x13:
-                            # Some 16-bit texture format. Game references D3D9 texture format 25 (A1R5G5B5).
-                            newdata = []
-                            for i in range(width * height):
-                                pixel = struct.unpack(
-                                    "<H",
-                                    raw_data[(64 + (i * 2)) : (66 + (i * 2))],
-                                )[0]
-
-                                # Extract the raw values
-                                alpha = 255 if ((pixel >> 15) & 0x1) != 0 else 0
-                                red = ((pixel >> 0) & 0x1F) << 3
-                                green = ((pixel >> 5) & 0x1F) << 3
-                                blue = ((pixel >> 10) & 0x1F) << 3
-
-                                # Scale the colors so they fill the entire 8 bit range.
-                                red = red | (red >> 5)
-                                green = green | (green >> 5)
-                                blue = blue | (blue >> 5)
-
-                                newdata.append(
-                                    struct.pack("<BBBB", blue, green, red, alpha)
-                                )
-                            img = Image.frombytes(
-                                "RGBA",
-                                (width, height),
-                                b"".join(newdata),
-                                "raw",
-                                "RGBA",
-                            )
-                        elif fmt == 0x15:
-                            # RGBA format. Game references D3D9 texture format 21 (A8R8G8B8).
-                            # Looks like unlike 0x20 below, the game does some endianness swapping.
-                            img = Image.frombytes(
-                                "RGBA",
-                                (width, height),
-                                raw_data[64:],
-                                "raw",
-                                "ARGB",
-                            )
-                        elif fmt == 0x16:
-                            # DXT1 format. Game references D3D9 DXT1 texture format.
-                            # Konami seems to have screwed up with DDR PS3 where they
-                            # swap every other byte in the format, even though its specified
-                            # as little-endian by all DXT1 documentation.
-                            dxt = DXTBuffer(width, height)
-                            img = Image.frombuffer(
-                                "RGBA",
-                                (width, height),
-                                dxt.DXT1Decompress(
-                                    raw_data[64:], swap=self.endian != "<"
-                                ),
-                                "raw",
-                                "RGBA",
-                                0,
-                                1,
-                            )
-                        elif fmt == 0x1A:
-                            # DXT5 format. Game references D3D9 DXT5 texture format.
-                            # Konami seems to have screwed up with DDR PS3 where they
-                            # swap every other byte in the format, even though its specified
-                            # as little-endian by all DXT5 documentation.
-                            dxt = DXTBuffer(width, height)
-                            img = Image.frombuffer(
-                                "RGBA",
-                                (width, height),
-                                dxt.DXT5Decompress(
-                                    raw_data[64:], swap=self.endian != "<"
-                                ),
-                                "raw",
-                                "RGBA",
-                                0,
-                                1,
-                            )
-                        elif fmt == 0x1E:
-                            # I have no idea what format this is. The game does some byte
-                            # swapping but doesn't actually call any texture create calls.
-                            # This might be leftover from another game.
-                            pass
-                        elif fmt == 0x1F:
-                            # 16-bit 4-4-4-4 RGBA format. Game references D3D9 texture format 26 (A4R4G4B4).
-                            newdata = []
-                            for i in range(width * height):
-                                pixel = struct.unpack(
-                                    "<H",
-                                    raw_data[(64 + (i * 2)) : (66 + (i * 2))],
-                                )[0]
-
-                                # Extract the raw values
-                                blue = ((pixel >> 0) & 0xF) << 4
-                                green = ((pixel >> 4) & 0xF) << 4
-                                red = ((pixel >> 8) & 0xF) << 4
-                                alpha = ((pixel >> 12) & 0xF) << 4
-
-                                # Scale the colors so they fill the entire 8 bit range.
-                                red = red | (red >> 4)
-                                green = green | (green >> 4)
-                                blue = blue | (blue >> 4)
-                                alpha = alpha | (alpha >> 4)
-
-                                newdata.append(
-                                    struct.pack("<BBBB", red, green, blue, alpha)
-                                )
-                            img = Image.frombytes(
-                                "RGBA",
-                                (width, height),
-                                b"".join(newdata),
-                                "raw",
-                                "RGBA",
-                            )
-                        elif fmt == 0x20:
-                            # RGBA format. Game references D3D9 surface format 21 (A8R8G8B8).
-                            img = Image.frombytes(
-                                "RGBA",
-                                (width, height),
-                                raw_data[64:],
-                                "raw",
-                                "BGRA",
-                            )
-                        else:
+                        if tdxt.img is None:
                             self.vprint(
-                                f"Unsupported format {hex(fmt)} for texture {name}"
+                                f"Unsupported format {hex(tdxt.fmt)} for texture {name}"
                             )
-                            img = None
 
                         self.textures.append(
                             Texture(
                                 name,
-                                width,
-                                height,
-                                fmt,
-                                header_flags1,
-                                header_flags2,
-                                header_flags3,
-                                fmtflags & 0xFFFFFF00,
-                                raw_data[64:],
+                                tdxt,
                                 lz_data,
-                                img,
                             )
                         )
         else:
@@ -1319,36 +1107,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             # Now, possibly compress and lay down textures.
             for texture in self.textures:
                 # Construct the TXDT texture format from our parsed results.
-                if self.endian == "<":
-                    magic = b"TDXT"
-                elif self.endian == ">":
-                    magic = b"TXDT"
-                else:
-                    raise Exception("Unexpected texture format!")
-
-                fmtflags = (texture.fmtflags & 0xFFFFFF00) | (texture.fmt & 0xFF)
-
-                raw_texture = (
-                    struct.pack(
-                        f"{self.endian}4sIIIHHIII",
-                        magic,
-                        texture.header_flags1,
-                        texture.header_flags2,
-                        64 + len(texture.raw),
-                        texture.width,
-                        texture.height,
-                        fmtflags,
-                        0,
-                        0,
-                    )
-                    + (b"\0" * 12)
-                    + struct.pack(
-                        f"{self.endian}I",
-                        texture.header_flags3,
-                    )
-                    + (b"\0" * 16)
-                    + texture.raw
-                )
+                raw_texture = texture.tdxt.toBytes()
 
                 if self.legacy_lz:
                     raise Exception("We don't support legacy lz mode!")
@@ -1714,12 +1473,9 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 if img.width != texture.width or img.height != texture.height:
                     raise Exception("Cannot update texture with different size!")
 
-                # Now, get the raw image data.
+                # Now, get the raw image data, and let the TDXT container refresh the raw.
                 img = img.convert("RGBA")
                 texture.img = img
-
-                # Now, refresh the raw texture data for when we write it out.
-                self._refresh_texture(texture)
 
                 return
         else:
@@ -1753,69 +1509,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
         # Now, copy the data over and update the raw texture.
         for tex in self.textures:
             if tex.name == texture:
-                tex.img.paste(sprite_img, (region.left // 2, region.top // 2))
-
-                # Now, refresh the texture so when we save the file its updated.
-                self._refresh_texture(tex)
-
-    def _refresh_texture(self, texture: Texture) -> None:
-        if texture.fmt == 0x0B:
-            # 16-bit 565 color RGB format.
-            texture.raw = b"".join(
-                struct.pack(
-                    f"{self.endian}H",
-                    (
-                        (((pixel[0] >> 3) & 0x1F) << 11)
-                        | (((pixel[1] >> 2) & 0x3F) << 5)
-                        | ((pixel[2] >> 3) & 0x1F)
-                    ),
-                )
-                for pixel in texture.img.getdata()
-            )
-        elif texture.fmt == 0x13:
-            # 16-bit A1R5G55 texture format.
-            texture.raw = b"".join(
-                struct.pack(
-                    f"{self.endian}H",
-                    (
-                        (0x8000 if pixel[3] >= 128 else 0x0000)
-                        | (((pixel[0] >> 3) & 0x1F) << 10)
-                        | (((pixel[1] >> 3) & 0x1F) << 5)
-                        | ((pixel[2] >> 3) & 0x1F)
-                    ),
-                )
-                for pixel in texture.img.getdata()
-            )
-        elif texture.fmt == 0x1F:
-            # 16-bit 4-4-4-4 RGBA format.
-            texture.raw = b"".join(
-                struct.pack(
-                    f"{self.endian}H",
-                    (
-                        ((pixel[2] >> 4) & 0xF)
-                        | (((pixel[1] >> 4) & 0xF) << 4)
-                        | (((pixel[0] >> 4) & 0xF) << 8)
-                        | (((pixel[3] >> 4) & 0xF) << 12)
-                    ),
-                )
-                for pixel in texture.img.getdata()
-            )
-        elif texture.fmt == 0x20:
-            # 32-bit RGBA format
-            texture.raw = b"".join(
-                struct.pack(
-                    f"{self.endian}BBBB",
-                    pixel[2],
-                    pixel[1],
-                    pixel[0],
-                    pixel[3],
-                )
-                for pixel in texture.img.getdata()
-            )
-        else:
-            raise Exception(
-                f"Unsupported format {hex(texture.fmt)} for texture {texture.name}"
-            )
-
-        # Make sure we don't use the old compressed data.
-        texture.compressed = None
+                # Now, composite and refresh the texture so when we save the file its updated.
+                img = tex.img
+                img.paste(sprite_img, (region.left // 2, region.top // 2))
+                tex.img = img
