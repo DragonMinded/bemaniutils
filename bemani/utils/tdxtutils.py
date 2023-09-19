@@ -1,14 +1,11 @@
 #! /usr/bin/env python3
 import argparse
 import io
-import json
-import math
 import os
 import os.path
 import sys
-import textwrap
-from PIL import Image, ImageDraw
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from PIL import Image
+from typing import Optional
 
 from bemani.format import TDXT
 

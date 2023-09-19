@@ -312,6 +312,15 @@ pointers to sub-structures and pointers to C strings. Note that much like "psmap
 has the ability to print out structures that are dynamically constructed at runtime by
 emulating x86 and x64 instructions. Run it like `./struct --help` to see how to use this.
 
+## tdxtfiles
+
+Utilities for working with raw TDXT texture files. These are found packed inside TXP2
+and TEXP containers but sometimes can be found standalone. This utility has the capability
+to extract a PNG of the texture for all known texture formats that I've come across, and
+can repack a TDXT file given a PNG of the same size under certain circumstances. Not all
+texture formats are supported for repacking. Run it like `./tdxtutils --help` to see help
+output and determine how to use it.
+
 ## trafficgen
 
 A utility for simulating traffic to an eAmusement service. Given a particular game,
