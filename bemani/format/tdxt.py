@@ -78,7 +78,7 @@ class TDXT:
             f"{endian}4sIIIHHIII",
             raw_data[0:32],
         )
-        if raw_length != len(raw_data):
+        if (raw_length + 64) != len(raw_data):
             raise Exception("Invalid texture length!")
 
         # I have only ever observed the following values across two different games.
