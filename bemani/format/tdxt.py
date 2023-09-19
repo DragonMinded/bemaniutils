@@ -16,6 +16,7 @@ class TDXT:
         fmt: int,
         fmtflags: int,
         endian: str,
+        length_fixup: bool,
         raw: bytes,
         img: Optional[Image.Image],
     ) -> None:
@@ -27,6 +28,7 @@ class TDXT:
         self.fmt = fmt
         self.fmtflags = fmtflags
         self.endian = endian
+        self.length_fixup = length_fixup
         self.__raw = raw
         self.__img = img
 
@@ -78,7 +80,13 @@ class TDXT:
             f"{endian}4sIIIHHIII",
             raw_data[0:32],
         )
-        if (raw_length + 64) != len(raw_data):
+        # Standalone TDXT files don't include the header in the length. Embedded ones
+        # inside a TXP2 file do. Ugh.
+        if raw_length == len(raw_data):
+            length_fixup = False
+        elif (raw_length + 64) == len(raw_data):
+            length_fixup = True
+        else:
             raise Exception("Invalid texture length!")
 
         # I have only ever observed the following values across two different games.
@@ -116,6 +124,7 @@ class TDXT:
             fmt=fmt,
             fmtflags=fmtflags & 0xFFFFFF00,
             endian=endian,
+            length_fixup=length_fixup,
             raw=raw_data[64:],
             img=TDXT._rawToImg(width, height, fmt, endian, raw_data[64:]),
         )
@@ -322,7 +331,9 @@ class TDXT:
                 magic,
                 self.header_flags1,
                 self.header_flags2,
-                64 + len(self.raw),
+                # Some files include the header in the length, some do not. We detect this
+                # in the header, and round-trip it here.
+                len(self.raw) if self.length_fixup else (64 + len(self.raw)),
                 self.width,
                 self.height,
                 fmtflags,

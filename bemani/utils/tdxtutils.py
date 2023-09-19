@@ -30,7 +30,9 @@ def extract_texture(
     output_dir = os.path.dirname(os.path.abspath(output_fname))
     os.makedirs(output_dir, exist_ok=True)
 
-    print(f"Extracting texture from {os.path.abspath(fname)} to {os.path.abspath(output_fname)}")
+    print(
+        f"Extracting texture from {os.path.abspath(fname)} to {os.path.abspath(output_fname)}"
+    )
     with open(output_fname, "wb") as bfp:
         tdxt.img.save(bfp, format="PNG")
 
@@ -52,7 +54,9 @@ def update_texture(
 
     tdxt.img = img
 
-    print(f"Updating texture in {os.path.abspath(fname)} from {os.path.abspath(input_fname)}")
+    print(
+        f"Updating texture in {os.path.abspath(fname)} from {os.path.abspath(input_fname)}"
+    )
     with open(fname, "wb") as bfp:
         bfp.write(tdxt.toBytes())
 
