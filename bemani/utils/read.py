@@ -2601,7 +2601,7 @@ class ImportJubeat(ImportBase):
                 "Unsupported Jubeat version, expected one of the following: all"
             )
 
-        with open(tsvfile, newline="") as tsvhandle:
+        with open(tsvfile, newline="", encoding="utf-8") as tsvhandle:
             jubeatreader = csv.reader(tsvhandle, delimiter="\t", quotechar='"')
             for row in jubeatreader:
                 songid = int(row[0])
