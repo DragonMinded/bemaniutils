@@ -13,9 +13,10 @@ from bemani.format import TDXT
 def extract_texture(
     fname: str,
     output_fname: Optional[str],
+    invert_channels: bool = False,
 ) -> int:
     with open(fname, "rb") as bfp:
-        tdxt = TDXT.fromBytes(bfp.read())
+        tdxt = TDXT.fromBytes(bfp.read(), invert_channels=invert_channels)
 
     if output_fname is None:
         output_fname = os.path.splitext(os.path.abspath(fname))[0] + ".png"
@@ -39,9 +40,10 @@ def extract_texture(
 def update_texture(
     fname: str,
     input_fname: str,
+    invert_channels: bool = False,
 ) -> int:
     with open(fname, "rb") as bfp:
-        tdxt = TDXT.fromBytes(bfp.read())
+        tdxt = TDXT.fromBytes(bfp.read(), invert_channels=invert_channels)
 
     if not input_fname.lower().endswith(".png"):
         raise Exception("Invalid output file format!")
@@ -82,6 +84,11 @@ def main() -> int:
         default=None,
         help="The PNG file to unpack the texture to.",
     )
+    unpack_parser.add_argument(
+        "--invert-channels",
+        action="store_true",
+        help="Swap the order of R/G/B channels in image.",
+    )
 
     update_parser = subparsers.add_parser(
         "update",
@@ -97,6 +104,11 @@ def main() -> int:
         metavar="INFILE",
         help="The PNG file to update the texture from.",
     )
+    update_parser.add_argument(
+        "--invert-channels",
+        action="store_true",
+        help="Swap the order of R/G/B channels in image.",
+    )
 
     args = parser.parse_args()
 
@@ -104,11 +116,13 @@ def main() -> int:
         return extract_texture(
             args.infile,
             args.outfile,
+            invert_channels=args.invert_channels,
         )
     elif args.action == "update":
         return update_texture(
             args.outfile,
             args.infile,
+            invert_channels=args.invert_channels,
         )
     else:
         raise Exception(f"Invalid action {args.action}!")

@@ -19,6 +19,8 @@ class TDXT:
         length_fixup: bool,
         raw: bytes,
         img: Optional[Image.Image],
+        *,
+        invert_channels: bool = False,
     ) -> None:
         self.header_flags1 = header_flags1
         self.header_flags2 = header_flags2
@@ -29,6 +31,7 @@ class TDXT:
         self.fmtflags = fmtflags
         self.endian = endian
         self.length_fixup = length_fixup
+        self.invert_channels = invert_channels
         self.__raw = raw
         self.__img = img
 
@@ -39,7 +42,14 @@ class TDXT:
     @raw.setter
     def raw(self, newdata: bytes) -> None:
         self.__raw = newdata
-        newimg = self._rawToImg(self.width, self.height, self.fmt, self.endian, newdata)
+        newimg = self._rawToImg(
+            self.width,
+            self.height,
+            self.fmt,
+            self.endian,
+            self.invert_channels,
+            newdata,
+        )
         width, height = newimg.size
         if width != self.width or height != self.height:
             raise Exception("Unsupported texture resize operation for TDXT file!")
@@ -55,7 +65,7 @@ class TDXT:
         self.__raw = self._imgToRaw(newimg)
 
     @staticmethod
-    def fromBytes(raw_data: bytes) -> "TDXT":
+    def fromBytes(raw_data: bytes, *, invert_channels: bool = False) -> "TDXT":
         # First, check the endianness.
         (magic,) = struct.unpack_from("4s", raw_data)
 
@@ -126,12 +136,15 @@ class TDXT:
             endian=endian,
             length_fixup=length_fixup,
             raw=raw_data[64:],
-            img=TDXT._rawToImg(width, height, fmt, endian, raw_data[64:]),
+            img=TDXT._rawToImg(
+                width, height, fmt, endian, invert_channels, raw_data[64:]
+            ),
+            invert_channels=invert_channels,
         )
 
     @staticmethod
     def _rawToImg(
-        width: int, height: int, fmt: int, endian: str, raw_data: bytes
+        width: int, height: int, fmt: int, endian: str, invert: bool, raw_data: bytes
     ) -> Optional[Image.Image]:
         # Since the AFP file format can be found in both big and little endian, its
         # possible that some of these loaders might need byteswapping on some platforms.
@@ -177,7 +190,7 @@ class TDXT:
                 (width, height),
                 b"".join(newdata),
                 "raw",
-                "RGB",
+                "BGR" if invert else "RGB",
             )
         elif fmt == 0x0E:
             # RGB image, no alpha. Game references D3D9 texture format 22 (R8G8B8).
@@ -186,7 +199,7 @@ class TDXT:
                 (width, height),
                 raw_data,
                 "raw",
-                "RGB",
+                "BGR" if invert else "RGB",
             )
         elif fmt == 0x10:
             # Seems to be some sort of RGBA with color swapping. Game references D3D9 texture
@@ -196,7 +209,7 @@ class TDXT:
                 (width, height),
                 raw_data,
                 "raw",
-                "BGRA",
+                "RGBA" if invert else "BGRA",
             )
         elif fmt == 0x13:
             # Some 16-bit texture format. Game references D3D9 texture format 25 (A1R5G5B5).
@@ -224,7 +237,7 @@ class TDXT:
                 (width, height),
                 b"".join(newdata),
                 "raw",
-                "RGBA",
+                "BGRA" if invert else "RGBA",
             )
         elif fmt == 0x15:
             # RGBA format. Game references D3D9 texture format 21 (A8R8G8B8).
@@ -234,7 +247,7 @@ class TDXT:
                 (width, height),
                 raw_data,
                 "raw",
-                "ARGB",
+                "ABGR" if invert else "ARGB",
             )
         elif fmt == 0x16:
             # DXT1 format. Game references D3D9 DXT1 texture format.
@@ -298,7 +311,7 @@ class TDXT:
                 (width, height),
                 b"".join(newdata),
                 "raw",
-                "RGBA",
+                "BGRA" if invert else "RGBA",
             )
         elif fmt == 0x20:
             # RGBA format. Game references D3D9 surface format 21 (A8R8G8B8).
@@ -307,7 +320,7 @@ class TDXT:
                 (width, height),
                 raw_data,
                 "raw",
-                "BGRA",
+                "RGBA" if invert else "BGRA",
             )
         else:
             img = None
@@ -354,15 +367,21 @@ class TDXT:
         if width != self.width or height != self.height:
             raise Exception("Unsupported texture resize operation for TDXT file!")
 
+        # Ignore alpha, which is basically always in the right place.
+        if self.invert_channels:
+            order = (2, 1, 0)
+        else:
+            order = (0, 1, 2)
+
         if self.fmt == 0x0B:
             # 16-bit 565 color RGB format.
             raw = b"".join(
                 struct.pack(
                     "<H",
                     (
-                        (((pixel[0] >> 3) & 0x1F) << 11)
-                        | (((pixel[1] >> 2) & 0x3F) << 5)
-                        | ((pixel[2] >> 3) & 0x1F)
+                        (((pixel[order[0]] >> 3) & 0x1F) << 11)
+                        | (((pixel[order[1]] >> 2) & 0x3F) << 5)
+                        | ((pixel[order[2]] >> 3) & 0x1F)
                     ),
                 )
                 for pixel in imgdata.getdata()
@@ -374,9 +393,9 @@ class TDXT:
                     "<H",
                     (
                         (0x8000 if pixel[3] >= 128 else 0x0000)
-                        | (((pixel[0] >> 3) & 0x1F) << 10)
-                        | (((pixel[1] >> 3) & 0x1F) << 5)
-                        | ((pixel[2] >> 3) & 0x1F)
+                        | (((pixel[order[0]] >> 3) & 0x1F) << 10)
+                        | (((pixel[order[1]] >> 3) & 0x1F) << 5)
+                        | ((pixel[order[2]] >> 3) & 0x1F)
                     ),
                 )
                 for pixel in imgdata.getdata()
@@ -387,9 +406,9 @@ class TDXT:
                 struct.pack(
                     "<H",
                     (
-                        ((pixel[2] >> 4) & 0xF)
-                        | (((pixel[1] >> 4) & 0xF) << 4)
-                        | (((pixel[0] >> 4) & 0xF) << 8)
+                        ((pixel[order[2]] >> 4) & 0xF)
+                        | (((pixel[order[1]] >> 4) & 0xF) << 4)
+                        | (((pixel[order[0]] >> 4) & 0xF) << 8)
                         | (((pixel[3] >> 4) & 0xF) << 12)
                     ),
                 )
@@ -400,9 +419,9 @@ class TDXT:
             raw = b"".join(
                 struct.pack(
                     "<BBBB",
-                    pixel[2],
-                    pixel[1],
-                    pixel[0],
+                    pixel[order[2]],
+                    pixel[order[1]],
+                    pixel[order[0]],
                     pixel[3],
                 )
                 for pixel in imgdata.getdata()
