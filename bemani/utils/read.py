@@ -3358,7 +3358,7 @@ class ImportIIDX(ImportBase):
                 "Unsupported IIDX version, expected one of the following: all"
             )
 
-        with open(tsvfile, newline="") as tsvhandle:
+        with open(tsvfile, newline="", encoding="utf-8") as tsvhandle:
             iidxreader = csv.reader(tsvhandle, delimiter="\t", quotechar='"')
             for row in iidxreader:
                 songid = int(row[0])
