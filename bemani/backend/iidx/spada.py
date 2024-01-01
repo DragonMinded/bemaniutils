@@ -170,6 +170,18 @@ class IIDXSpada(IIDXBase):
                     "setting": "omnimix_events_enabled",
                 },
             ],
+            "ints": [
+                {
+                    "name": "Event Phase",
+                    "tip": "Sets the machine event phase.",
+                    "category": "game_config",
+                    "setting": "event_phase",
+                    "values": {
+                        0: "No Event",
+                        1: "Qprogue",
+                    },
+                },
+            ],
         }
 
     def db_to_game_status(self, db_status: int) -> int:
@@ -877,8 +889,8 @@ class IIDXSpada(IIDXBase):
         if self.omnimix and (not omni_events):
             boss_phase = 0
         else:
-            # TODO: Figure out what these map to
-            boss_phase = 0
+            # There's only one event, and we hardcode it to the new maps.
+            boss_phase = game_config.get_int("event_phase")
 
         boss = Node.void("boss")
         root.add_child(boss)
