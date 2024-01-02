@@ -176,6 +176,12 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                     "category": "game_config",
                     "setting": "omnimix_events_enabled",
                 },
+                {
+                    "name": "Force Song Unlock",
+                    "tip": "Force unlock all songs.",
+                    "category": "game_config",
+                    "setting": "force_unlock_songs",
+                },
             ],
             "ints": [
                 {
@@ -1350,9 +1356,22 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         secret_dict = profile.get_dict("secret")
         secret = Node.void("secret")
         root.add_child(secret)
-        secret.add_child(Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3)))
-        secret.add_child(Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3)))
-        secret.add_child(Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3)))
+
+        game_config = self.get_game_config()
+        if game_config.get_bool("force_unlock_songs"):
+            secret.add_child(Node.s64_array("flg1", [-1, -1, -1]))
+            secret.add_child(Node.s64_array("flg2", [-1, -1, -1]))
+            secret.add_child(Node.s64_array("flg3", [-1, -1, -1]))
+        else:
+            secret.add_child(
+                Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3))
+            )
+            secret.add_child(
+                Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3))
+            )
+            secret.add_child(
+                Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3))
+            )
 
         # Favorites
         for folder in ["favorite1", "favorite2", "favorite3"]:
@@ -1982,13 +2001,15 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         newprofile.replace_dict("machine_judge_adjust", judge_dict)
 
         # Secret flags saving
-        secret = request.child("secret")
-        if secret is not None:
-            secret_dict = newprofile.get_dict("secret")
-            secret_dict.replace_int_array("flg1", 3, secret.child_value("flg1"))
-            secret_dict.replace_int_array("flg2", 3, secret.child_value("flg2"))
-            secret_dict.replace_int_array("flg3", 3, secret.child_value("flg3"))
-            newprofile.replace_dict("secret", secret_dict)
+        game_config = self.get_game_config()
+        if not game_config.get_bool("force_unlock_songs"):
+            secret = request.child("secret")
+            if secret is not None:
+                secret_dict = newprofile.get_dict("secret")
+                secret_dict.replace_int_array("flg1", 3, secret.child_value("flg1"))
+                secret_dict.replace_int_array("flg2", 3, secret.child_value("flg2"))
+                secret_dict.replace_int_array("flg3", 3, secret.child_value("flg3"))
+                newprofile.replace_dict("secret", secret_dict)
 
         # Basic achievements
         achievements = request.child("achievements")
