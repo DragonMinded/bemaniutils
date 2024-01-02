@@ -161,6 +161,12 @@ class IIDXTricoro(IIDXBase):
                     "category": "game_config",
                     "setting": "omnimix_events_enabled",
                 },
+                {
+                    "name": "Force Song Unlock",
+                    "tip": "Force unlock all songs.",
+                    "category": "game_config",
+                    "setting": "force_unlock_songs",
+                },
             ],
         }
 
@@ -1071,9 +1077,16 @@ class IIDXTricoro(IIDXBase):
         secret_dict = profile.get_dict("secret")
         secret = Node.void("secret")
         root.add_child(secret)
-        secret.add_child(Node.s64("flg1", secret_dict.get_int("flg1")))
-        secret.add_child(Node.s64("flg2", secret_dict.get_int("flg2")))
-        secret.add_child(Node.s64("flg3", secret_dict.get_int("flg3")))
+
+        game_config = self.get_game_config()
+        if game_config.get_bool("force_unlock_songs"):
+            secret.add_child(Node.s64("flg1", -1))
+            secret.add_child(Node.s64("flg2", -1))
+            secret.add_child(Node.s64("flg3", -1))
+        else:
+            secret.add_child(Node.s64("flg1", secret_dict.get_int("flg1")))
+            secret.add_child(Node.s64("flg2", secret_dict.get_int("flg2")))
+            secret.add_child(Node.s64("flg3", secret_dict.get_int("flg3")))
 
         # DAN rankings
         grade = Node.void("grade")
@@ -1408,13 +1421,15 @@ class IIDXTricoro(IIDXBase):
         newprofile.replace_dict("machine_judge_adjust", judge_dict)
 
         # Secret flags saving
-        secret = request.child("secret")
-        if secret is not None:
-            secret_dict = newprofile.get_dict("secret")
-            secret_dict.replace_int("flg1", secret.child_value("flg1"))
-            secret_dict.replace_int("flg2", secret.child_value("flg2"))
-            secret_dict.replace_int("flg3", secret.child_value("flg3"))
-            newprofile.replace_dict("secret", secret_dict)
+        game_config = self.get_game_config()
+        if not game_config.get_bool("force_unlock_songs"):
+            secret = request.child("secret")
+            if secret is not None:
+                secret_dict = newprofile.get_dict("secret")
+                secret_dict.replace_int("flg1", secret.child_value("flg1"))
+                secret_dict.replace_int("flg2", secret.child_value("flg2"))
+                secret_dict.replace_int("flg3", secret.child_value("flg3"))
+                newprofile.replace_dict("secret", secret_dict)
 
         # Basic achievements
         achievements = request.child("achievements")
