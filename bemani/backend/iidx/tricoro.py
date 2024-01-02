@@ -874,8 +874,12 @@ class IIDXTricoro(IIDXBase):
         if self.omnimix and (not omni_events):
             boss_phase = 0
         else:
-            # TODO: Figure out what these map to
+            # TODO: Figure out what these map to, implement profile round tripping for them.
             boss_phase = 0
+
+            # 1 is red phase
+            # 2 is blue phase
+            # 3 is yellow phase
 
         boss = Node.void("boss")
         root.add_child(boss)
@@ -1297,6 +1301,11 @@ class IIDXTricoro(IIDXBase):
         # Tran medals and shit
         achievements = Node.void("achievements")
         root.add_child(achievements)
+
+        # Gakuen event, open up some additional unlocks.
+        gakuen = Node.void("gakuen")
+        root.add_child(gakuen)
+        gakuen.set_attribute("music_list", str(-1))
 
         # Dailies
         if pack_id is None:
