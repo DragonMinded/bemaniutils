@@ -897,6 +897,8 @@ class IIDXTricoro(IIDXBase):
         root.add_child(medal)
         medal.set_attribute("phase", "1")
 
+        # Cafe del Tran event, shared with Jubeat. We just unlock all songs instead of implementing it
+        # properly for now.
         cafe = Node.void("cafe")
         root.add_child(cafe)
         cafe.set_attribute("open", "1")
@@ -1306,6 +1308,21 @@ class IIDXTricoro(IIDXBase):
         gakuen = Node.void("gakuen")
         root.add_child(gakuen)
         gakuen.set_attribute("music_list", str(-1))
+
+        # Cafe Del Tran event, don't implement this for now (would need us to have songs played on Jubeat).
+        cafe = Node.void("cafe")
+        root.add_child(cafe)
+        cafe.set_attribute("food", str(0))
+        cafe.set_attribute("pastry", str(0))
+        cafe.set_attribute("rainbow", str(1))
+        cafe.set_attribute("bastie", str(1))
+        cafe.set_attribute("astraia", str(1))
+        cafe.set_attribute("beachimp", str(1))
+        cafe.set_attribute("holysnow", str(1))
+        cafe.set_attribute("trueblue", str(1))
+        cafe.set_attribute("ledvsscu", str(1))
+        cafe.set_attribute("service", str(1))
+        cafe.set_attribute("is_first", str(0))
 
         # Dailies
         if pack_id is None:
