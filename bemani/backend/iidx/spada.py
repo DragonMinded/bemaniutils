@@ -179,6 +179,7 @@ class IIDXSpada(IIDXBase):
                     "values": {
                         0: "No Event",
                         1: "Qprogue",
+                        2: "Qprogue DX",
                     },
                 },
             ],
@@ -887,9 +888,11 @@ class IIDXSpada(IIDXBase):
 
         if self.omnimix and (not omni_events):
             boss_phase = 0
+            boss1_phase = 0
         else:
-            # There's only one event, and we hardcode it to the new maps.
-            boss_phase = game_config.get_int("event_phase")
+            # There's only one event, with two phases.
+            boss_phase = 1 if game_config.get_int("event_phase") > 0 else 0
+            boss1_phase = 1 if game_config.get_int("event_phase") == 2 else 0
 
         boss = Node.void("boss")
         root.add_child(boss)
@@ -897,12 +900,13 @@ class IIDXSpada(IIDXBase):
 
         boss1 = Node.void("boss1")
         root.add_child(boss1)
-        boss1.set_attribute("phase", "1")
+        boss1.set_attribute("phase", str(boss1_phase))
 
         medal = Node.void("medal")
         root.add_child(medal)
         medal.set_attribute("phase", "1")
 
+        # This is important because you can get additional stamina in Qprogue with VIP Pass Black.
         vip_black_pass = Node.void("vip_pass_black")
         root.add_child(vip_black_pass)
 
