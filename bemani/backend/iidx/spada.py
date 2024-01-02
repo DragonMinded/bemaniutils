@@ -894,6 +894,9 @@ class IIDXSpada(IIDXBase):
             boss_phase = 1 if game_config.get_int("event_phase") > 0 else 0
             boss1_phase = 1 if game_config.get_int("event_phase") == 2 else 0
 
+            # TODO: There's some stuff in profile about boss1_phase4, so it's possible the above
+            # are wrong, and we also need to update the profile as well.
+
         boss = Node.void("boss")
         root.add_child(boss)
         boss.set_attribute("phase", str(boss_phase))
@@ -1545,7 +1548,7 @@ class IIDXSpada(IIDXBase):
             ]:
                 link5.set_attribute(attr, str(link5_dict.get_int(attr)))
 
-        # Boss1 data
+        # Qprogue event data
         if "boss1" in profile:
             # Don't provide boss1 if we haven't saved it, so the game can
             # initialize it properly.
@@ -1599,6 +1602,25 @@ class IIDXSpada(IIDXBase):
                 boss1.add_child(
                     Node.binary("durability", boss1_dict.get_bytes("durability"))
                 )
+
+        # Events copied from Tricoro, but might still allow unlocks in this version?
+        gakuen = Node.void("gakuen")
+        root.add_child(gakuen)
+        gakuen.set_attribute("music_list", str(-1))
+
+        cafe = Node.void("cafe")
+        root.add_child(cafe)
+        cafe.set_attribute("food", str(0))
+        cafe.set_attribute("pastry", str(0))
+        cafe.set_attribute("rainbow", str(1))
+        cafe.set_attribute("bastie", str(1))
+        cafe.set_attribute("astraia", str(1))
+        cafe.set_attribute("beachimp", str(1))
+        cafe.set_attribute("holysnow", str(1))
+        cafe.set_attribute("trueblue", str(1))
+        cafe.set_attribute("ledvsscu", str(1))
+        cafe.set_attribute("service", str(1))
+        cafe.set_attribute("is_first", str(0))
 
         # Ea app features
         if self.data.triggers.has_broadcast_destination(self.game):
