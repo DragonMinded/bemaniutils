@@ -56,9 +56,7 @@ def modify_response(config: Dict[str, Any], resp_body: Node) -> Optional[Node]:
                             url.netloc, f'{config["local_host"]}:{config["local_port"]}'
                         )
                     else:
-                        new_url = child.attribute("url").replace(
-                            url.netloc, f'{config["local_host"]}'
-                        )
+                        new_url = child.attribute("url").replace(url.netloc, f'{config["local_host"]}')
                     child.set_attribute("url", new_url)
 
         return resp_body
@@ -280,9 +278,7 @@ def load_config(filename: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="A utility to MITM non-SSL eAmusement connections."
-    )
+    parser = argparse.ArgumentParser(description="A utility to MITM non-SSL eAmusement connections.")
     parser.add_argument(
         "-p",
         "--port",
@@ -304,12 +300,8 @@ if __name__ == "__main__":
         type=str,
         default="127.0.0.1",
     )
-    parser.add_argument(
-        "-q", "--remote-port", help="Port to connect to.", type=int, required=True
-    )
-    parser.add_argument(
-        "-b", "--remote-address", help="Address to connect to.", type=str, required=True
-    )
+    parser.add_argument("-q", "--remote-port", help="Port to connect to.", type=int, required=True)
+    parser.add_argument("-b", "--remote-address", help="Address to connect to.", type=str, required=True)
     parser.add_argument(
         "-c",
         "--config",
@@ -324,9 +316,7 @@ if __name__ == "__main__":
         type=str,
         default="localhost",
     )
-    parser.add_argument(
-        "-v", "--verbose", help="Display verbose packet info.", action="store_true"
-    )
+    parser.add_argument("-v", "--verbose", help="Display verbose packet info.", action="store_true")
     parser.add_argument(
         "-t",
         "--timeout",

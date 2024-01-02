@@ -79,9 +79,7 @@ class Dispatch:
         pcb = self.__data.local.machine.get_machine(pcbid)
         if self.__config.server.enforce_pcbid and pcb is None:
             self.log("Unrecognized PCBID {}", pcbid)
-            raise UnrecognizedPCBIDException(
-                pcbid, modelstring, self.__config.client.address
-            )
+            raise UnrecognizedPCBIDException(pcbid, modelstring, self.__config.client.address)
 
         # If we don't have a Machine, but we aren't enforcing, we must create it
         if pcb is None:
@@ -120,9 +118,7 @@ class Dispatch:
                     pcb.game,
                     game.game,
                 )
-                raise UnrecognizedPCBIDException(
-                    pcbid, modelstring, config.client.address
-                )
+                raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
             if pcb.version is not None:
                 if pcb.version > 0 and pcb.version != game.version:
                     self.log(
@@ -133,9 +129,7 @@ class Dispatch:
                         game.game,
                         game.version,
                     )
-                    raise UnrecognizedPCBIDException(
-                        pcbid, modelstring, config.client.address
-                    )
+                    raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
                 if pcb.version < 0 and (-pcb.version) < game.version:
                     self.log(
                         "PCBID {} assigned to game {} maximum version {}, but connected from game {} version {}",
@@ -145,9 +139,7 @@ class Dispatch:
                         game.game,
                         game.version,
                     )
-                    raise UnrecognizedPCBIDException(
-                        pcbid, modelstring, config.client.address
-                    )
+                    raise UnrecognizedPCBIDException(pcbid, modelstring, config.client.address)
 
         # First, try to handle with specific service/method function
         try:

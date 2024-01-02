@@ -184,9 +184,7 @@ class IIDXFrontend(FrontendBase):
             ],
         }
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile.update(
             {
@@ -283,10 +281,7 @@ class IIDXFrontend(FrontendBase):
 
     def merge_song(self, existing: Dict[str, Any], new: Song) -> Dict[str, Any]:
         new_song = super().merge_song(existing, new)
-        if (
-            existing["difficulties"][new.chart] == 0
-            or existing["notecounts"][new.chart] == 0
-        ):
+        if existing["difficulties"][new.chart] == 0 or existing["notecounts"][new.chart] == 0:
             new_song["difficulties"][new.chart] = new.data.get_int("difficulty", 13)
             new_song["notecounts"][new.chart] = new.data.get_int("notecount", 5730)
         return new_song

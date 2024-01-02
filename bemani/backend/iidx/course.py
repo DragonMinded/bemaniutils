@@ -56,12 +56,8 @@ class IIDXCourse(IIDXBase):
         )
         if course_score is None:
             course_score = ValidatedDict()
-        course_score.replace_int(
-            "clear_status", max(clear_status, course_score.get_int("clear_status"))
-        )
-        old_ex_score = (course_score.get_int("pgnum") * 2) + course_score.get_int(
-            "gnum"
-        )
+        course_score.replace_int("clear_status", max(clear_status, course_score.get_int("clear_status")))
+        old_ex_score = (course_score.get_int("pgnum") * 2) + course_score.get_int("gnum")
         if old_ex_score < ((pgreats * 2) + greats):
             course_score.replace_int("pgnum", pgreats)
             course_score.replace_int("gnum", greats)

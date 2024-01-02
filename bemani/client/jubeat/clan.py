@@ -53,24 +53,12 @@ class JubeatClanClient(BaseClient):
         self.assert_path(resp, "response/shopinfo/data/info/born/year")
         self.assert_path(resp, "response/shopinfo/data/info/collection/rating_s")
         self.assert_path(resp, "response/shopinfo/data/info/expert_option/is_available")
-        self.assert_path(
-            resp, "response/shopinfo/data/info/all_music_matching/is_available"
-        )
-        self.assert_path(
-            resp, "response/shopinfo/data/info/all_music_matching/team/default_flag"
-        )
-        self.assert_path(
-            resp, "response/shopinfo/data/info/all_music_matching/team/redbelk_flag"
-        )
-        self.assert_path(
-            resp, "response/shopinfo/data/info/all_music_matching/team/cyanttle_flag"
-        )
-        self.assert_path(
-            resp, "response/shopinfo/data/info/all_music_matching/team/greenesia_flag"
-        )
-        self.assert_path(
-            resp, "response/shopinfo/data/info/all_music_matching/team/plumpark_flag"
-        )
+        self.assert_path(resp, "response/shopinfo/data/info/all_music_matching/is_available")
+        self.assert_path(resp, "response/shopinfo/data/info/all_music_matching/team/default_flag")
+        self.assert_path(resp, "response/shopinfo/data/info/all_music_matching/team/redbelk_flag")
+        self.assert_path(resp, "response/shopinfo/data/info/all_music_matching/team/cyanttle_flag")
+        self.assert_path(resp, "response/shopinfo/data/info/all_music_matching/team/greenesia_flag")
+        self.assert_path(resp, "response/shopinfo/data/info/all_music_matching/team/plumpark_flag")
         self.assert_path(resp, "response/shopinfo/data/info/question_list")
         self.assert_path(resp, "response/shopinfo/data/info/drop_list")
         self.assert_path(resp, "response/shopinfo/data/info/daily_bonus_list")
@@ -138,24 +126,12 @@ class JubeatClanClient(BaseClient):
         self.assert_path(resp, "response/gametop/data/info/born/year")
         self.assert_path(resp, "response/gametop/data/info/collection/rating_s")
         self.assert_path(resp, "response/gametop/data/info/expert_option/is_available")
-        self.assert_path(
-            resp, "response/gametop/data/info/all_music_matching/is_available"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/info/all_music_matching/team/default_flag"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/info/all_music_matching/team/redbelk_flag"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/info/all_music_matching/team/cyanttle_flag"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/info/all_music_matching/team/greenesia_flag"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/info/all_music_matching/team/plumpark_flag"
-        )
+        self.assert_path(resp, "response/gametop/data/info/all_music_matching/is_available")
+        self.assert_path(resp, "response/gametop/data/info/all_music_matching/team/default_flag")
+        self.assert_path(resp, "response/gametop/data/info/all_music_matching/team/redbelk_flag")
+        self.assert_path(resp, "response/gametop/data/info/all_music_matching/team/cyanttle_flag")
+        self.assert_path(resp, "response/gametop/data/info/all_music_matching/team/greenesia_flag")
+        self.assert_path(resp, "response/gametop/data/info/all_music_matching/team/plumpark_flag")
         self.assert_path(resp, "response/gametop/data/info/question_list")
         self.assert_path(resp, "response/gametop/data/info/drop_list")
         self.assert_path(resp, "response/gametop/data/info/daily_bonus_list")
@@ -234,19 +210,13 @@ class JubeatClanClient(BaseClient):
         self.assert_path(resp, "response/gametop/data/player/lab_edit_seq")
         self.assert_path(resp, "response/gametop/data/player/event_info")
         self.assert_path(resp, "response/gametop/data/player/navi/flag")
-        self.assert_path(
-            resp, "response/gametop/data/player/fc_challenge/today/music_id"
-        )
+        self.assert_path(resp, "response/gametop/data/player/fc_challenge/today/music_id")
         self.assert_path(resp, "response/gametop/data/player/fc_challenge/today/state")
-        self.assert_path(
-            resp, "response/gametop/data/player/fc_challenge/whim/music_id"
-        )
+        self.assert_path(resp, "response/gametop/data/player/fc_challenge/whim/music_id")
         self.assert_path(resp, "response/gametop/data/player/fc_challenge/whim/state")
         self.assert_path(resp, "response/gametop/data/player/official_news/news_list")
         self.assert_path(resp, "response/gametop/data/player/rivallist")
-        self.assert_path(
-            resp, "response/gametop/data/player/free_first_play/is_available"
-        )
+        self.assert_path(resp, "response/gametop/data/player/free_first_play/is_available")
         self.assert_path(resp, "response/gametop/data/player/jbox/point")
         self.assert_path(resp, "response/gametop/data/player/jbox/emblem/normal/index")
         self.assert_path(resp, "response/gametop/data/player/jbox/emblem/premium/index")
@@ -255,9 +225,7 @@ class JubeatClanClient(BaseClient):
         self.assert_path(resp, "response/gametop/data/player/born/status")
         self.assert_path(resp, "response/gametop/data/player/question_list")
         self.assert_path(resp, "response/gametop/data/player/jubility/@param")
-        self.assert_path(
-            resp, "response/gametop/data/player/jubility/target_music_list"
-        )
+        self.assert_path(resp, "response/gametop/data/player/jubility/target_music_list")
         self.assert_path(resp, "response/gametop/data/player/team/@id")
         self.assert_path(resp, "response/gametop/data/player/team/section")
         self.assert_path(resp, "response/gametop/data/player/team/street")
@@ -277,24 +245,12 @@ class JubeatClanClient(BaseClient):
         self.assert_path(resp, "response/gametop/data/player/drop_list/drop/@id")
         self.assert_path(resp, "response/gametop/data/player/drop_list/drop/exp")
         self.assert_path(resp, "response/gametop/data/player/drop_list/drop/flag")
-        self.assert_path(
-            resp, "response/gametop/data/player/drop_list/drop/item_list/item/@id"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/player/drop_list/drop/item_list/item/num"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/player/fill_in_category/no_gray_flag_list"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/player/fill_in_category/all_yellow_flag_list"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/player/fill_in_category/full_combo_flag_list"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/player/fill_in_category/excellent_flag_list"
-        )
+        self.assert_path(resp, "response/gametop/data/player/drop_list/drop/item_list/item/@id")
+        self.assert_path(resp, "response/gametop/data/player/drop_list/drop/item_list/item/num")
+        self.assert_path(resp, "response/gametop/data/player/fill_in_category/no_gray_flag_list")
+        self.assert_path(resp, "response/gametop/data/player/fill_in_category/all_yellow_flag_list")
+        self.assert_path(resp, "response/gametop/data/player/fill_in_category/full_combo_flag_list")
+        self.assert_path(resp, "response/gametop/data/player/fill_in_category/excellent_flag_list")
         self.assert_path(resp, "response/gametop/data/player/daily_bonus_list")
         self.assert_path(resp, "response/gametop/data/player/ticket_list")
 
@@ -661,31 +617,21 @@ class JubeatClanClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_gametop_regist(card, ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         if cardid is None:

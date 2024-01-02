@@ -63,10 +63,7 @@ class DDRGameHiscoreHandler(DDRBase):
                 sortedrecords[score.id] = {}
             sortedrecords[score.id][score.chart] = (userid, score)
             missing_profiles.append(userid)
-        users = {
-            userid: profile
-            for (userid, profile) in self.get_any_profiles(missing_profiles)
-        }
+        users = {userid: profile for (userid, profile) in self.get_any_profiles(missing_profiles)}
 
         game = Node.void("game")
         for song in sortedrecords:
@@ -90,11 +87,7 @@ class DDRGameHiscoreHandler(DDRBase):
 
                 typenode.add_child(Node.string("name", users[userid].get_str("name")))
                 typenode.add_child(Node.u32("score", score.points))
-                typenode.add_child(
-                    Node.u16(
-                        "area", users[userid].get_int("area", self.get_machine_region())
-                    )
-                )
+                typenode.add_child(Node.u16("area", users[userid].get_int("area", self.get_machine_region())))
                 typenode.add_child(Node.u8("rank", gamerank))
                 typenode.add_child(Node.u8("combo_type", combo_type))
                 typenode.add_child(Node.u32("code", users[userid].extid))
@@ -109,16 +102,12 @@ class DDRGameAreaHiscoreHandler(DDRBase):
         # First, get all users that are in the current shop's area
         area_users = {
             uid: prof
-            for (uid, prof) in self.data.local.user.get_all_profiles(
-                self.game, self.version
-            )
+            for (uid, prof) in self.data.local.user.get_all_profiles(self.game, self.version)
             if prof.get_int("area", self.get_machine_region()) == shop_area
         }
 
         # Second, look up records belonging only to those users
-        records = self.data.local.music.get_all_records(
-            self.game, self.music_version, userlist=list(area_users.keys())
-        )
+        records = self.data.local.music.get_all_records(self.game, self.music_version, userlist=list(area_users.keys()))
 
         # Now, do the same lazy thing as 'hiscore' because I don't want
         # to think about how to change this knowing that we only pulled
@@ -137,10 +126,7 @@ class DDRGameAreaHiscoreHandler(DDRBase):
 
             for chart in area_records[song]:
                 userid, score = area_records[song][chart]
-                if (
-                    area_users[userid].get_int("area", self.get_machine_region())
-                    != shop_area
-                ):
+                if area_users[userid].get_int("area", self.get_machine_region()) != shop_area:
                     # Don't return this, this user isn't in this area
                     continue
                 try:
@@ -155,9 +141,7 @@ class DDRGameAreaHiscoreHandler(DDRBase):
                 music.add_child(typenode)
                 typenode.set_attribute("diff", str(gamechart))
 
-                typenode.add_child(
-                    Node.string("name", area_users[userid].get_str("name"))
-                )
+                typenode.add_child(Node.string("name", area_users[userid].get_str("name")))
                 typenode.add_child(Node.u32("score", score.points))
                 typenode.add_child(
                     Node.u16(
@@ -309,9 +293,7 @@ class DDRGameOldHandler(DDRBase):
             oldprofile = previous_version.get_profile(userid)
         if oldprofile is not None:
             game.set_attribute("name", oldprofile.get_str("name"))
-            game.set_attribute(
-                "area", str(oldprofile.get_int("area", self.get_machine_region()))
-            )
+            game.set_attribute("area", str(oldprofile.get_int("area", self.get_machine_region())))
         return game
 
 
@@ -361,9 +343,7 @@ class DDRGameFriendHandler(DDRBase):
         game.set_attribute("data", "1")
         game.add_child(Node.u32("code", friend.extid))
         game.add_child(Node.string("name", friend.get_str("name")))
-        game.add_child(
-            Node.u8("area", friend.get_int("area", self.get_machine_region()))
-        )
+        game.add_child(Node.u8("area", friend.get_int("area", self.get_machine_region())))
         game.add_child(Node.u32("exp", play_stats.get_int("exp")))
         game.add_child(Node.u32("star", friend.get_int("star")))
 
@@ -421,9 +401,7 @@ class DDRGameLoadCourseHandler(DDRBase):
 
         coursedata = [0] * 3200
         if userid is not None:
-            for course in self.data.local.user.get_achievements(
-                self.game, self.version, userid
-            ):
+            for course in self.data.local.user.get_achievements(self.game, self.version, userid):
                 if course.type != "course":
                     continue
 
@@ -438,9 +416,7 @@ class DDRGameLoadCourseHandler(DDRBase):
                     coursedata[index + 0] = int(course.data.get_int("score") / 10000)
                     coursedata[index + 1] = course.data.get_int("score") % 10000
                     coursedata[index + 2] = course.data.get_int("combo")
-                    coursedata[index + 3] = self.db_to_game_rank(
-                        course.data.get_int("rank")
-                    )
+                    coursedata[index + 3] = self.db_to_game_rank(course.data.get_int("rank"))
                     coursedata[index + 5] = course.data.get_int("stage")
                     coursedata[index + 6] = course.data.get_int("combo_type")
 

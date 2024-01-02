@@ -139,29 +139,19 @@ class JubeatFrontend(FrontendBase):
             "speech_bubble": emblem[4],
         }
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         # Grab achievements for both jubility in festo, as well as emblem parts in
         # prop onward.
-        userid = self.data.local.user.from_refid(
-            profile.game, profile.version, profile.refid
-        )
+        userid = self.data.local.user.from_refid(profile.game, profile.version, profile.refid)
         if userid is not None:
-            achievements = self.data.local.user.get_achievements(
-                profile.game, profile.version, userid
-            )
+            achievements = self.data.local.user.get_achievements(profile.game, profile.version, userid)
         else:
             achievements = []
 
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile["plays"] = playstats.get_int("total_plays")
-        formatted_profile["emblem"] = self.format_emblem(
-            profile.get_dict("last").get_int_array("emblem", 5)
-        )
-        formatted_profile["owned_emblems"] = [
-            str(ach.id) for ach in achievements if ach.type == "emblem"
-        ]
+        formatted_profile["emblem"] = self.format_emblem(profile.get_dict("last").get_int_array("emblem", 5))
+        formatted_profile["owned_emblems"] = [str(ach.id) for ach in achievements if ach.type == "emblem"]
         formatted_profile["jubility"] = (
             profile.get_int("jubility")
             if profile.version
@@ -173,24 +163,16 @@ class JubeatFrontend(FrontendBase):
             else 0
         )
         formatted_profile["pick_up_jubility"] = (
-            profile.get_float("pick_up_jubility")
-            if profile.version == VersionConstants.JUBEAT_FESTO
-            else 0
+            profile.get_float("pick_up_jubility") if profile.version == VersionConstants.JUBEAT_FESTO else 0
         )
         formatted_profile["common_jubility"] = (
-            profile.get_float("common_jubility")
-            if profile.version == VersionConstants.JUBEAT_FESTO
-            else 0
+            profile.get_float("common_jubility") if profile.version == VersionConstants.JUBEAT_FESTO else 0
         )
         if profile.version == VersionConstants.JUBEAT_FESTO:
             # Only reason this is a dictionary of dictionaries is because ValidatedDict doesn't support a list of dictionaries.
             # Probably intentionally lol. Just listify the pickup/common charts.
-            formatted_profile["pick_up_chart"] = list(
-                profile.get_dict("pick_up_chart").values()
-            )
-            formatted_profile["common_chart"] = list(
-                profile.get_dict("common_chart").values()
-            )
+            formatted_profile["pick_up_chart"] = list(profile.get_dict("pick_up_chart").values())
+            formatted_profile["common_chart"] = list(profile.get_dict("common_chart").values())
         elif profile.version == VersionConstants.JUBEAT_CLAN:
             # Look up achievements which is where jubility was stored. This is a bit of a hack
             # due to the fact that this could be formatting remote profiles, but then they should
@@ -210,9 +192,7 @@ class JubeatFrontend(FrontendBase):
                         bestentry.replace_int("songid", achievement.id)
                         bestentry.replace_int("chart", chart)
                 jubeat_entries.append(bestentry)
-            jubeat_entries = sorted(
-                jubeat_entries, key=lambda entry: entry.get_int("value"), reverse=True
-            )[:30]
+            jubeat_entries = sorted(jubeat_entries, key=lambda entry: entry.get_int("value"), reverse=True)[:30]
             formatted_profile["chart"] = jubeat_entries
 
         formatted_profile["ex_count"] = profile.get_int("ex_cnt")
@@ -258,7 +238,5 @@ class JubeatFrontend(FrontendBase):
         if existing["difficulties"][new.chart] == 0.0:
             new_song["difficulties"][new.chart] = new.data.get_float("difficulty", 13)
             if new_song["difficulties"][new.chart] == 13.0:
-                new_song["difficulties"][new.chart] = float(
-                    new.data.get_int("difficulty", 13)
-                )
+                new_song["difficulties"][new.chart] = float(new.data.get_int("difficulty", 13))
         return new_song

@@ -103,9 +103,7 @@ class TestXmlDecoder(unittest.TestCase):
         self.assertEqual(tree.data_type, "u32")
         self.assertEqual(tree.value, [1, 2, 3, 4])
 
-        xml = XmlDecoder(
-            b'<node __type="u32" __count="4">\n1\n2\n3\n4\n</node>', "ascii"
-        )
+        xml = XmlDecoder(b'<node __type="u32" __count="4">\n1\n2\n3\n4\n</node>', "ascii")
         tree = xml.get_tree()
 
         self.assertEqual(tree.children, [])

@@ -182,9 +182,7 @@ class ReflecBeatColette(BaseClient):
         self.assert_path(resp, "response/player/pdata/record")
 
         if resp.child_value("player/pdata/base/name") != self.NAME:
-            raise Exception(
-                f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!'
-            )
+            raise Exception(f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!')
 
         scores = []
         for child in resp.child("player/pdata/record").children:
@@ -203,9 +201,7 @@ class ReflecBeatColette(BaseClient):
             scores.append(score)
         return scores
 
-    def verify_player_write(
-        self, refid: str, loc: str, scores: List[Dict[str, int]]
-    ) -> int:
+    def verify_player_write(self, refid: str, loc: str, scores: List[Dict[str, int]]) -> int:
         call = self.call_node()
 
         player = Node.void("player")
@@ -471,9 +467,7 @@ class ReflecBeatColette(BaseClient):
                 if name != self.NAME:
                     raise Exception(f"Invalid name '{name}' returned for comment!")
                 if comment != "アメ〜〜！":
-                    raise Exception(
-                        f"Invalid comment '{comment}' returned for comment!"
-                    )
+                    raise Exception(f"Invalid comment '{comment}' returned for comment!")
                 found = True
 
         if not found:
@@ -553,17 +547,11 @@ class ReflecBeatColette(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             # Always get a player start, regardless of new profile or not
             self.verify_player_start(ref_id)
@@ -586,16 +574,12 @@ class ReflecBeatColette(BaseClient):
             )
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify lobby functionality
@@ -690,26 +674,19 @@ class ReflecBeatColette(BaseClient):
                 for expected in dummyscores:
                     actual = None
                     for received in scores:
-                        if (
-                            received["id"] == expected["id"]
-                            and received["chart"] == expected["chart"]
-                        ):
+                        if received["id"] == expected["id"] and received["chart"] == expected["chart"]:
                             actual = received
                             break
 
                     if actual is None:
-                        raise Exception(
-                            f"Didn't find song {expected['id']} chart {expected['chart']} in response!"
-                        )
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if "expected_score" in expected:
                         expected_score = expected["expected_score"]
                     else:
                         expected_score = expected["score"]
                     if "expected_achievement_rate" in expected:
-                        expected_achievement_rate = expected[
-                            "expected_achievement_rate"
-                        ]
+                        expected_achievement_rate = expected["expected_achievement_rate"]
                     else:
                         expected_achievement_rate = expected["achievement_rate"]
                     if "expected_clear_type" in expected:

@@ -235,9 +235,7 @@ class RecordsObject(BaseObject):
         else:
             return self.version
 
-    def fetch_v1(
-        self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         since = params.get("since")
         until = params.get("until")
 
@@ -247,9 +245,7 @@ class RecordsObject(BaseObject):
             # Because of the way this query works, we can't apply since/until to it directly.
             # If we did, it would miss higher scores earned before since or after until, and
             # incorrectly report records.
-            records.extend(
-                self.data.local.music.get_all_records(self.game, self.music_version)
-            )
+            records.extend(self.data.local.music.get_all_records(self.game, self.music_version))
         elif idtype == APIConstants.ID_TYPE_SONG:
             if len(ids) == 1:
                 songid = int(ids[0])
@@ -273,9 +269,7 @@ class RecordsObject(BaseObject):
             cardid = ids[2]
             userid = self.data.local.user.from_cardid(cardid)
             if userid is not None:
-                score = self.data.local.music.get_score(
-                    self.game, self.music_version, userid, songid, chart
-                )
+                score = self.data.local.music.get_score(self.game, self.music_version, userid, songid, chart)
                 if score is not None:
                     records.append((userid, score))
         elif idtype == APIConstants.ID_TYPE_CARD:

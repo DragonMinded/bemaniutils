@@ -101,28 +101,15 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         return IIDXSpada(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert dailies into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "daily_charts", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "daily_charts", "daily"):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = list(
-                set(
-                    [
-                        song.id
-                        for song in data.local.music.get_all_songs(
-                            cls.game, cls.version
-                        )
-                    ]
-                )
-            )
+            all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
             if len(all_songs) >= 3:
                 daily_songs = random.sample(all_songs, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -146,9 +133,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "daily_charts", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "daily_charts", "daily")
         return events
 
     @classmethod
@@ -243,9 +228,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root = Node.void("IIDX22shop")
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -269,9 +252,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             course.replace_int("music_2", request.child_value("music_2"))
             course.replace_int("music_3", request.child_value("music_3"))
             course.replace_bool("valid", request.child_value("valid"))
-            self.data.local.machine.put_settings(
-                machine.arcade, self.game, self.music_version, "shop_course", course
-            )
+            self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, "shop_course", course)
 
         return root
 
@@ -291,9 +272,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -530,16 +509,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         root = Node.void("IIDX22music")
         attempts = self.get_clear_rates()
 
-        all_songs = list(
-            set(
-                [
-                    song.id
-                    for song in self.data.local.music.get_all_songs(
-                        self.game, self.music_version
-                    )
-                ]
-            )
-        )
+        all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
         for song in all_songs:
             clears = []
             fcs = []
@@ -583,16 +553,12 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 continue
             userid = self.data.remote.user.from_extid(self.game, self.version, extid)
             if userid is not None:
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.music_version, userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
                 # Grab score data for user/rival
                 scoredata = self.make_score_struct(
                     scores,
-                    self.CLEAR_TYPE_SINGLE
-                    if cltype == self.GAME_CLTYPE_SINGLE
-                    else self.CLEAR_TYPE_DOUBLE,
+                    self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
                     rivalid,
                 )
                 for s in scoredata:
@@ -600,10 +566,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
                 # Grab most played for user/rival
                 most_played = [
-                    play[0]
-                    for play in self.data.local.music.get_most_played(
-                        self.game, self.music_version, userid, 20
-                    )
+                    play[0] for play in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
                 ]
                 if len(most_played) < 20:
                     most_played.extend([0] * (20 - len(most_played)))
@@ -646,19 +609,13 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             key=lambda s: (s[1].points, s[1].timestamp),
             reverse=True,
         )
-        all_players = {
-            uid: prof
-            for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])
-        }
+        all_players = {uid: prof for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])}
 
         if not global_scores:
             all_scores = [
                 score
                 for score in all_scores
-                if (
-                    score[0] == userid
-                    or self.user_joined_arcade(machine, all_players[score[0]])
-                )
+                if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
             ]
 
         # Find our actual index
@@ -710,9 +667,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             # Shop ranking
             shopdata = Node.void("shopdata")
             root.add_child(shopdata)
-            shopdata.set_attribute(
-                "rank", "-1" if oldindex is None else str(oldindex + 1)
-            )
+            shopdata.set_attribute("rank", "-1" if oldindex is None else str(oldindex + 1))
 
             # Grab the rank of some other players on this song
             ranklist = Node.void("ranklist")
@@ -736,10 +691,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 all_scores = [
                     score
                     for score in all_scores
-                    if (
-                        score[0] == userid
-                        or self.user_joined_arcade(machine, all_players[score[0]])
-                    )
+                    if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
                 ]
 
             # Find our actual index
@@ -887,9 +839,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         if userid is not None:
             # Try to look up previous ghost for user
-            my_score = self.data.remote.music.get_score(
-                self.game, self.music_version, userid, musicid, chart
-            )
+            my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
             if my_score is not None:
                 mydata = Node.binary("mydata", my_score.data.get_bytes("ghost"))
                 mydata.set_attribute("score", str(my_score.points))
@@ -1240,9 +1190,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             used_secret_ids: List[int] = []
             for c in secret_courses:
                 if c["id"] in used_secret_ids:
-                    raise Exception(
-                        "Cannot have multiple secret courses with the same ID!"
-                    )
+                    raise Exception("Cannot have multiple secret courses with the same ID!")
                 elif c["id"] < 0 or c["id"] >= 10:
                     raise Exception("Secret course ID is out of bounds!")
                 else:
@@ -1272,13 +1220,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         common_timeshift_phase = Node.void("common_timeshift_phase")
         root.add_child(common_timeshift_phase)
         if timeshift_override == 0:
-            common_timeshift_phase.set_attribute(
-                "phase", "1" if (days_since_epoch % 2) == 0 else "2"
-            )
+            common_timeshift_phase.set_attribute("phase", "1" if (days_since_epoch % 2) == 0 else "2")
         elif timeshift_override == 1:
-            common_timeshift_phase.set_attribute(
-                "phase", "2" if (days_since_epoch % 2) == 0 else "1"
-            )
+            common_timeshift_phase.set_attribute("phase", "2" if (days_since_epoch % 2) == 0 else "1")
         elif timeshift_override == 2:
             common_timeshift_phase.set_attribute("phase", "1")
         elif timeshift_override == 3:
@@ -1306,9 +1250,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         # Ranking details in title screen
         rankingcharts = []
-        for mid, _plays in self.data.local.music.get_hit_chart(
-            self.game, self.music_version, 20
-        ):
+        for mid, _plays in self.data.local.music.get_hit_chart(self.game, self.music_version, 20):
             rankingcharts.append(mid)
         root.add_child(Node.u16_array("monthly_mranking", rankingcharts))
         root.add_child(Node.u16_array("total_mranking", rankingcharts))
@@ -1467,9 +1409,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, "NO PLAY")
         now_clear_string = clear_map.get(now_clear, "NO PLAY")
         # let's get the song info first
-        song = self.data.local.music.get_song(
-            self.game, self.music_version, music_id, self.game_to_db_chart(class_id)
-        )
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get("notecount", 0)
         # Construct the dictionary for the broadcast
         card_data = {
@@ -1578,9 +1518,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 join_shop.set_attribute("join_name", machine.name)
 
         # Daily recommendations
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "dailies"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "dailies")
         if entry is not None:
             packinfo = Node.void("packinfo")
             root.add_child(packinfo)
@@ -1611,15 +1549,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             secret.add_child(Node.s64_array("flg2", [-1, -1, -1]))
             secret.add_child(Node.s64_array("flg3", [-1, -1, -1]))
         else:
-            secret.add_child(
-                Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3))
-            )
-            secret.add_child(
-                Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3))
-            )
-            secret.add_child(
-                Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3))
-            )
+            secret.add_child(Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3)))
+            secret.add_child(Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3)))
+            secret.add_child(Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3)))
 
         # Tran medals and shit
         achievements = Node.void("achievements")
@@ -1630,15 +1562,11 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             achievements.set_attribute("pack", "0")
             achievements.set_attribute("pack_comp", "0")
         else:
-            daily_played = self.data.local.user.get_achievement(
-                self.game, self.version, userid, pack_id, "daily"
-            )
+            daily_played = self.data.local.user.get_achievement(self.game, self.version, userid, pack_id, "daily")
             if daily_played is None:
                 daily_played = ValidatedDict()
             achievements.set_attribute("pack", str(daily_played.get_int("pack_flg")))
-            achievements.set_attribute(
-                "pack_comp", str(daily_played.get_int("pack_comp"))
-            )
+            achievements.set_attribute("pack_comp", str(daily_played.get_int("pack_comp")))
 
         # Weeklies
         achievements.set_attribute("last_weekly", str(profile.get_int("last_weekly")))
@@ -1651,9 +1579,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         achievements.set_attribute("rival_crush", str(profile.get_int("rival_crush")))
 
         # Tran medals
-        achievements.add_child(
-            Node.s64_array("trophy", profile.get_int_array("trophy", 10))
-        )
+        achievements.add_child(Node.s64_array("trophy", profile.get_int_array("trophy", 10)))
 
         # User settings
         settings_dict = profile.get_dict("settings")
@@ -1699,9 +1625,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 )
             ),
         )
-        rankings = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        rankings = self.data.local.user.get_achievements(self.game, self.version, userid)
         for rank in rankings:
             if rank.type == self.DAN_RANKING_SINGLE:
                 grade.add_child(
@@ -1739,9 +1663,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                         [
                             int(rank.id / 6),  # course ID
                             rank.id % 6,  # course chart
-                            self.db_to_game_status(
-                                rank.data.get_int("clear_status")
-                            ),  # course clear status
+                            self.db_to_game_status(rank.data.get_int("clear_status")),  # course clear status
                             rank.data.get_int("pgnum"),  # flashing great count
                             rank.data.get_int("gnum"),  # great count
                         ],
@@ -1758,9 +1680,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                         [
                             int(rank.id / 6),  # course ID
                             rank.id % 6,  # course chart
-                            self.db_to_game_status(
-                                rank.data.get_int("clear_status")
-                            ),  # course clear status
+                            self.db_to_game_status(rank.data.get_int("clear_status")),  # course clear status
                             rank.data.get_int("pgnum"),  # flashing great count
                             rank.data.get_int("gnum"),  # great count
                         ],
@@ -1776,9 +1696,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
                 detail.set_attribute("course_id", str(rank.id))
                 detail.set_attribute("n_point", str(rank.data.get_int("normal_points")))
                 detail.set_attribute("h_point", str(rank.data.get_int("hyper_points")))
-                detail.set_attribute(
-                    "a_point", str(rank.data.get_int("another_points"))
-                )
+                detail.set_attribute("a_point", str(rank.data.get_int("another_points")))
 
         # Qpro data
         qpro_dict = profile.get_dict("qpro")
@@ -1880,9 +1798,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         step.add_child(
             Node.binary(
                 "album",
-                step_dict.get_bytes(
-                    "album", b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
+                step_dict.get_bytes("album", b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"),
             )
         )
 
@@ -1962,9 +1878,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         present_time_sandglass.set_attribute("item_num", "99")
         # TODO: Same as above.
 
-        pointsdict = profile.get_dict(
-            "point_events"
-        )  # used for summer, dcat, and pyramid
+        pointsdict = profile.get_dict("point_events")  # used for summer, dcat, and pyramid
         # destiny event
         dcat = Node.void("destiny_catharsis")
         root.add_child(dcat)
@@ -1980,46 +1894,20 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         cdive = Node.void("chrono_diver")
         root.add_child(cdive)
         cdive.set_attribute("play_count", str(diverdict.get_int("play_count", 0)))
-        cdive.set_attribute(
-            "present_unlock", str(diverdict.get_int("present_unlock", 0))
-        )
+        cdive.set_attribute("present_unlock", str(diverdict.get_int("present_unlock", 0)))
         cdive.set_attribute("future_unlock", str(diverdict.get_int("future_unlock", 0)))
-        cdive.set_attribute(
-            "success_count_0_n", str(diverdict.get_int("success_count_0_n", 0))
-        )
-        cdive.set_attribute(
-            "success_count_0_h", str(diverdict.get_int("success_count_0_h", 0))
-        )
-        cdive.set_attribute(
-            "success_count_0_a", str(diverdict.get_int("success_count_0_a", 0))
-        )
-        cdive.set_attribute(
-            "success_count_1_n", str(diverdict.get_int("success_count_1_n", 0))
-        )
-        cdive.set_attribute(
-            "success_count_1_h", str(diverdict.get_int("success_count_1_h", 0))
-        )
-        cdive.set_attribute(
-            "success_count_1_a", str(diverdict.get_int("success_count_1_a", 0))
-        )
-        cdive.set_attribute(
-            "success_count_2_n", str(diverdict.get_int("success_count_2_n", 0))
-        )
-        cdive.set_attribute(
-            "success_count_2_h", str(diverdict.get_int("success_count_2_h", 0))
-        )
-        cdive.set_attribute(
-            "success_count_2_a", str(diverdict.get_int("success_count_2_a", 0))
-        )
-        cdive.set_attribute(
-            "success_count_3_n", str(diverdict.get_int("success_count_3_n", 0))
-        )
-        cdive.set_attribute(
-            "success_count_3_h", str(diverdict.get_int("success_count_3_h", 0))
-        )
-        cdive.set_attribute(
-            "success_count_3_a", str(diverdict.get_int("success_count_3_a", 0))
-        )
+        cdive.set_attribute("success_count_0_n", str(diverdict.get_int("success_count_0_n", 0)))
+        cdive.set_attribute("success_count_0_h", str(diverdict.get_int("success_count_0_h", 0)))
+        cdive.set_attribute("success_count_0_a", str(diverdict.get_int("success_count_0_a", 0)))
+        cdive.set_attribute("success_count_1_n", str(diverdict.get_int("success_count_1_n", 0)))
+        cdive.set_attribute("success_count_1_h", str(diverdict.get_int("success_count_1_h", 0)))
+        cdive.set_attribute("success_count_1_a", str(diverdict.get_int("success_count_1_a", 0)))
+        cdive.set_attribute("success_count_2_n", str(diverdict.get_int("success_count_2_n", 0)))
+        cdive.set_attribute("success_count_2_h", str(diverdict.get_int("success_count_2_h", 0)))
+        cdive.set_attribute("success_count_2_a", str(diverdict.get_int("success_count_2_a", 0)))
+        cdive.set_attribute("success_count_3_n", str(diverdict.get_int("success_count_3_n", 0)))
+        cdive.set_attribute("success_count_3_h", str(diverdict.get_int("success_count_3_h", 0)))
+        cdive.set_attribute("success_count_3_a", str(diverdict.get_int("success_count_3_a", 0)))
         cdive.set_attribute("story_list", str(diverdict.get_int("story_list", 0)))
 
         # reflec beat collaboration
@@ -2048,9 +1936,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -2126,15 +2012,9 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         # Basic achievements
         achievements = request.child("achievements")
         if achievements is not None:
-            newprofile.replace_int(
-                "visit_flg", int(achievements.attribute("visit_flg"))
-            )
-            newprofile.replace_int(
-                "last_weekly", int(achievements.attribute("last_weekly"))
-            )
-            newprofile.replace_int(
-                "weekly_num", int(achievements.attribute("weekly_num"))
-            )
+            newprofile.replace_int("visit_flg", int(achievements.attribute("visit_flg")))
+            newprofile.replace_int("last_weekly", int(achievements.attribute("last_weekly")))
+            newprofile.replace_int("weekly_num", int(achievements.attribute("weekly_num")))
 
             pack_id = int(achievements.attribute("pack_id"))
             if pack_id > 0:
@@ -2158,9 +2038,7 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         # Deller saving
         deller = request.child("deller")
         if deller is not None:
-            newprofile.replace_int(
-                "deller", newprofile.get_int("deller") + int(deller.attribute("deller"))
-            )
+            newprofile.replace_int("deller", newprofile.get_int("deller") + int(deller.attribute("deller")))
 
         # Secret course expert point saving
         expert_point = request.child("expert_point")
@@ -2212,17 +2090,13 @@ class IIDXPendual(IIDXCourse, IIDXBase):
             for i in range(self.FAVORITE_LIST_LENGTH):
                 singles.append(
                     {
-                        "id": struct.unpack(
-                            "<L", single_music_bin[(i * 4) : ((i + 1) * 4)]
-                        )[0],
+                        "id": struct.unpack("<L", single_music_bin[(i * 4) : ((i + 1) * 4)])[0],
                         "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[0],
                     }
                 )
                 doubles.append(
                     {
-                        "id": struct.unpack(
-                            "<L", double_music_bin[(i * 4) : ((i + 1) * 4)]
-                        )[0],
+                        "id": struct.unpack("<L", double_music_bin[(i * 4) : ((i + 1) * 4)])[0],
                         "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[0],
                     }
                 )
@@ -2272,61 +2146,29 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         diverdict = newprofile.get_dict("diver_dict")
         diverreq = request.child("chrono_diver")
         if diverreq is not None:
-            diverdict.replace_int(
-                "future_unlock", int(diverreq.attribute("future_unlock"))
-            )
+            diverdict.replace_int("future_unlock", int(diverreq.attribute("future_unlock")))
             diverdict.replace_int("play_count", int(diverreq.attribute("play_count")))
-            diverdict.replace_int(
-                "present_unlock", int(diverreq.attribute("present_unlock"))
-            )
+            diverdict.replace_int("present_unlock", int(diverreq.attribute("present_unlock")))
             diverdict.replace_int("story_list", int(diverreq.attribute("story_list")))
-            diverdict.replace_int(
-                "success_count_0_a", int(diverreq.attribute("success_count_0_a"))
-            )
-            diverdict.replace_int(
-                "success_count_0_h", int(diverreq.attribute("success_count_0_h"))
-            )
-            diverdict.replace_int(
-                "success_count_0_n", int(diverreq.attribute("success_count_0_n"))
-            )
-            diverdict.replace_int(
-                "success_count_1_a", int(diverreq.attribute("success_count_1_a"))
-            )
-            diverdict.replace_int(
-                "success_count_1_h", int(diverreq.attribute("success_count_1_h"))
-            )
-            diverdict.replace_int(
-                "success_count_1_n", int(diverreq.attribute("success_count_1_n"))
-            )
-            diverdict.replace_int(
-                "success_count_2_a", int(diverreq.attribute("success_count_2_a"))
-            )
-            diverdict.replace_int(
-                "success_count_2_h", int(diverreq.attribute("success_count_2_h"))
-            )
-            diverdict.replace_int(
-                "success_count_2_n", int(diverreq.attribute("success_count_2_n"))
-            )
-            diverdict.replace_int(
-                "success_count_3_a", int(diverreq.attribute("success_count_3_a"))
-            )
-            diverdict.replace_int(
-                "success_count_3_h", int(diverreq.attribute("success_count_3_h"))
-            )
-            diverdict.replace_int(
-                "success_count_3_n", int(diverreq.attribute("success_count_3_n"))
-            )
+            diverdict.replace_int("success_count_0_a", int(diverreq.attribute("success_count_0_a")))
+            diverdict.replace_int("success_count_0_h", int(diverreq.attribute("success_count_0_h")))
+            diverdict.replace_int("success_count_0_n", int(diverreq.attribute("success_count_0_n")))
+            diverdict.replace_int("success_count_1_a", int(diverreq.attribute("success_count_1_a")))
+            diverdict.replace_int("success_count_1_h", int(diverreq.attribute("success_count_1_h")))
+            diverdict.replace_int("success_count_1_n", int(diverreq.attribute("success_count_1_n")))
+            diverdict.replace_int("success_count_2_a", int(diverreq.attribute("success_count_2_a")))
+            diverdict.replace_int("success_count_2_h", int(diverreq.attribute("success_count_2_h")))
+            diverdict.replace_int("success_count_2_n", int(diverreq.attribute("success_count_2_n")))
+            diverdict.replace_int("success_count_3_a", int(diverreq.attribute("success_count_3_a")))
+            diverdict.replace_int("success_count_3_h", int(diverreq.attribute("success_count_3_h")))
+            diverdict.replace_int("success_count_3_n", int(diverreq.attribute("success_count_3_n")))
             newprofile.replace_dict("diver_dict", diverdict)
 
         reflecdict = newprofile.get_dict("reflec_collab")
         reflecreq = request.child("reflec_collabo")
         if reflecreq is not None:
-            reflecdict.replace_int(
-                "phase1_item", int(reflecreq.attribute("phase1_iidx_item"))
-            )
-            reflecdict.replace_int(
-                "phase2_item", int(reflecreq.attribute("phase2_iidx_item"))
-            )
+            reflecdict.replace_int("phase1_item", int(reflecreq.attribute("phase1_iidx_item")))
+            reflecdict.replace_int("phase2_item", int(reflecreq.attribute("phase2_iidx_item")))
             newprofile.replace_dict("reflec_collab", reflecdict)
 
         # boss event pendual tailsman points
@@ -2342,42 +2184,18 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         chorddict = newprofile.get_dict("chord_dict")
         chordreq = request.child("qpronicle_chord")
         if chordreq is not None:
-            chorddict.replace_int(
-                "is_first_select_map", int(chordreq.attribute("is_first_select_map"))
-            )
-            chorddict.replace_int(
-                "is_use_login_bonus", int(chordreq.attribute("is_use_login_bonus"))
-            )
-            chorddict.replace_int(
-                "last_select_map", int(chordreq.attribute("last_select_map"))
-            )
-            chorddict.replace_int(
-                "patona_leader", int(chordreq.attribute("patona_leader"))
-            )
-            chorddict.replace_int(
-                "patona_sub_1", int(chordreq.attribute("patona_sub_1"))
-            )
-            chorddict.replace_int(
-                "patona_sub_2", int(chordreq.attribute("patona_sub_2"))
-            )
-            chorddict.replace_int(
-                "rare_enemy_damage1", int(chordreq.attribute("rare_enemy_damage1"))
-            )
-            chorddict.replace_int(
-                "rare_enemy_damage2", int(chordreq.attribute("rare_enemy_damage2"))
-            )
-            chorddict.replace_int(
-                "rare_enemy_damage3", int(chordreq.attribute("rare_enemy_damage3"))
-            )
-            chorddict.replace_int(
-                "rare_enemy_damage4", int(chordreq.attribute("rare_enemy_damage4"))
-            )
-            chorddict.replace_int(
-                "rare_enemy_damage5", int(chordreq.attribute("rare_enemy_damage5"))
-            )
-            chorddict.replace_int(
-                "story_view_list", int(chordreq.attribute("story_view_list"))
-            )
+            chorddict.replace_int("is_first_select_map", int(chordreq.attribute("is_first_select_map")))
+            chorddict.replace_int("is_use_login_bonus", int(chordreq.attribute("is_use_login_bonus")))
+            chorddict.replace_int("last_select_map", int(chordreq.attribute("last_select_map")))
+            chorddict.replace_int("patona_leader", int(chordreq.attribute("patona_leader")))
+            chorddict.replace_int("patona_sub_1", int(chordreq.attribute("patona_sub_1")))
+            chorddict.replace_int("patona_sub_2", int(chordreq.attribute("patona_sub_2")))
+            chorddict.replace_int("rare_enemy_damage1", int(chordreq.attribute("rare_enemy_damage1")))
+            chorddict.replace_int("rare_enemy_damage2", int(chordreq.attribute("rare_enemy_damage2")))
+            chorddict.replace_int("rare_enemy_damage3", int(chordreq.attribute("rare_enemy_damage3")))
+            chorddict.replace_int("rare_enemy_damage4", int(chordreq.attribute("rare_enemy_damage4")))
+            chorddict.replace_int("rare_enemy_damage5", int(chordreq.attribute("rare_enemy_damage5")))
+            chorddict.replace_int("story_view_list", int(chordreq.attribute("story_view_list")))
             newprofile.replace_dict("chord_dict", chorddict)
 
         # Keep track of play statistics across all mixes

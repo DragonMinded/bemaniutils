@@ -29,9 +29,7 @@ class AESCipher:
         random = Random.new()
         iv = random.read(AES.block_size)
         cipher = AES.new(self.__key, AES.MODE_CBC, iv)
-        return base64.b64encode(
-            iv + cipher.encrypt(raw.encode("utf-8")), altchars=b"._"
-        ).decode("utf-8")
+        return base64.b64encode(iv + cipher.encrypt(raw.encode("utf-8")), altchars=b"._").decode("utf-8")
 
     def decrypt(self, encoded: str) -> str:
         enc = base64.b64decode(encoded.encode("utf-8"), altchars=b"._")

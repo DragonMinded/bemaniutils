@@ -57,10 +57,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
 
         mycourse_ctrl = Node.void("mycourse_ctrl")
         root.add_child(mycourse_ctrl)
-        songs = {
-            song.id
-            for song in self.data.local.music.get_all_songs(self.game, self.version)
-        }
+        songs = {song.id for song in self.data.local.music.get_all_songs(self.game, self.version)}
         for song in songs:
             data = Node.void("data")
             mycourse_ctrl.add_child(data)
@@ -98,25 +95,18 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             rec.add_child(Node.s16("mid", score.id))
             rec.add_child(Node.s8("ntgrd", score.chart))
             rec.add_child(Node.s32("pc", score.plays))
-            rec.add_child(
-                Node.s8(
-                    "ct", self._db_to_game_clear_type(score.data.get_int("clear_type"))
-                )
-            )
+            rec.add_child(Node.s8("ct", self._db_to_game_clear_type(score.data.get_int("clear_type"))))
             rec.add_child(Node.s16("ar", score.data.get_int("achievement_rate")))
             rec.add_child(Node.s16("scr", score.points))
             rec.add_child(Node.s16("ms", score.data.get_int("miss_count")))
             rec.add_child(
                 Node.s16(
                     "param",
-                    self._db_to_game_combo_type(score.data.get_int("combo_type"))
-                    + score.data.get_int("param"),
+                    self._db_to_game_combo_type(score.data.get_int("combo_type")) + score.data.get_int("param"),
                 )
             )
             rec.add_child(Node.s32("bscrt", score.timestamp))
-            rec.add_child(
-                Node.s32("bart", score.data.get_int("best_achievement_rate_time"))
-            )
+            rec.add_child(Node.s32("bart", score.data.get_int("best_achievement_rate_time")))
             rec.add_child(Node.s32("bctt", score.data.get_int("best_clear_type_time")))
             rec.add_child(Node.s32("bmst", score.data.get_int("best_miss_count_time")))
             rec.add_child(Node.s32("time", score.data.get_int("last_played_time")))
@@ -124,9 +114,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
 
         return root
 
-    def handle_player_rb5_player_read_rival_score_5_request(
-        self, request: Node
-    ) -> Node:
+    def handle_player_rb5_player_read_rival_score_5_request(self, request: Node) -> Node:
         extid = request.child_value("uid")
         songid = request.child_value("music_id")
         chart = request.child_value("note_grade")
@@ -135,9 +123,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             score = None
             profile = None
         else:
-            score = self.data.remote.music.get_score(
-                self.game, self.version, userid, songid, chart
-            )
+            score = self.data.remote.music.get_score(self.game, self.version, userid, songid, chart)
             profile = self.get_any_profile(userid)
 
         root = Node.void("player")
@@ -149,14 +135,10 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             player_select_score.add_child(Node.string("name", profile.get_str("name")))
             player_select_score.add_child(Node.s32("m_score", score.points))
             player_select_score.add_child(Node.s32("m_scoreTime", score.timestamp))
-            player_select_score.add_child(
-                Node.s16("m_iconID", profile.get_dict("config").get_int("icon_id"))
-            )
+            player_select_score.add_child(Node.s16("m_iconID", profile.get_dict("config").get_int("icon_id")))
         return root
 
-    def handle_player_rb5_player_read_rival_ranking_data_5_request(
-        self, request: Node
-    ) -> Node:
+    def handle_player_rb5_player_read_rival_ranking_data_5_request(self, request: Node) -> Node:
         extid = request.child_value("uid")
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
 
@@ -178,13 +160,9 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
                 rival_data.add_child(rl)
                 rl.add_child(Node.s32("uid", rprofile.extid))
                 rl.add_child(Node.string("nm", rprofile.get_str("name")))
-                rl.add_child(
-                    Node.s16("ic", rprofile.get_dict("config").get_int("icon_id"))
-                )
+                rl.add_child(Node.s16("ic", rprofile.get_dict("config").get_int("icon_id")))
 
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.version, link.other_userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.version, link.other_userid)
                 scores_by_musicid: Dict[int, List[Score]] = {}
                 for score in scores:
                     if score.id not in scores_by_musicid:
@@ -192,13 +170,8 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
                     scores_by_musicid[score.id][score.chart] = score
 
                 for mid, scores in scores_by_musicid.items():
-                    points = [
-                        score.points << 32 if score is not None else 0
-                        for score in scores
-                    ]
-                    timestamps = [
-                        score.timestamp if score is not None else 0 for score in scores
-                    ]
+                    points = [score.points << 32 if score is not None else 0 for score in scores]
+                    timestamps = [score.timestamp if score is not None else 0 for score in scores]
 
                     sl = Node.void("sl")
                     rl.add_child(sl)
@@ -230,86 +203,50 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             userid: [
                 score
                 for (uid, score) in all_scores
-                if uid == userid
-                and score.data.get_int("clear_type") >= self.CLEAR_TYPE_CLEARED
+                if uid == userid and score.data.get_int("clear_type") >= self.CLEAR_TYPE_CLEARED
             ]
             for userid in all_users
         }
 
         # Now grab all user profiles for this game
         all_profiles = {
-            profile[0]: profile[1]
-            for profile in self.data.remote.user.get_all_profiles(
-                self.game, self.version
-            )
+            profile[0]: profile[1] for profile in self.data.remote.user.get_all_profiles(self.game, self.version)
         }
 
         # Now, sum up the scores into the five categories that the game expects.
         total_scores = sorted(
-            [
-                sum([score.points for score in scores])
-                for userid, scores in scores_by_user.items()
-            ],
+            [sum([score.points for score in scores]) for userid, scores in scores_by_user.items()],
             reverse=True,
         )
         basic_scores = sorted(
             [
-                sum(
-                    [
-                        score.points
-                        for score in scores
-                        if score.chart == self.CHART_TYPE_BASIC
-                    ]
-                )
+                sum([score.points for score in scores if score.chart == self.CHART_TYPE_BASIC])
                 for userid, scores in scores_by_user.items()
             ],
             reverse=True,
         )
         medium_scores = sorted(
             [
-                sum(
-                    [
-                        score.points
-                        for score in scores
-                        if score.chart == self.CHART_TYPE_MEDIUM
-                    ]
-                )
+                sum([score.points for score in scores if score.chart == self.CHART_TYPE_MEDIUM])
                 for userid, scores in scores_by_user.items()
             ],
             reverse=True,
         )
         hard_scores = sorted(
             [
-                sum(
-                    [
-                        score.points
-                        for score in scores
-                        if score.chart == self.CHART_TYPE_HARD
-                    ]
-                )
+                sum([score.points for score in scores if score.chart == self.CHART_TYPE_HARD])
                 for userid, scores in scores_by_user.items()
             ],
         )
         special_scores = sorted(
             [
-                sum(
-                    [
-                        score.points
-                        for score in scores
-                        if score.chart == self.CHART_TYPE_SPECIAL
-                    ]
-                )
+                sum([score.points for score in scores if score.chart == self.CHART_TYPE_SPECIAL])
                 for userid, scores in scores_by_user.items()
             ],
             reverse=True,
         )
         minigame_scores = sorted(
-            [
-                all_profiles.get(
-                    userid, Profile(self.game, self.version, "", 0)
-                ).get_int("mgsc")
-                for userid in all_users
-            ],
+            [all_profiles.get(userid, Profile(self.game, self.version, "", 0)).get_int("mgsc") for userid in all_users],
             reverse=True,
         )
 
@@ -375,9 +312,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         links = self.data.local.user.get_links(self.game, self.version, userid)
         rprofiles: Dict[UserID, Profile] = {}
         root = Node.void("player")
@@ -468,9 +403,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
                 rprofiles[link.other_userid] = rprofile
             else:
                 rprofile = rprofiles[link.other_userid]
-            lobbyinfo = self.data.local.lobby.get_play_session_info(
-                self.game, self.version, link.other_userid
-            )
+            lobbyinfo = self.data.local.lobby.get_play_session_info(self.game, self.version, link.other_userid)
             if lobbyinfo is None:
                 lobbyinfo = ValidatedDict()
 
@@ -479,9 +412,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             r.add_child(Node.s32("slot_id", slotid))
             r.add_child(Node.s32("id", rprofile.extid))
             r.add_child(Node.string("name", rprofile.get_str("name")))
-            r.add_child(
-                Node.s32("icon", rprofile.get_dict("config").get_int("icon_id"))
-            )
+            r.add_child(Node.s32("icon", rprofile.get_dict("config").get_int("icon_id")))
             r.add_child(Node.s32("class", rprofile.get_int("class")))
             r.add_child(Node.s32("class_ar", rprofile.get_int("class_ar")))
             r.add_child(Node.bool("friend", True))
@@ -498,48 +429,26 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
         config = Node.void("config")
         pdata.add_child(config)
         config.add_child(Node.u8("msel_bgm", configdict.get_int("msel_bgm")))
-        config.add_child(
-            Node.u8("narrowdown_type", configdict.get_int("narrowdown_type"))
-        )
+        config.add_child(Node.u8("narrowdown_type", configdict.get_int("narrowdown_type")))
         config.add_child(Node.s16("icon_id", configdict.get_int("icon_id")))
         config.add_child(Node.s16("byword_0", configdict.get_int("byword_0")))
         config.add_child(Node.s16("byword_1", configdict.get_int("byword_1")))
-        config.add_child(
-            Node.bool("is_auto_byword_0", configdict.get_bool("is_auto_byword_0"))
-        )
-        config.add_child(
-            Node.bool("is_auto_byword_1", configdict.get_bool("is_auto_byword_1"))
-        )
+        config.add_child(Node.bool("is_auto_byword_0", configdict.get_bool("is_auto_byword_0")))
+        config.add_child(Node.bool("is_auto_byword_1", configdict.get_bool("is_auto_byword_1")))
         config.add_child(Node.u8("mrec_type", configdict.get_int("mrec_type")))
         config.add_child(Node.u8("tab_sel", configdict.get_int("tab_sel")))
         config.add_child(Node.u8("card_disp", configdict.get_int("card_disp")))
-        config.add_child(
-            Node.u8("score_tab_disp", configdict.get_int("score_tab_disp"))
-        )
-        config.add_child(
-            Node.s16("last_music_id", configdict.get_int("last_music_id", -1))
-        )
-        config.add_child(
-            Node.u8("last_note_grade", configdict.get_int("last_note_grade"))
-        )
+        config.add_child(Node.u8("score_tab_disp", configdict.get_int("score_tab_disp")))
+        config.add_child(Node.s16("last_music_id", configdict.get_int("last_music_id", -1)))
+        config.add_child(Node.u8("last_note_grade", configdict.get_int("last_note_grade")))
         config.add_child(Node.u8("sort_type", configdict.get_int("sort_type")))
-        config.add_child(
-            Node.u8("rival_panel_type", configdict.get_int("rival_panel_type"))
-        )
-        config.add_child(
-            Node.u64("random_entry_work", configdict.get_int("random_entry_work"))
-        )
-        config.add_child(
-            Node.u64("custom_folder_work", configdict.get_int("custom_folder_work"))
-        )
+        config.add_child(Node.u8("rival_panel_type", configdict.get_int("rival_panel_type")))
+        config.add_child(Node.u64("random_entry_work", configdict.get_int("random_entry_work")))
+        config.add_child(Node.u64("custom_folder_work", configdict.get_int("custom_folder_work")))
         config.add_child(Node.u8("folder_type", configdict.get_int("folder_type")))
-        config.add_child(
-            Node.u8("folder_lamp_type", configdict.get_int("folder_lamp_type"))
-        )
+        config.add_child(Node.u8("folder_lamp_type", configdict.get_int("folder_lamp_type")))
         config.add_child(Node.bool("is_tweet", configdict.get_bool("is_tweet")))
-        config.add_child(
-            Node.bool("is_link_twitter", configdict.get_bool("is_link_twitter"))
-        )
+        config.add_child(Node.bool("is_link_twitter", configdict.get_bool("is_link_twitter")))
 
         # Customizations
         customdict = profile.get_dict("custom")
@@ -555,31 +464,17 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
         custom.add_child(Node.u8("st_jr_gauge", customdict.get_int("st_jr_gauge")))
         custom.add_child(Node.u8("st_clr_gauge", customdict.get_int("st_clr_gauge")))
         custom.add_child(Node.u8("st_rnd", customdict.get_int("st_rnd")))
-        custom.add_child(
-            Node.u8("st_gr_gauge_type", customdict.get_int("st_gr_gauge_type"))
-        )
-        custom.add_child(
-            Node.s16("voice_message_set", customdict.get_int("voice_message_set", -1))
-        )
-        custom.add_child(
-            Node.u8("same_time_note_disp", customdict.get_int("same_time_note_disp"))
-        )
-        custom.add_child(
-            Node.u8("st_score_disp_type", customdict.get_int("st_score_disp_type"))
-        )
+        custom.add_child(Node.u8("st_gr_gauge_type", customdict.get_int("st_gr_gauge_type")))
+        custom.add_child(Node.s16("voice_message_set", customdict.get_int("voice_message_set", -1)))
+        custom.add_child(Node.u8("same_time_note_disp", customdict.get_int("same_time_note_disp")))
+        custom.add_child(Node.u8("st_score_disp_type", customdict.get_int("st_score_disp_type")))
         custom.add_child(Node.u8("st_bonus_type", customdict.get_int("st_bonus_type")))
-        custom.add_child(
-            Node.u8("st_rivalnote_type", customdict.get_int("st_rivalnote_type"))
-        )
-        custom.add_child(
-            Node.u8("st_topassist_type", customdict.get_int("st_topassist_type"))
-        )
+        custom.add_child(Node.u8("st_rivalnote_type", customdict.get_int("st_rivalnote_type")))
+        custom.add_child(Node.u8("st_topassist_type", customdict.get_int("st_topassist_type")))
         custom.add_child(Node.u8("high_speed", customdict.get_int("high_speed")))
         custom.add_child(Node.u8("st_hazard", customdict.get_int("st_hazard")))
         custom.add_child(Node.u8("st_clr_cond", customdict.get_int("st_clr_cond")))
-        custom.add_child(
-            Node.u8("voice_message_volume", customdict.get_int("voice_message_volume"))
-        )
+        custom.add_child(Node.u8("voice_message_volume", customdict.get_int("voice_message_volume")))
 
         # Unlocks
         released = Node.void("released")
@@ -635,9 +530,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             info.add_child(Node.u8("type", announcementtype))
             info.add_child(Node.u16("id", announcement.id))
             info.add_child(Node.u16("param", announcement.data.get_int("param")))
-            info.add_child(
-                Node.bool("bneedannounce", announcement.data.get_bool("need"))
-            )
+            info.add_child(Node.bool("bneedannounce", announcement.data.get_bool("need")))
 
         # Dojo ranking return
         dojo = Node.void("dojo")
@@ -654,12 +547,8 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             rec.add_child(Node.s32("total_ar", entry.data.get_int("ar")))
             rec.add_child(Node.s32("total_score", entry.data.get_int("score")))
             rec.add_child(Node.s32("play_count", entry.data.get_int("plays")))
-            rec.add_child(
-                Node.s32("last_play_time", entry.data.get_int("play_timestamp"))
-            )
-            rec.add_child(
-                Node.s32("record_update_time", entry.data.get_int("record_timestamp"))
-            )
+            rec.add_child(Node.s32("last_play_time", entry.data.get_int("play_timestamp")))
+            rec.add_child(Node.s32("record_update_time", entry.data.get_int("record_timestamp")))
             rec.add_child(Node.s32("rank", 0))
 
         # Player Parameters
@@ -675,9 +564,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             player_param.add_child(itemnode)
             itemnode.add_child(Node.s32("type", itemtype))
             itemnode.add_child(Node.s32("bank", param.id))
-            itemnode.add_child(
-                Node.s32_array("data", param.data.get_int_array("data", 256))
-            )
+            itemnode.add_child(Node.s32_array("data", param.data.get_int_array("data", 256)))
 
         # Shop score for players
         self._add_shop_score(pdata)
@@ -688,9 +575,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
         listdata = Node.void("list")
         mylist.add_child(listdata)
         listdata.add_child(Node.s16("idx", 0))
-        listdata.add_child(
-            Node.s16_array("mlst", profile.get_int_array("favorites", 30, [-1] * 30))
-        )
+        listdata.add_child(Node.s16_array("mlst", profile.get_int_array("favorites", 30, [-1] * 30)))
 
         # Minigame settings
         minigame = Node.void("minigame")
@@ -724,37 +609,19 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
         mycoursedict = profile.get_dict("mycourse")
         pdata.add_child(mycourse)
         mycourse.add_child(Node.s16("mycourse_id", 1))
-        mycourse.add_child(
-            Node.s32("music_id_1", mycoursedict.get_int("music_id_1", -1))
-        )
-        mycourse.add_child(
-            Node.s16("note_grade_1", mycoursedict.get_int("note_grade_1", -1))
-        )
+        mycourse.add_child(Node.s32("music_id_1", mycoursedict.get_int("music_id_1", -1)))
+        mycourse.add_child(Node.s16("note_grade_1", mycoursedict.get_int("note_grade_1", -1)))
         mycourse.add_child(Node.s32("score_1", mycoursedict.get_int("score_1", -1)))
-        mycourse.add_child(
-            Node.s32("music_id_2", mycoursedict.get_int("music_id_2", -1))
-        )
-        mycourse.add_child(
-            Node.s16("note_grade_2", mycoursedict.get_int("note_grade_2", -1))
-        )
+        mycourse.add_child(Node.s32("music_id_2", mycoursedict.get_int("music_id_2", -1)))
+        mycourse.add_child(Node.s16("note_grade_2", mycoursedict.get_int("note_grade_2", -1)))
         mycourse.add_child(Node.s32("score_2", mycoursedict.get_int("score_2", -1)))
-        mycourse.add_child(
-            Node.s32("music_id_3", mycoursedict.get_int("music_id_3", -1))
-        )
-        mycourse.add_child(
-            Node.s16("note_grade_3", mycoursedict.get_int("note_grade_3", -1))
-        )
+        mycourse.add_child(Node.s32("music_id_3", mycoursedict.get_int("music_id_3", -1)))
+        mycourse.add_child(Node.s16("note_grade_3", mycoursedict.get_int("note_grade_3", -1)))
         mycourse.add_child(Node.s32("score_3", mycoursedict.get_int("score_3", -1)))
-        mycourse.add_child(
-            Node.s32("music_id_4", mycoursedict.get_int("music_id_4", -1))
-        )
-        mycourse.add_child(
-            Node.s16("note_grade_4", mycoursedict.get_int("note_grade_4", -1))
-        )
+        mycourse.add_child(Node.s32("music_id_4", mycoursedict.get_int("music_id_4", -1)))
+        mycourse.add_child(Node.s16("note_grade_4", mycoursedict.get_int("note_grade_4", -1)))
         mycourse.add_child(Node.s32("score_4", mycoursedict.get_int("score_4", -1)))
-        mycourse.add_child(
-            Node.s32("insert_time", mycoursedict.get_int("insert_time", -1))
-        )
+        mycourse.add_child(Node.s32("insert_time", mycoursedict.get_int("insert_time", -1)))
         mycourse.add_child(Node.s32("def_music_id_1", -1))
         mycourse.add_child(Node.s16("def_note_grade_1", -1))
         mycourse.add_child(Node.s32("def_music_id_2", -1))
@@ -785,50 +652,28 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             mycourse_f.add_child(rec)
             rec.add_child(Node.s32("rival_id", rprofile.extid))
             rec.add_child(Node.s16("mycourse_id", 1))
-            rec.add_child(
-                Node.s32("music_id_1", mycoursedict.get_int("music_id_1", -1))
-            )
-            rec.add_child(
-                Node.s16("note_grade_1", mycoursedict.get_int("note_grade_1", -1))
-            )
+            rec.add_child(Node.s32("music_id_1", mycoursedict.get_int("music_id_1", -1)))
+            rec.add_child(Node.s16("note_grade_1", mycoursedict.get_int("note_grade_1", -1)))
             rec.add_child(Node.s32("score_1", mycoursedict.get_int("score_1", -1)))
-            rec.add_child(
-                Node.s32("music_id_2", mycoursedict.get_int("music_id_2", -1))
-            )
-            rec.add_child(
-                Node.s16("note_grade_2", mycoursedict.get_int("note_grade_2", -1))
-            )
+            rec.add_child(Node.s32("music_id_2", mycoursedict.get_int("music_id_2", -1)))
+            rec.add_child(Node.s16("note_grade_2", mycoursedict.get_int("note_grade_2", -1)))
             rec.add_child(Node.s32("score_2", mycoursedict.get_int("score_2", -1)))
-            rec.add_child(
-                Node.s32("music_id_3", mycoursedict.get_int("music_id_3", -1))
-            )
-            rec.add_child(
-                Node.s16("note_grade_3", mycoursedict.get_int("note_grade_3", -1))
-            )
+            rec.add_child(Node.s32("music_id_3", mycoursedict.get_int("music_id_3", -1)))
+            rec.add_child(Node.s16("note_grade_3", mycoursedict.get_int("note_grade_3", -1)))
             rec.add_child(Node.s32("score_3", mycoursedict.get_int("score_3", -1)))
-            rec.add_child(
-                Node.s32("music_id_4", mycoursedict.get_int("music_id_4", -1))
-            )
-            rec.add_child(
-                Node.s16("note_grade_4", mycoursedict.get_int("note_grade_4", -1))
-            )
+            rec.add_child(Node.s32("music_id_4", mycoursedict.get_int("music_id_4", -1)))
+            rec.add_child(Node.s16("note_grade_4", mycoursedict.get_int("note_grade_4", -1)))
             rec.add_child(Node.s32("score_4", mycoursedict.get_int("score_4", -1)))
-            rec.add_child(
-                Node.s32("insert_time", mycoursedict.get_int("insert_time", -1))
-            )
+            rec.add_child(Node.s32("insert_time", mycoursedict.get_int("insert_time", -1)))
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = oldprofile.clone()
 
         # Save base player profile info
-        newprofile.replace_int(
-            "lid", ID.parse_machine_id(request.child_value("pdata/account/lid"))
-        )
+        newprofile.replace_int("lid", ID.parse_machine_id(request.child_value("pdata/account/lid")))
         newprofile.replace_str("name", request.child_value("pdata/base/name"))
         newprofile.replace_int("mg", request.child_value("pdata/base/mg"))
         newprofile.replace_int("ap", request.child_value("pdata/base/ap"))
@@ -836,60 +681,36 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
         newprofile.replace_int("money", request.child_value("pdata/base/money"))
         newprofile.replace_int("class", request.child_value("pdata/base/class"))
         newprofile.replace_int("class_ar", request.child_value("pdata/base/class_ar"))
-        newprofile.replace_int(
-            "skill_point", request.child_value("pdata/base/skill_point")
-        )
+        newprofile.replace_int("skill_point", request.child_value("pdata/base/skill_point"))
         newprofile.replace_int("mgid", request.child_value("pdata/minigame/mgid"))
         newprofile.replace_int("mgsc", request.child_value("pdata/minigame/sc"))
-        newprofile.replace_int_array(
-            "favorites", 30, request.child_value("pdata/mylist/list/mlst")
-        )
+        newprofile.replace_int_array("favorites", 30, request.child_value("pdata/mylist/list/mlst"))
 
         # Save player config
         configdict = newprofile.get_dict("config")
         config = request.child("pdata/config")
         if config:
             configdict.replace_int("msel_bgm", config.child_value("msel_bgm"))
-            configdict.replace_int(
-                "narrowdown_type", config.child_value("narrowdown_type")
-            )
+            configdict.replace_int("narrowdown_type", config.child_value("narrowdown_type"))
             configdict.replace_int("icon_id", config.child_value("icon_id"))
             configdict.replace_int("byword_0", config.child_value("byword_0"))
             configdict.replace_int("byword_1", config.child_value("byword_1"))
-            configdict.replace_bool(
-                "is_auto_byword_0", config.child_value("is_auto_byword_0")
-            )
-            configdict.replace_bool(
-                "is_auto_byword_1", config.child_value("is_auto_byword_1")
-            )
+            configdict.replace_bool("is_auto_byword_0", config.child_value("is_auto_byword_0"))
+            configdict.replace_bool("is_auto_byword_1", config.child_value("is_auto_byword_1"))
             configdict.replace_int("mrec_type", config.child_value("mrec_type"))
             configdict.replace_int("tab_sel", config.child_value("tab_sel"))
             configdict.replace_int("card_disp", config.child_value("card_disp"))
-            configdict.replace_int(
-                "score_tab_disp", config.child_value("score_tab_disp")
-            )
+            configdict.replace_int("score_tab_disp", config.child_value("score_tab_disp"))
             configdict.replace_int("last_music_id", config.child_value("last_music_id"))
-            configdict.replace_int(
-                "last_note_grade", config.child_value("last_note_grade")
-            )
+            configdict.replace_int("last_note_grade", config.child_value("last_note_grade"))
             configdict.replace_int("sort_type", config.child_value("sort_type"))
-            configdict.replace_int(
-                "rival_panel_type", config.child_value("rival_panel_type")
-            )
-            configdict.replace_int(
-                "random_entry_work", config.child_value("random_entry_work")
-            )
-            configdict.replace_int(
-                "custom_folder_work", config.child_value("custom_folder_work")
-            )
+            configdict.replace_int("rival_panel_type", config.child_value("rival_panel_type"))
+            configdict.replace_int("random_entry_work", config.child_value("random_entry_work"))
+            configdict.replace_int("custom_folder_work", config.child_value("custom_folder_work"))
             configdict.replace_int("folder_type", config.child_value("folder_type"))
-            configdict.replace_int(
-                "folder_lamp_type", config.child_value("folder_lamp_type")
-            )
+            configdict.replace_int("folder_lamp_type", config.child_value("folder_lamp_type"))
             configdict.replace_bool("is_tweet", config.child_value("is_tweet"))
-            configdict.replace_bool(
-                "is_link_twitter", config.child_value("is_link_twitter")
-            )
+            configdict.replace_bool("is_link_twitter", config.child_value("is_link_twitter"))
         newprofile.replace_dict("config", configdict)
 
         # Save player custom settings
@@ -905,31 +726,17 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             customdict.replace_int("st_obj_size", custom.child_value("st_obj_size"))
             customdict.replace_int("st_jr_gauge", custom.child_value("st_jr_gauge"))
             customdict.replace_int("st_clr_gauge", custom.child_value("st_clr_gauge"))
-            customdict.replace_int(
-                "st_gr_gauge_type", custom.child_value("st_gr_gauge_type")
-            )
-            customdict.replace_int(
-                "voice_message_set", custom.child_value("voice_message_set")
-            )
-            customdict.replace_int(
-                "same_time_note_disp", custom.child_value("same_time_note_disp")
-            )
-            customdict.replace_int(
-                "st_score_disp_type", custom.child_value("st_score_disp_type")
-            )
+            customdict.replace_int("st_gr_gauge_type", custom.child_value("st_gr_gauge_type"))
+            customdict.replace_int("voice_message_set", custom.child_value("voice_message_set"))
+            customdict.replace_int("same_time_note_disp", custom.child_value("same_time_note_disp"))
+            customdict.replace_int("st_score_disp_type", custom.child_value("st_score_disp_type"))
             customdict.replace_int("st_bonus_type", custom.child_value("st_bonus_type"))
-            customdict.replace_int(
-                "st_rivalnote_type", custom.child_value("st_rivalnote_type")
-            )
-            customdict.replace_int(
-                "st_topassist_type", custom.child_value("st_topassist_type")
-            )
+            customdict.replace_int("st_rivalnote_type", custom.child_value("st_rivalnote_type"))
+            customdict.replace_int("st_topassist_type", custom.child_value("st_topassist_type"))
             customdict.replace_int("high_speed", custom.child_value("high_speed"))
             customdict.replace_int("st_hazard", custom.child_value("st_hazard"))
             customdict.replace_int("st_clr_cond", custom.child_value("st_clr_cond"))
-            customdict.replace_int(
-                "voice_message_volume", custom.child_value("voice_message_volume")
-            )
+            customdict.replace_int("voice_message_volume", custom.child_value("voice_message_volume"))
         newprofile.replace_dict("custom", customdict)
 
         # Save player parameter info
@@ -965,9 +772,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
                 # I assume this is copypasta, but I want to be sure
                 extid = child.child_value("user_id")
                 if extid != newprofile.extid:
-                    raise Exception(
-                        f"Unexpected user ID, got {extid} expecting {newprofile.extid}"
-                    )
+                    raise Exception(f"Unexpected user ID, got {extid} expecting {newprofile.extid}")
 
                 episode_type = child.child_value("type")
                 episode_value0 = child.child_value("value0")
@@ -1085,9 +890,7 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
                     continue
 
                 extid = child.child_value("id")
-                other_userid = self.data.remote.user.from_extid(
-                    self.game, self.version, extid
-                )
+                other_userid = self.data.remote.user.from_extid(self.game, self.version, extid)
                 if other_userid is None:
                     continue
 
@@ -1189,33 +992,17 @@ class ReflecBeatVolzza2(ReflecBeatVolzzaBase):
             )
 
             if total >= oldtotal:
-                mycoursedict.replace_int(
-                    "music_id_1", mycourse.child_value("music_id_1")
-                )
-                mycoursedict.replace_int(
-                    "note_grade_1", mycourse.child_value("note_grade_1")
-                )
+                mycoursedict.replace_int("music_id_1", mycourse.child_value("music_id_1"))
+                mycoursedict.replace_int("note_grade_1", mycourse.child_value("note_grade_1"))
                 mycoursedict.replace_int("score_1", score_1)
-                mycoursedict.replace_int(
-                    "music_id_2", mycourse.child_value("music_id_2")
-                )
-                mycoursedict.replace_int(
-                    "note_grade_2", mycourse.child_value("note_grade_2")
-                )
+                mycoursedict.replace_int("music_id_2", mycourse.child_value("music_id_2"))
+                mycoursedict.replace_int("note_grade_2", mycourse.child_value("note_grade_2"))
                 mycoursedict.replace_int("score_2", score_2)
-                mycoursedict.replace_int(
-                    "music_id_3", mycourse.child_value("music_id_3")
-                )
-                mycoursedict.replace_int(
-                    "note_grade_3", mycourse.child_value("note_grade_3")
-                )
+                mycoursedict.replace_int("music_id_3", mycourse.child_value("music_id_3"))
+                mycoursedict.replace_int("note_grade_3", mycourse.child_value("note_grade_3"))
                 mycoursedict.replace_int("score_3", score_3)
-                mycoursedict.replace_int(
-                    "music_id_4", mycourse.child_value("music_id_4")
-                )
-                mycoursedict.replace_int(
-                    "note_grade_4", mycourse.child_value("note_grade_4")
-                )
+                mycoursedict.replace_int("music_id_4", mycourse.child_value("music_id_4"))
+                mycoursedict.replace_int("note_grade_4", mycourse.child_value("note_grade_4"))
                 mycoursedict.replace_int("score_4", score_4)
                 mycoursedict.replace_int("insert_time", Time.now())
         newprofile.replace_dict("mycourse", mycoursedict)

@@ -1920,9 +1920,7 @@ class SoundVoltexInfiniteInfection(
             elif unlock.type == "special_unlock":
                 info = Node.void("info")
                 catalog.add_child(info)
-                info.add_child(
-                    Node.u8("catalog_type", self.GAME_CATALOG_TYPE_SPECIAL_SONG)
-                )
+                info.add_child(Node.u8("catalog_type", self.GAME_CATALOG_TYPE_SPECIAL_SONG))
                 info.add_child(Node.u32("catalog_id", unlock.id))
                 info.add_child(Node.u32("currency_type", self.GAME_CURRENCY_BLOCKS))
                 info.add_child(Node.u32("price", unlock.data.get_int("blocks")))
@@ -1941,9 +1939,7 @@ class SoundVoltexInfiniteInfection(
             info.add_child(Node.s16("level", course["level"]))
             info.add_child(Node.s32("season_id", course["season_id"]))
             info.add_child(Node.string("season_name", seasons[course["season_id"]]))
-            info.add_child(
-                Node.bool("season_new_flg", course["season_id"] == last_season)
-            )
+            info.add_child(Node.bool("season_new_flg", course["season_id"] == last_season))
             info.add_child(Node.string("course_name", skillnames[course["level"]]))
             info.add_child(Node.s16("course_type", 0))
             info.add_child(Node.s16("skill_name_id", course["level"]))
@@ -1983,10 +1979,7 @@ class SoundVoltexInfiniteInfection(
         # Now, grab user records
         records = self.data.remote.music.get_all_records(self.game, self.version)
         missing_users = [userid for (userid, _) in records]
-        users = {
-            userid: profile
-            for (userid, profile) in self.get_any_profiles(missing_users)
-        }
+        users = {userid: profile for (userid, profile) in self.get_any_profiles(missing_users)}
 
         hiscore_allover = Node.void("hiscore_allover")
         game.add_child(hiscore_allover)
@@ -2011,14 +2004,10 @@ class SoundVoltexInfiniteInfection(
         # Now, grab local records
         area_users = [
             uid
-            for (uid, prof) in self.data.local.user.get_all_profiles(
-                self.game, self.version
-            )
+            for (uid, prof) in self.data.local.user.get_all_profiles(self.game, self.version)
             if prof.get_int("loc", -1) == locid
         ]
-        records = self.data.local.music.get_all_records(
-            self.game, self.version, userlist=area_users
-        )
+        records = self.data.local.music.get_all_records(self.game, self.version, userlist=area_users)
         missing_users = [userid for (userid, _) in records if userid not in users]
         for userid, profile in self.get_any_profiles(missing_users):
             users[userid] = profile
@@ -2051,9 +2040,7 @@ class SoundVoltexInfiniteInfection(
         for songid in clears:
             for chart in clears[songid]:
                 if clears[songid][chart]["total"] > 0:
-                    rate = float(clears[songid][chart]["clears"]) / float(
-                        clears[songid][chart]["total"]
-                    )
+                    rate = float(clears[songid][chart]["clears"]) / float(clears[songid][chart]["total"])
                     dnode = Node.void("d")
                     clear_rate.add_child(dnode)
                     dnode.add_child(Node.u32("id", songid))
@@ -2155,11 +2142,7 @@ class SoundVoltexInfiniteInfection(
                     self.__db_to_game_clear_type(score.data.get_int("clear_type")),
                 )
             )
-            music.add_child(
-                Node.u32(
-                    "score_grade", self.__db_to_game_grade(score.data.get_int("grade"))
-                )
-            )
+            music.add_child(Node.u32("score_grade", self.__db_to_game_grade(score.data.get_int("grade"))))
             stats = score.data.get_dict("stats")
             music.add_child(Node.u32("btn_rate", stats.get_int("btn_rate")))
             music.add_child(Node.u32("long_rate", stats.get_int("long_rate")))
@@ -2330,9 +2313,7 @@ class SoundVoltexInfiniteInfection(
         game.add_child(Node.u32("gamecoin_packet", profile.get_int("packet")))
         game.add_child(Node.u32("gamecoin_block", profile.get_int("block")))
         game.add_child(Node.s16("skill_name_id", profile.get_int("skill_name_id", -1)))
-        game.add_child(
-            Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 20))
-        )
+        game.add_child(Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 20)))
         game.add_child(Node.u32("blaster_energy", profile.get_int("blaster_energy")))
         game.add_child(Node.u32("blaster_count", profile.get_int("blaster_count")))
 
@@ -2362,9 +2343,7 @@ class SoundVoltexInfiniteInfection(
         game.add_child(itemnode)
 
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
 
         for item in achievements:
             if item.type[:5] != "item_":
@@ -2375,9 +2354,7 @@ class SoundVoltexInfiniteInfection(
                 # Type 1 is appeal cards, and the game saves this for non-default cards but
                 # we take care of this below.
                 continue
-            if itemtype == self.GAME_CATALOG_TYPE_SONG and game_config.get_bool(
-                "force_unlock_songs"
-            ):
+            if itemtype == self.GAME_CATALOG_TYPE_SONG and game_config.get_bool("force_unlock_songs"):
                 # We will echo this below in the force unlock song section
                 continue
 
@@ -2452,22 +2429,16 @@ class SoundVoltexInfiniteInfection(
 
         return game
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value("earned_gamecoin_packet")
         if earned_gamecoin_packet is not None:
-            newprofile.replace_int(
-                "packet", newprofile.get_int("packet") + earned_gamecoin_packet
-            )
+            newprofile.replace_int("packet", newprofile.get_int("packet") + earned_gamecoin_packet)
         earned_gamecoin_block = request.child_value("earned_gamecoin_block")
         if earned_gamecoin_block is not None:
-            newprofile.replace_int(
-                "block", newprofile.get_int("block") + earned_gamecoin_block
-            )
+            newprofile.replace_int("block", newprofile.get_int("block") + earned_gamecoin_block)
         earned_blaster_energy = request.child_value("earned_blaster_energy")
         if earned_blaster_energy is not None:
             newprofile.replace_int(
@@ -2478,9 +2449,7 @@ class SoundVoltexInfiniteInfection(
         # Miscelaneous stuff
         newprofile.replace_int("blaster_count", request.child_value("blaster_count"))
         newprofile.replace_int("skill_name_id", request.child_value("skill_name_id"))
-        newprofile.replace_int_array(
-            "hidden_param", 20, request.child_value("hidden_param")
-        )
+        newprofile.replace_int_array("hidden_param", 20, request.child_value("hidden_param"))
 
         # Update user's unlock status if we aren't force unlocked
         game_config = self.get_game_config()

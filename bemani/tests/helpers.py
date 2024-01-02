@@ -28,9 +28,7 @@ class FakeCursor:
 
     def fetchone(self) -> Dict[str, Any]:
         if len(self.__rows) != 1:
-            raise Exception(
-                f"Tried to fetch one row and there are {len(self.__rows)} rows!"
-            )
+            raise Exception(f"Tried to fetch one row and there are {len(self.__rows)} rows!")
         return self.__rows[0]
 
     def __iter__(self) -> "FakeCursor":

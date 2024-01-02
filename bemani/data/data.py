@@ -135,17 +135,13 @@ class Data:
     def __exists(self) -> bool:
         # See if the DB was already created
         try:
-            cursor = self.__session.execute(
-                text("SELECT COUNT(version_num) AS count FROM alembic_version")
-            )
+            cursor = self.__session.execute(text("SELECT COUNT(version_num) AS count FROM alembic_version"))
             return cursor.fetchone()["count"] == 1
         except ProgrammingError:
             return False
 
     def __alembic_cmd(self, command: str, *args: str) -> None:
-        base_dir = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), "migrations"
-        )
+        base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "migrations")
         alembicArgs = [
             "-c",
             os.path.join(base_dir, "alembic.ini"),
@@ -165,9 +161,7 @@ class Data:
         """
         if self.__exists():
             # Cowardly refused to do anything, we should be using the upgrade path instead.
-            raise DBCreateException(
-                "Tables already created, use upgrade to upgrade schema!"
-            )
+            raise DBCreateException("Tables already created, use upgrade to upgrade schema!")
 
         metadata.create_all(
             self.__config.database.engine.connect(),
@@ -185,19 +179,13 @@ class Data:
         Generate upgrade scripts using alembic.
         """
         if not self.__exists():
-            raise DBCreateException(
-                "Tables have not been created yet, use create to create them!"
-            )
+            raise DBCreateException("Tables have not been created yet, use create to create them!")
 
         # Verify that there are actual changes, and refuse to create empty migration scripts
-        context = MigrationContext.configure(
-            self.__config.database.engine.connect(), opts={"compare_type": True}
-        )
+        context = MigrationContext.configure(self.__config.database.engine.connect(), opts={"compare_type": True})
         diff = compare_metadata(context, metadata)
         if (not allow_empty) and (len(diff) == 0):
-            raise DBCreateException(
-                "There is nothing different between code and the DB, refusing to create migration!"
-            )
+            raise DBCreateException("There is nothing different between code and the DB, refusing to create migration!")
 
         self.__alembic_cmd(
             "revision",
@@ -211,9 +199,7 @@ class Data:
         Upgrade an existing DB to the current model.
         """
         if not self.__exists():
-            raise DBCreateException(
-                "Tables have not been created yet, use create to create them!"
-            )
+            raise DBCreateException("Tables have not been created yet, use create to create them!")
 
         self.__alembic_cmd(
             "upgrade",

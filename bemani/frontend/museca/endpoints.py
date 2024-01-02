@@ -188,9 +188,7 @@ def viewtopscores(musicid: int) -> Response:
     for version in versions:
         for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
             for chart in [0, 1, 2, 3, 4]:
-                details = g.data.local.music.get_song(
-                    GameConstants.MUSECA, version + omniadd, musicid, chart
-                )
+                details = g.data.local.music.get_song(GameConstants.MUSECA, version + omniadd, musicid, chart)
                 if details is not None:
                     if name is None:
                         name = details.name
@@ -271,9 +269,7 @@ def viewplayer(userid: UserID) -> Response:
             "playerid": userid,
             "own_profile": userid == g.userID,
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("museca_pages.listplayer", userid=userid),
@@ -309,9 +305,7 @@ def viewsettings() -> Response:
         "museca/settings.react.js",
         {
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "updatename": url_for("museca_pages.updatename"),

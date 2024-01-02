@@ -81,9 +81,7 @@ class MusecaFrontend(FrontendBase):
         formatted_attempt["stats"] = attempt.data.get_dict("stats")
         return formatted_attempt
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile["plays"] = playstats.get_int("total_plays")
         return formatted_profile

@@ -9,9 +9,7 @@ class TestAPIClient(unittest.TestCase):
         client = APIClient("https://127.0.0.1", "token", False, False)
         self.assertFalse(client._content_type_valid("application/text"))
         self.assertFalse(client._content_type_valid("application/json"))
-        self.assertFalse(
-            client._content_type_valid("application/json; charset=shift-jis")
-        )
+        self.assertFalse(client._content_type_valid("application/json; charset=shift-jis"))
         self.assertTrue(client._content_type_valid("application/json; charset=utf-8"))
         self.assertTrue(client._content_type_valid("application/json;charset=utf-8"))
         self.assertTrue(client._content_type_valid("application/json;charset = utf-8"))

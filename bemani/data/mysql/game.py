@@ -67,17 +67,13 @@ time_sensitive_settings = Table(
     Column("start_time", Integer, nullable=False, index=True),
     Column("end_time", Integer, nullable=False, index=True),
     Column("data", JSON, nullable=False),
-    UniqueConstraint(
-        "game", "version", "name", "start_time", name="game_version_name_start_time"
-    ),
+    UniqueConstraint("game", "version", "name", "start_time", name="game_version_name_start_time"),
     mysql_charset="utf8mb4",
 )
 
 
 class GameData(BaseData):
-    def get_settings(
-        self, game: GameConstants, userid: UserID
-    ) -> Optional[ValidatedDict]:
+    def get_settings(self, game: GameConstants, userid: UserID) -> Optional[ValidatedDict]:
         """
         Given a game and a user ID, look up game-wide settings as a dictionary.
 
@@ -103,9 +99,7 @@ class GameData(BaseData):
         result = cursor.fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
-    def put_settings(
-        self, game: GameConstants, userid: UserID, settings: Dict[str, Any]
-    ) -> None:
+    def put_settings(self, game: GameConstants, userid: UserID, settings: Dict[str, Any]) -> None:
         """
         Given a game and a user ID, save game-wide settings to the DB.
 
@@ -167,9 +161,7 @@ class GameData(BaseData):
         result = cursor.fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
-    def get_achievements(
-        self, game: GameConstants, userid: UserID
-    ) -> List[Achievement]:
+    def get_achievements(self, game: GameConstants, userid: UserID) -> List[Achievement]:
         """
         Given a game/userid, find all achievements
 
@@ -228,9 +220,7 @@ class GameData(BaseData):
             },
         )
 
-    def get_time_sensitive_settings(
-        self, game: GameConstants, version: int, name: str
-    ) -> Optional[ValidatedDict]:
+    def get_time_sensitive_settings(self, game: GameConstants, version: int, name: str) -> Optional[ValidatedDict]:
         """
         Given a game/version/name, look up the current time-sensitive settings for this game.
 
@@ -267,9 +257,7 @@ class GameData(BaseData):
         retval["end_time"] = result["end_time"]
         return retval
 
-    def get_all_time_sensitive_settings(
-        self, game: GameConstants, version: int, name: str
-    ) -> List[ValidatedDict]:
+    def get_all_time_sensitive_settings(self, game: GameConstants, version: int, name: str) -> List[ValidatedDict]:
         """
         Given a game/version/name, look up all of the time-sensitive settings for this game.
 
@@ -287,9 +275,7 @@ class GameData(BaseData):
             SELECT data, start_time, end_time FROM time_sensitive_settings
             WHERE game = :game AND version = :version AND name = :name
         """
-        cursor = self.execute(
-            sql, {"game": game.value, "version": version, "name": name}
-        )
+        cursor = self.execute(sql, {"game": game.value, "version": version, "name": name})
         if cursor.rowcount == 0:
             # setting doesn't exist
             return []
@@ -376,9 +362,7 @@ class GameData(BaseData):
             },
         )
 
-    def get_item(
-        self, game: GameConstants, version: int, catid: int, cattype: str
-    ) -> Optional[ValidatedDict]:
+    def get_item(self, game: GameConstants, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
         """
         Given a game/userid and catalog id/type, find that catalog entry.
 
@@ -398,9 +382,7 @@ class GameData(BaseData):
             SELECT data FROM catalog
             WHERE game = :game AND version = :version AND id = :id AND type = :type
         """
-        cursor = self.execute(
-            sql, {"game": game.value, "version": version, "id": catid, "type": cattype}
-        )
+        cursor = self.execute(sql, {"game": game.value, "version": version, "id": catid, "type": cattype})
         if cursor.rowcount != 1:
             # entry doesn't exist
             return None

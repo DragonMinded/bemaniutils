@@ -116,9 +116,7 @@ class Shape:
             # point and there are only 8 of them, making a rectangle.
             for vertexno in range(vertex_count):
                 vertexno_offset = vertex_offset + (8 * vertexno)
-                x, y = struct.unpack(
-                    f"{endian}ff", self.data[vertexno_offset : vertexno_offset + 8]
-                )
+                x, y = struct.unpack(f"{endian}ff", self.data[vertexno_offset : vertexno_offset + 8])
                 vertex_points.append(Point(x, y))
         self.vertex_points = vertex_points
 
@@ -126,9 +124,7 @@ class Shape:
         if tex_offset != 0:
             for texno in range(tex_count):
                 texno_offset = tex_offset + (8 * texno)
-                x, y = struct.unpack(
-                    f"{endian}ff", self.data[texno_offset : texno_offset + 8]
-                )
+                x, y = struct.unpack(f"{endian}ff", self.data[texno_offset : texno_offset + 8])
                 tex_points.append(Point(x, y))
         self.tex_points = tex_points
 
@@ -136,9 +132,7 @@ class Shape:
         if color_offset != 0:
             for colorno in range(color_count):
                 colorno_offset = color_offset + (4 * colorno)
-                rgba = struct.unpack(
-                    f"{endian}I", self.data[colorno_offset : colorno_offset + 4]
-                )[0]
+                rgba = struct.unpack(f"{endian}I", self.data[colorno_offset : colorno_offset + 4])[0]
                 color = Color(
                     a=(rgba & 0xFF) / 255.0,
                     b=((rgba >> 8) & 0xFF) / 255.0,
@@ -152,9 +146,7 @@ class Shape:
         if label_offset != 0:
             for labelno in range(label_count):
                 labelno_offset = label_offset + (4 * labelno)
-                labelptr = struct.unpack(
-                    f"{endian}I", self.data[labelno_offset : labelno_offset + 4]
-                )[0]
+                labelptr = struct.unpack(f"{endian}I", self.data[labelno_offset : labelno_offset + 4])[0]
 
                 bytedata = self.get_until_null(labelptr)
                 labels.append(descramble_text(bytedata, text_obfuscated))
@@ -215,17 +207,11 @@ class Shape:
                 if mode != 4:
                     raise Exception("Unexpected mode in GE2D structure!")
                 if (flags & 0x2) and not labels:
-                    raise Exception(
-                        "GE2D structure has a texture, but no region labels present!"
-                    )
+                    raise Exception("GE2D structure has a texture, but no region labels present!")
                 if (flags & 0x2) and (tex1 == 0xFF):
-                    raise Exception(
-                        "GE2D structure requests a texture, but no texture pointer present!"
-                    )
+                    raise Exception("GE2D structure requests a texture, but no texture pointer present!")
                 if tex2 != 0xFF:
-                    raise Exception(
-                        "GE2D structure requests a second texture, but we don't support this!"
-                    )
+                    raise Exception("GE2D structure requests a second texture, but we don't support this!")
                 if unk != 0x0:
                     raise Exception("Unhandled unknown data in GE2D structure!")
 
@@ -238,16 +224,10 @@ class Shape:
 
                 verticies: List[int] = []
                 for render_paramstriangleno in range(trianglecount):
-                    render_paramstriangleno_offset = triangleoffset + (
-                        2 * render_paramstriangleno
-                    )
+                    render_paramstriangleno_offset = triangleoffset + (2 * render_paramstriangleno)
                     tex_offset = struct.unpack(
                         f"{endian}H",
-                        self.data[
-                            render_paramstriangleno_offset : (
-                                render_paramstriangleno_offset + 2
-                            )
-                        ],
+                        self.data[render_paramstriangleno_offset : (render_paramstriangleno_offset + 2)],
                     )[0]
                     verticies.append(tex_offset)
 

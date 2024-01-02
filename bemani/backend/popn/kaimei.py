@@ -384,9 +384,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
         root = super().format_profile(userid, profile)
 
         account = root.child("account")
-        account.add_child(
-            Node.s16("card_again_count", profile.get_int("card_again_count"))
-        )
+        account.add_child(Node.s16("card_again_count", profile.get_int("card_again_count")))
         account.add_child(Node.s16("sp_riddles_id", profile.get_int("sp_riddles_id")))
 
         # Kaimei riddles events
@@ -394,11 +392,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
         root.add_child(event2021)
         event2021.add_child(Node.u32("point", profile.get_int("point")))
         event2021.add_child(Node.u8("step", profile.get_int("step")))
-        event2021.add_child(
-            Node.u32_array(
-                "quest_point", profile.get_int_array("quest_point", 8, [0] * 8)
-            )
-        )
+        event2021.add_child(Node.u32_array("quest_point", profile.get_int_array("quest_point", 8, [0] * 8)))
         event2021.add_child(Node.u8("step_nos", profile.get_int("step_nos")))
         event2021.add_child(
             Node.u32_array(
@@ -428,9 +422,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
             sh_riddles.add_child(Node.u32("sh_riddles_id", riddle))
 
         # Set up kaimei riddles achievements
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for achievement in achievements:
             if achievement.type == "riddle":
                 kaimei_gauge = achievement.data.get_int("kaimei_gauge")
@@ -449,32 +441,22 @@ class PopnMusicKaimei(PopnMusicModernBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = super().unformat_profile(userid, request, oldprofile)
 
         account = request.child("account")
         if account is not None:
-            newprofile.replace_int(
-                "card_again_count", account.child_value("card_again_count")
-            )
-            newprofile.replace_int(
-                "sp_riddles_id", account.child_value("sp_riddles_id")
-            )
+            newprofile.replace_int("card_again_count", account.child_value("card_again_count"))
+            newprofile.replace_int("sp_riddles_id", account.child_value("sp_riddles_id"))
 
         # Kaimei riddles events
         event2021 = request.child("event2021")
         if event2021 is not None:
             newprofile.replace_int("point", event2021.child_value("point"))
             newprofile.replace_int("step", event2021.child_value("step"))
-            newprofile.replace_int_array(
-                "quest_point", 8, event2021.child_value("quest_point")
-            )
+            newprofile.replace_int_array("quest_point", 8, event2021.child_value("quest_point"))
             newprofile.replace_int("step_nos", event2021.child_value("step_nos"))
-            newprofile.replace_int_array(
-                "quest_point_nos", 13, event2021.child_value("quest_point_nos")
-            )
+            newprofile.replace_int_array("quest_point_nos", 13, event2021.child_value("quest_point_nos"))
 
         # Extract kaimei riddles achievements
         for node in request.children:

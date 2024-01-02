@@ -73,11 +73,7 @@ def login() -> Response:
 @account_pages.route("/login")
 @loginprohibited
 def viewlogin() -> Response:
-    return Response(
-        render_template(
-            "account/login.html", **{"title": "Log In", "show_navigation": False}
-        )
-    )
+    return Response(render_template("account/login.html", **{"title": "Log In", "show_navigation": False}))
 
 
 def register_display(card_number: str, username: str, email: str) -> Response:

@@ -107,28 +107,15 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         return IIDXCannonBallers(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert dailies into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "daily_charts", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "daily_charts", "daily"):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = list(
-                set(
-                    [
-                        song.id
-                        for song in data.local.music.get_all_songs(
-                            cls.game, cls.version
-                        )
-                    ]
-                )
-            )
+            all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
             if len(all_songs) >= 3:
                 daily_songs = random.sample(all_songs, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -152,9 +139,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "daily_charts", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "daily_charts", "daily")
         return events
 
     @classmethod
@@ -390,9 +375,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root = Node.void("IIDX26shop")
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -415,9 +398,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             course.replace_int("music_2", request.child_value("music_2"))
             course.replace_int("music_3", request.child_value("music_3"))
             course.replace_bool("valid", request.child_value("valid"))
-            self.data.local.machine.put_settings(
-                machine.arcade, self.game, self.music_version, "shop_course", course
-            )
+            self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, "shop_course", course)
 
         return Node.void("IIDX26shop")
 
@@ -429,16 +410,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root = Node.void("IIDX26music")
         attempts = self.get_clear_rates()
 
-        all_songs = list(
-            set(
-                [
-                    song.id
-                    for song in self.data.local.music.get_all_songs(
-                        self.game, self.music_version
-                    )
-                ]
-            )
-        )
+        all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
         for song in all_songs:
             clears = []
             fcs = []
@@ -482,16 +454,12 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 continue
             userid = self.data.remote.user.from_extid(self.game, self.version, extid)
             if userid is not None:
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.music_version, userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
                 # Grab score data for user/rival
                 scoredata = self.make_score_struct(
                     scores,
-                    self.CLEAR_TYPE_SINGLE
-                    if cltype == self.GAME_CLTYPE_SINGLE
-                    else self.CLEAR_TYPE_DOUBLE,
+                    self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
                     rivalid,
                 )
                 for s in scoredata:
@@ -499,10 +467,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
                 # Grab most played for user/rival
                 most_played = [
-                    play[0]
-                    for play in self.data.local.music.get_most_played(
-                        self.game, self.music_version, userid, 20
-                    )
+                    play[0] for play in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
                 ]
                 if len(most_played) < 20:
                     most_played.extend([0] * (20 - len(most_played)))
@@ -529,9 +494,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
         if userid is not None:
             # Try to look up previous ghost for user
-            my_score = self.data.remote.music.get_score(
-                self.game, self.music_version, userid, musicid, chart
-            )
+            my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
             if my_score is not None:
                 mydata = Node.binary("mydata", my_score.data.get_bytes("ghost"))
                 mydata.set_attribute("score", str(my_score.points))
@@ -622,18 +585,11 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             key=lambda s: (s[1].points, s[1].timestamp),
             reverse=True,
         )
-        all_players = {
-            uid: prof
-            for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])
-        }
+        all_players = {uid: prof for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])}
 
         shop_id = ID.parse_machine_id(request.attribute("location_id"))
         if not global_scores:
-            all_scores = [
-                score
-                for score in all_scores
-                if (score[0] == userid or score[1].location == shop_id)
-            ]
+            all_scores = [score for score in all_scores if (score[0] == userid or score[1].location == shop_id)]
 
         # Find our actual index
         oldindex = None
@@ -684,9 +640,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             # Shop ranking
             shopdata = Node.void("shopdata")
             root.add_child(shopdata)
-            shopdata.set_attribute(
-                "rank", "-1" if oldindex is None else str(oldindex + 1)
-            )
+            shopdata.set_attribute("rank", "-1" if oldindex is None else str(oldindex + 1))
 
             # Grab the rank of some other players on this song
             ranklist = Node.void("ranklist")
@@ -707,11 +661,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 all_players[uid] = prof
 
             if not global_scores:
-                all_scores = [
-                    score
-                    for score in all_scores
-                    if (score[0] == userid or score[1].location == shop_id)
-                ]
+                all_scores = [score for score in all_scores if (score[0] == userid or score[1].location == shop_id)]
 
             # Find our actual index
             ourindex = None
@@ -844,13 +794,9 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         }
         for item in request.children:
             if item.name == "music_list":
-                music_list[int(item.child_value("index"))] = int(
-                    item.child_value("total_notes")
-                )
+                music_list[int(item.child_value("index"))] = int(item.child_value("total_notes"))
             if item.name == "cpu_list":
-                cpu_list[int(item.child_value("index"))] = int(
-                    item.child_value("grade_id")
-                )
+                cpu_list[int(item.child_value("index"))] = int(item.child_value("grade_id"))
         for index in range(4):
             cpu_score_list = Node.void("cpu_score_list")
             cpu_score_list.add_child(Node.s32("index", index))
@@ -991,9 +937,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.set_attribute("pflg", "0")
         return root
 
-    def handle_IIDX26pc_shopregister_request(
-        self, request: Node
-    ) -> Node:  # Not used anymore????
+    def handle_IIDX26pc_shopregister_request(self, request: Node) -> Node:  # Not used anymore????
         root = Node.void("IIDX26pc")
         return root
 
@@ -1115,9 +1059,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, "NO PLAY")
         now_clear_string = clear_map.get(now_clear, "NO PLAY")
         # let's get the song info first
-        song = self.data.local.music.get_song(
-            self.game, self.music_version, music_id, self.game_to_db_chart(class_id)
-        )
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get("notecount", 0)
         # Construct the dictionary for the broadcast
         card_data = {
@@ -1239,25 +1181,15 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 root.add_child(arena_cpu_define)
                 arena_cpu_define.add_child(Node.s32("play_style", playstyle))
                 arena_cpu_define.add_child(Node.s32("arena_class", arena_class))
-                arena_cpu_define.add_child(
-                    Node.s32("grade_id", cpu_grades[arena_class])
-                )
-                arena_cpu_define.add_child(
-                    Node.s32("low_music_difficult", cpu_low_diff[arena_class])
-                )
-                arena_cpu_define.add_child(
-                    Node.s32("high_music_difficult", cpu_high_diff[arena_class])
-                )
-                arena_cpu_define.add_child(
-                    Node.bool("is_leggendaria", arena_class >= 13)
-                )
+                arena_cpu_define.add_child(Node.s32("grade_id", cpu_grades[arena_class]))
+                arena_cpu_define.add_child(Node.s32("low_music_difficult", cpu_low_diff[arena_class]))
+                arena_cpu_define.add_child(Node.s32("high_music_difficult", cpu_high_diff[arena_class]))
+                arena_cpu_define.add_child(Node.bool("is_leggendaria", arena_class >= 13))
             for matching_class in range(21):
                 matching_class_range = Node.void("matching_class_range")
                 root.add_child(matching_class_range)
                 matching_class_range.add_child(Node.s32("play_style", playstyle))
-                matching_class_range.add_child(
-                    Node.s32("matching_class", matching_class)
-                )
+                matching_class_range.add_child(Node.s32("matching_class", matching_class))
                 matching_class_range.add_child(Node.s32("low_arena_class", 1))
                 matching_class_range.add_child(Node.s32("high_arena_class", 20))
         return root
@@ -1330,12 +1262,8 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         pcdata.set_attribute("d_camera_layout", str(profile.get_int("d_camera_layout")))
         pcdata.set_attribute("s_ghost_score", str(profile.get_int("s_ghost_score")))
         pcdata.set_attribute("d_ghost_score", str(profile.get_int("d_ghost_score")))
-        pcdata.set_attribute(
-            "s_tsujigiri_disp", str(profile.get_int("s_tsujigiri_disp"))
-        )
-        pcdata.set_attribute(
-            "d_tsujigiri_disp", str(profile.get_int("d_tsujigiri_disp"))
-        )
+        pcdata.set_attribute("s_tsujigiri_disp", str(profile.get_int("s_tsujigiri_disp")))
+        pcdata.set_attribute("d_tsujigiri_disp", str(profile.get_int("d_tsujigiri_disp")))
 
         # KAC stuff
         # kac_entry_info = Node.void('kac_entry_info')
@@ -1363,15 +1291,9 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             secret.add_child(Node.s64_array("flg2", [-1, -1, -1]))
             secret.add_child(Node.s64_array("flg3", [-1, -1, -1]))
         else:
-            secret.add_child(
-                Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3))
-            )
-            secret.add_child(
-                Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3))
-            )
-            secret.add_child(
-                Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3))
-            )
+            secret.add_child(Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3)))
+            secret.add_child(Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3)))
+            secret.add_child(Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3)))
 
         # Favorites
         for folder in ["favorite1", "favorite2", "favorite3"]:
@@ -1420,21 +1342,11 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         qpro_secrete_dict = profile.get_dict("qpro_secret")
         qpro_secret = Node.void("qpro_secret")
         root.add_child(qpro_secret)
-        qpro_secret.add_child(
-            Node.s64_array("head", qpro_secrete_dict.get_int_array("head", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("hair", qpro_secrete_dict.get_int_array("hair", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("face", qpro_secrete_dict.get_int_array("face", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("body", qpro_secrete_dict.get_int_array("body", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("hand", qpro_secrete_dict.get_int_array("hand", 5))
-        )
+        qpro_secret.add_child(Node.s64_array("head", qpro_secrete_dict.get_int_array("head", 5)))
+        qpro_secret.add_child(Node.s64_array("hair", qpro_secrete_dict.get_int_array("hair", 5)))
+        qpro_secret.add_child(Node.s64_array("face", qpro_secrete_dict.get_int_array("face", 5)))
+        qpro_secret.add_child(Node.s64_array("body", qpro_secrete_dict.get_int_array("body", 5)))
+        qpro_secret.add_child(Node.s64_array("hand", qpro_secrete_dict.get_int_array("hand", 5)))
 
         # DAN rankings
         grade = Node.void("grade")
@@ -1457,9 +1369,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 )
             ),
         )
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for rank in achievements:
             if rank.type == self.DAN_RANKING_SINGLE:
                 grade.add_child(
@@ -1604,12 +1514,8 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             dj_rank_node = Node.void("dj_rank")
             root.add_child(dj_rank_node)
             dj_rank_node.set_attribute("style", str(dj_rank.id))
-            dj_rank_node.add_child(
-                Node.s32_array("rank", dj_rank.data.get_int_array("rank", 15))
-            )
-            dj_rank_node.add_child(
-                Node.s32_array("point", dj_rank.data.get_int_array("point", 15))
-            )
+            dj_rank_node.add_child(Node.s32_array("rank", dj_rank.data.get_int_array("rank", 15)))
+            dj_rank_node.add_child(Node.s32_array("point", dj_rank.data.get_int_array("point", 15)))
 
         dj_rank_ranking_node = Node.void("dj_rank_ranking")
         root.add_child(dj_rank_ranking_node)
@@ -1655,25 +1561,13 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         event1_dict = profile.get_dict("event1")
         event1 = Node.void("event1")
         root.add_child(event1)
-        event1.set_attribute(
-            "event_play_num", str(event1_dict.get_int("event_play_num"))
-        )
+        event1.set_attribute("event_play_num", str(event1_dict.get_int("event_play_num")))
         event1.set_attribute("fragment_num", str(event1_dict.get_int("fragment_num")))
-        event1.set_attribute(
-            "last_select_map_id", str(event1_dict.get_int("last_select_map"))
-        )
-        event1.set_attribute(
-            "read_tips_list", str(event1_dict.get_int("read_tips_list"))
-        )
-        event1.set_attribute(
-            "continuous_correct", str(event1_dict.get_int("continuous_correct"))
-        )
-        event1.set_attribute(
-            "bookshelf_release_num", str(event1_dict.get_int("bookshelf_release_num"))
-        )
-        event1.add_child(
-            Node.binary("quiz_control_list", event1_dict.get_bytes("quiz_control_list"))
-        )
+        event1.set_attribute("last_select_map_id", str(event1_dict.get_int("last_select_map")))
+        event1.set_attribute("read_tips_list", str(event1_dict.get_int("read_tips_list")))
+        event1.set_attribute("continuous_correct", str(event1_dict.get_int("continuous_correct")))
+        event1.set_attribute("bookshelf_release_num", str(event1_dict.get_int("bookshelf_release_num")))
+        event1.add_child(Node.binary("quiz_control_list", event1_dict.get_bytes("quiz_control_list")))
         for map_data in achievements:
             if map_data.type != "map_data":
                 continue
@@ -1681,9 +1575,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             map_data_node = Node.void("map_data")
             event1.add_child(map_data_node)
             map_data_node.set_attribute("map_id", str(map_data.id))
-            map_data_node.set_attribute(
-                "play_num", str(map_data.data.get_int("play_num"))
-            )
+            map_data_node.set_attribute("play_num", str(map_data.data.get_int("play_num")))
             map_data_node.set_attribute(
                 "last_select_route_id",
                 str(map_data.data.get_int("last_select_route_id")),
@@ -1692,14 +1584,8 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 "bookshelf_release_num",
                 str(map_data.data.get_int("bookshelf_release_num")),
             )
-            map_data_node.add_child(
-                Node.bool("is_clear", map_data.data.get_bool("is_clear"))
-            )
-            map_data_node.add_child(
-                Node.binary(
-                    "map_route_damage", map_data.data.get_bytes("map_route_damage")
-                )
-            )
+            map_data_node.add_child(Node.bool("is_clear", map_data.data.get_bool("is_clear")))
+            map_data_node.add_child(Node.binary("map_route_damage", map_data.data.get_bytes("map_route_damage")))
 
         # DELABITY LABORATORY event
         event2_dict = profile.get_dict("event2")
@@ -1707,27 +1593,13 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.add_child(event2)
         event2.set_attribute("play_num", str(event2_dict.get_int("play_num")))
         event2.set_attribute("delabity", str(event2_dict.get_int("delabity")))
-        event2.set_attribute(
-            "floor_0_last_area", str(event2_dict.get_int("floor_0_last_area"))
-        )
-        event2.set_attribute(
-            "floor_1_last_area", str(event2_dict.get_int("floor_1_last_area"))
-        )
-        event2.set_attribute(
-            "floor_2_last_area", str(event2_dict.get_int("floor_2_last_area"))
-        )
-        event2.set_attribute(
-            "floor_3_last_area", str(event2_dict.get_int("floor_3_last_area"))
-        )
-        event2.set_attribute(
-            "floor_4_last_area", str(event2_dict.get_int("floor_4_last_area"))
-        )
-        event2.set_attribute(
-            "floor_clear_flg_list", str(event2_dict.get_int("floor_clear_flg_list"))
-        )
-        event2.set_attribute(
-            "last_select_floor", str(event2_dict.get_int("last_select_floor"))
-        )
+        event2.set_attribute("floor_0_last_area", str(event2_dict.get_int("floor_0_last_area")))
+        event2.set_attribute("floor_1_last_area", str(event2_dict.get_int("floor_1_last_area")))
+        event2.set_attribute("floor_2_last_area", str(event2_dict.get_int("floor_2_last_area")))
+        event2.set_attribute("floor_3_last_area", str(event2_dict.get_int("floor_3_last_area")))
+        event2.set_attribute("floor_4_last_area", str(event2_dict.get_int("floor_4_last_area")))
+        event2.set_attribute("floor_clear_flg_list", str(event2_dict.get_int("floor_clear_flg_list")))
+        event2.set_attribute("last_select_floor", str(event2_dict.get_int("last_select_floor")))
         event2.set_attribute("tips_list", str(event2_dict.get_int("tips_list")))
 
         areas = self.data.local.user.get_achievements(self.game, self.version, userid)
@@ -1738,45 +1610,25 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             event2.add_child(area_data)
             area_data.set_attribute("area_id", str(area.id))
             area_data.set_attribute("floor_id", str(area.data.get_int("floor_id")))
-            area_data.set_attribute(
-                "last_select_note", str(area.data.get_int("last_select_note"))
-            )
-            area_data.set_attribute(
-                "normal_play_num", str(area.data.get_int("normal_play_num"))
-            )
-            area_data.set_attribute(
-                "hyper_play_num", str(area.data.get_int("hyper_play_num"))
-            )
-            area_data.set_attribute(
-                "another_play_num", str(area.data.get_int("another_play_num"))
-            )
-            area_data.set_attribute(
-                "area_clear_flg_list", str(area.data.get_int("area_clear_flg_list"))
-            )
-            area_data.set_attribute(
-                "normal_grade_point", str(area.data.get_int("normal_grade_point"))
-            )
-            area_data.set_attribute(
-                "hyper_grade_point", str(area.data.get_int("hyper_grade_point"))
-            )
-            area_data.set_attribute(
-                "another_grade_point", str(area.data.get_int("another_grade_point"))
-            )
+            area_data.set_attribute("last_select_note", str(area.data.get_int("last_select_note")))
+            area_data.set_attribute("normal_play_num", str(area.data.get_int("normal_play_num")))
+            area_data.set_attribute("hyper_play_num", str(area.data.get_int("hyper_play_num")))
+            area_data.set_attribute("another_play_num", str(area.data.get_int("another_play_num")))
+            area_data.set_attribute("area_clear_flg_list", str(area.data.get_int("area_clear_flg_list")))
+            area_data.set_attribute("normal_grade_point", str(area.data.get_int("normal_grade_point")))
+            area_data.set_attribute("hyper_grade_point", str(area.data.get_int("hyper_grade_point")))
+            area_data.set_attribute("another_grade_point", str(area.data.get_int("another_grade_point")))
 
         tonyutsu = Node.void("tonyutsu")
         tonyutsu_dict = profile.get_dict("tonyutsu")
-        tonyutsu.set_attribute(
-            "platinum_pass", str(tonyutsu_dict.get_int("platiunum_pass"))
-        )
+        tonyutsu.set_attribute("platinum_pass", str(tonyutsu_dict.get_int("platiunum_pass")))
         tonyutsu.set_attribute("black_pass", str(tonyutsu_dict.get_int("black_pass")))
 
         extra_boss_event_dict = profile.get_dict("extra_boss_event")
         extra_boss_event = Node.void("extra_boss_event")
         root.add_child(extra_boss_event)
         for i in range(9):
-            extra_boss_event.set_attribute(
-                f"orb_{i}", str(extra_boss_event_dict.get_int(f"orb_{i}"))
-            )
+            extra_boss_event.set_attribute(f"orb_{i}", str(extra_boss_event_dict.get_int(f"orb_{i}")))
 
         # Step up mode
         step_dict = profile.get_dict("step")
@@ -1784,49 +1636,25 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         root.add_child(step)
         step.set_attribute("enemy_damage", str(step_dict.get_int("enemy_damage")))
         step.set_attribute("progress", str(step_dict.get_int("progress")))
-        step.add_child(
-            Node.bool("is_track_ticket", step_dict.get_bool("is_track_ticket"))
-        )
+        step.add_child(Node.bool("is_track_ticket", step_dict.get_bool("is_track_ticket")))
         step.set_attribute("sp_level", str(step_dict.get_int("sp_level")))
         step.set_attribute("dp_level", str(step_dict.get_int("dp_level")))
-        step.set_attribute(
-            "sp_mission_point", str(step_dict.get_int("sp_mission_point"))
-        )
-        step.set_attribute(
-            "dp_mission_point", str(step_dict.get_int("dp_mission_point"))
-        )
-        step.set_attribute(
-            "sp_dj_mission_level", str(step_dict.get_int("sp_dj_mission_level@"))
-        )
-        step.set_attribute(
-            "dp_dj_mission_level", str(step_dict.get_int("dp_dj_mission_level@"))
-        )
-        step.set_attribute(
-            "sp_clear_mission_level", str(step_dict.get_int("sp_clear_mission_level"))
-        )
-        step.set_attribute(
-            "dp_clear_mission_level", str(step_dict.get_int("dp_clear_mission_level"))
-        )
-        step.set_attribute(
-            "sp_dj_mission_clear", str(step_dict.get_int("sp_dj_mission_clear"))
-        )
-        step.set_attribute(
-            "dp_dj_mission_clear", str(step_dict.get_int("dp_dj_mission_clear"))
-        )
-        step.set_attribute(
-            "sp_clear_mission_clear", str(step_dict.get_int("sp_clear_mission_clear"))
-        )
-        step.set_attribute(
-            "dp_clear_mission_clear", str(step_dict.get_int("dp_clear_mission_clear"))
-        )
+        step.set_attribute("sp_mission_point", str(step_dict.get_int("sp_mission_point")))
+        step.set_attribute("dp_mission_point", str(step_dict.get_int("dp_mission_point")))
+        step.set_attribute("sp_dj_mission_level", str(step_dict.get_int("sp_dj_mission_level@")))
+        step.set_attribute("dp_dj_mission_level", str(step_dict.get_int("dp_dj_mission_level@")))
+        step.set_attribute("sp_clear_mission_level", str(step_dict.get_int("sp_clear_mission_level")))
+        step.set_attribute("dp_clear_mission_level", str(step_dict.get_int("dp_clear_mission_level")))
+        step.set_attribute("sp_dj_mission_clear", str(step_dict.get_int("sp_dj_mission_clear")))
+        step.set_attribute("dp_dj_mission_clear", str(step_dict.get_int("dp_dj_mission_clear")))
+        step.set_attribute("sp_clear_mission_clear", str(step_dict.get_int("sp_clear_mission_clear")))
+        step.set_attribute("dp_clear_mission_clear", str(step_dict.get_int("dp_clear_mission_clear")))
         step.set_attribute("sp_mplay", str(step_dict.get_int("sp_mplay")))
         step.set_attribute("dp_mplay", str(step_dict.get_int("dp_mplay")))
         step.set_attribute("tips_read_list", str(step_dict.get_int("tips_read_list")))
 
         # Daily recommendations
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "dailies"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "dailies")
         if entry is not None:
             packinfo = Node.void("packinfo")
             root.add_child(packinfo)
@@ -1849,36 +1677,24 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             achievement_node.set_attribute("pack", "0")
             achievement_node.set_attribute("pack_comp", "0")
         else:
-            daily_played = self.data.local.user.get_achievement(
-                self.game, self.version, userid, pack_id, "daily"
-            )
+            daily_played = self.data.local.user.get_achievement(self.game, self.version, userid, pack_id, "daily")
             if daily_played is None:
                 daily_played = ValidatedDict()
-            achievement_node.set_attribute(
-                "pack", str(daily_played.get_int("pack_flg"))
-            )
-            achievement_node.set_attribute(
-                "pack_comp", str(daily_played.get_int("pack_comp"))
-            )
+            achievement_node.set_attribute("pack", str(daily_played.get_int("pack_flg")))
+            achievement_node.set_attribute("pack_comp", str(daily_played.get_int("pack_comp")))
 
         # Weeklies
-        achievement_node.set_attribute(
-            "last_weekly", str(profile.get_int("last_weekly"))
-        )
+        achievement_node.set_attribute("last_weekly", str(profile.get_int("last_weekly")))
         achievement_node.set_attribute("weekly_num", str(profile.get_int("weekly_num")))
 
         # Prefecture visit flag
         achievement_node.set_attribute("visit_flg", str(profile.get_int("visit_flg")))
 
         # Number of rivals beaten
-        achievement_node.set_attribute(
-            "rival_crush", str(profile.get_int("rival_crush"))
-        )
+        achievement_node.set_attribute("rival_crush", str(profile.get_int("rival_crush")))
 
         # Tran medals
-        achievement_node.add_child(
-            Node.s64_array("trophy", profile.get_int_array("trophy", 20))
-        )
+        achievement_node.add_child(Node.s64_array("trophy", profile.get_int_array("trophy", 20)))
 
         # Track deller
         deller = Node.void("deller")
@@ -1902,9 +1718,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 detail.set_attribute("course_id", str(rank.id))
                 detail.set_attribute("n_point", str(rank.data.get_int("normal_points")))
                 detail.set_attribute("h_point", str(rank.data.get_int("hyper_points")))
-                detail.set_attribute(
-                    "a_point", str(rank.data.get_int("another_points"))
-                )
+                detail.set_attribute("a_point", str(rank.data.get_int("another_points")))
 
         nostalgia = Node.void("nostalgia_open")
         root.add_child(nostalgia)
@@ -1918,9 +1732,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -1972,20 +1784,12 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         newprofile.replace_int("d_gauge_disp", int(request.attribute("d_gauge_disp")))
         newprofile.replace_int("s_lane_brignt", int(request.attribute("s_lane_brignt")))
         newprofile.replace_int("d_lane_brignt", int(request.attribute("d_lane_brignt")))
-        newprofile.replace_int(
-            "s_camera_layout", int(request.attribute("s_camera_layout"))
-        )
-        newprofile.replace_int(
-            "d_camera_layout", int(request.attribute("d_camera_layout"))
-        )
+        newprofile.replace_int("s_camera_layout", int(request.attribute("s_camera_layout")))
+        newprofile.replace_int("d_camera_layout", int(request.attribute("d_camera_layout")))
         newprofile.replace_int("s_ghost_score", int(request.attribute("s_ghost_score")))
         newprofile.replace_int("d_ghost_score", int(request.attribute("d_ghost_score")))
-        newprofile.replace_int(
-            "s_tsujigiri_disp", int(request.attribute("s_tsujigiri_disp"))
-        )
-        newprofile.replace_int(
-            "d_tsujigiri_disp", int(request.attribute("d_tsujigiri_disp"))
-        )
+        newprofile.replace_int("s_tsujigiri_disp", int(request.attribute("s_tsujigiri_disp")))
+        newprofile.replace_int("d_tsujigiri_disp", int(request.attribute("d_tsujigiri_disp")))
         newprofile.replace_int("s_lift", int(request.attribute("s_lift")))
         newprofile.replace_int("d_lift", int(request.attribute("d_lift")))
         newprofile.replace_int("mode", int(request.attribute("mode")))
@@ -2014,15 +1818,9 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         # Basic achievements
         achievements = request.child("achievements")
         if achievements is not None:
-            newprofile.replace_int(
-                "visit_flg", int(achievements.attribute("visit_flg"))
-            )
-            newprofile.replace_int(
-                "last_weekly", int(achievements.attribute("last_weekly"))
-            )
-            newprofile.replace_int(
-                "weekly_num", int(achievements.attribute("weekly_num"))
-            )
+            newprofile.replace_int("visit_flg", int(achievements.attribute("visit_flg")))
+            newprofile.replace_int("last_weekly", int(achievements.attribute("last_weekly")))
+            newprofile.replace_int("weekly_num", int(achievements.attribute("weekly_num")))
 
             pack_id = int(achievements.attribute("pack_id"))
             if pack_id > 0:
@@ -2046,9 +1844,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         # Deller saving
         deller = request.child("deller")
         if deller is not None:
-            newprofile.replace_int(
-                "deller", newprofile.get_int("deller") + int(deller.attribute("deller"))
-            )
+            newprofile.replace_int("deller", newprofile.get_int("deller") + int(deller.attribute("deller")))
 
         # Secret course expert point saving
         expert_point = request.child("expert_point")
@@ -2112,22 +1908,14 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 for i in range(self.FAVORITE_LIST_LENGTH):
                     singles.append(
                         {
-                            "id": struct.unpack(
-                                "<L", single_music_bin[(i * 4) : ((i + 1) * 4)]
-                            )[0],
-                            "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[
-                                0
-                            ],
+                            "id": struct.unpack("<L", single_music_bin[(i * 4) : ((i + 1) * 4)])[0],
+                            "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[0],
                         }
                     )
                     doubles.append(
                         {
-                            "id": struct.unpack(
-                                "<L", double_music_bin[(i * 4) : ((i + 1) * 4)]
-                            )[0],
-                            "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[
-                                0
-                            ],
+                            "id": struct.unpack("<L", double_music_bin[(i * 4) : ((i + 1) * 4)])[0],
+                            "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[0],
                         }
                     )
 
@@ -2172,21 +1960,11 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             event1_dict.increment_int("event_play_num")
             last_select_map = int(event1.attribute("last_select_map_id"))
             event1_dict.replace_int("play_gift", int(event1.attribute("play_gift")))
-            event1_dict.replace_int(
-                "fragment_num", int(event1.attribute("fragment_num"))
-            )
-            event1_dict.replace_int(
-                "continuous_correct", int(event1.attribute("continuous_correct"))
-            )
-            event1_dict.replace_int(
-                "bookshelf_release_num", int(event1.attribute("bookshelf_release_num"))
-            )
-            event1_dict.replace_int(
-                "read_tips_list", int(event1.attribute("read_tips_list"))
-            )
-            event1_dict.replace_bytes(
-                "quiz_control_list", event1.child_value("quiz_control_list")
-            )
+            event1_dict.replace_int("fragment_num", int(event1.attribute("fragment_num")))
+            event1_dict.replace_int("continuous_correct", int(event1.attribute("continuous_correct")))
+            event1_dict.replace_int("bookshelf_release_num", int(event1.attribute("bookshelf_release_num")))
+            event1_dict.replace_int("read_tips_list", int(event1.attribute("read_tips_list")))
+            event1_dict.replace_bytes("quiz_control_list", event1.child_value("quiz_control_list"))
             # Save any map data, also see if we need to update last_select_map
             for map_data in event1.children:
                 if map_data.name != "map_data":
@@ -2227,27 +2005,13 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             event2_dict = newprofile.get_dict("event2")
             event2_dict.replace_int("play_num", int(event2.attribute("play_num")))
             event2_dict.replace_int("delabity", int(event2.attribute("delabity")))
-            event2_dict.replace_int(
-                "floor_0_last_area", int(event2.attribute("floor_0_last_area"))
-            )
-            event2_dict.replace_int(
-                "floor_1_last_area", int(event2.attribute("floor_1_last_area"))
-            )
-            event2_dict.replace_int(
-                "floor_2_last_area", int(event2.attribute("floor_2_last_area"))
-            )
-            event2_dict.replace_int(
-                "floor_3_last_area", int(event2.attribute("floor_3_last_area"))
-            )
-            event2_dict.replace_int(
-                "floor_4_last_area", int(event2.attribute("floor_4_last_area"))
-            )
-            event2_dict.replace_int(
-                "floor_clear_flg_list", int(event2.attribute("floor_clear_flg_list"))
-            )
-            event2_dict.replace_int(
-                "last_select_floor", int(event2.attribute("last_select_floor"))
-            )
+            event2_dict.replace_int("floor_0_last_area", int(event2.attribute("floor_0_last_area")))
+            event2_dict.replace_int("floor_1_last_area", int(event2.attribute("floor_1_last_area")))
+            event2_dict.replace_int("floor_2_last_area", int(event2.attribute("floor_2_last_area")))
+            event2_dict.replace_int("floor_3_last_area", int(event2.attribute("floor_3_last_area")))
+            event2_dict.replace_int("floor_4_last_area", int(event2.attribute("floor_4_last_area")))
+            event2_dict.replace_int("floor_clear_flg_list", int(event2.attribute("floor_clear_flg_list")))
+            event2_dict.replace_int("last_select_floor", int(event2.attribute("last_select_floor")))
             event2_dict.replace_int("tips_list", int(event2.attribute("tips_list")))
 
             for area_data in event2.children:
@@ -2263,26 +2027,14 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                     f"area_data_floor_{floor_id}",  # Save floor_id twice since the game seems to key by both
                     {
                         "floor_id": floor_id,
-                        "last_select_note": int(
-                            area_data.attribute("last_select_note")
-                        ),
+                        "last_select_note": int(area_data.attribute("last_select_note")),
                         "normal_play_num": int(area_data.attribute("normal_play_num")),
                         "hyper_play_num": int(area_data.attribute("hyper_play_num")),
-                        "another_play_num": int(
-                            area_data.attribute("another_play_num")
-                        ),
-                        "area_clear_flg_list": int(
-                            area_data.attribute("area_clear_flg_list")
-                        ),
-                        "normal_grade_point": int(
-                            area_data.attribute("normal_grade_point")
-                        ),
-                        "hyper_grade_point": int(
-                            area_data.attribute("hyper_grade_point")
-                        ),
-                        "another_grade_point": int(
-                            area_data.attribute("another_grade_point")
-                        ),
+                        "another_play_num": int(area_data.attribute("another_play_num")),
+                        "area_clear_flg_list": int(area_data.attribute("area_clear_flg_list")),
+                        "normal_grade_point": int(area_data.attribute("normal_grade_point")),
+                        "hyper_grade_point": int(area_data.attribute("hyper_grade_point")),
+                        "another_grade_point": int(area_data.attribute("another_grade_point")),
                     },
                 )
 
@@ -2292,9 +2044,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         if extra_boss_event is not None:
             extra_boss_event_dict = newprofile.get_dict("extra_boss_event")
             for i in range(9):
-                extra_boss_event_dict.replace_int(
-                    f"orb_{i}", int(extra_boss_event.attribute(f"orb_{i}"))
-                )
+                extra_boss_event_dict.replace_int(f"orb_{i}", int(extra_boss_event.attribute(f"orb_{i}")))
             newprofile.replace_dict("extra_boss_event", extra_boss_event_dict)
 
         # Step-up mode
@@ -2303,25 +2053,15 @@ class IIDXRootage(IIDXCourse, IIDXBase):
             step_dict = newprofile.get_dict("step")
             step_dict.replace_int("enemy_damage", int(step.attribute("enemy_damage")))
             step_dict.replace_int("progress", int(step.attribute("progress")))
-            step_dict.replace_bool(
-                "is_track_ticket", bool(step.child_value("is_track_ticket"))
-            )
+            step_dict.replace_bool("is_track_ticket", bool(step.child_value("is_track_ticket")))
             step_dict.replace_int("sp_level", int(step.attribute("sp_level")))
             step_dict.replace_int("dp_level", int(step.attribute("dp_level")))
             step_dict.replace_int("sp_mplay", int(step.attribute("sp_mplay")))
             step_dict.replace_int("dp_mplay", int(step.attribute("dp_mplay")))
-            step_dict.replace_int(
-                "sp_mission_point", str(step_dict.get_int("sp_mission_point"))
-            )
-            step_dict.replace_int(
-                "dp_mission_point", str(step_dict.get_int("dp_mission_point"))
-            )
-            step_dict.replace_int(
-                "sp_dj_mission_level", str(step_dict.get_int("sp_dj_mission_level@"))
-            )
-            step_dict.replace_int(
-                "dp_dj_mission_level", str(step_dict.get_int("dp_dj_mission_level@"))
-            )
+            step_dict.replace_int("sp_mission_point", str(step_dict.get_int("sp_mission_point")))
+            step_dict.replace_int("dp_mission_point", str(step_dict.get_int("dp_mission_point")))
+            step_dict.replace_int("sp_dj_mission_level", str(step_dict.get_int("sp_dj_mission_level@")))
+            step_dict.replace_int("dp_dj_mission_level", str(step_dict.get_int("dp_dj_mission_level@")))
             step_dict.replace_int(
                 "sp_clear_mission_level",
                 str(step_dict.get_int("sp_clear_mission_level")),
@@ -2330,12 +2070,8 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 "dp_clear_mission_level",
                 str(step_dict.get_int("dp_clear_mission_level")),
             )
-            step_dict.replace_int(
-                "sp_dj_mission_clear", str(step_dict.get_int("sp_dj_mission_clear"))
-            )
-            step_dict.replace_int(
-                "dp_dj_mission_clear", str(step_dict.get_int("dp_dj_mission_clear"))
-            )
+            step_dict.replace_int("sp_dj_mission_clear", str(step_dict.get_int("sp_dj_mission_clear")))
+            step_dict.replace_int("dp_dj_mission_clear", str(step_dict.get_int("dp_dj_mission_clear")))
             step_dict.replace_int(
                 "sp_clear_mission_clear",
                 str(step_dict.get_int("sp_clear_mission_clear")),
@@ -2344,9 +2080,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
                 "dp_clear_mission_clear",
                 str(step_dict.get_int("dp_clear_mission_clear")),
             )
-            step_dict.replace_int(
-                "tips_read_list", str(step_dict.get_int("tips_read_list"))
-            )
+            step_dict.replace_int("tips_read_list", str(step_dict.get_int("tips_read_list")))
             newprofile.replace_dict("step", step_dict)
 
         # QPro equip in step-up mode
@@ -2364,21 +2098,11 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         qpro_secret = request.child("qpro_secret")
         if qpro_secret is not None:
             qpro_secret_dict = newprofile.get_dict("qpro_secret")
-            qpro_secret_dict.replace_int_array(
-                "head", 5, qpro_secret.child_value("head")
-            )
-            qpro_secret_dict.replace_int_array(
-                "hair", 5, qpro_secret.child_value("hair")
-            )
-            qpro_secret_dict.replace_int_array(
-                "face", 5, qpro_secret.child_value("face")
-            )
-            qpro_secret_dict.replace_int_array(
-                "body", 5, qpro_secret.child_value("body")
-            )
-            qpro_secret_dict.replace_int_array(
-                "hand", 5, qpro_secret.child_value("hand")
-            )
+            qpro_secret_dict.replace_int_array("head", 5, qpro_secret.child_value("head"))
+            qpro_secret_dict.replace_int_array("hair", 5, qpro_secret.child_value("hair"))
+            qpro_secret_dict.replace_int_array("face", 5, qpro_secret.child_value("face"))
+            qpro_secret_dict.replace_int_array("body", 5, qpro_secret.child_value("body"))
+            qpro_secret_dict.replace_int_array("hand", 5, qpro_secret.child_value("hand"))
             newprofile.replace_dict("qpro_secret", qpro_secret_dict)
 
         # Orb data saving
@@ -2394,9 +2118,7 @@ class IIDXRootage(IIDXCourse, IIDXBase):
         tonyutsu = request.child("tonyutsu")
         if tonyutsu is not None:
             tonyutsu_dict = newprofile.get_dict("tonyutsu")
-            tonyutsu_dict.replace_int(
-                "platinum_pass", tonyutsu.attribute("platinum_pass")
-            )
+            tonyutsu_dict.replace_int("platinum_pass", tonyutsu.attribute("platinum_pass"))
             tonyutsu_dict.replace_int("black_pass", tonyutsu.attribute("black_pass"))
 
         # Keep track of play statistics across all mixes

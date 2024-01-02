@@ -255,9 +255,7 @@ class Matrix:
         return new
 
     @staticmethod
-    def affine(
-        *, a: float, b: float, c: float, d: float, tx: float, ty: float
-    ) -> "Matrix":
+    def affine(*, a: float, b: float, c: float, d: float, tx: float, ty: float) -> "Matrix":
         return Matrix(
             a11=a,
             a12=b,
@@ -414,27 +412,15 @@ class Matrix:
 
     @property
     def xscale(self) -> float:
-        return math.sqrt(
-            (self.__a11 * self.__a11)
-            + (self.__a12 * self.__a12)
-            + (self.__a13 * self.__a13)
-        )
+        return math.sqrt((self.__a11 * self.__a11) + (self.__a12 * self.__a12) + (self.__a13 * self.__a13))
 
     @property
     def yscale(self) -> float:
-        return math.sqrt(
-            (self.__a21 * self.__a21)
-            + (self.__a22 * self.__a22)
-            + (self.__a23 * self.__a23)
-        )
+        return math.sqrt((self.__a21 * self.__a21) + (self.__a22 * self.__a22) + (self.__a23 * self.__a23))
 
     @property
     def zscale(self) -> float:
-        return math.sqrt(
-            (self.__a31 * self.__a31)
-            + (self.__a32 * self.__a32)
-            + (self.__a33 * self.__a33)
-        )
+        return math.sqrt((self.__a31 * self.__a31) + (self.__a32 * self.__a32) + (self.__a33 * self.__a33))
 
     @property
     def a(self) -> float:
@@ -613,18 +599,9 @@ class Matrix:
 
     def multiply_point(self, point: Point) -> Point:
         return Point(
-            x=(self.__a11 * point.x)
-            + (self.__a21 * point.y)
-            + (self.__a31 * point.z)
-            + self.__a41,
-            y=(self.__a12 * point.x)
-            + (self.__a22 * point.y)
-            + (self.__a32 * point.z)
-            + self.__a42,
-            z=(self.__a13 * point.x)
-            + (self.__a23 * point.y)
-            + (self.__a33 * point.z)
-            + self.__a43,
+            x=(self.__a11 * point.x) + (self.__a21 * point.y) + (self.__a31 * point.z) + self.__a41,
+            y=(self.__a12 * point.x) + (self.__a22 * point.y) + (self.__a32 * point.z) + self.__a42,
+            z=(self.__a13 * point.x) + (self.__a23 * point.y) + (self.__a33 * point.z) + self.__a43,
         )
 
     def translate(self, point: Point) -> "Matrix":
@@ -646,45 +623,18 @@ class Matrix:
 
     def multiply(self, other: "Matrix") -> "Matrix":
         return Matrix(
-            a11=self.__a11 * other.__a11
-            + self.__a12 * other.__a21
-            + self.__a13 * other.__a31,
-            a12=self.__a11 * other.__a12
-            + self.__a12 * other.__a22
-            + self.__a13 * other.__a32,
-            a13=self.__a11 * other.__a13
-            + self.__a12 * other.__a23
-            + self.__a13 * other.__a33,
-            a21=self.__a21 * other.__a11
-            + self.__a22 * other.__a21
-            + self.__a23 * other.__a31,
-            a22=self.__a21 * other.__a12
-            + self.__a22 * other.__a22
-            + self.__a23 * other.__a32,
-            a23=self.__a21 * other.__a13
-            + self.__a22 * other.__a23
-            + self.__a23 * other.__a33,
-            a31=self.__a31 * other.__a11
-            + self.__a32 * other.__a21
-            + self.__a33 * other.__a31,
-            a32=self.__a31 * other.__a12
-            + self.__a32 * other.__a22
-            + self.__a33 * other.__a32,
-            a33=self.__a31 * other.__a13
-            + self.__a32 * other.__a23
-            + self.__a33 * other.__a33,
-            a41=self.__a41 * other.__a11
-            + self.__a42 * other.__a21
-            + self.__a43 * other.__a31
-            + other.__a41,
-            a42=self.__a41 * other.__a12
-            + self.__a42 * other.__a22
-            + self.__a43 * other.__a32
-            + other.__a42,
-            a43=self.__a41 * other.__a13
-            + self.__a42 * other.__a23
-            + self.__a43 * other.__a33
-            + other.__a43,
+            a11=self.__a11 * other.__a11 + self.__a12 * other.__a21 + self.__a13 * other.__a31,
+            a12=self.__a11 * other.__a12 + self.__a12 * other.__a22 + self.__a13 * other.__a32,
+            a13=self.__a11 * other.__a13 + self.__a12 * other.__a23 + self.__a13 * other.__a33,
+            a21=self.__a21 * other.__a11 + self.__a22 * other.__a21 + self.__a23 * other.__a31,
+            a22=self.__a21 * other.__a12 + self.__a22 * other.__a22 + self.__a23 * other.__a32,
+            a23=self.__a21 * other.__a13 + self.__a22 * other.__a23 + self.__a23 * other.__a33,
+            a31=self.__a31 * other.__a11 + self.__a32 * other.__a21 + self.__a33 * other.__a31,
+            a32=self.__a31 * other.__a12 + self.__a32 * other.__a22 + self.__a33 * other.__a32,
+            a33=self.__a31 * other.__a13 + self.__a32 * other.__a23 + self.__a33 * other.__a33,
+            a41=self.__a41 * other.__a11 + self.__a42 * other.__a21 + self.__a43 * other.__a31 + other.__a41,
+            a42=self.__a41 * other.__a12 + self.__a42 * other.__a22 + self.__a43 * other.__a32 + other.__a42,
+            a43=self.__a41 * other.__a13 + self.__a42 * other.__a23 + self.__a43 * other.__a33 + other.__a43,
         )
 
     def inverse(self) -> "Matrix":
@@ -704,9 +654,7 @@ class Matrix:
             [self.__a31, self.__a32, self.__a33, 0.0],
             [self.__a41, self.__a42, self.__a43, 1.0],
         ]
-        inverse: List[List[float]] = [
-            [1 if row == col else 0 for col in range(size)] for row in range(size)
-        ]
+        inverse: List[List[float]] = [[1 if row == col else 0 for col in range(size)] for row in range(size)]
 
         for col in range(size):
             # First, get upper triangle of the matrix.
@@ -764,10 +712,7 @@ class Matrix:
                     ]
                     inverse = [
                         *inverse[:row],
-                        [
-                            inverse[row][i] + inverse[col][i] * factor
-                            for i in range(size)
-                        ],
+                        [inverse[row][i] + inverse[col][i] * factor for i in range(size)],
                         *inverse[(row + 1) :],
                     ]
 

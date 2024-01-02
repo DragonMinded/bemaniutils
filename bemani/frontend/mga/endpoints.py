@@ -62,9 +62,7 @@ def viewplayer(userid: UserID) -> Response:
             "playerid": userid,
             "own_profile": userid == g.userID,
             "player": djinfo,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("mga_pages.listplayer", userid=userid),
@@ -98,9 +96,7 @@ def viewsettings() -> Response:
         "mga/settings.react.js",
         {
             "player": djinfo,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "updatename": url_for("mga_pages.updatename"),

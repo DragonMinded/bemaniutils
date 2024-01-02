@@ -100,9 +100,7 @@ class GlobalGameData(BaseGlobalData):
                     seen.add(key)
         return retval
 
-    def get_item(
-        self, game: GameConstants, version: int, catid: int, cattype: str
-    ) -> Optional[ValidatedDict]:
+    def get_item(self, game: GameConstants, version: int, catid: int, cattype: str) -> Optional[ValidatedDict]:
         """
         Given a game/userid and catalog id/type, find that catalog entry.
 

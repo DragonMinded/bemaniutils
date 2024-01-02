@@ -15,9 +15,7 @@ class User:
     more cards, or swap out a card for a new one.
     """
 
-    def __init__(
-        self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool
-    ) -> None:
+    def __init__(self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool) -> None:
         """
         Initialize the user object.
 
@@ -76,9 +74,7 @@ class Link:
     determined by the game that needs this linkage.
     """
 
-    def __init__(
-        self, userid: UserID, linktype: str, other_userid: UserID, data: Dict[str, Any]
-    ) -> None:
+    def __init__(self, userid: UserID, linktype: str, other_userid: UserID, data: Dict[str, Any]) -> None:
         """
         Initialize the achievement object.
 

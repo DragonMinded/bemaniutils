@@ -83,9 +83,7 @@ class ImportBase:
         self.__session.commit()
         self.__batch = False
 
-    def execute(
-        self, sql: str, params: Optional[Dict[str, Any]] = None
-    ) -> CursorResult:
+    def execute(self, sql: str, params: Optional[Dict[str, Any]] = None) -> CursorResult:
         if not self.__batch:
             raise Exception("Logic error, cannot execute outside of a batch!")
 
@@ -119,15 +117,11 @@ class ImportBase:
             # Nothing in DB
             return 1
 
-    def get_music_id_for_song(
-        self, songid: int, chart: int, version: Optional[int] = None
-    ) -> Optional[int]:
+    def get_music_id_for_song(self, songid: int, chart: int, version: Optional[int] = None) -> Optional[int]:
         if version is None:
             # Normal lookup
             if self.version is None:
-                raise Exception(
-                    "Cannot get music ID for song when operating on all versions!"
-                )
+                raise Exception("Cannot get music ID for song when operating on all versions!")
             version = self.version
             sql = "SELECT id FROM `music` WHERE songid = :songid AND chart = :chart AND game = :game AND version != :version"
         else:
@@ -170,9 +164,7 @@ class ImportBase:
         if version is None:
             # Normal lookup
             if self.version is None:
-                raise Exception(
-                    "Cannot get music ID for song when operating on all versions!"
-                )
+                raise Exception("Cannot get music ID for song when operating on all versions!")
             version = self.version
             frags.append("version != :version")
         else:
@@ -209,9 +201,7 @@ class ImportBase:
     ) -> None:
         version = version if version is not None else self.version
         if version is None:
-            raise Exception(
-                "Cannot get insert new song when operating on all versions!"
-            )
+            raise Exception("Cannot get insert new song when operating on all versions!")
         if data is None:
             jsondata = "{}"
         else:
@@ -238,9 +228,7 @@ class ImportBase:
         except IntegrityError:
             if self.update:
                 print("Entry already existed, so updating information!")
-                self.update_metadata_for_song(
-                    songid, chart, name, artist, genre, data, version
-                )
+                self.update_metadata_for_song(songid, chart, name, artist, genre, data, version)
             else:
                 print("Entry already existed, so skip creating a second one!")
 
@@ -342,8 +330,7 @@ class ImportBase:
             jsondata = json.dumps(data)
         try:
             sql = (
-                "INSERT INTO `catalog` (game, version, type, id, data) "
-                + "VALUES (:game, :version, :type, :id, :data)"
+                "INSERT INTO `catalog` (game, version, type, id, data) " + "VALUES (:game, :version, :type, :id, :data)"
             )
             self.execute(
                 sql,
@@ -482,10 +469,8 @@ class ImportPopn(ImportBase):
             "26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES,
             "omni-24": VersionConstants.POPN_MUSIC_USANEKO
             + DBConstants.OMNIMIX_VERSION_BUMP,  # Omnimix v2 only works for 24 - 26
-            "omni-25": VersionConstants.POPN_MUSIC_PEACE
-            + DBConstants.OMNIMIX_VERSION_BUMP,
-            "omni-26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES
-            + DBConstants.OMNIMIX_VERSION_BUMP,
+            "omni-25": VersionConstants.POPN_MUSIC_PEACE + DBConstants.OMNIMIX_VERSION_BUMP,
+            "omni-26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES + DBConstants.OMNIMIX_VERSION_BUMP,
         }.get(version, -1)
 
         if actual_version == VersionConstants.POPN_MUSIC_TUNE_STREET:
@@ -501,13 +486,9 @@ class ImportPopn(ImportBase):
                 "Unsupported Pop'n Music version, expected one of the following: 19, 20, 21, 22, 23, 24, omni-24, 25, omni-25, 26, omni-26!"
             )
 
-        super().__init__(
-            config, GameConstants.POPN_MUSIC, actual_version, no_combine, update
-        )
+        super().__init__(config, GameConstants.POPN_MUSIC, actual_version, no_combine, update)
 
-    def scrape_xml(
-        self, xmlfile: Path, songs: List[Dict[str, Any]] = []
-    ) -> List[Dict[str, Any]]:
+    def scrape_xml(self, xmlfile: Path, songs: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
         with open(xmlfile, "rb") as xmlhandle:
             xmldata = xmlhandle.read().decode("shift_jisx0213")
             root = ET.fromstring(xmldata)
@@ -529,9 +510,7 @@ class ImportPopn(ImportBase):
                     chart_idx = diff_map.get(chart.attrib["idx"])
                     if chart.find("diff") is not None:
                         difficulties[chart_idx] = int(chart.find("diff").text)
-                        filenames[
-                            chart_idx
-                        ] = f'{chart.find("folder").text}/{chart.find("filename").text}'
+                        filenames[chart_idx] = f'{chart.find("folder").text}/{chart.find("filename").text}'
             songinfo: Dict
             # Check if song metadata is in this entry
             if music_entry.find("fw_title") is not None:
@@ -575,39 +554,25 @@ class ImportPopn(ImportBase):
                 for song in songs:
                     if song["id"] == int(music_entry.attrib["id"]):
                         if difficulties is not None:
-                            for diff, i in zip(
-                                ["easy", "normal", "hyper", "ex"], range(4)
-                            ):
+                            for diff, i in zip(["easy", "normal", "hyper", "ex"], range(4)):
                                 song["difficulty"]["standard"][diff] = (
-                                    difficulties[i]
-                                    if difficulties[i]
-                                    else song["difficulty"]["standard"][diff]
+                                    difficulties[i] if difficulties[i] else song["difficulty"]["standard"][diff]
                                 )
                                 song["file"]["standard"][diff] = (
-                                    filenames[i]
-                                    if filenames[i]
-                                    else song["file"]["standard"][diff]
+                                    filenames[i] if filenames[i] else song["file"]["standard"][diff]
                                 )
 
                             song["difficulty"]["battle"]["normal"] = (
-                                difficulties[4]
-                                if difficulties[4]
-                                else song["difficulty"]["battle"]["normal"]
+                                difficulties[4] if difficulties[4] else song["difficulty"]["battle"]["normal"]
                             )
                             song["difficulty"]["battle"]["hyper"] = (
-                                difficulties[5]
-                                if difficulties[5]
-                                else song["difficulty"]["battle"]["hyper"]
+                                difficulties[5] if difficulties[5] else song["difficulty"]["battle"]["hyper"]
                             )
                             song["file"]["battle"]["normal"] = (
-                                filenames[4]
-                                if filenames[4]
-                                else song["file"]["battle"]["normal"]
+                                filenames[4] if filenames[4] else song["file"]["battle"]["normal"]
                             )
                             song["file"]["battle"]["hyper"] = (
-                                filenames[5]
-                                if filenames[5]
-                                else song["file"]["battle"]["hyper"]
+                                filenames[5] if filenames[5] else song["file"]["battle"]["hyper"]
                             )
                         else:
                             song["genre"] = music_entry.find("fw_genre").text
@@ -1703,13 +1668,8 @@ class ImportPopn(ImportBase):
                     available_charts=available_charts,
                 )
             )
-        elif (
-            self.version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES
-            or self.version
-            == (
-                VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES
-                + DBConstants.OMNIMIX_VERSION_BUMP
-            )
+        elif self.version == VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES or self.version == (
+            VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES + DBConstants.OMNIMIX_VERSION_BUMP
         ):
             # Decoding function for chart masks
             def available_charts(
@@ -1965,11 +1925,7 @@ class ImportPopn(ImportBase):
 
         def file_handle(config: PopnScrapeConfiguration, offset: int) -> str:
             chunk = file_chunk(config, offset)
-            return (
-                read_string(chunk[config.file_folder_offset])
-                + "/"
-                + read_string(chunk[config.file_name_offset])
-            )
+            return read_string(chunk[config.file_folder_offset]) + "/" + read_string(chunk[config.file_name_offset])
 
         for config in configurations:
             try:
@@ -1980,9 +1936,7 @@ class ImportPopn(ImportBase):
                     chunkoffset = config.offset + (config.step * songid)
                     chunkdata = data[chunkoffset : (chunkoffset + config.step)]
                     unpacked = struct.unpack(config.packedfmt, chunkdata)
-                    valid_charts = config.available_charts(
-                        unpacked[config.charts_offset]
-                    )
+                    valid_charts = config.available_charts(unpacked[config.charts_offset])
                     songinfo = {
                         "id": songid,
                         "title": read_string(unpacked[config.title_offset]),
@@ -1995,68 +1949,40 @@ class ImportPopn(ImportBase):
                         "artist_en": read_string(unpacked[config.english_artist_offset])
                         if config.english_artist_offset is not None
                         else "",
-                        "long_genre": read_string(
-                            unpacked[config.extended_genre_offset]
-                        )
+                        "long_genre": read_string(unpacked[config.extended_genre_offset])
                         if config.extended_genre_offset is not None
                         else "",
                         "folder": unpacked[config.folder_offset],
                         "difficulty": {
                             "standard": {
-                                "easy": unpacked[config.easy_offset]
-                                if valid_charts[0]
-                                else 0,
-                                "normal": unpacked[config.normal_offset]
-                                if valid_charts[1]
-                                else 0,
-                                "hyper": unpacked[config.hyper_offset]
-                                if valid_charts[2]
-                                else 0,
-                                "ex": unpacked[config.ex_offset]
-                                if valid_charts[3]
-                                else 0,
+                                "easy": unpacked[config.easy_offset] if valid_charts[0] else 0,
+                                "normal": unpacked[config.normal_offset] if valid_charts[1] else 0,
+                                "hyper": unpacked[config.hyper_offset] if valid_charts[2] else 0,
+                                "ex": unpacked[config.ex_offset] if valid_charts[3] else 0,
                             },
                             "battle": {
-                                "normal": unpacked[config.battle_normal_offset]
-                                if valid_charts[4]
-                                else 0,
-                                "hyper": unpacked[config.battle_hyper_offset]
-                                if valid_charts[5]
-                                else 0,
+                                "normal": unpacked[config.battle_normal_offset] if valid_charts[4] else 0,
+                                "hyper": unpacked[config.battle_hyper_offset] if valid_charts[5] else 0,
                             },
                         },
                         "file": {
                             "standard": {
-                                "easy": file_handle(
-                                    config, unpacked[config.easy_file_offset]
-                                )
+                                "easy": file_handle(config, unpacked[config.easy_file_offset])
                                 if valid_charts[0]
                                 else "",
-                                "normal": file_handle(
-                                    config, unpacked[config.normal_file_offset]
-                                )
+                                "normal": file_handle(config, unpacked[config.normal_file_offset])
                                 if valid_charts[1]
                                 else "",
-                                "hyper": file_handle(
-                                    config, unpacked[config.hyper_file_offset]
-                                )
+                                "hyper": file_handle(config, unpacked[config.hyper_file_offset])
                                 if valid_charts[2]
                                 else "",
-                                "ex": file_handle(
-                                    config, unpacked[config.ex_file_offset]
-                                )
-                                if valid_charts[3]
-                                else "",
+                                "ex": file_handle(config, unpacked[config.ex_file_offset]) if valid_charts[3] else "",
                             },
                             "battle": {
-                                "normal": file_handle(
-                                    config, unpacked[config.battle_normal_file_offset]
-                                )
+                                "normal": file_handle(config, unpacked[config.battle_normal_file_offset])
                                 if valid_charts[4]
                                 else "",
-                                "hyper": file_handle(
-                                    config, unpacked[config.battle_hyper_file_offset]
-                                )
+                                "hyper": file_handle(config, unpacked[config.battle_hyper_file_offset])
                                 if valid_charts[5]
                                 else "",
                             },
@@ -2072,11 +1998,7 @@ class ImportPopn(ImportBase):
                         # This is a removed song
                         continue
 
-                    if (
-                        songinfo["title"] == "ＤＵＭＭＹ"
-                        and songinfo["artist"] == "ＤＵＭＭＹ"
-                        and songinfo["genre"] == "ＤＵＭＭＹ"
-                    ):
+                    if songinfo["title"] == "ＤＵＭＭＹ" and songinfo["artist"] == "ＤＵＭＭＹ" and songinfo["genre"] == "ＤＵＭＭＹ":
                         # This is a song the intern left in
                         continue
 
@@ -2182,9 +2104,7 @@ class ImportPopn(ImportBase):
                         },
                     },
                 }
-            lut[song.id]["difficulty"]["standard"][
-                chart_map[song.chart]
-            ] = song.data.get_int("difficulty")
+            lut[song.id]["difficulty"]["standard"][chart_map[song.chart]] = song.data.get_int("difficulty")
 
         # Return the reassembled data
         return [val for _, val in lut.items()]
@@ -2205,9 +2125,7 @@ class ImportPopn(ImportBase):
 
                 # Now, look up metadata
                 title = song["title_en"] if len(song["title_en"]) > 0 else song["title"]
-                artist = (
-                    song["artist_en"] if len(song["artist_en"]) > 0 else song["artist"]
-                )
+                artist = song["artist_en"] if len(song["artist_en"]) > 0 else song["artist"]
                 genre = song["genre"]
 
                 # We only care about easy/normal/hyper/ex, so only provide mappings there
@@ -2218,14 +2136,10 @@ class ImportPopn(ImportBase):
 
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print(
-                        f"New entry for {artist} {title} ({song['id']} chart {chart})"
-                    )
+                    print(f"New entry for {artist} {title} ({song['id']} chart {chart})")
                     next_id = self.get_next_music_id()
                 else:
-                    print(
-                        f"Reused entry for {artist} {title} ({song['id']} chart {chart})"
-                    )
+                    print(f"Reused entry for {artist} {title} ({song['id']} chart {chart})")
                     next_id = old_id
                 self.insert_music_id_for_song(
                     next_id,
@@ -2295,9 +2209,7 @@ class ImportJubeat(ImportBase):
                 "Unsupported Jubeat version, expected one of the following: saucer, saucer-fulfill, prop, omni-prop, qubell, omni-qubell, clan, omni-clan, festo, omni-festo!"
             )
 
-        super().__init__(
-            config, GameConstants.JUBEAT, actual_version, no_combine, update
-        )
+        super().__init__(config, GameConstants.JUBEAT, actual_version, no_combine, update)
 
     def scrape(self, xmlfile: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
@@ -2354,9 +2266,7 @@ class ImportJubeat(ImportBase):
                     float(music_entry.find("level_ext").text),
                 ]
             genre = "other"
-            if (
-                music_entry.find("genre") is not None
-            ):  # Qubell extend music_info doesn't have this field
+            if music_entry.find("genre") is not None:  # Qubell extend music_info doesn't have this field
                 for possible_genre in music_entry.find("genre"):
                     if int(possible_genre.text) != 0:
                         genre = str(possible_genre.tag)
@@ -2408,9 +2318,7 @@ class ImportJubeat(ImportBase):
 
         return songs, emblems
 
-    def lookup(
-        self, server: str, token: str
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise CLIException("Can't look up Jubeat database for 'all' version!")
 
@@ -2445,9 +2353,7 @@ class ImportJubeat(ImportBase):
                         "extreme": 0.0,
                     },
                 }
-            lut[song.id]["difficulty"][chart_map[song.chart]] = song.data.get_float(
-                "difficulty"
-            )
+            lut[song.id]["difficulty"][chart_map[song.chart]] = song.data.get_float("difficulty")
 
         # Reassemble the data
         reassembled_songs = [val for _, val in lut.items()]
@@ -2597,9 +2503,7 @@ class ImportJubeat(ImportBase):
 
     def import_metadata(self, tsvfile: str) -> None:
         if self.version is not None:
-            raise CLIException(
-                "Unsupported Jubeat version, expected one of the following: all"
-            )
+            raise CLIException("Unsupported Jubeat version, expected one of the following: all")
 
         with open(tsvfile, newline="") as tsvhandle:
             jubeatreader = csv.reader(tsvhandle, delimiter="\t", quotechar='"')
@@ -2717,17 +2621,13 @@ class ImportIIDX(ImportBase):
                 songid, extension = os.path.splitext(filename)
                 if extension == ".1" or extension == ".ifs":
                     try:
-                        files[int(songid)] = os.path.join(
-                            directory, os.path.join(dirpath, filename)
-                        )
+                        files[int(songid)] = os.path.join(directory, os.path.join(dirpath, filename))
                     except ValueError:
                         # Invalid file
                         pass
 
             for dirname in dirnames:
-                files.update(
-                    self.__gather_sound_files(os.path.join(directory, dirname))
-                )
+                files.update(self.__gather_sound_files(os.path.join(directory, dirname)))
 
         return files
 
@@ -2847,9 +2747,7 @@ class ImportIIDX(ImportBase):
                 return 1
         return chart
 
-    def scrape(
-        self, binfile: str, assets_dir: Optional[str]
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def scrape(self, binfile: str, assets_dir: Optional[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise CLIException("Can't import IIDX database for 'all' version!")
 
@@ -2909,13 +2807,9 @@ class ImportIIDX(ImportBase):
                             bpm = (bpm_min, bpm_max)
                             notecounts = iidxchart.notecounts
                         else:
-                            print(
-                                f"Could not find chart information for song {song.id}!"
-                            )
+                            print(f"Could not find chart information for song {song.id}!")
                     else:
-                        print(
-                            f"No chart information because chart for song {song.id} is missing!"
-                        )
+                        print(f"No chart information because chart for song {song.id} is missing!")
                 songs.append(
                     {
                         "id": song.id,
@@ -3029,8 +2923,7 @@ class ImportIIDX(ImportBase):
                         qp_body_length=211,
                         filename_offset=0,
                         qpro_id_offset=1,
-                        packedfmt="I"
-                        "I",  # filename  # string containing id and name of the part
+                        packedfmt="I" "I",  # filename  # string containing id and name of the part
                     )
                 )
             if self.version == VersionConstants.IIDX_SINOBUZ:
@@ -3051,8 +2944,7 @@ class ImportIIDX(ImportBase):
                         qp_body_length=256,
                         filename_offset=0,
                         qpro_id_offset=1,
-                        packedfmt="I"
-                        "I",  # filename  # string containing id and name of the part
+                        packedfmt="I" "I",  # filename  # string containing id and name of the part
                     )
                 )
             if self.version == VersionConstants.IIDX_CANNON_BALLERS:
@@ -3073,8 +2965,7 @@ class ImportIIDX(ImportBase):
                         qp_body_length=282,
                         filename_offset=0,
                         qpro_id_offset=1,
-                        packedfmt="Q"
-                        "Q",  # filename  # string containing id and name of the part
+                        packedfmt="Q" "Q",  # filename  # string containing id and name of the part
                     )
                 )
             if self.version == VersionConstants.IIDX_ROOTAGE:
@@ -3095,8 +2986,7 @@ class ImportIIDX(ImportBase):
                         qp_body_length=304,
                         filename_offset=0,
                         qpro_id_offset=1,
-                        packedfmt="Q"
-                        "Q",  # filename  # string containing id and name of the part
+                        packedfmt="Q" "Q",  # filename  # string containing id and name of the part
                     )
                 )
 
@@ -3124,15 +3014,9 @@ class ImportIIDX(ImportBase):
                     chunkoffset = offset + (config.stride * qpro_id)
                     chunkdata = binarydata[chunkoffset : (chunkoffset + config.stride)]
                     unpacked = struct.unpack(config.packedfmt, chunkdata)
-                    filename = read_string(unpacked[config.filename_offset]).replace(
-                        "qp_", ""
-                    )
+                    filename = read_string(unpacked[config.filename_offset]).replace("qp_", "")
                     remove = f"_{qp_type}.ifs"
-                    filename = (
-                        filename.replace(remove, "")
-                        .replace("_head1.ifs", "")
-                        .replace("_head2.ifs", "")
-                    )
+                    filename = filename.replace(remove, "").replace("_head1.ifs", "").replace("_head2.ifs", "")
                     if config.qpro_id_offset is None:
                         name = filename  # qpro names are not stored in these games so use the identifier instead
                     else:
@@ -3197,18 +3081,14 @@ class ImportIIDX(ImportBase):
                     return [], qpros
                 except (UnicodeError, InvalidOffsetException):
                     # These offsets are possibly not correct, so try the next configuration.
-                    print(
-                        "Failed to parse game DB using current inferred data version!"
-                    )
+                    print("Failed to parse game DB using current inferred data version!")
                     pass
 
             raise CLIException(
                 f"Could not determine correct binary parser configuration for IIDX version {self.version}"
             )
 
-    def lookup(
-        self, server: str, token: str
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def lookup(self, server: str, token: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         if self.version is None:
             raise CLIException("Can't look up IIDX database for 'all' version!")
 
@@ -3259,12 +3139,8 @@ class ImportIIDX(ImportBase):
                     },
                 }
             if song.chart in chart_map:
-                lut[song.id]["difficulty"][chart_map[song.chart]] = song.data.get_int(
-                    "difficulty"
-                )
-                lut[song.id]["notecount"][chart_map[song.chart]] = song.data.get_int(
-                    "notecount"
-                )
+                lut[song.id]["difficulty"][chart_map[song.chart]] = song.data.get_int("difficulty")
+                lut[song.id]["notecount"][chart_map[song.chart]] = song.data.get_int("notecount")
 
         # Return the reassembled data
         qpros: List[Dict[str, Any]] = []
@@ -3354,9 +3230,7 @@ class ImportIIDX(ImportBase):
 
     def import_metadata(self, tsvfile: str) -> None:
         if self.version is not None:
-            raise CLIException(
-                "Unsupported IIDX version, expected one of the following: all"
-            )
+            raise CLIException("Unsupported IIDX version, expected one of the following: all")
 
         with open(tsvfile, newline="") as tsvhandle:
             iidxreader = csv.reader(tsvhandle, delimiter="\t", quotechar='"')
@@ -3459,9 +3333,7 @@ class ImportDDR(ImportBase):
             }[version]
             self.charts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         else:
-            raise CLIException(
-                "Unsupported DDR version, expected one of the following: 12, 13, 14, 15, 16"
-            )
+            raise CLIException("Unsupported DDR version, expected one of the following: 12, 13, 14, 15, 16")
 
         super().__init__(config, GameConstants.DDR, actual_version, no_combine, update)
 
@@ -3706,89 +3578,39 @@ class ImportDDR(ImportBase):
                         "groove_gauge": {
                             "single": {
                                 "beginner": {
-                                    "voltage": unpacked[
-                                        config.groove_single_beginner + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_single_beginner + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_single_beginner + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_single_beginner + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_single_beginner + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_single_beginner + config.voltage],
+                                    "stream": unpacked[config.groove_single_beginner + config.stream],
+                                    "air": unpacked[config.groove_single_beginner + config.air],
+                                    "chaos": unpacked[config.groove_single_beginner + config.chaos],
+                                    "freeze": unpacked[config.groove_single_beginner + config.freeze],
                                 },
                                 "basic": {
-                                    "voltage": unpacked[
-                                        config.groove_single_basic + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_single_basic + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_single_basic + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_single_basic + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_single_basic + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_single_basic + config.voltage],
+                                    "stream": unpacked[config.groove_single_basic + config.stream],
+                                    "air": unpacked[config.groove_single_basic + config.air],
+                                    "chaos": unpacked[config.groove_single_basic + config.chaos],
+                                    "freeze": unpacked[config.groove_single_basic + config.freeze],
                                 },
                                 "difficult": {
-                                    "voltage": unpacked[
-                                        config.groove_single_difficult + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_single_difficult + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_single_difficult + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_single_difficult + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_single_difficult + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_single_difficult + config.voltage],
+                                    "stream": unpacked[config.groove_single_difficult + config.stream],
+                                    "air": unpacked[config.groove_single_difficult + config.air],
+                                    "chaos": unpacked[config.groove_single_difficult + config.chaos],
+                                    "freeze": unpacked[config.groove_single_difficult + config.freeze],
                                 },
                                 "expert": {
-                                    "voltage": unpacked[
-                                        config.groove_single_expert + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_single_expert + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_single_expert + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_single_expert + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_single_expert + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_single_expert + config.voltage],
+                                    "stream": unpacked[config.groove_single_expert + config.stream],
+                                    "air": unpacked[config.groove_single_expert + config.air],
+                                    "chaos": unpacked[config.groove_single_expert + config.chaos],
+                                    "freeze": unpacked[config.groove_single_expert + config.freeze],
                                 },
                                 "challenge": {
-                                    "voltage": unpacked[
-                                        config.groove_single_challenge + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_single_challenge + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_single_challenge + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_single_challenge + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_single_challenge + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_single_challenge + config.voltage],
+                                    "stream": unpacked[config.groove_single_challenge + config.stream],
+                                    "air": unpacked[config.groove_single_challenge + config.air],
+                                    "chaos": unpacked[config.groove_single_challenge + config.chaos],
+                                    "freeze": unpacked[config.groove_single_challenge + config.freeze],
                                 },
                             },
                             "double": {
@@ -3800,72 +3622,32 @@ class ImportDDR(ImportBase):
                                     "freeze": 0,
                                 },
                                 "basic": {
-                                    "voltage": unpacked[
-                                        config.groove_double_basic + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_double_basic + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_double_basic + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_double_basic + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_double_basic + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_double_basic + config.voltage],
+                                    "stream": unpacked[config.groove_double_basic + config.stream],
+                                    "air": unpacked[config.groove_double_basic + config.air],
+                                    "chaos": unpacked[config.groove_double_basic + config.chaos],
+                                    "freeze": unpacked[config.groove_double_basic + config.freeze],
                                 },
                                 "difficult": {
-                                    "voltage": unpacked[
-                                        config.groove_double_difficult + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_double_difficult + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_double_difficult + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_double_difficult + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_double_difficult + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_double_difficult + config.voltage],
+                                    "stream": unpacked[config.groove_double_difficult + config.stream],
+                                    "air": unpacked[config.groove_double_difficult + config.air],
+                                    "chaos": unpacked[config.groove_double_difficult + config.chaos],
+                                    "freeze": unpacked[config.groove_double_difficult + config.freeze],
                                 },
                                 "expert": {
-                                    "voltage": unpacked[
-                                        config.groove_double_expert + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_double_expert + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_double_expert + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_double_expert + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_double_expert + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_double_expert + config.voltage],
+                                    "stream": unpacked[config.groove_double_expert + config.stream],
+                                    "air": unpacked[config.groove_double_expert + config.air],
+                                    "chaos": unpacked[config.groove_double_expert + config.chaos],
+                                    "freeze": unpacked[config.groove_double_expert + config.freeze],
                                 },
                                 "challenge": {
-                                    "voltage": unpacked[
-                                        config.groove_double_challenge + config.voltage
-                                    ],
-                                    "stream": unpacked[
-                                        config.groove_double_challenge + config.stream
-                                    ],
-                                    "air": unpacked[
-                                        config.groove_double_challenge + config.air
-                                    ],
-                                    "chaos": unpacked[
-                                        config.groove_double_challenge + config.chaos
-                                    ],
-                                    "freeze": unpacked[
-                                        config.groove_double_challenge + config.freeze
-                                    ],
+                                    "voltage": unpacked[config.groove_double_challenge + config.voltage],
+                                    "stream": unpacked[config.groove_double_challenge + config.stream],
+                                    "air": unpacked[config.groove_double_challenge + config.air],
+                                    "chaos": unpacked[config.groove_double_challenge + config.chaos],
+                                    "freeze": unpacked[config.groove_double_challenge + config.freeze],
                                 },
                             },
                         },
@@ -3884,9 +3666,7 @@ class ImportDDR(ImportBase):
                 print("Failed to parse game DB using current inferred data version!")
                 pass
 
-        raise CLIException(
-            f"Could not determine correct binary parser configuration for DDR version {self.version}"
-        )
+        raise CLIException(f"Could not determine correct binary parser configuration for DDR version {self.version}")
 
     def hydrate(self, songs: List[Dict[str, Any]], infile: str) -> List[Dict[str, Any]]:
         tree = ET.parse(infile)
@@ -4157,21 +3937,11 @@ class ImportDDR(ImportBase):
                 }
             style, chart = chart_map[song.chart]
             lut[song.id]["difficulty"][style][chart] = song.data.get_int("difficulty")
-            lut[song.id]["groove_gauge"][style][chart]["air"] = song.data.get_dict(
-                "groove"
-            ).get_int("air")
-            lut[song.id]["groove_gauge"][style][chart]["chaos"] = song.data.get_dict(
-                "groove"
-            ).get_int("chaos")
-            lut[song.id]["groove_gauge"][style][chart]["freeze"] = song.data.get_dict(
-                "groove"
-            ).get_int("freeze")
-            lut[song.id]["groove_gauge"][style][chart]["stream"] = song.data.get_dict(
-                "groove"
-            ).get_int("stream")
-            lut[song.id]["groove_gauge"][style][chart]["voltage"] = song.data.get_dict(
-                "groove"
-            ).get_int("voltage")
+            lut[song.id]["groove_gauge"][style][chart]["air"] = song.data.get_dict("groove").get_int("air")
+            lut[song.id]["groove_gauge"][style][chart]["chaos"] = song.data.get_dict("groove").get_int("chaos")
+            lut[song.id]["groove_gauge"][style][chart]["freeze"] = song.data.get_dict("groove").get_int("freeze")
+            lut[song.id]["groove_gauge"][style][chart]["stream"] = song.data.get_dict("groove").get_int("stream")
+            lut[song.id]["groove_gauge"][style][chart]["voltage"] = song.data.get_dict("groove").get_int("voltage")
 
         # Return the reassembled data
         return [val for _, val in lut.items()]
@@ -4206,14 +3976,10 @@ class ImportDDR(ImportBase):
                 old_id = self.get_music_id_for_song(song["edit_id"], chart, version=0)
                 if self.no_combine or old_id is None:
                     # Insert original
-                    print(
-                        f"New entry for {song['title']} {song['artist']} ({song['id']} chart {chart})"
-                    )
+                    print(f"New entry for {song['title']} {song['artist']} ({song['id']} chart {chart})")
                     next_id = self.get_next_music_id()
                 else:
-                    print(
-                        f"Reused entry for {song['title']} {song['artist']} ({song['id']} chart {chart})"
-                    )
+                    print(f"Reused entry for {song['title']} {song['artist']} ({song['id']} chart {chart})")
                     next_id = old_id
                 # Add the virtual entry we talked about above, so we can link this song in the future.
                 self.insert_music_id_for_song(
@@ -4277,9 +4043,7 @@ class ImportSDVX(ImportBase):
         elif actual_version == VersionConstants.SDVX_HEAVENLY_HAVEN:
             self.charts = [0, 1, 2, 3, 4]
         else:
-            raise CLIException(
-                "Unsupported SDVX version, expected one of the following: 1, 2, 3, 4!"
-            )
+            raise CLIException("Unsupported SDVX version, expected one of the following: 1, 2, 3, 4!")
 
         super().__init__(config, GameConstants.SDVX, actual_version, no_combine, update)
 
@@ -4370,9 +4134,7 @@ class ImportSDVX(ImportBase):
                 except (TypeError, ValueError):
                     pass
             else:
-                raise CLIException(
-                    f"Cannot import appeal cards for SDVX version {self.version}"
-                )
+                raise CLIException(f"Cannot import appeal cards for SDVX version {self.version}")
 
             self.start_batch()
             for appealid in appealids:
@@ -4420,12 +4182,7 @@ class ImportSDVX(ImportBase):
                             int(info.text),
                         ]
                 # Make sure we got everything
-                if (
-                    title is None
-                    or artist is None
-                    or bpm_min is None
-                    or bpm_max is None
-                ):
+                if title is None or artist is None or bpm_min is None or bpm_max is None:
                     raise Exception(f"Couldn't parse info for song {songid}")
 
                 # Grab valid difficulties
@@ -4527,9 +4284,7 @@ class ImportSDVX(ImportBase):
                     "bpm_min": bpm_min,
                     "bpm_max": bpm_max,
                 }
-                self.insert_music_id_for_song(
-                    next_id, songid, chart, title, artist, None, data
-                )
+                self.insert_music_id_for_song(next_id, songid, chart, title, artist, None, data)
             self.finish_batch()
 
         appealids: List[int] = []
@@ -4590,9 +4345,7 @@ class ImportSDVX(ImportBase):
                     "bpm_min": song.data.get_int("bpm_min"),
                     "bpm_max": song.data.get_int("bpm_max"),
                 }
-                self.insert_music_id_for_song(
-                    next_id, song.id, song.chart, song.name, song.artist, None, data
-                )
+                self.insert_music_id_for_song(next_id, song.id, song.chart, song.name, song.artist, None, data)
             self.finish_batch()
 
         # Now, attempt to insert any catalog items we got for this version.
@@ -4607,9 +4360,7 @@ class ImportSDVX(ImportBase):
                     {},
                 )
             elif item.type == "song_unlock":
-                print(
-                    f"New catalog entry for {item.data.get_int('musicid')} chart {item.data.get_int('chart')}"
-                )
+                print(f"New catalog entry for {item.data.get_int('musicid')} chart {item.data.get_int('chart')}")
                 self.insert_catalog_entry(
                     "song_unlock",
                     item.id,
@@ -4634,8 +4385,7 @@ class ImportMuseca(ImportBase):
             actual_version = {
                 "1": VersionConstants.MUSECA,
                 "1+1/2": VersionConstants.MUSECA_1_PLUS,
-                "plus": VersionConstants.MUSECA_1_PLUS
-                + DBConstants.OMNIMIX_VERSION_BUMP,
+                "plus": VersionConstants.MUSECA_1_PLUS + DBConstants.OMNIMIX_VERSION_BUMP,
             }.get(version, -1)
         if actual_version in [
             VersionConstants.MUSECA,
@@ -4644,13 +4394,9 @@ class ImportMuseca(ImportBase):
         ]:
             self.charts = [0, 1, 2, 3]
         else:
-            raise CLIException(
-                "Unsupported Museca version, expected one of the following: 1, 1+1/2, plus!"
-            )
+            raise CLIException("Unsupported Museca version, expected one of the following: 1, 1+1/2, plus!")
 
-        super().__init__(
-            config, GameConstants.MUSECA, actual_version, no_combine, update
-        )
+        super().__init__(config, GameConstants.MUSECA, actual_version, no_combine, update)
 
     def import_music_db(self, xmlfile: str) -> None:
         with open(xmlfile, "rb") as fp:
@@ -4710,9 +4456,7 @@ class ImportMuseca(ImportBase):
                     "bpm_min": bpm_min,
                     "bpm_max": bpm_max,
                 }
-                self.insert_music_id_for_song(
-                    next_id, songid, chart, title, artist, None, data
-                )
+                self.insert_music_id_for_song(next_id, songid, chart, title, artist, None, data)
             self.finish_batch()
 
     def import_from_server(self, server: str, token: str) -> None:
@@ -4758,9 +4502,7 @@ class ImportMuseca(ImportBase):
                     "bpm_min": song.data.get_int("bpm_min"),
                     "bpm_max": song.data.get_int("bpm_max"),
                 }
-                self.insert_music_id_for_song(
-                    next_id, song.id, song.chart, song.name, song.artist, None, data
-                )
+                self.insert_music_id_for_song(next_id, song.id, song.chart, song.name, song.artist, None, data)
             self.finish_batch()
 
 
@@ -4817,13 +4559,9 @@ class ImportReflecBeat(ImportBase):
             }[version]
             self.charts = [0, 1, 2, 3]
         else:
-            raise CLIException(
-                "Unsupported ReflecBeat version, expected one of the following: 1, 2, 3, 4, 5, 6"
-            )
+            raise CLIException("Unsupported ReflecBeat version, expected one of the following: 1, 2, 3, 4, 5, 6")
 
-        super().__init__(
-            config, GameConstants.REFLEC_BEAT, actual_version, no_combine, update
-        )
+        super().__init__(config, GameConstants.REFLEC_BEAT, actual_version, no_combine, update)
 
     def scrape(self, infile: str) -> List[Dict[str, Any]]:
         with open(infile, mode="rb") as myfile:
@@ -4980,39 +4718,21 @@ class ImportReflecBeat(ImportBase):
                     end = start + config.stride
                     songdata = data[start:end]
 
-                    title = convert_string(
-                        songdata[
-                            config.song_offset : (
-                                config.song_offset + config.song_length
-                            )
-                        ]
-                    )
+                    title = convert_string(songdata[config.song_offset : (config.song_offset + config.song_length)])
                     if config.artist_offset is None:
                         artist = ""
                     else:
                         artist = convert_string(
-                            songdata[
-                                config.artist_offset : (
-                                    config.artist_offset + config.artist_length
-                                )
-                            ]
+                            songdata[config.artist_offset : (config.artist_offset + config.artist_length)]
                         )
                     if title == "" and artist == "":
                         continue
                     songid = struct.unpack("<I", songdata[0:4])[0]
-                    chart = convert_string(
-                        songdata[
-                            config.chart_offset : (
-                                config.chart_offset + config.chart_length
-                            )
-                        ]
-                    )
+                    chart = convert_string(songdata[config.chart_offset : (config.chart_offset + config.chart_length)])
                     difficulties = [
                         d
                         for d in songdata[
-                            config.difficulties_offset : (
-                                config.difficulties_offset + config.max_difficulties
-                            )
+                            config.difficulties_offset : (config.difficulties_offset + config.max_difficulties)
                         ]
                     ]
                     difficulties = [0 if d == 255 else d for d in difficulties]
@@ -5076,9 +4796,7 @@ class ImportReflecBeat(ImportBase):
                 # versions, so we need to keep a virtual mapping similar to DDR. Its not good
                 # enough to just do title/artist because Reflec also has revival charts that
                 # are named the same. Luckily we have internal chart ID to map on!
-                old_id = self.get_music_id_for_song_data(
-                    None, None, chartid, chart, version=0
-                )
+                old_id = self.get_music_id_for_song_data(None, None, chartid, chart, version=0)
                 if self.no_combine or old_id is None:
                     # Insert original
                     print(f"New entry for {songid} chart {chart}")
@@ -5148,13 +4866,9 @@ class ImportDanceEvolution(ImportBase):
         if version in ["1"]:
             actual_version = 1
         else:
-            raise CLIException(
-                "Unsupported Dance Evolution version, expected one of the following: 1"
-            )
+            raise CLIException("Unsupported Dance Evolution version, expected one of the following: 1")
 
-        super().__init__(
-            config, GameConstants.DANCE_EVOLUTION, actual_version, no_combine, update
-        )
+        super().__init__(config, GameConstants.DANCE_EVOLUTION, actual_version, no_combine, update)
 
     def scrape(self, infile: str) -> List[Dict[str, Any]]:
         with open(infile, mode="rb") as myfile:
@@ -5179,11 +4893,7 @@ class ImportDanceEvolution(ImportBase):
             length = 0
             while data[lut_offset + length] != 0:
                 length += 1
-            return (
-                data[lut_offset : (lut_offset + length)]
-                .decode("utf-8")
-                .replace("\n", " ")
-            )
+            return data[lut_offset : (lut_offset + length)].decode("utf-8").replace("\n", " ")
 
         def get_int(offset: int) -> int:
             return struct.unpack(">I", data[(offset) : (offset + 4)])[0]
@@ -5259,9 +4969,7 @@ class ImportDanceEvolution(ImportBase):
                 "bpm_min": song["bpm_min"],
                 "bpm_max": song["bpm_max"],
             }
-            self.insert_music_id_for_song(
-                next_id, song["id"], 0, song["title"], song["artist"], None, data
-            )
+            self.insert_music_id_for_song(next_id, song["id"], 0, song["title"], song["artist"], None, data)
             self.finish_batch()
 
 
@@ -5359,12 +5067,8 @@ def main() -> None:
     args = parser.parse_args()
     if (args.token and not args.server) or (args.server and not args.token):
         raise CLIException("Must specify both --server and --token together!")
-    if (args.csv or args.tsv or args.xml or args.bin or args.assets) and (
-        args.server or args.token
-    ):
-        raise CLIException(
-            "Cannot specify both a remote server and a local file to read from!"
-        )
+    if (args.csv or args.tsv or args.xml or args.bin or args.assets) and (args.server or args.token):
+        raise CLIException("Cannot specify both a remote server and a local file to read from!")
 
     # Load the config so we can talk to the server
     config = Config()
@@ -5513,9 +5217,7 @@ def main() -> None:
         reflec.close()
 
     elif series == GameConstants.DANCE_EVOLUTION:
-        danevo = ImportDanceEvolution(
-            config, args.version, args.no_combine, args.update
-        )
+        danevo = ImportDanceEvolution(config, args.version, args.no_combine, args.update)
         if args.server and args.token:
             songs = danevo.lookup(args.server, args.token)
         elif args.bin is not None:

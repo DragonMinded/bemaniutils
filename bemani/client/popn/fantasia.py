@@ -115,9 +115,7 @@ class PopnMusicFantasiaClient(BaseClient):
             if len(node.value) != length:
                 raise Exception(f"Node '{name}' is wrong array length!")
 
-    def verify_playerdata_get(
-        self, ref_id: str, msg_type: str
-    ) -> Optional[Dict[str, Any]]:
+    def verify_playerdata_get(self, ref_id: str, msg_type: str) -> Optional[Dict[str, Any]]:
         call = self.call_node()
 
         # Construct node
@@ -125,9 +123,7 @@ class PopnMusicFantasiaClient(BaseClient):
         call.add_child(playerdata)
         playerdata.set_attribute("method", "get")
         if msg_type == "new":
-            playerdata.set_attribute(
-                "model", self.config["old_profile_model"].split(":")[0]
-            )
+            playerdata.set_attribute("model", self.config["old_profile_model"].split(":")[0])
 
         playerdata.add_child(Node.string("ref_id", ref_id))
         playerdata.add_child(Node.string("shop_name", ""))
@@ -143,9 +139,7 @@ class PopnMusicFantasiaClient(BaseClient):
 
             status = int(resp.child("playerdata").attribute("status"))
             if status != 109:
-                raise Exception(
-                    f"Reference ID '{ref_id}' returned invalid status '{status}'"
-                )
+                raise Exception(f"Reference ID '{ref_id}' returned invalid status '{status}'")
 
             # No score data
             return None
@@ -181,11 +175,7 @@ class PopnMusicFantasiaClient(BaseClient):
                 )
 
             medals = [
-                transform_medals(medal)
-                for medal in resp.child("playerdata")
-                .child("base")
-                .child("clear_medal")
-                .value
+                transform_medals(medal) for medal in resp.child("playerdata").child("base").child("clear_medal").value
             ]
 
             hiscore = resp.child("playerdata").child("hiscore").value
@@ -202,8 +192,7 @@ class PopnMusicFantasiaClient(BaseClient):
                 hiscores.append(value & 0x1FFFF)
 
             scores = [
-                (hiscores[x], hiscores[x + 1], hiscores[x + 2], hiscores[x + 3])
-                for x in range(0, len(hiscores), 4)
+                (hiscores[x], hiscores[x + 1], hiscores[x + 2], hiscores[x + 3]) for x in range(0, len(hiscores), 4)
             ]
 
             return {"medals": medals, "scores": scores}
@@ -240,9 +229,7 @@ class PopnMusicFantasiaClient(BaseClient):
                     }[score["chart"]],
                 )
             )
-            stage.add_child(
-                Node.u16("n_data", (score["medal"] << (4 * score["chart"])))
-            )
+            stage.add_child(Node.u16("n_data", (score["medal"] << (4 * score["chart"]))))
             stage.add_child(Node.u8("e_data", 0))
             stage.add_child(Node.s32("score", score["score"]))
             stage.add_child(Node.u8("ojama_1", 0))
@@ -325,32 +312,22 @@ class PopnMusicFantasiaClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_playerdata_get(ref_id, msg_type="new")
             self.verify_playerdata_new(ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         if cardid is None:

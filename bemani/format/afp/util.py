@@ -69,9 +69,7 @@ class TrackedCoverage:
                 raise Exception(f"Already covered {hex(offset)}!")
             self.coverage[i] = True
 
-    def print_coverage(
-        self, req_start: Optional[int] = None, req_end: Optional[int] = None
-    ) -> None:
+    def print_coverage(self, req_start: Optional[int] = None, req_end: Optional[int] = None) -> None:
         for start, offset in self.get_uncovered_chunks(req_start, req_end):
             print(
                 f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)",
@@ -165,9 +163,7 @@ class VerboseOutput:
         return VerboseOutputManager(self, verbose)
 
     def vprint(self, *args: Any, **kwargs: Any) -> None:
-        should_print = self.verbose or (
-            kwargs.get("component", None) in self.components
-        )
+        should_print = self.verbose or (kwargs.get("component", None) in self.components)
         kwargs = {k: v for k, v in kwargs.items() if k != "component"}
         if should_print:
             print(*args, **kwargs, file=sys.stderr)

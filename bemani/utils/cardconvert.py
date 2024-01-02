@@ -4,9 +4,7 @@ from bemani.common import CardCipher, CardCipherException
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility to convert between card IDs and back-of-card characters."
-    )
+    parser = argparse.ArgumentParser(description="A utility to convert between card IDs and back-of-card characters.")
     parser.add_argument(
         "number",
         help="card ID or back-of-card characters to convert.",

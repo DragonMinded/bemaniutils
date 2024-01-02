@@ -5,9 +5,7 @@ from bemani.format import TwoDX
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility to extract/build 2dx files."
-    )
+    parser = argparse.ArgumentParser(description="A utility to extract/build 2dx files.")
     parser.add_argument(
         "file",
         help="2dx file to extract/build.",
@@ -83,9 +81,7 @@ def main() -> None:
         wfp.write(twodx.get_new_data())
         wfp.close()
     else:
-        raise Exception(
-            "Please provide either a directory to extract to, or a wav file to build into a 2dx file!"
-        )
+        raise Exception("Please provide either a directory to extract to, or a wav file to build into a 2dx file!")
 
 
 if __name__ == "__main__":

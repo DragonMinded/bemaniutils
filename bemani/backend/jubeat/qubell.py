@@ -56,22 +56,15 @@ class JubeatQubell(
         return JubeatProp(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert daily FC challenges into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "fc_challenge", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "fc_challenge", "daily"):
             # Generate a new list of two FC challenge songs.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = set(
-                song.id
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-            )
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
             if len(all_songs) >= 2:
                 daily_songs = random.sample(all_songs, 2)
                 data.local.game.put_time_sensitive_settings(
@@ -97,9 +90,7 @@ class JubeatQubell(
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "fc_challenge", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "fc_challenge", "daily")
         return events
 
     @classmethod
@@ -674,9 +665,7 @@ class JubeatQubell(
             # Grab unlock progress
             item = player.child("item")
             if item is not None:
-                owned_emblems = self.calculate_owned_items(
-                    item.child_value("emblem_list")
-                )
+                owned_emblems = self.calculate_owned_items(item.child_value("emblem_list"))
                 for index in owned_emblems:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -722,9 +711,7 @@ class JubeatQubell(
         game_config = self.get_game_config()
         force_unlock = game_config.get_bool("force_song_unlock")
 
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         owned_songs: Set[int] = set()
         owned_secrets: Set[int] = set()
         owned_emblems: Set[int] = set()
@@ -773,12 +760,8 @@ class JubeatQubell(
         info.add_child(Node.s32("match_cnt", profile.get_int("match_cnt")))
         info.add_child(Node.s32("beat_cnt", profile.get_int("beat_cnt")))
         info.add_child(Node.s32("mynews_cnt", profile.get_int("mynews_cnt")))
-        info.add_child(
-            Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points"))
-        )
-        info.add_child(
-            Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played"))
-        )
+        info.add_child(Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points")))
+        info.add_child(Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played")))
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
@@ -829,63 +812,29 @@ class JubeatQubell(
         # Secret unlocks
         item = Node.void("item")
         player.add_child(item)
-        item.add_child(
-            Node.s32_array(
-                "music_list", profile.get_int_array("music_list", 64, [-1] * 64)
-            )
-        )
+        item.add_child(Node.s32_array("music_list", profile.get_int_array("music_list", 64, [-1] * 64)))
         item.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 64)
-                if force_unlock
-                else self.create_owned_items(owned_songs, 64),
+                ([-1] * 64) if force_unlock else self.create_owned_items(owned_songs, 64),
             )
         )
-        item.add_child(
-            Node.s32_array(
-                "theme_list", profile.get_int_array("theme_list", 16, [-1] * 16)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list", 16, [-1] * 16)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "title_list", profile.get_int_array("title_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96))
-        )
+        item.add_child(Node.s32_array("theme_list", profile.get_int_array("theme_list", 16, [-1] * 16)))
+        item.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list", 16, [-1] * 16)))
+        item.add_child(Node.s32_array("title_list", profile.get_int_array("title_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96)))
 
         new = Node.void("new")
         item.add_child(new)
         new.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 64)
-                if force_unlock
-                else self.create_owned_items(owned_secrets, 64),
+                ([-1] * 64) if force_unlock else self.create_owned_items(owned_secrets, 64),
             )
         )
-        new.add_child(
-            Node.s32_array(
-                "theme_list", profile.get_int_array("theme_list_new", 16, [-1] * 16)
-            )
-        )
-        new.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list_new", 16, [-1] * 16)
-            )
-        )
+        new.add_child(Node.s32_array("theme_list", profile.get_int_array("theme_list_new", 16, [-1] * 16)))
+        new.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list_new", 16, [-1] * 16)))
 
         # Add rivals to profile.
         rivallist = Node.void("rivallist")
@@ -924,9 +873,7 @@ class JubeatQubell(
         lab_edit_seq.set_attribute("count", "0")
 
         # Full combo challenge
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "fc_challenge"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "fc_challenge")
         if entry is None:
             entry = ValidatedDict()
 
@@ -987,9 +934,7 @@ class JubeatQubell(
                 event.set_attribute("type", str(achievement.id))
 
                 state = 0x0
-                state = (
-                    state + 0x2 if achievement.data.get_bool("is_completed") else 0x0
-                )
+                state = state + 0x2 if achievement.data.get_bool("is_completed") else 0x0
                 event.add_child(Node.u8("state", state))
 
         # JBox stuff
@@ -1025,9 +970,7 @@ class JubeatQubell(
         main.add_child(stage)
         stage.set_attribute("number", str(digdigdict.get_int("stage_number", 1)))
         stage.add_child(Node.s32("point", digdigdict.get_int("point")))
-        stage.add_child(
-            Node.s32_array("param", digdigdict.get_int_array("param", 12, [0] * 12))
-        )
+        stage.add_child(Node.s32_array("param", digdigdict.get_int_array("param", 12, [0] * 12)))
 
         # Emerald eternal stages
         eternal = Node.void("eternal")
@@ -1035,42 +978,20 @@ class JubeatQubell(
         eternal.add_child(Node.s32("ratio", 1))
         eternal.add_child(Node.s64("used_point", eternaldict.get_int("used_point")))
         eternal.add_child(Node.s64("point", eternaldict.get_int("point")))
-        eternal.add_child(
-            Node.s64("excavated_point", eternaldict.get_int("excavated_point"))
-        )
+        eternal.add_child(Node.s64("excavated_point", eternaldict.get_int("excavated_point")))
         cube = Node.void("cube")
         eternal.add_child(cube)
-        cube.add_child(
-            Node.s8_array("state", eternaldict.get_int_array("state", 12, [0] * 12))
-        )
+        cube.add_child(Node.s8_array("state", eternaldict.get_int_array("state", 12, [0] * 12)))
         item = Node.void("item")
         cube.add_child(item)
-        item.add_child(
-            Node.s32_array("kind", eternaldict.get_int_array("item_kind", 12, [0] * 12))
-        )
-        item.add_child(
-            Node.s32_array(
-                "value", eternaldict.get_int_array("item_value", 12, [0] * 12)
-            )
-        )
+        item.add_child(Node.s32_array("kind", eternaldict.get_int_array("item_kind", 12, [0] * 12)))
+        item.add_child(Node.s32_array("value", eternaldict.get_int_array("item_value", 12, [0] * 12)))
         norma = Node.void("norma")
         cube.add_child(norma)
         norma.add_child(Node.s64_array("till_time", [0] * 12))
-        norma.add_child(
-            Node.s32_array(
-                "kind", eternaldict.get_int_array("norma_kind", 12, [0] * 12)
-            )
-        )
-        norma.add_child(
-            Node.s32_array(
-                "value", eternaldict.get_int_array("norma_value", 12, [0] * 12)
-            )
-        )
-        norma.add_child(
-            Node.s32_array(
-                "param", eternaldict.get_int_array("norma_param", 12, [0] * 12)
-            )
-        )
+        norma.add_child(Node.s32_array("kind", eternaldict.get_int_array("norma_kind", 12, [0] * 12)))
+        norma.add_child(Node.s32_array("value", eternaldict.get_int_array("norma_value", 12, [0] * 12)))
+        norma.add_child(Node.s32_array("param", eternaldict.get_int_array("norma_param", 12, [0] * 12)))
 
         if self.ENABLE_GARNET:
             # Garnet
@@ -1084,14 +1005,8 @@ class JubeatQubell(
                     olddict.get_int_array("excavated_point", 5, [0] * 5),
                 )
             )
-            old.add_child(
-                Node.s32_array(
-                    "excavated", olddict.get_int_array("excavated", 5, [0] * 5)
-                )
-            )
-            old.add_child(
-                Node.s32_array("param", olddict.get_int_array("param", 5, [0] * 5))
-            )
+            old.add_child(Node.s32_array("excavated", olddict.get_int_array("excavated", 5, [0] * 5)))
+            old.add_child(Node.s32_array("param", olddict.get_int_array("param", 5, [0] * 5)))
             # This should have a bunch of sub-nodes with the following format. Note that only
             # the first ten nodes are saved even if more are read. Presumably this is the list
             # of old songs we are allowing the player to unlock? Doesn't matter, we're disabling
@@ -1110,9 +1025,7 @@ class JubeatQubell(
         main.add_child(stage_list)
         # Stage numbers are between 1 and 13 inclusive.
         for i in range(1, 14):
-            stage_flags = self.data.local.user.get_achievement(
-                self.game, self.version, userid, i, "stage"
-            )
+            stage_flags = self.data.local.user.get_achievement(self.game, self.version, userid, i, "stage")
             if stage_flags is None:
                 stage_flags = ValidatedDict()
 
@@ -1167,9 +1080,7 @@ class JubeatQubell(
 
         return root
 
-    def format_scores(
-        self, userid: UserID, profile: Profile, scores: List[Score]
-    ) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)
@@ -1235,24 +1146,12 @@ class JubeatQubell(
             playdata.add_child(musicdata)
 
             musicdata.set_attribute("music_id", scoreid)
-            musicdata.add_child(
-                Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("score", scoredata.get_int_array("points", 3))
-            )
-            musicdata.add_child(
-                Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3))
-            )
+            musicdata.add_child(Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3)))
+            musicdata.add_child(Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3)))
+            musicdata.add_child(Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3)))
+            musicdata.add_child(Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3)))
+            musicdata.add_child(Node.s32_array("score", scoredata.get_int_array("points", 3)))
+            musicdata.add_child(Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3)))
 
             ghosts = scoredata.get("ghost", [None, None, None])
             for i in range(len(ghosts)):
@@ -1266,9 +1165,7 @@ class JubeatQubell(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         newprofile.replace_bool("saved", True)
         data = request.child("data")
@@ -1309,12 +1206,8 @@ class JubeatQubell(
             newprofile.replace_int("beat_cnt", info.child_value("beat_cnt"))
             newprofile.replace_int("mynews_cnt", info.child_value("mynews_cnt"))
 
-            newprofile.replace_int(
-                "bonus_tune_points", info.child_value("bonus_tune_points")
-            )
-            newprofile.replace_bool(
-                "is_bonus_tune_played", info.child_value("is_bonus_tune_played")
-            )
+            newprofile.replace_int("bonus_tune_points", info.child_value("bonus_tune_points"))
+            newprofile.replace_bool("is_bonus_tune_played", info.child_value("is_bonus_tune_played"))
 
         # Grab last settings
         lastnode = player.child("last")
@@ -1340,27 +1233,15 @@ class JubeatQubell(
         # Grab unlock progress
         item = player.child("item")
         if item is not None:
-            newprofile.replace_int_array(
-                "music_list", 64, item.child_value("music_list")
-            )
-            newprofile.replace_int_array(
-                "theme_list", 16, item.child_value("theme_list")
-            )
-            newprofile.replace_int_array(
-                "marker_list", 16, item.child_value("marker_list")
-            )
-            newprofile.replace_int_array(
-                "title_list", 160, item.child_value("title_list")
-            )
-            newprofile.replace_int_array(
-                "parts_list", 160, item.child_value("parts_list")
-            )
+            newprofile.replace_int_array("music_list", 64, item.child_value("music_list"))
+            newprofile.replace_int_array("theme_list", 16, item.child_value("theme_list"))
+            newprofile.replace_int_array("marker_list", 16, item.child_value("marker_list"))
+            newprofile.replace_int_array("title_list", 160, item.child_value("title_list"))
+            newprofile.replace_int_array("parts_list", 160, item.child_value("parts_list"))
 
             if not force_unlock:
                 # Don't persist if we're force-unlocked, this data will be bogus.
-                owned_songs = self.calculate_owned_items(
-                    item.child_value("secret_list")
-                )
+                owned_songs = self.calculate_owned_items(item.child_value("secret_list"))
                 for index in owned_songs:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -1384,18 +1265,12 @@ class JubeatQubell(
 
             newitem = item.child("new")
             if newitem is not None:
-                newprofile.replace_int_array(
-                    "theme_list_new", 16, newitem.child_value("theme_list")
-                )
-                newprofile.replace_int_array(
-                    "marker_list_new", 16, newitem.child_value("marker_list")
-                )
+                newprofile.replace_int_array("theme_list_new", 16, newitem.child_value("theme_list"))
+                newprofile.replace_int_array("marker_list_new", 16, newitem.child_value("marker_list"))
 
                 if not force_unlock:
                     # Don't persist if we're force-unlocked, this data will be bogus.
-                    owned_secrets = self.calculate_owned_items(
-                        newitem.child_value("secret_list")
-                    )
+                    owned_secrets = self.calculate_owned_items(newitem.child_value("secret_list"))
                     for index in owned_secrets:
                         self.data.local.user.put_achievement(
                             self.game,
@@ -1492,27 +1367,13 @@ class JubeatQubell(
             if eternal is not None:
                 eternaldict.replace_int("used_point", eternal.child_value("used_point"))
                 eternaldict.replace_int("point", eternal.child_value("point"))
-                eternaldict.replace_int(
-                    "excavated_point", eternal.child_value("excavated_point")
-                )
-                eternaldict.replace_int_array(
-                    "state", 12, eternal.child_value("cube/state")
-                )
-                eternaldict.replace_int_array(
-                    "item_kind", 12, eternal.child_value("cube/item/kind")
-                )
-                eternaldict.replace_int_array(
-                    "item_value", 12, eternal.child_value("cube/item/value")
-                )
-                eternaldict.replace_int_array(
-                    "norma_kind", 12, eternal.child_value("cube/norma/kind")
-                )
-                eternaldict.replace_int_array(
-                    "norma_value", 12, eternal.child_value("cube/norma/value")
-                )
-                eternaldict.replace_int_array(
-                    "norma_param", 12, eternal.child_value("cube/norma/param")
-                )
+                eternaldict.replace_int("excavated_point", eternal.child_value("excavated_point"))
+                eternaldict.replace_int_array("state", 12, eternal.child_value("cube/state"))
+                eternaldict.replace_int_array("item_kind", 12, eternal.child_value("cube/item/kind"))
+                eternaldict.replace_int_array("item_value", 12, eternal.child_value("cube/item/value"))
+                eternaldict.replace_int_array("norma_kind", 12, eternal.child_value("cube/norma/kind"))
+                eternaldict.replace_int_array("norma_value", 12, eternal.child_value("cube/norma/value"))
+                eternaldict.replace_int_array("norma_param", 12, eternal.child_value("cube/norma/param"))
             digdigdict.replace_dict("eternal", eternaldict)
 
             if self.ENABLE_GARNET:
@@ -1521,12 +1382,8 @@ class JubeatQubell(
                 if old is not None:
                     olddict.replace_int("need_point", old.child_value("need_point"))
                     olddict.replace_int("point", old.child_value("point"))
-                    olddict.replace_int_array(
-                        "excavated_point", 5, old.child_value("excavated_point")
-                    )
-                    olddict.replace_int_array(
-                        "excavated", 5, old.child_value("excavated")
-                    )
+                    olddict.replace_int_array("excavated_point", 5, old.child_value("excavated_point"))
+                    olddict.replace_int_array("excavated", 5, old.child_value("excavated"))
                     olddict.replace_int_array("param", 5, old.child_value("param"))
                 digdigdict.replace_dict("old", olddict)
 
@@ -1599,9 +1456,7 @@ class JubeatQubell(
                     if flags & bit > 0:
                         medal = max(medal, mapping[bit])
 
-                self.update_score(
-                    userid, timestamp, songid, chart, points, medal, combo, ghost, stats
-                )
+                self.update_score(userid, timestamp, songid, chart, points, medal, combo, ghost, stats)
 
         # Born stuff
         born = player.child("born")

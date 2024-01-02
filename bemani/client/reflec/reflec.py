@@ -155,9 +155,7 @@ class ReflecBeat(BaseClient):
         self.assert_path(resp, "response/player/pdata/cmnt")
 
         if resp.child_value("player/pdata/base/name") != self.NAME:
-            raise Exception(
-                f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!'
-            )
+            raise Exception(f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!')
 
         scores = []
         for child in resp.child("player/pdata/record").children:
@@ -224,9 +222,7 @@ class ReflecBeat(BaseClient):
             return f'{thing["id"]}-{thing["chart"]}'
 
         updates = [key(score) for score in scores]
-        sortedrecords = {
-            key(record): record for record in records if key(record) in updates
-        }
+        sortedrecords = {key(record): record for record in records if key(record) in updates}
 
         # Now, see what records need updating and update them
         for score in scores:
@@ -247,9 +243,7 @@ class ReflecBeat(BaseClient):
                 "id": score["id"],
                 "chart": score["chart"],
                 "clear_type": max(record["clear_type"], score["clear_type"]),
-                "achievement_rate": max(
-                    record["achievement_rate"], score["achievement_rate"]
-                ),
+                "achievement_rate": max(record["achievement_rate"], score["achievement_rate"]),
                 "score": max(record["score"], score["score"]),
                 "combo": max(record["combo"], score["combo"]),
                 "miss_count": min(record["miss_count"], score["miss_count"]),
@@ -310,9 +304,7 @@ class ReflecBeat(BaseClient):
         self.assert_path(resp, "response/player/time")
         return resp.child_value("player/uid")
 
-    def verify_log_play(
-        self, extid: int, loc: str, scores: List[Dict[str, int]]
-    ) -> None:
+    def verify_log_play(self, extid: int, loc: str, scores: List[Dict[str, int]]) -> None:
         call = self.call_node()
 
         log = Node.void("log")
@@ -468,17 +460,11 @@ class ReflecBeat(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             # Always get a player start, regardless of new profile or not
             self.verify_player_start(ref_id)
@@ -492,16 +478,12 @@ class ReflecBeat(BaseClient):
             )
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify lobby functionality
@@ -593,26 +575,19 @@ class ReflecBeat(BaseClient):
                 for expected in dummyscores:
                     actual = None
                     for received in scores:
-                        if (
-                            received["id"] == expected["id"]
-                            and received["chart"] == expected["chart"]
-                        ):
+                        if received["id"] == expected["id"] and received["chart"] == expected["chart"]:
                             actual = received
                             break
 
                     if actual is None:
-                        raise Exception(
-                            f"Didn't find song {expected['id']} chart {expected['chart']} in response!"
-                        )
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if "expected_score" in expected:
                         expected_score = expected["expected_score"]
                     else:
                         expected_score = expected["score"]
                     if "expected_achievement_rate" in expected:
-                        expected_achievement_rate = expected[
-                            "expected_achievement_rate"
-                        ]
+                        expected_achievement_rate = expected["expected_achievement_rate"]
                     else:
                         expected_achievement_rate = expected["achievement_rate"]
                     if "expected_clear_type" in expected:

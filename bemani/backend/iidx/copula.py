@@ -104,28 +104,15 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         return IIDXPendual(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert dailies into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "daily_charts", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "daily_charts", "daily"):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = list(
-                set(
-                    [
-                        song.id
-                        for song in data.local.music.get_all_songs(
-                            cls.game, cls.version
-                        )
-                    ]
-                )
-            )
+            all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
             if len(all_songs) >= 3:
                 daily_songs = random.sample(all_songs, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -149,9 +136,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "daily_charts", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "daily_charts", "daily")
         return events
 
     @classmethod
@@ -357,9 +342,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         root = Node.void("IIDX23shop")
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -383,9 +366,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             course.replace_int("music_2", request.child_value("music_2"))
             course.replace_int("music_3", request.child_value("music_3"))
             course.replace_bool("valid", request.child_value("valid"))
-            self.data.local.machine.put_settings(
-                machine.arcade, self.game, self.music_version, "shop_course", course
-            )
+            self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, "shop_course", course)
 
         return root
 
@@ -410,9 +391,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -527,16 +506,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         root = Node.void("IIDX23music")
         attempts = self.get_clear_rates()
 
-        all_songs = list(
-            set(
-                [
-                    song.id
-                    for song in self.data.local.music.get_all_songs(
-                        self.game, self.music_version
-                    )
-                ]
-            )
-        )
+        all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
         for song in all_songs:
             clears = []
             fcs = []
@@ -580,16 +550,12 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 continue
             userid = self.data.remote.user.from_extid(self.game, self.version, extid)
             if userid is not None:
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.music_version, userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
                 # Grab score data for user/rival
                 scoredata = self.make_score_struct(
                     scores,
-                    self.CLEAR_TYPE_SINGLE
-                    if cltype == self.GAME_CLTYPE_SINGLE
-                    else self.CLEAR_TYPE_DOUBLE,
+                    self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
                     rivalid,
                 )
                 for s in scoredata:
@@ -597,10 +563,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
                 # Grab most played for user/rival
                 most_played = [
-                    play[0]
-                    for play in self.data.local.music.get_most_played(
-                        self.game, self.music_version, userid, 20
-                    )
+                    play[0] for play in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
                 ]
                 if len(most_played) < 20:
                     most_played.extend([0] * (20 - len(most_played)))
@@ -643,19 +606,13 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             key=lambda s: (s[1].points, s[1].timestamp),
             reverse=True,
         )
-        all_players = {
-            uid: prof
-            for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])
-        }
+        all_players = {uid: prof for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])}
 
         if not global_scores:
             all_scores = [
                 score
                 for score in all_scores
-                if (
-                    score[0] == userid
-                    or self.user_joined_arcade(machine, all_players[score[0]])
-                )
+                if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
             ]
 
         # Find our actual index
@@ -707,9 +664,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             # Shop ranking
             shopdata = Node.void("shopdata")
             root.add_child(shopdata)
-            shopdata.set_attribute(
-                "rank", "-1" if oldindex is None else str(oldindex + 1)
-            )
+            shopdata.set_attribute("rank", "-1" if oldindex is None else str(oldindex + 1))
 
             # Grab the rank of some other players on this song
             ranklist = Node.void("ranklist")
@@ -733,10 +688,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 all_scores = [
                     score
                     for score in all_scores
-                    if (
-                        score[0] == userid
-                        or self.user_joined_arcade(machine, all_players[score[0]])
-                    )
+                    if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
                 ]
 
             # Find our actual index
@@ -884,9 +836,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
 
         if userid is not None:
             # Try to look up previous ghost for user
-            my_score = self.data.remote.music.get_score(
-                self.game, self.music_version, userid, musicid, chart
-            )
+            my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
             if my_score is not None:
                 mydata = Node.binary("mydata", my_score.data.get_bytes("ghost"))
                 mydata.set_attribute("score", str(my_score.points))
@@ -1318,9 +1268,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             used_secret_ids: List[int] = []
             for c in secret_courses:
                 if c["id"] in used_secret_ids:
-                    raise Exception(
-                        "Cannot have multiple secret courses with the same ID!"
-                    )
+                    raise Exception("Cannot have multiple secret courses with the same ID!")
                 elif c["id"] < 0 or c["id"] >= 20:
                     raise Exception("Secret course ID is out of bounds!")
                 else:
@@ -1497,9 +1445,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, "NO PLAY")
         now_clear_string = clear_map.get(now_clear, "NO PLAY")
         # let's get the song info first
-        song = self.data.local.music.get_song(
-            self.game, self.music_version, music_id, self.game_to_db_chart(class_id)
-        )
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get("notecount", 0)
         # Construct the dictionary for the broadcast
         card_data = {
@@ -1609,15 +1555,9 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             secret.add_child(Node.s64_array("flg2", [-1, -1, -1, -1]))
             secret.add_child(Node.s64_array("flg3", [-1, -1, -1, -1]))
         else:
-            secret.add_child(
-                Node.s64_array("flg1", secret_dict.get_int_array("flg1", 4))
-            )
-            secret.add_child(
-                Node.s64_array("flg2", secret_dict.get_int_array("flg2", 4))
-            )
-            secret.add_child(
-                Node.s64_array("flg3", secret_dict.get_int_array("flg3", 4))
-            )
+            secret.add_child(Node.s64_array("flg1", secret_dict.get_int_array("flg1", 4)))
+            secret.add_child(Node.s64_array("flg2", secret_dict.get_int_array("flg2", 4)))
+            secret.add_child(Node.s64_array("flg3", secret_dict.get_int_array("flg3", 4)))
 
         # Favorites
         for folder in ["favorite1", "favorite2", "favorite3"]:
@@ -1679,9 +1619,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 )
             ),
         )
-        rankings = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        rankings = self.data.local.user.get_achievements(self.game, self.version, userid)
         for rank in rankings:
             if rank.type == self.DAN_RANKING_SINGLE:
                 grade.add_child(
@@ -1822,9 +1760,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                         [
                             int(rank.id / 6),  # course ID
                             rank.id % 6,  # course chart
-                            self.db_to_game_status(
-                                rank.data.get_int("clear_status")
-                            ),  # course clear status
+                            self.db_to_game_status(rank.data.get_int("clear_status")),  # course clear status
                             rank.data.get_int("pgnum"),  # flashing great count
                             rank.data.get_int("gnum"),  # great count
                         ],
@@ -1841,9 +1777,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                         [
                             int(rank.id / 6),  # course ID
                             rank.id % 6,  # course chart
-                            self.db_to_game_status(
-                                rank.data.get_int("clear_status")
-                            ),  # course clear status
+                            self.db_to_game_status(rank.data.get_int("clear_status")),  # course clear status
                             rank.data.get_int("pgnum"),  # flashing great count
                             rank.data.get_int("gnum"),  # great count
                         ],
@@ -1881,16 +1815,12 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             step.add_child(
                 Node.binary(
                     "tokimeki",
-                    step_dict.get_bytes(
-                        "tokimeki", b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    ),
+                    step_dict.get_bytes("tokimeki", b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"),
                 )
             )
 
         # Daily recommendations
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "dailies"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "dailies")
         if entry is not None:
             packinfo = Node.void("packinfo")
             root.add_child(packinfo)
@@ -1913,15 +1843,11 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             achievements.set_attribute("pack", "0")
             achievements.set_attribute("pack_comp", "0")
         else:
-            daily_played = self.data.local.user.get_achievement(
-                self.game, self.version, userid, pack_id, "daily"
-            )
+            daily_played = self.data.local.user.get_achievement(self.game, self.version, userid, pack_id, "daily")
             if daily_played is None:
                 daily_played = ValidatedDict()
             achievements.set_attribute("pack", str(daily_played.get_int("pack_flg")))
-            achievements.set_attribute(
-                "pack_comp", str(daily_played.get_int("pack_comp"))
-            )
+            achievements.set_attribute("pack_comp", str(daily_played.get_int("pack_comp")))
 
         # Weeklies
         achievements.set_attribute("last_weekly", str(profile.get_int("last_weekly")))
@@ -1934,9 +1860,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         achievements.set_attribute("rival_crush", str(profile.get_int("rival_crush")))
 
         # Tran medals
-        achievements.add_child(
-            Node.s64_array("trophy", profile.get_int_array("trophy", 10))
-        )
+        achievements.add_child(Node.s64_array("trophy", profile.get_int_array("trophy", 10)))
 
         # Track deller
         deller = Node.void("deller")
@@ -1959,9 +1883,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 detail.set_attribute("course_id", str(rank.id))
                 detail.set_attribute("n_point", str(rank.data.get_int("normal_points")))
                 detail.set_attribute("h_point", str(rank.data.get_int("hyper_points")))
-                detail.set_attribute(
-                    "a_point", str(rank.data.get_int("another_points"))
-                )
+                detail.set_attribute("a_point", str(rank.data.get_int("another_points")))
 
         # Tokotoko Line Event
         if "event1" in profile:
@@ -1969,31 +1891,15 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             event1_dict = profile.get_dict("event1")
             event1_data = Node.void("event1_data")
             root.add_child(event1_data)
-            event1_data.set_attribute(
-                "point_map_0", str(event1_dict.get_int("point_map_0"))
-            )
-            event1_data.set_attribute(
-                "point_map_1", str(event1_dict.get_int("point_map_1"))
-            )
-            event1_data.set_attribute(
-                "point_map_2", str(event1_dict.get_int("point_map_2"))
-            )
-            event1_data.set_attribute(
-                "point_map_3", str(event1_dict.get_int("point_map_3"))
-            )
-            event1_data.set_attribute(
-                "point_map_4", str(event1_dict.get_int("point_map_4"))
-            )
-            event1_data.set_attribute(
-                "hold_point", str(event1_dict.get_int("hold_point"))
-            )
+            event1_data.set_attribute("point_map_0", str(event1_dict.get_int("point_map_0")))
+            event1_data.set_attribute("point_map_1", str(event1_dict.get_int("point_map_1")))
+            event1_data.set_attribute("point_map_2", str(event1_dict.get_int("point_map_2")))
+            event1_data.set_attribute("point_map_3", str(event1_dict.get_int("point_map_3")))
+            event1_data.set_attribute("point_map_4", str(event1_dict.get_int("point_map_4")))
+            event1_data.set_attribute("hold_point", str(event1_dict.get_int("hold_point")))
             event1_data.set_attribute("last_map", str(event1_dict.get_int("last_map")))
-            event1_data.set_attribute(
-                "rank_point", str(event1_dict.get_int("rank_point"))
-            )
-            event1_data.set_attribute(
-                "tips_list", str(event1_dict.get_int("tips_list"))
-            )
+            event1_data.set_attribute("rank_point", str(event1_dict.get_int("rank_point")))
+            event1_data.set_attribute("tips_list", str(event1_dict.get_int("tips_list")))
             event1_data.set_attribute("gift_point", "0")
 
         # Mystery Line Event
@@ -2004,16 +1910,10 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             root.add_child(event2_data)
             event2_data.set_attribute("play_num", str(event2_dict.get_int("play_num")))
             event2_data.set_attribute("now_area", str(event2_dict.get_int("now_area")))
-            event2_data.set_attribute(
-                "now_note_grade", str(event2_dict.get_int("now_note_grade"))
-            )
-            event2_data.set_attribute(
-                "stop_area_time", str(event2_dict.get_int("stop_area_time"))
-            )
+            event2_data.set_attribute("now_note_grade", str(event2_dict.get_int("now_note_grade")))
+            event2_data.set_attribute("stop_area_time", str(event2_dict.get_int("stop_area_time")))
 
-            areas = self.data.local.user.get_achievements(
-                self.game, self.version, userid
-            )
+            areas = self.data.local.user.get_achievements(self.game, self.version, userid)
             for area in areas:
                 if area.type != "event2_area_data":
                     continue
@@ -2021,18 +1921,10 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 event2_area_data = Node.void("event2_area_data")
                 event2_data.add_child(event2_area_data)
                 event2_area_data.set_attribute("area_no", str(area.id))
-                event2_area_data.set_attribute(
-                    "area_play", str(area.data.get_int("play_num"))
-                )
-                event2_area_data.set_attribute(
-                    "normal_point", str(area.data.get_int("normal_point"))
-                )
-                event2_area_data.set_attribute(
-                    "hyper_point", str(area.data.get_int("hyper_point"))
-                )
-                event2_area_data.set_attribute(
-                    "another_point", str(area.data.get_int("another_point"))
-                )
+                event2_area_data.set_attribute("area_play", str(area.data.get_int("play_num")))
+                event2_area_data.set_attribute("normal_point", str(area.data.get_int("normal_point")))
+                event2_area_data.set_attribute("hyper_point", str(area.data.get_int("hyper_point")))
+                event2_area_data.set_attribute("another_point", str(area.data.get_int("another_point")))
 
         # One More Event
         if "onemore" in profile:
@@ -2040,42 +1932,22 @@ class IIDXCopula(IIDXCourse, IIDXBase):
             onemore_dict = profile.get_dict("onemore")
             onemore_data = Node.void("onemore_data")
             root.add_child(onemore_data)
-            onemore_data.set_attribute(
-                "defeat_0", str(onemore_dict.get_int("defeat_0"))
-            )
-            onemore_data.set_attribute(
-                "defeat_1", str(onemore_dict.get_int("defeat_1"))
-            )
-            onemore_data.set_attribute(
-                "defeat_2", str(onemore_dict.get_int("defeat_2"))
-            )
-            onemore_data.set_attribute(
-                "defeat_3", str(onemore_dict.get_int("defeat_3"))
-            )
-            onemore_data.set_attribute(
-                "defeat_4", str(onemore_dict.get_int("defeat_4"))
-            )
-            onemore_data.set_attribute(
-                "defeat_5", str(onemore_dict.get_int("defeat_5"))
-            )
-            onemore_data.set_attribute(
-                "challenge_num_n", str(onemore_dict.get_int("challenge_num_n"))
-            )
-            onemore_data.set_attribute(
-                "challenge_num_h", str(onemore_dict.get_int("challenge_num_h"))
-            )
-            onemore_data.set_attribute(
-                "challenge_num_a", str(onemore_dict.get_int("challenge_num_a"))
-            )
+            onemore_data.set_attribute("defeat_0", str(onemore_dict.get_int("defeat_0")))
+            onemore_data.set_attribute("defeat_1", str(onemore_dict.get_int("defeat_1")))
+            onemore_data.set_attribute("defeat_2", str(onemore_dict.get_int("defeat_2")))
+            onemore_data.set_attribute("defeat_3", str(onemore_dict.get_int("defeat_3")))
+            onemore_data.set_attribute("defeat_4", str(onemore_dict.get_int("defeat_4")))
+            onemore_data.set_attribute("defeat_5", str(onemore_dict.get_int("defeat_5")))
+            onemore_data.set_attribute("challenge_num_n", str(onemore_dict.get_int("challenge_num_n")))
+            onemore_data.set_attribute("challenge_num_h", str(onemore_dict.get_int("challenge_num_h")))
+            onemore_data.set_attribute("challenge_num_a", str(onemore_dict.get_int("challenge_num_a")))
 
         # Ea app features
         if self.data.triggers.has_broadcast_destination(self.game):
             root.add_child(Node.void("bind_eaappli"))
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -2151,15 +2023,9 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         # Basic achievements
         achievements = request.child("achievements")
         if achievements is not None:
-            newprofile.replace_int(
-                "visit_flg", int(achievements.attribute("visit_flg"))
-            )
-            newprofile.replace_int(
-                "last_weekly", int(achievements.attribute("last_weekly"))
-            )
-            newprofile.replace_int(
-                "weekly_num", int(achievements.attribute("weekly_num"))
-            )
+            newprofile.replace_int("visit_flg", int(achievements.attribute("visit_flg")))
+            newprofile.replace_int("last_weekly", int(achievements.attribute("last_weekly")))
+            newprofile.replace_int("weekly_num", int(achievements.attribute("weekly_num")))
 
             pack_id = int(achievements.attribute("pack_id"))
             if pack_id > 0:
@@ -2183,9 +2049,7 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         # Deller saving
         deller = request.child("deller")
         if deller is not None:
-            newprofile.replace_int(
-                "deller", newprofile.get_int("deller") + int(deller.attribute("deller"))
-            )
+            newprofile.replace_int("deller", newprofile.get_int("deller") + int(deller.attribute("deller")))
 
         # Secret course expert point saving
         expert_point = request.child("expert_point")
@@ -2249,22 +2113,14 @@ class IIDXCopula(IIDXCourse, IIDXBase):
                 for i in range(self.FAVORITE_LIST_LENGTH):
                     singles.append(
                         {
-                            "id": struct.unpack(
-                                "<L", single_music_bin[(i * 4) : ((i + 1) * 4)]
-                            )[0],
-                            "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[
-                                0
-                            ],
+                            "id": struct.unpack("<L", single_music_bin[(i * 4) : ((i + 1) * 4)])[0],
+                            "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[0],
                         }
                     )
                     doubles.append(
                         {
-                            "id": struct.unpack(
-                                "<L", double_music_bin[(i * 4) : ((i + 1) * 4)]
-                            )[0],
-                            "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[
-                                0
-                            ],
+                            "id": struct.unpack("<L", double_music_bin[(i * 4) : ((i + 1) * 4)])[0],
+                            "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[0],
                         }
                     )
 
@@ -2312,47 +2168,25 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         event1_data = request.child("event1_data")
         if event1_data is not None:
             event1_dict = newprofile.get_dict("event1")
-            event1_dict.replace_int(
-                "hold_point", int(event1_data.attribute("hold_point"))
-            )
+            event1_dict.replace_int("hold_point", int(event1_data.attribute("hold_point")))
             event1_dict.replace_int("last_map", int(event1_data.attribute("last_map")))
-            event1_dict.replace_int(
-                "rank_point", int(event1_data.attribute("rank_point"))
-            )
-            event1_dict.replace_int(
-                "tips_list", int(event1_data.attribute("tips_list"))
-            )
-            event1_dict.replace_int(
-                "point_map_0", int(event1_data.attribute("point_map_0"))
-            )
-            event1_dict.replace_int(
-                "point_map_1", int(event1_data.attribute("point_map_1"))
-            )
-            event1_dict.replace_int(
-                "point_map_2", int(event1_data.attribute("point_map_2"))
-            )
-            event1_dict.replace_int(
-                "point_map_3", int(event1_data.attribute("point_map_3"))
-            )
-            event1_dict.replace_int(
-                "point_map_4", int(event1_data.attribute("point_map_4"))
-            )
+            event1_dict.replace_int("rank_point", int(event1_data.attribute("rank_point")))
+            event1_dict.replace_int("tips_list", int(event1_data.attribute("tips_list")))
+            event1_dict.replace_int("point_map_0", int(event1_data.attribute("point_map_0")))
+            event1_dict.replace_int("point_map_1", int(event1_data.attribute("point_map_1")))
+            event1_dict.replace_int("point_map_2", int(event1_data.attribute("point_map_2")))
+            event1_dict.replace_int("point_map_3", int(event1_data.attribute("point_map_3")))
+            event1_dict.replace_int("point_map_4", int(event1_data.attribute("point_map_4")))
             newprofile.replace_dict("event1", event1_dict)
 
         # Mystery Line Event
         event2_data = request.child("event2_data")
         if event2_data is not None:
             event2_dict = newprofile.get_dict("event2")
-            event2_dict.replace_int(
-                "now_area", int(event2_data.attribute("now_stay_area"))
-            )
-            event2_dict.replace_int(
-                "now_note_grade", int(event2_data.attribute("now_stay_note_grade"))
-            )
+            event2_dict.replace_int("now_area", int(event2_data.attribute("now_stay_area")))
+            event2_dict.replace_int("now_note_grade", int(event2_data.attribute("now_stay_note_grade")))
             event2_dict.replace_int("play_num", int(event2_data.attribute("play_num")))
-            event2_dict.replace_int(
-                "stop_area_time", int(event2_data.attribute("stop_area_time"))
-            )
+            event2_dict.replace_int("stop_area_time", int(event2_data.attribute("stop_area_time")))
             newprofile.replace_dict("event2", event2_dict)
 
             for area_data in event2_data.children:
@@ -2378,33 +2212,15 @@ class IIDXCopula(IIDXCourse, IIDXBase):
         onemore_data = request.child("onemore_data")
         if onemore_data is not None:
             onemore_dict = newprofile.get_dict("onemore")
-            onemore_dict.replace_int(
-                "defeat_0", int(onemore_data.attribute("defeat_0"))
-            )
-            onemore_dict.replace_int(
-                "defeat_1", int(onemore_data.attribute("defeat_1"))
-            )
-            onemore_dict.replace_int(
-                "defeat_2", int(onemore_data.attribute("defeat_2"))
-            )
-            onemore_dict.replace_int(
-                "defeat_3", int(onemore_data.attribute("defeat_3"))
-            )
-            onemore_dict.replace_int(
-                "defeat_4", int(onemore_data.attribute("defeat_4"))
-            )
-            onemore_dict.replace_int(
-                "defeat_5", int(onemore_data.attribute("defeat_5"))
-            )
-            onemore_dict.replace_int(
-                "challenge_num_n", int(onemore_data.attribute("challenge_num_n"))
-            )
-            onemore_dict.replace_int(
-                "challenge_num_h", int(onemore_data.attribute("challenge_num_h"))
-            )
-            onemore_dict.replace_int(
-                "challenge_num_a", int(onemore_data.attribute("challenge_num_a"))
-            )
+            onemore_dict.replace_int("defeat_0", int(onemore_data.attribute("defeat_0")))
+            onemore_dict.replace_int("defeat_1", int(onemore_data.attribute("defeat_1")))
+            onemore_dict.replace_int("defeat_2", int(onemore_data.attribute("defeat_2")))
+            onemore_dict.replace_int("defeat_3", int(onemore_data.attribute("defeat_3")))
+            onemore_dict.replace_int("defeat_4", int(onemore_data.attribute("defeat_4")))
+            onemore_dict.replace_int("defeat_5", int(onemore_data.attribute("defeat_5")))
+            onemore_dict.replace_int("challenge_num_n", int(onemore_data.attribute("challenge_num_n")))
+            onemore_dict.replace_int("challenge_num_h", int(onemore_data.attribute("challenge_num_h")))
+            onemore_dict.replace_int("challenge_num_a", int(onemore_data.attribute("challenge_num_a")))
             newprofile.replace_dict("onemore", onemore_dict)
 
         # Keep track of play statistics across all mixes

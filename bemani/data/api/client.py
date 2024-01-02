@@ -45,9 +45,7 @@ class APIClient:
 
     API_VERSION: Final[str] = "v1"
 
-    def __init__(
-        self, base_uri: str, token: str, allow_stats: bool, allow_scores: bool
-    ) -> None:
+    def __init__(self, base_uri: str, token: str, allow_stats: bool, allow_scores: bool) -> None:
         self.base_uri = base_uri
         self.token = token
         self.allow_stats = allow_stats
@@ -82,9 +80,7 @@ class APIClient:
                     return True
         return False
 
-    def __exchange_data(
-        self, request_uri: str, request_args: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def __exchange_data(self, request_uri: str, request_args: Dict[str, Any]) -> Dict[str, Any]:
         if self.base_uri[-1:] != "/":
             uri = f"{self.base_uri}/{request_uri}"
         else:
@@ -110,9 +106,7 @@ class APIClient:
 
         # Verify that content type is in the form of "application/json; charset=utf-8".
         if not self._content_type_valid(r.headers["content-type"]):
-            raise APIException(
-                f'API returned invalid content type \'{r.headers["content-type"]}\'!'
-            )
+            raise APIException(f'API returned invalid content type \'{r.headers["content-type"]}\'!')
 
         jsondata = r.json()
 
@@ -126,28 +120,18 @@ class APIClient:
         error = jsondata["error"]
 
         if r.status_code == 401:
-            raise NotAuthorizedAPIException(
-                "The API token used is not authorized against this server!"
-            )
+            raise NotAuthorizedAPIException("The API token used is not authorized against this server!")
         if r.status_code == 404:
-            raise UnsupportedRequestAPIException(
-                "The server does not support this game/version or request object!"
-            )
+            raise UnsupportedRequestAPIException("The server does not support this game/version or request object!")
         if r.status_code == 405:
-            raise UnrecognizedRequestAPIException(
-                "The server did not recognize the request!"
-            )
+            raise UnrecognizedRequestAPIException("The server did not recognize the request!")
         if r.status_code == 500:
             raise RemoteServerErrorAPIException(
                 f"The server had an error processing the request and returned '{error}'"
             )
         if r.status_code == 501:
-            raise UnsupportedVersionAPIException(
-                "The server does not support this version of the API!"
-            )
-        raise APIException(
-            "The server returned an invalid status code {}!", format(r.status_code)
-        )
+            raise UnsupportedVersionAPIException("The server does not support this version of the API!")
+        raise APIException("The server returned an invalid status code {}!", format(r.status_code))
 
     def __translate(self, game: GameConstants, version: int) -> Tuple[str, str]:
         servergame = {
@@ -160,9 +144,7 @@ class APIClient:
             GameConstants.SDVX: "soundvoltex",
         }.get(game)
         if servergame is None:
-            raise UnsupportedRequestAPIException(
-                "The client does not support this game/version!"
-            )
+            raise UnsupportedRequestAPIException("The client does not support this game/version!")
 
         if version >= DBConstants.OMNIMIX_VERSION_BUMP:
             version = version - DBConstants.OMNIMIX_VERSION_BUMP
@@ -234,9 +216,7 @@ class APIClient:
             .get(version)
         )
         if serverversion is None:
-            raise UnsupportedRequestAPIException(
-                "The client does not support this game/version!"
-            )
+            raise UnsupportedRequestAPIException("The client does not support this game/version!")
 
         if omnimix:
             serverversion = "o" + serverversion
@@ -338,9 +318,7 @@ class APIClient:
             return []
 
     @cache.memoize(Time.SECONDS_IN_HOUR * 1)
-    def get_catalog(
-        self, game: GameConstants, version: int
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    def get_catalog(self, game: GameConstants, version: int) -> Dict[str, List[Dict[str, Any]]]:
         # No point disallowing this, since its only ever used for bootstrapping.
 
         try:

@@ -186,9 +186,7 @@ def viewtopscores(musicid: int) -> Response:
     difficulties = [0, 0, 0, 0]
 
     for chart in [0, 1, 2, 3]:
-        details = g.data.local.music.get_song(
-            GameConstants.REFLEC_BEAT, 0, musicid, chart
-        )
+        details = g.data.local.music.get_song(GameConstants.REFLEC_BEAT, 0, musicid, chart)
         if details is not None:
             if name is None:
                 name = details.name
@@ -269,9 +267,7 @@ def viewplayer(userid: UserID) -> Response:
             "playerid": userid,
             "own_profile": userid == g.userID,
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("reflec_pages.listplayer", userid=userid),
@@ -307,9 +303,7 @@ def viewsettings() -> Response:
         "reflec/settings.react.js",
         {
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "updatename": url_for("reflec_pages.updatename"),
@@ -406,9 +400,7 @@ def viewrivals() -> Response:
             "rivals": rivals,
             "players": playerinfo,
             "versions": {
-                version: name
-                for (game, version, name) in frontend.all_games()
-                if version not in NO_RIVAL_SUPPORT
+                version: name for (game, version, name) in frontend.all_games() if version not in NO_RIVAL_SUPPORT
             },
         },
         {
@@ -472,9 +464,7 @@ def addrival() -> Dict[str, Any]:
     userid = g.userID
 
     # Add this rival link
-    profile = g.data.remote.user.get_profile(
-        GameConstants.REFLEC_BEAT, version, other_userid
-    )
+    profile = g.data.remote.user.get_profile(GameConstants.REFLEC_BEAT, version, other_userid)
     if profile is None:
         raise Exception("Unable to find profile for rival!")
 

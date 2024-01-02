@@ -98,9 +98,7 @@ class TheStarBishiBashi(
         data = data.replace(";", "#;")
         return data
 
-    def __generate_setting(
-        self, key: str, values: Union[int, str, Sequence[int], Sequence[str]]
-    ) -> str:
+    def __generate_setting(self, key: str, values: Union[int, str, Sequence[int], Sequence[str]]) -> str:
         if isinstance(values, Iterable) and not isinstance(values, str):
             values = ",".join(self.__escape_string(x) for x in values)
         else:
@@ -184,9 +182,7 @@ class TheStarBishiBashi(
             enable_dlc_levels = game_config.get_bool("enable_dlc_levels")
             if enable_dlc_levels:
                 settings["MAL"] = 1
-            force_unlock_characters = game_config.get_bool(
-                "force_unlock_eamuse_characters"
-            )
+            force_unlock_characters = game_config.get_bool("force_unlock_eamuse_characters")
             if force_unlock_characters:
                 settings["ALL"] = 1
             scrolling_message = game_config.get_str("big_announcement")
@@ -197,9 +193,7 @@ class TheStarBishiBashi(
                 settings["IM"] = bb_message
 
             # Generate system message
-            settings_str = ";".join(
-                self.__generate_setting(key, vals) for key, vals in settings.items()
-            )
+            settings_str = ";".join(self.__generate_setting(key, vals) for key, vals in settings.items())
 
             # Send it to the client, making sure to inform the client that it was valid.
             root.add_child(
@@ -223,9 +217,7 @@ class TheStarBishiBashi(
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
             root = Node.void("playerdata")
-            root.add_child(
-                Node.s32("result", 1)
-            )  # Unclear if this is the right thing to do here.
+            root.add_child(Node.s32("result", 1))  # Unclear if this is the right thing to do here.
             return root
 
         # Extract new profile info from old profile
@@ -258,14 +250,10 @@ class TheStarBishiBashi(
             return self.format_profile(userid, profiletype, profile)
         else:
             root = Node.void("playerdata")
-            root.add_child(
-                Node.s32("result", 1)
-            )  # Unclear if this is the right thing to do here.
+            root.add_child(Node.s32("result", 1))  # Unclear if this is the right thing to do here.
             return root
 
-    def format_profile(
-        self, userid: UserID, profiletype: str, profile: Profile
-    ) -> Node:
+    def format_profile(self, userid: UserID, profiletype: str, profile: Profile) -> Node:
         root = Node.void("playerdata")
         root.add_child(Node.s32("result", 0))
         player = Node.void("player")
@@ -342,9 +330,7 @@ class TheStarBishiBashi(
         player.add_child(Node.u32("record_num", records))
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool) -> Profile:
         # Profile save request, data values are base64 encoded.
         # d is a CSV, and bin1 is binary data.
         newprofile = oldprofile.clone()

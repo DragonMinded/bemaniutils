@@ -177,9 +177,7 @@ class CoreHandler(Base):
         root = Node.void("facility")
         root.set_attribute("expire", "600")
         location = Node.void("location")
-        location.add_child(
-            Node.string("id", ID.format_machine_id(machine.id, region=country))
-        )
+        location.add_child(Node.string("id", ID.format_machine_id(machine.id, region=country)))
         location.add_child(Node.string("country", country))
         location.add_child(Node.string("region", regionstr))
         location.add_child(Node.string("name", machine.name))
@@ -213,21 +211,11 @@ class CoreHandler(Base):
         eapass.add_child(Node.u16("valid", 365))
 
         url = Node.void("url")
-        url.add_child(
-            Node.string("eapass", self.config.server.uri or "www.ea-pass.konami.net")
-        )
-        url.add_child(
-            Node.string("arcadefan", self.config.server.uri or "www.konami.jp/am")
-        )
-        url.add_child(
-            Node.string("konaminetdx", self.config.server.uri or "http://am.573.jp")
-        )
-        url.add_child(
-            Node.string("konamiid", self.config.server.uri or "https://id.konami.net")
-        )
-        url.add_child(
-            Node.string("eagate", self.config.server.uri or "http://eagate.573.jp")
-        )
+        url.add_child(Node.string("eapass", self.config.server.uri or "www.ea-pass.konami.net"))
+        url.add_child(Node.string("arcadefan", self.config.server.uri or "www.konami.jp/am"))
+        url.add_child(Node.string("konaminetdx", self.config.server.uri or "http://am.573.jp"))
+        url.add_child(Node.string("konamiid", self.config.server.uri or "https://id.konami.net"))
+        url.add_child(Node.string("eagate", self.config.server.uri or "http://eagate.573.jp"))
 
         share.add_child(eacoin)
         share.add_child(url)

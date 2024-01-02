@@ -65,9 +65,7 @@ class CatalogObject(BaseObject):
         }
         return {
             "difficulty": song.data.get_int("difficulty"),
-            "category": categorymapping.get(
-                song.data.get_int("version", defaultcategory), "1"
-            ),
+            "category": categorymapping.get(song.data.get_int("version", defaultcategory), "1"),
             "bpm_min": song.data.get_int("bpm_min"),
             "bpm_max": song.data.get_int("bpm_max"),
         }
@@ -228,9 +226,7 @@ class CatalogObject(BaseObject):
         else:
             return self.version
 
-    def fetch_v1(
-        self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
         # Verify IDs
         if idtype != APIConstants.ID_TYPE_SERVER:
             raise APIException(
@@ -240,10 +236,7 @@ class CatalogObject(BaseObject):
 
         # Fetch the songs
         songs = self.data.local.music.get_all_songs(self.game, self.music_version)
-        if (
-            self.game == GameConstants.JUBEAT
-            and self.version == VersionConstants.JUBEAT_CLAN
-        ):
+        if self.game == GameConstants.JUBEAT and self.version == VersionConstants.JUBEAT_CLAN:
             # There's always a special case. We don't store all music IDs since those in
             # the range of 80000301-80000347 are actually the same song, but copy-pasted
             # for different prefectures and slightly different charts. So, we need to copy

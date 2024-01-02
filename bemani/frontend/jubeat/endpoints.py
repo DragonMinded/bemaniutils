@@ -36,9 +36,7 @@ def viewnetworkscores() -> Response:
             "attempts": network_scores["attempts"],
             "songs": frontend.get_all_songs(),
             "players": network_scores["players"],
-            "versions": {
-                version: name for (game, version, name) in frontend.sanitized_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.sanitized_games()},
             "shownames": True,
             "shownewrecords": False,
         },
@@ -77,9 +75,7 @@ def viewscores(userid: UserID) -> Response:
             "attempts": scores,
             "songs": frontend.get_all_songs(),
             "players": {},
-            "versions": {
-                version: name for (game, version, name) in frontend.sanitized_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.sanitized_games()},
             "shownames": False,
             "shownewrecords": True,
         },
@@ -115,9 +111,7 @@ def viewnetworkrecords() -> Response:
             "records": network_records["records"],
             "songs": frontend.get_all_songs(),
             "players": network_records["players"],
-            "versions": {
-                version: name for (game, version, name) in frontend.sanitized_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.sanitized_games()},
             "shownames": True,
             "showpersonalsort": False,
             "filterempty": False,
@@ -153,9 +147,7 @@ def viewrecords(userid: UserID) -> Response:
             "records": frontend.get_records(userid),
             "songs": frontend.get_all_songs(),
             "players": {},
-            "versions": {
-                version: name for (game, version, name) in frontend.sanitized_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.sanitized_games()},
             "shownames": False,
             "showpersonalsort": True,
             "filterempty": True,
@@ -197,9 +189,7 @@ def viewtopscores(musicid: int) -> Response:
     for version in versions:
         for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
             for chart in [0, 1, 2, 3, 4, 5]:
-                details = g.data.local.music.get_song(
-                    GameConstants.JUBEAT, version + omniadd, musicid, chart
-                )
+                details = g.data.local.music.get_song(GameConstants.JUBEAT, version + omniadd, musicid, chart)
                 if details is not None:
                     name = details.name
                     artist = details.artist
@@ -209,9 +199,7 @@ def viewtopscores(musicid: int) -> Response:
                     if difficulties[chart] == 0.0:
                         difficulties[chart] = details.data.get_float("difficulty", 13)
                         if difficulties[chart] >= 13.0:
-                            difficulties[chart] = float(
-                                details.data.get_int("difficulty", 13)
-                            )
+                            difficulties[chart] = float(details.data.get_int("difficulty", 13))
 
     if name is None:
         # Not a real song!
@@ -287,9 +275,7 @@ def viewplayer(userid: UserID) -> Response:
             "playerid": userid,
             "own_profile": userid == g.userID,
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("jubeat_pages.listplayer", userid=userid),
@@ -328,9 +314,7 @@ def showjubility(userid: UserID) -> Response:
             "playerid": userid,
             "player": info,
             "songs": frontend.get_all_songs(),
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("jubeat_pages.listplayer", userid=userid),
@@ -359,9 +343,7 @@ def viewsettings() -> Response:
         "jubeat/settings.react.js",
         {
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "emblems": all_emblems,
             "assets_available": g.config.assets.jubeat.emblems is not None,
         },
@@ -451,9 +433,7 @@ def viewrivals() -> Response:
             "userid": str(g.userID),
             "rivals": rivals,
             "players": playerinfo,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("jubeat_pages.listrivals"),
@@ -511,9 +491,7 @@ def addrival() -> Dict[str, Any]:
     userid = g.userID
 
     # Add this rival link
-    profile = g.data.remote.user.get_profile(
-        GameConstants.JUBEAT, version, other_userid
-    )
+    profile = g.data.remote.user.get_profile(GameConstants.JUBEAT, version, other_userid)
     if profile is None:
         raise Exception("Unable to find profile for rival!")
 

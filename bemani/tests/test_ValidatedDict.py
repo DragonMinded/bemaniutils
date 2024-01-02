@@ -33,13 +33,9 @@ class TestValidatedDict(unittest.TestCase):
         self.assertEqual(validict.get_int_array("int_array", 3), [0, 0, 0])
         self.assertEqual(validict.get_int_array("int_array", 3, [1, 2, 3]), [1, 2, 3])
         self.assertEqual(validict.get_bool_array("bool_array", 2), [False, False])
-        self.assertEqual(
-            validict.get_bool_array("bool_array", 2, [False, True]), [False, True]
-        )
+        self.assertEqual(validict.get_bool_array("bool_array", 2, [False, True]), [False, True])
         self.assertEqual(validict.get_str_array("str_array", 3), ["", "", ""])
-        self.assertEqual(
-            validict.get_str_array("str_array", 3, ["1", "2", "3"]), ["1", "2", "3"]
-        )
+        self.assertEqual(validict.get_str_array("str_array", 3, ["1", "2", "3"]), ["1", "2", "3"])
         self.assertEqual(validict.get_bytes_array("bytes_array", 3), [b"", b"", b""])
         self.assertEqual(
             validict.get_bytes_array("bytes_array", 3, [b"1", b"2", b"3"]),
@@ -77,13 +73,9 @@ class TestValidatedDict(unittest.TestCase):
         self.assertEqual(validict.get_int_array("int_array", 3), [3, 2, 1])
         self.assertEqual(validict.get_int_array("int_array", 3, [1, 2, 3]), [3, 2, 1])
         self.assertEqual(validict.get_bool_array("bool_array", 2), [True, False])
-        self.assertEqual(
-            validict.get_bool_array("bool_array", 2, [False, True]), [True, False]
-        )
+        self.assertEqual(validict.get_bool_array("bool_array", 2, [False, True]), [True, False])
         self.assertEqual(validict.get_str_array("str_array", 3), ["3", "4", "5"])
-        self.assertEqual(
-            validict.get_str_array("str_array", 3, ["1", "2", "3"]), ["3", "4", "5"]
-        )
+        self.assertEqual(validict.get_str_array("str_array", 3, ["1", "2", "3"]), ["3", "4", "5"])
         self.assertEqual(validict.get_bytes_array("bytes_array", 3), [b"3", b"5", b"7"])
         self.assertEqual(
             validict.get_bytes_array("bytes_array", 3, [b"1", b"2", b"3"]),
@@ -120,17 +112,13 @@ class TestValidatedDict(unittest.TestCase):
         self.assertEqual(validict.get_bytes("bytes", b"test"), b"test")
         self.assertEqual(validict.get_int_array("int_array", 3), [0, 0, 0])
         self.assertEqual(validict.get_int_array("int_array", 3, [1, 2, 3]), [1, 2, 3])
-        self.assertEqual(
-            validict.get_bool_array("bool_array", 3), [False, False, False]
-        )
+        self.assertEqual(validict.get_bool_array("bool_array", 3), [False, False, False])
         self.assertEqual(
             validict.get_bool_array("bool_array", 3, [False, True, True]),
             [False, True, True],
         )
         self.assertEqual(validict.get_str_array("str_array", 3), ["", "", ""])
-        self.assertEqual(
-            validict.get_str_array("str_array", 3, ["1", "2", "3"]), ["1", "2", "3"]
-        )
+        self.assertEqual(validict.get_str_array("str_array", 3, ["1", "2", "3"]), ["1", "2", "3"])
         self.assertEqual(validict.get_bytes_array("bytes_array", 3), [b"", b"", b""])
         self.assertEqual(
             validict.get_bytes_array("bytes_array", 3, [b"1", b"2", b"3"]),

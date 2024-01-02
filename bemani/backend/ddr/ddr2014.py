@@ -166,9 +166,7 @@ class DDR2014(
             flag.set_attribute("is_final", "0")
 
         # Last month's hit chart
-        hit_chart = self.data.local.music.get_hit_chart(
-            self.game, self.music_version, self.GAME_MAX_SONGS, 30
-        )
+        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS, 30)
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
@@ -176,9 +174,7 @@ class DDR2014(
         game.add_child(Node.u32_array("cnt_music_monthly", counts_by_reflink))
 
         # Last week's hit chart
-        hit_chart = self.data.local.music.get_hit_chart(
-            self.game, self.music_version, self.GAME_MAX_SONGS, 7
-        )
+        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS, 7)
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
@@ -186,9 +182,7 @@ class DDR2014(
         game.add_child(Node.u32_array("cnt_music_weekly", counts_by_reflink))
 
         # Last day's hit chart
-        hit_chart = self.data.local.music.get_hit_chart(
-            self.game, self.music_version, self.GAME_MAX_SONGS, 1
-        )
+        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS, 1)
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
@@ -209,9 +203,7 @@ class DDR2014(
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, userid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             scores = []
 
@@ -338,14 +330,10 @@ class DDR2014(
         root.add_child(Node.string("seq", ""))
         root.add_child(Node.u32("code", profile.extid))
         root.add_child(Node.string("name", profile.get_str("name")))
-        root.add_child(
-            Node.u8("area", profile.get_int("area", self.get_machine_region()))
-        )
+        root.add_child(Node.u8("area", profile.get_int("area", self.get_machine_region())))
         root.add_child(Node.u32("cnt_s", play_stats.get_int("single_plays")))
         root.add_child(Node.u32("cnt_d", play_stats.get_int("double_plays")))
-        root.add_child(
-            Node.u32("cnt_b", play_stats.get_int("battle_plays"))
-        )  # This could be wrong, its a guess
+        root.add_child(Node.u32("cnt_b", play_stats.get_int("battle_plays")))  # This could be wrong, its a guess
         root.add_child(Node.u32("cnt_m0", play_stats.get_int("cnt_m0")))
         root.add_child(Node.u32("cnt_m1", play_stats.get_int("cnt_m1")))
         root.add_child(Node.u32("cnt_m2", play_stats.get_int("cnt_m2")))
@@ -363,11 +351,7 @@ class DDR2014(
         chara = Node.void("chara")
         root.add_child(chara)
         chara.set_attribute("my", str(profile.get_int("chara", 30)))
-        root.add_child(
-            Node.u16_array(
-                "chara_opt", profile.get_int_array("chara_opt", 96, [208] * 96)
-            )
-        )
+        root.add_child(Node.u16_array("chara_opt", profile.get_int_array("chara_opt", 96, [208] * 96)))
 
         # Drill rankings
         if "title_gr" in profile:
@@ -420,9 +404,7 @@ class DDR2014(
         last.set_attribute("rival1", str(lastdict.get_int("rival1", -1)))
         last.set_attribute("rival2", str(lastdict.get_int("rival2", -1)))
         last.set_attribute("rival3", str(lastdict.get_int("rival3", -1)))
-        last.set_attribute(
-            "fri", str(lastdict.get_int("rival1", -1))
-        )  # This literally goes to the same memory in 2014
+        last.set_attribute("fri", str(lastdict.get_int("rival1", -1)))  # This literally goes to the same memory in 2014
         last.set_attribute("style", str(lastdict.get_int("style")))
         last.set_attribute("mode", str(lastdict.get_int("mode")))
         last.set_attribute("cate", str(lastdict.get_int("cate")))
@@ -462,17 +444,11 @@ class DDR2014(
         root.add_child(option_ver)
         option_ver.set_attribute("ver", str(profile.get_int("option_ver", 2)))
         if "option_02" in profile:
-            root.add_child(
-                Node.s16_array("option_02", profile.get_int_array("option_02", 24))
-            )
+            root.add_child(Node.s16_array("option_02", profile.get_int_array("option_02", 24)))
 
         # Unlock flags
-        root.add_child(
-            Node.u8_array("flag", profile.get_int_array("flag", 512, [1] * 512)[:256])
-        )
-        root.add_child(
-            Node.u8_array("flag_ex", profile.get_int_array("flag", 512, [1] * 512))
-        )
+        root.add_child(Node.u8_array("flag", profile.get_int_array("flag", 512, [1] * 512)[:256]))
+        root.add_child(Node.u8_array("flag_ex", profile.get_int_array("flag", 512, [1] * 512)))
 
         # Ranking display?
         root.add_child(Node.u16_array("rank", profile.get_int_array("rank", 100)))
@@ -494,9 +470,7 @@ class DDR2014(
                 friendnode.set_attribute("up", "0")
                 friendnode.add_child(Node.u32("code", friend.extid))
                 friendnode.add_child(Node.string("name", friend.get_str("name")))
-                friendnode.add_child(
-                    Node.u8("area", friend.get_int("area", self.get_machine_region()))
-                )
+                friendnode.add_child(Node.u8("area", friend.get_int("area", self.get_machine_region())))
                 friendnode.add_child(Node.u32("exp", play_stats.get_int("exp")))
                 friendnode.add_child(Node.u32("star", friend.get_int("star")))
 
@@ -553,9 +527,7 @@ class DDR2014(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -760,9 +732,7 @@ class DDR2014(
                     newfriends[pos] = None
                 else:
                     # Try looking up the userid
-                    newfriends[pos] = self.data.remote.user.from_extid(
-                        self.game, self.version, code
-                    )
+                    newfriends[pos] = self.data.remote.user.from_extid(self.game, self.version, code)
 
         # Diff the set of links to determine updates
         for i in range(10):

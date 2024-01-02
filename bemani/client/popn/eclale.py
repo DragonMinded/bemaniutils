@@ -118,9 +118,7 @@ class PopnMusicEclaleClient(BaseClient):
         self.assert_path(resp, "response/player23/stamp/stamp_id")
         self.assert_path(resp, "response/player23/stamp/cnt")
 
-    def verify_player23_read(
-        self, ref_id: str, msg_type: str
-    ) -> Dict[str, Dict[int, Dict[str, int]]]:
+    def verify_player23_read(self, ref_id: str, msg_type: str) -> Dict[str, Dict[int, Dict[str, int]]]:
         call = self.call_node()
 
         # Construct node
@@ -139,9 +137,7 @@ class PopnMusicEclaleClient(BaseClient):
             self.assert_path(resp, "response/player23/result")
             status = resp.child_value("player23/result")
             if status != 2:
-                raise Exception(
-                    f"Reference ID '{ref_id}' returned invalid status '{status}'"
-                )
+                raise Exception(f"Reference ID '{ref_id}' returned invalid status '{status}'")
 
             return {
                 "medals": {},
@@ -156,9 +152,7 @@ class PopnMusicEclaleClient(BaseClient):
             self.assert_path(resp, "response/player23/result")
             status = resp.child_value("player23/result")
             if status != 0:
-                raise Exception(
-                    f"Reference ID '{ref_id}' returned invalid status '{status}'"
-                )
+                raise Exception(f"Reference ID '{ref_id}' returned invalid status '{status}'")
             name = resp.child_value("player23/account/name")
             if name != self.NAME:
                 raise Exception(f"Invalid name '{name}' returned for Ref ID '{ref_id}'")
@@ -192,9 +186,7 @@ class PopnMusicEclaleClient(BaseClient):
         else:
             raise Exception(f"Unrecognized message type '{msg_type}'")
 
-    def verify_player23_read_score(
-        self, ref_id: str
-    ) -> Dict[str, Dict[int, Dict[int, int]]]:
+    def verify_player23_read_score(self, ref_id: str) -> Dict[str, Dict[int, Dict[int, int]]]:
         call = self.call_node()
 
         # Construct node
@@ -418,32 +410,22 @@ class PopnMusicEclaleClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_player23_read(ref_id, msg_type="new")
             self.verify_player23_new(ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify proper handling of basic stuff
@@ -489,9 +471,7 @@ class PopnMusicEclaleClient(BaseClient):
             raise Exception("Expecting to see chara ID 5 to have type 2 in characters!")
 
         # Verify purchases work
-        self.verify_player23_buy(
-            ref_id, item={"id": 6, "type": 7, "param": 8, "lumina": 400, "price": 250}
-        )
+        self.verify_player23_buy(ref_id, item={"id": 6, "type": 7, "param": 8, "lumina": 400, "price": 250})
         unlocks = self.verify_player23_read(ref_id, msg_type="query")
         if 6 not in unlocks["items"]:
             raise Exception("Expecting to see item ID 6 in items!")
@@ -500,9 +480,7 @@ class PopnMusicEclaleClient(BaseClient):
         if unlocks["items"][6]["param"] != 8:
             raise Exception("Expecting to see item ID 6 to have param 8 in items!")
         if unlocks["lumina"][0]["lumina"] != 150:
-            raise Exception(
-                f'Got wrong value for lumina {unlocks["lumina"][0]["lumina"]} after purchase!'
-            )
+            raise Exception(f'Got wrong value for lumina {unlocks["lumina"][0]["lumina"]} after purchase!')
 
         if cardid is None:
             # Verify score handling

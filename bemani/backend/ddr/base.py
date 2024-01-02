@@ -127,18 +127,14 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void("game")
 
-    def format_scores(
-        self, userid: UserID, profile: Profile, scores: List[Score]
-    ) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
         return a Node representing a score list. Should be overridden.
         """
         return Node.void("game")
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -164,9 +160,7 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now, return it
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(
-        self, refid: Optional[str], name: Optional[str], area: Optional[int]
-    ) -> None:
+    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], area: Optional[int]) -> None:
         """
         Given a RefID and a name/area, create a new profile.
         """

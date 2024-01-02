@@ -83,16 +83,12 @@ class JubeatClan(
         return JubeatQubell(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert daily FC challenges into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "fc_challenge", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "fc_challenge", "daily"):
             # Generate a new list of two FC challenge songs. Skip a particular song range since these are all a single song ID.
             # Jubeat Clan has an unlock event where you have to play different charts for the same song, and the charts are
             # loaded in based on the cabinet's prefecture. So, no matter where you are, you will only see one song within this
@@ -129,9 +125,7 @@ class JubeatClan(
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "fc_challenge", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "fc_challenge", "daily")
         return events
 
     @classmethod
@@ -1098,36 +1092,21 @@ class JubeatClan(
         valid_courses: Set[int] = set()
         for course in self.__get_course_list():
             if course["id"] < 1:
-                raise Exception(
-                    f"Invalid course ID {course['id']} found in course list!"
-                )
+                raise Exception(f"Invalid course ID {course['id']} found in course list!")
             if course["id"] in valid_courses:
                 raise Exception(f"Duplicate ID {course['id']} found in course list!")
-            if (
-                course["clear_type"] == self.COURSE_CLEAR_HAZARD
-                and "hazard_type" not in course
-            ):
+            if course["clear_type"] == self.COURSE_CLEAR_HAZARD and "hazard_type" not in course:
                 raise Exception(f"Need 'hazard_type' set in course {course['id']}!")
-            if (
-                course["course_type"] == self.COURSE_TYPE_TIME_BASED
-                and "end_time" not in course
-            ):
+            if course["course_type"] == self.COURSE_TYPE_TIME_BASED and "end_time" not in course:
                 raise Exception(f"Need 'end_time' set in course {course['id']}!")
             if (
-                course["clear_type"]
-                in [self.COURSE_CLEAR_SCORE, self.COURSE_CLEAR_COMBINED_SCORE]
+                course["clear_type"] in [self.COURSE_CLEAR_SCORE, self.COURSE_CLEAR_COMBINED_SCORE]
                 and "score" not in course
             ):
                 raise Exception(f"Need 'score' set in course {course['id']}!")
-            if (
-                course["clear_type"] == self.COURSE_CLEAR_SCORE
-                and course["score"] > 1000000
-            ):
+            if course["clear_type"] == self.COURSE_CLEAR_SCORE and course["score"] > 1000000:
                 raise Exception(f"Invalid per-coure score in course {course['id']}!")
-            if (
-                course["clear_type"] == self.COURSE_CLEAR_COMBINED_SCORE
-                and course["score"] <= 1000000
-            ):
+            if course["clear_type"] == self.COURSE_CLEAR_COMBINED_SCORE and course["score"] <= 1000000:
                 raise Exception(f"Invalid combined score in course {course['id']}!")
             valid_courses.add(course["id"])
 
@@ -1139,11 +1118,7 @@ class JubeatClan(
             clan_course.set_attribute("id", str(course["id"]))
             clan_course.set_attribute("course_type", str(course["course_type"]))
             clan_course.add_child(Node.s32("difficulty", course["difficulty"]))
-            clan_course.add_child(
-                Node.u64(
-                    "etime", (course["end_time"] if "end_time" in course else 0) * 1000
-                )
-            )
+            clan_course.add_child(Node.u64("etime", (course["end_time"] if "end_time" in course else 0) * 1000))
             clan_course.add_child(Node.string("name", course["name"]))
 
             # List of included songs
@@ -1169,9 +1144,7 @@ class JubeatClan(
             clan_course.add_child(clear)
             ex_option = Node.void("ex_option")
             clear.add_child(ex_option)
-            ex_option.add_child(
-                Node.bool("is_hard", course["hard"] if "hard" in course else False)
-            )
+            ex_option.add_child(Node.bool("is_hard", course["hard"] if "hard" in course else False))
             ex_option.add_child(
                 Node.s32(
                     "hazard_type",
@@ -1179,9 +1152,7 @@ class JubeatClan(
                 )
             )
             clear.set_attribute("type", str(course["clear_type"]))
-            clear.add_child(
-                Node.s32("score", course["score"] if "score" in course else 0)
-            )
+            clear.add_child(Node.s32("score", course["score"] if "score" in course else 0))
 
             reward_list = Node.void("reward_list")
             clear.add_child(reward_list)
@@ -1404,9 +1375,7 @@ class JubeatClan(
             # Grab unlock progress
             item = player.child("item")
             if item is not None:
-                owned_emblems = self.calculate_owned_items(
-                    item.child_value("emblem_list")
-                )
+                owned_emblems = self.calculate_owned_items(item.child_value("emblem_list"))
                 for index in owned_emblems:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -1443,9 +1412,7 @@ class JubeatClan(
 
         return Node.void("gameend")
 
-    def format_scores(
-        self, userid: UserID, profile: Profile, scores: List[Score]
-    ) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)
@@ -1518,24 +1485,12 @@ class JubeatClan(
             playdata.add_child(musicdata)
 
             musicdata.set_attribute("music_id", scoreid)
-            musicdata.add_child(
-                Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("score", scoredata.get_int_array("points", 3))
-            )
-            musicdata.add_child(
-                Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3))
-            )
+            musicdata.add_child(Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3)))
+            musicdata.add_child(Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3)))
+            musicdata.add_child(Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3)))
+            musicdata.add_child(Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3)))
+            musicdata.add_child(Node.s32_array("score", scoredata.get_int_array("points", 3)))
+            musicdata.add_child(Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3)))
 
             for i, ghost in enumerate(scoredata.get("ghost", [None, None, None])):
                 if ghost is None:
@@ -1557,9 +1512,7 @@ class JubeatClan(
         force_unlock = game_config.get_bool("force_song_unlock")
 
         # Calculate all of our achievement-backed entities.
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         owned_songs: Set[int] = set()
         owned_secrets: Set[int] = set()
         event_completion: Dict[int, bool] = {}
@@ -1567,9 +1520,7 @@ class JubeatClan(
         owned_emblems: Set[int] = set()
         for achievement in achievements:
             if achievement.type == "event":
-                event_completion[achievement.id] = achievement.data.get_bool(
-                    "is_completed"
-                )
+                event_completion[achievement.id] = achievement.data.get_bool("is_completed")
             elif achievement.type == "course":
                 course_completion[achievement.id] = achievement.data
             elif achievement.type == "emblem":
@@ -1610,12 +1561,8 @@ class JubeatClan(
         info.add_child(Node.s32("match_cnt", profile.get_int("match_cnt")))
         info.add_child(Node.s32("beat_cnt", profile.get_int("beat_cnt")))
         info.add_child(Node.s32("mynews_cnt", profile.get_int("mynews_cnt")))
-        info.add_child(
-            Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points"))
-        )
-        info.add_child(
-            Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played"))
-        )
+        info.add_child(Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points")))
+        info.add_child(Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played")))
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
@@ -1665,68 +1612,30 @@ class JubeatClan(
         # Secret unlocks
         item = Node.void("item")
         player.add_child(item)
-        item.add_child(
-            Node.s32_array(
-                "music_list", profile.get_int_array("music_list", 64, [-1] * 64)
-            )
-        )
+        item.add_child(Node.s32_array("music_list", profile.get_int_array("music_list", 64, [-1] * 64)))
         item.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 64)
-                if force_unlock
-                else self.create_owned_items(owned_songs, 64),
+                ([-1] * 64) if force_unlock else self.create_owned_items(owned_songs, 64),
             )
         )
-        item.add_child(
-            Node.s32_array(
-                "theme_list", profile.get_int_array("theme_list", 16, [-1] * 16)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list", 16, [-1] * 16)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "title_list", profile.get_int_array("title_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96))
-        )
-        item.add_child(
-            Node.s32_array(
-                "commu_list", profile.get_int_array("commu_list", 16, [-1] * 16)
-            )
-        )
+        item.add_child(Node.s32_array("theme_list", profile.get_int_array("theme_list", 16, [-1] * 16)))
+        item.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list", 16, [-1] * 16)))
+        item.add_child(Node.s32_array("title_list", profile.get_int_array("title_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96)))
+        item.add_child(Node.s32_array("commu_list", profile.get_int_array("commu_list", 16, [-1] * 16)))
 
         new = Node.void("new")
         item.add_child(new)
         new.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 64)
-                if force_unlock
-                else self.create_owned_items(owned_secrets, 64),
+                ([-1] * 64) if force_unlock else self.create_owned_items(owned_secrets, 64),
             )
         )
-        new.add_child(
-            Node.s32_array(
-                "theme_list", profile.get_int_array("theme_list_new", 16, [-1] * 16)
-            )
-        )
-        new.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list_new", 16, [-1] * 16)
-            )
-        )
+        new.add_child(Node.s32_array("theme_list", profile.get_int_array("theme_list_new", 16, [-1] * 16)))
+        new.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list_new", 16, [-1] * 16)))
 
         # Add rivals to profile.
         rivallist = Node.void("rivallist")
@@ -1765,9 +1674,7 @@ class JubeatClan(
         lab_edit_seq.set_attribute("count", "0")
 
         # Full combo challenge
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "fc_challenge"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "fc_challenge")
         if entry is None:
             entry = ValidatedDict()
 
@@ -1826,11 +1733,7 @@ class JubeatClan(
 
             state = 0x0
             state |= self.EVENT_STATUS_OPEN if eventdata["enabled"] else 0
-            state |= (
-                self.EVENT_STATUS_COMPLETE
-                if event_completion.get(eventid, False)
-                else 0
-            )
+            state |= self.EVENT_STATUS_COMPLETE if event_completion.get(eventid, False) else 0
             event.add_child(Node.u8("state", state))
 
         # JBox stuff
@@ -1900,9 +1803,7 @@ class JubeatClan(
                     bestentry.replace_int("songid", achievement.id)
                     bestentry.replace_int("chart", chart)
             jubeat_entries.append(bestentry)
-        jubeat_entries = sorted(
-            jubeat_entries, key=lambda entry: entry.get_int("value"), reverse=True
-        )
+        jubeat_entries = sorted(jubeat_entries, key=lambda entry: entry.get_int("value"), reverse=True)
 
         # Now, give the game the list.
         for i, entry in enumerate(jubeat_entries):
@@ -1916,9 +1817,7 @@ class JubeatClan(
             target_music.add_child(Node.s8("seq", entry.get_int("chart")))
             target_music.add_child(Node.s32("score", entry.get_int("score")))
             target_music.add_child(Node.s32("value", entry.get_int("value")))
-            target_music.add_child(
-                Node.bool("is_hard_mode", entry.get_bool("hard_mode"))
-            )
+            target_music.add_child(Node.bool("is_hard_mode", entry.get_bool("hard_mode")))
 
         # Team stuff
         team = Node.void("team")
@@ -1964,9 +1863,7 @@ class JubeatClan(
             status = 0
             status |= self.COURSE_STATUS_SEEN if status_dict.get_bool("seen") else 0
             status |= self.COURSE_STATUS_PLAYED if status_dict.get_bool("played") else 0
-            status |= (
-                self.COURSE_STATUS_CLEARED if status_dict.get_bool("cleared") else 0
-            )
+            status |= self.COURSE_STATUS_CLEARED if status_dict.get_bool("cleared") else 0
 
             clan_course = Node.void("clan_course")
             clan_course_list.add_child(clan_course)
@@ -2051,9 +1948,7 @@ class JubeatClan(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         newprofile.replace_bool("saved", True)
         data = request.child("data")
@@ -2092,12 +1987,8 @@ class JubeatClan(
             newprofile.replace_int("beat_cnt", info.child_value("beat_cnt"))
             newprofile.replace_int("mynews_cnt", info.child_value("mynews_cnt"))
 
-            newprofile.replace_int(
-                "bonus_tune_points", info.child_value("bonus_tune_points")
-            )
-            newprofile.replace_bool(
-                "is_bonus_tune_played", info.child_value("is_bonus_tune_played")
-            )
+            newprofile.replace_int("bonus_tune_points", info.child_value("bonus_tune_points"))
+            newprofile.replace_bool("is_bonus_tune_played", info.child_value("is_bonus_tune_played"))
 
         # Grab last settings
         lastnode = player.child("last")
@@ -2122,30 +2013,16 @@ class JubeatClan(
         # Grab unlock progress
         item = player.child("item")
         if item is not None:
-            newprofile.replace_int_array(
-                "music_list", 64, item.child_value("music_list")
-            )
-            newprofile.replace_int_array(
-                "theme_list", 16, item.child_value("theme_list")
-            )
-            newprofile.replace_int_array(
-                "marker_list", 16, item.child_value("marker_list")
-            )
-            newprofile.replace_int_array(
-                "title_list", 160, item.child_value("title_list")
-            )
-            newprofile.replace_int_array(
-                "parts_list", 160, item.child_value("parts_list")
-            )
-            newprofile.replace_int_array(
-                "commu_list", 16, item.child_value("commu_list")
-            )
+            newprofile.replace_int_array("music_list", 64, item.child_value("music_list"))
+            newprofile.replace_int_array("theme_list", 16, item.child_value("theme_list"))
+            newprofile.replace_int_array("marker_list", 16, item.child_value("marker_list"))
+            newprofile.replace_int_array("title_list", 160, item.child_value("title_list"))
+            newprofile.replace_int_array("parts_list", 160, item.child_value("parts_list"))
+            newprofile.replace_int_array("commu_list", 16, item.child_value("commu_list"))
 
             if not force_unlock:
                 # Don't persist if we're force-unlocked, this data will be bogus.
-                owned_songs = self.calculate_owned_items(
-                    item.child_value("secret_list")
-                )
+                owned_songs = self.calculate_owned_items(item.child_value("secret_list"))
                 for index in owned_songs:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -2169,18 +2046,12 @@ class JubeatClan(
 
             newitem = item.child("new")
             if newitem is not None:
-                newprofile.replace_int_array(
-                    "theme_list_new", 16, newitem.child_value("theme_list")
-                )
-                newprofile.replace_int_array(
-                    "marker_list_new", 16, newitem.child_value("marker_list")
-                )
+                newprofile.replace_int_array("theme_list_new", 16, newitem.child_value("theme_list"))
+                newprofile.replace_int_array("marker_list_new", 16, newitem.child_value("marker_list"))
 
                 if not force_unlock:
                     # Don't persist if we're force-unlocked, this data will be bogus.
-                    owned_secrets = self.calculate_owned_items(
-                        newitem.child_value("secret_list")
-                    )
+                    owned_secrets = self.calculate_owned_items(newitem.child_value("secret_list"))
                     for index in owned_secrets:
                         self.data.local.user.put_achievement(
                             self.game,
@@ -2375,9 +2246,7 @@ class JubeatClan(
                     if flags & bit > 0:
                         medal = max(medal, mapping[bit])
 
-                self.update_score(
-                    userid, timestamp, songid, chart, points, medal, combo, ghost, stats
-                )
+                self.update_score(userid, timestamp, songid, chart, points, medal, combo, ghost, stats)
 
         # Born stuff
         born = player.child("born")
@@ -2458,9 +2327,7 @@ class JubeatClan(
                     oldcourse = ValidatedDict()
 
                 oldcourse.replace_bool("seen", oldcourse.get_bool("seen") or is_seen)
-                oldcourse.replace_bool(
-                    "played", oldcourse.get_bool("played") or is_played
-                )
+                oldcourse.replace_bool("played", oldcourse.get_bool("played") or is_played)
 
                 # Save it as an achievement
                 self.data.local.user.put_achievement(

@@ -48,15 +48,11 @@ def format_machine(machine: Machine) -> Dict[str, Any]:
         }.get(machine.game)
     elif machine.version > 0:
         game = [
-            name
-            for (game, version, name) in Base.all_games()
-            if game == machine.game and version == machine.version
+            name for (game, version, name) in Base.all_games() if game == machine.game and version == machine.version
         ][0]
     elif machine.version < 0:
         game = [
-            name
-            for (game, version, name) in Base.all_games()
-            if game == machine.game and version == -machine.version
+            name for (game, version, name) in Base.all_games() if game == machine.game and version == -machine.version
         ][0] + " or older"
 
     return {
@@ -104,10 +100,7 @@ def viewarcade(arcadeid: int) -> Response:
     arcade = g.data.local.machine.get_arcade(arcadeid)
     if arcade is None or g.userID not in arcade.owners:
         abort(403)
-    machines = [
-        format_machine(machine)
-        for machine in g.data.local.machine.get_all_machines(arcade.id)
-    ]
+    machines = [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)]
     return render_react(
         arcade.name,
         "arcade/arcade.react.js",
@@ -116,18 +109,11 @@ def viewarcade(arcadeid: int) -> Response:
             "regions": RegionConstants.LUT,
             "machines": machines,
             "game_settings": get_game_settings(g.data, arcadeid),
-            "balances": {
-                balance[0]: balance[1]
-                for balance in g.data.local.machine.get_balances(arcadeid)
-            },
-            "users": {
-                user.id: user.username for user in g.data.local.user.get_all_users()
-            },
+            "balances": {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
+            "users": {user.id: user.username for user in g.data.local.user.get_all_users()},
             "events": [
                 format_event(event)
-                for event in g.data.local.network.get_events(
-                    arcadeid=arcadeid, event="paseli_transaction"
-                )
+                for event in g.data.local.network.get_events(arcadeid=arcadeid, event="paseli_transaction")
             ],
             "enforcing": g.config.server.enforce_pcbid,
             "max_pcbids": g.config.server.pcbid_self_grant_limit,
@@ -149,9 +135,7 @@ def viewarcade(arcadeid: int) -> Response:
                 arcadeid=arcadeid,
                 attribute="mask_services_url",
             ),
-            "update_settings": url_for(
-                "arcade_pages.updatesettings", arcadeid=arcadeid
-            ),
+            "update_settings": url_for("arcade_pages.updatesettings", arcadeid=arcadeid),
             "add_balance": url_for("arcade_pages.addbalance", arcadeid=arcadeid),
             "update_balance": url_for("arcade_pages.updatebalance", arcadeid=arcadeid),
             "update_pin": url_for("arcade_pages.updatepin", arcadeid=arcadeid),
@@ -176,22 +160,14 @@ def listarcade(arcadeid: int) -> Dict[str, Any]:
     if arcade is None or g.userID not in arcade.owners:
         raise Exception("You don't own this arcade, refusing to list!")
 
-    machines = [
-        format_machine(machine)
-        for machine in g.data.local.machine.get_all_machines(arcade.id)
-    ]
+    machines = [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)]
     return {
         "machines": machines,
-        "balances": {
-            balance[0]: balance[1]
-            for balance in g.data.local.machine.get_balances(arcadeid)
-        },
+        "balances": {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
         "users": {user.id: user.username for user in g.data.local.user.get_all_users()},
         "events": [
             format_event(event)
-            for event in g.data.local.network.get_events(
-                arcadeid=arcadeid, event="paseli_transaction"
-            )
+            for event in g.data.local.network.get_events(arcadeid=arcadeid, event="paseli_transaction")
         ],
     }
 
@@ -234,16 +210,11 @@ def addbalance(arcadeid: int) -> Dict[str, Any]:
         )
 
     return {
-        "balances": {
-            balance[0]: balance[1]
-            for balance in g.data.local.machine.get_balances(arcadeid)
-        },
+        "balances": {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
         "users": {user.id: user.username for user in g.data.local.user.get_all_users()},
         "events": [
             format_event(event)
-            for event in g.data.local.network.get_events(
-                arcadeid=arcadeid, event="paseli_transaction"
-            )
+            for event in g.data.local.network.get_events(arcadeid=arcadeid, event="paseli_transaction")
         ],
     }
 
@@ -277,16 +248,11 @@ def updatebalance(arcadeid: int) -> Dict[str, Any]:
             )
 
     return {
-        "balances": {
-            balance[0]: balance[1]
-            for balance in g.data.local.machine.get_balances(arcadeid)
-        },
+        "balances": {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},
         "users": {user.id: user.username for user in g.data.local.user.get_all_users()},
         "events": [
             format_event(event)
-            for event in g.data.local.network.get_events(
-                arcadeid=arcadeid, event="paseli_transaction"
-            )
+            for event in g.data.local.network.get_events(arcadeid=arcadeid, event="paseli_transaction")
         ],
     }
 
@@ -390,11 +356,7 @@ def generatepcbid(arcadeid: int) -> Dict[str, Any]:
 
     # Make sure the user hasn't gone over their limit of PCBIDs.
     existing_machine_count = len(
-        [
-            machine
-            for machine in g.data.local.machine.get_all_machines(arcade.id)
-            if is_user_editable(machine)
-        ]
+        [machine for machine in g.data.local.machine.get_all_machines(arcade.id) if is_user_editable(machine)]
     )
     if existing_machine_count >= g.config.server.pcbid_self_grant_limit:
         raise Exception("You have hit your limit of allowed PCBIDs!")
@@ -406,23 +368,16 @@ def generatepcbid(arcadeid: int) -> Dict[str, Any]:
 
     while pcbid is None:
         # Generate a new PCBID, check for uniqueness
-        potential_pcbid = "01201000000000" + "".join(
-            [random.choice("0123456789ABCDEF") for _ in range(6)]
-        )
+        potential_pcbid = "01201000000000" + "".join([random.choice("0123456789ABCDEF") for _ in range(6)])
         if g.data.local.machine.get_machine(potential_pcbid) is None:
             pcbid = potential_pcbid
 
     # Finally, add the generated PCBID to the network.
-    g.data.local.machine.create_machine(
-        pcbid, name, new_machine["description"], arcade.id
-    )
+    g.data.local.machine.create_machine(pcbid, name, new_machine["description"], arcade.id)
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines(arcade.id)
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)],
     }
 
 
@@ -449,11 +404,7 @@ def updatepcbid(arcadeid: int) -> Dict[str, Any]:
 
     # Make sure the PCBID we are trying to modify is actually owned by this arcade.
     # Also, make sure that the PCBID is actually user-editable.
-    if (
-        current_machine is None
-        or current_machine.arcade != arcadeid
-        or not is_user_editable(current_machine)
-    ):
+    if current_machine is None or current_machine.arcade != arcadeid or not is_user_editable(current_machine):
         raise Exception("You don't own this PCBID, refusing to update!")
 
     # Make sure the port is actually valid.
@@ -478,10 +429,7 @@ def updatepcbid(arcadeid: int) -> Dict[str, Any]:
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines(arcade.id)
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)],
     }
 
 
@@ -516,10 +464,7 @@ def removepcbid(arcadeid: int) -> Dict[str, Any]:
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines(arcade.id)
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines(arcade.id)],
     }
 
 
@@ -581,24 +526,18 @@ def updatesettings(arcadeid: int) -> Dict[str, Any]:
             new_value = game_setting["value"]
 
             # Update the value
-            current_settings = g.data.local.machine.get_settings(
-                arcadeid, game, version, category
-            )
+            current_settings = g.data.local.machine.get_settings(arcadeid, game, version, category)
             if current_settings is None:
                 current_settings = ValidatedDict()
 
             getattr(current_settings, update_function)(setting, new_value)
 
             # Save it back
-            g.data.local.machine.put_settings(
-                arcade.id, game, version, category, current_settings
-            )
+            g.data.local.machine.put_settings(arcade.id, game, version, category, current_settings)
 
     # Return the updated value
     return {
         "game_settings": [
-            gs
-            for gs in get_game_settings(g.data, arcadeid)
-            if gs["game"] == game.value and gs["version"] == version
+            gs for gs in get_game_settings(g.data, arcadeid) if gs["game"] == game.value and gs["version"] == version
         ][0],
     }

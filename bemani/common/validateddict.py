@@ -120,9 +120,7 @@ class ValidatedDict(dict):
             return default
         return val
 
-    def get_int_array(
-        self, name: str, length: int, default: Optional[List[int]] = None
-    ) -> List[int]:
+    def get_int_array(self, name: str, length: int, default: Optional[List[int]] = None) -> List[int]:
         """
         Given the name of a value, return a list of integers stored under that name.
 
@@ -152,9 +150,7 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_bool_array(
-        self, name: str, length: int, default: Optional[List[bool]] = None
-    ) -> List[bool]:
+    def get_bool_array(self, name: str, length: int, default: Optional[List[bool]] = None) -> List[bool]:
         """
         Given the name of a value, return a list of booleans stored under that name.
 
@@ -184,9 +180,7 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_bytes_array(
-        self, name: str, length: int, default: Optional[List[bytes]] = None
-    ) -> List[bytes]:
+    def get_bytes_array(self, name: str, length: int, default: Optional[List[bytes]] = None) -> List[bytes]:
         """
         Given the name of a value, return a list of bytestrings stored under that name.
 
@@ -216,9 +210,7 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_str_array(
-        self, name: str, length: int, default: Optional[List[str]] = None
-    ) -> List[str]:
+    def get_str_array(self, name: str, length: int, default: Optional[List[str]] = None) -> List[str]:
         """
         Given the name of a value, return a list of strings stored under that name.
 
@@ -248,9 +240,7 @@ class ValidatedDict(dict):
                 return default
         return val
 
-    def get_dict(
-        self, name: str, default: Optional[Dict[Any, Any]] = None
-    ) -> "ValidatedDict":
+    def get_dict(self, name: str, default: Optional[Dict[Any, Any]] = None) -> "ValidatedDict":
         """
         Given the name of a value, return a dictionary stored under that name.
 
@@ -477,9 +467,7 @@ class Profile(ValidatedDict):
         self.extid = extid
 
     def clone(self) -> "Profile":
-        return Profile(
-            self.game, self.version, self.refid, self.extid, copy.deepcopy(self)
-        )
+        return Profile(self.game, self.version, self.refid, self.extid, copy.deepcopy(self))
 
 
 class PlayStatistics(ValidatedDict):

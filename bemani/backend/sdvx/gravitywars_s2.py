@@ -3850,22 +3850,15 @@ class SoundVoltexGravityWarsSeason2(
 
         # Now, grab global and local scores as well as clear rates
         global_records = self.data.remote.music.get_all_records(self.game, self.version)
-        users = {
-            uid: prof
-            for (uid, prof) in self.data.local.user.get_all_profiles(
-                self.game, self.version
-            )
-        }
+        users = {uid: prof for (uid, prof) in self.data.local.user.get_all_profiles(self.game, self.version)}
         area_users = [uid for uid in users if users[uid].get_int("loc", -1) == locid]
-        area_records = self.data.local.music.get_all_records(
-            self.game, self.version, userlist=area_users
-        )
+        area_records = self.data.local.music.get_all_records(self.game, self.version, userlist=area_users)
         clears = self.get_clear_rates()
         records: Dict[int, Dict[int, Dict[str, Tuple[UserID, Score]]]] = {}
 
-        missing_users = [
-            userid for (userid, _) in global_records if userid not in users
-        ] + [userid for (userid, _) in area_records if userid not in users]
+        missing_users = [userid for (userid, _) in global_records if userid not in users] + [
+            userid for (userid, _) in area_records if userid not in users
+        ]
         for userid, profile in self.get_any_profiles(missing_users):
             users[userid] = profile
 
@@ -3896,9 +3889,7 @@ class SoundVoltexGravityWarsSeason2(
 
                 global_profile = users[globaluserid]
                 if clears[musicid][chart]["total"] > 0:
-                    clear_rate = float(clears[musicid][chart]["clears"]) / float(
-                        clears[musicid][chart]["total"]
-                    )
+                    clear_rate = float(clears[musicid][chart]["clears"]) / float(clears[musicid][chart]["total"])
                 else:
                     clear_rate = 0.0
 
@@ -3906,9 +3897,7 @@ class SoundVoltexGravityWarsSeason2(
                 highscores.add_child(info)
                 info.add_child(Node.u32("id", musicid))
                 info.add_child(Node.u32("ty", chart))
-                info.add_child(
-                    Node.string("a_sq", ID.format_extid(global_profile.extid))
-                )
+                info.add_child(Node.string("a_sq", ID.format_extid(global_profile.extid)))
                 info.add_child(Node.string("a_nm", global_profile.get_str("name")))
                 info.add_child(Node.u32("a_sc", globalscore.points))
                 info.add_child(Node.s32("cr", int(clear_rate * 10000)))
@@ -3916,9 +3905,7 @@ class SoundVoltexGravityWarsSeason2(
                 if "area" in records[musicid][chart]:
                     (localuserid, localscore) = records[musicid][chart]["area"]
                     local_profile = users[localuserid]
-                    info.add_child(
-                        Node.string("l_sq", ID.format_extid(local_profile.extid))
-                    )
+                    info.add_child(Node.string("l_sq", ID.format_extid(local_profile.extid)))
                     info.add_child(Node.string("l_nm", local_profile.get_str("name")))
                     info.add_child(Node.u32("l_sc", localscore.points))
 
@@ -3946,15 +3933,11 @@ class SoundVoltexGravityWarsSeason2(
                 rival = Node.void("rival")
                 game.add_child(rival)
                 rival.add_child(Node.s16("no", index))
-                rival.add_child(
-                    Node.string("seq", ID.format_extid(other_profile.extid))
-                )
+                rival.add_child(Node.string("seq", ID.format_extid(other_profile.extid)))
                 rival.add_child(Node.string("name", other_profile.get_str("name")))
 
                 # Return scores for this user on random charts
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.version, link.other_userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.version, link.other_userid)
                 for score in scores:
                     music = Node.void("music")
                     rival.add_child(music)
@@ -3975,14 +3958,10 @@ class SoundVoltexGravityWarsSeason2(
         game.add_child(
             Node.s16(
                 "skill_name_id",
-                profile.get_int(
-                    "chosen_skill_id", profile.get_int("skill_name_id", -1)
-                ),
+                profile.get_int("chosen_skill_id", profile.get_int("skill_name_id", -1)),
             )
         )
-        game.add_child(
-            Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 20))
-        )
+        game.add_child(Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 20)))
         game.add_child(Node.u32("blaster_energy", profile.get_int("blaster_energy")))
         game.add_child(Node.u32("blaster_count", profile.get_int("blaster_count")))
 
@@ -4011,31 +3990,20 @@ class SoundVoltexGravityWarsSeason2(
         game.add_child(itemnode)
 
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
 
         for item in achievements:
             if item.type[:5] != "item_":
                 continue
             itemtype = int(item.type[5:])
 
-            if (
-                game_config.get_bool("force_unlock_songs")
-                and itemtype == self.GAME_CATALOG_TYPE_SONG
-            ):
+            if game_config.get_bool("force_unlock_songs") and itemtype == self.GAME_CATALOG_TYPE_SONG:
                 # Don't echo unlocked songs, we will add all of them later
                 continue
-            if (
-                game_config.get_bool("force_unlock_cards")
-                and itemtype == self.GAME_CATALOG_TYPE_APPEAL_CARD
-            ):
+            if game_config.get_bool("force_unlock_cards") and itemtype == self.GAME_CATALOG_TYPE_APPEAL_CARD:
                 # Don't echo unlocked appeal cards, we will add all of them later
                 continue
-            if (
-                game_config.get_bool("force_unlock_crew")
-                and itemtype == self.GAME_CATALOG_TYPE_CREW
-            ):
+            if game_config.get_bool("force_unlock_crew") and itemtype == self.GAME_CATALOG_TYPE_CREW:
                 # Don't echo unlocked crew, we will add all of them later
                 continue
 
@@ -4104,8 +4072,7 @@ class SoundVoltexGravityWarsSeason2(
                 courselist = [
                     c
                     for c in self._get_skill_analyzer_courses()
-                    if c.get("id", c["level"]) == course_id
-                    and c["season_id"] == season_id
+                    if c.get("id", c["level"]) == course_id and c["season_id"] == season_id
                 ]
                 if len(courselist) > 0:
                     skill_level = max(skill_level, courselist[0]["level"])
@@ -4132,9 +4099,7 @@ class SoundVoltexGravityWarsSeason2(
             storynode.add_child(info)
             info.add_child(Node.s32("story_id", story.id))
             info.add_child(Node.s32("progress_id", story.data.get_int("progress_id")))
-            info.add_child(
-                Node.s32("progress_param", story.data.get_int("progress_param"))
-            )
+            info.add_child(Node.s32("progress_param", story.data.get_int("progress_param")))
             info.add_child(Node.s32("clear_cnt", story.data.get_int("clear_cnt")))
             info.add_child(Node.u32("route_flg", story.data.get_int("route_flg")))
 
@@ -4157,22 +4122,16 @@ class SoundVoltexGravityWarsSeason2(
 
         return game
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value("earned_gamecoin_packet")
         if earned_gamecoin_packet is not None:
-            newprofile.replace_int(
-                "packet", newprofile.get_int("packet") + earned_gamecoin_packet
-            )
+            newprofile.replace_int("packet", newprofile.get_int("packet") + earned_gamecoin_packet)
         earned_gamecoin_block = request.child_value("earned_gamecoin_block")
         if earned_gamecoin_block is not None:
-            newprofile.replace_int(
-                "block", newprofile.get_int("block") + earned_gamecoin_block
-            )
+            newprofile.replace_int("block", newprofile.get_int("block") + earned_gamecoin_block)
         earned_blaster_energy = request.child_value("earned_blaster_energy")
         if earned_blaster_energy is not None:
             newprofile.replace_int(
@@ -4183,9 +4142,7 @@ class SoundVoltexGravityWarsSeason2(
         # Miscelaneous stuff
         newprofile.replace_int("blaster_count", request.child_value("blaster_count"))
         newprofile.replace_int("chosen_skill_id", request.child_value("skill_name_id"))
-        newprofile.replace_int_array(
-            "hidden_param", 20, request.child_value("hidden_param")
-        )
+        newprofile.replace_int_array("hidden_param", 20, request.child_value("hidden_param"))
 
         # Update user's unlock status if we aren't force unlocked
         game_config = self.get_game_config()
@@ -4199,22 +4156,13 @@ class SoundVoltexGravityWarsSeason2(
                 item_type = child.child_value("type")
                 param = child.child_value("param")
 
-                if (
-                    game_config.get_bool("force_unlock_cards")
-                    and item_type == self.GAME_CATALOG_TYPE_APPEAL_CARD
-                ):
+                if game_config.get_bool("force_unlock_cards") and item_type == self.GAME_CATALOG_TYPE_APPEAL_CARD:
                     # Don't save back appeal cards because they were force unlocked
                     continue
-                if (
-                    game_config.get_bool("force_unlock_songs")
-                    and item_type == self.GAME_CATALOG_TYPE_SONG
-                ):
+                if game_config.get_bool("force_unlock_songs") and item_type == self.GAME_CATALOG_TYPE_SONG:
                     # Don't save back songs, because they were force unlocked
                     continue
-                if (
-                    game_config.get_bool("force_unlock_crew")
-                    and item_type == self.GAME_CATALOG_TYPE_CREW
-                ):
+                if game_config.get_bool("force_unlock_crew") and item_type == self.GAME_CATALOG_TYPE_CREW:
                     # Don't save back crew, because they were force unlocked
                     continue
 

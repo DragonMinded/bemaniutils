@@ -54,9 +54,7 @@ class BishiBashiFrontend(FrontendBase):
 
         return newprofile
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         name = "なし"  # Nothing
         shop = "未設定"  # Not set
         shop_area = "未設定"  # Not set

@@ -157,9 +157,7 @@ class ReflecBeatColette(ReflecBeatBase):
         ranking = Node.void("ranking")
         root.add_child(ranking)
 
-        def add_hitchart(
-            name: str, start: int, end: int, hitchart: List[Tuple[int, int]]
-        ) -> None:
+        def add_hitchart(name: str, start: int, end: int, hitchart: List[Tuple[int, int]]) -> None:
             base = Node.void(name)
             ranking.add_child(base)
             base.add_child(Node.s32("bt", start))
@@ -207,18 +205,12 @@ class ReflecBeatColette(ReflecBeatBase):
 
         comments = [
             achievement
-            for achievement in self.data.local.user.get_all_time_based_achievements(
-                self.game, self.version
-            )
+            for achievement in self.data.local.user.get_all_time_based_achievements(self.game, self.version)
             if achievement[1].type == "puzzle_comment"
         ]
         comments.sort(key=lambda x: x[1].timestamp, reverse=True)
         favorites = [comment for comment in comments if comment[0] == userid]
-        teamcomments = [
-            comment
-            for comment in comments
-            if comment[1].data.get_int("teamid") == teamid
-        ]
+        teamcomments = [comment for comment in comments if comment[1].data.get_int("teamid") == teamid]
 
         # Cap all comment blocks to the limit
         if limit >= 0:
@@ -232,9 +224,7 @@ class ReflecBeatColette(ReflecBeatBase):
         comment.add_child(Node.s32("time", Time.now()))
 
         # Mapping of profiles to userIDs
-        uid_mapping = {
-            uid: prof for (uid, prof) in self.get_any_profiles([c[0] for c in comments])
-        }
+        uid_mapping = {uid: prof for (uid, prof) in self.get_any_profiles([c[0] for c in comments])}
 
         # Handle anonymous comments by returning a default profile
         uid_mapping[UserID(0)] = Profile(
@@ -622,9 +612,7 @@ class ReflecBeatColette(ReflecBeatBase):
             )
             if lobby is not None:
                 self.data.local.lobby.destroy_lobby(lobby.get_int("id"))
-            self.data.local.lobby.destroy_play_session_info(
-                self.game, self.version, userid
-            )
+            self.data.local.lobby.destroy_play_session_info(self.game, self.version, userid)
 
         return Node.void("player")
 
@@ -637,9 +625,7 @@ class ReflecBeatColette(ReflecBeatBase):
             achievements = self.data.local.user.get_achievements(
                 previous_version.game, previous_version.version, userid
             )
-            scores = self.data.remote.music.get_scores(
-                previous_version.game, previous_version.version, userid
-            )
+            scores = self.data.remote.music.get_scores(previous_version.game, previous_version.version, userid)
         else:
             profile = None
 
@@ -715,9 +701,7 @@ class ReflecBeatColette(ReflecBeatBase):
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
         links = self.data.local.user.get_links(self.game, self.version, userid)
         root = Node.void("player")
@@ -749,9 +733,7 @@ class ReflecBeatColette(ReflecBeatBase):
         base.add_child(Node.string("tname", profile.get_str("team_name", "")))
         base.add_child(Node.string("cmnt", ""))
         base.add_child(Node.s32("uattr", profile.get_int("uattr")))
-        base.add_child(
-            Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 50))
-        )
+        base.add_child(Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 50)))
         base.add_child(Node.s32("tbs", -1))
         base.add_child(Node.s32("tbs_r", -1))
 
@@ -793,73 +775,41 @@ class ReflecBeatColette(ReflecBeatBase):
         custom.add_child(Node.u8("st_jdg_disp", customdict.get_int("st_jdg_disp")))
         custom.add_child(Node.u8("st_tm_disp", customdict.get_int("st_tm_disp")))
         custom.add_child(Node.u8("st_rnd", customdict.get_int("st_rnd")))
-        custom.add_child(
-            Node.s16_array("schat_0", customdict.get_int_array("schat_0", 9))
-        )
-        custom.add_child(
-            Node.s16_array("schat_1", customdict.get_int_array("schat_1", 9))
-        )
-        custom.add_child(
-            Node.s16_array("ichat_0", customdict.get_int_array("ichat_0", 6))
-        )
-        custom.add_child(
-            Node.s16_array("ichat_1", customdict.get_int_array("ichat_1", 6))
-        )
+        custom.add_child(Node.s16_array("schat_0", customdict.get_int_array("schat_0", 9)))
+        custom.add_child(Node.s16_array("schat_1", customdict.get_int_array("schat_1", 9)))
+        custom.add_child(Node.s16_array("ichat_0", customdict.get_int_array("ichat_0", 6)))
+        custom.add_child(Node.s16_array("ichat_1", customdict.get_int_array("ichat_1", 6)))
 
         # Player external config
         config = Node.void("config")
         configdict = profile.get_dict("config")
         pdata.add_child(config)
         config.add_child(Node.u8("msel_bgm", configdict.get_int("msel_bgm")))
-        config.add_child(
-            Node.u8("narrowdown_type", configdict.get_int("narrowdown_type"))
-        )
+        config.add_child(Node.u8("narrowdown_type", configdict.get_int("narrowdown_type")))
         config.add_child(Node.s16("icon_id", configdict.get_int("icon_id")))
         config.add_child(Node.s16("byword_0", configdict.get_int("byword_0")))
         config.add_child(Node.s16("byword_1", configdict.get_int("byword_1")))
-        config.add_child(
-            Node.bool("is_auto_byword_0", configdict.get_bool("is_auto_byword_0"))
-        )
-        config.add_child(
-            Node.bool("is_auto_byword_1", configdict.get_bool("is_auto_byword_1"))
-        )
+        config.add_child(Node.bool("is_auto_byword_0", configdict.get_bool("is_auto_byword_0")))
+        config.add_child(Node.bool("is_auto_byword_1", configdict.get_bool("is_auto_byword_1")))
         config.add_child(Node.u8("mrec_type", configdict.get_int("mrec_type")))
         config.add_child(Node.u8("tab_sel", configdict.get_int("tab_sel")))
         config.add_child(Node.u8("card_disp", configdict.get_int("card_disp")))
-        config.add_child(
-            Node.u8("score_tab_disp", configdict.get_int("score_tab_disp"))
-        )
-        config.add_child(
-            Node.s16("last_music_id", configdict.get_int("last_music_id", -1))
-        )
-        config.add_child(
-            Node.u8("last_note_grade", configdict.get_int("last_note_grade"))
-        )
+        config.add_child(Node.u8("score_tab_disp", configdict.get_int("score_tab_disp")))
+        config.add_child(Node.s16("last_music_id", configdict.get_int("last_music_id", -1)))
+        config.add_child(Node.u8("last_note_grade", configdict.get_int("last_note_grade")))
         config.add_child(Node.u8("sort_type", configdict.get_int("sort_type")))
-        config.add_child(
-            Node.u8("rival_panel_type", configdict.get_int("rival_panel_type"))
-        )
-        config.add_child(
-            Node.u64("random_entry_work", configdict.get_int("random_entry_work"))
-        )
-        config.add_child(
-            Node.u8("folder_lamp_type", configdict.get_int("folder_lamp_type"))
-        )
+        config.add_child(Node.u8("rival_panel_type", configdict.get_int("rival_panel_type")))
+        config.add_child(Node.u64("random_entry_work", configdict.get_int("random_entry_work")))
+        config.add_child(Node.u8("folder_lamp_type", configdict.get_int("folder_lamp_type")))
         config.add_child(Node.bool("is_tweet", configdict.get_bool("is_tweet")))
-        config.add_child(
-            Node.bool("is_link_twitter", configdict.get_bool("is_link_twitter"))
-        )
+        config.add_child(Node.bool("is_link_twitter", configdict.get_bool("is_link_twitter")))
 
         # Stamps
         stamp = Node.void("stamp")
         stampdict = profile.get_dict("stamp")
         pdata.add_child(stamp)
-        stamp.add_child(
-            Node.s32_array("stmpcnt", stampdict.get_int_array("stmpcnt", 5))
-        )
-        stamp.add_child(
-            Node.s32_array("tcktcnt", stampdict.get_int_array("tcktcnt", 5))
-        )
+        stamp.add_child(Node.s32_array("stmpcnt", stampdict.get_int_array("stmpcnt", 5)))
+        stamp.add_child(Node.s32_array("tcktcnt", stampdict.get_int_array("tcktcnt", 5)))
         stamp.add_child(Node.s64("area", stampdict.get_int("area")))
         stamp.add_child(Node.s64("prfvst", stampdict.get_int("prfvst")))
         stamp.add_child(Node.s32("reserve", stampdict.get_int("reserve")))
@@ -993,73 +943,47 @@ class ReflecBeatColette(ReflecBeatBase):
             rec.add_child(Node.s16("cmb", score.data.get_int("combo")))
             rec.add_child(Node.s16("ms", score.data.get_int("miss_count")))
             rec.add_child(Node.s32("bscrt", score.timestamp))
-            rec.add_child(
-                Node.s32("bart", score.data.get_int("best_achievement_rate_time"))
-            )
+            rec.add_child(Node.s32("bart", score.data.get_int("best_achievement_rate_time")))
             rec.add_child(Node.s32("bctt", score.data.get_int("best_clear_type_time")))
             rec.add_child(Node.s32("bmst", score.data.get_int("best_miss_count_time")))
             rec.add_child(Node.s32("time", score.data.get_int("last_played_time")))
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = oldprofile.clone()
 
-        newprofile.replace_int(
-            "lid", ID.parse_machine_id(request.child_value("pdata/account/lid"))
-        )
+        newprofile.replace_int("lid", ID.parse_machine_id(request.child_value("pdata/account/lid")))
         newprofile.replace_str("name", request.child_value("pdata/base/name"))
         newprofile.replace_int("exp", request.child_value("pdata/base/exp"))
         newprofile.replace_int("lvl", request.child_value("pdata/base/lvl"))
         newprofile.replace_int("mg", request.child_value("pdata/base/mg"))
         newprofile.replace_int("ap", request.child_value("pdata/base/ap"))
-        newprofile.replace_int_array(
-            "hidden_param", 50, request.child_value("pdata/base/hidden_param")
-        )
+        newprofile.replace_int_array("hidden_param", 50, request.child_value("pdata/base/hidden_param"))
 
         configdict = newprofile.get_dict("config")
         config = request.child("pdata/config")
         if config:
             configdict.replace_int("msel_bgm", config.child_value("msel_bgm"))
-            configdict.replace_int(
-                "narrowdown_type", config.child_value("narrowdown_type")
-            )
+            configdict.replace_int("narrowdown_type", config.child_value("narrowdown_type"))
             configdict.replace_int("icon_id", config.child_value("icon_id"))
             configdict.replace_int("byword_0", config.child_value("byword_0"))
             configdict.replace_int("byword_1", config.child_value("byword_1"))
-            configdict.replace_bool(
-                "is_auto_byword_0", config.child_value("is_auto_byword_0")
-            )
-            configdict.replace_bool(
-                "is_auto_byword_1", config.child_value("is_auto_byword_1")
-            )
+            configdict.replace_bool("is_auto_byword_0", config.child_value("is_auto_byword_0"))
+            configdict.replace_bool("is_auto_byword_1", config.child_value("is_auto_byword_1"))
             configdict.replace_int("mrec_type", config.child_value("mrec_type"))
             configdict.replace_int("tab_sel", config.child_value("tab_sel"))
             configdict.replace_int("card_disp", config.child_value("card_disp"))
-            configdict.replace_int(
-                "score_tab_disp", config.child_value("score_tab_disp")
-            )
+            configdict.replace_int("score_tab_disp", config.child_value("score_tab_disp"))
             configdict.replace_int("last_music_id", config.child_value("last_music_id"))
-            configdict.replace_int(
-                "last_note_grade", config.child_value("last_note_grade")
-            )
+            configdict.replace_int("last_note_grade", config.child_value("last_note_grade"))
             configdict.replace_int("sort_type", config.child_value("sort_type"))
-            configdict.replace_int(
-                "rival_panel_type", config.child_value("rival_panel_type")
-            )
-            configdict.replace_int(
-                "random_entry_work", config.child_value("random_entry_work")
-            )
-            configdict.replace_int(
-                "folder_lamp_type", config.child_value("folder_lamp_type")
-            )
+            configdict.replace_int("rival_panel_type", config.child_value("rival_panel_type"))
+            configdict.replace_int("random_entry_work", config.child_value("random_entry_work"))
+            configdict.replace_int("folder_lamp_type", config.child_value("folder_lamp_type"))
             configdict.replace_bool("is_tweet", config.child_value("is_tweet"))
-            configdict.replace_bool(
-                "is_link_twitter", config.child_value("is_link_twitter")
-            )
+            configdict.replace_bool("is_link_twitter", config.child_value("is_link_twitter"))
         newprofile.replace_dict("config", configdict)
 
         customdict = newprofile.get_dict("custom")

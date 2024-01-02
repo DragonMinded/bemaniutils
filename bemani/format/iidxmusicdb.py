@@ -167,9 +167,7 @@ class IIDXMusicDB:
 
     @property
     def songs(self) -> List[IIDXSong]:
-        return sorted(
-            [self.__songs[mid][0] for mid in self.__songs], key=lambda song: song.id
-        )
+        return sorted([self.__songs[mid][0] for mid in self.__songs], key=lambda song: song.id)
 
     @property
     def songids(self) -> List[int]:

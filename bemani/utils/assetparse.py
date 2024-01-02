@@ -29,9 +29,7 @@ class ImportJubeat:
         }:
             self.version = actual_version
         else:
-            raise Exception(
-                "Unsupported Jubeat version, expected one of the following: prop, qubell, clan, festo!"
-            )
+            raise Exception("Unsupported Jubeat version, expected one of the following: prop, qubell, clan, festo!")
 
         self.config = config
         self.update = update
@@ -46,12 +44,8 @@ class ImportJubeat:
 
         file_mapping: Dict[str, str] = {}
         for emblem in root.find("emblem_list"):
-            emblem.find("texname").text = emblem.find("texname").text.replace(
-                ".tex", ".png"
-            )
-            file_mapping[
-                emblem.find("texname").text
-            ] = f'{emblem.find("index").text}.png'
+            emblem.find("texname").text = emblem.find("texname").text.replace(".tex", ".png")
+            file_mapping[emblem.find("texname").text] = f'{emblem.find("index").text}.png'
 
         if not file_mapping:
             # This isn't an emblem XML!
@@ -62,9 +56,7 @@ class ImportJubeat:
             raise Exception("Expect a valid directory for emblems in config file!")
 
         # First, make the root directory structure.
-        actual_output = os.path.join(
-            self.config.assets.jubeat.emblems, f"{self.version}"
-        )
+        actual_output = os.path.join(self.config.assets.jubeat.emblems, f"{self.version}")
         os.makedirs(actual_output, exist_ok=True)
 
         for fileroot, _, files in os.walk(assets):
@@ -92,9 +84,7 @@ class ImportJubeat:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Import game assets from various game files"
-    )
+    parser = argparse.ArgumentParser(description="Import game assets from various game files")
     parser.add_argument(
         "--series",
         action="store",
@@ -155,9 +145,7 @@ if __name__ == "__main__":
         if args.xml:
             jubeat.import_assets(args.xml, args.assets)
         else:
-            raise Exception(
-                "No emblem-info.xml provided! Please provide a --xml option!"
-            )
+            raise Exception("No emblem-info.xml provided! Please provide a --xml option!")
 
     else:
         raise Exception("Unsupported game series!")

@@ -65,9 +65,7 @@ class PASELIHandler(Base):
                 # enabled, so there's no way to find a balance.
                 balance = 0
             else:
-                balance = self.data.local.user.get_balance(
-                    userid, self.config.machine.arcade
-                )
+                balance = self.data.local.user.get_balance(userid, self.config.machine.arcade)
 
         root.add_child(Node.s16("sequence", 0))
         root.add_child(Node.u8("acstatus", 0))
@@ -158,17 +156,13 @@ class PASELIHandler(Base):
             else:
                 # Look up the new balance based on this delta. If there isn't enough,
                 # we will end up returning None here and exit without performing.
-                balance = self.data.local.user.update_balance(
-                    userid, self.config.machine.arcade, -payment
-                )
+                balance = self.data.local.user.update_balance(userid, self.config.machine.arcade, -payment)
 
             if balance is None:
                 print("Not enough balance for eacoin consume request")
                 return make_resp(
                     1,
-                    self.data.local.user.get_balance(
-                        userid, self.config.machine.arcade
-                    ),
+                    self.data.local.user.get_balance(userid, self.config.machine.arcade),
                 )
             else:
                 self.data.local.network.put_event(
@@ -253,16 +247,13 @@ class PASELIHandler(Base):
             end_of_week = beginning_of_today
             beginning_of_week = end_of_week - Time.SECONDS_IN_WEEK
 
-            topic.add_child(
-                Node.string("sumfrom", Time.format(beginning_of_week, date_format))
-            )
+            topic.add_child(Node.string("sumfrom", Time.format(beginning_of_week, date_format)))
             topic.add_child(Node.string("sumto", Time.format(end_of_week, date_format)))
             today_total = sum(
                 [
                     -event.data.get_int("delta")
                     for event in events
-                    if event.timestamp >= beginning_of_today
-                    and event.timestamp < end_of_today
+                    if event.timestamp >= beginning_of_today and event.timestamp < end_of_today
                 ]
             )
 
@@ -270,15 +261,13 @@ class PASELIHandler(Base):
                 [
                     -event.data.get_int("delta")
                     for event in events
-                    if event.timestamp >= beginning_of_today
-                    and event.timestamp < end_of_today
+                    if event.timestamp >= beginning_of_today and event.timestamp < end_of_today
                 ]
             )
             week_txns = [
                 -event.data.get_int("delta")
                 for event in events
-                if event.timestamp >= beginning_of_week
-                and event.timestamp < end_of_week
+                if event.timestamp >= beginning_of_week and event.timestamp < end_of_week
             ]
             week_total = sum(week_txns)
             if len(week_txns) > 0:
@@ -298,8 +287,7 @@ class PASELIHandler(Base):
                         [
                             -event.data.get_int("delta")
                             for event in events
-                            if event.timestamp >= start_of_day
-                            and event.timestamp < end_of_day
+                            if event.timestamp >= start_of_day and event.timestamp < end_of_day
                         ]
                     )
                 )
@@ -317,14 +305,10 @@ class PASELIHandler(Base):
             topic.add_child(
                 Node.string(
                     "sumfrom",
-                    Time.format(
-                        end_of_52_weeks - (52 * Time.SECONDS_IN_WEEK), date_format
-                    ),
+                    Time.format(end_of_52_weeks - (52 * Time.SECONDS_IN_WEEK), date_format),
                 )
             )
-            topic.add_child(
-                Node.string("sumto", Time.format(end_of_52_weeks, date_format))
-            )
+            topic.add_child(Node.string("sumto", Time.format(end_of_52_weeks, date_format)))
 
             # We index backwards, where index 0 = the first week back, 1 = the next week back after that, etc...
             items = []
@@ -337,8 +321,7 @@ class PASELIHandler(Base):
                         [
                             -event.data.get_int("delta")
                             for event in events
-                            if event.timestamp >= beginning_of_range
-                            and event.timestamp < end_of_range
+                            if event.timestamp >= beginning_of_range and event.timestamp < end_of_range
                         ]
                     )
                 )
@@ -366,9 +349,7 @@ class PASELIHandler(Base):
             hours = [0] * 24
 
             for event in events:
-                event_hour = int(
-                    (event.timestamp % Time.SECONDS_IN_DAY) / Time.SECONDS_IN_HOUR
-                )
+                event_hour = int((event.timestamp % Time.SECONDS_IN_DAY) / Time.SECONDS_IN_HOUR)
                 hours[event_hour] = hours[event_hour] - event.data.get_int("delta")
                 if event.timestamp < start_ts:
                     start_ts = event.timestamp
@@ -399,15 +380,11 @@ class PASELIHandler(Base):
 
                 item = Node.void("item")
                 history.add_child(item)
-                item.add_child(
-                    Node.string("date", Time.format(event.timestamp, time_format))
-                )
+                item.add_child(Node.string("date", Time.format(event.timestamp, time_format)))
                 item.add_child(Node.s32("consume", -event.data.get_int("delta")))
                 item.add_child(Node.s32("service", -event.data.get_int("service")))
                 item.add_child(Node.string("cardtype", ""))
-                item.add_child(
-                    Node.string("cardno", " " * self.paseli_padding + card_no)
-                )
+                item.add_child(Node.string("cardno", " " * self.paseli_padding + card_no))
                 item.add_child(Node.string("title", ""))
                 item.add_child(Node.string("systemid", ""))
 
@@ -417,9 +394,7 @@ class PASELIHandler(Base):
             last_month = Time.timestamp_from_date(year, month - 1)
             month_before = Time.timestamp_from_date(year, month - 2)
 
-            topic.add_child(
-                Node.string("sumfrom", Time.format(month_before, date_format))
-            )
+            topic.add_child(Node.string("sumfrom", Time.format(month_before, date_format)))
             topic.add_child(Node.string("sumto", Time.format(this_month, date_format)))
 
             for start, end in [(month_before, last_month), (last_month, this_month)]:
@@ -439,8 +414,7 @@ class PASELIHandler(Base):
                                 [
                                     -event.data.get_int("delta")
                                     for event in events
-                                    if event.timestamp >= begin_ts
-                                    and event.timestamp < end_ts
+                                    if event.timestamp >= begin_ts and event.timestamp < end_ts
                                 ]
                             )
                         )

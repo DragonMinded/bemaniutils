@@ -40,9 +40,7 @@ class IIDXChart:
                 continue
 
             while True:
-                time, event, side, value = struct.unpack(
-                    "<iBBH", chartdata[(position * 8) : ((position + 1) * 8)]
-                )
+                time, event, side, value = struct.unpack("<iBBH", chartdata[(position * 8) : ((position + 1) * 8)])
                 position += 1
 
                 if time == 0x7FFFFFFF:

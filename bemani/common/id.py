@@ -68,8 +68,7 @@ class ID:
         """
         try:
             if (
-                machine_id[:2]
-                in {"JP", "KR", "TW", "HK", "US", "GB", "IT", "ES", "FR", "PT", "XX"}
+                machine_id[:2] in {"JP", "KR", "TW", "HK", "US", "GB", "IT", "ES", "FR", "PT", "XX"}
                 and machine_id[2] == "-"
             ):
                 return int(machine_id[3:])

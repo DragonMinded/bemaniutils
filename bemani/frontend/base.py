@@ -75,9 +75,7 @@ class FrontendBase(ABC):
             "remote": RemoteUser.is_remote(link.other_userid),
         }
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         return {
             "name": profile.get_str("name"),
             "extid": ID.format_extid(profile.extid),
@@ -138,30 +136,22 @@ class FrontendBase(ABC):
         playstats: Dict[UserID, ValidatedDict] = {}
 
         # Find all versions of the users' profiles, sorted newest to oldest.
-        versions = sorted(
-            [version for (game, version, name) in self.all_games()], reverse=True
-        )
+        versions = sorted([version for (game, version, name) in self.all_games()], reverse=True)
         for userid in userids:
             info[userid] = {}
             userlimit = limit
             for version in versions:
                 if allow_remote:
-                    profile = self.data.remote.user.get_profile(
-                        self.game, version, userid
-                    )
+                    profile = self.data.remote.user.get_profile(self.game, version, userid)
                 else:
-                    profile = self.data.local.user.get_profile(
-                        self.game, version, userid
-                    )
+                    profile = self.data.local.user.get_profile(self.game, version, userid)
                 if profile is not None:
                     if userid not in playstats:
                         stats = self.data.local.game.get_settings(self.game, userid)
                         if stats is None:
                             stats = ValidatedDict()
                         playstats[userid] = stats
-                    info[userid][version] = self.format_profile(
-                        profile, playstats[userid]
-                    )
+                    info[userid][version] = self.format_profile(profile, playstats[userid])
                     info[userid][version]["remote"] = RemoteUser.is_remote(userid)
                     # Exit out if we've hit the limit
                     if userlimit is not None:
@@ -171,9 +161,7 @@ class FrontendBase(ABC):
 
         return info
 
-    def get_latest_player_info(
-        self, userids: List[UserID]
-    ) -> Dict[UserID, Dict[str, Any]]:
+    def get_latest_player_info(self, userids: List[UserID]) -> Dict[UserID, Dict[str, Any]]:
         # Grab the latest profile for each user
         all_info = self.get_all_player_info(userids, 1)
         info = {}
@@ -200,9 +188,7 @@ class FrontendBase(ABC):
         # Find all attempts across all games
         attempts = [
             attempt
-            for attempt in self.data.local.music.get_all_attempts(
-                game=self.game, version=self.version, limit=limit
-            )
+            for attempt in self.data.local.music.get_all_attempts(game=self.game, version=self.version, limit=limit)
             if attempt[0] is not None
         ]
         for attempt in attempts:
@@ -227,9 +213,7 @@ class FrontendBase(ABC):
         userids: List[UserID] = []
 
         # Find all high-scores across all games
-        highscores = self.data.local.music.get_all_records(
-            game=self.game, version=self.version
-        )
+        highscores = self.data.local.music.get_all_records(game=self.game, version=self.version)
         for score in highscores:
             index = self.make_index(score[1].id, score[1].chart)
             if index not in records:
@@ -248,16 +232,11 @@ class FrontendBase(ABC):
                     records[index] = newscore
 
         return {
-            "records": [
-                self.format_score(records[index][0], records[index][1])
-                for index in records
-            ],
+            "records": [self.format_score(records[index][0], records[index][1]) for index in records],
             "players": self.get_latest_player_info(userids),
         }
 
-    def get_scores(
-        self, userid: UserID, limit: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_scores(self, userid: UserID, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         # Find all attempts across all games
         attempts = [
             attempt
@@ -281,9 +260,7 @@ class FrontendBase(ABC):
         records: Dict[str, Tuple[UserID, Score]] = {}
 
         # Find all high-scores across all games
-        highscores = self.data.local.music.get_all_scores(
-            game=self.game, version=self.version, userid=userid
-        )
+        highscores = self.data.local.music.get_all_scores(game=self.game, version=self.version, userid=userid)
         for score in highscores:
             index = self.make_index(score[1].id, score[1].chart)
             if index not in records:
@@ -302,9 +279,7 @@ class FrontendBase(ABC):
         # Copy over records to duplicate IDs, such as revivals
         indexes = [index for index in records]
         for index in indexes:
-            alternate = self.get_duplicate_id(
-                records[index][1].id, records[index][1].chart
-            )
+            alternate = self.get_duplicate_id(records[index][1].id, records[index][1].chart)
             if alternate is not None:
                 altid, altchart = alternate
                 newindex = self.make_index(altid, altchart)
@@ -317,9 +292,7 @@ class FrontendBase(ABC):
         return [self.format_score(None, records[index][1]) for index in records]
 
     def get_top_scores(self, musicid: int) -> Dict[str, Any]:
-        scores = self.data.local.music.get_all_scores(
-            game=self.game, version=self.version, songid=musicid
-        )
+        scores = self.data.local.music.get_all_scores(game=self.game, version=self.version, songid=musicid)
         userids: List[UserID] = []
         for score in scores:
             if score[1].chart not in self.valid_charts:
@@ -342,18 +315,14 @@ class FrontendBase(ABC):
 
         return {
             "topscores": [
-                self.format_top_score(score[0], score[1])
-                for score in scores
-                if score[1].chart in self.valid_charts
+                self.format_top_score(score[0], score[1]) for score in scores if score[1].chart in self.valid_charts
             ],
             "players": self.get_latest_player_info(userids),
         }
 
     def get_rivals(
         self, userid: UserID
-    ) -> Tuple[
-        Dict[int, List[Dict[str, Any]]], Dict[UserID, Dict[int, Dict[str, Any]]]
-    ]:
+    ) -> Tuple[Dict[int, List[Dict[str, Any]]], Dict[UserID, Dict[int, Dict[str, Any]]]]:
         rivals = {}
         userids = set()
         versions = [version for (game, version, name) in self.all_games()]
@@ -373,12 +342,6 @@ class FrontendBase(ABC):
                 userids.add(rival.other_userid)
 
         return (
-            {
-                version: [
-                    self.format_rival(rival, profiles[version])
-                    for rival in rivals[version]
-                ]
-                for version in rivals
-            },
+            {version: [self.format_rival(rival, profiles[version]) for rival in rivals[version]] for version in rivals},
             self.get_all_player_info(list(userids), allow_remote=True),
         )

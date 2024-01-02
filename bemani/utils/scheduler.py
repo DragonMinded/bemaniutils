@@ -75,9 +75,7 @@ def run_scheduled_work(config: Config) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="A scheduler for work that needs to be done periodically."
-    )
+    parser = argparse.ArgumentParser(description="A scheduler for work that needs to be done periodically.")
     parser.add_argument(
         "-c",
         "--config",

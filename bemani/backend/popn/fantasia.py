@@ -113,9 +113,7 @@ class PopnMusicFantasia(PopnMusicBase):
         base.add_child(Node.u8("mode", profile.get_int("mode", 0)))
         base.add_child(Node.s8("button", profile.get_int("button", 0)))
         base.add_child(Node.s8("last_play_flag", profile.get_int("last_play_flag", -1)))
-        base.add_child(
-            Node.u8("medal_and_friend", profile.get_int("medal_and_friend", 0))
-        )
+        base.add_child(Node.u8("medal_and_friend", profile.get_int("medal_and_friend", 0)))
         base.add_child(Node.s8("category", profile.get_int("category", -1)))
         base.add_child(Node.s8("sub_category", profile.get_int("sub_category", -1)))
         base.add_child(Node.s16("chara", profile.get_int("chara", -1)))
@@ -128,58 +126,32 @@ class PopnMusicFantasia(PopnMusicBase):
         base.add_child(Node.s32("option", profile.get_int("option", 0)))
         base.add_child(Node.s16("music", profile.get_int("music", -1)))
         base.add_child(Node.u16("ep", profile.get_int("ep", 0)))
-        base.add_child(
-            Node.s32_array("sp_color_flg", profile.get_int_array("sp_color_flg", 2))
-        )
+        base.add_child(Node.s32_array("sp_color_flg", profile.get_int_array("sp_color_flg", 2)))
         base.add_child(Node.s32("read_news", profile.get_int("read_news", 0)))
-        base.add_child(
-            Node.s16(
-                "consecutive_days_coupon", profile.get_int("consecutive_days_coupon", 0)
-            )
-        )
+        base.add_child(Node.s16("consecutive_days_coupon", profile.get_int("consecutive_days_coupon", 0)))
         base.add_child(Node.s8("staff", 0))
 
         # Player card section
         player_card_dict = profile.get_dict("player_card")
         player_card = Node.void("player_card")
         root.add_child(player_card)
-        player_card.add_child(
-            Node.u8_array("title", player_card_dict.get_int_array("title", 2, [0, 1]))
-        )
+        player_card.add_child(Node.u8_array("title", player_card_dict.get_int_array("title", 2, [0, 1])))
         player_card.add_child(Node.u8("frame", player_card_dict.get_int("frame")))
         player_card.add_child(Node.u8("base", player_card_dict.get_int("base")))
-        player_card.add_child(
-            Node.u8_array("seal", player_card_dict.get_int_array("seal", 2))
-        )
-        player_card.add_child(
-            Node.s32_array("get_title", player_card_dict.get_int_array("get_title", 4))
-        )
-        player_card.add_child(
-            Node.s32("get_frame", player_card_dict.get_int("get_frame"))
-        )
-        player_card.add_child(
-            Node.s32("get_base", player_card_dict.get_int("get_base"))
-        )
-        player_card.add_child(
-            Node.s32_array("get_seal", player_card_dict.get_int_array("get_seal", 2))
-        )
+        player_card.add_child(Node.u8_array("seal", player_card_dict.get_int_array("seal", 2)))
+        player_card.add_child(Node.s32_array("get_title", player_card_dict.get_int_array("get_title", 4)))
+        player_card.add_child(Node.s32("get_frame", player_card_dict.get_int("get_frame")))
+        player_card.add_child(Node.s32("get_base", player_card_dict.get_int("get_base")))
+        player_card.add_child(Node.s32_array("get_seal", player_card_dict.get_int_array("get_seal", 2)))
         player_card.add_child(Node.s8("is_open", 1))
 
         # Player card EX section
         player_card_ex = Node.void("player_card_ex")
         root.add_child(player_card_ex)
-        player_card_ex.add_child(
-            Node.s32("get_title_ex", player_card_dict.get_int("get_title_ex"))
-        )
-        player_card_ex.add_child(
-            Node.s32("get_frame_ex", player_card_dict.get_int("get_frame_ex"))
-        )
-        player_card_ex.add_child(
-            Node.s32("get_base_ex", player_card_dict.get_int("get_base_ex"))
-        )
-        player_card_ex.add_child(
-            Node.s32("get_seal_ex", player_card_dict.get_int("get_seal_ex"))
-        )
+        player_card_ex.add_child(Node.s32("get_title_ex", player_card_dict.get_int("get_title_ex")))
+        player_card_ex.add_child(Node.s32("get_frame_ex", player_card_dict.get_int("get_frame_ex")))
+        player_card_ex.add_child(Node.s32("get_base_ex", player_card_dict.get_int("get_base_ex")))
+        player_card_ex.add_child(Node.s32("get_seal_ex", player_card_dict.get_int("get_seal_ex")))
 
         # Statistics section and scores section
         statistics = self.get_play_statistics(userid)
@@ -201,18 +173,8 @@ class PopnMusicFantasia(PopnMusicBase):
             rivalcount += 1
         base.add_child(Node.u8("active_fr_num", rivalcount))
 
-        last_played = [
-            x[0]
-            for x in self.data.local.music.get_last_played(
-                self.game, self.music_version, userid, 3
-            )
-        ]
-        most_played = [
-            x[0]
-            for x in self.data.local.music.get_most_played(
-                self.game, self.music_version, userid, 20
-            )
-        ]
+        last_played = [x[0] for x in self.data.local.music.get_last_played(self.game, self.music_version, userid, 3)]
+        most_played = [x[0] for x in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)]
         while len(last_played) < 3:
             last_played.append(-1)
         while len(most_played) < 20:
@@ -222,9 +184,7 @@ class PopnMusicFantasia(PopnMusicBase):
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
         clear_medal_sub = [0] * self.GAME_MAX_MUSIC_ID
 
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -240,9 +200,7 @@ class PopnMusicFantasia(PopnMusicBase):
             if score.data.get_int("medal") == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
-            clear_medal[score.id] = clear_medal[
-                score.id
-            ] | self.__format_medal_for_score(score)
+            clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
             hiscore_index = (score.id * 4) + {
                 self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                 self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -252,15 +210,9 @@ class PopnMusicFantasia(PopnMusicBase):
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
             hiscore_value = score.points << hiscore_bit_pos
-            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (
-                hiscore_value & 0xFF
-            )
-            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[
-                hiscore_byte_pos + 1
-            ] | ((hiscore_value >> 8) & 0xFF)
-            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[
-                hiscore_byte_pos + 2
-            ] | ((hiscore_value >> 16) & 0xFF)
+            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
 
         hiscore = bytes(hiscore_array)
 
@@ -294,9 +246,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
         reflec_data = Node.void("reflec_data")
         root.add_child(reflec_data)
-        reflec_data.add_child(
-            Node.s8_array("reflec", profile.get_int_array("reflec", 2))
-        )
+        reflec_data.add_child(Node.s8_array("reflec", profile.get_int_array("reflec", 2)))
 
         # Navigate section
         for i in range(3):
@@ -307,14 +257,10 @@ class PopnMusicFantasia(PopnMusicBase):
             navigate.add_child(Node.s8("image", navigate_dict.get_int("image", -1)))
             navigate.add_child(Node.s8("level", navigate_dict.get_int("level", -1)))
             navigate.add_child(Node.s8("ojama", navigate_dict.get_int("ojama", -1)))
-            navigate.add_child(
-                Node.s16("limit_num", navigate_dict.get_int("limit_num", -1))
-            )
+            navigate.add_child(Node.s16("limit_num", navigate_dict.get_int("limit_num", -1)))
             navigate.add_child(Node.s8("button", navigate_dict.get_int("button", -1)))
             navigate.add_child(Node.s8("life", navigate_dict.get_int("life", -1)))
-            navigate.add_child(
-                Node.s16("progress", navigate_dict.get_int("progress", -1))
-            )
+            navigate.add_child(Node.s16("progress", navigate_dict.get_int("progress", -1)))
 
         return root
 
@@ -331,9 +277,7 @@ class PopnMusicFantasia(PopnMusicBase):
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
         hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
 
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -349,9 +293,7 @@ class PopnMusicFantasia(PopnMusicBase):
             if score.data.get_int("medal") == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
-            clear_medal[score.id] = clear_medal[
-                score.id
-            ] | self.__format_medal_for_score(score)
+            clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
             hiscore_index = (score.id * 4) + {
                 self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                 self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -361,24 +303,16 @@ class PopnMusicFantasia(PopnMusicBase):
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
             hiscore_value = score.points << hiscore_bit_pos
-            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (
-                hiscore_value & 0xFF
-            )
-            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[
-                hiscore_byte_pos + 1
-            ] | ((hiscore_value >> 8) & 0xFF)
-            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[
-                hiscore_byte_pos + 2
-            ] | ((hiscore_value >> 16) & 0xFF)
+            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
 
         root.add_child(Node.u16_array("clear_medal", clear_medal))
         root.add_child(Node.binary("hiscore", bytes(hiscore_array)))
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         # For some reason, Pop'n 20 sends us two profile saves, one with 'not done yet'
         # so we only want to process the done yet node. The 'not gameover' save has
         # jubeat collabo stuff set in it, but we don't use that so it doesn't matter.
@@ -396,17 +330,11 @@ class PopnMusicFantasia(PopnMusicBase):
         newprofile.replace_int("category", request.child_value("category"))
         newprofile.replace_int("sub_category", request.child_value("sub_category"))
         newprofile.replace_int("chara_category", request.child_value("chara_category"))
-        newprofile.replace_int(
-            "medal_and_friend", request.child_value("medal_and_friend")
-        )
+        newprofile.replace_int("medal_and_friend", request.child_value("medal_and_friend"))
         newprofile.replace_int("ep", request.child_value("ep"))
-        newprofile.replace_int_array(
-            "sp_color_flg", 2, request.child_value("sp_color_flg")
-        )
+        newprofile.replace_int_array("sp_color_flg", 2, request.child_value("sp_color_flg"))
         newprofile.replace_int("read_news", request.child_value("read_news"))
-        newprofile.replace_int(
-            "consecutive_days_coupon", request.child_value("consecutive_days_coupon")
-        )
+        newprofile.replace_int("consecutive_days_coupon", request.child_value("consecutive_days_coupon"))
         newprofile.replace_int("tutorial", request.child_value("tutorial"))
         newprofile.replace_int("music_open_pt", request.child_value("music_open_pt"))
         newprofile.replace_int("collabo", request.child_value("collabo"))
@@ -428,29 +356,17 @@ class PopnMusicFantasia(PopnMusicBase):
         player_card_dict.replace_int("frame", request.child_value("frame"))
         player_card_dict.replace_int("base", request.child_value("base"))
         player_card_dict.replace_int_array("seal", 2, request.child_value("seal"))
-        player_card_dict.replace_int_array(
-            "get_title", 4, request.child_value("get_title")
-        )
+        player_card_dict.replace_int_array("get_title", 4, request.child_value("get_title"))
         player_card_dict.replace_int("get_frame", request.child_value("get_frame"))
         player_card_dict.replace_int("get_base", request.child_value("get_base"))
-        player_card_dict.replace_int_array(
-            "get_seal", 2, request.child_value("get_seal")
-        )
+        player_card_dict.replace_int_array("get_seal", 2, request.child_value("get_seal"))
 
         player_card_ex = request.child("player_card_ex")
         if player_card_ex is not None:
-            player_card_dict.replace_int(
-                "get_title_ex", player_card_ex.child_value("get_title_ex")
-            )
-            player_card_dict.replace_int(
-                "get_frame_ex", player_card_ex.child_value("get_frame_ex")
-            )
-            player_card_dict.replace_int(
-                "get_base_ex", player_card_ex.child_value("get_base_ex")
-            )
-            player_card_dict.replace_int(
-                "get_seal_ex", player_card_ex.child_value("get_seal_ex")
-            )
+            player_card_dict.replace_int("get_title_ex", player_card_ex.child_value("get_title_ex"))
+            player_card_dict.replace_int("get_frame_ex", player_card_ex.child_value("get_frame_ex"))
+            player_card_dict.replace_int("get_base_ex", player_card_ex.child_value("get_base_ex"))
+            player_card_dict.replace_int("get_seal_ex", player_card_ex.child_value("get_seal_ex"))
         newprofile.replace_dict("player_card", player_card_dict)
 
         # Extract navigate stuff
@@ -462,9 +378,7 @@ class PopnMusicFantasia(PopnMusicBase):
                 navigate_dict.replace_int("image", navigate.child_value("image"))
                 navigate_dict.replace_int("level", navigate.child_value("level"))
                 navigate_dict.replace_int("ojama", navigate.child_value("ojama"))
-                navigate_dict.replace_int(
-                    "limit_num", navigate.child_value("limit_num")
-                )
+                navigate_dict.replace_int("limit_num", navigate.child_value("limit_num"))
                 navigate_dict.replace_int("button", navigate.child_value("button"))
                 navigate_dict.replace_int("life", navigate.child_value("life"))
                 navigate_dict.replace_int("progress", navigate.child_value("progress"))
@@ -549,9 +463,7 @@ class PopnMusicFantasia(PopnMusicBase):
         machine = self.get_machine()
 
         root = Node.void("playerdata")
-        root.add_child(
-            Node.s8("pref", machine.data.get_int("pref", self.get_machine_region()))
-        )
+        root.add_child(Node.s8("pref", machine.data.get_int("pref", self.get_machine_region())))
 
         if refid is None:
             root.add_child(Node.string("name", ""))
@@ -584,9 +496,7 @@ class PopnMusicFantasia(PopnMusicBase):
             root.add_child(Node.string("message", ""))
             return root
 
-        oldprofile = self.get_profile(userid) or Profile(
-            self.game, self.version, refid, 0
-        )
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
         newprofile = self.unformat_profile(userid, request, oldprofile)
 
         if newprofile is not None:
@@ -597,22 +507,10 @@ class PopnMusicFantasia(PopnMusicBase):
             root.add_child(Node.s16("chara", newprofile.get_int("chara", -1)))
             root.add_child(Node.u8("frame", player_card_dict.get_int("frame")))
             root.add_child(Node.u8("base", player_card_dict.get_int("base")))
-            root.add_child(
-                Node.u8("seal_1", player_card_dict.get_int_array("seal", 2)[0])
-            )
-            root.add_child(
-                Node.u8("seal_2", player_card_dict.get_int_array("seal", 2)[1])
-            )
-            root.add_child(
-                Node.u8(
-                    "title_1", player_card_dict.get_int_array("title", 2, [0, 1])[0]
-                )
-            )
-            root.add_child(
-                Node.u8(
-                    "title_2", player_card_dict.get_int_array("title", 2, [0, 1])[1]
-                )
-            )
+            root.add_child(Node.u8("seal_1", player_card_dict.get_int_array("seal", 2)[0]))
+            root.add_child(Node.u8("seal_2", player_card_dict.get_int_array("seal", 2)[1]))
+            root.add_child(Node.u8("title_1", player_card_dict.get_int_array("title", 2, [0, 1])[0]))
+            root.add_child(Node.u8("title_2", player_card_dict.get_int_array("title", 2, [0, 1])[1]))
             root.add_child(Node.s16("recommend_1", -1))
             root.add_child(Node.s16("recommend_2", -1))
             root.add_child(Node.s16("recommend_3", -1))
@@ -647,9 +545,7 @@ class PopnMusicFantasia(PopnMusicBase):
         for rival in links[:2]:
             rivalid = rival.other_userid
             rivalprofile = profiles[rivalid]
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, rivalid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, rivalid)
 
             # First, output general profile info.
             friend = Node.void("friend")
@@ -661,9 +557,7 @@ class PopnMusicFantasia(PopnMusicBase):
 
             # Set up some sane defaults.
             friend.add_child(Node.string("name", rivalprofile.get_str("name", "なし")))
-            friend.add_child(
-                Node.string("g_pm_id", ID.format_extid(rivalprofile.extid))
-            )
+            friend.add_child(Node.string("g_pm_id", ID.format_extid(rivalprofile.extid)))
             friend.add_child(Node.s16("chara", rivalprofile.get_int("chara", -1)))
 
             # Perform hiscore/medal conversion.
@@ -684,9 +578,7 @@ class PopnMusicFantasia(PopnMusicBase):
                 if score.data.get_int("medal") == self.PLAY_MEDAL_NO_PLAY:
                     continue
 
-                clear_medal[score.id] = clear_medal[
-                    score.id
-                ] | self.__format_medal_for_score(score)
+                clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
                 hiscore_index = (score.id * 4) + {
                     self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                     self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -696,15 +588,13 @@ class PopnMusicFantasia(PopnMusicBase):
                 hiscore_byte_pos = int((hiscore_index * 17) / 8)
                 hiscore_bit_pos = int((hiscore_index * 17) % 8)
                 hiscore_value = score.points << hiscore_bit_pos
-                hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (
-                    hiscore_value & 0xFF
+                hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+                hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | (
+                    (hiscore_value >> 8) & 0xFF
                 )
-                hiscore_array[hiscore_byte_pos + 1] = hiscore_array[
-                    hiscore_byte_pos + 1
-                ] | ((hiscore_value >> 8) & 0xFF)
-                hiscore_array[hiscore_byte_pos + 2] = hiscore_array[
-                    hiscore_byte_pos + 2
-                ] | ((hiscore_value >> 16) & 0xFF)
+                hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | (
+                    (hiscore_value >> 16) & 0xFF
+                )
 
             hiscore = bytes(hiscore_array)
             friend.add_child(Node.u16_array("clear_medal", clear_medal))
@@ -726,14 +616,10 @@ class PopnMusicFantasia(PopnMusicBase):
         root.add_child(Node.s32("game_phase", game_phase))
         root.add_child(Node.s32("ir_phase", 0))
         root.add_child(Node.s32("event_phase", event_phase))
-        root.add_child(
-            Node.s32("netvs_phase", 0)
-        )  # Net taisen mode, we don't support lobbies.
+        root.add_child(Node.s32("netvs_phase", 0))  # Net taisen mode, we don't support lobbies.
         root.add_child(Node.s32("card_phase", 6))
         root.add_child(Node.s32("illust_phase", 2))
-        root.add_child(
-            Node.s32("psp_phase", 5)
-        )  # Unlock songs from Pop'n Music Portable.
+        root.add_child(Node.s32("psp_phase", 5))  # Unlock songs from Pop'n Music Portable.
         root.add_child(Node.s32("other_phase", 1))
         root.add_child(Node.s32("jubeat_phase", 1))
         root.add_child(Node.s32("public_phase", 3))

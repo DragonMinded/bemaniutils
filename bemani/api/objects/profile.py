@@ -74,15 +74,11 @@ class ProfileObject(BaseObject):
 
         return base
 
-    def fetch_v1(
-        self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         # Fetch the profiles
         profiles: List[Tuple[UserID, Profile]] = []
         if idtype == APIConstants.ID_TYPE_SERVER:
-            profiles.extend(
-                self.data.local.user.get_all_profiles(self.game, self.version)
-            )
+            profiles.extend(self.data.local.user.get_all_profiles(self.game, self.version))
         elif idtype == APIConstants.ID_TYPE_SONG:
             raise APIException(
                 "Unsupported ID for lookup!",
@@ -108,9 +104,7 @@ class ProfileObject(BaseObject):
                     # in the case that we returned scores for a user that doesn't have a
                     # profile on a particular version. We allow that on this network, so in
                     # order to not break remote networks, try our best to return any profile.
-                    profile = self.data.local.user.get_any_profile(
-                        self.game, self.version, userid
-                    )
+                    profile = self.data.local.user.get_any_profile(self.game, self.version, userid)
                     if profile is not None:
                         profiles.append((userid, profile))
         else:

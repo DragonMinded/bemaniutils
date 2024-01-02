@@ -113,9 +113,7 @@ class DDRAce(
         return DDR2014(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         # DDR Ace has a weird bug where it sends a profile save for a blank
         # profile before reading it back when creating a new profile. If there
         # is no profile on read-back, it errors out, and it also uses the name
@@ -134,10 +132,7 @@ class DDRAce(
         events = []
 
         for userid, profile in profiles:
-            if (
-                profile.get_str("name") == ""
-                and profile.get_int("write_time") < several_minutes_ago
-            ):
+            if profile.get_str("name") == "" and profile.get_int("write_time") < several_minutes_ago:
                 data.local.user.delete_profile(cls.game, cls.version, userid)
                 events.append(
                     (
@@ -255,21 +250,15 @@ class DDRAce(
         tax.add_child(Node.s32("phase", 0))
         return tax
 
-    def __handle_userload(
-        self, userid: Optional[UserID], requestdata: Node, response: Node
-    ) -> None:
+    def __handle_userload(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         has_profile: bool = False
         achievements: List[Achievement] = []
         scores: List[Score] = []
 
         if userid is not None:
             has_profile = self.has_profile(userid)
-            achievements = self.data.local.user.get_achievements(
-                self.game, self.version, userid
-            )
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, userid
-            )
+            achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
         # Place scores into an arrangement for easier distribution to Ace.
         scores_by_mcode: Dict[int, List[Optional[Score]]] = {}
@@ -304,11 +293,7 @@ class DDRAce(
                     note.add_child(Node.s32("ghostid", 0))
                 else:
                     note.add_child(Node.u16("count", score.plays))
-                    note.add_child(
-                        Node.u8(
-                            "rank", self.db_to_game_rank(score.data.get_int("rank"))
-                        )
-                    )
+                    note.add_child(Node.u8("rank", self.db_to_game_rank(score.data.get_int("rank"))))
                     note.add_child(
                         Node.u8(
                             "clearkind",
@@ -401,9 +386,7 @@ class DDRAce(
             eventdata.add_child(Node.u32("eventno", 0))
             eventdata.add_child(Node.s64("condition", 0))
             eventdata.add_child(Node.u32("reward", 0))
-            eventdata.add_child(
-                Node.s32("comptime", 1 if playerstats.get_bool("completed") else 0)
-            )
+            eventdata.add_child(Node.s32("comptime", 1 if playerstats.get_bool("completed") else 0))
             eventdata.add_child(Node.s64("savedata", 0))
 
         for evtprogress in progress:
@@ -414,21 +397,11 @@ class DDRAce(
             eventdata.add_child(Node.s32("eventtype", int(evtprogress.type)))
             eventdata.add_child(Node.u32("eventno", 0))
             eventdata.add_child(Node.s64("condition", 0))
-            eventdata.add_child(
-                Node.u32(
-                    "reward", rewards.get(evtprogress.type, {}).get(evtprogress.id)
-                )
-            )
-            eventdata.add_child(
-                Node.s32("comptime", 1 if evtprogress.data.get_bool("completed") else 0)
-            )
-            eventdata.add_child(
-                Node.s64("savedata", evtprogress.data.get_int("progress"))
-            )
+            eventdata.add_child(Node.u32("reward", rewards.get(evtprogress.type, {}).get(evtprogress.id)))
+            eventdata.add_child(Node.s32("comptime", 1 if evtprogress.data.get_bool("completed") else 0))
+            eventdata.add_child(Node.s64("savedata", evtprogress.data.get_int("progress")))
 
-    def __handle_usersave(
-        self, userid: Optional[UserID], requestdata: Node, response: Node
-    ) -> None:
+    def __handle_usersave(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         if userid is None:
             # the game sends us empty user ID strings when a guest is playing.
             # Return early so it doesn't wait a minute and a half to show the
@@ -537,9 +510,7 @@ class DDRAce(
             ghost=ghost,
         )
 
-    def __handle_rivalload(
-        self, userid: Optional[UserID], requestdata: Node, response: Node
-    ) -> None:
+    def __handle_rivalload(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         data = Node.void("data")
         response.add_child(data)
         data.add_child(Node.s32("recordtype", requestdata.child_value("loadflag")))
@@ -567,9 +538,7 @@ class DDRAce(
 
         if loadkind == self.GAME_RIVAL_TYPE_WORLD:
             # Just load all scores for this network
-            scores = self.data.remote.music.get_all_records(
-                self.game, self.music_version
-            )
+            scores = self.data.remote.music.get_all_records(self.game, self.music_version)
         elif loadkind == self.GAME_RIVAL_TYPE_AREA:
             if thismachine.arcade is not None:
                 match_arcade = thismachine.arcade
@@ -595,14 +564,10 @@ class DDRAce(
                         userids.append(userid)
 
             # Load all scores for users in the area
-            scores = self.data.local.music.get_all_records(
-                self.game, self.music_version, userlist=userids
-            )
+            scores = self.data.local.music.get_all_records(self.game, self.music_version, userlist=userids)
         elif loadkind == self.GAME_RIVAL_TYPE_MACHINE:
             # Load up all scores and filter them by those earned at this location
-            scores = self.data.local.music.get_all_records(
-                self.game, self.music_version, locationlist=[thismachine.id]
-            )
+            scores = self.data.local.music.get_all_records(self.game, self.music_version, locationlist=[thismachine.id])
         elif loadkind in [
             self.GAME_RIVAL_TYPE_RIVAL1,
             self.GAME_RIVAL_TYPE_RIVAL2,
@@ -611,17 +576,13 @@ class DDRAce(
             # Load up this user's highscores, format the way the below code expects it
             extid = requestdata.child_value("ddrcode")
             otherid = self.data.remote.user.from_extid(self.game, self.version, extid)
-            userscores = self.data.remote.music.get_scores(
-                self.game, self.music_version, otherid
-            )
+            userscores = self.data.remote.music.get_scores(self.game, self.music_version, otherid)
             scores = [(otherid, score) for score in userscores]
         else:
             # Nothing here
             scores = []
 
-        missing_users = [
-            userid for (userid, _) in scores if userid not in profiles_by_userid
-        ]
+        missing_users = [userid for (userid, _) in scores if userid not in profiles_by_userid]
         for userid, profile in self.get_any_profiles(missing_users):
             profiles_by_userid[userid] = profile
 
@@ -634,12 +595,8 @@ class DDRAce(
             data.add_child(record)
             record.add_child(Node.u32("mcode", score.id))
             record.add_child(Node.u8("notetype", self.db_to_game_chart(score.chart)))
-            record.add_child(
-                Node.u8("rank", self.db_to_game_rank(score.data.get_int("rank")))
-            )
-            record.add_child(
-                Node.u8("clearkind", self.db_to_game_halo(score.data.get_int("halo")))
-            )
+            record.add_child(Node.u8("rank", self.db_to_game_rank(score.data.get_int("rank"))))
+            record.add_child(Node.u8("clearkind", self.db_to_game_halo(score.data.get_int("halo"))))
             record.add_child(Node.u8("flagdata", 0))
             record.add_child(Node.string("name", profiledata.get_str("name")))
             record.add_child(Node.s32("area", profiledata.get_int("area", 58)))
@@ -647,9 +604,7 @@ class DDRAce(
             record.add_child(Node.s32("score", score.points))
             record.add_child(Node.s32("ghostid", score.key))
 
-    def __handle_usernew(
-        self, userid: Optional[UserID], requestdata: Node, response: Node
-    ) -> None:
+    def __handle_usernew(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         if userid is None:
             raise Exception("Expecting valid UserID to create new profile!")
 
@@ -669,26 +624,18 @@ class DDRAce(
         response.add_child(Node.s32("code", profile.extid))
         response.add_child(Node.string("shoparea", ""))
 
-    def __handle_inheritance(
-        self, userid: Optional[UserID], requestdata: Node, response: Node
-    ) -> None:
+    def __handle_inheritance(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         if userid is not None:
             previous_version = self.previous_version()
             profile = previous_version.get_profile(userid)
         else:
             profile = None
 
-        response.add_child(
-            Node.s32("InheritanceStatus", 1 if profile is not None else 0)
-        )
+        response.add_child(Node.s32("InheritanceStatus", 1 if profile is not None else 0))
 
-    def __handle_ghostload(
-        self, userid: Optional[UserID], requestdata: Node, response: Node
-    ) -> None:
+    def __handle_ghostload(self, userid: Optional[UserID], requestdata: Node, response: Node) -> None:
         ghostid = requestdata.child_value("ghostid")
-        ghost = self.data.local.music.get_score_by_key(
-            self.game, self.music_version, ghostid
-        )
+        ghost = self.data.local.music.get_score_by_key(self.game, self.music_version, ghostid)
         if ghost is None:
             return
 
@@ -708,9 +655,7 @@ class DDRAce(
         ghostdata.add_child(Node.s32("ghostsize", len(score.data["ghost"])))
         ghostdata.add_child(Node.string("ghost", score.data["ghost"]))
 
-    def handle_playerdata_usergamedata_advanced_request(
-        self, request: Node
-    ) -> Optional[Node]:
+    def handle_playerdata_usergamedata_advanced_request(self, request: Node) -> Optional[Node]:
         playerdata = Node.void("playerdata")
 
         # DDR Ace decides to be difficult and have a third level of packet switching
@@ -748,9 +693,7 @@ class DDRAce(
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
-            profile = self.get_profile(userid) or Profile(
-                self.game, self.version, refid, 0
-            )
+            profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             usergamedata = profile.get_dict("usergamedata")
 
             for record in request.child("data/record").children:
@@ -781,30 +724,19 @@ class DDRAce(
                     profile.replace_bool(
                         "workout_mode",
                         int(
-                            strdatalist[self.GAME_COMMON_WEIGHT_DISPLAY_OFFSET].decode(
-                                "ascii"
-                            ),
+                            strdatalist[self.GAME_COMMON_WEIGHT_DISPLAY_OFFSET].decode("ascii"),
                             16,
                         )
                         != 0,
                     )
                     profile.replace_int(
                         "weight",
-                        int(
-                            float(
-                                strdatalist[self.GAME_COMMON_WEIGHT_OFFSET].decode(
-                                    "ascii"
-                                )
-                            )
-                            * 10
-                        ),
+                        int(float(strdatalist[self.GAME_COMMON_WEIGHT_OFFSET].decode("ascii")) * 10),
                     )
                     profile.replace_int(
                         "character",
                         int(
-                            strdatalist[self.GAME_COMMON_CHARACTER_OFFSET].decode(
-                                "ascii"
-                            ),
+                            strdatalist[self.GAME_COMMON_CHARACTER_OFFSET].decode("ascii"),
                             16,
                         ),
                     )
@@ -812,36 +744,28 @@ class DDRAce(
                     profile.replace_int(
                         "combo",
                         int(
-                            strdatalist[self.GAME_OPTION_COMBO_POSITION_OFFSET].decode(
-                                "ascii"
-                            ),
+                            strdatalist[self.GAME_OPTION_COMBO_POSITION_OFFSET].decode("ascii"),
                             16,
                         ),
                     )
                     profile.replace_int(
                         "early_late",
                         int(
-                            strdatalist[self.GAME_OPTION_FAST_SLOW_OFFSET].decode(
-                                "ascii"
-                            ),
+                            strdatalist[self.GAME_OPTION_FAST_SLOW_OFFSET].decode("ascii"),
                             16,
                         ),
                     )
                     profile.replace_int(
                         "arrowskin",
                         int(
-                            strdatalist[self.GAME_OPTION_ARROW_SKIN_OFFSET].decode(
-                                "ascii"
-                            ),
+                            strdatalist[self.GAME_OPTION_ARROW_SKIN_OFFSET].decode("ascii"),
                             16,
                         ),
                     )
                     profile.replace_int(
                         "guidelines",
                         int(
-                            strdatalist[self.GAME_OPTION_GUIDELINE_OFFSET].decode(
-                                "ascii"
-                            ),
+                            strdatalist[self.GAME_OPTION_GUIDELINE_OFFSET].decode("ascii"),
                             16,
                         ),
                     )
@@ -907,45 +831,39 @@ class DDRAce(
                                 old_profile = previous_version.get_profile(userid)
                                 if old_profile is not None:
                                     name = old_profile.get_str("name")
-                                    area = old_profile.get_int(
-                                        "area", self.get_machine_region()
-                                    )
+                                    area = old_profile.get_int("area", self.get_machine_region())
                                 else:
                                     area = self.get_machine_region()
 
                             common = usergamedata[ptype]["strdata"].split(b",")
                             common[self.GAME_COMMON_NAME_OFFSET] = name.encode("ascii")
-                            common[self.GAME_COMMON_AREA_OFFSET] = acehex(area).encode(
-                                "ascii"
-                            )
+                            common[self.GAME_COMMON_AREA_OFFSET] = acehex(area).encode("ascii")
                             common[self.GAME_COMMON_WEIGHT_DISPLAY_OFFSET] = (
                                 b"1" if profile.get_bool("workout_mode") else b"0"
                             )
                             common[self.GAME_COMMON_WEIGHT_OFFSET] = str(
                                 float(profile.get_int("weight")) / 10.0
                             ).encode("ascii")
-                            common[self.GAME_COMMON_CHARACTER_OFFSET] = acehex(
-                                profile.get_int("character")
-                            ).encode("ascii")
+                            common[self.GAME_COMMON_CHARACTER_OFFSET] = acehex(profile.get_int("character")).encode(
+                                "ascii"
+                            )
                             usergamedata[ptype]["strdata"] = b",".join(common)
                         if ptype == "OPTION":
                             # Return user settings for frontend
                             option = usergamedata[ptype]["strdata"].split(b",")
-                            option[self.GAME_OPTION_FAST_SLOW_OFFSET] = acehex(
-                                profile.get_int("early_late")
-                            ).encode("ascii")
-                            option[self.GAME_OPTION_COMBO_POSITION_OFFSET] = acehex(
-                                profile.get_int("combo")
-                            ).encode("ascii")
-                            option[self.GAME_OPTION_ARROW_SKIN_OFFSET] = acehex(
-                                profile.get_int("arrowskin")
-                            ).encode("ascii")
-                            option[self.GAME_OPTION_GUIDELINE_OFFSET] = acehex(
-                                profile.get_int("guidelines")
-                            ).encode("ascii")
-                            option[self.GAME_OPTION_FILTER_OFFSET] = acehex(
-                                profile.get_int("filter")
-                            ).encode("ascii")
+                            option[self.GAME_OPTION_FAST_SLOW_OFFSET] = acehex(profile.get_int("early_late")).encode(
+                                "ascii"
+                            )
+                            option[self.GAME_OPTION_COMBO_POSITION_OFFSET] = acehex(profile.get_int("combo")).encode(
+                                "ascii"
+                            )
+                            option[self.GAME_OPTION_ARROW_SKIN_OFFSET] = acehex(profile.get_int("arrowskin")).encode(
+                                "ascii"
+                            )
+                            option[self.GAME_OPTION_GUIDELINE_OFFSET] = acehex(profile.get_int("guidelines")).encode(
+                                "ascii"
+                            )
+                            option[self.GAME_OPTION_FILTER_OFFSET] = acehex(profile.get_int("filter")).encode("ascii")
                             usergamedata[ptype]["strdata"] = b",".join(option)
                         if ptype == "LAST":
                             # Return the number of calories expended in the last day
@@ -959,9 +877,7 @@ class DDRAce(
                             total = sum([w.data.get_int("calories") for w in workouts])
 
                             last = usergamedata[ptype]["strdata"].split(b",")
-                            last[self.GAME_LAST_CALORIES_OFFSET] = acehex(total).encode(
-                                "ascii"
-                            )
+                            last[self.GAME_LAST_CALORIES_OFFSET] = acehex(total).encode("ascii")
                             usergamedata[ptype]["strdata"] = b",".join(last)
                         if ptype == "RIVAL":
                             # Fill in the DDR code and active status of the three active
@@ -1003,24 +919,18 @@ class DDRAce(
                                 }[rivalno]
 
                                 rival[activeslot] = acehex(rivalno).encode("ascii")
-                                rival[ddrcodeslot] = acehex(friendprofile.extid).encode(
-                                    "ascii"
-                                )
+                                rival[ddrcodeslot] = acehex(friendprofile.extid).encode("ascii")
 
                             usergamedata[ptype]["strdata"] = b",".join(rival)
 
                         dnode = Node.string(
                             "d",
-                            base64.b64encode(usergamedata[ptype]["strdata"]).decode(
-                                "ascii"
-                            ),
+                            base64.b64encode(usergamedata[ptype]["strdata"]).decode("ascii"),
                         )
                         dnode.add_child(
                             Node.string(
                                 "bin1",
-                                base64.b64encode(usergamedata[ptype]["bindata"]).decode(
-                                    "ascii"
-                                ),
+                                base64.b64encode(usergamedata[ptype]["bindata"]).decode("ascii"),
                             )
                         )
                         record.add_child(dnode)

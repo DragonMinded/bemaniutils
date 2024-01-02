@@ -121,11 +121,7 @@ class ReflecBeatVolzza(BaseClient):
         player.add_child(Node.u8_array("ga", [127, 0, 0, 1]))
         player.add_child(Node.u16("gp", 10573))
         player.add_child(Node.u8_array("la", [16, 0, 0, 0]))
-        player.add_child(
-            Node.u8_array(
-                "pnid", [39, 16, 0, 0, 0, 23, 62, 60, 39, 127, 0, 0, 1, 23, 62, 60]
-            )
-        )
+        player.add_child(Node.u8_array("pnid", [39, 16, 0, 0, 0, 23, 62, 60, 39, 127, 0, 0, 1, 23, 62, 60]))
 
         call.add_child(player)
 
@@ -246,9 +242,7 @@ class ReflecBeatVolzza(BaseClient):
         self.assert_path(resp, "response/player/ap")
         self.assert_path(resp, "response/player/uattr")
 
-    def verify_player_rb5_player_read(
-        self, refid: str, cardid: str, location: str
-    ) -> None:
+    def verify_player_rb5_player_read(self, refid: str, cardid: str, location: str) -> None:
         call = self.call_node()
 
         player = Node.void("player")
@@ -303,13 +297,9 @@ class ReflecBeatVolzza(BaseClient):
         self.assert_path(resp, "response/player/pdata/mylist/list/mlst")
 
         if resp.child_value("player/pdata/base/name") != self.NAME:
-            raise Exception(
-                f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!'
-            )
+            raise Exception(f'Invalid name {resp.child_value("player/pdata/base/name")} returned on profile read!')
 
-    def verify_player_rb5_player_read_score(
-        self, refid: str, location: str
-    ) -> List[Dict[str, int]]:
+    def verify_player_rb5_player_read_score(self, refid: str, location: str) -> List[Dict[str, int]]:
         call = self.call_node()
 
         player = Node.void("player")
@@ -581,17 +571,11 @@ class ReflecBeatVolzza(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
             # Always get a player start, regardless of new profile or not
@@ -603,16 +587,12 @@ class ReflecBeatVolzza(BaseClient):
             )
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify lobby functionality
@@ -699,35 +679,26 @@ class ReflecBeatVolzza(BaseClient):
                             "expected_miss_count": 0,
                         },
                     ]
-                self.verify_player_rb5_player_write(
-                    ref_id, location, scores=dummyscores
-                )
+                self.verify_player_rb5_player_write(ref_id, location, scores=dummyscores)
 
                 self.verify_player_rb5_player_read(ref_id, card, location)
                 scores = self.verify_player_rb5_player_read_score(ref_id, location)
                 for expected in dummyscores:
                     actual = None
                     for received in scores:
-                        if (
-                            received["id"] == expected["id"]
-                            and received["chart"] == expected["chart"]
-                        ):
+                        if received["id"] == expected["id"] and received["chart"] == expected["chart"]:
                             actual = received
                             break
 
                     if actual is None:
-                        raise Exception(
-                            f"Didn't find song {expected['id']} chart {expected['chart']} in response!"
-                        )
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if "expected_score" in expected:
                         expected_score = expected["expected_score"]
                     else:
                         expected_score = expected["score"]
                     if "expected_achievement_rate" in expected:
-                        expected_achievement_rate = expected[
-                            "expected_achievement_rate"
-                        ]
+                        expected_achievement_rate = expected["expected_achievement_rate"]
                     else:
                         expected_achievement_rate = expected["achievement_rate"]
                     if "expected_clear_type" in expected:

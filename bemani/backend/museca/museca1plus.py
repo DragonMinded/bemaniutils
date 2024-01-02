@@ -309,9 +309,7 @@ class Museca1Plus(
             userid = None
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, userid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             scores = []
 
@@ -334,11 +332,7 @@ class Museca1Plus(
                     self.db_to_game_clear_type(score.data.get_int("clear_type")),
                 )
             )
-            music.add_child(
-                Node.u32(
-                    "score_grade", self.db_to_game_grade(score.data.get_int("grade"))
-                )
-            )
+            music.add_child(Node.u32("score_grade", self.db_to_game_grade(score.data.get_int("grade"))))
             stats = score.data.get_dict("stats")
             music.add_child(Node.u32("btn_rate", stats.get_int("btn_rate")))
             music.add_child(Node.u32("long_rate", stats.get_int("long_rate")))
@@ -355,9 +349,7 @@ class Museca1Plus(
         game.add_child(Node.u32("gamecoin_packet", profile.get_int("packet")))
         game.add_child(Node.u32("gamecoin_block", profile.get_int("block")))
         game.add_child(Node.s16("skill_name_id", profile.get_int("skill_name_id", -1)))
-        game.add_child(
-            Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 20))
-        )
+        game.add_child(Node.s32_array("hidden_param", profile.get_int_array("hidden_param", 20)))
         game.add_child(Node.u32("blaster_energy", profile.get_int("blaster_energy")))
         game.add_child(Node.u32("blaster_count", profile.get_int("blaster_count")))
 
@@ -391,19 +383,14 @@ class Museca1Plus(
         game.add_child(itemnode)
 
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
 
         for item in achievements:
             if item.type[:5] != "item_":
                 continue
             itemtype = int(item.type[5:])
 
-            if (
-                game_config.get_bool("force_unlock_songs")
-                and itemtype == self.GAME_CATALOG_TYPE_SONG
-            ):
+            if game_config.get_bool("force_unlock_songs") and itemtype == self.GAME_CATALOG_TYPE_SONG:
                 # Don't echo unlocked songs, we will add all of them later
                 continue
 
@@ -437,22 +424,16 @@ class Museca1Plus(
 
         return game
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value("earned_gamecoin_packet")
         if earned_gamecoin_packet is not None:
-            newprofile.replace_int(
-                "packet", newprofile.get_int("packet") + earned_gamecoin_packet
-            )
+            newprofile.replace_int("packet", newprofile.get_int("packet") + earned_gamecoin_packet)
         earned_gamecoin_block = request.child_value("earned_gamecoin_block")
         if earned_gamecoin_block is not None:
-            newprofile.replace_int(
-                "block", newprofile.get_int("block") + earned_gamecoin_block
-            )
+            newprofile.replace_int("block", newprofile.get_int("block") + earned_gamecoin_block)
         earned_blaster_energy = request.child_value("earned_blaster_energy")
         if earned_blaster_energy is not None:
             newprofile.replace_int(
@@ -463,9 +444,7 @@ class Museca1Plus(
         # Miscelaneous stuff
         newprofile.replace_int("blaster_count", request.child_value("blaster_count"))
         newprofile.replace_int("skill_name_id", request.child_value("skill_name_id"))
-        newprofile.replace_int_array(
-            "hidden_param", 20, request.child_value("hidden_param")
-        )
+        newprofile.replace_int_array("hidden_param", 20, request.child_value("hidden_param"))
 
         # Update user's unlock status if we aren't force unlocked
         game_config = self.get_game_config()
@@ -480,10 +459,7 @@ class Museca1Plus(
                 param = child.child_value("param")
                 diff_param = child.child_value("diff_param")
 
-                if (
-                    game_config.get_bool("force_unlock_songs")
-                    and item_type == self.GAME_CATALOG_TYPE_SONG
-                ):
+                if game_config.get_bool("force_unlock_songs") and item_type == self.GAME_CATALOG_TYPE_SONG:
                     # Don't save back songs, because they were force unlocked
                     continue
 

@@ -9,9 +9,7 @@ from bemani.protocol import Node
 from bemani.utils.responsegen import generate_lines
 
 
-def parse_psmap(
-    pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
-) -> Node:
+def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False) -> Node:
     root = Node.void(rootname)
     base = int(offset, 16)
 
@@ -42,20 +40,14 @@ def parse_psmap(
             chunk = pe.data[base : (base + 24)]
             base = base + 24
 
-            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack(
-                "<BBHIQQ", chunk
-            )
+            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack("<BBHIQQ", chunk)
         else:  # 32 bit
             chunk = pe.data[base : (base + 16)]
             base = base + 16
 
-            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack(
-                "<BBHIII", chunk
-            )
+            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack("<BBHIII", chunk)
 
-        if (
-            nodetype == 0xFF or nodetype == 0x00
-        ):  # if nodetype is 0 then we probably read garbage
+        if nodetype == 0xFF or nodetype == 0x00:  # if nodetype is 0 then we probably read garbage
             # End of nodes, see if we should exit
             if len(saved_root) == 0:
                 break
@@ -215,9 +207,7 @@ def parse_psmap(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility to extract psmap node lists and generate code."
-    )
+    parser = argparse.ArgumentParser(description="A utility to extract psmap node lists and generate code.")
     parser.add_argument(
         "--file",
         help="DLL file to extract from.",

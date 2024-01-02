@@ -61,9 +61,7 @@ from bemani.client.bishi import TheStarBishiBashiClient
 from bemani.client.mga.mga import MetalGearArcadeClient
 
 
-def get_client(
-    proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, Any]
-) -> BaseClient:
+def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, Any]) -> BaseClient:
     if game == "pnm-tune-street":
         return PopnMusicTuneStreetClient(
             proto,
@@ -570,9 +568,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="A utility to generate game-like traffic for testing an eAmusement server."
     )
-    parser.add_argument(
-        "-p", "--port", help="Port to talk to. Defaults to 80", type=int, default=80
-    )
+    parser.add_argument("-p", "--port", help="Port to talk to. Defaults to 80", type=int, default=80)
     parser.add_argument(
         "-a",
         "--address",
@@ -594,9 +590,7 @@ def main() -> None:
         type=str,
         default=None,
     )
-    parser.add_argument(
-        "-l", "--list", help="List all known games and exit.", action="store_true"
-    )
+    parser.add_argument("-l", "--list", help="List all known games and exit.", action="store_true")
     parser.add_argument(
         "-i",
         "--cardid",
@@ -664,9 +658,7 @@ def main() -> None:
         "mga": "metal-gear-arcade",
     }.get(game, game)
 
-    mainloop(
-        args.address, args.port, args.config, action, game, args.cardid, args.verbose
-    )
+    mainloop(args.address, args.port, args.config, action, game, args.cardid, args.verbose)
 
 
 if __name__ == "__main__":

@@ -49,17 +49,13 @@ class ReflecBeatFrontend(FrontendBase):
             ReflecBeatBase.COMBO_TYPE_FULL_COMBO: "FULL COMBO",
             ReflecBeatBase.COMBO_TYPE_FULL_COMBO_ALL_JUST: "FULL COMBO + ALL JUST",
         }.get(score.data.get_int("combo_type"), "")
-        formatted_score["medal"] = score.data.get_int(
-            "combo_type"
-        ) * 1000 + score.data.get_int("clear_type")
+        formatted_score["medal"] = score.data.get_int("combo_type") * 1000 + score.data.get_int("clear_type")
         return formatted_score
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
         formatted_attempt = super().format_attempt(userid, attempt)
         formatted_attempt["combo"] = attempt.data.get_int("combo", -1)
-        formatted_attempt["achievement_rate"] = attempt.data.get_int(
-            "achievement_rate", -1
-        )
+        formatted_attempt["achievement_rate"] = attempt.data.get_int("achievement_rate", -1)
         formatted_attempt["miss_count"] = attempt.data.get_int("miss_count", -1)
         formatted_attempt["clear_type"] = {
             ReflecBeatBase.CLEAR_TYPE_NO_PLAY: "NO PLAY",
@@ -74,14 +70,10 @@ class ReflecBeatFrontend(FrontendBase):
             ReflecBeatBase.COMBO_TYPE_FULL_COMBO: "FULL COMBO",
             ReflecBeatBase.COMBO_TYPE_FULL_COMBO_ALL_JUST: "FULL COMBO + ALL JUST",
         }.get(attempt.data.get_int("combo_type"), "")
-        formatted_attempt["medal"] = attempt.data.get_int(
-            "combo_type"
-        ) * 1000 + attempt.data.get_int("clear_type")
+        formatted_attempt["medal"] = attempt.data.get_int("combo_type") * 1000 + attempt.data.get_int("clear_type")
         return formatted_attempt
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         formatted_profile["plays"] = playstats.get_int("total_plays")
         return formatted_profile

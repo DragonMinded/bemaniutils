@@ -203,9 +203,7 @@ class Sniffer:
     IP_HEADER_LENGTH: Final[int] = 20
     TCP_HEADER_LENGTH: Final[int] = 20
 
-    def __init__(
-        self, address: Optional[str] = None, port: Optional[int] = None
-    ) -> None:
+    def __init__(self, address: Optional[str] = None, port: Optional[int] = None) -> None:
         """
         Initialize the sniffer. Can be told to filter by address, port or both. If address or
         port is not provided, it defaults to all addresses or ports.
@@ -309,9 +307,7 @@ class Sniffer:
             "fin": bool(flags & 0x001),
         }
 
-    def __process_address(
-        self, address: Tuple[int, int, int, int, int]
-    ) -> Dict[str, int]:
+    def __process_address(self, address: Tuple[int, int, int, int, int]) -> Dict[str, int]:
         """
         Given an address tuple from Linux's recvfrom syscall, return a dict which represents this
         address.
@@ -391,9 +387,7 @@ class Sniffer:
         offset = 0
 
         # Make sure its a valid packet
-        eth_header = self.__process_ethframe(
-            packet[offset : (offset + Sniffer.ETH_HEADER_LENGTH)]
-        )
+        eth_header = self.__process_ethframe(packet[offset : (offset + Sniffer.ETH_HEADER_LENGTH)])
         offset = offset + eth_header["header_length"]
 
         if eth_header["protocol"] != 8:
@@ -401,9 +395,7 @@ class Sniffer:
             raise UnknownPacketException(f'Unknown frame {eth_header["protocol"]}')
 
         # Get the IP header
-        ip_header = self.__process_ipframe(
-            packet[offset : (offset + Sniffer.IP_HEADER_LENGTH)]
-        )
+        ip_header = self.__process_ipframe(packet[offset : (offset + Sniffer.IP_HEADER_LENGTH)])
         offset = offset + ip_header["header_length"]
 
         if ip_header["protocol"] != 6:
@@ -413,17 +405,11 @@ class Sniffer:
             )
 
         # Get TCP header
-        tcp_header = self.__process_tcpframe(
-            packet[offset : (offset + Sniffer.TCP_HEADER_LENGTH)]
-        )
+        tcp_header = self.__process_tcpframe(packet[offset : (offset + Sniffer.TCP_HEADER_LENGTH)])
         offset = offset + tcp_header["header_length"]
 
         # Get payload length
-        payload_length = (
-            ip_header["length"]
-            - ip_header["header_length"]
-            - tcp_header["header_length"]
-        )
+        payload_length = ip_header["length"] - ip_header["header_length"] - tcp_header["header_length"]
 
         # Get payload
         data = packet[offset : offset + payload_length]
@@ -449,10 +435,7 @@ class Sniffer:
                 continue
 
             # Hack for sniffing on localhost
-            if (
-                packet["address"]["interface"] == "lo"
-                and packet["address"]["type"] != 4
-            ):
+            if packet["address"]["interface"] == "lo" and packet["address"]["type"] != 4:
                 continue
 
             if self.address and self.port:

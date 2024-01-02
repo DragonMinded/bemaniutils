@@ -91,9 +91,7 @@ def jsonify(func: Callable) -> Callable:
 
 @app.errorhandler(Exception)
 def server_exception(exception: Any) -> Response:
-    stack = "".join(
-        traceback.format_exception(type(exception), exception, exception.__traceback__)
-    )
+    stack = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
     print(stack)
     try:
         g.data.local.network.put_event(

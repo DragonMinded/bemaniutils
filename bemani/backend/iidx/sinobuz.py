@@ -105,28 +105,15 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         return IIDXCopula(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert dailies into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "daily_charts", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "daily_charts", "daily"):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = list(
-                set(
-                    [
-                        song.id
-                        for song in data.local.music.get_all_songs(
-                            cls.game, cls.version
-                        )
-                    ]
-                )
-            )
+            all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
             if len(all_songs) >= 3:
                 daily_songs = random.sample(all_songs, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -150,9 +137,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "daily_charts", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "daily_charts", "daily")
         return events
 
     @classmethod
@@ -387,9 +372,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         root = Node.void("IIDX24shop")
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -412,9 +395,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             course.replace_int("music_2", request.child_value("music_2"))
             course.replace_int("music_3", request.child_value("music_3"))
             course.replace_bool("valid", request.child_value("valid"))
-            self.data.local.machine.put_settings(
-                machine.arcade, self.game, self.music_version, "shop_course", course
-            )
+            self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, "shop_course", course)
 
         return Node.void("IIDX24shop")
 
@@ -434,9 +415,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -574,16 +553,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         root = Node.void("IIDX24music")
         attempts = self.get_clear_rates()
 
-        all_songs = list(
-            set(
-                [
-                    song.id
-                    for song in self.data.local.music.get_all_songs(
-                        self.game, self.music_version
-                    )
-                ]
-            )
-        )
+        all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
         for song in all_songs:
             clears = []
             fcs = []
@@ -627,16 +597,12 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                 continue
             userid = self.data.remote.user.from_extid(self.game, self.version, extid)
             if userid is not None:
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.music_version, userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
                 # Grab score data for user/rival
                 scoredata = self.make_score_struct(
                     scores,
-                    self.CLEAR_TYPE_SINGLE
-                    if cltype == self.GAME_CLTYPE_SINGLE
-                    else self.CLEAR_TYPE_DOUBLE,
+                    self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
                     rivalid,
                 )
                 for s in scoredata:
@@ -644,10 +610,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
                 # Grab most played for user/rival
                 most_played = [
-                    play[0]
-                    for play in self.data.local.music.get_most_played(
-                        self.game, self.music_version, userid, 20
-                    )
+                    play[0] for play in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
                 ]
                 if len(most_played) < 20:
                     most_played.extend([0] * (20 - len(most_played)))
@@ -674,9 +637,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
 
         if userid is not None:
             # Try to look up previous ghost for user
-            my_score = self.data.remote.music.get_score(
-                self.game, self.music_version, userid, musicid, chart
-            )
+            my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
             if my_score is not None:
                 mydata = Node.binary("mydata", my_score.data.get_bytes("ghost"))
                 mydata.set_attribute("score", str(my_score.points))
@@ -767,19 +728,13 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             key=lambda s: (s[1].points, s[1].timestamp),
             reverse=True,
         )
-        all_players = {
-            uid: prof
-            for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])
-        }
+        all_players = {uid: prof for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])}
 
         if not global_scores:
             all_scores = [
                 score
                 for score in all_scores
-                if (
-                    score[0] == userid
-                    or self.user_joined_arcade(machine, all_players[score[0]])
-                )
+                if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
             ]
 
         # Find our actual index
@@ -831,9 +786,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             # Shop ranking
             shopdata = Node.void("shopdata")
             root.add_child(shopdata)
-            shopdata.set_attribute(
-                "rank", "-1" if oldindex is None else str(oldindex + 1)
-            )
+            shopdata.set_attribute("rank", "-1" if oldindex is None else str(oldindex + 1))
 
             # Grab the rank of some other players on this song
             ranklist = Node.void("ranklist")
@@ -857,10 +810,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                 all_scores = [
                     score
                     for score in all_scores
-                    if (
-                        score[0] == userid
-                        or self.user_joined_arcade(machine, all_players[score[0]])
-                    )
+                    if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
                 ]
 
             # Find our actual index
@@ -1324,9 +1274,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             used_secret_ids: List[int] = []
             for c in secret_courses:
                 if c["id"] in used_secret_ids:
-                    raise Exception(
-                        "Cannot have multiple secret courses with the same ID!"
-                    )
+                    raise Exception("Cannot have multiple secret courses with the same ID!")
                 elif c["id"] < 0 or c["id"] >= 20:
                     raise Exception("Secret course ID is out of bounds!")
                 else:
@@ -1503,9 +1451,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         best_clear_string = clear_map.get(best_clear, "NO PLAY")
         now_clear_string = clear_map.get(now_clear, "NO PLAY")
         # let's get the song info first
-        song = self.data.local.music.get_song(
-            self.game, self.music_version, music_id, self.game_to_db_chart(class_id)
-        )
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get("notecount", 0)
         # Construct the dictionary for the broadcast
         card_data = {
@@ -1622,15 +1568,9 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             secret.add_child(Node.s64_array("flg2", [-1, -1, -1]))
             secret.add_child(Node.s64_array("flg3", [-1, -1, -1]))
         else:
-            secret.add_child(
-                Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3))
-            )
-            secret.add_child(
-                Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3))
-            )
-            secret.add_child(
-                Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3))
-            )
+            secret.add_child(Node.s64_array("flg1", secret_dict.get_int_array("flg1", 3)))
+            secret.add_child(Node.s64_array("flg2", secret_dict.get_int_array("flg2", 3)))
+            secret.add_child(Node.s64_array("flg3", secret_dict.get_int_array("flg3", 3)))
 
         # Favorites
         for folder in ["favorite1", "favorite2", "favorite3"]:
@@ -1692,9 +1632,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                 )
             ),
         )
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for rank in achievements:
             if rank.type == self.DAN_RANKING_SINGLE:
                 grade.add_child(
@@ -1766,21 +1704,11 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         qpro_secrete_dict = profile.get_dict("qpro_secret")
         qpro_secret = Node.void("qpro_secret")
         root.add_child(qpro_secret)
-        qpro_secret.add_child(
-            Node.s64_array("head", qpro_secrete_dict.get_int_array("head", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("hair", qpro_secrete_dict.get_int_array("hair", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("face", qpro_secrete_dict.get_int_array("face", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("body", qpro_secrete_dict.get_int_array("body", 5))
-        )
-        qpro_secret.add_child(
-            Node.s64_array("hand", qpro_secrete_dict.get_int_array("hand", 5))
-        )
+        qpro_secret.add_child(Node.s64_array("head", qpro_secrete_dict.get_int_array("head", 5)))
+        qpro_secret.add_child(Node.s64_array("hair", qpro_secrete_dict.get_int_array("hair", 5)))
+        qpro_secret.add_child(Node.s64_array("face", qpro_secrete_dict.get_int_array("face", 5)))
+        qpro_secret.add_child(Node.s64_array("body", qpro_secrete_dict.get_int_array("body", 5)))
+        qpro_secret.add_child(Node.s64_array("hand", qpro_secrete_dict.get_int_array("hand", 5)))
 
         # Rivals
         rlist = Node.void("rlist")
@@ -1861,9 +1789,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                         [
                             courseid,  # course ID
                             coursechart,  # course chart
-                            self.db_to_game_status(
-                                course.data.get_int("clear_status")
-                            ),  # course clear status
+                            self.db_to_game_status(course.data.get_int("clear_status")),  # course clear status
                             course.data.get_int("pgnum"),  # flashing great count
                             course.data.get_int("gnum"),  # great count
                         ],
@@ -1881,9 +1807,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                         [
                             courseid,  # course ID
                             coursechart,  # course chart
-                            self.db_to_game_status(
-                                course.data.get_int("clear_status")
-                            ),  # course clear status
+                            self.db_to_game_status(course.data.get_int("clear_status")),  # course clear status
                             course.data.get_int("pgnum"),  # flashing great count
                             course.data.get_int("gnum"),  # great count
                         ],
@@ -1918,20 +1842,14 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             ninja_rank_node = Node.void("ninja_rank")
             root.add_child(ninja_rank_node)
             ninja_rank_node.set_attribute("style", str(ninja_rank.id))
-            ninja_rank_node.add_child(
-                Node.s32_array("rank", ninja_rank.data.get_int_array("rank", 13))
-            )
-            ninja_rank_node.add_child(
-                Node.s32_array("point", ninja_rank.data.get_int_array("point", 13))
-            )
+            ninja_rank_node.add_child(Node.s32_array("rank", ninja_rank.data.get_int_array("rank", 13)))
+            ninja_rank_node.add_child(Node.s32_array("point", ninja_rank.data.get_int_array("point", 13)))
 
         # SINOBUZ Den event
         event1_dict = profile.get_dict("event1")
         event1 = Node.void("event1")
         root.add_child(event1)
-        event1.set_attribute(
-            "last_select_map", str(event1_dict.get_int("last_select_map"))
-        )
+        event1.set_attribute("last_select_map", str(event1_dict.get_int("last_select_map")))
         event1.set_attribute("hold_rice", str(event1_dict.get_int("hold_rice")))
         event1.set_attribute("tax_rice", str(event1_dict.get_int("tax_rice")))
         event1.set_attribute("tips_list", str(event1_dict.get_int("tips_list")))
@@ -1943,32 +1861,14 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             map_data_node = Node.void("map_data")
             event1.add_child(map_data_node)
             map_data_node.set_attribute("map_id", str(map_data.id))
-            map_data_node.set_attribute(
-                "play_num", str(map_data.data.get_int("play_num"))
-            )
-            map_data_node.set_attribute(
-                "progress", str(map_data.data.get_int("progress"))
-            )
-            map_data_node.set_attribute(
-                "battle_point", str(map_data.data.get_int("battle_point"))
-            )
-            map_data_node.set_attribute(
-                "rice_point", str(map_data.data.get_int("rice_point"))
-            )
-            map_data_node.set_attribute(
-                "is_clear", "1" if map_data.data.get_bool("is_clear") else "0"
-            )
-            map_data_node.add_child(
-                Node.binary("ninjyutsu", map_data.data.get_bytes("ninjyutsu"))
-            )
-            map_data_node.add_child(
-                Node.binary(
-                    "map_card_damage", map_data.data.get_bytes("map_card_damage")
-                )
-            )
-            map_data_node.add_child(
-                Node.binary("map_card_clear", map_data.data.get_bytes("map_card_clear"))
-            )
+            map_data_node.set_attribute("play_num", str(map_data.data.get_int("play_num")))
+            map_data_node.set_attribute("progress", str(map_data.data.get_int("progress")))
+            map_data_node.set_attribute("battle_point", str(map_data.data.get_int("battle_point")))
+            map_data_node.set_attribute("rice_point", str(map_data.data.get_int("rice_point")))
+            map_data_node.set_attribute("is_clear", "1" if map_data.data.get_bool("is_clear") else "0")
+            map_data_node.add_child(Node.binary("ninjyutsu", map_data.data.get_bytes("ninjyutsu")))
+            map_data_node.add_child(Node.binary("map_card_damage", map_data.data.get_bytes("map_card_damage")))
+            map_data_node.add_child(Node.binary("map_card_clear", map_data.data.get_bytes("map_card_clear")))
 
         # Shichikenden event
         event2_dict = profile.get_dict("event2")
@@ -1976,20 +1876,14 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         root.add_child(event2)
         event2.set_attribute("play_num", str(event2_dict.get_int("play_num")))
         event2.set_attribute("chakra_point", str(event2_dict.get_int("chakra_point")))
-        event2.set_attribute(
-            "last_select_ryuha", str(event2_dict.get_int("last_select_ryuha"))
-        )
+        event2.set_attribute("last_select_ryuha", str(event2_dict.get_int("last_select_ryuha")))
         event2.add_child(
             Node.binary(
                 "last_select_dojo",
                 event2_dict.get_bytes("last_select_dojo", b"\0" * 12),
             )
         )
-        event2.add_child(
-            Node.binary(
-                "enemy_damage", event2_dict.get_bytes("enemy_damage", b"\0" * 532)
-            )
-        )
+        event2.add_child(Node.binary("enemy_damage", event2_dict.get_bytes("enemy_damage", b"\0" * 532)))
 
         # OMES Data
         omes_dict = profile.get_dict("omes")
@@ -2002,15 +1896,9 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         onemore_data.set_attribute("defeat_4", str(omes_dict.get_int("defeat_4")))
         onemore_data.set_attribute("defeat_5", str(omes_dict.get_int("defeat_5")))
         onemore_data.set_attribute("defeat_6", str(omes_dict.get_int("defeat_6")))
-        onemore_data.set_attribute(
-            "challenge_num_n", str(omes_dict.get_int("challenge_num_n"))
-        )
-        onemore_data.set_attribute(
-            "challenge_num_h", str(omes_dict.get_int("challenge_num_h"))
-        )
-        onemore_data.set_attribute(
-            "challenge_num_a", str(omes_dict.get_int("challenge_num_a"))
-        )
+        onemore_data.set_attribute("challenge_num_n", str(omes_dict.get_int("challenge_num_n")))
+        onemore_data.set_attribute("challenge_num_h", str(omes_dict.get_int("challenge_num_h")))
+        onemore_data.set_attribute("challenge_num_a", str(omes_dict.get_int("challenge_num_a")))
 
         # If the user joined a particular shop, let the game know.
         if "shop_location" in profile:
@@ -2030,18 +1918,14 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         root.add_child(step)
         step.set_attribute("enemy_damage", str(step_dict.get_int("enemy_damage")))
         step.set_attribute("progress", str(step_dict.get_int("progress")))
-        step.set_attribute(
-            "enemy_defeat_flg", str(step_dict.get_int("enemy_defeat_flg"))
-        )
+        step.set_attribute("enemy_defeat_flg", str(step_dict.get_int("enemy_defeat_flg")))
         step.set_attribute("sp_level", str(step_dict.get_int("sp_level")))
         step.set_attribute("dp_level", str(step_dict.get_int("dp_level")))
         step.set_attribute("sp_mplay", str(step_dict.get_int("sp_mplay")))
         step.set_attribute("dp_mplay", str(step_dict.get_int("dp_mplay")))
 
         # Daily recommendations
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "dailies"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "dailies")
         if entry is not None:
             packinfo = Node.void("packinfo")
             root.add_child(packinfo)
@@ -2064,36 +1948,24 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             achievement_node.set_attribute("pack", "0")
             achievement_node.set_attribute("pack_comp", "0")
         else:
-            daily_played = self.data.local.user.get_achievement(
-                self.game, self.version, userid, pack_id, "daily"
-            )
+            daily_played = self.data.local.user.get_achievement(self.game, self.version, userid, pack_id, "daily")
             if daily_played is None:
                 daily_played = ValidatedDict()
-            achievement_node.set_attribute(
-                "pack", str(daily_played.get_int("pack_flg"))
-            )
-            achievement_node.set_attribute(
-                "pack_comp", str(daily_played.get_int("pack_comp"))
-            )
+            achievement_node.set_attribute("pack", str(daily_played.get_int("pack_flg")))
+            achievement_node.set_attribute("pack_comp", str(daily_played.get_int("pack_comp")))
 
         # Weeklies
-        achievement_node.set_attribute(
-            "last_weekly", str(profile.get_int("last_weekly"))
-        )
+        achievement_node.set_attribute("last_weekly", str(profile.get_int("last_weekly")))
         achievement_node.set_attribute("weekly_num", str(profile.get_int("weekly_num")))
 
         # Prefecture visit flag
         achievement_node.set_attribute("visit_flg", str(profile.get_int("visit_flg")))
 
         # Number of rivals beaten
-        achievement_node.set_attribute(
-            "rival_crush", str(profile.get_int("rival_crush"))
-        )
+        achievement_node.set_attribute("rival_crush", str(profile.get_int("rival_crush")))
 
         # Tran medals
-        achievement_node.add_child(
-            Node.s64_array("trophy", profile.get_int_array("trophy", 10))
-        )
+        achievement_node.add_child(Node.s64_array("trophy", profile.get_int_array("trophy", 10)))
 
         # Track deller
         deller = Node.void("deller")
@@ -2116,9 +1988,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                 detail.set_attribute("course_id", str(rank.id))
                 detail.set_attribute("n_point", str(rank.data.get_int("normal_points")))
                 detail.set_attribute("h_point", str(rank.data.get_int("hyper_points")))
-                detail.set_attribute(
-                    "a_point", str(rank.data.get_int("another_points"))
-                )
+                detail.set_attribute("a_point", str(rank.data.get_int("another_points")))
 
         nostalgia = Node.void("nostalgia_open")
         root.add_child(nostalgia)
@@ -2128,9 +1998,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             root.add_child(Node.void("bind_eaappli"))
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -2206,15 +2074,9 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         # Basic achievements
         achievements = request.child("achievements")
         if achievements is not None:
-            newprofile.replace_int(
-                "visit_flg", int(achievements.attribute("visit_flg"))
-            )
-            newprofile.replace_int(
-                "last_weekly", int(achievements.attribute("last_weekly"))
-            )
-            newprofile.replace_int(
-                "weekly_num", int(achievements.attribute("weekly_num"))
-            )
+            newprofile.replace_int("visit_flg", int(achievements.attribute("visit_flg")))
+            newprofile.replace_int("last_weekly", int(achievements.attribute("last_weekly")))
+            newprofile.replace_int("weekly_num", int(achievements.attribute("weekly_num")))
 
             pack_id = int(achievements.attribute("pack_id"))
             if pack_id > 0:
@@ -2238,9 +2100,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         # Deller saving
         deller = request.child("deller")
         if deller is not None:
-            newprofile.replace_int(
-                "deller", newprofile.get_int("deller") + int(deller.attribute("deller"))
-            )
+            newprofile.replace_int("deller", newprofile.get_int("deller") + int(deller.attribute("deller")))
 
         # Secret course expert point saving
         expert_point = request.child("expert_point")
@@ -2304,22 +2164,14 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
                 for i in range(self.FAVORITE_LIST_LENGTH):
                     singles.append(
                         {
-                            "id": struct.unpack(
-                                "<L", single_music_bin[(i * 4) : ((i + 1) * 4)]
-                            )[0],
-                            "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[
-                                0
-                            ],
+                            "id": struct.unpack("<L", single_music_bin[(i * 4) : ((i + 1) * 4)])[0],
+                            "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[0],
                         }
                     )
                     doubles.append(
                         {
-                            "id": struct.unpack(
-                                "<L", double_music_bin[(i * 4) : ((i + 1) * 4)]
-                            )[0],
-                            "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[
-                                0
-                            ],
+                            "id": struct.unpack("<L", double_music_bin[(i * 4) : ((i + 1) * 4)])[0],
+                            "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[0],
                         }
                     )
 
@@ -2412,18 +2264,10 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         if event2 is not None:
             event2_dict = newprofile.get_dict("event2")
             event2_dict.replace_int("play_num", int(event2.attribute("play_num")))
-            event2_dict.replace_int(
-                "last_select_ryuha", int(event2.attribute("last_select_ryuha"))
-            )
-            event2_dict.replace_int(
-                "chakra_point", int(event2.attribute("chakra_point"))
-            )
-            event2_dict.replace_bytes(
-                "last_select_dojo", event2.child_value("last_select_dojo")
-            )
-            event2_dict.replace_bytes(
-                "enemy_damage", event2.child_value("enemy_damage")
-            )
+            event2_dict.replace_int("last_select_ryuha", int(event2.attribute("last_select_ryuha")))
+            event2_dict.replace_int("chakra_point", int(event2.attribute("chakra_point")))
+            event2_dict.replace_bytes("last_select_dojo", event2.child_value("last_select_dojo"))
+            event2_dict.replace_bytes("enemy_damage", event2.child_value("enemy_damage"))
             newprofile.replace_dict("event2", event2_dict)
 
         # Step-up mode
@@ -2432,9 +2276,7 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             step_dict = newprofile.get_dict("step")
             step_dict.replace_int("enemy_damage", int(step.attribute("enemy_damage")))
             step_dict.replace_int("progress", int(step.attribute("progress")))
-            step_dict.replace_int(
-                "enemy_defeat_flg", int(step.attribute("enemy_defeat_flg"))
-            )
+            step_dict.replace_int("enemy_defeat_flg", int(step.attribute("enemy_defeat_flg")))
             step_dict.replace_int("sp_level", int(step.attribute("sp_level")))
             step_dict.replace_int("dp_level", int(step.attribute("dp_level")))
             step_dict.replace_int("sp_mplay", int(step.attribute("sp_mplay")))
@@ -2456,21 +2298,11 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
         qpro_secret = request.child("qpro_secret")
         if qpro_secret is not None:
             qpro_secret_dict = newprofile.get_dict("qpro_secret")
-            qpro_secret_dict.replace_int_array(
-                "head", 5, qpro_secret.child_value("head")
-            )
-            qpro_secret_dict.replace_int_array(
-                "hair", 5, qpro_secret.child_value("hair")
-            )
-            qpro_secret_dict.replace_int_array(
-                "face", 5, qpro_secret.child_value("face")
-            )
-            qpro_secret_dict.replace_int_array(
-                "body", 5, qpro_secret.child_value("body")
-            )
-            qpro_secret_dict.replace_int_array(
-                "hand", 5, qpro_secret.child_value("hand")
-            )
+            qpro_secret_dict.replace_int_array("head", 5, qpro_secret.child_value("head"))
+            qpro_secret_dict.replace_int_array("hair", 5, qpro_secret.child_value("hair"))
+            qpro_secret_dict.replace_int_array("face", 5, qpro_secret.child_value("face"))
+            qpro_secret_dict.replace_int_array("body", 5, qpro_secret.child_value("body"))
+            qpro_secret_dict.replace_int_array("hand", 5, qpro_secret.child_value("hand"))
             newprofile.replace_dict("qpro_secret", qpro_secret_dict)
 
         # Orb data saving
@@ -2493,15 +2325,9 @@ class IIDXSinobuz(IIDXCourse, IIDXBase):
             omes_dict.replace_int("defeat_4", int(onemore_data.attribute("defeat_4")))
             omes_dict.replace_int("defeat_5", int(onemore_data.attribute("defeat_5")))
             omes_dict.replace_int("defeat_6", int(onemore_data.attribute("defeat_6")))
-            omes_dict.replace_int(
-                "challenge_num_n", int(onemore_data.attribute("challenge_num_n"))
-            )
-            omes_dict.replace_int(
-                "challenge_num_h", int(onemore_data.attribute("challenge_num_h"))
-            )
-            omes_dict.replace_int(
-                "challenge_num_a", int(onemore_data.attribute("challenge_num_a"))
-            )
+            omes_dict.replace_int("challenge_num_n", int(onemore_data.attribute("challenge_num_n")))
+            omes_dict.replace_int("challenge_num_h", int(onemore_data.attribute("challenge_num_h")))
+            omes_dict.replace_int("challenge_num_a", int(onemore_data.attribute("challenge_num_a")))
             newprofile.replace_dict("omes", omes_dict)
 
         # Keep track of play statistics across all mixes

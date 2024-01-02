@@ -176,15 +176,11 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         comments = [
             achievement
-            for achievement in self.data.local.user.get_all_time_based_achievements(
-                self.game, self.version
-            )
+            for achievement in self.data.local.user.get_all_time_based_achievements(self.game, self.version)
             if achievement[1].type == "puzzle_comment"
         ]
         comments.sort(key=lambda x: x[1].timestamp, reverse=True)
-        statuses = self.data.local.lobby.get_all_play_session_infos(
-            self.game, self.version
-        )
+        statuses = self.data.local.lobby.get_all_play_session_infos(self.game, self.version)
         statuses.sort(key=lambda x: x[1]["time"], reverse=True)
 
         # Cap all comment blocks to the limit
@@ -194,10 +190,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         # Mapping of profiles to userIDs
         uid_mapping = {
-            uid: prof
-            for (uid, prof) in self.get_any_profiles(
-                [c[0] for c in comments] + [s[0] for s in statuses]
-            )
+            uid: prof for (uid, prof) in self.get_any_profiles([c[0] for c in comments] + [s[0] for s in statuses])
         }
 
         # Mapping of location ID to machine name
@@ -254,9 +247,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
             s.add_child(Node.s32("exp", uid_mapping[uid].get_int("exp")))
             s.add_child(Node.s32("customize", status.get_int("customize")))
             s.add_child(Node.s32("tid", uid_mapping[uid].get_int("team_id", -1)))
-            s.add_child(
-                Node.string("t_name", uid_mapping[uid].get_str("team_name", ""))
-            )
+            s.add_child(Node.string("t_name", uid_mapping[uid].get_str("team_name", "")))
             s.add_child(Node.string("lid", status.get_str("lid")))
             s.add_child(Node.string("s_name", lid_mapping[lid]))
             s.add_child(Node.s8("pref", status.get_int("prefecture")))
@@ -457,9 +448,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
         refid = request.child_value("rid")
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
-            self.data.local.lobby.put_play_session_info(
-                self.game, self.version, userid, {}
-            )
+            self.data.local.lobby.put_play_session_info(self.game, self.version, userid, {})
 
         root = Node.void("player")
         root.add_child(Node.bool("is_suc", True))
@@ -525,9 +514,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
             )
             if lobby is not None:
                 self.data.local.lobby.destroy_lobby(lobby.get_int("id"))
-            self.data.local.lobby.destroy_play_session_info(
-                self.game, self.version, userid
-            )
+            self.data.local.lobby.destroy_play_session_info(self.game, self.version, userid)
 
         return Node.void("player")
 
@@ -559,9 +546,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
             achievements = self.data.local.user.get_achievements(
                 previous_version.game, previous_version.version, userid
             )
-            scores = self.data.remote.music.get_scores(
-                previous_version.game, previous_version.version, userid
-            )
+            scores = self.data.remote.music.get_scores(previous_version.game, previous_version.version, userid)
         else:
             profile = None
 
@@ -598,15 +583,9 @@ class ReflecBeatLimelight(ReflecBeatBase):
                 mrecord.add_child(mrec)
                 mrec.add_child(Node.s32("mid", score.id))
                 mrec.add_child(Node.s32("ctype", score.chart))
-                mrec.add_child(
-                    Node.s32("win", score.data.get_dict("stats").get_int("win"))
-                )
-                mrec.add_child(
-                    Node.s32("lose", score.data.get_dict("stats").get_int("win"))
-                )
-                mrec.add_child(
-                    Node.s32("draw", score.data.get_dict("stats").get_int("win"))
-                )
+                mrec.add_child(Node.s32("win", score.data.get_dict("stats").get_int("win")))
+                mrec.add_child(Node.s32("lose", score.data.get_dict("stats").get_int("win")))
+                mrec.add_child(Node.s32("draw", score.data.get_dict("stats").get_int("win")))
                 mrec.add_child(Node.s32("score", score.points))
                 mrec.add_child(Node.s32("combo", score.data.get_int("combo")))
                 mrec.add_child(Node.s32("miss", score.data.get_int("miss_count")))
@@ -626,9 +605,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
         links = self.data.local.user.get_links(self.game, self.version, userid)
         root = Node.void("player")
@@ -672,50 +649,24 @@ class ReflecBeatLimelight(ReflecBeatBase):
         custom.add_child(Node.u8("se_s", customdict.get_int("se_s")))
         custom.add_child(Node.u8("se_s_v", customdict.get_int("se_s_v")))
         custom.add_child(Node.s16("last_music_id", customdict.get_int("last_music_id")))
-        custom.add_child(
-            Node.u8("last_note_grade", customdict.get_int("last_note_grade"))
-        )
+        custom.add_child(Node.u8("last_note_grade", customdict.get_int("last_note_grade")))
         custom.add_child(Node.u8("sort_type", customdict.get_int("sort_type")))
-        custom.add_child(
-            Node.u8("narrowdown_type", customdict.get_int("narrowdown_type"))
-        )
-        custom.add_child(
-            Node.bool("is_begginer", customdict.get_bool("is_begginer"))
-        )  # Yes, this is spelled right
+        custom.add_child(Node.u8("narrowdown_type", customdict.get_int("narrowdown_type")))
+        custom.add_child(Node.bool("is_begginer", customdict.get_bool("is_begginer")))  # Yes, this is spelled right
         custom.add_child(Node.bool("is_tut", customdict.get_bool("is_tut")))
-        custom.add_child(
-            Node.s16_array(
-                "symbol_chat_0", customdict.get_int_array("symbol_chat_0", 6)
-            )
-        )
-        custom.add_child(
-            Node.s16_array(
-                "symbol_chat_1", customdict.get_int_array("symbol_chat_1", 6)
-            )
-        )
+        custom.add_child(Node.s16_array("symbol_chat_0", customdict.get_int_array("symbol_chat_0", 6)))
+        custom.add_child(Node.s16_array("symbol_chat_1", customdict.get_int_array("symbol_chat_1", 6)))
         custom.add_child(Node.u8("gauge_style", customdict.get_int("gauge_style")))
         custom.add_child(Node.u8("obj_shade", customdict.get_int("obj_shade")))
         custom.add_child(Node.u8("obj_size", customdict.get_int("obj_size")))
-        custom.add_child(
-            Node.s16_array("byword", customdict.get_int_array("byword", 2))
-        )
-        custom.add_child(
-            Node.bool_array(
-                "is_auto_byword", customdict.get_bool_array("is_auto_byword", 2)
-            )
-        )
+        custom.add_child(Node.s16_array("byword", customdict.get_int_array("byword", 2)))
+        custom.add_child(Node.bool_array("is_auto_byword", customdict.get_bool_array("is_auto_byword", 2)))
         custom.add_child(Node.bool("is_tweet", customdict.get_bool("is_tweet")))
-        custom.add_child(
-            Node.bool("is_link_twitter", customdict.get_bool("is_link_twitter"))
-        )
+        custom.add_child(Node.bool("is_link_twitter", customdict.get_bool("is_link_twitter")))
         custom.add_child(Node.s16("mrec_type", customdict.get_int("mrec_type")))
-        custom.add_child(
-            Node.s16("card_disp_type", customdict.get_int("card_disp_type"))
-        )
+        custom.add_child(Node.s16("card_disp_type", customdict.get_int("card_disp_type")))
         custom.add_child(Node.s16("tab_sel", customdict.get_int("tab_sel")))
-        custom.add_child(
-            Node.s32_array("hidden_param", customdict.get_int_array("hidden_param", 20))
-        )
+        custom.add_child(Node.s32_array("hidden_param", customdict.get_int_array("hidden_param", 20)))
 
         released = Node.void("released")
         pdata.add_child(released)
@@ -763,22 +714,14 @@ class ReflecBeatLimelight(ReflecBeatBase):
             record.add_child(rec)
             rec.add_child(Node.u16("mid", score.id))
             rec.add_child(Node.u8("ng", score.chart))
-            rec.add_child(
-                Node.s32("point", score.data.get_dict("stats").get_int("earned_points"))
-            )
+            rec.add_child(Node.s32("point", score.data.get_dict("stats").get_int("earned_points")))
             rec.add_child(Node.s32("played_time", score.timestamp))
 
             mrec_0 = Node.void("mrec_0")
             rec.add_child(mrec_0)
-            mrec_0.add_child(
-                Node.s32("win", score.data.get_dict("stats").get_int("win"))
-            )
-            mrec_0.add_child(
-                Node.s32("lose", score.data.get_dict("stats").get_int("lose"))
-            )
-            mrec_0.add_child(
-                Node.s32("draw", score.data.get_dict("stats").get_int("draw"))
-            )
+            mrec_0.add_child(Node.s32("win", score.data.get_dict("stats").get_int("win")))
+            mrec_0.add_child(Node.s32("lose", score.data.get_dict("stats").get_int("lose")))
+            mrec_0.add_child(Node.s32("draw", score.data.get_dict("stats").get_int("draw")))
             mrec_0.add_child(
                 Node.u8(
                     "ct",
@@ -788,9 +731,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
                     ),
                 )
             )
-            mrec_0.add_child(
-                Node.s16("ar", int(score.data.get_int("achievement_rate") / 10))
-            )
+            mrec_0.add_child(Node.s16("ar", int(score.data.get_int("achievement_rate") / 10)))
             mrec_0.add_child(Node.s32("bs", score.points))
             mrec_0.add_child(Node.s16("mc", score.data.get_int("combo")))
             mrec_0.add_child(Node.s16("bmc", score.data.get_int("miss_count")))
@@ -888,9 +829,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = oldprofile.clone()
 
@@ -916,42 +855,24 @@ class ReflecBeatLimelight(ReflecBeatBase):
             customdict.replace_int("se_s", custom.child_value("se_s"))
             customdict.replace_int("se_s_v", custom.child_value("se_s_v"))
             customdict.replace_int("last_music_id", custom.child_value("last_music_id"))
-            customdict.replace_int(
-                "last_note_grade", custom.child_value("last_note_grade")
-            )
+            customdict.replace_int("last_note_grade", custom.child_value("last_note_grade"))
             customdict.replace_int("sort_type", custom.child_value("sort_type"))
-            customdict.replace_int(
-                "narrowdown_type", custom.child_value("narrowdown_type")
-            )
-            customdict.replace_bool(
-                "is_begginer", custom.child_value("is_begginer")
-            )  # Yes, this is spelled right
+            customdict.replace_int("narrowdown_type", custom.child_value("narrowdown_type"))
+            customdict.replace_bool("is_begginer", custom.child_value("is_begginer"))  # Yes, this is spelled right
             customdict.replace_bool("is_tut", custom.child_value("is_tut"))
-            customdict.replace_int_array(
-                "symbol_chat_0", 6, custom.child_value("symbol_chat_0")
-            )
-            customdict.replace_int_array(
-                "symbol_chat_1", 6, custom.child_value("symbol_chat_1")
-            )
+            customdict.replace_int_array("symbol_chat_0", 6, custom.child_value("symbol_chat_0"))
+            customdict.replace_int_array("symbol_chat_1", 6, custom.child_value("symbol_chat_1"))
             customdict.replace_int("gauge_style", custom.child_value("gauge_style"))
             customdict.replace_int("obj_shade", custom.child_value("obj_shade"))
             customdict.replace_int("obj_size", custom.child_value("obj_size"))
             customdict.replace_int_array("byword", 2, custom.child_value("byword"))
-            customdict.replace_bool_array(
-                "is_auto_byword", 2, custom.child_value("is_auto_byword")
-            )
+            customdict.replace_bool_array("is_auto_byword", 2, custom.child_value("is_auto_byword"))
             customdict.replace_bool("is_tweet", custom.child_value("is_tweet"))
-            customdict.replace_bool(
-                "is_link_twitter", custom.child_value("is_link_twitter")
-            )
+            customdict.replace_bool("is_link_twitter", custom.child_value("is_link_twitter"))
             customdict.replace_int("mrec_type", custom.child_value("mrec_type"))
-            customdict.replace_int(
-                "card_disp_type", custom.child_value("card_disp_type")
-            )
+            customdict.replace_int("card_disp_type", custom.child_value("card_disp_type"))
             customdict.replace_int("tab_sel", custom.child_value("tab_sel"))
-            customdict.replace_int_array(
-                "hidden_param", 20, custom.child_value("hidden_param")
-            )
+            customdict.replace_int_array("hidden_param", 20, custom.child_value("hidden_param"))
         newprofile.replace_dict("custom", customdict)
 
         # Music unlocks and other stuff
@@ -1036,10 +957,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
                     if chart in savedrecords[songid]:
                         data = savedrecords[songid][chart]
 
-                        if (
-                            data["achievement_rate"] == achievement_rate
-                            and data["points"] == points
-                        ):
+                        if data["achievement_rate"] == achievement_rate and data["points"] == points:
                             # This is the same record! Use the stats from it to update our
                             # internal representation.
                             combo = data["combo"]

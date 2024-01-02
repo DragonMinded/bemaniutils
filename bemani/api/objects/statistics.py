@@ -17,9 +17,7 @@ class StatisticsObject(BaseObject):
             "combos": stats.get("combos", -1),
         }
 
-    def __format_user_statistics(
-        self, cardids: List[str], stats: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def __format_user_statistics(self, cardids: List[str], stats: Dict[str, Any]) -> Dict[str, Any]:
         base = self.__format_statistics(stats)
         base["cards"] = cardids
         return base
@@ -48,20 +46,11 @@ class StatisticsObject(BaseObject):
         }:
             return True
         if self.game == GameConstants.IIDX:
-            return (
-                attempt.data.get_int("clear_status")
-                != DBConstants.IIDX_CLEAR_STATUS_NO_PLAY
-            )
+            return attempt.data.get_int("clear_status") != DBConstants.IIDX_CLEAR_STATUS_NO_PLAY
         if self.game == GameConstants.REFLEC_BEAT:
-            return (
-                attempt.data.get_int("clear_type")
-                != DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY
-            )
+            return attempt.data.get_int("clear_type") != DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY
         if self.game == GameConstants.SDVX:
-            return (
-                attempt.data.get_int("clear_type")
-                != DBConstants.SDVX_CLEAR_TYPE_NO_PLAY
-            )
+            return attempt.data.get_int("clear_type") != DBConstants.SDVX_CLEAR_TYPE_NO_PLAY
 
         return False
 
@@ -72,17 +61,11 @@ class StatisticsObject(BaseObject):
         if self.game == GameConstants.DDR:
             return attempt.data.get_int("rank") != DBConstants.DDR_RANK_E
         if self.game == GameConstants.IIDX:
-            return (
-                attempt.data.get_int("clear_status")
-                != DBConstants.IIDX_CLEAR_STATUS_FAILED
-            )
+            return attempt.data.get_int("clear_status") != DBConstants.IIDX_CLEAR_STATUS_FAILED
         if self.game == GameConstants.JUBEAT:
             return attempt.data.get_int("medal") != DBConstants.JUBEAT_PLAY_MEDAL_FAILED
         if self.game == GameConstants.MUSECA:
-            return (
-                attempt.data.get_int("clear_type")
-                != DBConstants.MUSECA_CLEAR_TYPE_FAILED
-            )
+            return attempt.data.get_int("clear_type") != DBConstants.MUSECA_CLEAR_TYPE_FAILED
         if self.game == GameConstants.POPN_MUSIC:
             return attempt.data.get_int("medal") not in [
                 DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED,
@@ -90,14 +73,9 @@ class StatisticsObject(BaseObject):
                 DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FAILED,
             ]
         if self.game == GameConstants.REFLEC_BEAT:
-            return (
-                attempt.data.get_int("clear_type")
-                != DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED
-            )
+            return attempt.data.get_int("clear_type") != DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED
         if self.game == GameConstants.SDVX:
-            return attempt.data.get_int(
-                "grade"
-            ) != DBConstants.SDVX_GRADE_NO_PLAY and attempt.data.get_int(
+            return attempt.data.get_int("grade") != DBConstants.SDVX_GRADE_NO_PLAY and attempt.data.get_int(
                 "clear_type"
             ) not in [
                 DBConstants.SDVX_CLEAR_TYPE_NO_PLAY,
@@ -113,10 +91,7 @@ class StatisticsObject(BaseObject):
         if self.game == GameConstants.DDR:
             return attempt.data.get_int("halo") != DBConstants.DDR_HALO_NONE
         if self.game == GameConstants.IIDX:
-            return (
-                attempt.data.get_int("clear_status")
-                == DBConstants.IIDX_CLEAR_STATUS_FULL_COMBO
-            )
+            return attempt.data.get_int("clear_status") == DBConstants.IIDX_CLEAR_STATUS_FULL_COMBO
         if self.game == GameConstants.JUBEAT:
             return attempt.data.get_int("medal") in [
                 DBConstants.JUBEAT_PLAY_MEDAL_FULL_COMBO,
@@ -124,10 +99,7 @@ class StatisticsObject(BaseObject):
                 DBConstants.JUBEAT_PLAY_MEDAL_EXCELLENT,
             ]
         if self.game == GameConstants.MUSECA:
-            return (
-                attempt.data.get_int("clear_type")
-                == DBConstants.MUSECA_CLEAR_TYPE_FULL_COMBO
-            )
+            return attempt.data.get_int("clear_type") == DBConstants.MUSECA_CLEAR_TYPE_FULL_COMBO
         if self.game == GameConstants.POPN_MUSIC:
             return attempt.data.get_int("medal") in [
                 DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO,
@@ -213,20 +185,13 @@ class StatisticsObject(BaseObject):
 
         return retval
 
-    def fetch_v1(
-        self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         retval: List[Dict[str, Any]] = []
 
         # Fetch the attempts
         if idtype == APIConstants.ID_TYPE_SERVER:
             retval = self.__aggregate_global(
-                [
-                    attempt[1]
-                    for attempt in self.data.local.music.get_all_attempts(
-                        self.game, self.music_version
-                    )
-                ]
+                [attempt[1] for attempt in self.data.local.music.get_all_attempts(self.game, self.music_version)]
             )
         elif idtype == APIConstants.ID_TYPE_SONG:
             if len(ids) == 1:
@@ -272,9 +237,7 @@ class StatisticsObject(BaseObject):
 
                     id_to_cards[userid] = self.data.local.user.get_cards(userid)
                     attempts.extend(
-                        self.data.local.music.get_all_attempts(
-                            self.game, self.music_version, userid=userid
-                        )
+                        self.data.local.music.get_all_attempts(self.game, self.music_version, userid=userid)
                     )
             retval = self.__aggregate_local(id_to_cards, attempts)
         else:

@@ -143,22 +143,15 @@ class JubeatFesto(
         }[db_chart]
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert daily FC challenges into the DB.
         """
         events: List[Tuple[str, Dict[str, Any]]] = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "fc_challenge", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "fc_challenge", "daily"):
             # Generate a new list of two FC challenge songs.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = set(
-                song.id
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-            )
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
             if len(all_songs) >= 2:
                 daily_songs = random.sample(all_songs, 2)
                 data.local.game.put_time_sensitive_settings(
@@ -184,12 +177,8 @@ class JubeatFesto(
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "fc_challenge", "daily"
-                )
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "random_course", "daily"
-        ):
+                data.local.network.mark_scheduled(cls.game, cls.version, "fc_challenge", "daily")
+        if data.local.network.should_schedule(cls.game, cls.version, "random_course", "daily"):
             # Generate a new list of three random songs for random course mode.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
 
@@ -216,11 +205,7 @@ class JubeatFesto(
                     cls.CHART_TYPE_HARD_EXTREME: cls.CHART_TYPE_EXTREME,
                 }[chart]
 
-            all_tens = [
-                song
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-                if is_ten(song)
-            ]
+            all_tens = [song for song in data.local.music.get_all_songs(cls.game, cls.version) if is_ten(song)]
             if len(all_tens) >= 3:
                 course_songs = random.sample(all_tens, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -266,9 +251,7 @@ class JubeatFesto(
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "random_course", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "random_course", "daily")
         return events
 
     @classmethod
@@ -324,9 +307,7 @@ class JubeatFesto(
 
         # If it is available, then grab the random course. If we haven't generated that course, then
         # just don't bother trying to create it.
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "random_course"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "random_course")
         random_course: List[Dict[str, Any]] = []
 
         if entry is not None:
@@ -521,9 +502,7 @@ class JubeatFesto(
                 "music": [
                     [
                         (
-                            70000057
-                            if dataver < 2019062100
-                            else (90000079 if dataver < 2022021600 else 20000031),
+                            70000057 if dataver < 2019062100 else (90000079 if dataver < 2022021600 else 20000031),
                             0,
                         ),
                         (60000100, 0),
@@ -543,9 +522,7 @@ class JubeatFesto(
                 "music": [
                     [
                         (
-                            80000020
-                            if dataver < 2019062100
-                            else (90000082 if dataver < 2022021600 else 60000092),
+                            80000020 if dataver < 2019062100 else (90000082 if dataver < 2022021600 else 60000092),
                             0,
                         ),
                         (90000031, 0),
@@ -556,9 +533,7 @@ class JubeatFesto(
                             80000034
                             if dataver < 2020062900
                             else (
-                                30000108
-                                if dataver < 2020091300
-                                else (40000107 if dataver < 2021020100 else 30000004)
+                                30000108 if dataver < 2020091300 else (40000107 if dataver < 2021020100 else 30000004)
                             ),
                             0,
                         ),
@@ -579,9 +554,7 @@ class JubeatFesto(
                 "music": [
                     [
                         (
-                            70000148
-                            if dataver < 2020021900
-                            else (90000040 if dataver < 2021081600 else 80000097),
+                            70000148 if dataver < 2020021900 else (90000040 if dataver < 2021081600 else 80000097),
                             0,
                         ),
                         (50000296 if dataver < 2021081600 else 90000029, 0),
@@ -665,9 +638,7 @@ class JubeatFesto(
                     [
                         (50000242, 0),
                         (
-                            80000034
-                            if dataver < 2020063000
-                            else (90000079 if dataver < 2022021600 else 50000277),
+                            80000034 if dataver < 2020063000 else (90000079 if dataver < 2022021600 else 50000277),
                             1,
                         ),
                         (90000037 if dataver < 2021081600 else 50000294, 1),
@@ -675,9 +646,7 @@ class JubeatFesto(
                     [(50000260, 1), (50000261, 1)],
                     [
                         (
-                            70000085
-                            if dataver < 2019062100
-                            else (90000081 if dataver < 2022021600 else 90000143),
+                            70000085 if dataver < 2019062100 else (90000081 if dataver < 2022021600 else 90000143),
                             1,
                         ),
                     ],
@@ -695,9 +664,7 @@ class JubeatFesto(
                         (20000111 if dataver < 2019062100 else 90000034, 1),
                         (90000037 if dataver < 2021081600 else 90000107, 1),
                         (
-                            70000131
-                            if dataver < 2019111800
-                            else (90000042 if dataver < 2021081600 else 90000140),
+                            70000131 if dataver < 2019111800 else (90000042 if dataver < 2021081600 else 90000140),
                             1,
                         ),
                     ],
@@ -1753,9 +1720,7 @@ class JubeatFesto(
         game_config = self.get_game_config()
         konami_logo_50th = Node.void("konami_logo_50th")
         info.add_child(konami_logo_50th)
-        konami_logo_50th.add_child(
-            Node.bool("is_available", game_config.get_bool("50th_anniversary"))
-        )
+        konami_logo_50th.add_child(Node.bool("is_available", game_config.get_bool("50th_anniversary")))
 
         expert_option = Node.void("expert_option")
         info.add_child(expert_option)
@@ -1780,36 +1745,21 @@ class JubeatFesto(
         dataver = self.model.version or 2022052400
         for course in self.__get_course_list():
             if course["id"] < 1:
-                raise Exception(
-                    f"Invalid course ID {course['id']} found in course list!"
-                )
+                raise Exception(f"Invalid course ID {course['id']} found in course list!")
             if course["id"] in valid_courses:
                 raise Exception(f"Duplicate ID {course['id']} found in course list!")
-            if (
-                course["clear_type"] == self.COURSE_CLEAR_HAZARD
-                and "hazard_type" not in course
-            ):
+            if course["clear_type"] == self.COURSE_CLEAR_HAZARD and "hazard_type" not in course:
                 raise Exception(f"Need 'hazard_type' set in course {course['id']}!")
-            if (
-                course["course_type"] == self.COURSE_TYPE_TIME_BASED
-                and "end_time" not in course
-            ):
+            if course["course_type"] == self.COURSE_TYPE_TIME_BASED and "end_time" not in course:
                 raise Exception(f"Need 'end_time' set in course {course['id']}!")
             if (
-                course["clear_type"]
-                in [self.COURSE_CLEAR_SCORE, self.COURSE_CLEAR_COMBINED_SCORE]
+                course["clear_type"] in [self.COURSE_CLEAR_SCORE, self.COURSE_CLEAR_COMBINED_SCORE]
                 and "score" not in course
             ):
                 raise Exception(f"Need 'score' set in course {course['id']}!")
-            if (
-                course["clear_type"] == self.COURSE_CLEAR_SCORE
-                and course["score"] > 1000000
-            ):
+            if course["clear_type"] == self.COURSE_CLEAR_SCORE and course["score"] > 1000000:
                 raise Exception(f"Invalid per-coure score in course {course['id']}!")
-            if (
-                course["clear_type"] == self.COURSE_CLEAR_COMBINED_SCORE
-                and course["score"] <= 1000000
-            ):
+            if course["clear_type"] == self.COURSE_CLEAR_COMBINED_SCORE and course["score"] <= 1000000:
                 raise Exception(f"Invalid combined score in course {course['id']}!")
             valid_courses.add(course["id"])
 
@@ -1821,11 +1771,7 @@ class JubeatFesto(
             clan_course.set_attribute("id", str(course["id"]))
             clan_course.set_attribute("course_type", str(course["course_type"]))
             clan_course.add_child(Node.s32("difficulty", course["difficulty"]))
-            clan_course.add_child(
-                Node.u64(
-                    "etime", (course["end_time"] if "end_time" in course else 0) * 1000
-                )
-            )
+            clan_course.add_child(Node.u64("etime", (course["end_time"] if "end_time" in course else 0) * 1000))
             clan_course.add_child(Node.string("name", course["name"]))
 
             # List of included songs
@@ -1851,9 +1797,7 @@ class JubeatFesto(
             clan_course.add_child(clear)
             ex_option = Node.void("ex_option")
             clear.add_child(ex_option)
-            ex_option.add_child(
-                Node.bool("is_hard", course["hard"] if "hard" in course else False)
-            )
+            ex_option.add_child(Node.bool("is_hard", course["hard"] if "hard" in course else False))
             ex_option.add_child(
                 Node.s32(
                     "hazard_type",
@@ -1861,9 +1805,7 @@ class JubeatFesto(
                 )
             )
             clear.set_attribute("type", str(course["clear_type"]))
-            clear.add_child(
-                Node.s32("score", course["score"] if "score" in course else 0)
-            )
+            clear.add_child(Node.s32("score", course["score"] if "score" in course else 0))
 
             reward_list = Node.void("reward_list")
             clear.add_child(reward_list)
@@ -1965,9 +1907,7 @@ class JubeatFesto(
         if game_config.get_bool("festo_dungeon"):
             festo_dungeon = Node.void("festo_dungeon")
             info.add_child(festo_dungeon)
-            festo_dungeon.add_child(
-                Node.u64("etime", (Time.now() + Time.SECONDS_IN_WEEK) * 1000)
-            )
+            festo_dungeon.add_child(Node.u64("etime", (Time.now() + Time.SECONDS_IN_WEEK) * 1000))
 
         # Unsupported team_battle nodes.
         info.add_child(Node.void("team_battle"))
@@ -2205,9 +2145,7 @@ class JubeatFesto(
             # Grab unlock progress
             item = player.child("item")
             if item is not None:
-                owned_emblems = self.calculate_owned_items(
-                    item.child_value("emblem_list")
-                )
+                owned_emblems = self.calculate_owned_items(item.child_value("emblem_list"))
                 for index in owned_emblems:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -2244,9 +2182,7 @@ class JubeatFesto(
 
         return Node.void("gameend")
 
-    def format_scores(
-        self, userid: UserID, profile: Profile, scores: List[Score]
-    ) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)
@@ -2324,43 +2260,15 @@ class JubeatFesto(
                 normalnode = Node.void("normal")
                 musicdata.add_child(normalnode)
 
-                normalnode.add_child(
-                    Node.s32_array(
-                        "play_cnt", scoredata.get_int_array("normal_play_cnt", 3)
-                    )
-                )
-                normalnode.add_child(
-                    Node.s32_array(
-                        "clear_cnt", scoredata.get_int_array("normal_clear_cnt", 3)
-                    )
-                )
-                normalnode.add_child(
-                    Node.s32_array(
-                        "fc_cnt", scoredata.get_int_array("normal_fc_cnt", 3)
-                    )
-                )
-                normalnode.add_child(
-                    Node.s32_array(
-                        "ex_cnt", scoredata.get_int_array("normal_ex_cnt", 3)
-                    )
-                )
-                normalnode.add_child(
-                    Node.s32_array("score", scoredata.get_int_array("normal_points", 3))
-                )
-                normalnode.add_child(
-                    Node.s8_array(
-                        "clear", scoredata.get_int_array("normal_clear_flags", 3)
-                    )
-                )
-                normalnode.add_child(
-                    Node.s32_array(
-                        "music_rate", scoredata.get_int_array("normal_music_rate", 3)
-                    )
-                )
+                normalnode.add_child(Node.s32_array("play_cnt", scoredata.get_int_array("normal_play_cnt", 3)))
+                normalnode.add_child(Node.s32_array("clear_cnt", scoredata.get_int_array("normal_clear_cnt", 3)))
+                normalnode.add_child(Node.s32_array("fc_cnt", scoredata.get_int_array("normal_fc_cnt", 3)))
+                normalnode.add_child(Node.s32_array("ex_cnt", scoredata.get_int_array("normal_ex_cnt", 3)))
+                normalnode.add_child(Node.s32_array("score", scoredata.get_int_array("normal_points", 3)))
+                normalnode.add_child(Node.s8_array("clear", scoredata.get_int_array("normal_clear_flags", 3)))
+                normalnode.add_child(Node.s32_array("music_rate", scoredata.get_int_array("normal_music_rate", 3)))
 
-                for i, ghost in enumerate(
-                    scoredata.get("normal_ghost", [None, None, None])
-                ):
+                for i, ghost in enumerate(scoredata.get("normal_ghost", [None, None, None])):
                     if ghost is None:
                         continue
 
@@ -2372,39 +2280,15 @@ class JubeatFesto(
                 hardnode = Node.void("hard")
                 musicdata.add_child(hardnode)
 
-                hardnode.add_child(
-                    Node.s32_array(
-                        "play_cnt", scoredata.get_int_array("hard_play_cnt", 3)
-                    )
-                )
-                hardnode.add_child(
-                    Node.s32_array(
-                        "clear_cnt", scoredata.get_int_array("hard_clear_cnt", 3)
-                    )
-                )
-                hardnode.add_child(
-                    Node.s32_array("fc_cnt", scoredata.get_int_array("hard_fc_cnt", 3))
-                )
-                hardnode.add_child(
-                    Node.s32_array("ex_cnt", scoredata.get_int_array("hard_ex_cnt", 3))
-                )
-                hardnode.add_child(
-                    Node.s32_array("score", scoredata.get_int_array("hard_points", 3))
-                )
-                hardnode.add_child(
-                    Node.s8_array(
-                        "clear", scoredata.get_int_array("hard_clear_flags", 3)
-                    )
-                )
-                hardnode.add_child(
-                    Node.s32_array(
-                        "music_rate", scoredata.get_int_array("hard_music_rate", 3)
-                    )
-                )
+                hardnode.add_child(Node.s32_array("play_cnt", scoredata.get_int_array("hard_play_cnt", 3)))
+                hardnode.add_child(Node.s32_array("clear_cnt", scoredata.get_int_array("hard_clear_cnt", 3)))
+                hardnode.add_child(Node.s32_array("fc_cnt", scoredata.get_int_array("hard_fc_cnt", 3)))
+                hardnode.add_child(Node.s32_array("ex_cnt", scoredata.get_int_array("hard_ex_cnt", 3)))
+                hardnode.add_child(Node.s32_array("score", scoredata.get_int_array("hard_points", 3)))
+                hardnode.add_child(Node.s8_array("clear", scoredata.get_int_array("hard_clear_flags", 3)))
+                hardnode.add_child(Node.s32_array("music_rate", scoredata.get_int_array("hard_music_rate", 3)))
 
-                for i, ghost in enumerate(
-                    scoredata.get("hard_ghost", [None, None, None])
-                ):
+                for i, ghost in enumerate(scoredata.get("hard_ghost", [None, None, None])):
                     if ghost is None:
                         continue
 
@@ -2424,9 +2308,7 @@ class JubeatFesto(
         force_unlock = game_config.get_bool("force_song_unlock")
 
         # Calculate all of our achievement-backed entities.
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         owned_songs: Set[int] = set()
         owned_secrets: Set[int] = set()
         owned_emblems: Set[int] = set()
@@ -2434,9 +2316,7 @@ class JubeatFesto(
         course_completion: Dict[int, ValidatedDict] = {}
         for achievement in achievements:
             if achievement.type == "event":
-                event_completion[achievement.id] = achievement.data.get_bool(
-                    "is_completed"
-                )
+                event_completion[achievement.id] = achievement.data.get_bool("is_completed")
             elif achievement.type == "course":
                 course_completion[achievement.id] = achievement.data
             elif achievement.type == "emblem":
@@ -2480,12 +2360,8 @@ class JubeatFesto(
         info.add_child(Node.s32("mtg_entry_cnt", profile.get_int("mtg_entry_cnt")))
         info.add_child(Node.s32("mtg_hold_cnt", profile.get_int("mtg_hold_cnt")))
         info.add_child(Node.u8("mtg_result", profile.get_int("mtg_result")))
-        info.add_child(
-            Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points"))
-        )
-        info.add_child(
-            Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played"))
-        )
+        info.add_child(Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points")))
+        info.add_child(Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played")))
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
@@ -2532,55 +2408,27 @@ class JubeatFesto(
 
         # Default music availability, I think? The game doesn't seem to make much use of this, so I think
         # we can safely set it to all 1's much like we do the open_music_list bitfield in global settings.
-        item.add_child(
-            Node.s32_array(
-                "music_list", profile.get_int_array("music_list", 64, [-1] * 64)
-            )
-        )
+        item.add_child(Node.s32_array("music_list", profile.get_int_array("music_list", 64, [-1] * 64)))
 
         # Song unlocks, force everything on if force unlocked, otherwise default to what the game granted.
         item.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 64)
-                if force_unlock
-                else self.create_owned_items(owned_songs, 64),
+                ([-1] * 64) if force_unlock else self.create_owned_items(owned_songs, 64),
             )
         )
 
         # We force unlock all themes, markers, titles, and parts, regardless of what the client ended up earning.
-        item.add_child(
-            Node.s32_array(
-                "theme_list", profile.get_int_array("theme_list", 16, [-1] * 16)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list", 16, [-1] * 16)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "title_list", profile.get_int_array("title_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)
-            )
-        )
+        item.add_child(Node.s32_array("theme_list", profile.get_int_array("theme_list", 16, [-1] * 16)))
+        item.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list", 16, [-1] * 16)))
+        item.add_child(Node.s32_array("title_list", profile.get_int_array("title_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)))
 
         # These get earned by unlocking them through JBOX.
-        item.add_child(
-            Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96))
-        )
+        item.add_child(Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96)))
 
         # I got no idea wtf this is, so I'm defaulting it to all on like the above ones.
-        item.add_child(
-            Node.s32_array(
-                "commu_list", profile.get_int_array("commu_list", 16, [-1] * 16)
-            )
-        )
+        item.add_child(Node.s32_array("commu_list", profile.get_int_array("commu_list", 16, [-1] * 16)))
 
         # I have no idea what these are for. I figured it was for the server to grant songs/themes/markers
         # outside of gameplay, but the game doesn't seem to react to setting values here. So, lets set them
@@ -2592,21 +2440,11 @@ class JubeatFesto(
         new.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 64)
-                if force_unlock
-                else self.create_owned_items(owned_secrets, 64),
+                ([-1] * 64) if force_unlock else self.create_owned_items(owned_secrets, 64),
             )
         )
-        new.add_child(
-            Node.s32_array(
-                "theme_list", profile.get_int_array("theme_list_new", 16, [-1] * 16)
-            )
-        )
-        new.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list_new", 16, [-1] * 16)
-            )
-        )
+        new.add_child(Node.s32_array("theme_list", profile.get_int_array("theme_list_new", 16, [-1] * 16)))
+        new.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list_new", 16, [-1] * 16)))
 
         # Add rivals to profile.
         rivallist = Node.void("rivallist")
@@ -2643,9 +2481,7 @@ class JubeatFesto(
         lab_edit_seq.set_attribute("count", "0")
 
         # Full combo challenge
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "fc_challenge"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "fc_challenge")
         if entry is None:
             entry = ValidatedDict()
 
@@ -2705,11 +2541,7 @@ class JubeatFesto(
 
             state = 0x0
             state |= self.EVENT_STATUS_OPEN if eventdata["enabled"] else 0
-            state |= (
-                self.EVENT_STATUS_COMPLETE
-                if event_completion.get(eventid, False)
-                else 0
-            )
+            state |= self.EVENT_STATUS_COMPLETE if event_completion.get(eventid, False) else 0
             event.add_child(Node.u8("state", state))
 
         # JBox stuff
@@ -2776,9 +2608,7 @@ class JubeatFesto(
             status = 0
             status |= self.COURSE_STATUS_SEEN if status_dict.get_bool("seen") else 0
             status |= self.COURSE_STATUS_PLAYED if status_dict.get_bool("played") else 0
-            status |= (
-                self.COURSE_STATUS_CLEARED if status_dict.get_bool("cleared") else 0
-            )
+            status |= self.COURSE_STATUS_CLEARED if status_dict.get_bool("cleared") else 0
 
             coursenode = Node.void("course")
             course_list.add_child(coursenode)
@@ -2871,20 +2701,14 @@ class JubeatFesto(
         # Festo dungeon
         festo_dungeon = Node.void("festo_dungeon")
         player.add_child(festo_dungeon)
-        festo_dungeon.add_child(
-            Node.s32("phase", profile.get_int("festo_dungeon_phase"))
-        )
-        festo_dungeon.add_child(
-            Node.s32("clear_flag", profile.get_int("festo_dungeon_clear_flag"))
-        )
+        festo_dungeon.add_child(Node.s32("phase", profile.get_int("festo_dungeon_phase")))
+        festo_dungeon.add_child(Node.s32("clear_flag", profile.get_int("festo_dungeon_clear_flag")))
 
         # Missing travel event, which I do not want to implement.
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         newprofile.replace_bool("saved", True)
         data = request.child("data")
@@ -2923,12 +2747,8 @@ class JubeatFesto(
             newprofile.replace_int("beat_cnt", info.child_value("beat_cnt"))
             newprofile.replace_int("mynews_cnt", info.child_value("mynews_cnt"))
 
-            newprofile.replace_int(
-                "bonus_tune_points", info.child_value("bonus_tune_points")
-            )
-            newprofile.replace_bool(
-                "is_bonus_tune_played", info.child_value("is_bonus_tune_played")
-            )
+            newprofile.replace_int("bonus_tune_points", info.child_value("bonus_tune_points"))
+            newprofile.replace_bool("is_bonus_tune_played", info.child_value("is_bonus_tune_played"))
 
         # Grab last settings
         lastnode = player.child("last")
@@ -2953,30 +2773,16 @@ class JubeatFesto(
         # Grab unlock progress
         item = player.child("item")
         if item is not None:
-            newprofile.replace_int_array(
-                "music_list", 64, item.child_value("music_list")
-            )
-            newprofile.replace_int_array(
-                "theme_list", 16, item.child_value("theme_list")
-            )
-            newprofile.replace_int_array(
-                "marker_list", 16, item.child_value("marker_list")
-            )
-            newprofile.replace_int_array(
-                "title_list", 160, item.child_value("title_list")
-            )
-            newprofile.replace_int_array(
-                "parts_list", 160, item.child_value("parts_list")
-            )
-            newprofile.replace_int_array(
-                "commu_list", 16, item.child_value("commu_list")
-            )
+            newprofile.replace_int_array("music_list", 64, item.child_value("music_list"))
+            newprofile.replace_int_array("theme_list", 16, item.child_value("theme_list"))
+            newprofile.replace_int_array("marker_list", 16, item.child_value("marker_list"))
+            newprofile.replace_int_array("title_list", 160, item.child_value("title_list"))
+            newprofile.replace_int_array("parts_list", 160, item.child_value("parts_list"))
+            newprofile.replace_int_array("commu_list", 16, item.child_value("commu_list"))
 
             if not force_unlock:
                 # Don't persist if we're force-unlocked, this data will be bogus.
-                owned_songs = self.calculate_owned_items(
-                    item.child_value("secret_list")
-                )
+                owned_songs = self.calculate_owned_items(item.child_value("secret_list"))
                 for index in owned_songs:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -3000,18 +2806,12 @@ class JubeatFesto(
 
             newitem = item.child("new")
             if newitem is not None:
-                newprofile.replace_int_array(
-                    "theme_list_new", 16, newitem.child_value("theme_list")
-                )
-                newprofile.replace_int_array(
-                    "marker_list_new", 16, newitem.child_value("marker_list")
-                )
+                newprofile.replace_int_array("theme_list_new", 16, newitem.child_value("theme_list"))
+                newprofile.replace_int_array("marker_list_new", 16, newitem.child_value("marker_list"))
 
                 if not force_unlock:
                     # Don't persist if we're force-unlocked, this data will be bogus.
-                    owned_secrets = self.calculate_owned_items(
-                        newitem.child_value("secret_list")
-                    )
+                    owned_secrets = self.calculate_owned_items(newitem.child_value("secret_list"))
                     for index in owned_secrets:
                         self.data.local.user.put_achievement(
                             self.game,
@@ -3226,9 +3026,7 @@ class JubeatFesto(
 
             # Save it back
             newprofile.replace_dict("pick_up_chart", pick_up_chart)
-            newprofile.replace_float(
-                "pick_up_jubility", float(hot_music_list.attribute("param")) / 10
-            )
+            newprofile.replace_float("pick_up_jubility", float(hot_music_list.attribute("param")) / 10)
 
             # Common jubility stuff
             other_music_list = target_music.child("other_music_list")
@@ -3251,9 +3049,7 @@ class JubeatFesto(
 
             # Save it back
             newprofile.replace_dict("common_chart", common_chart)
-            newprofile.replace_float(
-                "common_jubility", float(other_music_list.attribute("param")) / 10
-            )
+            newprofile.replace_float("common_jubility", float(other_music_list.attribute("param")) / 10)
 
         # Clan course saving
         clan_course_list = player.child("course_list")
@@ -3281,9 +3077,7 @@ class JubeatFesto(
                     oldcourse = ValidatedDict()
 
                 oldcourse.replace_bool("seen", oldcourse.get_bool("seen") or is_seen)
-                oldcourse.replace_bool(
-                    "played", oldcourse.get_bool("played") or is_played
-                )
+                oldcourse.replace_bool("played", oldcourse.get_bool("played") or is_played)
 
                 # Save it as an achievement
                 self.data.local.user.put_achievement(
@@ -3335,12 +3129,8 @@ class JubeatFesto(
 
         festo_dungeon = player.child("festo_dungeon")
         if festo_dungeon is not None:
-            newprofile.replace_int(
-                "festo_dungeon_phase", festo_dungeon.child_value("phase")
-            )
-            newprofile.replace_int(
-                "festo_dungeon_clear_flag", festo_dungeon.child_value("clear_flag")
-            )
+            newprofile.replace_int("festo_dungeon_phase", festo_dungeon.child_value("phase"))
+            newprofile.replace_int("festo_dungeon_clear_flag", festo_dungeon.child_value("clear_flag"))
 
         # Keep track of play statistics
         self.update_play_statistics(userid)

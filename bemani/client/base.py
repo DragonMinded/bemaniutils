@@ -22,9 +22,7 @@ class BaseClient:
     CORRECT_PASSWORD: Final[str] = "1234"
     WRONG_PASSWORD: Final[str] = "4321"
 
-    def __init__(
-        self, proto: ClientProtocol, pcbid: str, config: Dict[str, Any]
-    ) -> None:
+    def __init__(self, proto: ClientProtocol, pcbid: str, config: Dict[str, Any]) -> None:
         self.__proto = proto
         self.pcbid = pcbid
         self.config = config
@@ -92,9 +90,7 @@ class BaseClient:
         if not self.__assert_path(root, path):
             raise Exception(f"Path '{path}' not found in root node:\n{root}")
 
-    def verify_services_get(
-        self, expected_services: List[str] = [], include_net: bool = False
-    ) -> None:
+    def verify_services_get(self, expected_services: List[str] = [], include_net: bool = False) -> None:
         call = self.call_node()
 
         # Construct node
@@ -254,9 +250,7 @@ class BaseClient:
         # Verify that response is correct
         self.assert_path(resp, "response/pcbevent")
 
-    def verify_cardmng_inquire(
-        self, card_id: str, msg_type: str, paseli_enabled: bool
-    ) -> Optional[str]:
+    def verify_cardmng_inquire(self, card_id: str, msg_type: str, paseli_enabled: bool) -> Optional[str]:
         call = self.call_node()
 
         # Construct node
@@ -295,17 +289,11 @@ class BaseClient:
             ecflag = int(resp.child("cardmng").attribute("ecflag"))
 
             if binded != 0:
-                raise Exception(
-                    f"Card '{card_id}' returned invalid binded value '{binded}'"
-                )
+                raise Exception(f"Card '{card_id}' returned invalid binded value '{binded}'")
             if newflag != 1:
-                raise Exception(
-                    f"Card '{card_id}' returned invalid newflag value '{newflag}'"
-                )
+                raise Exception(f"Card '{card_id}' returned invalid newflag value '{newflag}'")
             if ecflag != (1 if paseli_enabled else 0):
-                raise Exception(
-                    f"Card '{card_id}' returned invalid ecflag value '{newflag}'"
-                )
+                raise Exception(f"Card '{card_id}' returned invalid ecflag value '{newflag}'")
 
             # Return the refid
             return resp.child("cardmng").attribute("refid")
@@ -321,17 +309,11 @@ class BaseClient:
             ecflag = int(resp.child("cardmng").attribute("ecflag"))
 
             if binded != 1:
-                raise Exception(
-                    f"Card '{card_id}' returned invalid binded value '{binded}'"
-                )
+                raise Exception(f"Card '{card_id}' returned invalid binded value '{binded}'")
             if newflag != 0:
-                raise Exception(
-                    f"Card '{card_id}' returned invalid newflag value '{newflag}'"
-                )
+                raise Exception(f"Card '{card_id}' returned invalid newflag value '{newflag}'")
             if ecflag != (1 if paseli_enabled else 0):
-                raise Exception(
-                    f"Card '{card_id}' returned invalid ecflag value '{newflag}'"
-                )
+                raise Exception(f"Card '{card_id}' returned invalid ecflag value '{newflag}'")
 
             # Return the refid
             return resp.child("cardmng").attribute("refid")
@@ -365,9 +347,7 @@ class BaseClient:
         cardmng = Node.void("cardmng")
         call.add_child(cardmng)
         cardmng.set_attribute("method", "authpass")
-        cardmng.set_attribute(
-            "pass", self.CORRECT_PASSWORD if correct else self.CORRECT_PASSWORD[::-1]
-        )
+        cardmng.set_attribute("pass", self.CORRECT_PASSWORD if correct else self.CORRECT_PASSWORD[::-1])
         cardmng.set_attribute("refid", ref_id)
 
         # Swap with server
@@ -426,9 +406,7 @@ class BaseClient:
 
         newbalance = resp.child("eacoin").child_value("balance")
         if balance - amount != newbalance:
-            raise Exception(
-                f"Expected to get back balance {balance - amount} but got {newbalance}"
-            )
+            raise Exception(f"Expected to get back balance {balance - amount} but got {newbalance}")
 
     def verify_eacoin_checkout(self, session: str) -> None:
         call = self.call_node()

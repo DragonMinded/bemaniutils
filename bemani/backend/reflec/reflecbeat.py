@@ -61,9 +61,7 @@ class ReflecBeat(ReflecBeatBase):
             raise Exception(f"Invalid db_combo_type {db_combo_type}")
         raise Exception(f"Invalid db_clear_type {db_clear_type}")
 
-    def __game_to_db_clear_type(
-        self, game_clear_type: int, game_achievement_rate: int
-    ) -> Tuple[int, int]:
+    def __game_to_db_clear_type(self, game_clear_type: int, game_achievement_rate: int) -> Tuple[int, int]:
         if game_clear_type == self.GAME_CLEAR_TYPE_NO_PLAY:
             return (self.CLEAR_TYPE_NO_PLAY, self.COMBO_TYPE_NONE)
         if game_clear_type == self.GAME_CLEAR_TYPE_PLAYED:
@@ -254,9 +252,7 @@ class ReflecBeat(ReflecBeatBase):
         refid = request.child_value("rid")
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
-            self.data.local.lobby.put_play_session_info(
-                self.game, self.version, userid, {}
-            )
+            self.data.local.lobby.put_play_session_info(self.game, self.version, userid, {})
 
         root = Node.void("player")
         root.add_child(Node.bool("is_suc", True))
@@ -282,9 +278,7 @@ class ReflecBeat(ReflecBeatBase):
             )
             if lobby is not None:
                 self.data.local.lobby.destroy_lobby(lobby.get_int("id"))
-            self.data.local.lobby.destroy_play_session_info(
-                self.game, self.version, userid
-            )
+            self.data.local.lobby.destroy_play_session_info(self.game, self.version, userid)
 
         return Node.void("player")
 
@@ -310,9 +304,7 @@ class ReflecBeat(ReflecBeatBase):
     def format_profile(self, userid: UserID, profile: Profile) -> Node:
         statistics = self.get_play_statistics(userid)
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         scores = self.data.remote.music.get_scores(self.game, self.version, userid)
         root = Node.void("player")
         pdata = Node.void("pdata")
@@ -368,10 +360,7 @@ class ReflecBeat(ReflecBeatBase):
             info.add_child(Node.u16("id", item.id))
 
         if game_config.get_bool("force_unlock_songs"):
-            songs = {
-                song.id
-                for song in self.data.local.music.get_all_songs(self.game, self.version)
-            }
+            songs = {song.id for song in self.data.local.music.get_all_songs(self.game, self.version)}
 
             for songid in songs:
                 info = Node.void("info")
@@ -389,12 +378,8 @@ class ReflecBeat(ReflecBeatBase):
             rec.add_child(Node.u16("mid", score.id))
             rec.add_child(Node.u8("ng", score.chart))
             rec.add_child(Node.s32("win", score.data.get_dict("stats").get_int("win")))
-            rec.add_child(
-                Node.s32("lose", score.data.get_dict("stats").get_int("lose"))
-            )
-            rec.add_child(
-                Node.s32("draw", score.data.get_dict("stats").get_int("draw"))
-            )
+            rec.add_child(Node.s32("lose", score.data.get_dict("stats").get_int("lose")))
+            rec.add_child(Node.s32("draw", score.data.get_dict("stats").get_int("draw")))
             rec.add_child(
                 Node.u8(
                     "ct",
@@ -404,9 +389,7 @@ class ReflecBeat(ReflecBeatBase):
                     ),
                 )
             )
-            rec.add_child(
-                Node.s16("ar", int(score.data.get_int("achievement_rate") / 10))
-            )
+            rec.add_child(Node.s16("ar", int(score.data.get_int("achievement_rate") / 10)))
             rec.add_child(Node.s16("bs", score.points))
             rec.add_child(Node.s16("mc", score.data.get_int("combo")))
             rec.add_child(Node.s16("bmc", score.data.get_int("miss_count")))
@@ -421,9 +404,7 @@ class ReflecBeat(ReflecBeatBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         game_config = self.get_game_config()
         newprofile = oldprofile.clone()
 
@@ -515,9 +496,7 @@ class ReflecBeat(ReflecBeatBase):
                 achievement_rate = child.child_value("myself/ar") * 10
                 points = child.child_value("myself/s")
 
-                clear_type, combo_type = self.__game_to_db_clear_type(
-                    clear_type, achievement_rate
-                )
+                clear_type, combo_type = self.__game_to_db_clear_type(clear_type, achievement_rate)
 
                 combo = None
                 miss_count = -1
@@ -527,10 +506,7 @@ class ReflecBeat(ReflecBeatBase):
                     if chart in savedrecords[songid]:
                         data = savedrecords[songid][chart]
 
-                        if (
-                            data["achievement_rate"] == achievement_rate
-                            and data["points"] == points
-                        ):
+                        if data["achievement_rate"] == achievement_rate and data["points"] == points:
                             # This is the same record! Use the stats from it to update our
                             # internal representation.
                             combo = data["combo"]

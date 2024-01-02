@@ -156,9 +156,7 @@ class DDRX2(
             flag.set_attribute("s1", "0")
             flag.set_attribute("t", "0")
 
-        hit_chart = self.data.local.music.get_hit_chart(
-            self.game, self.music_version, self.GAME_MAX_SONGS
-        )
+        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS)
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
@@ -180,10 +178,7 @@ class DDRX2(
                 sortedrecords[score.id] = {}
             sortedrecords[score.id][score.chart] = (userid, score)
             missing_profiles.append(userid)
-        users = {
-            userid: profile
-            for (userid, profile) in self.get_any_profiles(missing_profiles)
-        }
+        users = {userid: profile for (userid, profile) in self.get_any_profiles(missing_profiles)}
 
         game = Node.void("game")
         for song in sortedrecords:
@@ -207,11 +202,7 @@ class DDRX2(
 
                 typenode.add_child(Node.string("name", users[userid].get_str("name")))
                 typenode.add_child(Node.u32("score", score.points))
-                typenode.add_child(
-                    Node.u16(
-                        "area", users[userid].get_int("area", self.get_machine_region())
-                    )
-                )
+                typenode.add_child(Node.u16("area", users[userid].get_int("area", self.get_machine_region())))
                 typenode.add_child(Node.u8("rank", gamerank))
                 typenode.add_child(Node.u8("combo_type", combo_type))
 
@@ -229,9 +220,7 @@ class DDRX2(
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, userid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             scores = []
 
@@ -317,14 +306,10 @@ class DDRX2(
         root.add_child(Node.string("seq", ""))
         root.add_child(Node.u32("code", profile.extid))
         root.add_child(Node.string("name", profile.get_str("name")))
-        root.add_child(
-            Node.u8("area", profile.get_int("area", self.get_machine_region()))
-        )
+        root.add_child(Node.u8("area", profile.get_int("area", self.get_machine_region())))
         root.add_child(Node.u32("cnt_s", play_stats.get_int("single_plays")))
         root.add_child(Node.u32("cnt_d", play_stats.get_int("double_plays")))
-        root.add_child(
-            Node.u32("cnt_b", play_stats.get_int("battle_plays"))
-        )  # This could be wrong, its a guess
+        root.add_child(Node.u32("cnt_b", play_stats.get_int("battle_plays")))  # This could be wrong, its a guess
         root.add_child(Node.u32("cnt_m0", play_stats.get_int("cnt_m0")))
         root.add_child(Node.u32("cnt_m1", play_stats.get_int("cnt_m1")))
         root.add_child(Node.u32("cnt_m2", play_stats.get_int("cnt_m2")))
@@ -342,9 +327,7 @@ class DDRX2(
         if "chara" in profile:
             chara.set_attribute("my", str(profile.get_int("chara")))
 
-        root.add_child(
-            Node.u8_array("chara_opt", profile.get_int_array("chara_opt", 96))
-        )
+        root.add_child(Node.u8_array("chara_opt", profile.get_int_array("chara_opt", 96)))
 
         # Drill rankings
         if "title" in profile:
@@ -387,53 +370,31 @@ class DDRX2(
             e_panel_dict = profile.get_dict("e_panel")
             if "play_id" in e_panel_dict:
                 e_panel.set_attribute("play_id", str(e_panel_dict.get_int("play_id")))
-            e_panel.add_child(
-                Node.u8_array("cell", e_panel_dict.get_int_array("cell", 24))
-            )
-            e_panel.add_child(
-                Node.u8_array(
-                    "panel_state", e_panel_dict.get_int_array("panel_state", 6)
-                )
-            )
+            e_panel.add_child(Node.u8_array("cell", e_panel_dict.get_int_array("cell", 24)))
+            e_panel.add_child(Node.u8_array("panel_state", e_panel_dict.get_int_array("panel_state", 6)))
 
         if "e_pix" in profile:
             e_pix = Node.void("e_pix")
             root.add_child(e_pix)
             e_pix_dict = profile.get_dict("e_pix")
             if "max_distance" in e_pix_dict:
-                e_pix.set_attribute(
-                    "max_distance", str(e_pix_dict.get_int("max_distance"))
-                )
+                e_pix.set_attribute("max_distance", str(e_pix_dict.get_int("max_distance")))
             if "max_planet" in e_pix_dict:
                 e_pix.set_attribute("max_planet", str(e_pix_dict.get_int("max_planet")))
             if "total_distance" in e_pix_dict:
-                e_pix.set_attribute(
-                    "total_distance", str(e_pix_dict.get_int("total_distance"))
-                )
+                e_pix.set_attribute("total_distance", str(e_pix_dict.get_int("total_distance")))
             if "total_planet" in e_pix_dict:
-                e_pix.set_attribute(
-                    "total_planet", str(e_pix_dict.get_int("total_planet"))
-                )
+                e_pix.set_attribute("total_planet", str(e_pix_dict.get_int("total_planet")))
             if "border_character" in e_pix_dict:
-                e_pix.set_attribute(
-                    "border_character", str(e_pix_dict.get_int("border_character"))
-                )
+                e_pix.set_attribute("border_character", str(e_pix_dict.get_int("border_character")))
             if "border_balloon" in e_pix_dict:
-                e_pix.set_attribute(
-                    "border_balloon", str(e_pix_dict.get_int("border_balloon"))
-                )
+                e_pix.set_attribute("border_balloon", str(e_pix_dict.get_int("border_balloon")))
             if "border_music_aftr" in e_pix_dict:
-                e_pix.set_attribute(
-                    "border_music_aftr", str(e_pix_dict.get_int("border_music_aftr"))
-                )
+                e_pix.set_attribute("border_music_aftr", str(e_pix_dict.get_int("border_music_aftr")))
             if "border_music_meii" in e_pix_dict:
-                e_pix.set_attribute(
-                    "border_music_meii", str(e_pix_dict.get_int("border_music_meii"))
-                )
+                e_pix.set_attribute("border_music_meii", str(e_pix_dict.get_int("border_music_meii")))
             if "border_music_dirt" in e_pix_dict:
-                e_pix.set_attribute(
-                    "border_music_dirt", str(e_pix_dict.get_int("border_music_dirt"))
-                )
+                e_pix.set_attribute("border_music_dirt", str(e_pix_dict.get_int("border_music_dirt")))
             if "flags" in e_pix_dict:
                 e_pix.set_attribute("flags", str(e_pix_dict.get_int("flags")))
 
@@ -488,9 +449,7 @@ class DDRX2(
         root.add_child(Node.s16_array("opt_ex", profile.get_int_array("opt_ex", 16)))
 
         # Unlock flags
-        root.add_child(
-            Node.u8_array("flag", profile.get_int_array("flag", 256, [1] * 256))
-        )
+        root.add_child(Node.u8_array("flag", profile.get_int_array("flag", 256, [1] * 256)))
 
         # Ranking display?
         root.add_child(Node.u16_array("rank", profile.get_int_array("rank", 100)))
@@ -512,9 +471,7 @@ class DDRX2(
                 friendnode.set_attribute("up", "0")
                 friendnode.add_child(Node.u32("code", friend.extid))
                 friendnode.add_child(Node.string("name", friend.get_str("name")))
-                friendnode.add_child(
-                    Node.u8("area", friend.get_int("area", self.get_machine_region()))
-                )
+                friendnode.add_child(Node.u8("area", friend.get_int("area", self.get_machine_region())))
                 friendnode.add_child(Node.u32("exp", play_stats.get_int("exp")))
                 friendnode.add_child(Node.u32("star", friend.get_int("star")))
 
@@ -558,9 +515,7 @@ class DDRX2(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -656,9 +611,7 @@ class DDRX2(
             e_panel_dict = newprofile.get_dict("e_panel")
             e_panel_dict.replace_int("play_id", intish(e_panel.attribute("play_id")))
             e_panel_dict.replace_int_array("cell", 24, e_panel.child_value("cell"))
-            e_panel_dict.replace_int_array(
-                "panel_state", 6, e_panel.child_value("panel_state")
-            )
+            e_panel_dict.replace_int_array("panel_state", 6, e_panel.child_value("panel_state"))
             newprofile.replace_dict("e_panel", e_panel_dict)
 
         e_pix = request.child("e_pix")
@@ -777,9 +730,7 @@ class DDRX2(
                     newfriends[pos] = None
                 else:
                     # Try looking up the userid
-                    newfriends[pos] = self.data.remote.user.from_extid(
-                        self.game, self.version, code
-                    )
+                    newfriends[pos] = self.data.remote.user.from_extid(self.game, self.version, code)
 
         # Diff the set of links to determine updates
         for i in range(10):

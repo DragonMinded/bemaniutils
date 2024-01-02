@@ -227,9 +227,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         # Format Scores
         hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 7) * 17) + 7) / 8)
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -245,12 +243,8 @@ class PopnMusicTuneStreet(PopnMusicBase):
             flags = self.__format_flags_for_score(score)
 
             flags_index = score.id * 2
-            binary_profile[108 + flags_index] = binary_profile[108 + flags_index] | (
-                flags & 0xFF
-            )
-            binary_profile[109 + flags_index] = binary_profile[109 + flags_index] | (
-                (flags >> 8) & 0xFF
-            )
+            binary_profile[108 + flags_index] = binary_profile[108 + flags_index] | (flags & 0xFF)
+            binary_profile[109 + flags_index] = binary_profile[109 + flags_index] | ((flags >> 8) & 0xFF)
 
             if score.chart in [
                 self.CHART_TYPE_ENJOY_5_BUTTON,
@@ -272,23 +266,12 @@ class PopnMusicTuneStreet(PopnMusicBase):
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
             hiscore_value = score.points << hiscore_bit_pos
-            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (
-                hiscore_value & 0xFF
-            )
-            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[
-                hiscore_byte_pos + 1
-            ] | ((hiscore_value >> 8) & 0xFF)
-            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[
-                hiscore_byte_pos + 2
-            ] | ((hiscore_value >> 16) & 0xFF)
+            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
 
         # Format most played
-        most_played = [
-            x[0]
-            for x in self.data.local.music.get_most_played(
-                self.game, self.music_version, userid, 20
-            )
-        ]
+        most_played = [x[0] for x in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)]
         while len(most_played) < 20:
             most_played.append(-1)
         profile_pos = 68
@@ -322,9 +305,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
         bought_flg = town.get_int_array("bought_flg", 3)
         game_config = self.get_game_config()
         force_unlock_songs = game_config.get_bool("force_unlock_songs")
-        force_unlock_customizations = game_config.get_bool(
-            "force_unlock_customizations"
-        )
+        force_unlock_customizations = game_config.get_bool("force_unlock_customizations")
 
         if force_unlock_songs:
             bought_flg[0] = 0xFFFFFFFF
@@ -390,9 +371,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         # Extract the playmode, important for scores later
@@ -404,13 +383,9 @@ class PopnMusicTuneStreet(PopnMusicBase):
         if "option" in request.attributes:
             newprofile.replace_int("option", int(request.attribute("option")))
         if "last_play_flag" in request.attributes:
-            newprofile.replace_int(
-                "last_play_flag", int(request.attribute("last_play_flag"))
-            )
+            newprofile.replace_int("last_play_flag", int(request.attribute("last_play_flag")))
         if "medal_and_friend" in request.attributes:
-            newprofile.replace_int(
-                "medal_and_friend", int(request.attribute("medal_and_friend"))
-            )
+            newprofile.replace_int("medal_and_friend", int(request.attribute("medal_and_friend")))
         if "music_num" in request.attributes:
             newprofile.replace_int("music", int(request.attribute("music_num")))
         if "sheet_num" in request.attributes:
@@ -418,23 +393,15 @@ class PopnMusicTuneStreet(PopnMusicBase):
         if "category_num" in request.attributes:
             newprofile.replace_int("category", int(request.attribute("category_num")))
         if "read_news_no_max" in request.attributes:
-            newprofile.replace_int(
-                "read_news", int(request.attribute("read_news_no_max"))
-            )
+            newprofile.replace_int("read_news", int(request.attribute("read_news_no_max")))
         if "jubeat_collabo" in request.attributes:
-            newprofile.replace_int(
-                "jubeat_collabo", int(request.attribute("jubeat_collabo"))
-            )
+            newprofile.replace_int("jubeat_collabo", int(request.attribute("jubeat_collabo")))
         if "norma_point" in request.attributes:
             newprofile.replace_int("norma_point", int(request.attribute("norma_point")))
         if "skin_tex_note" in request.attributes:
-            newprofile.replace_int(
-                "skin_tex_note", int(request.attribute("skin_tex_note"))
-            )
+            newprofile.replace_int("skin_tex_note", int(request.attribute("skin_tex_note")))
         if "skin_tex_cmn" in request.attributes:
-            newprofile.replace_int(
-                "skin_tex_cmn", int(request.attribute("skin_tex_cmn"))
-            )
+            newprofile.replace_int("skin_tex_cmn", int(request.attribute("skin_tex_cmn")))
         if "skin_sd_bgm" in request.attributes:
             newprofile.replace_int("skin_sd_bgm", int(request.attribute("skin_sd_bgm")))
         if "skin_sd_se" in request.attributes:
@@ -532,19 +499,13 @@ class PopnMusicTuneStreet(PopnMusicBase):
             if "play_type" in townnode.attributes:
                 town.replace_int("play_type", int(townnode.attribute("play_type")))
             if "base" in townnode.attributes:
-                town.replace_int_array(
-                    "base", 4, [int(x) for x in townnode.attribute("base").split(",")]
-                )
+                town.replace_int_array("base", 4, [int(x) for x in townnode.attribute("base").split(",")])
             if "bought_flg" in townnode.attributes:
-                bought_array = [
-                    int(x) for x in townnode.attribute("bought_flg").split(",")
-                ]
+                bought_array = [int(x) for x in townnode.attribute("bought_flg").split(",")]
                 if len(bought_array) == 3:
                     game_config = self.get_game_config()
                     force_unlock_songs = game_config.get_bool("force_unlock_songs")
-                    force_unlock_customizations = game_config.get_bool(
-                        "force_unlock_customizations"
-                    )
+                    force_unlock_customizations = game_config.get_bool("force_unlock_customizations")
                     old_bought_array = town.get_int_array("bought_flg", 3)
 
                     if force_unlock_songs:
@@ -578,10 +539,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
                     town.replace_int_array(
                         f"building_{bid}",
                         8,
-                        [
-                            int(x)
-                            for x in townnode.attribute(f"building_{bid}").split(",")
-                        ],
+                        [int(x) for x in townnode.attribute(f"building_{bid}").split(",")],
                     )
 
         newprofile.replace_dict("town", town)
@@ -594,23 +552,17 @@ class PopnMusicTuneStreet(PopnMusicBase):
         town_phase = game_config.get_int("town_phase")
 
         root = Node.void("game")
-        root.set_attribute(
-            "game_phase", str(game_phase)
-        )  # Phase unlocks, for song availability.
+        root.set_attribute("game_phase", str(game_phase))  # Phase unlocks, for song availability.
         root.set_attribute("boss_battle_point", "1")
         root.set_attribute("boss_diff", "100,100,100,100,100,100,100,100,100,100")
         root.set_attribute("card_phase", "3")
-        root.set_attribute(
-            "event_phase", str(town_phase)
-        )  # Town mode, for the main event.
+        root.set_attribute("event_phase", str(town_phase))  # Town mode, for the main event.
         root.set_attribute("gfdm_phase", "2")
         root.set_attribute("ir_phase", "14")
         root.set_attribute("jubeat_phase", "2")
         root.set_attribute("local_matching_enable", "1")
         root.set_attribute("matching_sec", "120")
-        root.set_attribute(
-            "netvs_phase", "0"
-        )  # Net taisen mode phase, maximum 18 (no lobby support).
+        root.set_attribute("netvs_phase", "0")  # Net taisen mode phase, maximum 18 (no lobby support).
         return root
 
     def handle_game_active_request(self, request: Node) -> Node:
@@ -696,9 +648,7 @@ class PopnMusicTuneStreet(PopnMusicBase):
         if userid is None:
             return root
 
-        oldprofile = self.get_profile(userid) or Profile(
-            self.game, self.version, refid, 0
-        )
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
         newprofile = self.unformat_profile(userid, request, oldprofile)
 
         if newprofile is not None:

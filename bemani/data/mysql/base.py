@@ -136,9 +136,7 @@ class BaseData:
         """
         # Look up the user account, making sure to expire old sessions
         sql = "SELECT id FROM session WHERE session = :session AND type = :type AND expiration > :timestamp"
-        cursor = self.execute(
-            sql, {"session": session, "type": sesstype, "timestamp": Time.now()}
-        )
+        cursor = self.execute(sql, {"session": session, "type": sesstype, "timestamp": Time.now()})
         if cursor.rowcount != 1:
             # Couldn't find a user with this session
             return None
@@ -146,9 +144,7 @@ class BaseData:
         result = cursor.fetchone()
         return result["id"]
 
-    def _create_session(
-        self, opid: int, optype: str, expiration: int = (30 * 86400)
-    ) -> str:
+    def _create_session(self, opid: int, optype: str, expiration: int = (30 * 86400)) -> str:
         """
         Given an ID, create a session string.
 
@@ -161,10 +157,7 @@ class BaseData:
         """
         # Create a new session that is unique
         while True:
-            session = "".join(
-                random.choice("0123456789ABCDEF")
-                for _ in range(BaseData.SESSION_LENGTH)
-            )
+            session = "".join(random.choice("0123456789ABCDEF") for _ in range(BaseData.SESSION_LENGTH))
             sql = "SELECT session FROM session WHERE session = :session"
             cursor = self.execute(sql, {"session": session})
             if cursor.rowcount == 0:
@@ -198,9 +191,7 @@ class BaseData:
         """
         # Remove the session token
         sql = "DELETE FROM session WHERE session = :session AND type = :sesstype"
-        self.execute(
-            sql, {"session": session, "sesstype": sesstype}, safe_write_operation=True
-        )
+        self.execute(sql, {"session": session, "sesstype": sesstype}, safe_write_operation=True)
 
         # Also weed out any other defunct sessions
         sql = "DELETE FROM session WHERE expiration < :timestamp"

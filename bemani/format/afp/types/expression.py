@@ -11,9 +11,7 @@ class Expression:
     # Any thing that can be evaluated for a result, such as a variable
     # reference, function call, or mathematical operation.
     def render(self, parent_prefix: str, nested: bool = False) -> str:
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement render()!"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} does not implement render()!")
 
 
 class GenericObject(Expression):
@@ -2039,8 +2037,7 @@ class Object(Expression):
 
     def render(self, parent_prefix: str, nested: bool = False) -> str:
         params = [
-            f"{value_ref(key, parent_prefix)}: {value_ref(val, parent_prefix)}"
-            for (key, val) in self.params.items()
+            f"{value_ref(key, parent_prefix)}: {value_ref(val, parent_prefix)}" for (key, val) in self.params.items()
         ]
         lpar = "{"
         rpar = "}"
@@ -2050,9 +2047,7 @@ class Object(Expression):
 
 class FunctionCall(Expression):
     # Call a method on an object.
-    def __init__(
-        self, insertion_ref: int, name: Union[str, StringConstant], params: List[Any]
-    ) -> None:
+    def __init__(self, insertion_ref: int, name: Union[str, StringConstant], params: List[Any]) -> None:
         self.insertion_ref = insertion_ref
         self.name = name
         self.params = params
@@ -2182,9 +2177,7 @@ class Member(Expression):
 
 # The following are helpers which facilitate rendering out various parts of expressions.
 def object_ref(obj: Any, parent_prefix: str) -> str:
-    if isinstance(
-        obj, (GenericObject, Variable, Member, MethodCall, FunctionCall, Register)
-    ):
+    if isinstance(obj, (GenericObject, Variable, Member, MethodCall, FunctionCall, Register)):
         return obj.render(parent_prefix, nested=True)
     else:
         raise Exception(f"Unsupported objectref {obj} ({type(obj)})")

@@ -52,9 +52,7 @@ def main() -> None:
         os.makedirs(os.path.dirname(outfile), exist_ok=True)
 
         with open(infile, "rb") as f:
-            jsx = transformer.transform_string(
-                polyfill_fragments(f.read().decode("utf-8"))
-            ).encode("utf-8")
+            jsx = transformer.transform_string(polyfill_fragments(f.read().decode("utf-8"))).encode("utf-8")
 
         print(f"Writing {outfile}...")
         with open(outfile, "wb") as f:

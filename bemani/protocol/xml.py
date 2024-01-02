@@ -60,9 +60,7 @@ class XmlDecoder:
             # Get the data value
             type_int = Node.typename_to_type(data_type)
             if type_int is None:
-                raise XmlEncodingException(
-                    f'Invalid node type {data_type} for node {tag.decode("ascii")}'
-                )
+                raise XmlEncodingException(f'Invalid node type {data_type} for node {tag.decode("ascii")}')
 
             node = Node(name=tag.decode("ascii"), type=type_int, array=array)
 
@@ -87,9 +85,7 @@ class XmlDecoder:
         node = self.current.pop()
 
         if node.name != tag.decode("ascii"):
-            raise Exception(
-                f'Logic error, expected {tag.decode("ascii")} but got {node.name}'
-            )
+            raise Exception(f'Logic error, expected {tag.decode("ascii")} but got {node.name}')
 
         if len(self.current) == 0:
             self.root = node
@@ -154,22 +150,12 @@ class XmlDecoder:
                 value = "".join([c for c in value if not c.isspace()])
                 if self.current[-1].value is None:
                     self.current[-1].set_value(
-                        b"".join(
-                            [
-                                hex_to_bin(value[i : (i + 2)])
-                                for i in range(0, len(value), 2)
-                            ]
-                        )
+                        b"".join([hex_to_bin(value[i : (i + 2)]) for i in range(0, len(value), 2)])
                     )
                 else:
                     self.current[-1].set_value(
                         self.current[-1].value
-                        + b"".join(
-                            [
-                                hex_to_bin(value[i : (i + 2)])
-                                for i in range(0, len(value), 2)
-                            ]
-                        )
+                        + b"".join([hex_to_bin(value[i : (i + 2)]) for i in range(0, len(value), 2)])
                     )
             elif data_type == "ip4":
                 # Do nothing, already fine
@@ -183,23 +169,17 @@ class XmlDecoder:
                         return True
 
                 if array or composite:
-                    self.current[-1].set_value(
-                        [conv_bool(v) for v in self.__yield_values(value)]
-                    )
+                    self.current[-1].set_value([conv_bool(v) for v in self.__yield_values(value)])
                 else:
                     self.current[-1].set_value(conv_bool(value))
             elif data_type == "float":
                 if array or composite:
-                    self.current[-1].set_value(
-                        [float(v) for v in self.__yield_values(value)]
-                    )
+                    self.current[-1].set_value([float(v) for v in self.__yield_values(value)])
                 else:
                     self.current[-1].set_value(float(value))
             else:
                 if array or composite:
-                    self.current[-1].set_value(
-                        [int(v) for v in self.__yield_values(value)]
-                    )
+                    self.current[-1].set_value([int(v) for v in self.__yield_values(value)])
                 else:
                     self.current[-1].set_value(int(value))
 
@@ -465,9 +445,7 @@ class XmlEncoder:
                         vals = ""
                     else:
                         if node.data_type == "bool":
-                            vals = " ".join(
-                                [("1" if val else "0") for val in node.value]
-                            )
+                            vals = " ".join([("1" if val else "0") for val in node.value])
                         else:
                             vals = " ".join([str(val) for val in node.value])
                     binary = vals.encode("ascii")

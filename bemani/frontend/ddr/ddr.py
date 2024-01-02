@@ -66,16 +66,12 @@ class DDRFrontend(FrontendBase):
         newprofile.replace_int("early_late", 1 if display_early_late else 0)
         return newprofile
 
-    def update_background_combo(
-        self, profile: Profile, background_combo: bool
-    ) -> Profile:
+    def update_background_combo(self, profile: Profile, background_combo: bool) -> Profile:
         newprofile = copy.deepcopy(profile)
         newprofile.replace_int("combo", 1 if background_combo else 0)
         return newprofile
 
-    def update_settings(
-        self, profile: Profile, new_settings: Dict[str, Any]
-    ) -> Profile:
+    def update_settings(self, profile: Profile, new_settings: Dict[str, Any]) -> Profile:
         newprofile = copy.deepcopy(profile)
         if newprofile.version in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             newprofile.replace_int("arrowskin", new_settings["arrowskin"])
@@ -87,9 +83,7 @@ class DDRFrontend(FrontendBase):
             pass
         return newprofile
 
-    def format_profile(
-        self, profile: Profile, playstats: ValidatedDict
-    ) -> Dict[str, Any]:
+    def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
         if profile.version in (VersionConstants.DDR_ACE, VersionConstants.DDR_A20):
             formatted_profile.update(

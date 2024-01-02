@@ -28,9 +28,7 @@ class ARC:
         for fno in range(numfiles):
             start = 16 + (16 * fno)
             end = start + 16
-            (nameoffset, fileoffset, uncompressedsize, compressedsize) = struct.unpack(
-                "<IIII", data[start:end]
-            )
+            (nameoffset, fileoffset, uncompressedsize, compressedsize) = struct.unpack("<IIII", data[start:end])
             name = ""
 
             while data[nameoffset] != 0:
@@ -52,6 +50,4 @@ class ARC:
         else:
             # Compressed
             lz77 = Lz77()
-            return lz77.decompress(
-                self.__data[fileoffset : (fileoffset + compressedsize)]
-            )
+            return lz77.decompress(self.__data[fileoffset : (fileoffset + compressedsize)])

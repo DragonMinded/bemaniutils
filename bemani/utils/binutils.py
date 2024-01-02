@@ -6,9 +6,7 @@ from bemani.protocol.lz77 import Lz77
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility to convert binxml files to their XML representation."
-    )
+    parser = argparse.ArgumentParser(description="A utility to convert binxml files to their XML representation.")
     parser.add_argument(
         "-i",
         "--infile",

@@ -226,9 +226,7 @@ class Base(ABC):
             return Base(data, config, model)
         else:
             # Return the registered module providing this game
-            return cls.__registered_games[model.gamecode].create(
-                data, config, model, parentmodel=parentmodel
-            )
+            return cls.__registered_games[model.gamecode].create(data, config, model, parentmodel=parentmodel)
 
     @classmethod
     def register(cls, gamecode: str, handler: Type[Factory]) -> None:
@@ -244,9 +242,7 @@ class Base(ABC):
         cls.__registered_handlers.add(handler)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Config
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Config) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Run any out-of-band scheduled work that is applicable to this game.
         """
@@ -297,10 +293,7 @@ class Base(ABC):
         Returns:
             True if the profile exists, False if not.
         """
-        return (
-            self.data.local.user.get_profile(self.game, self.version, userid)
-            is not None
-        )
+        return self.data.local.user.get_profile(self.game, self.version, userid) is not None
 
     def get_profile(self, userid: UserID) -> Optional[Profile]:
         """
@@ -354,15 +347,11 @@ class Base(ABC):
             or an empty dictionary if nothing was found.
         """
         userids = list(set(userids))
-        profiles = self.data.remote.user.get_any_profiles(
-            self.game, self.version, userids
-        )
+        profiles = self.data.remote.user.get_any_profiles(self.game, self.version, userids)
         return [
             (
                 userid,
-                profile
-                if profile is not None
-                else Profile(self.game, self.version, "", 0),
+                profile if profile is not None else Profile(self.game, self.version, "", 0),
             )
             for (userid, profile) in profiles
         ]
@@ -379,9 +368,7 @@ class Base(ABC):
             raise Exception("Trying to save a remote profile locally!")
         self.data.local.user.put_profile(self.game, self.version, userid, profile)
 
-    def update_play_statistics(
-        self, userid: UserID, stats: Optional[PlayStatistics] = None
-    ) -> None:
+    def update_play_statistics(self, userid: UserID, stats: Optional[PlayStatistics] = None) -> None:
         """
         Given a user ID, calculate new play statistics.
 
@@ -397,9 +384,7 @@ class Base(ABC):
 
         # We store the play statistics in a series-wide settings blob so its available
         # across all game versions, since it isn't game-specific.
-        settings = self.data.local.game.get_settings(
-            self.game, userid
-        ) or ValidatedDict({})
+        settings = self.data.local.game.get_settings(self.game, userid) or ValidatedDict({})
 
         if stats is not None:
             for key in stats:
@@ -418,9 +403,7 @@ class Base(ABC):
                 settings[key] = stats[key]
 
         settings.replace_int("total_plays", settings.get_int("total_plays") + 1)
-        settings.replace_int(
-            "first_play_timestamp", settings.get_int("first_play_timestamp", Time.now())
-        )
+        settings.replace_int("first_play_timestamp", settings.get_int("first_play_timestamp", Time.now()))
         settings.replace_int("last_play_timestamp", Time.now())
 
         last_play_date = settings.get_int_array("last_play_date", 3)
@@ -445,9 +428,7 @@ class Base(ABC):
                 and last_play_date[2] == yesterday_play_date[2]
             ):
                 # We played yesterday, add one to consecutive days
-                settings.replace_int(
-                    "consecutive_days", settings.get_int("consecutive_days") + 1
-                )
+                settings.replace_int("consecutive_days", settings.get_int("consecutive_days") + 1)
             else:
                 # We haven't played yesterday, so we have only one consecutive day.
                 settings.replace_int("consecutive_days", 1)
@@ -490,13 +471,9 @@ class Base(ABC):
     def get_machine_region(self) -> int:
         arcade = self.get_arcade()
         if arcade is None:
-            return RegionConstants.db_to_game_region(
-                self.requires_extended_regions, self.config.server.region
-            )
+            return RegionConstants.db_to_game_region(self.requires_extended_regions, self.config.server.region)
         else:
-            return RegionConstants.db_to_game_region(
-                self.requires_extended_regions, arcade.region
-            )
+            return RegionConstants.db_to_game_region(self.requires_extended_regions, arcade.region)
 
     def get_game_config(self) -> ValidatedDict:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
@@ -504,9 +481,7 @@ class Base(ABC):
         # If this machine belongs to an arcade, use its settings. If the settings aren't present,
         # default to the game's defaults.
         if machine.arcade is not None:
-            settings = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.version, "game_config"
-            )
+            settings = self.data.local.machine.get_settings(machine.arcade, self.game, self.version, "game_config")
             if settings is None:
                 settings = ValidatedDict()
             return settings
@@ -582,11 +557,7 @@ class Base(ABC):
             total_days = settings.get_int("total_days", 1)
             consecutive_days = settings.get_int("consecutive_days", 1)
         else:
-            if (
-                last_play_date[0] != 0
-                and last_play_date[1] != 0
-                and last_play_date[2] != 0
-            ):
+            if last_play_date[0] != 0 and last_play_date[1] != 0 and last_play_date[2] != 0:
                 # We've played before but not today, so the total days is
                 # the stored count plus today.
                 total_days = settings.get_int("total_days") + 1

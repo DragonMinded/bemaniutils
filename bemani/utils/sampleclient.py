@@ -13,9 +13,7 @@ class APIClient:
         self.base_uri = base_uri
         self.token = token
 
-    def exchange_data(
-        self, request_uri: str, request_args: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def exchange_data(self, request_uri: str, request_args: Dict[str, Any]) -> Dict[str, Any]:
         if self.base_uri[-1:] != "/":
             uri = "{}/{}".format(self.base_uri, request_uri)
         else:
@@ -36,11 +34,7 @@ class APIClient:
         )
 
         if r.headers["content-type"] != "application/json; charset=utf-8":
-            raise Exception(
-                "API returned invalid content type '{}'!".format(
-                    r.headers["content-type"]
-                )
-            )
+            raise Exception("API returned invalid content type '{}'!".format(r.headers["content-type"]))
 
         jsondata = r.json()
 
@@ -59,27 +53,15 @@ class APIClient:
             raise Exception("The API token used is not authorized against the server!")
         if r.status_code == 404:
             raise Exception(
-                "The server does not support this game/version or request object and returned '{}'".format(
-                    error
-                )
+                "The server does not support this game/version or request object and returned '{}'".format(error)
             )
         if r.status_code == 405:
-            raise Exception(
-                "The server did not recognize the request and returned '{}'".format(
-                    error
-                )
-            )
+            raise Exception("The server did not recognize the request and returned '{}'".format(error))
         if r.status_code == 500:
-            raise Exception(
-                "The server had an error processing the request and returned '{}'".format(
-                    error
-                )
-            )
+            raise Exception("The server had an error processing the request and returned '{}'".format(error))
         if r.status_code == 501:
             raise Exception("The server does not support this version of the API!")
-        raise Exception(
-            "The server returned an invalid status code {}!".format(r.status_code)
-        )
+        raise Exception("The server returned an invalid status code {}!".format(r.status_code))
 
     def info_exchange(self) -> None:
         resp = self.exchange_data("", {})
@@ -124,9 +106,7 @@ class APIClient:
         )
         print(json.dumps(resp["records"], indent=4))
 
-    def profile_exchange(
-        self, game: str, version: str, idtype: str, ids: List[str]
-    ) -> None:
+    def profile_exchange(self, game: str, version: str, idtype: str, ids: List[str]) -> None:
         self.__id_check(idtype, ids)
         resp = self.exchange_data(
             "{}/{}/{}".format(self.API_VERSION, game, version),
@@ -138,9 +118,7 @@ class APIClient:
         )
         print(json.dumps(resp["profile"], indent=4))
 
-    def statistics_exchange(
-        self, game: str, version: str, idtype: str, ids: List[str]
-    ) -> None:
+    def statistics_exchange(self, game: str, version: str, idtype: str, ids: List[str]) -> None:
         self.__id_check(idtype, ids)
         resp = self.exchange_data(
             "{}/{}/{}".format(self.API_VERSION, game, version),
@@ -166,9 +144,7 @@ class APIClient:
 
 def main() -> None:
     # Global arguments
-    parser = argparse.ArgumentParser(
-        description="A sample API client for an e-AMUSEMENT API provider."
-    )
+    parser = argparse.ArgumentParser(description="A sample API client for an e-AMUSEMENT API provider.")
     parser.add_argument(
         "-t",
         "--token",

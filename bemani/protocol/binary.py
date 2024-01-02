@@ -278,36 +278,26 @@ class BinaryDecoder:
         """
         length = self.stream.read_int()
         if length is None:
-            raise BinaryEncodingException(
-                "Ran out of data when attempting to read node name length!"
-            )
+            raise BinaryEncodingException("Ran out of data when attempting to read node name length!")
 
         if not self.compressed:
             if length < 0x40:
-                raise BinaryEncodingException(
-                    "Node name length under decompressed minimum"
-                )
+                raise BinaryEncodingException("Node name length under decompressed minimum")
             elif length < 0x80:
                 length -= 0x3F
             else:
                 length_ex = self.stream.read_int()
                 if length_ex is None:
-                    raise BinaryEncodingException(
-                        "Ran out of data when attempting to read node name length!"
-                    )
+                    raise BinaryEncodingException("Ran out of data when attempting to read node name length!")
                 length = (length << 8) | length_ex
                 length -= 0x7FBF
 
             if length > BinaryEncoding.NAME_MAX_DECOMPRESSED:
-                raise BinaryEncodingException(
-                    "Node name length over decompressed limit"
-                )
+                raise BinaryEncodingException("Node name length over decompressed limit")
 
             name = self.stream.read_blob(length)
             if name is None:
-                raise BinaryEncodingException(
-                    "Ran out of data when attempting to read node name!"
-                )
+                raise BinaryEncodingException("Ran out of data when attempting to read node name!")
 
             return name.decode(self.encoding)
 
@@ -327,9 +317,7 @@ class BinaryDecoder:
         for _ in range(binary_length):
             next_byte = self.stream.read_int()
             if next_byte is None:
-                raise BinaryEncodingException(
-                    "Ran out of data when attempting to read node name!"
-                )
+                raise BinaryEncodingException("Ran out of data when attempting to read node name!")
             data = data + int_to_bin(next_byte)
         data_str = [data[i : (i + 6)] for i in range(0, len(data), 6)]
         data_int = [int(val, 2) for val in data_str]
@@ -352,9 +340,7 @@ class BinaryDecoder:
         while True:
             child_type = self.stream.read_int()
             if child_type is None:
-                raise BinaryEncodingException(
-                    "Ran out of data when attempting to read node type!"
-                )
+                raise BinaryEncodingException("Ran out of data when attempting to read node type!")
 
             if child_type == Node.END_OF_NODE:
                 return node
@@ -374,23 +360,17 @@ class BinaryDecoder:
             Node object
         """
         if self.executed:
-            raise BinaryEncodingException(
-                "Logic error, should only call this once per instance"
-            )
+            raise BinaryEncodingException("Logic error, should only call this once per instance")
         self.executed = True
 
         # Read the header first
         header_length = self.stream.read_int(4)
         if header_length is None:
-            raise BinaryEncodingException(
-                "Ran out of data when attempting to read header length!"
-            )
+            raise BinaryEncodingException("Ran out of data when attempting to read header length!")
 
         node_type = self.stream.read_int()
         if node_type is None:
-            raise BinaryEncodingException(
-                "Ran out of data when attempting to read root node type!"
-            )
+            raise BinaryEncodingException("Ran out of data when attempting to read root node type!")
         root = self.__read_node(node_type)
 
         eod = self.stream.read_int()
@@ -444,9 +424,7 @@ class BinaryDecoder:
                     elif alignment == 4:
                         loc = ordering.get_next_int()
                     if loc is None:
-                        raise BinaryEncodingException(
-                            "Ran out of data when attempting to read node data location!"
-                        )
+                        raise BinaryEncodingException("Ran out of data when attempting to read node data location!")
 
                     if size is None:
                         # The size should be read from the first 4 bytes
@@ -466,9 +444,7 @@ class BinaryDecoder:
                     if composite:
                         val_list = list(struct.unpack(decode_value, decode_data))
                         if value["type"] == "attribute":
-                            raise Exception(
-                                "Logic error, shouldn't have composite attribute type!"
-                            )
+                            raise Exception("Logic error, shouldn't have composite attribute type!")
                         node.set_value(val_list)
                         continue
 
@@ -491,9 +467,7 @@ class BinaryDecoder:
                     # Array value
                     loc = ordering.get_next_int()
                     if loc is None:
-                        raise BinaryEncodingException(
-                            "Ran out of data when attempting to read array length location!"
-                        )
+                        raise BinaryEncodingException("Ran out of data when attempting to read array length location!")
 
                     # The raw size in bytes
                     length = struct.unpack(">I", body[loc : (loc + 4)])[0]
@@ -550,9 +524,7 @@ class BinaryEncoder:
             length = len(encoded)
 
             if length > BinaryEncoding.NAME_MAX_DECOMPRESSED:
-                raise BinaryEncodingException(
-                    "Node name length over decompressed limit"
-                )
+                raise BinaryEncodingException("Node name length over decompressed limit")
 
             if length < 64:
                 self.stream.write_int(length + 0x3F)
@@ -598,9 +570,7 @@ class BinaryEncoder:
         Parameters:
             node - A Node which should be encoded.
         """
-        to_write = PackedOrdering.node_to_body_ordering(
-            node, include_children=False, include_void=True
-        )
+        to_write = PackedOrdering.node_to_body_ordering(node, include_children=False, include_void=True)
         for thing in to_write:
             # First, write the type of this node out
             if thing["type"] == "value":
@@ -699,9 +669,7 @@ class BinaryEncoder:
                     elif alignment == 4:
                         loc = ordering.get_next_int()
                     if loc is None:
-                        raise BinaryEncodingException(
-                            "Ran out of data when attempting to allocate node location!"
-                        )
+                        raise BinaryEncodingException("Ran out of data when attempting to allocate node location!")
 
                     if dtype == "str":
                         # Need to convert this to encoding from standard string.
@@ -718,9 +686,7 @@ class BinaryEncoder:
                                 f'Node \'{value["name"]}\' has un-encodable string value \'{val}\''
                             )
                         size = len(valbytes)
-                        self.__add_data(
-                            struct.pack(">I", size) + valbytes, size + 4, loc
-                        )
+                        self.__add_data(struct.pack(">I", size) + valbytes, size + 4, loc)
                         ordering.mark_used(size + 4, loc, round_to=4)
 
                         # We took care of this one
@@ -736,9 +702,7 @@ class BinaryEncoder:
                     elif composite:
                         # Array, but not, somewhat silly
                         if size is None:
-                            raise Exception(
-                                "Logic error, node size not set yet this is not an attribute!"
-                            )
+                            raise Exception("Logic error, node size not set yet this is not an attribute!")
 
                         encode_value = f">{enc}"
                         self.__add_data(struct.pack(encode_value, *val), size, loc)
@@ -751,9 +715,7 @@ class BinaryEncoder:
 
                     # The size is built-in, emit it
                     if size is None:
-                        raise Exception(
-                            "Logic error, node size not set yet this is not an attribute!"
-                        )
+                        raise Exception("Logic error, node size not set yet this is not an attribute!")
 
                     encode_value = f">{enc}"
                     self.__add_data(struct.pack(encode_value, val), size, loc)
@@ -762,13 +724,9 @@ class BinaryEncoder:
                     # Array value
                     loc = ordering.get_next_int()
                     if loc is None:
-                        raise BinaryEncodingException(
-                            "Ran out of data when attempting allocate array location!"
-                        )
+                        raise BinaryEncodingException("Ran out of data when attempting allocate array location!")
                     if size is None:
-                        raise Exception(
-                            "Logic error, node size not set yet this is not an attribute!"
-                        )
+                        raise Exception("Logic error, node size not set yet this is not an attribute!")
 
                     # The raw size in bytes
                     elems = len(val)
@@ -859,9 +817,7 @@ class BinaryEncoding:
             if we couldn't decode the object for some reason.
         """
         try:
-            data_magic, contents, encoding_raw, encoding_swapped = struct.unpack(
-                ">BBBB", data[0:4]
-            )
+            data_magic, contents, encoding_raw, encoding_swapped = struct.unpack(">BBBB", data[0:4])
         except struct.error:
             # Couldn't even parse magic
             return None
@@ -886,9 +842,7 @@ class BinaryEncoding:
         if encoding is not None:
             self.encoding = encoding
             try:
-                decoder = BinaryDecoder(
-                    data[4:], self.__sanitize_encoding(encoding), self.compressed
-                )
+                decoder = BinaryDecoder(data[4:], self.__sanitize_encoding(encoding), self.compressed)
                 return decoder.get_tree()
             except BinaryEncodingException:
                 if skip_on_exceptions:
@@ -898,9 +852,7 @@ class BinaryEncoding:
         else:
             return None
 
-    def encode(
-        self, tree: Node, encoding: Optional[str] = None, compressed: bool = True
-    ) -> bytes:
+    def encode(self, tree: Node, encoding: Optional[str] = None, compressed: bool = True) -> bytes:
         """
         Given a tree of Node objects, encode the data with the current encoding.
 
@@ -932,9 +884,7 @@ class BinaryEncoding:
             struct.pack(
                 ">BBBB",
                 BinaryEncoding.MAGIC,
-                BinaryEncoding.COMPRESSED_WITH_DATA
-                if compressed
-                else BinaryEncoding.DECOMPRESSED_WITH_DATA,
+                BinaryEncoding.COMPRESSED_WITH_DATA if compressed else BinaryEncoding.DECOMPRESSED_WITH_DATA,
                 encoding_magic,
                 (~encoding_magic & 0xFF),
             )

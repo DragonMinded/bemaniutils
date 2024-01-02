@@ -90,9 +90,7 @@ class IIDXCopulaClient(BaseClient):
                 raise Exception(f"Invalid node data {child} in clear rate response!")
             for v in child.value:
                 if v < 0 or v > 101:
-                    raise Exception(
-                        f"Invalid clear percent {child} in clear rate response!"
-                    )
+                    raise Exception(f"Invalid clear percent {child} in clear rate response!")
 
     def verify_iidx23shop_getconvention(self, lid: str) -> None:
         call = self.call_node()
@@ -171,9 +169,7 @@ class IIDXCopulaClient(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/IIDX23shop")
 
-    def verify_iidx23pc_get(
-        self, ref_id: str, card_id: str, lid: str
-    ) -> Dict[str, Any]:
+    def verify_iidx23pc_get(self, ref_id: str, card_id: str, lid: str) -> Dict[str, Any]:
         call = self.call_node()
 
         # Construct node
@@ -269,9 +265,7 @@ class IIDXCopulaClient(BaseClient):
             "expert_point": expert_point,
         }
 
-    def verify_iidx23music_getrank(
-        self, extid: int
-    ) -> Dict[int, Dict[int, Dict[str, int]]]:
+    def verify_iidx23music_getrank(self, extid: int) -> Dict[int, Dict[int, Dict[str, int]]]:
         scores: Dict[int, Dict[int, Dict[str, int]]] = {}
         for cltype in [0, 1]:  # singles, doubles
             call = self.call_node()
@@ -293,9 +287,7 @@ class IIDXCopulaClient(BaseClient):
             for child in resp.child("IIDX23music").children:
                 if child.name == "m":
                     if child.value[0] != -1:
-                        raise Exception(
-                            "Got non-self score back when requesting only our scores!"
-                        )
+                        raise Exception("Got non-self score back when requesting only our scores!")
 
                     music_id = child.value[1]
                     normal_clear_status = child.value[2]
@@ -434,9 +426,7 @@ class IIDXCopulaClient(BaseClient):
         resp = self.exchange("", call)
         self.assert_path(resp, "response/IIDX23pc")
 
-    def verify_iidx23music_reg(
-        self, extid: int, lid: str, score: Dict[str, Any]
-    ) -> None:
+    def verify_iidx23music_reg(self, extid: int, lid: str, score: Dict[str, Any]) -> None:
         call = self.call_node()
 
         # Construct node
@@ -464,9 +454,7 @@ class IIDXCopulaClient(BaseClient):
         self.assert_path(resp, "response/IIDX23music/shopdata/@rank")
         self.assert_path(resp, "response/IIDX23music/ranklist/data")
 
-    def verify_iidx23music_appoint(
-        self, extid: int, musicid: int, chart: int
-    ) -> Tuple[int, bytes]:
+    def verify_iidx23music_appoint(self, extid: int, musicid: int, chart: int) -> Tuple[int, bytes]:
         call = self.call_node()
 
         # Construct node
@@ -586,9 +574,7 @@ class IIDXCopulaClient(BaseClient):
         # Verify nodes that cause crashes if they don't exist
         self.assert_path(resp, "response/IIDX23music")
 
-    def verify_iidx23grade_raised(
-        self, iidxid: int, shop_name: str, dantype: str
-    ) -> None:
+    def verify_iidx23grade_raised(self, iidxid: int, shop_name: str, dantype: str) -> None:
         call = self.call_node()
 
         # Construct node
@@ -612,9 +598,7 @@ class IIDXCopulaClient(BaseClient):
         # Verify nodes that cause crashes if they don't exist
         self.assert_path(resp, "response/IIDX23grade/@pnum")
 
-    def verify_iidx23ranking_entry(
-        self, iidxid: int, shop_name: str, coursetype: str
-    ) -> None:
+    def verify_iidx23ranking_entry(self, iidxid: int, shop_name: str, coursetype: str) -> None:
         call = self.call_node()
 
         # Construct node
@@ -682,32 +666,22 @@ class IIDXCopulaClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_iidx23pc_reg(ref_id, card, lid)
             self.verify_iidx23pc_get(ref_id, card, lid)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         if cardid is None:
@@ -802,9 +776,7 @@ class IIDXCopulaClient(BaseClient):
                 for score in dummyscores:
                     data = scores.get(score["id"], {}).get(score["chart"], None)
                     if data is None:
-                        raise Exception(
-                            f'Expected to get score back for song {score["id"]} chart {score["chart"]}!'
-                        )
+                        raise Exception(f'Expected to get score back for song {score["id"]} chart {score["chart"]}!')
 
                     if "expected_ex_score" in score:
                         expected_score = score["expected_ex_score"]
@@ -833,9 +805,7 @@ class IIDXCopulaClient(BaseClient):
                         )
 
                     # Verify we can fetch our own ghost
-                    ex_score, ghost = self.verify_iidx23music_appoint(
-                        profile["extid"], score["id"], score["chart"]
-                    )
+                    ex_score, ghost = self.verify_iidx23music_appoint(profile["extid"], score["id"], score["chart"])
                     if ex_score != expected_score:
                         raise Exception(
                             f'Expected a score of \'{expected_score}\' for song \'{score["id"]}\' chart \'{score["chart"]}\' but got score \'{data["ex_score"]}\''
@@ -940,9 +910,7 @@ class IIDXCopulaClient(BaseClient):
             )
             scores = self.verify_iidx23music_getrank(profile["extid"])
             if 1000 not in scores:
-                raise Exception(
-                    f"Didn't get expected scores back for song {1000} beginner chart!"
-                )
+                raise Exception(f"Didn't get expected scores back for song {1000} beginner chart!")
             if 6 not in scores[1000]:
                 raise Exception(f"Didn't get beginner score back for song {1000}!")
             if scores[1000][6] != {"clear_status": 4, "ex_score": -1, "miss_count": -1}:
@@ -962,12 +930,8 @@ class IIDXCopulaClient(BaseClient):
             self.verify_iidx23ranking_entry(profile["extid"], newname, "secret")
             profile = self.verify_iidx23pc_get(ref_id, card, lid)
             for ptype in ["ir_data", "secret_course_data"]:
-                if profile[ptype] != {
-                    2: {1: {"clear_status": 4, "pgnum": 1771, "gnum": 967}}
-                }:
-                    raise Exception(
-                        f"Invalid data {profile[ptype]} returned on profile load for {ptype}!"
-                    )
+                if profile[ptype] != {2: {1: {"clear_status": 4, "pgnum": 1771, "gnum": 967}}}:
+                    raise Exception(f"Invalid data {profile[ptype]} returned on profile load for {ptype}!")
         else:
             print("Skipping score checks for existing card")
 

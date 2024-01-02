@@ -136,9 +136,7 @@ class PopnMusicPeaceClient(BaseClient):
         self.assert_path(resp, "response/player24/stamp/stamp_id")
         self.assert_path(resp, "response/player24/stamp/cnt")
 
-    def verify_player24_read(
-        self, ref_id: str, msg_type: str
-    ) -> Dict[str, Dict[int, Dict[str, int]]]:
+    def verify_player24_read(self, ref_id: str, msg_type: str) -> Dict[str, Dict[int, Dict[str, int]]]:
         call = self.call_node()
 
         # Construct node
@@ -157,9 +155,7 @@ class PopnMusicPeaceClient(BaseClient):
             self.assert_path(resp, "response/player24/result")
             status = resp.child_value("player24/result")
             if status != 2:
-                raise Exception(
-                    f"Reference ID '{ref_id}' returned invalid status '{status}'"
-                )
+                raise Exception(f"Reference ID '{ref_id}' returned invalid status '{status}'")
 
             return {
                 "items": {},
@@ -173,9 +169,7 @@ class PopnMusicPeaceClient(BaseClient):
             self.assert_path(resp, "response/player24/result")
             status = resp.child_value("player24/result")
             if status != 0:
-                raise Exception(
-                    f"Reference ID '{ref_id}' returned invalid status '{status}'"
-                )
+                raise Exception(f"Reference ID '{ref_id}' returned invalid status '{status}'")
             name = resp.child_value("player24/account/name")
             if name != self.NAME:
                 raise Exception(f"Invalid name '{name}' returned for Ref ID '{ref_id}'")
@@ -207,16 +201,12 @@ class PopnMusicPeaceClient(BaseClient):
                 "items": items,
                 "characters": charas,
                 "courses": courses,
-                "points": {
-                    0: {"points": resp.child_value("player24/account/player_point")}
-                },
+                "points": {0: {"points": resp.child_value("player24/account/player_point")}},
             }
         else:
             raise Exception(f"Unrecognized message type '{msg_type}'")
 
-    def verify_player24_read_score(
-        self, ref_id: str
-    ) -> Dict[str, Dict[int, Dict[int, int]]]:
+    def verify_player24_read_score(self, ref_id: str) -> Dict[str, Dict[int, Dict[int, int]]]:
         call = self.call_node()
 
         # Construct node
@@ -468,32 +458,22 @@ class PopnMusicPeaceClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_player24_read(ref_id, msg_type="new")
             self.verify_player24_new(ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify proper handling of basic stuff
@@ -531,9 +511,7 @@ class PopnMusicPeaceClient(BaseClient):
             if 5 not in unlocks["characters"]:
                 raise Exception("Expecting to see chara ID 5 in characters!")
             if unlocks["characters"][5]["friendship"] != 420:
-                raise Exception(
-                    "Expecting to see chara ID 5 to have type 2 in characters!"
-                )
+                raise Exception("Expecting to see chara ID 5 to have type 2 in characters!")
 
             # Verify purchases work
             self.verify_player24_buy(
@@ -548,9 +526,7 @@ class PopnMusicPeaceClient(BaseClient):
             if unlocks["items"][6]["param"] != 8:
                 raise Exception("Expecting to see item ID 6 to have param 8 in items!")
             if unlocks["points"][0]["points"] != 150:
-                raise Exception(
-                    f'Got wrong value for points {unlocks["points"][0]["points"]} after purchase!'
-                )
+                raise Exception(f'Got wrong value for points {unlocks["points"][0]["points"]} after purchase!')
 
             # Verify course handling
             self.verify_player24_update_ranking(ref_id, location)
@@ -558,25 +534,15 @@ class PopnMusicPeaceClient(BaseClient):
             if 12345 not in unlocks["courses"]:
                 raise Exception("Expecting to see course ID 12345 in courses!")
             if unlocks["courses"][12345]["clear_type"] != 7:
-                raise Exception(
-                    "Expecting to see item ID 12345 to have clear_type 7 in courses!"
-                )
+                raise Exception("Expecting to see item ID 12345 to have clear_type 7 in courses!")
             if unlocks["courses"][12345]["clear_rank"] != 5:
-                raise Exception(
-                    "Expecting to see item ID 12345 to have clear_rank 5 in courses!"
-                )
+                raise Exception("Expecting to see item ID 12345 to have clear_rank 5 in courses!")
             if unlocks["courses"][12345]["total_score"] != 86000:
-                raise Exception(
-                    "Expecting to see item ID 12345 to have total_score 86000 in courses!"
-                )
+                raise Exception("Expecting to see item ID 12345 to have total_score 86000 in courses!")
             if unlocks["courses"][12345]["count"] != 1:
-                raise Exception(
-                    "Expecting to see item ID 12345 to have count 1 in courses!"
-                )
+                raise Exception("Expecting to see item ID 12345 to have count 1 in courses!")
             if unlocks["courses"][12345]["sheet_num"] != 2:
-                raise Exception(
-                    "Expecting to see item ID 12345 to have sheet_num 2 in courses!"
-                )
+                raise Exception("Expecting to see item ID 12345 to have sheet_num 2 in courses!")
 
             # Verify score handling
             scores = self.verify_player24_read_score(ref_id)

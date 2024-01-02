@@ -165,9 +165,7 @@ class DDRX3(
             flag.set_attribute("s1", "0")
             flag.set_attribute("t", "0")
 
-        hit_chart = self.data.local.music.get_hit_chart(
-            self.game, self.music_version, self.GAME_MAX_SONGS
-        )
+        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS)
         counts_by_reflink = [0] * self.GAME_MAX_SONGS
         for reflink, plays in hit_chart:
             if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
@@ -188,14 +186,10 @@ class DDRX3(
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
 
         if userid is not None:
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, userid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
             old_scores = [
                 score
-                for score in self.data.local.user.get_achievements(
-                    self.game, self.music_version, userid
-                )
+                for score in self.data.local.user.get_achievements(self.game, self.music_version, userid)
                 if score.type == "2ndmix"
             ]
         else:
@@ -236,12 +230,8 @@ class DDRX3(
 
                 if "score" in scoredict:
                     # We played the normal version of this song
-                    gamerank = self.db_to_game_rank(
-                        scoredict["score"].data.get_int("rank")
-                    )
-                    combo_type = self.db_to_game_halo(
-                        scoredict["score"].data.get_int("halo")
-                    )
+                    gamerank = self.db_to_game_rank(scoredict["score"].data.get_int("rank"))
+                    combo_type = self.db_to_game_halo(scoredict["score"].data.get_int("halo"))
                     points = scoredict["score"].points  # type: ignore
                     plays = scoredict["score"].plays  # type: ignore
                 else:
@@ -366,14 +356,10 @@ class DDRX3(
         root.add_child(Node.string("seq", ""))
         root.add_child(Node.u32("code", profile.extid))
         root.add_child(Node.string("name", profile.get_str("name")))
-        root.add_child(
-            Node.u8("area", profile.get_int("area", self.get_machine_region()))
-        )
+        root.add_child(Node.u8("area", profile.get_int("area", self.get_machine_region())))
         root.add_child(Node.u32("cnt_s", play_stats.get_int("single_plays")))
         root.add_child(Node.u32("cnt_d", play_stats.get_int("double_plays")))
-        root.add_child(
-            Node.u32("cnt_b", play_stats.get_int("battle_plays"))
-        )  # This could be wrong, its a guess
+        root.add_child(Node.u32("cnt_b", play_stats.get_int("battle_plays")))  # This could be wrong, its a guess
         root.add_child(Node.u32("cnt_m0", play_stats.get_int("cnt_m0")))
         root.add_child(Node.u32("cnt_m1", play_stats.get_int("cnt_m1")))
         root.add_child(Node.u32("cnt_m2", play_stats.get_int("cnt_m2")))
@@ -391,11 +377,7 @@ class DDRX3(
         chara = Node.void("chara")
         root.add_child(chara)
         chara.set_attribute("my", str(profile.get_int("chara", 30)))
-        root.add_child(
-            Node.u16_array(
-                "chara_opt", profile.get_int_array("chara_opt", 96, [208] * 96)
-            )
-        )
+        root.add_child(Node.u16_array("chara_opt", profile.get_int_array("chara_opt", 96, [208] * 96)))
 
         # Drill rankings
         if "title_gr" in profile:
@@ -443,9 +425,7 @@ class DDRX3(
         last.set_attribute("rival1", str(lastdict.get_int("rival1", -1)))
         last.set_attribute("rival2", str(lastdict.get_int("rival2", -1)))
         last.set_attribute("rival3", str(lastdict.get_int("rival3", -1)))
-        last.set_attribute(
-            "fri", str(lastdict.get_int("rival1", -1))
-        )  # This literally goes to the same memory in X3
+        last.set_attribute("fri", str(lastdict.get_int("rival1", -1)))  # This literally goes to the same memory in X3
         last.set_attribute("style", str(lastdict.get_int("style")))
         last.set_attribute("mode", str(lastdict.get_int("mode")))
         last.set_attribute("cate", str(lastdict.get_int("cate")))
@@ -489,9 +469,7 @@ class DDRX3(
         root.add_child(Node.s16_array("opt_ex", profile.get_int_array("opt_ex", 16)))
 
         # Unlock flags
-        root.add_child(
-            Node.u8_array("flag", profile.get_int_array("flag", 256, [1] * 256))
-        )
+        root.add_child(Node.u8_array("flag", profile.get_int_array("flag", 256, [1] * 256)))
 
         # Ranking display?
         root.add_child(Node.u16_array("rank", profile.get_int_array("rank", 100)))
@@ -513,9 +491,7 @@ class DDRX3(
                 friendnode.set_attribute("up", "0")
                 friendnode.add_child(Node.u32("code", friend.extid))
                 friendnode.add_child(Node.string("name", friend.get_str("name")))
-                friendnode.add_child(
-                    Node.u8("area", friend.get_int("area", self.get_machine_region()))
-                )
+                friendnode.add_child(Node.u8("area", friend.get_int("area", self.get_machine_region())))
                 friendnode.add_child(Node.u32("exp", play_stats.get_int("exp")))
                 friendnode.add_child(Node.u32("star", friend.get_int("star")))
 
@@ -566,9 +542,7 @@ class DDRX3(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -773,9 +747,7 @@ class DDRX3(
                     newfriends[pos] = None
                 else:
                     # Try looking up the userid
-                    newfriends[pos] = self.data.remote.user.from_extid(
-                        self.game, self.version, code
-                    )
+                    newfriends[pos] = self.data.remote.user.from_extid(self.game, self.version, code)
 
         # Diff the set of links to determine updates
         for i in range(10):

@@ -4,9 +4,7 @@ from bemani.format import IIDXMusicDB
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility to patch a IIDX music database."
-    )
+    parser = argparse.ArgumentParser(description="A utility to patch a IIDX music database.")
     parser.add_argument(
         "infile",
         help="Music DB to work with.",
@@ -32,9 +30,7 @@ def main() -> None:
     if args.hide_leggendarias:
         for song in db.songs:
             if song.title[-1:] == "†" or (
-                song.difficulties[0] == 0
-                and song.difficulties[1] == 0
-                and song.difficulties[2] == 12
+                song.difficulties[0] == 0 and song.difficulties[1] == 0 and song.difficulties[2] == 12
             ):
                 print(f"Patching '{song.title}' to only appear in leggendaria folder!")
                 song.folder = 0x5C

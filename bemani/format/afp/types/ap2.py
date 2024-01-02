@@ -715,9 +715,7 @@ class AP2Action:
 
 
 class DefineFunction2Action(AP2Action):
-    def __init__(
-        self, offset: int, name: Optional[str], flags: int, body: "ByteCode"
-    ) -> None:
+    def __init__(self, offset: int, name: Optional[str], flags: int, body: "ByteCode") -> None:
         super().__init__(offset, AP2Action.DEFINE_FUNCTION2)
         self.name = name
         self.flags = flags
@@ -792,9 +790,7 @@ class InitRegisterAction(AP2Action):
 
 
 class StoreRegisterAction(AP2Action):
-    def __init__(
-        self, offset: int, registers: List[Register], preserve_stack: bool
-    ) -> None:
+    def __init__(self, offset: int, registers: List[Register], preserve_stack: bool) -> None:
         super().__init__(offset, AP2Action.STORE_REGISTER)
         self.registers = registers
         self.preserve_stack = preserve_stack

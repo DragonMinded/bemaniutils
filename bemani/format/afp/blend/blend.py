@@ -36,15 +36,9 @@ def blend_normal(
     srcremainder = 1.0 - srcpercent
     new_alpha = max(min(0.0, srcpercent + destpercent * srcremainder), 1.0)
     return (
-        clamp(
-            ((dest[0] * destpercent * srcremainder) + (src[0] * srcpercent)) / new_alpha
-        ),
-        clamp(
-            ((dest[1] * destpercent * srcremainder) + (src[1] * srcpercent)) / new_alpha
-        ),
-        clamp(
-            ((dest[2] * destpercent * srcremainder) + (src[2] * srcpercent)) / new_alpha
-        ),
+        clamp(((dest[0] * destpercent * srcremainder) + (src[0] * srcpercent)) / new_alpha),
+        clamp(((dest[1] * destpercent * srcremainder) + (src[1] * srcpercent)) / new_alpha),
+        clamp(((dest[2] * destpercent * srcremainder) + (src[2] * srcpercent)) / new_alpha),
         clamp(255 * new_alpha),
     )
 
@@ -120,18 +114,9 @@ def blend_multiply(
     src_alpha = src[3] / 255.0
     src_remainder = 1.0 - src_alpha
     return (
-        clamp(
-            (255 * ((dest[0] / 255.0) * (src[0] / 255.0) * src_alpha))
-            + (dest[0] * src_remainder)
-        ),
-        clamp(
-            (255 * ((dest[1] / 255.0) * (src[1] / 255.0) * src_alpha))
-            + (dest[1] * src_remainder)
-        ),
-        clamp(
-            (255 * ((dest[2] / 255.0) * (src[2] / 255.0) * src_alpha))
-            + (dest[2] * src_remainder)
-        ),
+        clamp((255 * ((dest[0] / 255.0) * (src[0] / 255.0) * src_alpha)) + (dest[0] * src_remainder)),
+        clamp((255 * ((dest[1] / 255.0) * (src[1] / 255.0) * src_alpha)) + (dest[1] * src_remainder)),
+        clamp((255 * ((dest[2] / 255.0) * (src[2] / 255.0) * src_alpha)) + (dest[2] * src_remainder)),
         dest[3],
     )
 
@@ -205,9 +190,7 @@ def blend_point(
     # convert and shift. Also I'm not sure if this should be done before or
     # after the add and multiply.
     if not hsl_shift.is_identity:
-        hslcolor = Color(
-            src_color[0] / 255, src_color[1] / 255, src_color[2] / 255, 1.0
-        ).as_hsl()
+        hslcolor = Color(src_color[0] / 255, src_color[1] / 255, src_color[2] / 255, 1.0).as_hsl()
         hslcolor = hslcolor.add(hsl_shift)
         newcolor = hslcolor.as_rgb()
 
@@ -312,12 +295,7 @@ def pixel_renderer(
             aaloc = callback(Point(imgx + 0.5, imgy + 0.5))
             if aaloc is not None:
                 aax, aay, _ = aaloc.as_tuple()
-                if not (
-                    aax <= 0
-                    or aay <= 0
-                    or aax >= (texwidth - 1)
-                    or aay >= (texheight - 1)
-                ):
+                if not (aax <= 0 or aay <= 0 or aax >= (texwidth - 1) or aay >= (texheight - 1)):
                     bilinear = True
 
         # Now perform the desired AA operation.
@@ -351,9 +329,7 @@ def pixel_renderer(
                 average = [255, 255, 255, 0]
             else:
                 # Interpolate in the X direction on both Y axis.
-                y0r = (texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (
-                    texbytes[tex10] * tex10percent * aaxrem
-                )
+                y0r = (texbytes[tex00] * tex00percent * (1.0 - aaxrem)) + (texbytes[tex10] * tex10percent * aaxrem)
                 y0g = (texbytes[tex00 + 1] * tex00percent * (1.0 - aaxrem)) + (
                     texbytes[tex10 + 1] * tex10percent * aaxrem
                 )
@@ -361,9 +337,7 @@ def pixel_renderer(
                     texbytes[tex10 + 2] * tex10percent * aaxrem
                 )
 
-                y1r = (texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (
-                    texbytes[tex11] * tex11percent * aaxrem
-                )
+                y1r = (texbytes[tex01] * tex01percent * (1.0 - aaxrem)) + (texbytes[tex11] * tex11percent * aaxrem)
                 y1g = (texbytes[tex01 + 1] * tex01percent * (1.0 - aaxrem)) + (
                     texbytes[tex11 + 1] * tex11percent * aaxrem
                 )
@@ -383,12 +357,7 @@ def pixel_renderer(
                 for addx in xpoints:
                     xloc = imgx + addx
                     yloc = imgy + addy
-                    if (
-                        xloc < 0.0
-                        or yloc < 0.0
-                        or xloc >= imgwidth
-                        or yloc >= imgheight
-                    ):
+                    if xloc < 0.0 or yloc < 0.0 or xloc >= imgwidth or yloc >= imgheight:
                         continue
 
                     texloc = callback(Point(xloc, yloc))
@@ -496,9 +465,7 @@ def affine_line_renderer(
         if imgy is None:
             return
 
-        rowbytes = bytearray(
-            imgbytes[(imgy * imgwidth * 4) : ((imgy + 1) * imgwidth * 4)]
-        )
+        rowbytes = bytearray(imgbytes[(imgy * imgwidth * 4) : ((imgy + 1) * imgwidth * 4)])
         for imgx in range(imgwidth):
             if imgx < minx or imgx >= maxx:
                 # No need to even consider this pixel.
@@ -726,9 +693,7 @@ def perspective_line_renderer(
         if imgy is None:
             return
 
-        rowbytes = bytearray(
-            imgbytes[(imgy * imgwidth * 4) : ((imgy + 1) * imgwidth * 4)]
-        )
+        rowbytes = bytearray(imgbytes[(imgy * imgwidth * 4) : ((imgy + 1) * imgwidth * 4)])
         for imgx in range(imgwidth):
             if imgx < minx or imgx >= maxx:
                 # No need to even consider this pixel.

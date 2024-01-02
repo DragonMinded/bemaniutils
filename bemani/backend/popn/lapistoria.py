@@ -289,9 +289,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         if userid is None:
             return root
 
-        oldprofile = self.get_profile(userid) or Profile(
-            self.game, self.version, refid, 0
-        )
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
         newprofile = self.unformat_profile(userid, request, oldprofile)
 
         if newprofile is not None:
@@ -334,12 +332,8 @@ class PopnMusicLapistoria(PopnMusicBase):
             return root
         rivalid = links[no].other_userid
         rivalprofile = profiles[rivalid]
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, rivalid
-        )
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, rivalid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, rivalid)
+        achievements = self.data.local.user.get_achievements(self.game, self.version, rivalid)
 
         # First, output general profile info.
         friend = Node.void("friend")
@@ -474,9 +468,7 @@ class PopnMusicLapistoria(PopnMusicBase):
             self.GAME_PLAY_MEDAL_STAR_FULL_COMBO: self.PLAY_MEDAL_STAR_FULL_COMBO,
             self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
         }[medal]
-        self.update_score(
-            userid, songid, chart, points, medal, combo=combo, stats=stats
-        )
+        self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
         return root
 
     def handle_player22_write_course_request(self, request: Node) -> Node:
@@ -496,9 +488,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         if course_id is not None:
             machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
             pref = request.child_value("pref") or self.get_machine_region()
-            profile = self.get_profile(userid) or Profile(
-                self.game, self.version, refid, 0
-            )
+            profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
 
             course = self.data.local.user.get_achievement(
                 self.game,
@@ -569,12 +559,8 @@ class PopnMusicLapistoria(PopnMusicBase):
                 key=lambda entry: entry[1].data.get_int("total_score"),
                 reverse=True,
             )
-            pref_ranking = [
-                c for c in global_ranking if c[1].data.get_int("pref") == pref
-            ]
-            local_ranking = [
-                c for c in global_ranking if c[1].data.get_int("lid") == machine.arcade
-            ]
+            pref_ranking = [c for c in global_ranking if c[1].data.get_int("pref") == pref]
+            local_ranking = [c for c in global_ranking if c[1].data.get_int("lid") == machine.arcade]
 
             global_rank = len(global_ranking)
             pref_rank = len(pref_ranking)
@@ -630,9 +616,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         account.add_child(Node.s8("is_conv", 0))
         account.add_child(Node.s16("item_type", 0))
         account.add_child(Node.s16("item_id", 0))
-        account.add_child(
-            Node.s16_array("license_data", [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1])
-        )
+        account.add_child(Node.s16_array("license_data", [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]))
 
         # Statistics section and scores section
         statistics = self.get_play_statistics(userid)
@@ -657,18 +641,8 @@ class PopnMusicLapistoria(PopnMusicBase):
         account.add_child(Node.u8("active_fr_num", rivalcount))
 
         # Add scores section
-        last_played = [
-            x[0]
-            for x in self.data.local.music.get_last_played(
-                self.game, self.music_version, userid, 5
-            )
-        ]
-        most_played = [
-            x[0]
-            for x in self.data.local.music.get_most_played(
-                self.game, self.music_version, userid, 10
-            )
-        ]
+        last_played = [x[0] for x in self.data.local.music.get_last_played(self.game, self.music_version, userid, 5)]
+        most_played = [x[0] for x in self.data.local.music.get_most_played(self.game, self.music_version, userid, 10)]
         while len(last_played) < 5:
             last_played.append(-1)
         while len(most_played) < 10:
@@ -677,9 +651,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         account.add_child(Node.s16_array("my_best", most_played))
         account.add_child(Node.s16_array("latest_music", last_played))
 
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             # Skip any scores for chart types we don't support
             if score.chart not in [
@@ -754,9 +726,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         config.add_child(Node.u8("sheet", profile.get_int("sheet", 0)))
         config.add_child(Node.s8("category", profile.get_int("category", 1)))
         config.add_child(Node.s8("sub_category", profile.get_int("sub_category", -1)))
-        config.add_child(
-            Node.s8("chara_category", profile.get_int("chara_category", -1))
-        )
+        config.add_child(Node.s8("chara_category", profile.get_int("chara_category", -1)))
         config.add_child(Node.s16("story_id", profile.get_int("story_id", -1)))
         config.add_child(Node.s16("course_id", profile.get_int("course_id", -1)))
         config.add_child(Node.s8("course_folder", profile.get_int("course_folder", -1)))
@@ -774,26 +744,16 @@ class PopnMusicLapistoria(PopnMusicBase):
         option.add_child(Node.s16("hispeed", option_dict.get_int("hispeed", 10)))
         option.add_child(Node.u8("popkun", option_dict.get_int("popkun", 0)))
         option.add_child(Node.bool("hidden", option_dict.get_bool("hidden", False)))
-        option.add_child(
-            Node.s16("hidden_rate", option_dict.get_int("hidden_rate", -1))
-        )
+        option.add_child(Node.s16("hidden_rate", option_dict.get_int("hidden_rate", -1)))
         option.add_child(Node.bool("sudden", option_dict.get_bool("sudden", False)))
-        option.add_child(
-            Node.s16("sudden_rate", option_dict.get_int("sudden_rate", -1))
-        )
+        option.add_child(Node.s16("sudden_rate", option_dict.get_int("sudden_rate", -1)))
         option.add_child(Node.s8("randmir", option_dict.get_int("randmir", 0)))
         option.add_child(Node.s8("gauge_type", option_dict.get_int("gauge_type", 0)))
         option.add_child(Node.u8("ojama_0", option_dict.get_int("ojama_0", 0)))
         option.add_child(Node.u8("ojama_1", option_dict.get_int("ojama_1", 0)))
-        option.add_child(
-            Node.bool("forever_0", option_dict.get_bool("forever_0", False))
-        )
-        option.add_child(
-            Node.bool("forever_1", option_dict.get_bool("forever_1", False))
-        )
-        option.add_child(
-            Node.bool("full_setting", option_dict.get_bool("full_setting", False))
-        )
+        option.add_child(Node.bool("forever_0", option_dict.get_bool("forever_0", False)))
+        option.add_child(Node.bool("forever_1", option_dict.get_bool("forever_1", False)))
+        option.add_child(Node.bool("full_setting", option_dict.get_bool("full_setting", False)))
 
         # Set up info
         info = Node.void("info")
@@ -824,12 +784,7 @@ class PopnMusicLapistoria(PopnMusicBase):
 
         game_config = self.get_game_config()
         if game_config.get_bool("force_unlock_songs"):
-            songs = {
-                song.id
-                for song in self.data.local.music.get_all_songs(
-                    self.game, self.music_version
-                )
-            }
+            songs = {song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)}
             for song in songs:
                 item = Node.void("item")
                 root.add_child(item)
@@ -839,9 +794,7 @@ class PopnMusicLapistoria(PopnMusicBase):
                 item.add_child(Node.bool("is_new", False))
 
         # Set up achievements
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for achievement in achievements:
             if achievement.type == "item":
                 itemtype = achievement.data.get_int("type")
@@ -919,9 +872,7 @@ class PopnMusicLapistoria(PopnMusicBase):
                 course.add_child(Node.s32("stage3_score", stage3_score))
                 course.add_child(Node.s32("stage4_score", stage4_score))
                 course.add_child(Node.s32("total_score", total_score))
-                course.add_child(
-                    Node.s16("max_cmbo", max_combo)
-                )  # Yes, it is misspelled.
+                course.add_child(Node.s16("max_cmbo", max_combo))  # Yes, it is misspelled.
                 course.add_child(Node.s16("play_cnt", play_cnt))
                 course.add_child(Node.s16("all_rank", 1))  # Unclear what this does.
 
@@ -930,9 +881,7 @@ class PopnMusicLapistoria(PopnMusicBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         account = request.child("account")
@@ -953,16 +902,12 @@ class PopnMusicLapistoria(PopnMusicBase):
             newprofile.replace_int("sheet", config.child_value("sheet"))
             newprofile.replace_int("category", config.child_value("category"))
             newprofile.replace_int("sub_category", config.child_value("sub_category"))
-            newprofile.replace_int(
-                "chara_category", config.child_value("chara_category")
-            )
+            newprofile.replace_int("chara_category", config.child_value("chara_category"))
             newprofile.replace_int("story_id", config.child_value("story_id"))
             newprofile.replace_int("course_id", config.child_value("course_id"))
             newprofile.replace_int("course_folder", config.child_value("course_folder"))
             newprofile.replace_int("story_folder", config.child_value("story_folder"))
-            newprofile.replace_int(
-                "ms_banner_disp", config.child_value("ms_banner_disp")
-            )
+            newprofile.replace_int("ms_banner_disp", config.child_value("ms_banner_disp"))
             newprofile.replace_int("ms_down_info", config.child_value("ms_down_info"))
             newprofile.replace_int("ms_side_info", config.child_value("ms_side_info"))
             newprofile.replace_int("ms_raise_type", config.child_value("ms_raise_type"))
@@ -1088,9 +1033,7 @@ class PopnMusicLapistoria(PopnMusicBase):
         root.add_child(Node.s32("option", profile.get_int("option", 0)))
         root.add_child(Node.s8("result", 1))
 
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue

@@ -66,9 +66,7 @@ class PopnMusicTuneStreetClient(BaseClient):
             if name not in resp.child("game").attributes:
                 raise Exception(f"Missing attribute '{name}' in response!")
 
-    def verify_playerdata_get(
-        self, ref_id: str, msg_type: str
-    ) -> Optional[Dict[str, Any]]:
+    def verify_playerdata_get(self, ref_id: str, msg_type: str) -> Optional[Dict[str, Any]]:
         call = self.call_node()
 
         # Construct node
@@ -80,9 +78,7 @@ class PopnMusicTuneStreetClient(BaseClient):
         playerdata.set_attribute("ref_id", ref_id)
 
         if msg_type == "new":
-            playerdata.set_attribute(
-                "model", self.config["old_profile_model"].split(":")[0]
-            )
+            playerdata.set_attribute("model", self.config["old_profile_model"].split(":")[0])
 
         # Swap with server
         resp = self.exchange("pnm/playerdata", call)
@@ -93,9 +89,7 @@ class PopnMusicTuneStreetClient(BaseClient):
 
             status = int(resp.child("playerdata").attribute("status"))
             if status != 109:
-                raise Exception(
-                    f"Reference ID '{ref_id}' returned invalid status '{status}'"
-                )
+                raise Exception(f"Reference ID '{ref_id}' returned invalid status '{status}'")
 
             # No score data
             return None
@@ -105,20 +99,12 @@ class PopnMusicTuneStreetClient(BaseClient):
             self.assert_path(resp, "response/playerdata/hiscore")
             self.assert_path(resp, "response/playerdata/town")
 
-            name = (
-                resp.child("playerdata")
-                .child("b")
-                .value[0:12]
-                .decode("SHIFT_JIS")
-                .replace("\x00", "")
-            )
+            name = resp.child("playerdata").child("b").value[0:12].decode("SHIFT_JIS").replace("\x00", "")
             if name != self.NAME:
                 raise Exception(f"Invalid name '{name}' returned for Ref ID '{ref_id}'")
 
             medals = resp.child("playerdata").child("b").value[108:]
-            medals = [
-                (medals[x] + (medals[x + 1] << 8)) for x in range(0, len(medals), 2)
-            ]
+            medals = [(medals[x] + (medals[x + 1] << 8)) for x in range(0, len(medals), 2)]
 
             # Extract and return score data
             def transform_medals(medal: int) -> Tuple[int, int, int, int]:
@@ -273,32 +259,22 @@ class PopnMusicTuneStreetClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_playerdata_get(ref_id, msg_type="new")
             self.verify_playerdata_new(card, ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         if cardid is None:

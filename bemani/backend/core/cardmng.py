@@ -43,10 +43,7 @@ class CardManagerHandler(Base):
 
         refid = self.data.local.user.get_refid(self.game, self.version, userid)
         paseli_enabled = self.supports_paseli and self.config.paseli.enabled
-        newflag = (
-            self.data.remote.user.get_any_profile(self.game, self.version, userid)
-            is None
-        )
+        newflag = self.data.remote.user.get_any_profile(self.game, self.version, userid) is None
 
         root = Node.void("cardmng")
         root.set_attribute("refid", refid)
@@ -81,9 +78,7 @@ class CardManagerHandler(Base):
         else:
             valid = False
         root = Node.void("cardmng")
-        root.set_attribute(
-            "status", str(Status.SUCCESS if valid else Status.INVALID_PIN)
-        )
+        root.set_attribute("status", str(Status.SUCCESS if valid else Status.INVALID_PIN))
         return root
 
     def handle_cardmng_getrefid_request(self, request: Node) -> Node:

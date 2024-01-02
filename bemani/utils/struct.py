@@ -46,9 +46,7 @@ class StructPrinter:
                     if not in_dereference:
                         in_dereference = True
                         if cur_accum:
-                            raise Exception(
-                                "Cannot have dereference marker in middle of specifier!"
-                            )
+                            raise Exception("Cannot have dereference marker in middle of specifier!")
                     else:
                         # Double-indirect dereference.
                         cur_accum += c
@@ -84,19 +82,13 @@ class StructPrinter:
                 continue
 
             # If we have either an integer prefix, or an offset prefix, accumulate here.
-            if (
-                c.isdigit()
-                or c in "+-"
-                or (c in "xabcdefABCDEF" and ("+" in cur_accum or "-" in cur_accum))
-            ):
+            if c.isdigit() or c in "+-" or (c in "xabcdefABCDEF" and ("+" in cur_accum or "-" in cur_accum)):
                 cur_accum += c
                 continue
 
             if c == "&":
                 if cur_accum:
-                    raise Exception(
-                        "Hex specifier should be at beginning of specifier!"
-                    )
+                    raise Exception("Hex specifier should be at beginning of specifier!")
                 cur_accum += c
                 continue
 
@@ -115,16 +107,10 @@ class StructPrinter:
 
         return prefix, specs
 
-    def parse_struct(
-        self, startaddr: str, endaddr: str, countstr: str, fmt: str
-    ) -> List[Any]:
+    def parse_struct(self, startaddr: str, endaddr: str, countstr: str, fmt: str) -> List[Any]:
         start: int = int(startaddr, 16)
         end: Optional[int] = int(endaddr, 16) if endaddr is not None else None
-        count: Optional[int] = (
-            int(countstr, 16 if "0x" in countstr else 10)
-            if countstr is not None
-            else None
-        )
+        count: Optional[int] = int(countstr, 16 if "0x" in countstr else 10) if countstr is not None else None
 
         if end is None and count is None:
             raise Exception("Can't handle endless structures!")
@@ -176,9 +162,7 @@ class StructPrinter:
                     if spec[-1] == "#":
                         if len(spec) > 1:
                             if spec[0] not in "+-":
-                                raise Exception(
-                                    "Line number offsets must include a '+' or '-' prefix!"
-                                )
+                                raise Exception("Line number offsets must include a '+' or '-' prefix!")
                             val = int(spec[:-1], 16 if "0x" in spec else 10)
                         else:
                             val = 0
@@ -222,9 +206,7 @@ class StructPrinter:
                         line.append(None)
                     else:
                         pointer = self.pe.virtual_to_physical(pointer)
-                        subparse = self.__parse_struct(
-                            pointer, pointer + 1, None, prefix, spec
-                        )
+                        subparse = self.__parse_struct(pointer, pointer + 1, None, prefix, spec)
                         if len(subparse) != 1:
                             raise Exception("Logic error!")
                         line.append(subparse[0])

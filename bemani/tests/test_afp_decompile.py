@@ -155,9 +155,7 @@ class TestAFPControlGraph(ExtendedTestCase):
             actions[-1].offset + 1,
         )
 
-    def __call_graph(
-        self, bytecode: ByteCode
-    ) -> Tuple[Dict[int, ByteCodeChunk], Dict[int, int]]:
+    def __call_graph(self, bytecode: ByteCode) -> Tuple[Dict[int, ByteCodeChunk], Dict[int, int]]:
         # Just create a dummy compiler so we can access the internal method for testing.
         bcd = ByteCodeDecompiler(bytecode, optimize=True)
 
@@ -165,9 +163,7 @@ class TestAFPControlGraph(ExtendedTestCase):
         chunks, offset_map = bcd._graph_control_flow(bytecode)
         return {chunk.id: chunk for chunk in chunks}, offset_map
 
-    def __equiv(
-        self, bytecode: Union[ByteCode, ByteCodeChunk, List[AP2Action]]
-    ) -> List[str]:
+    def __equiv(self, bytecode: Union[ByteCode, ByteCodeChunk, List[AP2Action]]) -> List[str]:
         if isinstance(bytecode, (ByteCode, ByteCodeChunk)):
             return [str(x) for x in bytecode.actions]
         else:
@@ -230,27 +226,13 @@ class TestAFPControlGraph(ExtendedTestCase):
         self.assertItemsEqual(chunks_by_id[8].next_chunks, [])
 
         # Also verify the code
-        self.assertEqual(
-            self.__equiv(chunks_by_id[0]), ["100: JUMP, Offset To Jump To: 102"]
-        )
-        self.assertEqual(
-            self.__equiv(chunks_by_id[1]), ["101: JUMP, Offset To Jump To: 104"]
-        )
-        self.assertEqual(
-            self.__equiv(chunks_by_id[2]), ["102: JUMP, Offset To Jump To: 101"]
-        )
-        self.assertEqual(
-            self.__equiv(chunks_by_id[3]), ["103: JUMP, Offset To Jump To: 106"]
-        )
-        self.assertEqual(
-            self.__equiv(chunks_by_id[4]), ["104: JUMP, Offset To Jump To: 103"]
-        )
-        self.assertEqual(
-            self.__equiv(chunks_by_id[5]), ["105: JUMP, Offset To Jump To: 107"]
-        )
-        self.assertEqual(
-            self.__equiv(chunks_by_id[6]), ["106: JUMP, Offset To Jump To: 105"]
-        )
+        self.assertEqual(self.__equiv(chunks_by_id[0]), ["100: JUMP, Offset To Jump To: 102"])
+        self.assertEqual(self.__equiv(chunks_by_id[1]), ["101: JUMP, Offset To Jump To: 104"])
+        self.assertEqual(self.__equiv(chunks_by_id[2]), ["102: JUMP, Offset To Jump To: 101"])
+        self.assertEqual(self.__equiv(chunks_by_id[3]), ["103: JUMP, Offset To Jump To: 106"])
+        self.assertEqual(self.__equiv(chunks_by_id[4]), ["104: JUMP, Offset To Jump To: 103"])
+        self.assertEqual(self.__equiv(chunks_by_id[5]), ["105: JUMP, Offset To Jump To: 107"])
+        self.assertEqual(self.__equiv(chunks_by_id[6]), ["106: JUMP, Offset To Jump To: 105"])
         self.assertEqual(self.__equiv(chunks_by_id[7]), ["107: STOP"])
         self.assertEqual(self.__equiv(chunks_by_id[8]), [])
 
@@ -758,9 +740,7 @@ class TestAFPDecompile(ExtendedTestCase):
             ]
         )
         statements = self.__call_decompile(bytecode)
-        self.assertEqual(
-            self.__equiv(statements), ["builtin_StopPlaying()", "builtin_StopPlaying()"]
-        )
+        self.assertEqual(self.__equiv(statements), ["builtin_StopPlaying()", "builtin_StopPlaying()"])
 
     def test_dead_code_elimination_return(self) -> None:
         # Return case
@@ -814,9 +794,7 @@ class TestAFPDecompile(ExtendedTestCase):
         statements = self.__call_decompile(bytecode)
         self.assertEqual(
             self.__equiv(statements),
-            [
-                f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET}"
-            ],
+            [f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET}"],
         )
 
     def test_if_handling_basic_jump_to_end(self) -> None:
@@ -835,9 +813,7 @@ class TestAFPDecompile(ExtendedTestCase):
         statements = self.__call_decompile(bytecode)
         self.assertEqual(
             self.__equiv(statements),
-            [
-                f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET}"
-            ],
+            [f"if (True) {OPEN_BRACKET}{os.linesep}  builtin_StartPlaying(){os.linesep}{CLOSE_BRACKET}"],
         )
 
     def test_if_handling_diamond(self) -> None:
@@ -1039,9 +1015,7 @@ class TestAFPDecompile(ExtendedTestCase):
             self.__equiv(statements),
             [
                 "local finished = False",
-                f"while (not finished) {OPEN_BRACKET}{os.linesep}"
-                f"  builtin_GotoNextFrame(){os.linesep}"
-                "}",
+                f"while (not finished) {OPEN_BRACKET}{os.linesep}" f"  builtin_GotoNextFrame(){os.linesep}" "}",
             ],
         )
 
@@ -1173,9 +1147,7 @@ class TestIfExprs(ExtendedTestCase):
             "a == b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b"))
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b"))),
             "a != b",
         )
         self.assertEqual(
@@ -1195,19 +1167,11 @@ class TestIfExprs(ExtendedTestCase):
             "a >= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")
-                )
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b"))),
             "a === b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")
-                )
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b"))),
             "a !== b",
         )
         self.assertEqual(
@@ -1230,68 +1194,38 @@ class TestIfExprs(ExtendedTestCase):
         )
 
     def test_invert_simple(self) -> None:
-        self.assertEqual(
-            str(IsUndefinedIf(Variable("a")).invert()), "a is not UNDEFINED"
-        )
+        self.assertEqual(str(IsUndefinedIf(Variable("a")).invert()), "a is not UNDEFINED")
         self.assertEqual(str(IsBooleanIf(Variable("a")).invert()), "not a")
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.EQUALS, Variable("b")
-                ).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.EQUALS, Variable("b")).invert()),
             "a != b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b")
-                ).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b")).invert()),
             "a == b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")).invert()),
             "a >= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.GT, Variable("b")).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT, Variable("b")).invert()),
             "a <= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b")
-                ).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b")).invert()),
             "a > b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")
-                ).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")).invert()),
             "a < b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")
-                ).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")).invert()),
             "a !== b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")
-                ).invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).invert()),
             "a === b",
         )
         self.assertEqual(
@@ -1314,76 +1248,38 @@ class TestIfExprs(ExtendedTestCase):
         )
 
     def test_invert_double(self) -> None:
-        self.assertEqual(
-            str(IsUndefinedIf(Variable("a")).invert().invert()), "a is UNDEFINED"
-        )
+        self.assertEqual(str(IsUndefinedIf(Variable("a")).invert().invert()), "a is UNDEFINED")
         self.assertEqual(str(IsBooleanIf(Variable("a")).invert().invert()), "a")
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.EQUALS, Variable("b"))
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.EQUALS, Variable("b")).invert().invert()),
             "a == b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b"))
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b")).invert().invert()),
             "a != b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b"))
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")).invert().invert()),
             "a < b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.GT, Variable("b"))
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT, Variable("b")).invert().invert()),
             "a > b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b"))
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b")).invert().invert()),
             "a <= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b"))
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")).invert().invert()),
             "a >= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")
-                )
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")).invert().invert()),
             "a === b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")
-                )
-                .invert()
-                .invert()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).invert().invert()),
             "a !== b",
         )
         self.assertEqual(
@@ -1413,19 +1309,11 @@ class TestIfExprs(ExtendedTestCase):
         self.assertEqual(str(IsUndefinedIf(Variable("a")).swap()), "a is UNDEFINED")
         self.assertEqual(str(IsBooleanIf(Variable("a")).swap()), "a")
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.EQUALS, Variable("b")
-                ).swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.EQUALS, Variable("b")).swap()),
             "b == a",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b")
-                ).swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b")).swap()),
             "b != a",
         )
         self.assertEqual(
@@ -1437,35 +1325,19 @@ class TestIfExprs(ExtendedTestCase):
             "b < a",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b")
-                ).swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b")).swap()),
             "b >= a",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")
-                ).swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")).swap()),
             "b <= a",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")
-                ).swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")).swap()),
             "b === a",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")
-                ).swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).swap()),
             "b !== a",
         )
         self.assertEqual(
@@ -1488,76 +1360,38 @@ class TestIfExprs(ExtendedTestCase):
         )
 
     def test_swap_double(self) -> None:
-        self.assertEqual(
-            str(IsUndefinedIf(Variable("a")).swap().swap()), "a is UNDEFINED"
-        )
+        self.assertEqual(str(IsUndefinedIf(Variable("a")).swap().swap()), "a is UNDEFINED")
         self.assertEqual(str(IsBooleanIf(Variable("a")).swap().swap()), "a")
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.EQUALS, Variable("b"))
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.EQUALS, Variable("b")).swap().swap()),
             "a == b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b"))
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.NOT_EQUALS, Variable("b")).swap().swap()),
             "a != b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b"))
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")).swap().swap()),
             "a < b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.GT, Variable("b"))
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT, Variable("b")).swap().swap()),
             "a > b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b"))
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.LT_EQUALS, Variable("b")).swap().swap()),
             "a <= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b"))
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")).swap().swap()),
             "a >= b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")
-                )
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_EQUALS, Variable("b")).swap().swap()),
             "a === b",
         )
         self.assertEqual(
-            str(
-                TwoParameterIf(
-                    Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")
-                )
-                .swap()
-                .swap()
-            ),
+            str(TwoParameterIf(Variable("a"), TwoParameterIf.STRICT_NOT_EQUALS, Variable("b")).swap().swap()),
             "a !== b",
         )
         self.assertEqual(
@@ -1585,9 +1419,7 @@ class TestIfExprs(ExtendedTestCase):
 
     def test_simplify_noop(self) -> None:
         self.assertEqual(str(IsUndefinedIf(Variable("a")).simplify()), "a is UNDEFINED")
-        self.assertEqual(
-            str(IsUndefinedIf(Variable("a")).invert().simplify()), "a is not UNDEFINED"
-        )
+        self.assertEqual(str(IsUndefinedIf(Variable("a")).invert().simplify()), "a is not UNDEFINED")
         self.assertEqual(str(IsBooleanIf(Variable("a")).simplify()), "a")
         self.assertEqual(str(IsBooleanIf(Variable("a")).invert().simplify()), "not a")
         self.assertEqual(
@@ -1612,9 +1444,7 @@ class TestIfExprs(ExtendedTestCase):
             str(
                 AndIf(
                     TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")),
-                    TwoParameterIf(
-                        Variable("a"), TwoParameterIf.GT_EQUALS, Variable("c")
-                    ),
+                    TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("c")),
                 ).simplify()
             ),
             "a < b && a >= c",
@@ -1716,9 +1546,7 @@ class TestIfExprs(ExtendedTestCase):
             str(
                 AndIf(
                     TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")),
-                    TwoParameterIf(
-                        Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")
-                    ),
+                    TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")),
                 ).simplify()
             ),
             "False",
@@ -1727,9 +1555,7 @@ class TestIfExprs(ExtendedTestCase):
             str(
                 OrIf(
                     TwoParameterIf(Variable("a"), TwoParameterIf.LT, Variable("b")),
-                    TwoParameterIf(
-                        Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")
-                    ),
+                    TwoParameterIf(Variable("a"), TwoParameterIf.GT_EQUALS, Variable("b")),
                 ).simplify()
             ),
             "True",
@@ -1967,9 +1793,7 @@ class TestAFPOptimize(ExtendedTestCase):
             optimize=True,
         )
         with bcd.debugging(verbose=self.verbose):
-            return bcd._pretty_print(bcd._optimize_code(statements), prefix="").split(
-                os.linesep
-            )
+            return bcd._pretty_print(bcd._optimize_code(statements), prefix="").split(os.linesep)
 
     def test_no_flow(self) -> None:
         statements: List[Statement] = [

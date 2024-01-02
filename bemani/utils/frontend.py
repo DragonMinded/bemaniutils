@@ -68,12 +68,8 @@ def instantiate_cache(app: Any) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A front end services provider for eAmusement games."
-    )
-    parser.add_argument(
-        "-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80
-    )
+    parser = argparse.ArgumentParser(description="A front end services provider for eAmusement games.")
+    parser.add_argument("-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80)
     parser.add_argument(
         "-c",
         "--config",

@@ -204,9 +204,7 @@ class SoundVoltexGravityWars(
         courses = self._get_skill_analyzer_courses()
         max_level: Dict[int, int] = {}
         for course in courses:
-            max_level[course["level"]] = max(
-                course["season_id"], max_level.get(course["level"], -1)
-            )
+            max_level[course["level"]] = max(course["season_id"], max_level.get(course["level"], -1))
         for course in courses:
             info = Node.void("info")
             skill_course.add_child(info)
@@ -214,11 +212,7 @@ class SoundVoltexGravityWars(
             info.add_child(Node.s16("level", course["level"]))
             info.add_child(Node.s32("season_id", course["season_id"]))
             info.add_child(Node.string("season_name", seasons[course["season_id"]]))
-            info.add_child(
-                Node.bool(
-                    "season_new_flg", max_level[course["level"]] == course["season_id"]
-                )
-            )
+            info.add_child(Node.bool("season_new_flg", max_level[course["level"]] == course["season_id"]))
             info.add_child(
                 Node.string(
                     "course_name",
@@ -226,14 +220,8 @@ class SoundVoltexGravityWars(
                 )
             )
             info.add_child(Node.s16("course_type", 0))
-            info.add_child(
-                Node.s16("skill_name_id", course.get("skill_name_id", course["level"]))
-            )
-            info.add_child(
-                Node.bool(
-                    "matching_assist", course["level"] >= 0 and course["level"] <= 6
-                )
-            )
+            info.add_child(Node.s16("skill_name_id", course.get("skill_name_id", course["level"])))
+            info.add_child(Node.bool("matching_assist", course["level"] >= 0 and course["level"] <= 6))
             info.add_child(Node.s16("gauge_type", self.GAME_GAUGE_TYPE_SKILL))
             info.add_child(Node.s16("paseli_type", 0))
 
@@ -464,11 +452,7 @@ class SoundVoltexGravityWars(
                     self.__db_to_game_clear_type(score.data.get_int("clear_type")),
                 )
             )
-            music.add_child(
-                Node.u32(
-                    "score_grade", self.__db_to_game_grade(score.data.get_int("grade"))
-                )
-            )
+            music.add_child(Node.u32("score_grade", self.__db_to_game_grade(score.data.get_int("grade"))))
             stats = score.data.get_dict("stats")
             music.add_child(Node.u32("btn_rate", stats.get_int("btn_rate")))
             music.add_child(Node.u32("long_rate", stats.get_int("long_rate")))

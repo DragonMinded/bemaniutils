@@ -6,9 +6,7 @@ class Model:
     Object representing a parsed Model String.
     """
 
-    def __init__(
-        self, gamecode: str, dest: str, spec: str, rev: str, version: Optional[int]
-    ) -> None:
+    def __init__(self, gamecode: str, dest: str, spec: str, rev: str, version: Optional[int]) -> None:
         """
         Initialize a Model object.
 

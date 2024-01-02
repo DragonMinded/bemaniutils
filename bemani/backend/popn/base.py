@@ -28,30 +28,16 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
     # Play medals, as saved into/loaded from the DB
     PLAY_MEDAL_NO_PLAY: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_NO_PLAY
-    PLAY_MEDAL_CIRCLE_FAILED: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
-    PLAY_MEDAL_DIAMOND_FAILED: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
+    PLAY_MEDAL_CIRCLE_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED
+    PLAY_MEDAL_DIAMOND_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED
     PLAY_MEDAL_STAR_FAILED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FAILED
     PLAY_MEDAL_EASY_CLEAR: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_EASY_CLEAR
-    PLAY_MEDAL_CIRCLE_CLEARED: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_CLEARED
-    PLAY_MEDAL_DIAMOND_CLEARED: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_CLEARED
+    PLAY_MEDAL_CIRCLE_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_CLEARED
+    PLAY_MEDAL_DIAMOND_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_CLEARED
     PLAY_MEDAL_STAR_CLEARED: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_CLEARED
-    PLAY_MEDAL_CIRCLE_FULL_COMBO: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO
-    PLAY_MEDAL_DIAMOND_FULL_COMBO: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FULL_COMBO
-    PLAY_MEDAL_STAR_FULL_COMBO: Final[
-        int
-    ] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FULL_COMBO
+    PLAY_MEDAL_CIRCLE_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FULL_COMBO
+    PLAY_MEDAL_DIAMOND_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FULL_COMBO
+    PLAY_MEDAL_STAR_FULL_COMBO: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_STAR_FULL_COMBO
     PLAY_MEDAL_PERFECT: Final[int] = DBConstants.POPN_MUSIC_PLAY_MEDAL_PERFECT
 
     # Chart type, as saved into/loaded from the DB, and returned to game
@@ -107,9 +93,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void("playerdata")
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -117,9 +101,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return oldprofile
 
-    def get_profile_by_refid(
-        self, refid: Optional[str], load_mode: int
-    ) -> Optional[Node]:
+    def get_profile_by_refid(self, refid: Optional[str], load_mode: int) -> Optional[Node]:
         """
         Given a RefID, return a formatted profile node. Basically every game
         needs a profile lookup, even if it handles where that happens in
@@ -341,9 +323,7 @@ class PopnMusicBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     ) -> None:
         # Generate scorecard
         profile = self.get_profile(userid)
-        song = self.data.local.music.get_song(
-            self.game, self.music_version, songid, chart
-        )
+        song = self.data.local.music.get_song(self.game, self.music_version, songid, chart)
 
         card_medal = {
             self.PLAY_MEDAL_CIRCLE_FAILED: "Failed",

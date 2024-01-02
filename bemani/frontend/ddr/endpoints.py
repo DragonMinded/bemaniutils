@@ -37,9 +37,7 @@ def viewnetworkscores() -> Response:
             "attempts": network_scores["attempts"],
             "songs": frontend.get_all_songs(),
             "players": network_scores["players"],
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "shownames": True,
             "shownewrecords": False,
         },
@@ -78,9 +76,7 @@ def viewscores(userid: UserID) -> Response:
             "attempts": scores,
             "songs": frontend.get_all_songs(),
             "players": {},
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "shownames": False,
             "shownewrecords": True,
         },
@@ -116,9 +112,7 @@ def viewnetworkrecords() -> Response:
             "records": network_records["records"],
             "songs": frontend.get_all_songs(),
             "players": network_records["players"],
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "shownames": True,
             "showpersonalsort": False,
             "filterempty": False,
@@ -154,9 +148,7 @@ def viewrecords(userid: UserID) -> Response:
             "records": frontend.get_records(userid),
             "songs": frontend.get_all_songs(),
             "players": {},
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "shownames": False,
             "showpersonalsort": True,
             "filterempty": True,
@@ -274,9 +266,7 @@ def viewplayer(userid: UserID) -> Response:
             "playerid": userid,
             "own_profile": userid == g.userID,
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("ddr_pages.listplayer", userid=userid),
@@ -312,9 +302,7 @@ def viewsettings() -> Response:
         "ddr/settings.react.js",
         {
             "player": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "updatename": url_for("ddr_pages.updatename"),
@@ -475,9 +463,7 @@ def viewrivals() -> Response:
             "rivals": rivals,
             "max_active_rivals": frontend.max_active_rivals,
             "players": info,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("ddr_pages.listrivals"),

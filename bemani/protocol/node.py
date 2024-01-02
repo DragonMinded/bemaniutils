@@ -22,9 +22,7 @@ class Node:
     constructor helper classmethods to make constructing a tree from source code easier.
     """
 
-    NODE_NAME_CHARS: Final[
-        str
-    ] = "0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+    NODE_NAME_CHARS: Final[str] = "0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
     NODE_TYPE_VOID: Final[int] = 1
     NODE_TYPE_S8: Final[int] = 2
@@ -649,9 +647,7 @@ class Node:
             A string data type name. This string can be fed to typename_to_type to get the original type back.
         """
         if self.__translated_type is None:
-            raise Exception(
-                "Logic error, tried to fetch data type before setting type!"
-            )
+            raise Exception("Logic error, tried to fetch data type before setting type!")
         return self.__translated_type["name"]
 
     @property
@@ -664,9 +660,7 @@ class Node:
             An integer data length, or None if this node's element has variable length.
         """
         if self.__translated_type is None:
-            raise Exception(
-                "Logic error, tried to fetch data length before setting type!"
-            )
+            raise Exception("Logic error, tried to fetch data length before setting type!")
         if self.__translated_type["name"] in {"bin", "str"}:
             return None
         return struct.calcsize(self.__translated_type["enc"])
@@ -680,9 +674,7 @@ class Node:
             A character that can be passed to struct.pack or struct.unpack.
         """
         if self.__translated_type is None:
-            raise Exception(
-                "Logic error, tried to fetch data encoding before setting type!"
-            )
+            raise Exception("Logic error, tried to fetch data encoding before setting type!")
         return self.__translated_type["enc"]
 
     def set_attribute(self, attr: str, val: str = "") -> None:
@@ -802,9 +794,7 @@ class Node:
             True if this Node is a composite type, False otherwise.
         """
         if self.__translated_type is None:
-            raise Exception(
-                "Logic error, tried to fetch composite determination before setting type!"
-            )
+            raise Exception("Logic error, tried to fetch composite determination before setting type!")
         return self.__translated_type["composite"]
 
     def set_value(self, val: Any) -> None:
@@ -915,9 +905,7 @@ class Node:
             A string representing the XML-like data for this node and all children.
         """
         if self.__translated_type is None:
-            raise Exception(
-                "Logic error, tried to get XML representation before setting type!"
-            )
+            raise Exception("Logic error, tried to get XML representation before setting type!")
         translated_type: Dict[str, Any] = self.__translated_type
 
         attrs_dict = copy.deepcopy(self.__attrs)
@@ -949,9 +937,7 @@ class Node:
                 return str(val)
 
         if attrs_dict:
-            attrs = " " + " ".join(
-                [f'{attr}="{escape(attrs_dict[attr], attr=True)}"' for attr in order]
-            )
+            attrs = " " + " ".join([f'{attr}="{escape(attrs_dict[attr], attr=True)}"' for attr in order])
         else:
             attrs = ""
 
@@ -986,7 +972,9 @@ class Node:
                     f'{" " * ((depth + 1) * 4)}{get_val()}\n',
                 ] + children
 
-            string = f'{" " * (depth * 4)}<{self.__name}{attrs}>\n{"".join(children)}{" " * (depth * 4)}</{self.__name}>\n'
+            string = (
+                f'{" " * (depth * 4)}<{self.__name}{attrs}>\n{"".join(children)}{" " * (depth * 4)}</{self.__name}>\n'
+            )
         else:
             # Doesn't have children nodes
             if self.data_length == 0:

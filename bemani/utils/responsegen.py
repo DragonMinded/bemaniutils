@@ -40,9 +40,7 @@ def generate_node_create(node: Node) -> str:
         if dtype == "str":
             value = f", '{node.value}'"
         elif dtype == "ip4":
-            value = (
-                f", '{node.value[0]}.{node.value[1]}.{node.value[2]}.{node.value[3]}'"
-            )
+            value = f", '{node.value[0]}.{node.value[1]}.{node.value[2]}.{node.value[3]}'"
         else:
             value = f", {node.value}"
     else:
@@ -51,9 +49,7 @@ def generate_node_create(node: Node) -> str:
     return f"Node.{method}('{node.name}'{value})"
 
 
-def generate_node_link(
-    node_name: str, used_names: Dict[str, Node], parent: Node
-) -> str:
+def generate_node_link(node_name: str, used_names: Dict[str, Node], parent: Node) -> str:
     # Find the node that parents this, link to it
     found_parent = None
     for parent_name in used_names:
@@ -67,9 +63,7 @@ def generate_node_link(
     return f"{found_parent}.add_child({node_name})"
 
 
-def generate_lines(
-    node: Node, used_names: Dict[str, Node], parent: Optional[Node] = None
-) -> List[str]:
+def generate_lines(node: Node, used_names: Dict[str, Node], parent: Optional[Node] = None) -> List[str]:
     # First, generate node itself
     create = generate_node_create(node)
     if not node.children and not node.attributes and parent:

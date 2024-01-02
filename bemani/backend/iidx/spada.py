@@ -100,28 +100,15 @@ class IIDXSpada(IIDXBase):
         return IIDXTricoro(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert dailies into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "daily_charts", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "daily_charts", "daily"):
             # Generate a new list of three dailies.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = list(
-                set(
-                    [
-                        song.id
-                        for song in data.local.music.get_all_songs(
-                            cls.game, cls.version
-                        )
-                    ]
-                )
-            )
+            all_songs = list(set([song.id for song in data.local.music.get_all_songs(cls.game, cls.version)]))
             if len(all_songs) >= 3:
                 daily_songs = random.sample(all_songs, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -145,9 +132,7 @@ class IIDXSpada(IIDXBase):
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "daily_charts", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "daily_charts", "daily")
         return events
 
     @classmethod
@@ -345,9 +330,7 @@ class IIDXSpada(IIDXBase):
         root = Node.void("IIDX21shop")
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -371,9 +354,7 @@ class IIDXSpada(IIDXBase):
             course.replace_int("music_2", request.child_value("music_2"))
             course.replace_int("music_3", request.child_value("music_3"))
             course.replace_bool("valid", request.child_value("valid"))
-            self.data.local.machine.put_settings(
-                machine.arcade, self.game, self.music_version, "shop_course", course
-            )
+            self.data.local.machine.put_settings(machine.arcade, self.game, self.music_version, "shop_course", course)
 
         return root
 
@@ -393,9 +374,7 @@ class IIDXSpada(IIDXBase):
 
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            course = self.data.local.machine.get_settings(
-                machine.arcade, self.game, self.music_version, "shop_course"
-            )
+            course = self.data.local.machine.get_settings(machine.arcade, self.game, self.music_version, "shop_course")
         else:
             course = None
 
@@ -474,16 +453,7 @@ class IIDXSpada(IIDXBase):
         root = Node.void("IIDX21music")
         attempts = self.get_clear_rates()
 
-        all_songs = list(
-            set(
-                [
-                    song.id
-                    for song in self.data.local.music.get_all_songs(
-                        self.game, self.music_version
-                    )
-                ]
-            )
-        )
+        all_songs = list(set([song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)]))
         for song in all_songs:
             clears = []
             fcs = []
@@ -527,16 +497,12 @@ class IIDXSpada(IIDXBase):
                 continue
             userid = self.data.remote.user.from_extid(self.game, self.version, extid)
             if userid is not None:
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.music_version, userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
                 # Grab score data for user/rival
                 scoredata = self.make_score_struct(
                     scores,
-                    self.CLEAR_TYPE_SINGLE
-                    if cltype == self.GAME_CLTYPE_SINGLE
-                    else self.CLEAR_TYPE_DOUBLE,
+                    self.CLEAR_TYPE_SINGLE if cltype == self.GAME_CLTYPE_SINGLE else self.CLEAR_TYPE_DOUBLE,
                     rivalid,
                 )
                 for s in scoredata:
@@ -544,10 +510,7 @@ class IIDXSpada(IIDXBase):
 
                 # Grab most played for user/rival
                 most_played = [
-                    play[0]
-                    for play in self.data.local.music.get_most_played(
-                        self.game, self.music_version, userid, 20
-                    )
+                    play[0] for play in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)
                 ]
                 if len(most_played) < 20:
                     most_played.extend([0] * (20 - len(most_played)))
@@ -590,19 +553,13 @@ class IIDXSpada(IIDXBase):
             key=lambda s: (s[1].points, s[1].timestamp),
             reverse=True,
         )
-        all_players = {
-            uid: prof
-            for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])
-        }
+        all_players = {uid: prof for (uid, prof) in self.get_any_profiles([s[0] for s in all_scores])}
 
         if not global_scores:
             all_scores = [
                 score
                 for score in all_scores
-                if (
-                    score[0] == userid
-                    or self.user_joined_arcade(machine, all_players[score[0]])
-                )
+                if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
             ]
 
         # Find our actual index
@@ -654,9 +611,7 @@ class IIDXSpada(IIDXBase):
             # Shop ranking
             shopdata = Node.void("shopdata")
             root.add_child(shopdata)
-            shopdata.set_attribute(
-                "rank", "-1" if oldindex is None else str(oldindex + 1)
-            )
+            shopdata.set_attribute("rank", "-1" if oldindex is None else str(oldindex + 1))
 
             # Grab the rank of some other players on this song
             ranklist = Node.void("ranklist")
@@ -680,10 +635,7 @@ class IIDXSpada(IIDXBase):
                 all_scores = [
                     score
                     for score in all_scores
-                    if (
-                        score[0] == userid
-                        or self.user_joined_arcade(machine, all_players[score[0]])
-                    )
+                    if (score[0] == userid or self.user_joined_arcade(machine, all_players[score[0]]))
                 ]
 
             # Find our actual index
@@ -831,9 +783,7 @@ class IIDXSpada(IIDXBase):
 
         if userid is not None:
             # Try to look up previous ghost for user
-            my_score = self.data.remote.music.get_score(
-                self.game, self.music_version, userid, musicid, chart
-            )
+            my_score = self.data.remote.music.get_score(self.game, self.music_version, userid, musicid, chart)
             if my_score is not None:
                 mydata = Node.binary("mydata", my_score.data.get_bytes("ghost"))
                 mydata.set_attribute("score", str(my_score.points))
@@ -1128,9 +1078,7 @@ class IIDXSpada(IIDXBase):
         best_clear_string = clear_map.get(best_clear, "NO PLAY")
         now_clear_string = clear_map.get(now_clear, "NO PLAY")
         # let's get the song info first
-        song = self.data.local.music.get_song(
-            self.game, self.music_version, music_id, self.game_to_db_chart(class_id)
-        )
+        song = self.data.local.music.get_song(self.game, self.music_version, music_id, self.game_to_db_chart(class_id))
         notecount = song.data.get("notecount", 0)
         # Construct the dictionary for the broadcast
         card_data = {
@@ -1235,9 +1183,7 @@ class IIDXSpada(IIDXBase):
                 join_shop.set_attribute("join_name", machine.name)
 
         # Daily recommendations
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "dailies"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "dailies")
         if entry is not None:
             packinfo = Node.void("packinfo")
             root.add_child(packinfo)
@@ -1268,15 +1214,9 @@ class IIDXSpada(IIDXBase):
             secret.add_child(Node.s64_array("flg2", [-1, -1]))
             secret.add_child(Node.s64_array("flg3", [-1, -1]))
         else:
-            secret.add_child(
-                Node.s64_array("flg1", secret_dict.get_int_array("flg1", 2))
-            )
-            secret.add_child(
-                Node.s64_array("flg2", secret_dict.get_int_array("flg2", 2))
-            )
-            secret.add_child(
-                Node.s64_array("flg3", secret_dict.get_int_array("flg3", 2))
-            )
+            secret.add_child(Node.s64_array("flg1", secret_dict.get_int_array("flg1", 2)))
+            secret.add_child(Node.s64_array("flg2", secret_dict.get_int_array("flg2", 2)))
+            secret.add_child(Node.s64_array("flg3", secret_dict.get_int_array("flg3", 2)))
 
         # Tran medals and shit
         achievements = Node.void("achievements")
@@ -1287,15 +1227,11 @@ class IIDXSpada(IIDXBase):
             achievements.set_attribute("pack", "0")
             achievements.set_attribute("pack_comp", "0")
         else:
-            daily_played = self.data.local.user.get_achievement(
-                self.game, self.version, userid, pack_id, "daily"
-            )
+            daily_played = self.data.local.user.get_achievement(self.game, self.version, userid, pack_id, "daily")
             if daily_played is None:
                 daily_played = ValidatedDict()
             achievements.set_attribute("pack", str(daily_played.get_int("pack_flg")))
-            achievements.set_attribute(
-                "pack_comp", str(daily_played.get_int("pack_comp"))
-            )
+            achievements.set_attribute("pack_comp", str(daily_played.get_int("pack_comp")))
 
         # Weeklies
         achievements.set_attribute("last_weekly", str(profile.get_int("last_weekly")))
@@ -1308,9 +1244,7 @@ class IIDXSpada(IIDXBase):
         achievements.set_attribute("rival_crush", str(profile.get_int("rival_crush")))
 
         # Tran medals
-        achievements.add_child(
-            Node.s64_array("trophy", profile.get_int_array("trophy", 10))
-        )
+        achievements.add_child(Node.s64_array("trophy", profile.get_int_array("trophy", 10)))
 
         # User settings
         settings_dict = profile.get_dict("settings")
@@ -1356,9 +1290,7 @@ class IIDXSpada(IIDXBase):
                 )
             ),
         )
-        rankings = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        rankings = self.data.local.user.get_achievements(self.game, self.version, userid)
         for rank in rankings:
             if rank.type == self.DAN_RANKING_SINGLE:
                 grade.add_child(
@@ -1483,9 +1415,7 @@ class IIDXSpada(IIDXBase):
         step.add_child(
             Node.binary(
                 "album",
-                step_dict.get_bytes(
-                    "album", b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
+                step_dict.get_bytes("album", b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"),
             )
         )
 
@@ -1614,13 +1544,9 @@ class IIDXSpada(IIDXBase):
                 "boss6_damage",
             ]:
                 boss1.set_attribute(attr, str(boss1_dict.get_int(attr)))
-            boss1.add_child(
-                Node.s32_array("level", boss1_dict.get_int_array("level", 7))
-            )
+            boss1.add_child(Node.s32_array("level", boss1_dict.get_int_array("level", 7)))
             if "durability" in boss1_dict:
-                boss1.add_child(
-                    Node.binary("durability", boss1_dict.get_bytes("durability"))
-                )
+                boss1.add_child(Node.binary("durability", boss1_dict.get_bytes("durability")))
 
         # Events copied from Tricoro, but might still allow unlocks in this version?
         gakuen = Node.void("gakuen")
@@ -1646,9 +1572,7 @@ class IIDXSpada(IIDXBase):
             root.add_child(Node.void("bind_eaappli"))
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         play_stats = self.get_play_statistics(userid)
 
@@ -1720,15 +1644,9 @@ class IIDXSpada(IIDXBase):
         # Basic achievements
         achievements = request.child("achievements")
         if achievements is not None:
-            newprofile.replace_int(
-                "visit_flg", int(achievements.attribute("visit_flg"))
-            )
-            newprofile.replace_int(
-                "last_weekly", int(achievements.attribute("last_weekly"))
-            )
-            newprofile.replace_int(
-                "weekly_num", int(achievements.attribute("weekly_num"))
-            )
+            newprofile.replace_int("visit_flg", int(achievements.attribute("visit_flg")))
+            newprofile.replace_int("last_weekly", int(achievements.attribute("last_weekly")))
+            newprofile.replace_int("weekly_num", int(achievements.attribute("weekly_num")))
 
             pack_id = int(achievements.attribute("pack_id"))
             if pack_id > 0:
@@ -1752,9 +1670,7 @@ class IIDXSpada(IIDXBase):
         # Deller saving
         deller = request.child("deller")
         if deller is not None:
-            newprofile.replace_int(
-                "deller", newprofile.get_int("deller") + int(deller.attribute("deller"))
-            )
+            newprofile.replace_int("deller", newprofile.get_int("deller") + int(deller.attribute("deller")))
 
         # Favorites saving
         favorite = request.child("favorite")
@@ -1769,17 +1685,13 @@ class IIDXSpada(IIDXBase):
             for i in range(self.FAVORITE_LIST_LENGTH):
                 singles.append(
                     {
-                        "id": struct.unpack(
-                            "<L", single_music_bin[(i * 4) : ((i + 1) * 4)]
-                        )[0],
+                        "id": struct.unpack("<L", single_music_bin[(i * 4) : ((i + 1) * 4)])[0],
                         "chart": struct.unpack("B", single_chart_bin[i : (i + 1)])[0],
                     }
                 )
                 doubles.append(
                     {
-                        "id": struct.unpack(
-                            "<L", double_music_bin[(i * 4) : ((i + 1) * 4)]
-                        )[0],
+                        "id": struct.unpack("<L", double_music_bin[(i * 4) : ((i + 1) * 4)])[0],
                         "chart": struct.unpack("B", double_chart_bin[i : (i + 1)])[0],
                     }
                 )

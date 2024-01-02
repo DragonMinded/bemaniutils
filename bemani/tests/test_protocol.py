@@ -111,9 +111,7 @@ class TestProtocol(unittest.TestCase):
         eacoin = Node.void("eacoin")
         root.add_child(eacoin)
         eacoin.set_attribute("esdate", "2015-08-01T02:09:23")
-        eacoin.set_attribute(
-            "esid", "177baae4bdf0085f1f3da9b6fed02223ee9b482f62b83a28af704a9c7893a370"
-        )
+        eacoin.set_attribute("esid", "177baae4bdf0085f1f3da9b6fed02223ee9b482f62b83a28af704a9c7893a370")
         eacoin.set_attribute("method", "consume")
 
         eacoin.add_child(Node.string("sessid", "5666-5524"))
@@ -409,9 +407,7 @@ class TestProtocol(unittest.TestCase):
         root.add_child(Node.s32_array("s32_array_node", [-2000000000, -1]))
         root.add_child(Node.u32_array("u32_array_node", [4000000000, 0, 1, 2]))
         root.add_child(Node.s64_array("s64_array_node", [-1234567890000, -1, 1, 1337]))
-        root.add_child(
-            Node.u64_array("u64_array_node", [1234567890000, 123, 456, 7890])
-        )
+        root.add_child(Node.u64_array("u64_array_node", [1234567890000, 123, 456, 7890]))
         root.add_child(Node.time_array("time_array_node", [1234567890, 98765432]))
         root.add_child(Node.float_array("float_array_node", [2.5, 0.0, 5.0, 20.5]))
         root.add_child(Node.bool_array("bool_array_node", [False, True, True, False]))

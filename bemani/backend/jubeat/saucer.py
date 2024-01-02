@@ -34,22 +34,15 @@ class JubeatSaucer(
         return JubeatCopiousAppend(self.data, self.config, self.model)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Insert daily FC challenges into the DB.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "fc_challenge", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "fc_challenge", "daily"):
             # Generate a new list of two FC challenge songs.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = set(
-                song.id
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-            )
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
             if all_songs:
                 today_song = random.sample(all_songs, 1)[0]
                 data.local.game.put_time_sensitive_settings(
@@ -73,9 +66,7 @@ class JubeatSaucer(
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "fc_challenge", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "fc_challenge", "daily")
         return events
 
     @classmethod
@@ -215,9 +206,7 @@ class JubeatSaucer(
         force_unlock = game_config.get_bool("force_song_unlock")
 
         # Allow figuring out owned songs.
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         owned_songs: Set[int] = set()
         owned_secrets: Set[int] = set()
         for achievement in achievements:
@@ -242,9 +231,7 @@ class JubeatSaucer(
         info.add_child(Node.s32("beat_cnt", profile.get_int("beat_cnt")))
         info.add_child(Node.s32("mynews_cnt", profile.get_int("mynews_cnt")))
         if "total_best_score" in profile:
-            info.add_child(
-                Node.s32("total_best_score", profile.get_int("total_best_score"))
-            )
+            info.add_child(Node.s32("total_best_score", profile.get_int("total_best_score")))
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
@@ -266,9 +253,7 @@ class JubeatSaucer(
         item.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 32)
-                if force_unlock
-                else self.create_owned_items(owned_songs, 32),
+                ([-1] * 32) if force_unlock else self.create_owned_items(owned_songs, 32),
             )
         )
         item.add_child(
@@ -282,25 +267,15 @@ class JubeatSaucer(
             )
         )
         item.add_child(Node.s16("theme_list", profile.get_int("theme_list", -1)))
-        item.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list", 2, [-1] * 2)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "parts_list", profile.get_int_array("parts_list", 96, [-1] * 96)
-            )
-        )
+        item.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list", 2, [-1] * 2)))
+        item.add_child(Node.s32_array("parts_list", profile.get_int_array("parts_list", 96, [-1] * 96)))
 
         new = Node.void("new")
         item.add_child(new)
         new.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 32)
-                if force_unlock
-                else self.create_owned_items(owned_secrets, 32),
+                ([-1] * 32) if force_unlock else self.create_owned_items(owned_secrets, 32),
             )
         )
         new.add_child(
@@ -314,11 +289,7 @@ class JubeatSaucer(
             )
         )
         new.add_child(Node.s16("theme_list", profile.get_int("theme_list_new", -1)))
-        new.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list_new", 2, [-1] * 2)
-            )
-        )
+        new.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list_new", 2, [-1] * 2)))
 
         # Last played data, for showing cursor and such
         lastdict = profile.get_dict("last")
@@ -393,9 +364,7 @@ class JubeatSaucer(
         collabo.add_child(Node.bool("completed", False))
 
         # Daily FC challenge.
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "fc_challenge"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "fc_challenge")
         if entry is None:
             entry = ValidatedDict()
 
@@ -510,9 +479,7 @@ class JubeatSaucer(
             music.add_child(Node.s32("price_s32", routedata["price"]))
 
             # Look up any updated satisfaction stored by the game
-            routesaved = self.data.local.user.get_achievement(
-                self.game, self.version, userid, route_no + 1, "route"
-            )
+            routesaved = self.data.local.user.get_achievement(self.game, self.version, userid, route_no + 1, "route")
             if routesaved is None:
                 routesaved = ValidatedDict()
             satisfaction = routesaved.get_int("satisfaction", routedata["satisfaction"])
@@ -697,9 +664,7 @@ class JubeatSaucer(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         newprofile.replace_bool("saved", True)
         data = request.child("data")
@@ -727,44 +692,28 @@ class JubeatSaucer(
             newprofile.replace_int("save_cnt", info.child_value("save_cnt"))
             newprofile.replace_int("saved_cnt", info.child_value("saved_cnt"))
             newprofile.replace_int("fc_cnt", info.child_value("fc_cnt"))
-            newprofile.replace_int(
-                "ex_cnt", info.child_value("exc_cnt")
-            )  # Not a mistake, Jubeat is weird
+            newprofile.replace_int("ex_cnt", info.child_value("exc_cnt"))  # Not a mistake, Jubeat is weird
             newprofile.replace_int("pf_cnt", info.child_value("pf_cnt"))
             newprofile.replace_int("clear_cnt", info.child_value("clear_cnt"))
             newprofile.replace_int("match_cnt", info.child_value("match_cnt"))
             newprofile.replace_int("beat_cnt", info.child_value("beat_cnt"))
-            newprofile.replace_int(
-                "total_best_score", info.child_value("total_best_score")
-            )
+            newprofile.replace_int("total_best_score", info.child_value("total_best_score"))
             newprofile.replace_int("mynews_cnt", info.child_value("mynews_cnt"))
 
         # Grab unlock progress
         item = player.child("item")
         if item is not None:
-            newprofile.replace_int_array(
-                "title_list", 96, item.child_value("title_list")
-            )
+            newprofile.replace_int_array("title_list", 96, item.child_value("title_list"))
             newprofile.replace_int("theme_list", item.child_value("theme_list"))
-            newprofile.replace_int_array(
-                "marker_list", 2, item.child_value("marker_list")
-            )
-            newprofile.replace_int_array(
-                "parts_list", 96, item.child_value("parts_list")
-            )
-            newprofile.replace_int_array(
-                "title_list_new", 96, item.child_value("title_new")
-            )
+            newprofile.replace_int_array("marker_list", 2, item.child_value("marker_list"))
+            newprofile.replace_int_array("parts_list", 96, item.child_value("parts_list"))
+            newprofile.replace_int_array("title_list_new", 96, item.child_value("title_new"))
             newprofile.replace_int("theme_list_new", item.child_value("theme_new"))
-            newprofile.replace_int_array(
-                "marker_list_new", 2, item.child_value("marker_new")
-            )
+            newprofile.replace_int_array("marker_list_new", 2, item.child_value("marker_new"))
 
             if not force_unlock:
                 # Don't persist if we're force-unlocked, this data will be bogus.
-                owned_songs = self.calculate_owned_items(
-                    item.child_value("secret_list")
-                )
+                owned_songs = self.calculate_owned_items(item.child_value("secret_list"))
                 for index in owned_songs:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -775,9 +724,7 @@ class JubeatSaucer(
                         {},
                     )
 
-                owned_secrets = self.calculate_owned_items(
-                    item.child_value("secret_new")
-                )
+                owned_secrets = self.calculate_owned_items(item.child_value("secret_new"))
                 for index in owned_secrets:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -791,9 +738,7 @@ class JubeatSaucer(
         # Grab bistro progress
         bistro = player.child("bistro")
         if bistro is not None:
-            newprofile.replace_int(
-                "bistro_carry_over", bistro.child_value("carry_over")
-            )
+            newprofile.replace_int("bistro_carry_over", bistro.child_value("carry_over"))
 
             chefdata = newprofile.get_dict("chef")
             chef = bistro.child("chef")
@@ -877,9 +822,7 @@ class JubeatSaucer(
                     if flags & bit > 0:
                         medal = max(medal, mapping[bit])
 
-                self.update_score(
-                    userid, timestamp, songid, chart, points, medal, combo, ghost
-                )
+                self.update_score(userid, timestamp, songid, chart, points, medal, combo, ghost)
 
         # Save back last information gleaned from results
         newprofile.replace_dict("last", last)
@@ -889,9 +832,7 @@ class JubeatSaucer(
 
         return newprofile
 
-    def format_scores(
-        self, userid: UserID, profile: Profile, scores: List[Score]
-    ) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)
@@ -958,24 +899,12 @@ class JubeatSaucer(
             playdata.add_child(musicdata)
 
             musicdata.set_attribute("music_id", scoreid)
-            musicdata.add_child(
-                Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("score", scoredata.get_int_array("points", 3))
-            )
-            musicdata.add_child(
-                Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3))
-            )
+            musicdata.add_child(Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3)))
+            musicdata.add_child(Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3)))
+            musicdata.add_child(Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3)))
+            musicdata.add_child(Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3)))
+            musicdata.add_child(Node.s32_array("score", scoredata.get_int_array("points", 3)))
+            musicdata.add_child(Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3)))
 
             ghosts = scoredata.get("ghost", [None, None, None])
             for i in range(len(ghosts)):

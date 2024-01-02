@@ -209,9 +209,7 @@ class PopnMusicEclale(PopnMusicBase):
             rank = rank + 1
 
         # Output the hit chart
-        for songid, _plays in self.data.local.music.get_hit_chart(
-            self.game, self.music_version, 500
-        ):
+        for songid, _plays in self.data.local.music.get_hit_chart(self.game, self.music_version, 500):
             popular_music = Node.void("popular_music")
             root.add_child(popular_music)
             popular_music.add_child(Node.s16("music_num", songid))
@@ -285,9 +283,7 @@ class PopnMusicEclale(PopnMusicBase):
             userid = None
 
         if userid is not None:
-            oldprofile = self.get_profile(userid) or Profile(
-                self.game, self.version, refid, 0
-            )
+            oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
             newprofile = self.unformat_profile(userid, request, oldprofile)
 
             if newprofile is not None:
@@ -332,9 +328,7 @@ class PopnMusicEclale(PopnMusicBase):
 
             if lumina >= price:
                 # Update player lumina balance
-                profile = self.get_profile(userid) or Profile(
-                    self.game, self.version, refid, 0
-                )
+                profile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
                 profile.replace_int("lumina", lumina - price)
                 self.put_profile(userid, profile)
 
@@ -360,9 +354,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, userid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             scores = []
 
@@ -453,17 +445,13 @@ class PopnMusicEclale(PopnMusicBase):
             return root
         rivalid = links[no].other_userid
         rivalprofile = profiles[rivalid]
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, rivalid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, rivalid)
 
         # First, output general profile info.
         friend = Node.void("friend")
         root.add_child(friend)
         friend.add_child(Node.s16("no", no))
-        friend.add_child(
-            Node.string("g_pm_id", self.format_extid(rivalprofile.extid))
-        )  # Eclale formats on its own
+        friend.add_child(Node.string("g_pm_id", self.format_extid(rivalprofile.extid)))  # Eclale formats on its own
         friend.add_child(Node.string("name", rivalprofile.get_str("name", "なし")))
         friend.add_child(Node.s16("chara_num", rivalprofile.get_int("chara", -1)))
         # This might be for having non-active or non-confirmed friends, but setting to 0 makes the
@@ -561,9 +549,7 @@ class PopnMusicEclale(PopnMusicBase):
             self.GAME_PLAY_MEDAL_STAR_FULL_COMBO: self.PLAY_MEDAL_STAR_FULL_COMBO,
             self.GAME_PLAY_MEDAL_PERFECT: self.PLAY_MEDAL_PERFECT,
         }[medal]
-        self.update_score(
-            userid, songid, chart, points, medal, combo=combo, stats=stats
-        )
+        self.update_score(userid, songid, chart, points, medal, combo=combo, stats=stats)
 
         if request.child_value("is_image_store") == 1:
             self.broadcast_score(userid, songid, chart, medal, points, combo, stats)
@@ -577,9 +563,7 @@ class PopnMusicEclale(PopnMusicBase):
         root.add_child(Node.s8("result", 1))
 
         # Scores
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             # Skip any scores for chart types we don't support
             if score.chart not in [
@@ -649,34 +633,18 @@ class PopnMusicEclale(PopnMusicBase):
         account.add_child(Node.s16("area_id", profile.get_int("area_id")))
         account.add_child(Node.s16("lumina", profile.get_int("lumina", 300)))
         account.add_child(Node.s16("read_news", profile.get_int("read_news")))
-        account.add_child(
-            Node.bool("welcom_pack", False)
-        )  # Set this to true to grant extra stage no matter what.
-        account.add_child(
-            Node.s16_array("medal_set", profile.get_int_array("medal_set", 4))
-        )
-        account.add_child(
-            Node.s16_array("nice", profile.get_int_array("nice", 30, [-1] * 30))
-        )
-        account.add_child(
-            Node.s16_array(
-                "favorite_chara", profile.get_int_array("favorite_chara", 20, [-1] * 20)
-            )
-        )
-        account.add_child(
-            Node.s16_array("special_area", profile.get_int_array("special_area", 8))
-        )
+        account.add_child(Node.bool("welcom_pack", False))  # Set this to true to grant extra stage no matter what.
+        account.add_child(Node.s16_array("medal_set", profile.get_int_array("medal_set", 4)))
+        account.add_child(Node.s16_array("nice", profile.get_int_array("nice", 30, [-1] * 30)))
+        account.add_child(Node.s16_array("favorite_chara", profile.get_int_array("favorite_chara", 20, [-1] * 20)))
+        account.add_child(Node.s16_array("special_area", profile.get_int_array("special_area", 8)))
         account.add_child(
             Node.s16_array(
                 "chocolate_charalist",
                 profile.get_int_array("chocolate_charalist", 5, [-1] * 5),
             )
         )
-        account.add_child(
-            Node.s16_array(
-                "teacher_setting", profile.get_int_array("teacher_setting", 10)
-            )
-        )
+        account.add_child(Node.s16_array("teacher_setting", profile.get_int_array("teacher_setting", 10)))
 
         # Stuff we never change
         account.add_child(Node.s8("staff", 0))
@@ -687,18 +655,8 @@ class PopnMusicEclale(PopnMusicBase):
         account.add_child(Node.s16_array("license_data", [-1] * 20))
 
         # Add statistics section
-        last_played = [
-            x[0]
-            for x in self.data.local.music.get_last_played(
-                self.game, self.music_version, userid, 5
-            )
-        ]
-        most_played = [
-            x[0]
-            for x in self.data.local.music.get_most_played(
-                self.game, self.music_version, userid, 10
-            )
-        ]
+        last_played = [x[0] for x in self.data.local.music.get_last_played(self.game, self.music_version, userid, 5)]
+        most_played = [x[0] for x in self.data.local.music.get_most_played(self.game, self.music_version, userid, 10)]
         while len(last_played) < 5:
             last_played.append(-1)
         while len(most_played) < 10:
@@ -753,9 +711,7 @@ class PopnMusicEclale(PopnMusicBase):
         config.add_child(Node.u8("sheet", profile.get_int("sheet")))
         config.add_child(Node.s8("category", profile.get_int("category", -1)))
         config.add_child(Node.s8("sub_category", profile.get_int("sub_category", -1)))
-        config.add_child(
-            Node.s8("chara_category", profile.get_int("chara_category", -1))
-        )
+        config.add_child(Node.s8("chara_category", profile.get_int("chara_category", -1)))
         config.add_child(Node.s16("course_id", profile.get_int("course_id", -1)))
         config.add_child(Node.s8("course_folder", profile.get_int("course_folder", -1)))
         config.add_child(Node.s8("ms_banner_disp", profile.get_int("ms_banner_disp")))
@@ -780,9 +736,7 @@ class PopnMusicEclale(PopnMusicBase):
         option.add_child(Node.u8("ojama_1", option_dict.get_int("ojama_1")))
         option.add_child(Node.bool("forever_0", option_dict.get_bool("forever_0")))
         option.add_child(Node.bool("forever_1", option_dict.get_bool("forever_1")))
-        option.add_child(
-            Node.bool("full_setting", option_dict.get_bool("full_setting"))
-        )
+        option.add_child(Node.bool("full_setting", option_dict.get_bool("full_setting")))
         option.add_child(Node.u8("judge", option_dict.get_int("judge")))
 
         # Unknown custom category stuff?
@@ -798,12 +752,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         game_config = self.get_game_config()
         if game_config.get_bool("force_unlock_songs"):
-            songs = {
-                song.id
-                for song in self.data.local.music.get_all_songs(
-                    self.game, self.music_version
-                )
-            }
+            songs = {song.id for song in self.data.local.music.get_all_songs(self.game, self.music_version)}
             for song in songs:
                 item = Node.void("item")
                 root.add_child(item)
@@ -813,9 +762,7 @@ class PopnMusicEclale(PopnMusicBase):
                 item.add_child(Node.bool("is_new", False))
 
         # Set up achievements
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         for achievement in achievements:
             if achievement.type[:5] == "item_":
                 itemtype = int(achievement.type[5:])
@@ -898,9 +845,7 @@ class PopnMusicEclale(PopnMusicBase):
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         account = request.child("account")
@@ -909,22 +854,12 @@ class PopnMusicEclale(PopnMusicBase):
             newprofile.replace_int("read_news", account.child_value("read_news"))
             newprofile.replace_int("area_id", account.child_value("area_id"))
             newprofile.replace_int("lumina", account.child_value("lumina"))
-            newprofile.replace_int_array(
-                "medal_set", 4, account.child_value("medal_set")
-            )
+            newprofile.replace_int_array("medal_set", 4, account.child_value("medal_set"))
             newprofile.replace_int_array("nice", 30, account.child_value("nice"))
-            newprofile.replace_int_array(
-                "favorite_chara", 20, account.child_value("favorite_chara")
-            )
-            newprofile.replace_int_array(
-                "special_area", 8, account.child_value("special_area")
-            )
-            newprofile.replace_int_array(
-                "chocolate_charalist", 5, account.child_value("chocolate_charalist")
-            )
-            newprofile.replace_int_array(
-                "teacher_setting", 10, account.child_value("teacher_setting")
-            )
+            newprofile.replace_int_array("favorite_chara", 20, account.child_value("favorite_chara"))
+            newprofile.replace_int_array("special_area", 8, account.child_value("special_area"))
+            newprofile.replace_int_array("chocolate_charalist", 5, account.child_value("chocolate_charalist"))
+            newprofile.replace_int_array("teacher_setting", 10, account.child_value("teacher_setting"))
 
         info = request.child("info")
         if info is not None:
@@ -938,14 +873,10 @@ class PopnMusicEclale(PopnMusicBase):
             newprofile.replace_int("sheet", config.child_value("sheet"))
             newprofile.replace_int("category", config.child_value("category"))
             newprofile.replace_int("sub_category", config.child_value("sub_category"))
-            newprofile.replace_int(
-                "chara_category", config.child_value("chara_category")
-            )
+            newprofile.replace_int("chara_category", config.child_value("chara_category"))
             newprofile.replace_int("course_id", config.child_value("course_id"))
             newprofile.replace_int("course_folder", config.child_value("course_folder"))
-            newprofile.replace_int(
-                "ms_banner_disp", config.child_value("ms_banner_disp")
-            )
+            newprofile.replace_int("ms_banner_disp", config.child_value("ms_banner_disp"))
             newprofile.replace_int("ms_down_info", config.child_value("ms_down_info"))
             newprofile.replace_int("ms_side_info", config.child_value("ms_side_info"))
             newprofile.replace_int("ms_raise_type", config.child_value("ms_raise_type"))
@@ -973,21 +904,15 @@ class PopnMusicEclale(PopnMusicBase):
         customize = request.child("customize")
         if customize is not None:
             newprofile.replace_int("effect_left", customize.child_value("effect_left"))
-            newprofile.replace_int(
-                "effect_center", customize.child_value("effect_center")
-            )
-            newprofile.replace_int(
-                "effect_right", customize.child_value("effect_right")
-            )
+            newprofile.replace_int("effect_center", customize.child_value("effect_center"))
+            newprofile.replace_int("effect_right", customize.child_value("effect_right"))
             newprofile.replace_int("hukidashi", customize.child_value("hukidashi"))
             newprofile.replace_int("comment_1", customize.child_value("comment_1"))
             newprofile.replace_int("comment_2", customize.child_value("comment_2"))
 
         event = request.child("event")
         if event is not None:
-            newprofile.replace_int(
-                "event_enemy_medal", event.child_value("enemy_medal")
-            )
+            newprofile.replace_int("event_enemy_medal", event.child_value("enemy_medal"))
             newprofile.replace_int("event_hp", event.child_value("hp"))
 
         stamp = request.child("stamp")

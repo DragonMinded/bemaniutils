@@ -98,9 +98,7 @@ class Protocol:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility to replay a packet from a log or binary dump."
-    )
+    parser = argparse.ArgumentParser(description="A utility to replay a packet from a log or binary dump.")
     parser.add_argument(
         "-i",
         "--infile",
@@ -116,9 +114,7 @@ def main() -> None:
         type=str,
         default="utf-8",
     )
-    parser.add_argument(
-        "-p", "--port", help="Port to talk to. Defaults to 80", type=int, default=80
-    )
+    parser.add_argument("-p", "--port", help="Port to talk to. Defaults to 80", type=int, default=80)
     parser.add_argument(
         "-a",
         "--address",

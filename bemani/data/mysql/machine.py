@@ -71,9 +71,7 @@ arcade_settings = Table(
     Column("version", Integer, nullable=False),
     Column("type", String(64), nullable=False),
     Column("data", JSON, nullable=False),
-    UniqueConstraint(
-        "arcadeid", "game", "version", "type", name="arcadeid_game_version_type"
-    ),
+    UniqueConstraint("arcadeid", "game", "version", "type", name="arcadeid_game_version_type"),
     mysql_charset="utf8mb4",
 )
 

@@ -88,10 +88,7 @@ class EAmuseProtocol:
         if encryption_key:
             # Key is concatenated with the shared secret above
             version, first, second = encryption_key.split("-")
-            key = (
-                binascii.unhexlify((first + second).encode("ascii"))
-                + EAmuseProtocol.SHARED_SECRET
-            )
+            key = binascii.unhexlify((first + second).encode("ascii")) + EAmuseProtocol.SHARED_SECRET
 
             # Next, key is sent through MD5 to derive the real key
             m = hashlib.md5()
@@ -232,9 +229,7 @@ class EAmuseProtocol:
         else:
             raise EAmuseException(f"Invalid packet encoding {packet_encoding}")
 
-    def decode(
-        self, compression: Optional[str], encryption: Optional[str], data: bytes
-    ) -> Node:
+    def decode(self, compression: Optional[str], encryption: Optional[str], data: bytes) -> Node:
         """
         Given a request with optional compression and encryption set, decrypt,
         decompress and decode the data, returning a parsed tree.

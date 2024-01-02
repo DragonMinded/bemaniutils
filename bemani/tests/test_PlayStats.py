@@ -21,9 +21,7 @@ def mock_stats(existing_value: Dict[str, Any]) -> Mock:
     data = Mock()
     data.local = Mock()
     data.local.game = Mock()
-    data.local.game.get_settings = Mock(
-        return_value=ValidatedDict(existing_value) if existing_value else None
-    )
+    data.local.game.get_settings = Mock(return_value=ValidatedDict(existing_value) if existing_value else None)
     data.local.game.put_settings = Mock()
     return data
 
@@ -65,9 +63,7 @@ class TestPlayStats(unittest.TestCase):
             self.assertEqual(new_settings.get_int("consecutive_days"), 1)
             self.assertEqual(new_settings.get_int("first_play_timestamp"), Time.now())
             self.assertEqual(new_settings.get_int("last_play_timestamp"), Time.now())
-            self.assertEqual(
-                new_settings.get_int_array("last_play_date", 3), Time.todays_date()
-            )
+            self.assertEqual(new_settings.get_int_array("last_play_date", 3), Time.todays_date())
 
     def test_get_played_today(self) -> None:
         with freeze_time("2021-08-24"):
@@ -119,9 +115,7 @@ class TestPlayStats(unittest.TestCase):
             self.assertEqual(new_settings.get_int("consecutive_days"), 69)
             self.assertEqual(new_settings.get_int("first_play_timestamp"), 1234567890)
             self.assertEqual(new_settings.get_int("last_play_timestamp"), Time.now())
-            self.assertEqual(
-                new_settings.get_int_array("last_play_date", 3), Time.todays_date()
-            )
+            self.assertEqual(new_settings.get_int_array("last_play_date", 3), Time.todays_date())
 
     def test_get_played_yesterday(self) -> None:
         with freeze_time("2021-08-24"):
@@ -173,9 +167,7 @@ class TestPlayStats(unittest.TestCase):
             self.assertEqual(new_settings.get_int("consecutive_days"), 70)
             self.assertEqual(new_settings.get_int("first_play_timestamp"), 1234567890)
             self.assertEqual(new_settings.get_int("last_play_timestamp"), Time.now())
-            self.assertEqual(
-                new_settings.get_int_array("last_play_date", 3), Time.todays_date()
-            )
+            self.assertEqual(new_settings.get_int_array("last_play_date", 3), Time.todays_date())
 
     def test_get_played_awhile_ago(self) -> None:
         with freeze_time("2021-08-24"):
@@ -225,9 +217,7 @@ class TestPlayStats(unittest.TestCase):
             self.assertEqual(new_settings.get_int("consecutive_days"), 1)
             self.assertEqual(new_settings.get_int("first_play_timestamp"), 1234567890)
             self.assertEqual(new_settings.get_int("last_play_timestamp"), Time.now())
-            self.assertEqual(
-                new_settings.get_int_array("last_play_date", 3), Time.todays_date()
-            )
+            self.assertEqual(new_settings.get_int_array("last_play_date", 3), Time.todays_date())
 
     def test_get_extra_settings(self) -> None:
         with freeze_time("2021-08-24"):

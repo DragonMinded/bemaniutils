@@ -41,16 +41,12 @@ class JubeatPropClient(BaseClient):
         self.assert_path(resp, "response/shopinfo/data/info/share_music")
         self.assert_path(resp, "response/shopinfo/data/info/bonus_music")
         self.assert_path(resp, "response/shopinfo/data/info/only_now_music")
-        self.assert_path(
-            resp, "response/shopinfo/data/info/fc_challenge/today/music_id"
-        )
+        self.assert_path(resp, "response/shopinfo/data/info/fc_challenge/today/music_id")
         self.assert_path(resp, "response/shopinfo/data/info/white_music_list")
         self.assert_path(resp, "response/shopinfo/data/info/open_music_list")
         self.assert_path(resp, "response/shopinfo/data/info/cabinet_survey/id")
         self.assert_path(resp, "response/shopinfo/data/info/cabinet_survey/status")
-        self.assert_path(
-            resp, "response/shopinfo/data/info/kaitou_bisco/remaining_days"
-        )
+        self.assert_path(resp, "response/shopinfo/data/info/kaitou_bisco/remaining_days")
         self.assert_path(resp, "response/shopinfo/data/info/league/status")
         self.assert_path(resp, "response/shopinfo/data/info/bistro/bistro_id")
         self.assert_path(resp, "response/shopinfo/data/info/jbox/point")
@@ -165,27 +161,17 @@ class JubeatPropClient(BaseClient):
         self.assert_path(resp, "response/gametop/data/player/cabinet_survey/read_flag")
         self.assert_path(resp, "response/gametop/data/player/kaitou_bisco/read_flag")
         self.assert_path(resp, "response/gametop/data/player/navi/flag")
-        self.assert_path(
-            resp, "response/gametop/data/player/fc_challenge/today/music_id"
-        )
+        self.assert_path(resp, "response/gametop/data/player/fc_challenge/today/music_id")
         self.assert_path(resp, "response/gametop/data/player/fc_challenge/today/state")
-        self.assert_path(
-            resp, "response/gametop/data/player/fc_challenge/whim/music_id"
-        )
+        self.assert_path(resp, "response/gametop/data/player/fc_challenge/whim/music_id")
         self.assert_path(resp, "response/gametop/data/player/fc_challenge/whim/state")
         self.assert_path(resp, "response/gametop/data/player/news/checked")
         self.assert_path(resp, "response/gametop/data/player/news/checked_flag")
         self.assert_path(resp, "response/gametop/data/player/rivallist")
-        self.assert_path(
-            resp, "response/gametop/data/player/free_first_play/is_available"
-        )
+        self.assert_path(resp, "response/gametop/data/player/free_first_play/is_available")
         self.assert_path(resp, "response/gametop/data/player/free_first_play/point")
-        self.assert_path(
-            resp, "response/gametop/data/player/free_first_play/point_used"
-        )
-        self.assert_path(
-            resp, "response/gametop/data/player/free_first_play/come_come_jbox/is_valid"
-        )
+        self.assert_path(resp, "response/gametop/data/player/free_first_play/point_used")
+        self.assert_path(resp, "response/gametop/data/player/free_first_play/come_come_jbox/is_valid")
         self.assert_path(
             resp,
             "response/gametop/data/player/free_first_play/come_come_jbox/end_time_if_paired",
@@ -201,17 +187,13 @@ class JubeatPropClient(BaseClient):
         self.assert_path(resp, "response/gametop/data/player/league/class")
         self.assert_path(resp, "response/gametop/data/player/league/subclass")
         self.assert_path(resp, "response/gametop/data/player/new_music")
-        self.assert_path(
-            resp, "response/gametop/data/player/eapass_privilege/emblem_list"
-        )
+        self.assert_path(resp, "response/gametop/data/player/eapass_privilege/emblem_list")
         self.assert_path(resp, "response/gametop/data/player/bonus_music/music")
         self.assert_path(resp, "response/gametop/data/player/bonus_music/event_id")
         self.assert_path(resp, "response/gametop/data/player/bonus_music/till_time")
         self.assert_path(resp, "response/gametop/data/player/bistro/chef/id")
         self.assert_path(resp, "response/gametop/data/player/bistro/carry_over")
-        self.assert_path(
-            resp, "response/gametop/data/player/bistro/route_list/route_count"
-        )
+        self.assert_path(resp, "response/gametop/data/player/bistro/route_list/route_count")
         self.assert_path(resp, "response/gametop/data/player/bistro/extension")
         self.assert_path(resp, "response/gametop/data/player/gift_list")
 
@@ -507,9 +489,7 @@ class JubeatPropClient(BaseClient):
 
         leagueid = resp.child_value("gametop/data/league_list/league/id")
         playernode = None
-        for player in resp.child(
-            "gametop/data/league_list/league/player_list"
-        ).children:
+        for player in resp.child("gametop/data/league_list/league/player_list").children:
             if player.child_value("jid") == jid:
                 playernode = player
                 break
@@ -599,31 +579,21 @@ class JubeatPropClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             self.verify_gametop_regist(card, ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         if cardid is None:
@@ -731,13 +701,9 @@ class JubeatPropClient(BaseClient):
                 courses = self.verify_gametop_get_course(jid)
                 league = self.verify_gametop_get_league(jid)
                 if len(courses) > 0:
-                    raise Exception(
-                        "Got nonzero course count without playing any courses!"
-                    )
+                    raise Exception("Got nonzero course count without playing any courses!")
                 if league[1][0] != 0 or league[1][1] != 0 or league[1][2] != 0:
-                    raise Exception(
-                        "Got nonzero league count without playing any league!"
-                    )
+                    raise Exception("Got nonzero league count without playing any league!")
 
                 for score in dummyscores:
                     newscore = scores[str(score["id"])][score["chart"]]
@@ -808,14 +774,10 @@ class JubeatPropClient(BaseClient):
 
                 for course in dummycourses:
                     # Find the course
-                    foundcourses = [
-                        c for c in courses if c["course_id"] == course["course_id"]
-                    ]
+                    foundcourses = [c for c in courses if c["course_id"] == course["course_id"]]
 
                     if len(foundcourses) == 0:
-                        raise Exception(
-                            f"Didn't find course by ID {course['course_id']}"
-                        )
+                        raise Exception(f"Didn't find course by ID {course['course_id']}")
                     foundcourse = foundcourses[0]
 
                     if "expected_rating" in course:
@@ -846,33 +808,21 @@ class JubeatPropClient(BaseClient):
                 time.sleep(1)
 
             # Play a league course, save the score
-            self.verify_gameend_regist(
-                ref_id, jid, [], {}, (league[0], (123456, 234567, 345678))
-            )
+            self.verify_gameend_regist(ref_id, jid, [], {}, (league[0], (123456, 234567, 345678)))
             jid = self.verify_gametop_get_pdata(card, ref_id)
             league = self.verify_gametop_get_league(jid)
 
-            if (
-                league[1][0] != 123456
-                or league[1][1] != 234567
-                or league[1][2] != 345678
-            ):
+            if league[1][0] != 123456 or league[1][1] != 234567 or league[1][2] != 345678:
                 raise Exception(
                     f"League score didn\t save! Got wrong values {league[1][0]}, {league[1][1]}, {league[1][2]} back!"
                 )
 
             # Play a league course, do worse, make sure it doesn't overwrite
-            self.verify_gameend_regist(
-                ref_id, jid, [], {}, (league[0], (12345, 23456, 34567))
-            )
+            self.verify_gameend_regist(ref_id, jid, [], {}, (league[0], (12345, 23456, 34567)))
             jid = self.verify_gametop_get_pdata(card, ref_id)
             league = self.verify_gametop_get_league(jid)
 
-            if (
-                league[1][0] != 123456
-                or league[1][1] != 234567
-                or league[1][2] != 345678
-            ):
+            if league[1][0] != 123456 or league[1][1] != 234567 or league[1][2] != 345678:
                 raise Exception(
                     f"League score got overwritten! Got wrong values {league[1][0]}, {league[1][1]}, {league[1][2]} back!"
                 )

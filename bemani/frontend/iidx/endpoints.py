@@ -36,9 +36,7 @@ def viewnetworkscores() -> Response:
             "attempts": network_scores["attempts"],
             "songs": frontend.get_all_songs(),
             "players": network_scores["players"],
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "showdjnames": True,
             "shownewrecords": False,
         },
@@ -77,9 +75,7 @@ def viewscores(userid: UserID) -> Response:
             "attempts": scores,
             "songs": frontend.get_all_songs(),
             "players": {},
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "showdjnames": False,
             "shownewrecords": True,
         },
@@ -115,9 +111,7 @@ def viewnetworkrecords() -> Response:
             "records": network_records["records"],
             "songs": frontend.get_all_songs(),
             "players": network_records["players"],
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "showdjnames": True,
             "showpersonalsort": False,
             "filterempty": False,
@@ -153,9 +147,7 @@ def viewrecords(userid: UserID) -> Response:
             "records": frontend.get_records(userid),
             "songs": frontend.get_all_songs(),
             "players": {},
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "showdjnames": False,
             "showpersonalsort": True,
             "filterempty": True,
@@ -197,9 +189,7 @@ def viewtopscores(musicid: int) -> Response:
     for version in versions:
         for omniadd in [0, DBConstants.OMNIMIX_VERSION_BUMP]:
             for chart in [0, 1, 2, 3, 4, 5]:
-                details = g.data.local.music.get_song(
-                    GameConstants.IIDX, version + omniadd, musicid, chart
-                )
+                details = g.data.local.music.get_song(GameConstants.IIDX, version + omniadd, musicid, chart)
                 if details is not None:
                     name = details.name
                     artist = details.artist
@@ -275,12 +265,8 @@ def viewplayer(userid: UserID) -> Response:
     latest_version = sorted(djinfo.keys(), reverse=True)[0]
 
     for version in djinfo:
-        sp_rival = g.data.local.user.get_link(
-            GameConstants.IIDX, version, g.userID, "sp_rival", userid
-        )
-        dp_rival = g.data.local.user.get_link(
-            GameConstants.IIDX, version, g.userID, "dp_rival", userid
-        )
+        sp_rival = g.data.local.user.get_link(GameConstants.IIDX, version, g.userID, "sp_rival", userid)
+        dp_rival = g.data.local.user.get_link(GameConstants.IIDX, version, g.userID, "dp_rival", userid)
         djinfo[version]["sp_rival"] = sp_rival is not None
         djinfo[version]["dp_rival"] = dp_rival is not None
 
@@ -291,9 +277,7 @@ def viewplayer(userid: UserID) -> Response:
             "playerid": userid,
             "own_profile": userid == g.userID,
             "player": djinfo,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("iidx_pages.listplayer", userid=userid),
@@ -313,12 +297,8 @@ def listplayer(userid: UserID) -> Dict[str, Any]:
     djinfo = frontend.get_all_player_info([userid])[userid]
 
     for version in djinfo:
-        sp_rival = g.data.local.user.get_link(
-            GameConstants.IIDX, version, g.userID, "sp_rival", userid
-        )
-        dp_rival = g.data.local.user.get_link(
-            GameConstants.IIDX, version, g.userID, "dp_rival", userid
-        )
+        sp_rival = g.data.local.user.get_link(GameConstants.IIDX, version, g.userID, "sp_rival", userid)
+        dp_rival = g.data.local.user.get_link(GameConstants.IIDX, version, g.userID, "dp_rival", userid)
         djinfo[version]["sp_rival"] = sp_rival is not None
         djinfo[version]["dp_rival"] = dp_rival is not None
 
@@ -345,9 +325,7 @@ def viewsettings() -> Response:
         {
             "player": djinfo,
             "regions": RegionConstants.LUT,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
             "qpros": frontend.get_all_items(versions),
         },
         {
@@ -394,13 +372,9 @@ def updateflags() -> Dict[str, Any]:
     settings_dict.replace_int("flags", flagint)
 
     # Update special case flags
-    settings_dict.replace_int(
-        "disable_song_preview", 1 if flags["disable_song_preview"] else 0
-    )
+    settings_dict.replace_int("disable_song_preview", 1 if flags["disable_song_preview"] else 0)
     settings_dict.replace_int("effector_lock", 1 if flags["effector_lock"] else 0)
-    settings_dict.replace_int(
-        "disable_hcn_color", 1 if flags["disable_hcn_color"] else 0
-    )
+    settings_dict.replace_int("disable_hcn_color", 1 if flags["disable_hcn_color"] else 0)
 
     # Update the settings dict
     profile.replace_dict("settings", settings_dict)
@@ -540,9 +514,7 @@ def updateprefecture() -> Dict[str, Any]:
     profile = g.data.local.user.get_profile(GameConstants.IIDX, version, user.id)
     if profile is None:
         raise Exception("Unable to find profile to update!")
-    profile.replace_int(
-        "pid", RegionConstants.db_to_game_region(version >= 25, prefecture)
-    )
+    profile.replace_int("pid", RegionConstants.db_to_game_region(version >= 25, prefecture))
     g.data.local.user.put_profile(GameConstants.IIDX, version, user.id, profile)
 
     # Return that we updated
@@ -565,9 +537,7 @@ def viewrivals() -> Response:
             "userid": str(g.userID),
             "rivals": rivals,
             "players": djinfo,
-            "versions": {
-                version: name for (game, version, name) in frontend.all_games()
-            },
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
         },
         {
             "refresh": url_for("iidx_pages.listrivals"),

@@ -423,9 +423,7 @@ class DDR2014Client(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
-    def verify_game_save(
-        self, ref_id: str, style: int, gauge: Optional[List[int]] = None
-    ) -> None:
+    def verify_game_save(self, ref_id: str, style: int, gauge: Optional[List[int]] = None) -> None:
         gauge = gauge or [0, 0, 0, 0, 0]
 
         call = self.call_node()
@@ -453,9 +451,7 @@ class DDR2014Client(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
-    def verify_game_save_m(
-        self, ref_id: str, ext_id: str, score: Dict[str, Any]
-    ) -> None:
+    def verify_game_save_m(self, ref_id: str, ext_id: str, score: Dict[str, Any]) -> None:
         call = self.call_node()
         game = Node.void("game")
         call.add_child(game)
@@ -546,33 +542,23 @@ class DDR2014Client(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             # Bishi doesn't read a new profile, it just writes out CSV for a blank one
             self.verify_game_load(ref_id, msg_type="new")
             self.verify_game_new(ref_id)
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify locking and unlocking profile ability
@@ -709,9 +695,7 @@ class DDR2014Client(BaseClient):
                 for score in dummyscores:
                     data = scores.get(score["id"], {}).get(score["chart"], None)
                     if data is None:
-                        raise Exception(
-                            f'Expected to get score back for song {score["id"]} chart {score["chart"]}!'
-                        )
+                        raise Exception(f'Expected to get score back for song {score["id"]} chart {score["chart"]}!')
 
                     # Verify the attributes of the score
                     expected_score = score.get("expected_score", score["score"])

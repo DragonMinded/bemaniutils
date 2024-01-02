@@ -37,26 +37,18 @@ class Triggers:
         # Nothing is hooked up for this game, so there is no destination.
         return False
 
-    def broadcast_score(
-        self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song
-    ) -> None:
+    def broadcast_score(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         # For now we only support discord
         if self.config.webhooks.discord[game] is not None:
             self.broadcast_score_discord(data, game, song)
 
-    def broadcast_score_discord(
-        self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song
-    ) -> None:
+    def broadcast_score_discord(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
         if game in {GameConstants.IIDX, GameConstants.POPN_MUSIC}:
             now = datetime.now()
 
             webhook = DiscordWebhook(url=self.config.webhooks.discord[game])
-            scoreembed = DiscordEmbed(
-                title=f"New {self.__gameconst_to_series(game)} Score!", color="fbba08"
-            )
-            scoreembed.set_footer(
-                text=(now.strftime("Score was recorded on %m/%d/%y at %H:%M:%S"))
-            )
+            scoreembed = DiscordEmbed(title=f"New {self.__gameconst_to_series(game)} Score!", color="fbba08")
+            scoreembed.set_footer(text=(now.strftime("Score was recorded on %m/%d/%y at %H:%M:%S")))
 
             # lets give it an author
             song_url = (

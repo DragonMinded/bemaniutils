@@ -307,9 +307,7 @@ def extract_txp2(
                         sprite.save(bfp, format="PNG")
             else:
                 if not announced.get(texturename, False):
-                    print(
-                        f"Cannot extract sprites from {texturename} because it is not a supported format!"
-                    )
+                    print(f"Cannot extract sprites from {texturename} because it is not a supported format!")
                     announced[texturename] = True
     if write_bytecode:
         for swf in afpfile.swfdata:
@@ -318,9 +316,7 @@ def extract_txp2(
     return 0
 
 
-def update_txp2(
-    fname: str, update_dir: str, *, pretend: bool = False, verbose: bool = False
-) -> int:
+def update_txp2(fname: str, update_dir: str, *, pretend: bool = False, verbose: bool = False) -> int:
     # First, parse the file out
     with open(fname, "rb") as bfp:
         afpfile = TXP2File(bfp.read(), verbose=verbose)
@@ -347,9 +343,7 @@ def update_txp2(
         filename = os.path.join(update_dir, filename)
 
         if os.path.isfile(filename):
-            print(
-                f"Updating {texturename} sprite piece {spritename} from {filename}..."
-            )
+            print(f"Updating {texturename} sprite piece {spritename} from {filename}...")
 
             with open(filename, "rb") as bfp:
                 afpfile.update_sprite(texturename, spritename, bfp.read())
@@ -367,9 +361,7 @@ def update_txp2(
     return 0
 
 
-def print_txp2(
-    fname: str, *, decompile_bytecode: bool = False, verbose: bool = False
-) -> int:
+def print_txp2(fname: str, *, decompile_bytecode: bool = False, verbose: bool = False) -> int:
     # First, parse the file out
     with open(fname, "rb") as bfp:
         afpfile = TXP2File(bfp.read(), verbose=verbose)
@@ -386,9 +378,7 @@ def print_txp2(
     return 0
 
 
-def parse_afp(
-    afp: str, bsi: str, *, decompile_bytecode: bool = False, verbose: bool = False
-) -> int:
+def parse_afp(afp: str, bsi: str, *, decompile_bytecode: bool = False, verbose: bool = False) -> int:
     # First, load the AFP and BSI files
     with open(afp, "rb") as bafp:
         with open(bsi, "rb") as bbsi:
@@ -434,9 +424,7 @@ def parse_geo(geo: str, *, verbose: bool = False) -> int:
     return 0
 
 
-def load_containers(
-    renderer: AFPRenderer, containers: List[str], *, need_extras: bool, verbose: bool
-) -> None:
+def load_containers(renderer: AFPRenderer, containers: List[str], *, need_extras: bool, verbose: bool) -> None:
     # This is a complicated one, as we need to be able to specify multiple
     # directories of files as well as support IFS files and TXP2 files.
     for container in containers:
@@ -463,9 +451,7 @@ def load_containers(
                     renderer.add_shape(name, shape)
 
                     if verbose:
-                        print(
-                            f"Added {name} to animation shape library.", file=sys.stderr
-                        )
+                        print(f"Added {name} to animation shape library.", file=sys.stderr)
 
                 # Now, split and load textures into the renderer.
                 sheets: Dict[str, Any] = {}
@@ -482,9 +468,7 @@ def load_containers(
                                 sheets[texturename] = tex
                                 break
                         else:
-                            raise Exception(
-                                "Could not find texture {texturename} to split!"
-                            )
+                            raise Exception("Could not find texture {texturename} to split!")
 
                     if sheets[texturename].img:
                         sprite = sheets[texturename].img.crop(
@@ -503,9 +487,7 @@ def load_containers(
                                 file=sys.stderr,
                             )
                     else:
-                        print(
-                            f"Cannot load {name} from {texturename} because it is not a supported format!"
-                        )
+                        print(f"Cannot load {name} from {texturename} because it is not a supported format!")
 
             # Finally, load the animation data itself into the renderer.
             for i, name in enumerate(afpfile.swfmap.entries):
@@ -631,24 +613,16 @@ def adjust_background_loop(
         background_loop_end = len(background)
 
     if background_loop_start >= background_loop_end:
-        raise Exception(
-            "Cannot start background loop after the end of the background loop!"
-        )
+        raise Exception("Cannot start background loop after the end of the background loop!")
     if background_loop_start < 0 or background_loop_end < 0:
         raise Exception("Cannot start or end background loop on a negative frame!")
-    if background_loop_start >= len(background) or background_loop_end > len(
-        background
-    ):
-        raise Exception(
-            "Cannot start or end background loop larger than the number of background animation frames!"
-        )
+    if background_loop_start >= len(background) or background_loop_end > len(background):
+        raise Exception("Cannot start or end background loop larger than the number of background animation frames!")
 
     background = background[background_loop_start:background_loop_end]
 
     if background_loop_offset < 0 or background_loop_offset >= len(background):
-        raise Exception(
-            "Cannot start first iteration of background loop outside the loop bounds!"
-        )
+        raise Exception("Cannot start first iteration of background loop outside the loop bounds!")
 
     return background[background_loop_offset:] + background[:background_loop_offset]
 
@@ -680,9 +654,7 @@ def render_path(
     if show_progress:
         print("Loading textures, shapes and animation instructions...")
 
-    renderer = AFPRenderer(
-        single_threaded=disable_threads, enable_aa=enable_anti_aliasing
-    )
+    renderer = AFPRenderer(single_threaded=disable_threads, enable_aa=enable_anti_aliasing)
     load_containers(renderer, containers, need_extras=True, verbose=verbose)
 
     if show_progress:
@@ -702,9 +674,7 @@ def render_path(
     if background_color:
         colorvals = background_color.split(",")
         if len(colorvals) not in [3, 4]:
-            raise Exception(
-                "Invalid color, specify a color as a comma-separated RGB or RGBA value!"
-            )
+            raise Exception("Invalid color, specify a color as a comma-separated RGB or RGBA value!")
 
         if len(colorvals) == 3:
             colorvals.append("255")
@@ -766,9 +736,7 @@ def render_path(
             )
 
             # Finally, get the filenames from this sequence.
-            filenames: List[str] = [
-                os.path.join(dirof, filename) for (_, filename) in seqtuple
-            ]
+            filenames: List[str] = [os.path.join(dirof, filename) for (_, filename) in seqtuple]
 
             # Now that we have the list, lets load the images!
             for filename in filenames:
@@ -816,9 +784,7 @@ def render_path(
     if force_aspect_ratio:
         ratio = force_aspect_ratio.split(":")
         if len(ratio) != 2:
-            raise Exception(
-                "Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!"
-            )
+            raise Exception("Invalid aspect ratio, specify a ratio such as 16:9 or 4:3!")
 
         rx, ry = [float(r.strip()) for r in ratio]
         if rx <= 0 or ry <= 0:
@@ -888,9 +854,7 @@ def render_path(
             )
         ):
             if show_progress:
-                frameno = (
-                    requested_frames[i] if requested_frames is not None else (i + 1)
-                )
+                frameno = requested_frames[i] if requested_frames is not None else (i + 1)
                 print(f"Rendered animation frame {frameno}/{frames}.")
             images.append(img)
 
@@ -934,9 +898,7 @@ def render_path(
                     movie_transform=transform,
                 )
             ):
-                frameno = (
-                    requested_frames[i] if requested_frames is not None else (i + 1)
-                )
+                frameno = requested_frames[i] if requested_frames is not None else (i + 1)
                 fullname = f"{filename}-{frameno:{digits}}{ext}"
 
                 try:
@@ -955,9 +917,7 @@ def render_path(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Konami AFP graphic file unpacker/repacker."
-    )
+    parser = argparse.ArgumentParser(description="Konami AFP graphic file unpacker/repacker.")
     subparsers = parser.add_subparsers(help="Action to take", dest="action")
 
     extract_parser = subparsers.add_parser(
@@ -1381,13 +1341,9 @@ def main() -> int:
             verbose=args.verbose,
         )
     elif args.action == "update":
-        return update_txp2(
-            args.file, args.dir, pretend=args.pretend, verbose=args.verbose
-        )
+        return update_txp2(args.file, args.dir, pretend=args.pretend, verbose=args.verbose)
     elif args.action == "print":
-        return print_txp2(
-            args.file, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose
-        )
+        return print_txp2(args.file, decompile_bytecode=args.decompile_bytecode, verbose=args.verbose)
     elif args.action == "parseafp":
         return parse_afp(
             args.afp,

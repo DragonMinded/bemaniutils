@@ -68,9 +68,7 @@ class SoundVoltexHeavenlyHaven(
     GAME_SKILL_NAME_ID_BMK2017: Final[int] = 19
     GAME_SKILL_NAME_ID_KAC_7TH_TIGER: Final[int] = 20
     GAME_SKILL_NAME_ID_KAC_7TH_WOLF: Final[int] = 21
-    GAME_SKILL_NAME_ID_RIKKA: Final[
-        int
-    ] = 22  # For the course that ran from 1/18/2018-2/18/2018
+    GAME_SKILL_NAME_ID_RIKKA: Final[int] = 22  # For the course that ran from 1/18/2018-2/18/2018
     GAME_SKILL_NAME_ID_KAC_8TH: Final[int] = 23
 
     # Return the local2 service so that SDVX 4 and above will send certain packets.
@@ -3336,9 +3334,7 @@ class SoundVoltexHeavenlyHaven(
         skill_course = Node.void("skill_course")
         game.add_child(skill_course)
 
-        achievements = self.data.local.user.get_all_achievements(
-            self.game, self.version, achievementtype="course"
-        )
+        achievements = self.data.local.user.get_all_achievements(self.game, self.version, achievementtype="course")
         courserates: Dict[Tuple[int, int], Dict[str, int]] = {}
 
         def getrates(season_id: int, course_id: int) -> Dict[str, int]:
@@ -3372,14 +3368,8 @@ class SoundVoltexHeavenlyHaven(
 
             info.add_child(Node.s32("season_id", course["season_id"]))
             info.add_child(Node.string("season_name", seasons[course["season_id"]]))
-            info.add_child(
-                Node.bool("season_new_flg", course["season_id"] in {10, 11, 12, 22, 23})
-            )
-            info.add_child(
-                Node.s16(
-                    "course_id", course.get("course_id", course.get("skill_level", -1))
-                )
-            )
+            info.add_child(Node.bool("season_new_flg", course["season_id"] in {10, 11, 12, 22, 23}))
+            info.add_child(Node.s16("course_id", course.get("course_id", course.get("skill_level", -1))))
             info.add_child(
                 Node.string(
                     "course_name",
@@ -3409,8 +3399,7 @@ class SoundVoltexHeavenlyHaven(
             info.add_child(
                 Node.bool(
                     "matching_assist",
-                    course.get("skill_level", -1) >= 1
-                    and course.get("skill_level", -1) <= 7,
+                    course.get("skill_level", -1) >= 1 and course.get("skill_level", -1) <= 7,
                 )
             )
 
@@ -3420,14 +3409,8 @@ class SoundVoltexHeavenlyHaven(
                 course.get("course_id", course.get("skill_level", -1)),
             )
             if rate["attempts"] > 0:
-                info.add_child(
-                    Node.s32(
-                        "clear_rate", int(100.0 * (rate["clears"] / rate["attempts"]))
-                    )
-                )
-                info.add_child(
-                    Node.u32("avg_score", rate["total_score"] // rate["attempts"])
-                )
+                info.add_child(Node.s32("clear_rate", int(100.0 * (rate["clears"] / rate["attempts"]))))
+                info.add_child(Node.u32("avg_score", rate["total_score"] // rate["attempts"]))
             else:
                 info.add_child(Node.s32("clear_rate", 0))
                 info.add_child(Node.u32("avg_score", 0))
@@ -3461,22 +3444,15 @@ class SoundVoltexHeavenlyHaven(
 
         # Now, grab global and local scores as well as clear rates
         global_records = self.data.remote.music.get_all_records(self.game, self.version)
-        users = {
-            uid: prof
-            for (uid, prof) in self.data.local.user.get_all_profiles(
-                self.game, self.version
-            )
-        }
+        users = {uid: prof for (uid, prof) in self.data.local.user.get_all_profiles(self.game, self.version)}
         area_users = [uid for uid in users if users[uid].get_int("loc", -1) == locid]
-        area_records = self.data.local.music.get_all_records(
-            self.game, self.version, userlist=area_users
-        )
+        area_records = self.data.local.music.get_all_records(self.game, self.version, userlist=area_users)
         clears = self.get_clear_rates()
         records: Dict[int, Dict[int, Dict[str, Tuple[UserID, Score]]]] = {}
 
-        missing_users = [
-            userid for (userid, _) in global_records if userid not in users
-        ] + [userid for (userid, _) in area_records if userid not in users]
+        missing_users = [userid for (userid, _) in global_records if userid not in users] + [
+            userid for (userid, _) in area_records if userid not in users
+        ]
         for userid, profile in self.get_any_profiles(missing_users):
             users[userid] = profile
 
@@ -3507,9 +3483,7 @@ class SoundVoltexHeavenlyHaven(
 
                 global_profile = users[globaluserid]
                 if clears[musicid][chart]["total"] > 0:
-                    clear_rate = float(clears[musicid][chart]["clears"]) / float(
-                        clears[musicid][chart]["total"]
-                    )
+                    clear_rate = float(clears[musicid][chart]["clears"]) / float(clears[musicid][chart]["total"])
                 else:
                     clear_rate = 0.0
 
@@ -3517,9 +3491,7 @@ class SoundVoltexHeavenlyHaven(
                 highscores.add_child(info)
                 info.add_child(Node.u32("id", musicid))
                 info.add_child(Node.u32("ty", chart))
-                info.add_child(
-                    Node.string("a_sq", ID.format_extid(global_profile.extid))
-                )
+                info.add_child(Node.string("a_sq", ID.format_extid(global_profile.extid)))
                 info.add_child(Node.string("a_nm", global_profile.get_str("name")))
                 info.add_child(Node.u32("a_sc", globalscore.points))
                 info.add_child(Node.s32("cr", int(clear_rate * 10000)))
@@ -3528,9 +3500,7 @@ class SoundVoltexHeavenlyHaven(
                 if "area" in records[musicid][chart]:
                     (localuserid, localscore) = records[musicid][chart]["area"]
                     local_profile = users[localuserid]
-                    info.add_child(
-                        Node.string("l_sq", ID.format_extid(local_profile.extid))
-                    )
+                    info.add_child(Node.string("l_sq", ID.format_extid(local_profile.extid)))
                     info.add_child(Node.string("l_nm", local_profile.get_str("name")))
                     info.add_child(Node.u32("l_sc", localscore.points))
 
@@ -3655,18 +3625,14 @@ class SoundVoltexHeavenlyHaven(
                 rival = Node.void("rival")
                 game.add_child(rival)
                 rival.add_child(Node.s16("no", index))
-                rival.add_child(
-                    Node.string("seq", ID.format_extid(other_profile.extid))
-                )
+                rival.add_child(Node.string("seq", ID.format_extid(other_profile.extid)))
                 rival.add_child(Node.string("name", other_profile.get_str("name")))
 
                 # Keep track of index
                 index = index + 1
 
                 # Return scores for this user on random charts
-                scores = self.data.remote.music.get_scores(
-                    self.game, self.version, link.other_userid
-                )
+                scores = self.data.remote.music.get_scores(self.game, self.version, link.other_userid)
                 for score in scores:
                     music = Node.void("music")
                     rival.add_child(music)
@@ -3677,9 +3643,7 @@ class SoundVoltexHeavenlyHaven(
                                 score.id,
                                 score.chart,
                                 score.points,
-                                self.__db_to_game_clear_type(
-                                    score.data.get_int("clear_type")
-                                ),
+                                self.__db_to_game_clear_type(score.data.get_int("clear_type")),
                                 self.__db_to_game_grade(score.data.get_int("grade")),
                             ],
                         )
@@ -3956,31 +3920,20 @@ class SoundVoltexHeavenlyHaven(
         game.add_child(itemnode)
 
         game_config = self.get_game_config()
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
 
         for item in achievements:
             if item.type[:5] != "item_":
                 continue
             itemtype = int(item.type[5:])
 
-            if (
-                game_config.get_bool("force_unlock_songs")
-                and itemtype == self.GAME_CATALOG_TYPE_SONG
-            ):
+            if game_config.get_bool("force_unlock_songs") and itemtype == self.GAME_CATALOG_TYPE_SONG:
                 # Don't echo unlocked songs, we will add all of them later
                 continue
-            if (
-                game_config.get_bool("force_unlock_cards")
-                and itemtype == self.GAME_CATALOG_TYPE_APPEAL_CARD
-            ):
+            if game_config.get_bool("force_unlock_cards") and itemtype == self.GAME_CATALOG_TYPE_APPEAL_CARD:
                 # Don't echo unlocked appeal cards, we will add all of them later
                 continue
-            if (
-                game_config.get_bool("force_unlock_crew")
-                and itemtype == self.GAME_CATALOG_TYPE_CREW
-            ):
+            if game_config.get_bool("force_unlock_crew") and itemtype == self.GAME_CATALOG_TYPE_CREW:
                 # Don't echo unlocked crew, we will add all of them later
                 continue
 
@@ -4047,8 +4000,7 @@ class SoundVoltexHeavenlyHaven(
                 courselist = [
                     c
                     for c in self.__get_skill_analyzer_courses()
-                    if c.get("course_id", c.get("skill_level", -1)) == course_id
-                    and c["season_id"] == season_id
+                    if c.get("course_id", c.get("skill_level", -1)) == course_id and c["season_id"] == season_id
                 ]
                 if len(courselist) > 0:
                     skill_level = max(skill_level, courselist[0]["skill_level"])
@@ -4060,9 +4012,7 @@ class SoundVoltexHeavenlyHaven(
             course_node.add_child(Node.s32("sc", course.data.get_int("score")))
             course_node.add_child(Node.s16("ct", course.data.get_int("clear_type")))
             course_node.add_child(Node.s16("gr", course.data.get_int("grade")))
-            course_node.add_child(
-                Node.s16("ar", course.data.get_int("achievement_rate"))
-            )
+            course_node.add_child(Node.s16("ar", course.data.get_int("achievement_rate")))
             course_node.add_child(Node.s16("cnt", 1))
 
         # Calculated skill level
@@ -4104,22 +4054,16 @@ class SoundVoltexHeavenlyHaven(
 
         return game
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         # Update blaster energy and in-game currencies
         earned_gamecoin_packet = request.child_value("earned_gamecoin_packet")
         if earned_gamecoin_packet is not None:
-            newprofile.replace_int(
-                "packet", newprofile.get_int("packet") + earned_gamecoin_packet
-            )
+            newprofile.replace_int("packet", newprofile.get_int("packet") + earned_gamecoin_packet)
         earned_gamecoin_block = request.child_value("earned_gamecoin_block")
         if earned_gamecoin_block is not None:
-            newprofile.replace_int(
-                "block", newprofile.get_int("block") + earned_gamecoin_block
-            )
+            newprofile.replace_int("block", newprofile.get_int("block") + earned_gamecoin_block)
         earned_blaster_energy = request.child_value("earned_blaster_energy")
         if earned_blaster_energy is not None:
             newprofile.replace_int(
@@ -4146,22 +4090,13 @@ class SoundVoltexHeavenlyHaven(
                 item_type = child.child_value("type")
                 param = child.child_value("param")
 
-                if (
-                    game_config.get_bool("force_unlock_cards")
-                    and item_type == self.GAME_CATALOG_TYPE_APPEAL_CARD
-                ):
+                if game_config.get_bool("force_unlock_cards") and item_type == self.GAME_CATALOG_TYPE_APPEAL_CARD:
                     # Don't save back appeal cards because they were force unlocked
                     continue
-                if (
-                    game_config.get_bool("force_unlock_songs")
-                    and item_type == self.GAME_CATALOG_TYPE_SONG
-                ):
+                if game_config.get_bool("force_unlock_songs") and item_type == self.GAME_CATALOG_TYPE_SONG:
                     # Don't save back songs, because they were force unlocked
                     continue
-                if (
-                    game_config.get_bool("force_unlock_crew")
-                    and item_type == self.GAME_CATALOG_TYPE_CREW
-                ):
+                if game_config.get_bool("force_unlock_crew") and item_type == self.GAME_CATALOG_TYPE_CREW:
                     # Don't save back crew, because they were force unlocked
                     continue
 

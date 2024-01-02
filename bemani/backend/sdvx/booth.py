@@ -227,10 +227,7 @@ class SoundVoltexBooth(
             records_by_id[score.id][score.chart] = record
             missing_users.append(userid)
 
-        users = {
-            userid: profile
-            for (userid, profile) in self.get_any_profiles(missing_users)
-        }
+        users = {userid: profile for (userid, profile) in self.get_any_profiles(missing_users)}
 
         # Output records
         for songid in records_by_id:
@@ -492,22 +489,16 @@ class SoundVoltexBooth(
 
         return game
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
 
         # Update experience and in-game currencies
         earned_gamecoin_packet = request.child_value("earned_gamecoin_packet")
         if earned_gamecoin_packet is not None:
-            newprofile.replace_int(
-                "packet", newprofile.get_int("packet") + earned_gamecoin_packet
-            )
+            newprofile.replace_int("packet", newprofile.get_int("packet") + earned_gamecoin_packet)
         earned_gamecoin_block = request.child_value("earned_gamecoin_block")
         if earned_gamecoin_block is not None:
-            newprofile.replace_int(
-                "block", newprofile.get_int("block") + earned_gamecoin_block
-            )
+            newprofile.replace_int("block", newprofile.get_int("block") + earned_gamecoin_block)
         gain_exp = request.child_value("gain_exp")
         if gain_exp is not None:
             newprofile.replace_int("exp", newprofile.get_int("exp") + gain_exp)
@@ -520,15 +511,11 @@ class SoundVoltexBooth(
         if not game_config.get_bool("force_unlock_cards"):
             have_item = request.child_value("have_item")
             if have_item is not None:
-                newprofile.replace_int_array(
-                    "have_item", 512, [1 if x else 0 for x in have_item]
-                )
+                newprofile.replace_int_array("have_item", 512, [1 if x else 0 for x in have_item])
         if not game_config.get_bool("force_unlock_songs"):
             have_note = request.child_value("have_note")
             if have_note is not None:
-                newprofile.replace_int_array(
-                    "have_note", 512, [1 if x else 0 for x in have_note]
-                )
+                newprofile.replace_int_array("have_note", 512, [1 if x else 0 for x in have_note])
 
         # Grab last information.
         lastdict = newprofile.get_dict("last")

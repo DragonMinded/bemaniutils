@@ -11,11 +11,7 @@ from .. import package_root
 try:
     clib = None
     clib_path = os.path.join(package_root, "protocol")
-    files = [
-        f
-        for f in os.listdir(clib_path)
-        if f.startswith("lz77cpp") and f.endswith(".so")
-    ]
+    files = [f for f in os.listdir(clib_path) if f.startswith("lz77cpp") and f.endswith(".so")]
     if len(files) > 0:
         clib = ctypes.cdll.LoadLibrary(os.path.join(clib_path, files[0]))
         clib.decompress.argtypes = (
@@ -110,11 +106,7 @@ class Lz77Decompress:
             if amount > (self.ringlength - self.write_pos):
                 amount = self.ringlength - self.write_pos
 
-            self.ring = (
-                self.ring[: self.write_pos]
-                + bytedata[:amount]
-                + self.ring[(self.write_pos + amount) :]
-            )
+            self.ring = self.ring[: self.write_pos] + bytedata[:amount] + self.ring[(self.write_pos + amount) :]
             bytedata = bytedata[amount:]
             self.write_pos = (self.write_pos + amount) % self.ringlength
 
@@ -356,14 +348,10 @@ class Lz77Compress:
                     earliest = max(0, self.bytes_written - (self.ringlength - 1))
                     index = self.data[self.read_pos : (self.read_pos + 3)]
                     updated_backref_locations: Set[int] = set(
-                        absolute_pos
-                        for absolute_pos in self.starts[index]
-                        if absolute_pos >= earliest
+                        absolute_pos for absolute_pos in self.starts[index] if absolute_pos >= earliest
                     )
                     self.starts[index] = updated_backref_locations
-                    possible_backref_locations: List[int] = list(
-                        updated_backref_locations
-                    )
+                    possible_backref_locations: List[int] = list(updated_backref_locations)
 
                     # Output the data as a copy if we couldn't find a backref
                     if not possible_backref_locations:
@@ -385,11 +373,7 @@ class Lz77Compress:
                     copy_amount = 3
                     while copy_amount < backref_amount:
                         # First, let's see if we have any 3-wide chunks to consume.
-                        index = self.data[
-                            (self.read_pos + copy_amount) : (
-                                self.read_pos + copy_amount + 3
-                            )
-                        ]
+                        index = self.data[(self.read_pos + copy_amount) : (self.read_pos + copy_amount + 3)]
                         locations = self.starts[index]
                         new_backref_locations: List[int] = [
                             absolute_pos
@@ -406,9 +390,7 @@ class Lz77Compress:
                             # Check our existing locations to figure out if we still have
                             # longest prefixes of 1 or 2 left.
                             while copy_amount < backref_amount:
-                                locations = self.locations[
-                                    self.data[self.read_pos + copy_amount]
-                                ]
+                                locations = self.locations[self.data[self.read_pos + copy_amount]]
                                 new_backref_locations = [
                                     absolute_pos
                                     for absolute_pos in possible_backref_locations
@@ -422,11 +404,7 @@ class Lz77Compress:
 
                                 # Mark that we're copying an extra byte from the backref.
                                 self._ring_write(
-                                    self.data[
-                                        (self.read_pos + copy_amount) : (
-                                            self.read_pos + copy_amount + 1
-                                        )
-                                    ]
+                                    self.data[(self.read_pos + copy_amount) : (self.read_pos + copy_amount + 1)]
                                 )
                                 copy_amount += 1
                                 possible_backref_locations = new_backref_locations

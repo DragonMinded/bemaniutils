@@ -99,9 +99,7 @@ def adminrequired(func: Callable) -> Callable:
         else:
             user = g.data.local.user.get_user(g.userID)
             if not user.admin:
-                return Response(
-                    render_template("403.html", **{"title": "403 Forbidden"}), 403
-                )
+                return Response(render_template("403.html", **{"title": "403 Forbidden"}), 403)
             else:
                 return func(*args, **kwargs)
 
@@ -169,9 +167,7 @@ def jsx(filename: str) -> Response:
         if jsx is None:
             with open(jsxfile, "rb") as f:
                 transformer = JSXTransformer()
-                jsx = transformer.transform_string(
-                    polyfill_fragments(f.read().decode("utf-8"))
-                )
+                jsx = transformer.transform_string(polyfill_fragments(f.read().decode("utf-8")))
             # Set the cache to one year, since we namespace on this file's update time
             g.cache.set(namespace, jsx, timeout=86400 * 365)
         return Response(jsx, mimetype="application/javascript")
@@ -179,11 +175,7 @@ def jsx(filename: str) -> Response:
         if app.debug:
             # We should make sure this error shows up on the frontend
             # much like python or template errors do.
-            stack = "".join(
-                traceback.format_exception(
-                    type(exception), exception, exception.__traceback__
-                )
-            )
+            stack = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
             stack = stack.replace('"', '\\"')
             stack = stack.replace("\r\n", "\\n")
             stack = stack.replace("\r", "\\n")
@@ -263,9 +255,7 @@ def render_react(
 
 
 def exception(sender: Any, exception: Exception, **extra: Any) -> None:
-    stack = "".join(
-        traceback.format_exception(type(exception), exception, exception.__traceback__)
-    )
+    stack = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
     try:
         g.data.local.network.put_event(
             "exception",
@@ -294,9 +284,7 @@ def page_not_found(error: Any) -> Response:
 
 @app.errorhandler(500)
 def server_error(error: Any) -> Response:
-    return Response(
-        render_template("500.html", **{"title": "500 Internal Server Error"}), 500
-    )
+    return Response(render_template("500.html", **{"title": "500 Internal Server Error"}), 500)
 
 
 def error(msg: str) -> None:
@@ -316,10 +304,7 @@ def info(msg: str) -> None:
 
 
 def valid_email(email: str) -> bool:
-    return (
-        re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", email)
-        is not None
-    )
+    return re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", email) is not None
 
 
 def valid_username(username: str) -> bool:

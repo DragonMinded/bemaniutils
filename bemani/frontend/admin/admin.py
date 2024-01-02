@@ -161,26 +161,14 @@ def viewevents() -> Response:
         "Events",
         "admin/events.react.js",
         {
-            "events": [
-                format_event(event)
-                for event in g.data.local.network.get_events(limit=100)
-            ],
-            "users": {
-                user.id: user.username for user in g.data.local.user.get_all_users()
-            },
-            "arcades": {
-                arcade.id: arcade.name
-                for arcade in g.data.local.machine.get_all_arcades()
-            },
+            "events": [format_event(event) for event in g.data.local.network.get_events(limit=100)],
+            "users": {user.id: user.username for user in g.data.local.user.get_all_users()},
+            "arcades": {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
             "iidxsongs": iidx.get_all_songs(),
             "jubeatsongs": jubeat.get_all_songs(),
             "pnmsongs": pnm.get_all_songs(),
-            "iidxversions": {
-                version: name for (game, version, name) in iidx.all_games()
-            },
-            "jubeatversions": {
-                version: name for (game, version, name) in jubeat.all_games()
-            },
+            "iidxversions": {version: name for (game, version, name) in iidx.all_games()},
+            "jubeatversions": {version: name for (game, version, name) in jubeat.all_games()},
             "pnmversions": {version: name for (game, version, name) in pnm.all_games()},
         },
         {
@@ -205,10 +193,7 @@ def viewevents() -> Response:
 @adminrequired
 def backfillevents(until: int) -> Dict[str, Any]:
     return {
-        "events": [
-            format_event(event)
-            for event in g.data.local.network.get_events(until_id=until, limit=1000)
-        ],
+        "events": [format_event(event) for event in g.data.local.network.get_events(until_id=until, limit=1000)],
     }
 
 
@@ -217,14 +202,9 @@ def backfillevents(until: int) -> Dict[str, Any]:
 @adminrequired
 def listevents(since: int) -> Dict[str, Any]:
     return {
-        "events": [
-            format_event(event)
-            for event in g.data.local.network.get_events(since_id=since)
-        ],
+        "events": [format_event(event) for event in g.data.local.network.get_events(since_id=since)],
         "users": {user.id: user.username for user in g.data.local.user.get_all_users()},
-        "arcades": {
-            arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()
-        },
+        "arcades": {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
     }
 
 
@@ -235,12 +215,8 @@ def viewapi() -> Response:
         "Data API",
         "admin/api.react.js",
         {
-            "clients": [
-                format_client(client) for client in g.data.local.api.get_all_clients()
-            ],
-            "servers": [
-                format_server(server) for server in g.data.local.api.get_all_servers()
-            ],
+            "clients": [format_client(client) for client in g.data.local.api.get_all_clients()],
+            "servers": [format_server(server) for server in g.data.local.api.get_all_servers()],
         },
         {
             "addclient": url_for("admin_pages.addclient"),
@@ -261,10 +237,7 @@ def viewarcades() -> Response:
         "Arcades",
         "admin/arcades.react.js",
         {
-            "arcades": [
-                format_arcade(arcade)
-                for arcade in g.data.local.machine.get_all_arcades()
-            ],
+            "arcades": [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
             "regions": RegionConstants.LUT,
             "usernames": g.data.local.user.get_all_usernames(),
             "paseli_enabled": g.config.paseli.enabled,
@@ -294,14 +267,8 @@ def viewmachines() -> Response:
         "Machines",
         "admin/machines.react.js",
         {
-            "machines": [
-                format_machine(machine)
-                for machine in g.data.local.machine.get_all_machines()
-            ],
-            "arcades": {
-                arcade.id: arcade.name
-                for arcade in g.data.local.machine.get_all_arcades()
-            },
+            "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
+            "arcades": {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
             "series": {
                 GameConstants.BISHI_BASHI.value: "BishiBashi",
                 GameConstants.DDR.value: "DDR",
@@ -384,9 +351,7 @@ def viewgamesettings() -> Response:
         "Game Settings",
         "admin/gamesettings.react.js",
         {
-            "game_settings": get_game_settings(
-                g.data, g.data.local.machine.DEFAULT_SETTINGS_ARCADE
-            ),
+            "game_settings": get_game_settings(g.data, g.data.local.machine.DEFAULT_SETTINGS_ARCADE),
         },
         {
             "update_settings": url_for("admin_pages.updatesettings"),
@@ -419,15 +384,10 @@ def viewuser(userid: int) -> Response:
             },
             "cards": cards,
             "arcades": {arcade.id: arcade.name for arcade in arcades},
-            "balances": {
-                arcade.id: g.data.local.user.get_balance(userid, arcade.id)
-                for arcade in arcades
-            },
+            "balances": {arcade.id: g.data.local.user.get_balance(userid, arcade.id) for arcade in arcades},
             "events": [
                 format_event(event)
-                for event in g.data.local.network.get_events(
-                    userid=userid, event="paseli_transaction"
-                )
+                for event in g.data.local.network.get_events(userid=userid, event="paseli_transaction")
             ],
         },
         {
@@ -461,15 +421,9 @@ def listuser(userid: int) -> Dict[str, Any]:
     return {
         "cards": cards,
         "arcades": {arcade.id: arcade.name for arcade in arcades},
-        "balances": {
-            arcade.id: g.data.local.user.get_balance(userid, arcade.id)
-            for arcade in arcades
-        },
+        "balances": {arcade.id: g.data.local.user.get_balance(userid, arcade.id) for arcade in arcades},
         "events": [
-            format_event(event)
-            for event in g.data.local.network.get_events(
-                userid=userid, event="paseli_transaction"
-            )
+            format_event(event) for event in g.data.local.network.get_events(userid=userid, event="paseli_transaction")
         ],
     }
 
@@ -479,13 +433,8 @@ def listuser(userid: int) -> Dict[str, Any]:
 @adminrequired
 def listmachines() -> Dict[str, Any]:
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines()
-        ],
-        "arcades": {
-            arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()
-        },
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
+        "arcades": {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
     }
 
 
@@ -517,9 +466,7 @@ def updatearcade() -> Dict[str, Any]:
 
     # Just return all arcades for ease of updating
     return {
-        "arcades": [
-            format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()
-        ],
+        "arcades": [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
     }
 
 
@@ -556,9 +503,7 @@ def addarcade() -> Dict[str, Any]:
 
     # Just return all arcades for ease of updating
     return {
-        "arcades": [
-            format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()
-        ],
+        "arcades": [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
     }
 
 
@@ -575,9 +520,7 @@ def removearcade() -> Dict[str, Any]:
 
     # Just return all arcades for ease of updating
     return {
-        "arcades": [
-            format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()
-        ],
+        "arcades": [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
     }
 
 
@@ -599,9 +542,7 @@ def updateclient() -> Dict[str, Any]:
 
     # Just return all clients for ease of updating
     return {
-        "clients": [
-            format_client(client) for client in g.data.local.api.get_all_clients()
-        ],
+        "clients": [format_client(client) for client in g.data.local.api.get_all_clients()],
     }
 
 
@@ -621,9 +562,7 @@ def addclient() -> Dict[str, Any]:
 
     # Just return all clientss for ease of updating
     return {
-        "clients": [
-            format_client(client) for client in g.data.local.api.get_all_clients()
-        ],
+        "clients": [format_client(client) for client in g.data.local.api.get_all_clients()],
     }
 
 
@@ -640,9 +579,7 @@ def removeclient() -> Dict[str, Any]:
 
     # Just return all clients for ease of updating
     return {
-        "clients": [
-            format_client(client) for client in g.data.local.api.get_all_clients()
-        ],
+        "clients": [format_client(client) for client in g.data.local.api.get_all_clients()],
     }
 
 
@@ -662,9 +599,7 @@ def queryserver(serverid: int) -> Dict[str, Any]:
             "name": serverinfo["name"],
             "email": serverinfo["email"],
         }
-        info["status"] = (
-            "ok" if APIClient.API_VERSION in serverinfo["versions"] else "badversion"
-        )
+        info["status"] = "ok" if APIClient.API_VERSION in serverinfo["versions"] else "badversion"
     except NotAuthorizedAPIException:
         info = {
             "name": "unknown",
@@ -704,9 +639,7 @@ def updateserver() -> Dict[str, Any]:
 
     # Just return all servers for ease of updating
     return {
-        "servers": [
-            format_server(server) for server in g.data.local.api.get_all_servers()
-        ],
+        "servers": [format_server(server) for server in g.data.local.api.get_all_servers()],
     }
 
 
@@ -729,9 +662,7 @@ def addserver() -> Dict[str, Any]:
 
     # Just return all serverss for ease of updating
     return {
-        "servers": [
-            format_server(server) for server in g.data.local.api.get_all_servers()
-        ],
+        "servers": [format_server(server) for server in g.data.local.api.get_all_servers()],
     }
 
 
@@ -748,9 +679,7 @@ def removeserver() -> Dict[str, Any]:
 
     # Just return all servers for ease of updating
     return {
-        "servers": [
-            format_server(server) for server in g.data.local.api.get_all_servers()
-        ],
+        "servers": [format_server(server) for server in g.data.local.api.get_all_servers()],
     }
 
 
@@ -770,22 +699,15 @@ def generatepcbid() -> Dict[str, Any]:
     pcbid: Optional[str] = None
     while pcbid is None:
         # Generate a new PCBID, check for uniqueness
-        potential_pcbid = "01201000000000" + "".join(
-            [random.choice("0123456789ABCDEF") for _ in range(6)]
-        )
+        potential_pcbid = "01201000000000" + "".join([random.choice("0123456789ABCDEF") for _ in range(6)])
         if g.data.local.machine.get_machine(potential_pcbid) is None:
             pcbid = potential_pcbid
 
-    g.data.local.machine.create_machine(
-        pcbid, name, new_pcbid["description"], new_pcbid["arcade"]
-    )
+    g.data.local.machine.create_machine(pcbid, name, new_pcbid["description"], new_pcbid["arcade"])
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines()
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
     }
 
 
@@ -801,9 +723,7 @@ def addpcbid() -> Dict[str, Any]:
             raise Exception("Unable to find arcade to link PCBID to!")
 
     # Verify that the PCBID is valid
-    potential_pcbid = "".join(
-        [c for c in new_pcbid["pcbid"].upper() if c in "0123456789ABCDEF"]
-    )
+    potential_pcbid = "".join([c for c in new_pcbid["pcbid"].upper() if c in "0123456789ABCDEF"])
     if len(potential_pcbid) != len(new_pcbid["pcbid"]):
         raise Exception("Invalid characters in PCBID!")
     if len(potential_pcbid) != 20:
@@ -814,16 +734,11 @@ def addpcbid() -> Dict[str, Any]:
 
     # Will be set by the game on boot.
     name = "なし"
-    g.data.local.machine.create_machine(
-        potential_pcbid, name, new_pcbid["description"], new_pcbid["arcade"]
-    )
+    g.data.local.machine.create_machine(potential_pcbid, name, new_pcbid["description"], new_pcbid["arcade"])
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines()
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
     }
 
 
@@ -850,18 +765,13 @@ def updatepcbid() -> Dict[str, Any]:
     current_machine.description = machine["description"]
     current_machine.arcade = machine["arcade"]
     current_machine.port = machine["port"]
-    current_machine.game = (
-        None if machine["game"] == "any" else GameConstants(machine["game"])
-    )
+    current_machine.game = None if machine["game"] == "any" else GameConstants(machine["game"])
     current_machine.version = None if machine["game"] == "any" else machine["version"]
     g.data.local.machine.put_machine(current_machine)
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines()
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
     }
 
 
@@ -878,10 +788,7 @@ def removepcbid() -> Dict[str, Any]:
 
     # Just return all machines for ease of updating
     return {
-        "machines": [
-            format_machine(machine)
-            for machine in g.data.local.machine.get_all_machines()
-        ],
+        "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
     }
 
 
@@ -963,11 +870,7 @@ def searchusers() -> Dict[str, Any]:
             return True
 
     return {
-        "users": [
-            format_user(user)
-            for user in g.data.local.user.get_all_users()
-            if match(user)
-        ],
+        "users": [format_user(user) for user in g.data.local.user.get_all_users() if match(user)],
     }
 
 
@@ -1003,15 +906,9 @@ def updatebalance(userid: int) -> Dict[str, Any]:
 
     return {
         "arcades": {arcade.id: arcade.name for arcade in arcades},
-        "balances": {
-            arcade.id: g.data.local.user.get_balance(userid, arcade.id)
-            for arcade in arcades
-        },
+        "balances": {arcade.id: g.data.local.user.get_balance(userid, arcade.id) for arcade in arcades},
         "events": [
-            format_event(event)
-            for event in g.data.local.network.get_events(
-                userid=userid, event="paseli_transaction"
-            )
+            format_event(event) for event in g.data.local.network.get_events(userid=userid, event="paseli_transaction")
         ],
     }
 
@@ -1144,9 +1041,7 @@ def removeusercard(userid: int) -> Dict[str, Any]:
 
     # Return new card list
     return {
-        "cards": [
-            CardCipher.encode(card) for card in g.data.local.user.get_cards(userid)
-        ],
+        "cards": [CardCipher.encode(card) for card in g.data.local.user.get_cards(userid)],
     }
 
 
@@ -1178,9 +1073,7 @@ def addusercard(userid: int) -> Dict[str, Any]:
 
     # Return new card list
     return {
-        "cards": [
-            CardCipher.encode(card) for card in g.data.local.user.get_cards(userid)
-        ],
+        "cards": [CardCipher.encode(card) for card in g.data.local.user.get_cards(userid)],
     }
 
 
@@ -1261,24 +1154,18 @@ def updatesettings() -> Dict[str, Any]:
             new_value = game_setting["value"]
 
             # Update the value
-            current_settings = g.data.local.machine.get_settings(
-                arcadeid, game, version, category
-            )
+            current_settings = g.data.local.machine.get_settings(arcadeid, game, version, category)
             if current_settings is None:
                 current_settings = ValidatedDict()
 
             getattr(current_settings, update_function)(setting, new_value)
 
             # Save it back
-            g.data.local.machine.put_settings(
-                arcadeid, game, version, category, current_settings
-            )
+            g.data.local.machine.put_settings(arcadeid, game, version, category, current_settings)
 
     # Return the updated value
     return {
         "game_settings": [
-            gs
-            for gs in get_game_settings(g.data, arcadeid)
-            if gs["game"] == game.value and gs["version"] == version
+            gs for gs in get_game_settings(g.data, arcadeid) if gs["game"] == game.value and gs["version"] == version
         ][0],
     }

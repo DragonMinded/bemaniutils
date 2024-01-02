@@ -34,9 +34,7 @@ class MusecaGameHiscoreHandler(MusecaBase):
 
         # Now, grab user records
         records = self.data.remote.music.get_all_records(self.game, self.version)
-        users = {
-            uid: prof for (uid, prof) in self.get_any_profiles([r[0] for r in records])
-        }
+        users = {uid: prof for (uid, prof) in self.get_any_profiles([r[0] for r in records])}
 
         hiscore_allover = Node.void("hiscore_allover")
         game.add_child(hiscore_allover)
@@ -61,14 +59,10 @@ class MusecaGameHiscoreHandler(MusecaBase):
         # Now, grab local records
         area_users = [
             uid
-            for (uid, prof) in self.data.local.user.get_all_profiles(
-                self.game, self.version
-            )
+            for (uid, prof) in self.data.local.user.get_all_profiles(self.game, self.version)
             if prof.get_int("loc", -1) == locid
         ]
-        records = self.data.local.music.get_all_records(
-            self.game, self.version, userlist=area_users
-        )
+        records = self.data.local.music.get_all_records(self.game, self.version, userlist=area_users)
         missing_players = [uid for (uid, _) in records if uid not in users]
         for uid, prof in self.get_any_profiles(missing_players):
             users[uid] = prof
@@ -101,9 +95,7 @@ class MusecaGameHiscoreHandler(MusecaBase):
         for songid in clears:
             for chart in clears[songid]:
                 if clears[songid][chart]["total"] > 0:
-                    rate = float(clears[songid][chart]["clears"]) / float(
-                        clears[songid][chart]["total"]
-                    )
+                    rate = float(clears[songid][chart]["clears"]) / float(clears[songid][chart]["total"])
                     dnode = Node.void("d")
                     clear_rate.add_child(dnode)
                     dnode.add_child(Node.u32("id", songid))

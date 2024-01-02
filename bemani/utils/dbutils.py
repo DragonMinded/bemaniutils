@@ -69,9 +69,7 @@ def remove_admin(config: Config, username: Optional[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="A utility for working with databases created with this codebase."
-    )
+    parser = argparse.ArgumentParser(description="A utility for working with databases created with this codebase.")
     parser.add_argument(
         "operation",
         help="Operation to perform, options include 'create', 'generate', 'upgrade', 'change-password', 'add-admin' and 'remove-admin'.",

@@ -199,9 +199,7 @@ class JubeatProp(
         return cls.__rank_to_class(cls.__class_to_rank(cur_class, cur_subclass) - 1)
 
     @classmethod
-    def _get_league_buckets(
-        cls, scores: List[Tuple[UserID, int]]
-    ) -> Tuple[List[UserID], List[UserID], List[UserID]]:
+    def _get_league_buckets(cls, scores: List[Tuple[UserID, int]]) -> Tuple[List[UserID], List[UserID], List[UserID]]:
         """
         Given a list of userid, score tuples, return a tuple containing three lists.
         The first list is the top 30% scorer IDs, the next list is the middle 40%
@@ -253,9 +251,7 @@ class JubeatProp(
                 scores.append(
                     (
                         userid,
-                        league_score["score"][0]
-                        + league_score["score"][1]
-                        + league_score["score"][2],
+                        league_score["score"][0] + league_score["score"][1] + league_score["score"][2],
                     )
                 )
             else:
@@ -264,9 +260,7 @@ class JubeatProp(
         return scores, absentees
 
     @classmethod
-    def _get_league_absentees(
-        cls, data: Data, current_id: int, absentees: List[UserID]
-    ) -> List[UserID]:
+    def _get_league_absentees(cls, data: Data, current_id: int, absentees: List[UserID]) -> List[UserID]:
         """
         Given a list of user IDs that didn't play for some number of weeks, return
         a subset of those IDs that have been absent enough weeks to get a demotion.
@@ -333,22 +327,15 @@ class JubeatProp(
             data.local.user.put_profile(cls.game, cls.version, userid, profile)
 
     @classmethod
-    def run_scheduled_work(
-        cls, data: Data, config: Dict[str, Any]
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    def run_scheduled_work(cls, data: Data, config: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
         Once a week, insert a new league course. Every day, insert new FC challenge courses.
         """
         events = []
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "league_course", "weekly"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "league_course", "weekly"):
             # Generate a new league course list, save it to the DB.
             start_time, end_time = data.local.network.get_schedule_duration("weekly")
-            all_songs = set(
-                song.id
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-            )
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
             if len(all_songs) >= 3:
                 league_songs = random.sample(all_songs, 3)
                 data.local.game.put_time_sensitive_settings(
@@ -390,19 +377,12 @@ class JubeatProp(
                     cls._modify_profile(data, userid, "demote")
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "league_course", "weekly"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "league_course", "weekly")
 
-        if data.local.network.should_schedule(
-            cls.game, cls.version, "fc_challenge", "daily"
-        ):
+        if data.local.network.should_schedule(cls.game, cls.version, "fc_challenge", "daily"):
             # Generate a new list of two FC challenge songs.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = set(
-                song.id
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-            )
+            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
             if len(all_songs) >= 2:
                 daily_songs = random.sample(all_songs, 2)
                 data.local.game.put_time_sensitive_settings(
@@ -428,9 +408,7 @@ class JubeatProp(
                 )
 
                 # Mark that we did some actual work here.
-                data.local.network.mark_scheduled(
-                    cls.game, cls.version, "fc_challenge", "daily"
-                )
+                data.local.network.mark_scheduled(cls.game, cls.version, "fc_challenge", "daily")
 
         return events
 
@@ -466,9 +444,7 @@ class JubeatProp(
         info.add_child(only_now_music)
 
         # Full combo challenge?
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "fc_challenge"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "fc_challenge")
         if entry is None:
             entry = ValidatedDict()
 
@@ -803,11 +779,7 @@ class JubeatProp(
             result.add_child(Node.s32_array("score", scores))
 
         # Last course ID
-        data.add_child(
-            Node.s32(
-                "last_course_id", profile.get_dict("last").get_int("last_course_id", -1)
-            )
-        )
+        data.add_child(Node.s32("last_course_id", profile.get_dict("last").get_int("last_course_id", -1)))
 
         return gametop
 
@@ -830,9 +802,7 @@ class JubeatProp(
         data.add_child(league_list)
 
         # Look up the current league charts in the DB
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "league"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "league")
         if entry is not None:
             # Just get the week number, use that as the ID
             leagueid = int(entry["start_time"] / 604800)
@@ -870,27 +840,15 @@ class JubeatProp(
             result = Node.void("result")
             player.add_child(result)
 
-            league_score = self.data.local.user.get_achievement(
-                self.game, self.version, userid, leagueid, "league"
-            )
+            league_score = self.data.local.user.get_achievement(self.game, self.version, userid, leagueid, "league")
             if league_score is None:
                 league_score = ValidatedDict()
 
-            result.add_child(
-                Node.s32_array("score", league_score.get_int_array("score", 3, [0] * 3))
-            )
-            result.add_child(
-                Node.s8_array("clear", league_score.get_int_array("clear", 3, [0] * 3))
-            )
+            result.add_child(Node.s32_array("score", league_score.get_int_array("score", 3, [0] * 3)))
+            result.add_child(Node.s8_array("clear", league_score.get_int_array("clear", 3, [0] * 3)))
 
-        data.add_child(
-            Node.s32("last_class", profile.get_dict("last").get_int("league_class", 1))
-        )
-        data.add_child(
-            Node.s32(
-                "last_subclass", profile.get_dict("last").get_int("league_subclass", 5)
-            )
-        )
+        data.add_child(Node.s32("last_class", profile.get_dict("last").get_int("league_class", 1)))
+        data.add_child(Node.s32("last_subclass", profile.get_dict("last").get_int("league_subclass", 5)))
         data.add_child(Node.bool("is_checked", profile.get_bool("league_is_checked")))
 
         return gametop
@@ -905,9 +863,7 @@ class JubeatProp(
         force_unlock = game_config.get_bool("force_song_unlock")
 
         # Allow figuring out owned emblems.
-        achievements = self.data.local.user.get_achievements(
-            self.game, self.version, userid
-        )
+        achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         owned_songs: Set[int] = set()
         owned_secrets: Set[int] = set()
         owned_emblems: Set[int] = set()
@@ -953,12 +909,8 @@ class JubeatProp(
         info.add_child(Node.s32("match_cnt", profile.get_int("match_cnt")))
         info.add_child(Node.s32("beat_cnt", profile.get_int("beat_cnt")))
         info.add_child(Node.s32("mynews_cnt", profile.get_int("mynews_cnt")))
-        info.add_child(
-            Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points"))
-        )
-        info.add_child(
-            Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played"))
-        )
+        info.add_child(Node.s32("bonus_tune_points", profile.get_int("bonus_tune_points")))
+        info.add_child(Node.bool("is_bonus_tune_played", profile.get_bool("is_bonus_tune_played")))
 
         # Looks to be set to true when there's an old profile, stops tutorial from
         # happening on first load.
@@ -1008,55 +960,29 @@ class JubeatProp(
         # Secret unlocks
         item = Node.void("item")
         player.add_child(item)
-        item.add_child(
-            Node.s32_array(
-                "music_list", profile.get_int_array("music_list", 32, [-1] * 32)
-            )
-        )
+        item.add_child(Node.s32_array("music_list", profile.get_int_array("music_list", 32, [-1] * 32)))
         item.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 32)
-                if force_unlock
-                else self.create_owned_items(owned_songs, 32),
+                ([-1] * 32) if force_unlock else self.create_owned_items(owned_songs, 32),
             )
         )
         item.add_child(Node.s16("theme_list", profile.get_int("theme_list", -1)))
-        item.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list", 2, [-1] * 2)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "title_list", profile.get_int_array("title_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array(
-                "parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)
-            )
-        )
-        item.add_child(
-            Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96))
-        )
+        item.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list", 2, [-1] * 2)))
+        item.add_child(Node.s32_array("title_list", profile.get_int_array("title_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("parts_list", profile.get_int_array("parts_list", 160, [-1] * 160)))
+        item.add_child(Node.s32_array("emblem_list", self.create_owned_items(owned_emblems, 96)))
 
         new = Node.void("new")
         item.add_child(new)
         new.add_child(
             Node.s32_array(
                 "secret_list",
-                ([-1] * 32)
-                if force_unlock
-                else self.create_owned_items(owned_secrets, 32),
+                ([-1] * 32) if force_unlock else self.create_owned_items(owned_secrets, 32),
             )
         )
         new.add_child(Node.s16("theme_list", profile.get_int("theme_list_new", -1)))
-        new.add_child(
-            Node.s32_array(
-                "marker_list", profile.get_int_array("marker_list_new", 2, [-1] * 2)
-            )
-        )
+        new.add_child(Node.s32_array("marker_list", profile.get_int_array("marker_list_new", 2, [-1] * 2)))
 
         # Sane defaults for unknown/who cares nodes
         history = Node.void("history")
@@ -1070,9 +996,7 @@ class JubeatProp(
         cabinet_survey.add_child(Node.u32("read_flag", 0))
         kaitou_bisco = Node.void("kaitou_bisco")
         player.add_child(kaitou_bisco)
-        kaitou_bisco.add_child(
-            Node.u32("read_flag", profile.get_int("kaitou_bisco_read_flag"))
-        )
+        kaitou_bisco.add_child(Node.u32("read_flag", profile.get_int("kaitou_bisco_read_flag")))
         navi = Node.void("navi")
         player.add_child(navi)
         navi.add_child(Node.u32("flag", profile.get_int("navi_flag")))
@@ -1089,15 +1013,11 @@ class JubeatProp(
                 event.set_attribute("type", str(achievement.id))
 
                 state = 0x0
-                state = (
-                    state + 0x2 if achievement.data.get_bool("is_completed") else 0x0
-                )
+                state = state + 0x2 if achievement.data.get_bool("is_completed") else 0x0
                 event.add_child(Node.u8("state", state))
 
         # Full combo challenge
-        entry = self.data.local.game.get_time_sensitive_settings(
-            self.game, self.version, "fc_challenge"
-        )
+        entry = self.data.local.game.get_time_sensitive_settings(self.game, self.version, "fc_challenge")
         if entry is None:
             entry = ValidatedDict()
 
@@ -1161,15 +1081,9 @@ class JubeatProp(
 
             league = Node.void("league")
             rival.add_child(league)
-            league.add_child(
-                Node.bool(
-                    "is_first_play", rprofile.get_bool("league_is_first_play", True)
-                )
-            )
+            league.add_child(Node.bool("is_first_play", rprofile.get_bool("league_is_first_play", True)))
             league.add_child(Node.s32("class", rprofile.get_int("league_class", 1)))
-            league.add_child(
-                Node.s32("subclass", rprofile.get_int("league_subclass", 5))
-            )
+            league.add_child(Node.s32("subclass", rprofile.get_int("league_subclass", 5)))
 
             # Lazy way of keeping track of rivals, since we can only have 3
             # or the game with throw up.
@@ -1214,17 +1128,13 @@ class JubeatProp(
         player.add_child(career)
         career.add_child(Node.s16("level", careerdict.get_int("level", 1)))
         career.add_child(Node.s32("point", careerdict.get_int("point")))
-        career.add_child(
-            Node.s32_array("param", careerdict.get_int_array("param", 10, [-1] * 10))
-        )
+        career.add_child(Node.s32_array("param", careerdict.get_int_array("param", 10, [-1] * 10)))
         career.add_child(Node.bool("is_unlocked", careerdict.get_bool("is_unlocked")))
 
         # League stuff
         league = Node.void("league")
         player.add_child(league)
-        league.add_child(
-            Node.bool("is_first_play", profile.get_bool("league_is_first_play", True))
-        )
+        league.add_child(Node.bool("is_first_play", profile.get_bool("league_is_first_play", True)))
         league.add_child(Node.s32("class", profile.get_int("league_class", 1)))
         league.add_child(Node.s32("subclass", profile.get_int("league_subclass", 5)))
 
@@ -1276,9 +1186,7 @@ class JubeatProp(
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         newprofile.replace_bool("saved", True)
         data = request.child("data")
@@ -1318,17 +1226,11 @@ class JubeatProp(
             newprofile.replace_int("clear_cnt", info.child_value("clear_cnt"))
             newprofile.replace_int("match_cnt", info.child_value("match_cnt"))
             newprofile.replace_int("beat_cnt", info.child_value("beat_cnt"))
-            newprofile.replace_int(
-                "total_best_score", info.child_value("total_best_score")
-            )
+            newprofile.replace_int("total_best_score", info.child_value("total_best_score"))
             newprofile.replace_int("mynews_cnt", info.child_value("mynews_cnt"))
 
-            newprofile.replace_int(
-                "bonus_tune_points", info.child_value("bonus_tune_points")
-            )
-            newprofile.replace_bool(
-                "is_bonus_tune_played", info.child_value("is_bonus_tune_played")
-            )
+            newprofile.replace_int("bonus_tune_points", info.child_value("bonus_tune_points"))
+            newprofile.replace_bool("is_bonus_tune_played", info.child_value("is_bonus_tune_played"))
 
         # Grab last settings (finally mostly in its own node!)
         lastnode = player.child("last")
@@ -1353,25 +1255,15 @@ class JubeatProp(
         # Grab unlock progress
         item = player.child("item")
         if item is not None:
-            newprofile.replace_int_array(
-                "title_list", 160, item.child_value("title_list")
-            )
+            newprofile.replace_int_array("title_list", 160, item.child_value("title_list"))
             newprofile.replace_int("theme_list", item.child_value("theme_list"))
-            newprofile.replace_int_array(
-                "marker_list", 2, item.child_value("marker_list")
-            )
-            newprofile.replace_int_array(
-                "parts_list", 160, item.child_value("parts_list")
-            )
-            newprofile.replace_int_array(
-                "music_list", 32, item.child_value("music_list")
-            )
+            newprofile.replace_int_array("marker_list", 2, item.child_value("marker_list"))
+            newprofile.replace_int_array("parts_list", 160, item.child_value("parts_list"))
+            newprofile.replace_int_array("music_list", 32, item.child_value("music_list"))
 
             if not force_unlock:
                 # Don't persist if we're force-unlocked, this data will be bogus.
-                owned_songs = self.calculate_owned_items(
-                    item.child_value("secret_list")
-                )
+                owned_songs = self.calculate_owned_items(item.child_value("secret_list"))
                 for index in owned_songs:
                     self.data.local.user.put_achievement(
                         self.game,
@@ -1395,18 +1287,12 @@ class JubeatProp(
 
             newitem = item.child("new")
             if newitem is not None:
-                newprofile.replace_int(
-                    "theme_list_new", newitem.child_value("theme_list")
-                )
-                newprofile.replace_int_array(
-                    "marker_list_new", 2, newitem.child_value("marker_list")
-                )
+                newprofile.replace_int("theme_list_new", newitem.child_value("theme_list"))
+                newprofile.replace_int_array("marker_list_new", 2, newitem.child_value("marker_list"))
 
                 if not force_unlock:
                     # Don't persist if we're force-unlocked, this data will be bogus.
-                    owned_secrets = self.calculate_owned_items(
-                        newitem.child_value("secret_list")
-                    )
+                    owned_secrets = self.calculate_owned_items(newitem.child_value("secret_list"))
                     for index in owned_secrets:
                         self.data.local.user.put_achievement(
                             self.game,
@@ -1478,9 +1364,7 @@ class JubeatProp(
 
         # A whole bunch of miscelaneous shit
         newprofile.replace_int("navi_flag", player.child_value("navi/flag"))
-        newprofile.replace_int(
-            "kaitou_bisco_read_flag", player.child_value("kaitou_bisco/read_flag")
-        )
+        newprofile.replace_int("kaitou_bisco_read_flag", player.child_value("kaitou_bisco/read_flag"))
 
         # Get timestamps for played songs
         timestamps: Dict[int, int] = {}
@@ -1527,9 +1411,7 @@ class JubeatProp(
                     if flags & bit > 0:
                         medal = max(medal, mapping[bit])
 
-                self.update_score(
-                    userid, timestamp, songid, chart, points, medal, combo, ghost
-                )
+                self.update_score(userid, timestamp, songid, chart, points, medal, combo, ghost)
 
         # If this was a course save, grab and save that info too
         course = player.child("course")
@@ -1558,12 +1440,8 @@ class JubeatProp(
         league = player.child("league")
         if league is not None:
             leagueid = league.child_value("league_id")
-            newprofile.replace_bool(
-                "league_is_checked", league.child_value("is_checked")
-            )
-            newprofile.replace_bool(
-                "league_is_first_play", league.child_value("is_first_play")
-            )
+            newprofile.replace_bool("league_is_checked", league.child_value("is_checked"))
+            newprofile.replace_bool("league_is_first_play", league.child_value("is_first_play"))
 
             # Extract scores
             score = [0] * 3
@@ -1605,9 +1483,7 @@ class JubeatProp(
 
         return newprofile
 
-    def format_scores(
-        self, userid: UserID, profile: Profile, scores: List[Score]
-    ) -> Node:
+    def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         root = Node.void("gametop")
         datanode = Node.void("data")
         root.add_child(datanode)
@@ -1673,24 +1549,12 @@ class JubeatProp(
             playdata.add_child(musicdata)
 
             musicdata.set_attribute("music_id", scoreid)
-            musicdata.add_child(
-                Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3))
-            )
-            musicdata.add_child(
-                Node.s32_array("score", scoredata.get_int_array("points", 3))
-            )
-            musicdata.add_child(
-                Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3))
-            )
+            musicdata.add_child(Node.s32_array("play_cnt", scoredata.get_int_array("play_cnt", 3)))
+            musicdata.add_child(Node.s32_array("clear_cnt", scoredata.get_int_array("clear_cnt", 3)))
+            musicdata.add_child(Node.s32_array("fc_cnt", scoredata.get_int_array("fc_cnt", 3)))
+            musicdata.add_child(Node.s32_array("ex_cnt", scoredata.get_int_array("ex_cnt", 3)))
+            musicdata.add_child(Node.s32_array("score", scoredata.get_int_array("points", 3)))
+            musicdata.add_child(Node.s8_array("clear", scoredata.get_int_array("clear_flags", 3)))
 
             ghosts = scoredata.get("ghost", [None, None, None])
             for i in range(len(ghosts)):

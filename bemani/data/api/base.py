@@ -14,10 +14,7 @@ class BaseGlobalData:
         if self.__apiclients is None:
             servers = self.__localapi.get_all_servers()
             self.__apiclients = [
-                APIClient(
-                    server.uri, server.token, server.allow_stats, server.allow_scores
-                )
-                for server in servers
+                APIClient(server.uri, server.token, server.allow_stats, server.allow_scores) for server in servers
             ]
 
         return self.__apiclients

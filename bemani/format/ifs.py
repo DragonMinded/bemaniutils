@@ -77,10 +77,7 @@ class IFS:
         if header is None:
             # Now, try as XML
             xenc = XmlEncoding()
-            header = xenc.decode(
-                b'<?xml encoding="ascii"?>'
-                + data[header_offset:data_index].split(b"\0")[0]
-            )
+            header = xenc.decode(b'<?xml encoding="ascii"?>' + data[header_offset:data_index].split(b"\0")[0])
 
             if header is None:
                 raise Exception("Invalid IFS file!")
@@ -109,9 +106,7 @@ class IFS:
         def get_children(parent: str, node: Node) -> None:
             real_name = self.__fix_name(node.name)
             if node.data_type == "3s32":
-                node_name = os.path.join(parent, real_name).replace(
-                    f"{os.sep}imgfs{os.sep}", ""
-                )
+                node_name = os.path.join(parent, real_name).replace(f"{os.sep}imgfs{os.sep}", "")
                 ref = None
                 for subnode in node.children:
                     if subnode.name == "i":
@@ -147,9 +142,7 @@ class IFS:
                         ifsdata = self.__loader(external_file)
 
                     if ifsdata is None:
-                        raise Exception(
-                            f"Couldn't extract file data for {fn} referencing IFS file {external_file}!"
-                        )
+                        raise Exception(f"Couldn't extract file data for {fn} referencing IFS file {external_file}!")
                     else:
                         otherdata[external_file] = ifsdata
 
@@ -178,17 +171,13 @@ class IFS:
                     # Now, try as XML
                     xenc = XmlEncoding()
                     encoding = "ascii"
-                    texdata = xenc.decode(
-                        b'<?xml encoding="ascii"?>' + self.__files[filename]
-                    )
+                    texdata = xenc.decode(b'<?xml encoding="ascii"?>' + self.__files[filename])
 
                     if texdata is None:
                         continue
                 else:
                     if benc.encoding is None:
-                        raise Exception(
-                            "Logic error, expected an encoding from binary decoder!"
-                        )
+                        raise Exception("Logic error, expected an encoding from binary decoder!")
                     encoding = benc.encoding
 
                 if texdata.name != "texturelist":
@@ -271,17 +260,13 @@ class IFS:
                     # Now, try as XML
                     xenc = XmlEncoding()
                     encoding = "ascii"
-                    afpdata = xenc.decode(
-                        b'<?xml encoding="ascii"?>' + self.__files[filename]
-                    )
+                    afpdata = xenc.decode(b'<?xml encoding="ascii"?>' + self.__files[filename])
 
                     if afpdata is None:
                         continue
                 else:
                     if benc.encoding is None:
-                        raise Exception(
-                            "Logic error, expected an encoding from binary decoder!"
-                        )
+                        raise Exception("Logic error, expected an encoding from binary decoder!")
                     encoding = benc.encoding
 
                 if afpdata.name != "afplist":

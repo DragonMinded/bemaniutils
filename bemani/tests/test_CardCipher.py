@@ -21,13 +21,9 @@ class TestCardCipher(unittest.TestCase):
             inp = bytes(pair[0])
             out = bytes(pair[1])
             encoded = CardCipher.INTERNAL_CIPHER.encrypt(inp)
-            self.assertEqual(
-                encoded, out, f"Card encode {encoded!r} doesn't match expected {out!r}"
-            )
+            self.assertEqual(encoded, out, f"Card encode {encoded!r} doesn't match expected {out!r}")
             decoded = CardCipher.INTERNAL_CIPHER.decrypt(out)
-            self.assertEqual(
-                decoded, inp, f"Card decode {decoded!r} doesn't match expected {inp!r}"
-            )
+            self.assertEqual(decoded, inp, f"Card decode {decoded!r} doesn't match expected {inp!r}")
 
     def test_external_cipher(self) -> None:
         test_cards = [
@@ -39,10 +35,6 @@ class TestCardCipher(unittest.TestCase):
             back = card[0]
             db = card[1]
             decoded = CardCipher.decode(back)
-            self.assertEqual(
-                decoded, db, f"Card DB {decoded} doesn't match expected {db}"
-            )
+            self.assertEqual(decoded, db, f"Card DB {decoded} doesn't match expected {db}")
             encoded = CardCipher.encode(db)
-            self.assertEqual(
-                encoded, back, f"Card back {encoded} doesn't match expected {back}"
-            )
+            self.assertEqual(encoded, back, f"Card back {encoded} doesn't match expected {back}")

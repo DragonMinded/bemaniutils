@@ -165,9 +165,7 @@ class Museca1Client(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/game_3/result")
 
-    def verify_game_save(
-        self, location: str, refid: str, packet: int, block: int, blaster_energy: int
-    ) -> None:
+    def verify_game_save(self, location: str, refid: str, packet: int, block: int, blaster_energy: int) -> None:
         call = self.call_node()
 
         game = Node.void("game_3")
@@ -230,9 +228,7 @@ class Museca1Client(BaseClient):
         self.assert_path(resp, "response/game_3/music_limited")
         self.assert_path(resp, "response/game_3/event")
 
-    def verify_game_load(
-        self, cardid: str, refid: str, msg_type: str
-    ) -> Dict[str, Any]:
+    def verify_game_load(self, cardid: str, refid: str, msg_type: str) -> Dict[str, Any]:
         call = self.call_node()
 
         game = Node.void("game_3")
@@ -354,9 +350,7 @@ class Museca1Client(BaseClient):
 
         return scores
 
-    def verify_game_save_m(
-        self, location: str, refid: str, score: Dict[str, int]
-    ) -> None:
+    def verify_game_save_m(self, location: str, refid: str, score: Dict[str, int]) -> None:
         call = self.call_node()
 
         game = Node.void("game_3")
@@ -428,17 +422,11 @@ class Museca1Client(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             # Museca doesn't read the new profile, it asks for the profile itself after calling new
             self.verify_game_load(card, ref_id, msg_type="new")
@@ -446,16 +434,12 @@ class Museca1Client(BaseClient):
             self.verify_game_load(card, ref_id, msg_type="existing")
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify account freezing
@@ -467,34 +451,24 @@ class Museca1Client(BaseClient):
             # Verify profile loading and saving
             profile = self.verify_game_load(card, ref_id, msg_type="existing")
             if profile["name"] != self.NAME:
-                raise Exception(
-                    f'Profile has incorrect name {profile["name"]} associated with it!'
-                )
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile["packet"] != 0:
                 raise Exception("Profile has nonzero blocks associated with it!")
             if profile["block"] != 0:
                 raise Exception("Profile has nonzero packets associated with it!")
             if profile["blaster_energy"] != 0:
-                raise Exception(
-                    "Profile has nonzero blaster energy associated with it!"
-                )
+                raise Exception("Profile has nonzero blaster energy associated with it!")
 
-            self.verify_game_save(
-                location, ref_id, packet=123, block=234, blaster_energy=42
-            )
+            self.verify_game_save(location, ref_id, packet=123, block=234, blaster_energy=42)
             profile = self.verify_game_load(card, ref_id, msg_type="existing")
             if profile["name"] != self.NAME:
-                raise Exception(
-                    f'Profile has incorrect name {profile["name"]} associated with it!'
-                )
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile["packet"] != 123:
                 raise Exception("Profile has invalid blocks associated with it!")
             if profile["block"] != 234:
                 raise Exception("Profile has invalid packets associated with it!")
             if profile["blaster_energy"] != 42:
-                raise Exception(
-                    "Profile has invalid blaster energy associated with it!"
-                )
+                raise Exception("Profile has invalid blaster energy associated with it!")
 
             # Verify empty profile has no scores on it
             scores = self.verify_game_load_m(ref_id)
@@ -567,17 +541,12 @@ class Museca1Client(BaseClient):
                 for expected in dummyscores:
                     actual = None
                     for received in scores:
-                        if (
-                            received["id"] == expected["id"]
-                            and received["chart"] == expected["chart"]
-                        ):
+                        if received["id"] == expected["id"] and received["chart"] == expected["chart"]:
                             actual = received
                             break
 
                     if actual is None:
-                        raise Exception(
-                            f"Didn't find song {expected['id']} chart {expected['chart']} in response!"
-                        )
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if "expected_score" in expected:
                         expected_score = expected["expected_score"]

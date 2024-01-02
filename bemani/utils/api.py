@@ -22,9 +22,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="An API services provider for eAmusement games, conforming to BEMAPI specs."
     )
-    parser.add_argument(
-        "-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80
-    )
+    parser.add_argument("-p", "--port", help="Port to listen on. Defaults to 80", type=int, default=80)
     parser.add_argument(
         "-c",
         "--config",

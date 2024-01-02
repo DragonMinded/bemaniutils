@@ -52,7 +52,9 @@ class MetalGearArcade(
 
         if reqtype == "S_SRVMSG" and reqkey == "INFO":
             # Generate system message
-            settings1_str = "2011081000:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1"
+            settings1_str = (
+                "2011081000:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1"
+            )
             settings2_str = "1,1,1,1,1,1,1,1,1,1,1,1,1,1"
 
             # Send it to the client, making sure to inform the client that it was valid.
@@ -82,9 +84,7 @@ class MetalGearArcade(
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
             root = Node.void("playerdata")
-            root.add_child(
-                Node.s32("result", 1)
-            )  # Unclear if this is the right thing to do here.
+            root.add_child(Node.s32("result", 1))  # Unclear if this is the right thing to do here.
             return root
 
         # Extract new profile info from old profile
@@ -117,9 +117,7 @@ class MetalGearArcade(
             return self.format_profile(userid, profiletypes, profile)
         else:
             root = Node.void("playerdata")
-            root.add_child(
-                Node.s32("result", 1)
-            )  # Unclear if this is the right thing to do here.
+            root.add_child(Node.s32("result", 1))  # Unclear if this is the right thing to do here.
             return root
 
     def handle_playerdata_usergamedata_scorerank_request(self, request: Node) -> Node:
@@ -151,9 +149,7 @@ class MetalGearArcade(
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
             root = Node.void("matching")
-            root.add_child(
-                Node.s32("result", -1)
-            )  # Set to error so matching doesn't happen.
+            root.add_child(Node.s32("result", -1))  # Set to error so matching doesn't happen.
             return root
 
         # Game sends how long it intends to wait, so we should use that.
@@ -162,21 +158,13 @@ class MetalGearArcade(
         # Look up active lobbies, see if there was a previous one for us.
         # Matchmaking takes at most 60 seconds, so assume any lobbies older
         # than this are dead.
-        lobbies = self.data.local.lobby.get_all_lobbies(
-            self.game, self.version, max_age=wait_time
-        )
+        lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version, max_age=wait_time)
         previous_hosted_lobbies = [True for uid, _ in lobbies if uid == userid]
-        previous_joined_lobbies = [
-            (uid, lobby) for uid, lobby in lobbies if userid in lobby["participants"]
-        ]
+        previous_joined_lobbies = [(uid, lobby) for uid, lobby in lobbies if userid in lobby["participants"]]
 
         # See if there's a random lobby we can be slotted into. Don't choose potentially
         # our old one, since it will be overwritten by a new entry, if we were ever a host.
-        nonfull_lobbies = [
-            (uid, lobby)
-            for uid, lobby in lobbies
-            if len(lobby["participants"]) < lobby["lobbysize"]
-        ]
+        nonfull_lobbies = [(uid, lobby) for uid, lobby in lobbies if len(lobby["participants"]) < lobby["lobbysize"]]
 
         # Make sure to put our session information somewhere that we can find again.
         self.data.local.lobby.put_play_session_info(
@@ -225,18 +213,10 @@ class MetalGearArcade(
                 Node.s32("result", 1)
             )  # Setting this to 1 makes the client consider itself a guest and join a host.
             root.add_child(Node.s64("hostid", lobby.get_int("id")))
-            root.add_child(
-                Node.string("hostip_g", host_play_session_info.get_str("joinip"))
-            )
-            root.add_child(
-                Node.s32("hostport_g", host_play_session_info.get_int("joinport"))
-            )
-            root.add_child(
-                Node.string("hostip_l", host_play_session_info.get_str("localip"))
-            )
-            root.add_child(
-                Node.s32("hostport_l", host_play_session_info.get_int("localport"))
-            )
+            root.add_child(Node.string("hostip_g", host_play_session_info.get_str("joinip")))
+            root.add_child(Node.s32("hostport_g", host_play_session_info.get_int("joinport")))
+            root.add_child(Node.string("hostip_l", host_play_session_info.get_str("localip")))
+            root.add_child(Node.s32("hostport_l", host_play_session_info.get_int("localport")))
             return root
 
         # The game does weird things if you let it wait as long as its own countdown,
@@ -281,16 +261,11 @@ class MetalGearArcade(
         # List all lobbies out, find the one that we're either a host or a guest of.
         lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
         info_by_uid = {
-            uid: data
-            for uid, data in self.data.local.lobby.get_all_play_session_infos(
-                self.game, self.version
-            )
+            uid: data for uid, data in self.data.local.lobby.get_all_play_session_infos(self.game, self.version)
         }
 
         # We should be able to filter by host_id that the game gave us.
-        joined_lobby = [
-            (uid, lobby) for uid, lobby in lobbies if lobby.get_int("id") == host_id
-        ]
+        joined_lobby = [(uid, lobby) for uid, lobby in lobbies if lobby.get_int("id") == host_id]
         if len(joined_lobby) != 1:
             # This shouldn't happen.
             root = Node.void("matching")
@@ -299,14 +274,10 @@ class MetalGearArcade(
 
         # Calculate creation time, figure out when to join the match after that.
         host_uid, lobby = joined_lobby[0]
-        time_left = max(
-            lobby.get_int("waittime") - (Time.now() - lobby.get_int("createtime")), 0
-        )
+        time_left = max(lobby.get_int("waittime") - (Time.now() - lobby.get_int("createtime")), 0)
 
         root = Node.void("matching")
-        root.add_child(
-            Node.s32("result", 0 if time_left > 0 else 1)
-        )  # We send 1 to start the match.
+        root.add_child(Node.s32("result", 0 if time_left > 0 else 1))  # We send 1 to start the match.
         root.add_child(Node.s32("prwtime", time_left))
         matchlist = Node.void("matchlist")
         root.add_child(matchlist)
@@ -339,9 +310,7 @@ class MetalGearArcade(
 
         return root
 
-    def format_profile(
-        self, userid: UserID, profiletypes: List[str], profile: Profile
-    ) -> Node:
+    def format_profile(self, userid: UserID, profiletypes: List[str], profile: Profile) -> Node:
         root = Node.void("playerdata")
         root.add_child(Node.s32("result", 0))
         player = Node.void("player")
@@ -371,9 +340,7 @@ class MetalGearArcade(
                 strdata = b",".join(csvs[2:])
                 d = Node.string("d", base64.b64encode(strdata).decode("ascii"))
                 record.add_child(d)
-                d.add_child(
-                    Node.string("bin1", base64.b64encode(bindata).decode("ascii"))
-                )
+                d.add_child(Node.string("bin1", base64.b64encode(bindata).decode("ascii")))
 
                 # Remember that we had this record
                 records = records + 1
@@ -381,9 +348,7 @@ class MetalGearArcade(
         player.add_child(Node.u32("record_num", records))
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile, is_new: bool) -> Profile:
         # Profile save request, data values are base64 encoded.
         # d is a CSV, and bin1 is binary data.
         newprofile = oldprofile.clone()

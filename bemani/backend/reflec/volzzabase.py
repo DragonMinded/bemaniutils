@@ -87,16 +87,11 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
         )
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         if machine.arcade is not None:
-            lids = [
-                machine.id
-                for machine in self.data.local.machine.get_all_machines(machine.arcade)
-            ]
+            lids = [machine.id for machine in self.data.local.machine.get_all_machines(machine.arcade)]
         else:
             lids = [machine.id]
 
-        relevant_profiles = [
-            profile for profile in all_profiles if profile[1].get_int("lid", -1) in lids
-        ]
+        relevant_profiles = [profile for profile in all_profiles if profile[1].get_int("lid", -1) in lids]
 
         for rootnode, timeoffset in [
             (today, 0),
@@ -124,10 +119,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                     scores_by_user[userid][attempt.id][attempt.chart] = attempt
                 else:
                     # If this attempt is better than the stored one, replace it
-                    if (
-                        scores_by_user[userid][attempt.id][attempt.chart].points
-                        < attempt.points
-                    ):
+                    if scores_by_user[userid][attempt.id][attempt.chart].points < attempt.points:
                         scores_by_user[userid][attempt.id][attempt.chart] = attempt
 
             # Calculate points earned by user in the day
@@ -136,27 +128,16 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                 points_by_user[userid] = 0
                 for mid in scores_by_user[userid]:
                     for chart in scores_by_user[userid][mid]:
-                        points_by_user[userid] = (
-                            points_by_user[userid]
-                            + scores_by_user[userid][mid][chart].points
-                        )
+                        points_by_user[userid] = points_by_user[userid] + scores_by_user[userid][mid][chart].points
 
             # Output that day's earned points
             for userid, profile in relevant_profiles:
                 data = Node.void("data")
                 rootnode.add_child(data)
-                data.add_child(
-                    Node.s16(
-                        "day_id", int((Time.now() - timeoffset) / Time.SECONDS_IN_DAY)
-                    )
-                )
+                data.add_child(Node.s16("day_id", int((Time.now() - timeoffset) / Time.SECONDS_IN_DAY)))
                 data.add_child(Node.s32("user_id", profile.extid))
-                data.add_child(
-                    Node.s16("icon_id", profile.get_dict("config").get_int("icon_id"))
-                )
-                data.add_child(
-                    Node.s16("point", min(points_by_user.get(userid, 0), 32767))
-                )
+                data.add_child(Node.s16("icon_id", profile.get_dict("config").get_int("icon_id")))
+                data.add_child(Node.s16("point", min(points_by_user.get(userid, 0), 32767)))
                 data.add_child(Node.s32("update_time", Time.now()))
                 data.add_child(Node.string("name", profile.get_str("name")))
 
@@ -176,9 +157,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
         ranking = Node.void("ranking")
         root.add_child(ranking)
 
-        def add_hitchart(
-            name: str, start: int, end: int, hitchart: List[Tuple[int, int]]
-        ) -> None:
+        def add_hitchart(name: str, start: int, end: int, hitchart: List[Tuple[int, int]]) -> None:
             base = Node.void(name)
             ranking.add_child(base)
             base.add_child(Node.s32("bt", start))
@@ -261,17 +240,11 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                     data.add_child(
                         Node.s8(
                             "clear_type",
-                            self._db_to_game_clear_type(
-                                score.data.get_int("clear_type")
-                            ),
+                            self._db_to_game_clear_type(score.data.get_int("clear_type")),
                         )
                     )
                     data.add_child(Node.s32("user_id", profile.extid))
-                    data.add_child(
-                        Node.s16(
-                            "icon_id", profile.get_dict("config").get_int("icon_id")
-                        )
-                    )
+                    data.add_child(Node.s16("icon_id", profile.get_dict("config").get_int("icon_id")))
                     data.add_child(Node.s32("score", score.points))
                     data.add_child(Node.s32("time", score.timestamp))
                     data.add_child(Node.string("name", profile.get_str("name")))
@@ -288,9 +261,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
         userid = self.data.remote.user.from_extid(self.game, self.version, extid)
         if userid is not None:
             profile = self.get_profile(userid)
-            info = self.data.local.lobby.get_play_session_info(
-                self.game, self.version, userid
-            )
+            info = self.data.local.lobby.get_play_session_info(self.game, self.version, userid)
             if profile is None or info is None:
                 return root
 
@@ -369,9 +340,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                     continue
 
                 profile = self.get_profile(user)
-                info = self.data.local.lobby.get_play_session_info(
-                    self.game, self.version, userid
-                )
+                info = self.data.local.lobby.get_play_session_info(self.game, self.version, userid)
                 if profile is None or info is None:
                     # No profile info, don't return this lobby
                     return root
@@ -502,9 +471,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
             )
             if lobby is not None:
                 self.data.local.lobby.destroy_lobby(lobby.get_int("id"))
-            self.data.local.lobby.destroy_play_session_info(
-                self.game, self.version, userid
-            )
+            self.data.local.lobby.destroy_play_session_info(self.game, self.version, userid)
 
         return Node.void("player")
 

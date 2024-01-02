@@ -16,9 +16,7 @@ from bemani.data.types import UserID, Score, Song
 
 
 class GlobalMusicData(BaseGlobalData):
-    def __init__(
-        self, api: APIProviderInterface, user: UserData, music: MusicData
-    ) -> None:
+    def __init__(self, api: APIProviderInterface, user: UserData, music: MusicData) -> None:
         super().__init__(api)
         self.user = user
         self.music = music
@@ -40,9 +38,7 @@ class GlobalMusicData(BaseGlobalData):
     def __max(self, int1: int, int2: int) -> int:
         return max(int1, int2)
 
-    def __format_ddr_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_ddr_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         halo = {
             "none": DBConstants.DDR_HALO_NONE,
             "gfc": DBConstants.DDR_HALO_GOOD_FULL_COMBO,
@@ -96,9 +92,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_iidx_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_iidx_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         status = {
             "np": DBConstants.IIDX_CLEAR_STATUS_NO_PLAY,
             "failed": DBConstants.IIDX_CLEAR_STATUS_FAILED,
@@ -128,9 +122,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_jubeat_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_jubeat_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         status = {
             "failed": DBConstants.JUBEAT_PLAY_MEDAL_FAILED,
             "cleared": DBConstants.JUBEAT_PLAY_MEDAL_CLEARED,
@@ -157,9 +149,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_museca_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_museca_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         rank = {
             "death": DBConstants.MUSECA_GRADE_DEATH,
             "poor": DBConstants.MUSECA_GRADE_POOR,
@@ -198,9 +188,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_popn_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_popn_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         status = {
             "cf": DBConstants.POPN_MUSIC_PLAY_MEDAL_CIRCLE_FAILED,
             "df": DBConstants.POPN_MUSIC_PLAY_MEDAL_DIAMOND_FAILED,
@@ -230,9 +218,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_reflec_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_reflec_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         status = {
             "np": DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY,
             "failed": DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED,
@@ -265,9 +251,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __format_sdvx_score(
-        self, version: int, songid: int, songchart: int, data: Dict[str, Any]
-    ) -> Score:
+    def __format_sdvx_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         status = {
             "np": DBConstants.SDVX_CLEAR_TYPE_NO_PLAY,
             "failed": DBConstants.SDVX_CLEAR_TYPE_FAILED,
@@ -335,9 +319,7 @@ class GlobalMusicData(BaseGlobalData):
             return self.__format_sdvx_score(version, songid, songchart, data)
         return None
 
-    def __merge_ddr_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_ddr_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
             -1,
             oldscore.id,
@@ -363,9 +345,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __merge_iidx_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_iidx_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
             -1,
             oldscore.id,
@@ -379,9 +359,7 @@ class GlobalMusicData(BaseGlobalData):
             oldscore.location,  # Always propagate location from local setup if possible
             oldscore.plays + newscore.plays,
             {
-                "clear_status": self.__max(
-                    oldscore.data["clear_status"], newscore.data["clear_status"]
-                ),
+                "clear_status": self.__max(oldscore.data["clear_status"], newscore.data["clear_status"]),
                 "ghost": oldscore.data.get("ghost")
                 if oldscore.points > newscore.points
                 else newscore.data.get("ghost"),
@@ -398,12 +376,8 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __merge_jubeat_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
-        rate = self.__max(
-            oldscore.data.get("music_rate", -1), newscore.data.get("music_rate", -1)
-        )
+    def __merge_jubeat_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
+        rate = self.__max(oldscore.data.get("music_rate", -1), newscore.data.get("music_rate", -1))
 
         return Score(
             -1,
@@ -428,9 +402,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __merge_museca_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_museca_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
             -1,
             oldscore.id,
@@ -445,19 +417,13 @@ class GlobalMusicData(BaseGlobalData):
             oldscore.plays + newscore.plays,
             {
                 "grade": self.__max(oldscore.data["grade"], newscore.data["grade"]),
-                "clear_type": self.__max(
-                    oldscore.data["clear_type"], newscore.data["clear_type"]
-                ),
+                "clear_type": self.__max(oldscore.data["clear_type"], newscore.data["clear_type"]),
                 "combo": self.__max(oldscore.data["combo"], newscore.data["combo"]),
-                "stats": oldscore.data["stats"]
-                if oldscore.points > newscore.points
-                else newscore.data["stats"],
+                "stats": oldscore.data["stats"] if oldscore.points > newscore.points else newscore.data["stats"],
             },
         )
 
-    def __merge_popn_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_popn_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
             -1,
             oldscore.id,
@@ -476,9 +442,7 @@ class GlobalMusicData(BaseGlobalData):
             },
         )
 
-    def __merge_reflec_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_reflec_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
             -1,
             oldscore.id,
@@ -492,26 +456,18 @@ class GlobalMusicData(BaseGlobalData):
             oldscore.location,  # Always propagate location from local setup if possible
             oldscore.plays + newscore.plays,
             {
-                "clear_type": self.__max(
-                    oldscore.data["clear_type"], newscore.data["clear_type"]
-                ),
-                "combo_type": self.__max(
-                    oldscore.data["combo_type"], newscore.data["combo_type"]
-                ),
+                "clear_type": self.__max(oldscore.data["clear_type"], newscore.data["clear_type"]),
+                "combo_type": self.__max(oldscore.data["combo_type"], newscore.data["combo_type"]),
                 "miss_count": self.__min(
                     oldscore.data.get_int("miss_count", -1),
                     newscore.data.get_int("miss_count", -1),
                 ),
                 "combo": self.__max(oldscore.data["combo"], newscore.data["combo"]),
-                "achievement_rate": self.__max(
-                    oldscore.data["achievement_rate"], newscore.data["achievement_rate"]
-                ),
+                "achievement_rate": self.__max(oldscore.data["achievement_rate"], newscore.data["achievement_rate"]),
             },
         )
 
-    def __merge_sdvx_score(
-        self, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_sdvx_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
             -1,
             oldscore.id,
@@ -526,26 +482,18 @@ class GlobalMusicData(BaseGlobalData):
             oldscore.plays + newscore.plays,
             {
                 "grade": self.__max(oldscore.data["grade"], newscore.data["grade"]),
-                "clear_type": self.__max(
-                    oldscore.data["clear_type"], newscore.data["clear_type"]
-                ),
+                "clear_type": self.__max(oldscore.data["clear_type"], newscore.data["clear_type"]),
                 "combo": self.__max(
                     oldscore.data.get_int("combo", 1),
                     newscore.data.get_int("combo", -1),
                 ),
-                "stats": oldscore.data["stats"]
-                if oldscore.points > newscore.points
-                else newscore.data["stats"],
+                "stats": oldscore.data["stats"] if oldscore.points > newscore.points else newscore.data["stats"],
             },
         )
 
-    def __merge_score(
-        self, game: GameConstants, version: int, oldscore: Score, newscore: Score
-    ) -> Score:
+    def __merge_score(self, game: GameConstants, version: int, oldscore: Score, newscore: Score) -> Score:
         if oldscore.id != newscore.id or oldscore.chart != newscore.chart:
-            raise Exception(
-                "Logic error! Tried to merge scores from different song/charts!"
-            )
+            raise Exception("Logic error! Tried to merge scores from different song/charts!")
 
         if game == GameConstants.DDR:
             return self.__merge_ddr_score(version, oldscore, newscore)
@@ -597,9 +545,7 @@ class GlobalMusicData(BaseGlobalData):
         else:
             localscore, scores = Parallel.execute(
                 [
-                    lambda: self.music.get_score(
-                        game, version, userid, songid, songchart
-                    ),
+                    lambda: self.music.get_score(game, version, userid, songid, songchart),
                     lambda: Parallel.flatten(
                         Parallel.map(
                             get_scores_for_card,
@@ -773,9 +719,7 @@ class GlobalMusicData(BaseGlobalData):
     ) -> List[Tuple[UserID, Score]]:
         # First, pass off to local-only if this was called with parameters we don't support
         if version is None or userid is not None or songid is None:
-            return self.music.get_all_scores(
-                game, version, userid, songid, songchart, since, until
-            )
+            return self.music.get_all_scores(game, version, userid, songid, songchart, since, until)
 
         # Now, figure out the request key based on passed in parameters
         if songchart is None:
@@ -787,9 +731,7 @@ class GlobalMusicData(BaseGlobalData):
         localcards, localscores, remotescores = Parallel.execute(
             [
                 self.user.get_all_cards,
-                lambda: self.music.get_all_scores(
-                    game, version, userid, songid, songchart, since, until
-                ),
+                lambda: self.music.get_all_scores(game, version, userid, songid, songchart, since, until),
                 lambda: Parallel.flatten(
                     Parallel.call(
                         [client.get_records for client in self.clients],
@@ -804,9 +746,7 @@ class GlobalMusicData(BaseGlobalData):
             ]
         )
 
-        return self.__merge_global_scores(
-            game, version, localcards, localscores, remotescores
-        )
+        return self.__merge_global_scores(game, version, localcards, localscores, remotescores)
 
     def __merge_global_records(
         self,
@@ -824,9 +764,7 @@ class GlobalMusicData(BaseGlobalData):
                 allscores[score.id] = {}
             allscores[score.id][score.chart] = (userid, score)
 
-        def get_score(
-            songid: int, songchart: int
-        ) -> Tuple[Optional[UserID], Optional[Score]]:
+        def get_score(songid: int, songchart: int) -> Tuple[Optional[UserID], Optional[Score]]:
             return allscores.get(songid, {}).get(songchart, (None, None))
 
         # First, seed with local records
@@ -857,9 +795,7 @@ class GlobalMusicData(BaseGlobalData):
             else:
                 # if IDs are the same then we should merge them
                 if oldid == userid:
-                    add_score(
-                        userid, self.__merge_score(game, version, oldscore, newscore)
-                    )
+                    add_score(userid, self.__merge_score(game, version, oldscore, newscore))
                 else:
                     # if the IDs are different we need to check which score actually belongs
                     if newscore.points > oldscore.points:
@@ -869,9 +805,7 @@ class GlobalMusicData(BaseGlobalData):
         finalscores: List[Tuple[UserID, Score]] = []
         for songid in allscores:
             for chart in allscores[songid]:
-                finalscores.append(
-                    (allscores[songid][chart][0], allscores[songid][chart][1])
-                )
+                finalscores.append((allscores[songid][chart][0], allscores[songid][chart][1]))
 
         return finalscores
 
@@ -890,9 +824,7 @@ class GlobalMusicData(BaseGlobalData):
         localcards, localscores, remotescores = Parallel.execute(
             [
                 self.user.get_all_cards,
-                lambda: self.music.get_all_records(
-                    game, version, userlist, locationlist
-                ),
+                lambda: self.music.get_all_records(game, version, userlist, locationlist),
                 lambda: Parallel.flatten(
                     Parallel.call(
                         [client.get_records for client in self.clients],
@@ -905,9 +837,7 @@ class GlobalMusicData(BaseGlobalData):
             ]
         )
 
-        return self.__merge_global_records(
-            game, version, localcards, localscores, remotescores
-        )
+        return self.__merge_global_records(game, version, localcards, localscores, remotescores)
 
     def get_clear_rates(
         self,
@@ -1104,9 +1034,7 @@ class GlobalMusicData(BaseGlobalData):
                 "bpm_min": int(data["bpm_min"]),
                 "bpm_max": int(data["bpm_max"]),
                 "difficulty": int(data["difficulty"]),
-                "version": categorymapping.get(
-                    data.get("category", "0"), defaultcategory
-                ),
+                "version": categorymapping.get(data.get("category", "0"), defaultcategory),
             },
         )
 
@@ -1223,33 +1151,19 @@ class GlobalMusicData(BaseGlobalData):
         data: Dict[str, Any],
     ) -> Optional[Song]:
         if game == GameConstants.DDR:
-            return self.__format_ddr_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_ddr_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.IIDX:
-            return self.__format_iidx_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_iidx_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.JUBEAT:
-            return self.__format_jubeat_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_jubeat_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.MUSECA:
-            return self.__format_museca_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_museca_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.POPN_MUSIC:
-            return self.__format_popn_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_popn_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.REFLEC_BEAT:
-            return self.__format_reflec_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_reflec_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.SDVX:
-            return self.__format_sdvx_song(
-                version, songid, songchart, name, artist, genre, data
-            )
+            return self.__format_sdvx_song(version, songid, songchart, name, artist, genre, data)
         return None
 
     def get_all_songs(

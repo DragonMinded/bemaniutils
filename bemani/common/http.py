@@ -3,9 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 class HTTP:
     @staticmethod
-    def parse(
-        data: bytes, request: bool = False, response: bool = False
-    ) -> Optional[Dict[str, Any]]:
+    def parse(data: bytes, request: bool = False, response: bool = False) -> Optional[Dict[str, Any]]:
         """
         A very lazy and hastily coded HTTP parser.
 
@@ -64,9 +62,7 @@ class HTTP:
         if "content-length" in headers:
             data = data[: int(headers["content-length"])]
             valid = len(data) == int(headers["content-length"])
-        elif (
-            "transfer-encoding" in headers and headers["transfer-encoding"] == "chunked"
-        ):
+        elif "transfer-encoding" in headers and headers["transfer-encoding"] == "chunked":
             real_data = b""
 
             while True:
@@ -139,13 +135,9 @@ class HTTP:
 
         # Add first part of header
         if request:
-            out.append(
-                f'{parsed_headers["method"]} {parsed_headers["uri"]} {parsed_headers["version"]}'
-            )
+            out.append(f'{parsed_headers["method"]} {parsed_headers["uri"]} {parsed_headers["version"]}')
         elif response:
-            out.append(
-                f'{parsed_headers["version"]} {parsed_headers["code"]} {parsed_headers["error"]}'
-            )
+            out.append(f'{parsed_headers["version"]} {parsed_headers["code"]} {parsed_headers["error"]}')
         else:
             raise Exception("Logic error!")
 

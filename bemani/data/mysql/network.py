@@ -34,9 +34,7 @@ scheduled_work = Table(
     Column("schedule", String(32), nullable=False),
     Column("year", Integer),
     Column("day", Integer),
-    UniqueConstraint(
-        "game", "version", "name", "schedule", name="game_version_name_schedule"
-    ),
+    UniqueConstraint("game", "version", "name", "schedule", name="game_version_name_schedule"),
     mysql_charset="utf8mb4",
 )
 
@@ -90,9 +88,7 @@ class NetworkData(BaseData):
             The ID of the newly created entry.
         """
         sql = "INSERT INTO news (timestamp, title, body) VALUES (:timestamp, :title, :body)"
-        cursor = self.execute(
-            sql, {"timestamp": Time.now(), "title": title, "body": body}
-        )
+        cursor = self.execute(sql, {"timestamp": Time.now(), "title": title, "body": body})
         return cursor.lastrowid
 
     def get_news(self, newsid: int) -> Optional[News]:
@@ -145,9 +141,7 @@ class NetworkData(BaseData):
         of the current schedule of this type.
         """
         if schedule not in ["daily", "weekly"]:
-            raise Exception(
-                "Logic error, specify either 'daily' or 'weekly' for schedule type!"
-            )
+            raise Exception("Logic error, specify either 'daily' or 'weekly' for schedule type!")
 
         if schedule == "daily":
             return (Time.beginning_of_today(), Time.end_of_today())
@@ -158,17 +152,13 @@ class NetworkData(BaseData):
         # Should never happen
         return (0, 0)
 
-    def should_schedule(
-        self, game: GameConstants, version: int, name: str, schedule: str
-    ) -> bool:
+    def should_schedule(self, game: GameConstants, version: int, name: str, schedule: str) -> bool:
         """
         Given a game/version/name pair and a schedule value, return whether
         this scheduled work is overdue or not.
         """
         if schedule not in ["daily", "weekly"]:
-            raise Exception(
-                "Logic error, specify either 'daily' or 'weekly' for schedule type!"
-            )
+            raise Exception("Logic error, specify either 'daily' or 'weekly' for schedule type!")
 
         sql = """
             SELECT year, day FROM scheduled_work
@@ -212,13 +202,9 @@ class NetworkData(BaseData):
         # We have already run this work for this schedule
         return False
 
-    def mark_scheduled(
-        self, game: GameConstants, version: int, name: str, schedule: str
-    ) -> None:
+    def mark_scheduled(self, game: GameConstants, version: int, name: str, schedule: str) -> None:
         if schedule not in ["daily", "weekly"]:
-            raise Exception(
-                "Logic error, specify either 'daily' or 'weekly' for schedule type!"
-            )
+            raise Exception("Logic error, specify either 'daily' or 'weekly' for schedule type!")
 
         if schedule == "daily":
             year, day = Time.days_into_year()
@@ -327,9 +313,7 @@ class NetworkData(BaseData):
                 result["id"],
                 result["timestamp"],
                 UserID(result["userid"]) if result["userid"] is not None else None,
-                ArcadeID(result["arcadeid"])
-                if result["arcadeid"] is not None
-                else None,
+                ArcadeID(result["arcadeid"]) if result["arcadeid"] is not None else None,
                 result["type"],
                 self.deserialize(result["data"]),
             )

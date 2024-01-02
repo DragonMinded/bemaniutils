@@ -19,9 +19,7 @@ class TestGameData(unittest.TestCase):
                 "work",
                 {"start_time": 12345, "end_time": 12340},
             )
-        self.assertTrue(
-            "Start time is greater than end time!" in str(context.exception)
-        )
+        self.assertTrue("Start time is greater than end time!" in str(context.exception))
 
         # Verify that we catch events spanning no time
         with self.assertRaises(Exception) as context:
@@ -52,6 +50,5 @@ class TestGameData(unittest.TestCase):
                 {"start_time": 12347, "end_time": 12355},
             )
         self.assertTrue(
-            "This event overlaps an existing one with start time 12345 and end time 12350"
-            in str(context.exception)
+            "This event overlaps an existing one with start time 12345 and end time 12350" in str(context.exception)
         )

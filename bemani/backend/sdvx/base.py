@@ -21,9 +21,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CLEAR_TYPE_CLEAR: Final[int] = DBConstants.SDVX_CLEAR_TYPE_CLEAR
     CLEAR_TYPE_HARD_CLEAR: Final[int] = DBConstants.SDVX_CLEAR_TYPE_HARD_CLEAR
     CLEAR_TYPE_ULTIMATE_CHAIN: Final[int] = DBConstants.SDVX_CLEAR_TYPE_ULTIMATE_CHAIN
-    CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[
-        int
-    ] = DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN
+    CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN: Final[int] = DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN
 
     GRADE_NO_PLAY: Final[int] = DBConstants.SDVX_GRADE_NO_PLAY
     GRADE_D: Final[int] = DBConstants.SDVX_GRADE_D
@@ -68,9 +66,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now, return it
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(
-        self, refid: Optional[str], name: Optional[str], locid: Optional[int]
-    ) -> Node:
+    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], locid: Optional[int]) -> Node:
         """
         Given a RefID and an optional name, create a profile and then return
         a formatted profile node. Similar rationale to get_profile_by_refid.
@@ -103,9 +99,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void("game")
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -154,10 +148,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             # We saw an attempt, keep the total attempts in sync.
             attempts[attempt.id][attempt.chart]["average"] = int(
                 (
-                    (
-                        attempts[attempt.id][attempt.chart]["average"]
-                        * attempts[attempt.id][attempt.chart]["total"]
-                    )
+                    (attempts[attempt.id][attempt.chart]["average"] * attempts[attempt.id][attempt.chart]["total"])
                     + attempt.points
                 )
                 / (attempts[attempt.id][attempt.chart]["total"] + 1)
@@ -187,12 +178,8 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                         "average": 0,
                     }
 
-                attempts[songid][songchart]["total"] += remote_attempts[songid][
-                    songchart
-                ]["plays"]
-                attempts[songid][songchart]["clears"] += remote_attempts[songid][
-                    songchart
-                ]["clears"]
+                attempts[songid][songchart]["total"] += remote_attempts[songid][songchart]["plays"]
+                attempts[songid][songchart]["clears"] += remote_attempts[songid][songchart]["clears"]
 
         return attempts
 
@@ -267,9 +254,7 @@ class SoundVoltexBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Replace clear type and grade
-        scoredata.replace_int(
-            "clear_type", max(scoredata.get_int("clear_type"), clear_type)
-        )
+        scoredata.replace_int("clear_type", max(scoredata.get_int("clear_type"), clear_type))
         history.replace_int("clear_type", clear_type)
         scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
         history.replace_int("grade", grade)

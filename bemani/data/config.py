@@ -31,13 +31,9 @@ class Database:
     def engine(self) -> Engine:
         engine = self.__config.get("database", {}).get("engine")
         if engine is None:
-            raise Exception(
-                "Config object is not instantiated properly, no SQLAlchemy engine present!"
-            )
+            raise Exception("Config object is not instantiated properly, no SQLAlchemy engine present!")
         if not isinstance(engine, Engine):
-            raise Exception(
-                "Config object is not instantiated properly, engine property is not a SQLAlchemy Engine!"
-            )
+            raise Exception("Config object is not instantiated properly, engine property is not a SQLAlchemy Engine!")
         return engine
 
     @property
@@ -109,9 +105,7 @@ class Client:
     def address(self) -> str:
         address = self.__config.get("client", {}).get("address")
         if address is None:
-            raise Exception(
-                "Config object is not instantiated properly, no client address present!"
-            )
+            raise Exception("Config object is not instantiated properly, no client address present!")
         return str(address)
 
 
@@ -123,9 +117,7 @@ class Machine:
     def pcbid(self) -> str:
         pcbid = self.__config.get("machine", {}).get("pcbid")
         if pcbid is None:
-            raise Exception(
-                "Config object is not instantiated properly, no machine pcbid present!"
-            )
+            raise Exception("Config object is not instantiated properly, no machine pcbid present!")
         return str(pcbid)
 
     @property
@@ -206,22 +198,16 @@ class Config(dict):
     def filename(self) -> str:
         filename = self.get("filename")
         if filename is None:
-            raise Exception(
-                "Config object is not instantiated properly, no filename present!"
-            )
+            raise Exception("Config object is not instantiated properly, no filename present!")
         return os.path.abspath(str(filename))
 
     @property
     def support(self) -> Set[GameConstants]:
         support = self.get("support")
         if support is None:
-            raise Exception(
-                "Config object is not instantiated properly, no support list present!"
-            )
+            raise Exception("Config object is not instantiated properly, no support list present!")
         if not isinstance(support, set):
-            raise Exception(
-                "Config object is not instantiated properly, support property is not a Set!"
-            )
+            raise Exception("Config object is not instantiated properly, support property is not a Set!")
         return support
 
     @property

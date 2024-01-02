@@ -89,9 +89,7 @@ from .util import VerboseOutput
 
 class ByteCode:
     # A list of bytecodes to execute.
-    def __init__(
-        self, name: Optional[str], actions: Sequence[AP2Action], end_offset: int
-    ) -> None:
+    def __init__(self, name: Optional[str], actions: Sequence[AP2Action], end_offset: int) -> None:
         self.name = name
         self.actions = list(actions)
         self.start_offset = self.actions[0].offset if actions else None
@@ -104,9 +102,7 @@ class ByteCode:
         if self.name:
             opar = "{"
             cpar = "}"
-            code = (
-                f"{self.name}(){os.linesep}{opar}{os.linesep}{code}{os.linesep}{cpar}"
-            )
+            code = f"{self.name}(){os.linesep}{opar}{os.linesep}{code}{os.linesep}{cpar}"
         return code
 
     def as_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
@@ -143,13 +139,9 @@ class ControlFlow:
     def is_last(self, offset: int) -> bool:
         return self.end == (offset + 1)
 
-    def split(
-        self, offset: int, link: bool = False
-    ) -> Tuple["ControlFlow", "ControlFlow"]:
+    def split(self, offset: int, link: bool = False) -> Tuple["ControlFlow", "ControlFlow"]:
         if not self.contains(offset):
-            raise Exception(
-                f"Logic error, this ControlFlow does not contain offset {offset}"
-            )
+            raise Exception(f"Logic error, this ControlFlow does not contain offset {offset}")
 
         # First, make the second half that the first half will point to.
         second = ControlFlow(
@@ -212,9 +204,7 @@ class MaybeStackEntry(Expression):
         return f"MaybeStackEntry({self.parent_stack_id})"
 
     def render(self, parent_prefix: str, nested: bool = False) -> str:
-        raise Exception(
-            "Logic error, a MaybeStackEntry should never make it to the render stage!"
-        )
+        raise Exception("Logic error, a MaybeStackEntry should never make it to the render stage!")
 
 
 class MultiAction(ConvertedAction):
@@ -262,9 +252,7 @@ class IntermediateIf(ConvertedAction):
                 ]
             )
         else:
-            return os.linesep.join(
-                [f"if <{self.parent_action}> {{", os.linesep.join(true_entries), "}"]
-            )
+            return os.linesep.join([f"if <{self.parent_action}> {{", os.linesep.join(true_entries), "}"])
 
 
 class ByteCodeChunk:
@@ -318,9 +306,7 @@ class Loop:
         self.id = id
 
         # Calculate predecessors (who points into it) and successors (who we point out of).
-        ided_chunks: Dict[int, ArbitraryCodeChunk] = {
-            chunk.id: chunk for chunk in chunks
-        }
+        ided_chunks: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
 
         self.previous_chunks: List[int] = []
         self.next_chunks: List[int] = []
@@ -416,9 +402,7 @@ class InsertionLocation(Statement):
         return f"<INSERTION POINT FOR {self.location}>"
 
     def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        raise Exception(
-            "Logic error, an InsertionLocation should never make it to the render stage!"
-        )
+        raise Exception("Logic error, an InsertionLocation should never make it to the render stage!")
 
 
 class OriginalCallLocation(Statement):
@@ -429,9 +413,7 @@ class OriginalCallLocation(Statement):
         return f"<INSERTION POINT FOR {self.insertion_id}>"
 
     def render(self, prefix: str, verbose: bool = False) -> List[str]:
-        raise Exception(
-            "Logic error, an InsertionLocation should never make it to the render stage!"
-        )
+        raise Exception("Logic error, an InsertionLocation should never make it to the render stage!")
 
 
 class BitVector:
@@ -449,17 +431,13 @@ class BitVector:
 
     def setBit(self, bit: int) -> "BitVector":
         if bit < 0 or bit >= len(self.__bits):
-            raise Exception(
-                f"Logic error, trying to set bit {bit} of a bitvector length {len(self.__bits)}!"
-            )
+            raise Exception(f"Logic error, trying to set bit {bit} of a bitvector length {len(self.__bits)}!")
         self.__bits[bit] = True
         return self
 
     def clearBit(self, bit: int) -> "BitVector":
         if bit < 0 or bit >= len(self.__bits):
-            raise Exception(
-                f"Logic error, trying to set bit {bit} of a bitvector length {len(self.__bits)}!"
-            )
+            raise Exception(f"Logic error, trying to set bit {bit} of a bitvector length {len(self.__bits)}!")
         self.__bits[bit] = False
         return self
 
@@ -520,9 +498,7 @@ class ByteCodeDecompiler(VerboseOutput):
             raise Exception("Call decompile() first before retrieving statements!")
         return self.__statements
 
-    def _graph_control_flow(
-        self, bytecode: ByteCode
-    ) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
+    def _graph_control_flow(self, bytecode: ByteCode) -> Tuple[List[ByteCodeChunk], Dict[int, int]]:
         # Start by assuming that the whole bytecode never directs flow. This is, confusingly,
         # indexed by AP2Action offset, not by actual bytecode offset, so we can avoid the
         # prickly problem of opcodes that take more than one byte in the data.
@@ -542,9 +518,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if cf.contains(opcodeno):
                     return start
 
-            raise Exception(
-                f"Logic error, offset {opcodeno} somehow not in our control flow graph!"
-            )
+            raise Exception(f"Logic error, offset {opcodeno} somehow not in our control flow graph!")
 
         # Now, walk the entire bytecode, and every control flow point split the graph at that point.
         for i, action in enumerate(bytecode.actions):
@@ -562,9 +536,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     first, second = flows[current_action_flow].split(next_action)
                     first.next_flow = [end]
 
-                    self.vprint(
-                        f"{action} action split {flows[current_action_flow]} into {first}, {second}"
-                    )
+                    self.vprint(f"{action} action split {flows[current_action_flow]} into {first}, {second}")
 
                     flows[current_action_flow] = first
                     flows[next_action] = second
@@ -576,9 +548,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # link it to the end.
                     flows[current_action_flow].next_flow = [end]
 
-                    self.vprint(
-                        f"{action} action repointed {flows[current_action_flow]} to end"
-                    )
+                    self.vprint(f"{action} action repointed {flows[current_action_flow]} to end")
             elif action.opcode == AP2Action.JUMP:
                 # Unconditional control flow redirection after this, we should split the
                 # section if necessary and point this section at the new offset.
@@ -593,9 +563,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     if action.jump_offset == bytecode.end_offset:
                         dest_action = end
                     else:
-                        raise Exception(
-                            f"{action} jumps to an opcode that doesn't exist!"
-                        )
+                        raise Exception(f"{action} jumps to an opcode that doesn't exist!")
 
                 # If the destination action flow already starts with the jump offset,
                 # then we're good, we just need to point our current split at this new
@@ -603,13 +571,9 @@ class ByteCodeDecompiler(VerboseOutput):
                 # that flow so we can point to the opcode directly.
                 dest_action_flow = find(dest_action)
                 if not flows[dest_action_flow].is_first(dest_action):
-                    first, second = flows[dest_action_flow].split(
-                        dest_action, link=True
-                    )
+                    first, second = flows[dest_action_flow].split(dest_action, link=True)
 
-                    self.vprint(
-                        f"{action} action required split of {flows[dest_action_flow]} into {first, second}"
-                    )
+                    self.vprint(f"{action} action required split of {flows[dest_action_flow]} into {first, second}")
 
                     flows[dest_action_flow] = first
                     flows[dest_action] = second
@@ -626,9 +590,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     first, second = flows[current_action_flow].split(next_action)
                     first.next_flow = [dest_action_flow]
 
-                    self.vprint(
-                        f"{action} action split {flows[current_action_flow]} into {first}, {second}"
-                    )
+                    self.vprint(f"{action} action split {flows[current_action_flow]} into {first}, {second}")
 
                     flows[current_action_flow] = first
                     flows[next_action] = second
@@ -639,9 +601,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # link it to the end.
                     flows[current_action_flow].next_flow = [dest_action_flow]
 
-                    self.vprint(
-                        f"{action} action repointed {flows[current_action_flow]} to new chunk"
-                    )
+                    self.vprint(f"{action} action repointed {flows[current_action_flow]} to new chunk")
             elif action.opcode == AP2Action.IF:
                 # Conditional control flow redirection after this, we should split the
                 # section if necessary and point this section at the new offset as well
@@ -657,9 +617,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     if action.jump_if_true_offset == bytecode.end_offset:
                         dest_action = end
                     else:
-                        raise Exception(
-                            f"{action} conditionally jumps to an opcode that doesn't exist!"
-                        )
+                        raise Exception(f"{action} conditionally jumps to an opcode that doesn't exist!")
 
                 # If the destination action flow already starts with the jump offset,
                 # then we're good, we just need to point our current split at this new
@@ -667,13 +625,9 @@ class ByteCodeDecompiler(VerboseOutput):
                 # that flow so we can point to the opcode directly.
                 dest_action_flow = find(dest_action)
                 if not flows[dest_action_flow].is_first(dest_action):
-                    first, second = flows[dest_action_flow].split(
-                        dest_action, link=True
-                    )
+                    first, second = flows[dest_action_flow].split(dest_action, link=True)
 
-                    self.vprint(
-                        f"{action} action required split of {flows[dest_action_flow]} into {first, second}"
-                    )
+                    self.vprint(f"{action} action required split of {flows[dest_action_flow]} into {first, second}")
 
                     flows[dest_action_flow] = first
                     flows[dest_action] = second
@@ -690,9 +644,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     first, second = flows[current_action_flow].split(next_action)
                     first.next_flow = [next_action, dest_action_flow]
 
-                    self.vprint(
-                        f"{action} action split {flows[current_action_flow]} into {first}, {second}"
-                    )
+                    self.vprint(f"{action} action split {flows[current_action_flow]} into {first}, {second}")
 
                     flows[current_action_flow] = first
                     flows[next_action] = second
@@ -706,9 +658,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         dest_action_flow,
                     ]
 
-                    self.vprint(
-                        f"{action} action repointed {flows[current_action_flow]} to new chunk"
-                    )
+                    self.vprint(f"{action} action repointed {flows[current_action_flow]} to new chunk")
             elif action.opcode == AP2Action.IF2:
                 # We don't emit this anymore, so this is a problem.
                 raise Exception(
@@ -754,15 +704,9 @@ class ByteCodeDecompiler(VerboseOutput):
         # Now, eliminate any dead code since it will trip us up later. Chunk ID is still the
         # offset of the first entry in the chunk since we haven't assigned IDs yet.
         while True:
-            dead_chunk_ids = {
-                c.id
-                for c in chunks
-                if not c.previous_chunks and c.id != bytecode.start_offset
-            }
+            dead_chunk_ids = {c.id for c in chunks if not c.previous_chunks and c.id != bytecode.start_offset}
             if dead_chunk_ids:
-                self.vprint(
-                    f"Elimitating dead code chunks {', '.join(str(d) for d in dead_chunk_ids)}"
-                )
+                self.vprint(f"Elimitating dead code chunks {', '.join(str(d) for d in dead_chunk_ids)}")
                 chunks = [c for c in chunks if c.id not in dead_chunk_ids]
 
                 for chunk in chunks:
@@ -772,9 +716,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             raise Exception(
                                 f"Logic error, chunk ID {chunk.id} points at a dead code chunk we're eliminating!"
                             )
-                    chunk.previous_chunks = [
-                        c for c in chunk.previous_chunks if c not in dead_chunk_ids
-                    ]
+                    chunk.previous_chunks = [c for c in chunk.previous_chunks if c not in dead_chunk_ids]
             else:
                 break
 
@@ -809,9 +751,7 @@ class ByteCodeDecompiler(VerboseOutput):
             chunk.previous_chunks = [offset_to_id[c] for c in chunk.previous_chunks]
 
         # Add the "return" chunk now that we've converted everything.
-        chunks.append(
-            ByteCodeChunk(end_chunk_id, [], [], previous_chunks=end_previous_chunks)
-        )
+        chunks.append(ByteCodeChunk(end_chunk_id, [], [], previous_chunks=end_previous_chunks))
 
         # Verify a few invariants about the tree we just created.
         num_start_chunks = 0
@@ -852,20 +792,14 @@ class ByteCodeDecompiler(VerboseOutput):
                         f"Chunk ID {chunk.id} has two next chunks but control flow action is not an if statement!"
                     )
                 if len(chunk.next_chunks) > 2:
-                    raise Exception(
-                        f"Chunk ID {chunk.id} has more than two next chunks!"
-                    )
+                    raise Exception(f"Chunk ID {chunk.id} has more than two next chunks!")
 
         # Num start chunks can be 0 (if the start chunk is a loop beginning) or 1 (if its a normal chunk).
         if num_start_chunks > 1:
-            raise Exception(
-                f"Found {num_start_chunks} start chunks but expecting at most 1!"
-            )
+            raise Exception(f"Found {num_start_chunks} start chunks but expecting at most 1!")
         # Num end chunks can only be 1 as we created an artificial end chunk.
         if num_end_chunks != 1:
-            raise Exception(
-                f"Found {num_end_chunks} end chunks but expecting exactly 1!"
-            )
+            raise Exception(f"Found {num_end_chunks} end chunks but expecting exactly 1!")
 
         # Now that we're satisfied with the tree we created, return it.
         return (chunks, offset_to_id)
@@ -885,14 +819,10 @@ class ByteCodeDecompiler(VerboseOutput):
             raise Exception("Logic error, no start block found!")
         return start_id
 
-    def __compute_dominators(
-        self, start_id: int, chunks: Sequence[ByteCodeChunk]
-    ) -> Dict[int, Set[int]]:
+    def __compute_dominators(self, start_id: int, chunks: Sequence[ByteCodeChunk]) -> Dict[int, Set[int]]:
         # Compute dominators recursively
         chunklen = len(chunks)
-        dominators: Dict[int, BitVector] = {
-            chunk.id: BitVector(chunklen, init=True) for chunk in chunks
-        }
+        dominators: Dict[int, BitVector] = {chunk.id: BitVector(chunklen, init=True) for chunk in chunks}
         dominators[start_id].setAllBitsTo(False).setBit(start_id)
 
         # Verify that the chunk IDs are contiguous. Otherwise this algorithm fails, since it
@@ -929,20 +859,14 @@ class ByteCodeDecompiler(VerboseOutput):
         header_chunks = [c for c in loop.chunks if c.id == loop.id]
         if len(header_chunks) != 1:
             # Should never happen, only one should match ID.
-            raise Exception(
-                "Logic error, didn't find the header chunk based on Loop ID!"
-            )
+            raise Exception("Logic error, didn't find the header chunk based on Loop ID!")
         header_chunk = header_chunks[0]
 
         # Identify external jumps from the header.
-        break_points = [
-            i for i in header_chunk.next_chunks if i not in internal_jump_points
-        ]
+        break_points = [i for i in header_chunk.next_chunks if i not in internal_jump_points]
         if len(break_points) > 1:
             # We should not have two exits here, if so this isn't a loop!
-            raise Exception(
-                "Logic error, loop has more than one next chunk to jump to on break!"
-            )
+            raise Exception("Logic error, loop has more than one next chunk to jump to on break!")
         if not break_points:
             # This might be possible, but I don't know how to deal with it.
             raise Exception("Logic error, loop has no chunk to jump to on break!")
@@ -951,9 +875,7 @@ class ByteCodeDecompiler(VerboseOutput):
         break_point = break_points[0]
         continue_point = header_chunk.id
 
-        self.vprint(
-            f"Loop ID {loop.id} breaks to {break_point} and continues to {continue_point}"
-        )
+        self.vprint(f"Loop ID {loop.id} breaks to {break_point} and continues to {continue_point}")
 
         # Now, go through each chunk, identify whether it has an if, and fix up the
         # if statements.
@@ -981,36 +903,26 @@ class ByteCodeDecompiler(VerboseOutput):
                     next_chunk = chunk.next_chunks[0]
 
                     if next_chunk == break_point:
-                        self.vprint(
-                            "Converting jump to loop break into break statement."
-                        )
+                        self.vprint("Converting jump to loop break into break statement.")
                         chunk.actions[-1] = BreakStatement()
                         chunk.next_chunks = []
                     elif next_chunk == continue_point:
-                        self.vprint(
-                            "Converting jump to loop continue into continue statement."
-                        )
+                        self.vprint("Converting jump to loop continue into continue statement.")
                         chunk.actions[-1] = ContinueStatement()
                         chunk.next_chunks = []
                     elif next_chunk not in internal_jump_points:
                         if next_chunk == offset_map[self.bytecode.end_offset]:
-                            self.vprint(
-                                "Converting jump to external point into return statement."
-                            )
+                            self.vprint("Converting jump to external point into return statement.")
                             chunk.actions[-1] = NullReturnStatement()
                         else:
-                            self.vprint(
-                                "Converting jump to external point into goto statement."
-                            )
+                            self.vprint("Converting jump to external point into goto statement.")
                             chunk.actions[-1] = GotoStatement(next_chunk)
                         chunk.next_chunks = []
                     continue
 
                 if last_action.opcode == AP2Action.IF:
                     # Calculate true and false jump points.
-                    true_jump_point, false_jump_point = self.__get_jump_points(
-                        chunk, offset_map
-                    )
+                    true_jump_point, false_jump_point = self.__get_jump_points(chunk, offset_map)
                     end_offset = offset_map[self.bytecode.end_offset]
 
                     # Calculate true and false jump points, see if they are break/continue/goto.
@@ -1020,67 +932,39 @@ class ByteCodeDecompiler(VerboseOutput):
                     # continue or return statement).
                     true_action: Optional[Statement] = None
                     if true_jump_point == break_point:
-                        self.vprint(
-                            "Converting jump if true to loop break into break statement."
-                        )
+                        self.vprint("Converting jump if true to loop break into break statement.")
                         true_action = BreakStatement()
-                        chunk.next_chunks = [
-                            n for n in chunk.next_chunks if n != true_jump_point
-                        ]
+                        chunk.next_chunks = [n for n in chunk.next_chunks if n != true_jump_point]
                     elif true_jump_point == continue_point:
-                        self.vprint(
-                            "Converting jump if true to loop continue into continue statement."
-                        )
+                        self.vprint("Converting jump if true to loop continue into continue statement.")
                         true_action = ContinueStatement()
-                        chunk.next_chunks = [
-                            n for n in chunk.next_chunks if n != true_jump_point
-                        ]
+                        chunk.next_chunks = [n for n in chunk.next_chunks if n != true_jump_point]
                     elif true_jump_point not in internal_jump_points:
                         if true_jump_point == end_offset:
-                            self.vprint(
-                                "Converting jump if true to external point into return statement."
-                            )
+                            self.vprint("Converting jump if true to external point into return statement.")
                             true_action = NullReturnStatement()
                         else:
-                            self.vprint(
-                                "Converting jump if true to external point into goto statement."
-                            )
+                            self.vprint("Converting jump if true to external point into goto statement.")
                             true_action = GotoStatement(true_jump_point)
-                        chunk.next_chunks = [
-                            n for n in chunk.next_chunks if n != true_jump_point
-                        ]
+                        chunk.next_chunks = [n for n in chunk.next_chunks if n != true_jump_point]
 
                     false_action: Optional[Statement] = None
                     if false_jump_point == break_point:
-                        self.vprint(
-                            "Converting jump if false to loop break into break statement."
-                        )
+                        self.vprint("Converting jump if false to loop break into break statement.")
                         false_action = BreakStatement()
-                        chunk.next_chunks = [
-                            n for n in chunk.next_chunks if n != false_jump_point
-                        ]
+                        chunk.next_chunks = [n for n in chunk.next_chunks if n != false_jump_point]
                     elif false_jump_point == continue_point:
-                        self.vprint(
-                            "Converting jump if false to loop continue into continue statement."
-                        )
+                        self.vprint("Converting jump if false to loop continue into continue statement.")
                         false_action = ContinueStatement()
-                        chunk.next_chunks = [
-                            n for n in chunk.next_chunks if n != false_jump_point
-                        ]
+                        chunk.next_chunks = [n for n in chunk.next_chunks if n != false_jump_point]
                     elif false_jump_point not in internal_jump_points:
                         if false_jump_point == end_offset:
-                            self.vprint(
-                                "Converting jump if false to external point into return statement."
-                            )
+                            self.vprint("Converting jump if false to external point into return statement.")
                             false_action = NullReturnStatement()
                         else:
-                            self.vprint(
-                                "Converting jump if false to external point into goto statement."
-                            )
+                            self.vprint("Converting jump if false to external point into goto statement.")
                             false_action = GotoStatement(false_jump_point)
-                        chunk.next_chunks = [
-                            n for n in chunk.next_chunks if n != false_jump_point
-                        ]
+                        chunk.next_chunks = [n for n in chunk.next_chunks if n != false_jump_point]
 
                     if true_action is None and false_action is None:
                         # This is an internal-only if statement, we don't care. We will handle it in
@@ -1099,13 +983,9 @@ class ByteCodeDecompiler(VerboseOutput):
                     AP2Action.END,
                 ]:
                     if len(chunk.next_chunks) != 1:
-                        raise Exception(
-                            f"Logic error, chunkd ID {chunk.id} returns, throws or end to multiple blocks!"
-                        )
+                        raise Exception(f"Logic error, chunkd ID {chunk.id} returns, throws or end to multiple blocks!")
                     if chunk.next_chunks[0] != offset_map[self.bytecode.end_offset]:
-                        raise Exception(
-                            f"Expected chunk ID {chunk.id} to jump to return block but jumped elsewhere!"
-                        )
+                        raise Exception(f"Expected chunk ID {chunk.id} to jump to return block but jumped elsewhere!")
                     # We will convert this later.
                     self.vprint("Severing link to return address.")
                     chunk.next_chunks = []
@@ -1120,23 +1000,14 @@ class ByteCodeDecompiler(VerboseOutput):
             if isinstance(chunk, ByteCodeChunk):
                 last_action = chunk.actions[-1]
                 if isinstance(last_action, AP2Action):
-                    if (
-                        last_action.opcode == AP2Action.IF
-                        and len(chunk.next_chunks) != 2
-                    ):
-                        raise Exception(
-                            f"Somehow messed up the next pointers on if statement in chunk ID {chunk.id}!"
-                        )
-                    if (
-                        last_action.opcode == AP2Action.JUMP
-                        and len(chunk.next_chunks) != 1
-                    ):
+                    if last_action.opcode == AP2Action.IF and len(chunk.next_chunks) != 2:
+                        raise Exception(f"Somehow messed up the next pointers on if statement in chunk ID {chunk.id}!")
+                    if last_action.opcode == AP2Action.JUMP and len(chunk.next_chunks) != 1:
                         raise Exception(
                             f"Somehow messed up the next pointers on control flow statement in chunk ID {chunk.id}!"
                         )
                     if (
-                        last_action.opcode
-                        in [AP2Action.RETURN, AP2Action.THROW, AP2Action.END]
+                        last_action.opcode in [AP2Action.RETURN, AP2Action.THROW, AP2Action.END]
                         and len(chunk.next_chunks) != 0
                     ):
                         raise Exception(
@@ -1163,9 +1034,7 @@ class ByteCodeDecompiler(VerboseOutput):
         dominators: Dict[int, Set[int]],
         offset_map: Dict[int, int],
     ) -> List[Union[ByteCodeChunk, Loop]]:
-        chunks_by_id: Dict[int, Union[ByteCodeChunk, Loop]] = {
-            chunk.id: chunk for chunk in chunks
-        }
+        chunks_by_id: Dict[int, Union[ByteCodeChunk, Loop]] = {chunk.id: chunk for chunk in chunks}
 
         # Go through and gather up all loops in the chunks.
         loops: Dict[int, Set[int]] = {}
@@ -1192,9 +1061,7 @@ class ByteCodeDecompiler(VerboseOutput):
                                     blocks.add(predecessor)
                                     blocks_to_examine.append(predecessor)
 
-                    self.vprint(
-                        f"Found loop with header {header} and blocks {', '.join(str(b) for b in blocks)}."
-                    )
+                    self.vprint(f"Found loop with header {header} and blocks {', '.join(str(b) for b in blocks)}.")
 
                     # Now, make sure we scoop up any remaining if/else bodies not found in the backwards walk.
                     changed: bool = True
@@ -1208,26 +1075,18 @@ class ByteCodeDecompiler(VerboseOutput):
                                 continue
                             add_id: Optional[int] = None
                             for cid, doms in dominators.items():
-                                if (
-                                    dominators[b] == doms - {cid}
-                                    and cid not in blocks
-                                    and cid != header
-                                ):
+                                if dominators[b] == doms - {cid} and cid not in blocks and cid != header:
                                     add_id = cid
                                     break
                             if add_id is not None:
-                                self.vprint(
-                                    f"Chunk {cid} should be included in loop list!"
-                                )
+                                self.vprint(f"Chunk {cid} should be included in loop list!")
                                 blocks.add(add_id)
                                 changed = True
                                 break
 
                     # We found a loop!
                     if header in loops:
-                        raise Exception(
-                            f"Logic error, loop with header {header} was already found!"
-                        )
+                        raise Exception(f"Logic error, loop with header {header} was already found!")
                     loops[header] = blocks
 
         # Now, we need to reduce our list of chunks down to non-loops only. We do this
@@ -1253,9 +1112,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 else:
                     # This loop does not contain any loops of its own. It is safe to
                     # convert.
-                    self.vprint(
-                        f"Converting loop with header {header} and blocks {', '.join(str(b) for b in blocks)}."
-                    )
+                    self.vprint(f"Converting loop with header {header} and blocks {', '.join(str(b) for b in blocks)}.")
                     new_loop = Loop(header, [chunks_by_id[i] for i in blocks])
 
                     # Eliminate jumps that are to the beginning/end of the loop to
@@ -1264,9 +1121,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # to a break/continue/goto.
                     new_loop = self.__analyze_loop_jumps(new_loop, offset_map)
                     if len(new_loop.next_chunks) != 1:
-                        raise Exception(
-                            f"Newly created loop ID {new_loop.id} has more than one exit point!"
-                        )
+                        raise Exception(f"Newly created loop ID {new_loop.id} has more than one exit point!")
                     chunks_by_id[header] = new_loop
 
                     # These blocks are now part of the loop, so we need to remove them
@@ -1277,17 +1132,14 @@ class ByteCodeDecompiler(VerboseOutput):
 
             if delete_header is None:
                 # We must find at LEAST one loop that has no inner loops of its own.
-                raise Exception(
-                    "Logic error, we found no fixable loops, yet have at least one loop to fix up!"
-                )
+                raise Exception("Logic error, we found no fixable loops, yet have at least one loop to fix up!")
 
             # Remove this loop from the processing list
             del loops[delete_header]
 
             # Go through and remove the rest of the chunks from the rest of the loops
             loops = {
-                header: {block for block in blocks if block not in delete_blocks}
-                for (header, blocks) in loops.items()
+                header: {block for block in blocks if block not in delete_blocks} for (header, blocks) in loops.items()
             }
 
             # Also remove the rest of the chunks from our IDed chunks as they are part of this loop now.
@@ -1299,9 +1151,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 for nextid in chunk_or_loop.next_chunks:
                     if nextid in delete_blocks:
                         # Woah, we point at a chunk inside this loop that isn't the header!
-                        raise Exception(
-                            f"Logic error, chunkd ID {chunk_id} points into loop ID {delete_header} body!"
-                        )
+                        raise Exception(f"Logic error, chunkd ID {chunk_id} points into loop ID {delete_header} body!")
 
             # Update our master list of chunks we deleted.
             deleted_chunks.update(delete_blocks)
@@ -1315,9 +1165,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
         return updated_chunks
 
-    def __get_jump_points(
-        self, chunk: ByteCodeChunk, offset_map: Dict[int, int]
-    ) -> Tuple[int, int]:
+    def __get_jump_points(self, chunk: ByteCodeChunk, offset_map: Dict[int, int]) -> Tuple[int, int]:
         action = chunk.actions[-1]
 
         if isinstance(action, IfAction):
@@ -1335,13 +1183,9 @@ class ByteCodeDecompiler(VerboseOutput):
 
             return true_jump_point, false_jump_point
         else:
-            raise Exception(
-                f"Logic error, expecting JumpAction but got {action} in chunk {chunk.id}!"
-            )
+            raise Exception(f"Logic error, expecting JumpAction but got {action} in chunk {chunk.id}!")
 
-    def __break_graph(
-        self, chunks: Sequence[Union[ByteCodeChunk, Loop]], offset_map: Dict[int, int]
-    ) -> None:
+    def __break_graph(self, chunks: Sequence[Union[ByteCodeChunk, Loop]], offset_map: Dict[int, int]) -> None:
         for chunk in chunks:
             if chunk.id == offset_map[self.bytecode.end_offset]:
                 # Don't examine the sentinel we keep around as a jump point for returns.
@@ -1352,9 +1196,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 # At this point, we know chunk.chunks is a Union[ByteCodeChunk, Loop] because we haven't run
                 # any if detection yet.
-                self.__break_graph(
-                    cast(List[Union[ByteCodeChunk, Loop]], chunk.chunks), offset_map
-                )
+                self.__break_graph(cast(List[Union[ByteCodeChunk, Loop]], chunk.chunks), offset_map)
             else:
                 # Examine the last instruction.
                 last_action = chunk.actions[-1]
@@ -1366,42 +1208,29 @@ class ByteCodeDecompiler(VerboseOutput):
                     ]:
                         # The last action already dictates what we should do here. Break
                         # the chain at this point.
-                        self.vprint(
-                            f"Breaking chain on {chunk.id} because it is a {last_action}."
-                        )
+                        self.vprint(f"Breaking chain on {chunk.id} because it is a {last_action}.")
                         chunk.next_chunks = []
-                    elif (
-                        len(chunk.next_chunks) == 1
-                        and chunk.next_chunks[0] == offset_map[self.bytecode.end_offset]
-                    ):
+                    elif len(chunk.next_chunks) == 1 and chunk.next_chunks[0] == offset_map[self.bytecode.end_offset]:
                         # The jump point for this is the end of the function. If it is a jump,
                         # then we should replace it with a return. If it is not a jump, we should
                         # add a return.
                         if last_action.opcode == AP2Action.JUMP:
-                            self.vprint(
-                                f"Converting jump to end of code in {chunk.id} into a null return."
-                            )
+                            self.vprint(f"Converting jump to end of code in {chunk.id} into a null return.")
                             chunk.actions[-1] = NullReturnStatement()
                         else:
                             if last_action.opcode == AP2Action.IF:
                                 raise Exception(
                                     f"Logic error, unexpected if statement with only one successor in {chunk.id}!"
                                 )
-                            self.vprint(
-                                f"Converting fall-through to end of code in {chunk.id} into a null return."
-                            )
+                            self.vprint(f"Converting fall-through to end of code in {chunk.id} into a null return.")
                             chunk.actions.append(NullReturnStatement())
                         chunk.next_chunks = []
                     elif len(chunk.next_chunks) == 2:
                         if last_action.opcode != AP2Action.IF:
-                            raise Exception(
-                                f"Logic error, expected if statement with two successors in {chunk.id}!"
-                            )
+                            raise Exception(f"Logic error, expected if statement with two successors in {chunk.id}!")
 
                         # This is an if statement, let's see if any of the arms point to a return.
-                        true_jump_point, false_jump_point = self.__get_jump_points(
-                            chunk, offset_map
-                        )
+                        true_jump_point, false_jump_point = self.__get_jump_points(chunk, offset_map)
                         end_offset = offset_map[self.bytecode.end_offset]
 
                         # It's possible for the true and false jump point to be equal, if the code being
@@ -1413,9 +1242,7 @@ class ByteCodeDecompiler(VerboseOutput):
                                 f"Converting jump if true to external point into return statement in {chunk.id}."
                             )
                             true_action = NullReturnStatement()
-                            chunk.next_chunks = [
-                                c for c in chunk.next_chunks if c != true_jump_point
-                            ]
+                            chunk.next_chunks = [c for c in chunk.next_chunks if c != true_jump_point]
 
                         false_action: Optional[Statement] = None
                         if false_jump_point == end_offset:
@@ -1423,9 +1250,7 @@ class ByteCodeDecompiler(VerboseOutput):
                                 f"Converting jump if false to external point into return statement in {chunk.id}."
                             )
                             false_action = NullReturnStatement()
-                            chunk.next_chunks = [
-                                c for c in chunk.next_chunks if c != false_jump_point
-                            ]
+                            chunk.next_chunks = [c for c in chunk.next_chunks if c != false_jump_point]
 
                         if true_action or false_action:
                             chunk.actions[-1] = IntermediateIf(
@@ -1457,11 +1282,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 # goto/return/throw statements as they should be treated the same as not finding an
                 # end.
                 new_candidates.extend(
-                    [
-                        c
-                        for c in chunks_by_id[candidate].next_chunks
-                        if c not in visited and c in chunks_by_id
-                    ]
+                    [c for c in chunks_by_id[candidate].next_chunks if c not in visited and c in chunks_by_id]
                 )
             candidates = new_candidates
 
@@ -1481,13 +1302,7 @@ class ByteCodeDecompiler(VerboseOutput):
             for candidate in candidates:
                 # We can't take the same shortcut here as above, as we are trying to ask the question
                 # of what's the shallowest successor, not color them in.
-                new_candidates.extend(
-                    [
-                        c
-                        for c in chunks_by_id[candidate].next_chunks
-                        if c in chunks_by_id
-                    ]
-                )
+                new_candidates.extend([c for c in chunks_by_id[candidate].next_chunks if c in chunks_by_id])
             candidates = new_candidates
 
         # If we didn't find a successor, that means one of the control paths leads to end of execution.
@@ -1550,9 +1365,7 @@ class ByteCodeDecompiler(VerboseOutput):
         chunks: Sequence[ArbitraryCodeChunk],
         offset_map: Dict[int, int],
     ) -> List[ArbitraryCodeChunk]:
-        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {
-            chunk.id: chunk for chunk in chunks
-        }
+        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
         cur_id = start_id
 
         self.vprint(f"Separating if statements out of graph starting at {start_id}")
@@ -1561,20 +1374,14 @@ class ByteCodeDecompiler(VerboseOutput):
             cur_chunk = chunks_by_id[cur_id]
             if isinstance(cur_chunk, Loop):
                 self.vprint(f"Examining loop {cur_chunk.id} body for if statements...")
-                cur_chunk.chunks = self.__separate_ifs(
-                    cur_chunk.id, None, cur_chunk.chunks, offset_map
-                )
-                self.vprint(
-                    f"Finished examining loop {cur_chunk.id} body for if statements..."
-                )
+                cur_chunk.chunks = self.__separate_ifs(cur_chunk.id, None, cur_chunk.chunks, offset_map)
+                self.vprint(f"Finished examining loop {cur_chunk.id} body for if statements...")
 
             # Filter out anything pointing at the end chunk, since we know that's where we will end up
             # when we leave this if statement anyway. Don't do this for if statements as we need to
             # preserve the jump point in that case.
             if len(chunks_by_id[cur_id].next_chunks) == 1:
-                chunks_by_id[cur_id].next_chunks = [
-                    c for c in chunks_by_id[cur_id].next_chunks if c != end_id
-                ]
+                chunks_by_id[cur_id].next_chunks = [c for c in chunks_by_id[cur_id].next_chunks if c != end_id]
 
             if not chunks_by_id[cur_id].next_chunks:
                 # We're done!
@@ -1588,9 +1395,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     if next_id not in chunks_by_id:
                         # We need to go to the next chunk, but we don't own it. Convert it to a goto.
                         if isinstance(cur_chunk, Loop):
-                            self.vprint(
-                                f"Loop ID {cur_id} needs a goto outside of this if."
-                            )
+                            self.vprint(f"Loop ID {cur_id} needs a goto outside of this if.")
                             cur_chunk.post_statements.append(GotoStatement(next_id))
                             chunks_by_id[cur_id].next_chunks = []
                             break
@@ -1604,9 +1409,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 last_action = cur_chunk.actions[-1]
                 if isinstance(last_action, IfAction):
-                    raise Exception(
-                        f"Logic error, IfAction with only one child in chunk {cur_chunk}!"
-                    )
+                    raise Exception(f"Logic error, IfAction with only one child in chunk {cur_chunk}!")
 
                 next_id = chunks_by_id[cur_id].next_chunks[0]
                 if isinstance(last_action, AP2Action) and last_action.opcode in [
@@ -1624,9 +1427,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 else:
                     if next_id not in chunks_by_id:
                         # We need to go to the next chunk, but we don't own it. Convert it to a goto.
-                        self.vprint(
-                            f"Chunk ID {cur_id} needs a goto outside of this if."
-                        )
+                        self.vprint(f"Chunk ID {cur_id} needs a goto outside of this if.")
                         cur_chunk.actions.append(GotoStatement(next_id))
                         chunks_by_id[cur_id].next_chunks = []
                         break
@@ -1649,16 +1450,12 @@ class ByteCodeDecompiler(VerboseOutput):
             last_action = cur_chunk.actions[-1]
             if not isinstance(last_action, IfAction):
                 # This needs, again, to be an if statement.
-                raise Exception(
-                    "Logic error, only IfActions can have multiple successors in chunk {cur_chunk.id}!"
-                )
+                raise Exception("Logic error, only IfActions can have multiple successors in chunk {cur_chunk.id}!")
 
             # This should be an if statement. Figure out if it is an if-else or an
             # if, and if both branches return.
             if_end = self.__find_shallowest_successor(cur_id, chunks_by_id)
-            true_jump_point, false_jump_point = self.__get_jump_points(
-                cur_chunk, offset_map
-            )
+            true_jump_point, false_jump_point = self.__get_jump_points(cur_chunk, offset_map)
             if true_jump_point == false_jump_point:
                 # This is an optimized-away if statement, render it out as an empty intermediate If
                 # and set the jump point to the next location.
@@ -1687,12 +1484,8 @@ class ByteCodeDecompiler(VerboseOutput):
 
             true_chunks: List[ArbitraryCodeChunk] = []
             if true_jump_point not in chunks_by_id and true_jump_point != if_end:
-                self.vprint(
-                    f"If statement true jump point {true_jump_point} is a goto!"
-                )
-                true_chunks.append(
-                    ByteCodeChunk(self.__goto_body_id, [GotoStatement(true_jump_point)])
-                )
+                self.vprint(f"If statement true jump point {true_jump_point} is a goto!")
+                true_chunks.append(ByteCodeChunk(self.__goto_body_id, [GotoStatement(true_jump_point)]))
                 self.__goto_body_id -= 1
             elif true_jump_point not in {if_end, end_id}:
                 self.vprint(
@@ -1700,12 +1493,8 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
 
                 # First, grab all the chunks in this if statement body.
-                true_chunks = self.__gather_chunks(
-                    true_jump_point, if_end, chunks_by_id
-                )
-                self.vprint(
-                    f"True chunks are {', '.join(str(c.id) for c in true_chunks)}"
-                )
+                true_chunks = self.__gather_chunks(true_jump_point, if_end, chunks_by_id)
+                self.vprint(f"True chunks are {', '.join(str(c.id) for c in true_chunks)}")
 
                 # Delete these chunks from our chunk mapping since we're putting them in an if body.
                 for chunk in true_chunks:
@@ -1721,14 +1510,8 @@ class ByteCodeDecompiler(VerboseOutput):
 
             false_chunks: List[ArbitraryCodeChunk] = []
             if false_jump_point not in chunks_by_id and false_jump_point != if_end:
-                self.vprint(
-                    f"If statement false jump point {false_jump_point} is a goto!"
-                )
-                false_chunks.append(
-                    ByteCodeChunk(
-                        self.__goto_body_id, [GotoStatement(false_jump_point)]
-                    )
-                )
+                self.vprint(f"If statement false jump point {false_jump_point} is a goto!")
+                false_chunks.append(ByteCodeChunk(self.__goto_body_id, [GotoStatement(false_jump_point)]))
                 self.__goto_body_id -= 1
             elif false_jump_point not in {if_end, end_id}:
                 self.vprint(
@@ -1736,12 +1519,8 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
 
                 # First, grab all the chunks in this if statement body.
-                false_chunks = self.__gather_chunks(
-                    false_jump_point, if_end, chunks_by_id
-                )
-                self.vprint(
-                    f"False chunks are {', '.join(str(c.id) for c in false_chunks)}"
-                )
+                false_chunks = self.__gather_chunks(false_jump_point, if_end, chunks_by_id)
+                self.vprint(f"False chunks are {', '.join(str(c.id) for c in false_chunks)}")
 
                 # Delete these chunks from our chunk mapping since we're putting them in an if body.
                 for chunk in false_chunks:
@@ -1767,12 +1546,8 @@ class ByteCodeDecompiler(VerboseOutput):
             # Add a new if body that this current chunk points to. At this point, chunks_by_id contains
             # none of the chunks in the true or false bodies of the if, so we add it back to the graph
             # in the form of an IfBody.
-            self.vprint(
-                f"Created new IfBody for chunk {cur_id} to point at, ending at {if_id}"
-            )
-            chunks_by_id[if_id] = IfBody(
-                if_id, true_chunks, false_chunks, if_end, cur_id
-            )
+            self.vprint(f"Created new IfBody for chunk {cur_id} to point at, ending at {if_id}")
+            chunks_by_id[if_id] = IfBody(if_id, true_chunks, false_chunks, if_end, cur_id)
             chunks_by_id[cur_id].next_chunks = [if_id]
 
             if if_end is not None:
@@ -1782,19 +1557,13 @@ class ByteCodeDecompiler(VerboseOutput):
                 # This if statement encompases all the rest of the statements, we're done.
                 break
 
-        self.vprint(
-            f"Finished separating if statements out of graph starting at {start_id}"
-        )
+        self.vprint(f"Finished separating if statements out of graph starting at {start_id}")
         return [c for _, c in chunks_by_id.items()]
 
-    def __check_graph(
-        self, start_id: int, chunks: Sequence[ArbitraryCodeChunk]
-    ) -> List[ArbitraryCodeChunk]:
+    def __check_graph(self, start_id: int, chunks: Sequence[ArbitraryCodeChunk]) -> List[ArbitraryCodeChunk]:
         # Recursively go through and verify that all entries to the graph have only one link.
         # Also, clean up the graph.
-        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {
-            chunk.id: chunk for chunk in chunks
-        }
+        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
         new_chunks: List[ArbitraryCodeChunk] = []
 
         while True:
@@ -1810,17 +1579,11 @@ class ByteCodeDecompiler(VerboseOutput):
                 if cur_chunk.true_chunks:
                     self.vprint(f"Cleaning up graph of IfBody {cur_chunk.id} true case")
                     true_start = self.__get_entry_block(cur_chunk.true_chunks)
-                    cur_chunk.true_chunks = self.__check_graph(
-                        true_start, cur_chunk.true_chunks
-                    )
+                    cur_chunk.true_chunks = self.__check_graph(true_start, cur_chunk.true_chunks)
                 if cur_chunk.false_chunks:
-                    self.vprint(
-                        f"Cleaning up graph of IfBody {cur_chunk.id} false case"
-                    )
+                    self.vprint(f"Cleaning up graph of IfBody {cur_chunk.id} false case")
                     false_start = self.__get_entry_block(cur_chunk.false_chunks)
-                    cur_chunk.false_chunks = self.__check_graph(
-                        false_start, cur_chunk.false_chunks
-                    )
+                    cur_chunk.false_chunks = self.__check_graph(false_start, cur_chunk.false_chunks)
 
             # Now, check to make sure that we have only one exit pointer.
             num_exits = len(cur_chunk.next_chunks)
@@ -1886,11 +1649,7 @@ class ByteCodeDecompiler(VerboseOutput):
             elif action.comparison in [IfAction.COMP_BITAND, IfAction.COMP_NOT_BITAND]:
                 conditional2 = stack.pop()
                 conditional1 = stack.pop()
-                comp = (
-                    TwoParameterIf.NOT_EQUALS
-                    if action.comparison == IfAction.COMP_BITAND
-                    else TwoParameterIf.EQUALS
-                )
+                comp = TwoParameterIf.NOT_EQUALS if action.comparison == IfAction.COMP_BITAND else TwoParameterIf.EQUALS
 
                 return TwoParameterIf(
                     ArithmeticExpression(conditional1, "&", conditional2),
@@ -1916,9 +1675,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if action.name:
                     # This defines a global function, so it won't go on the stack.
-                    chunk.actions[i] = SetVariableStatement(
-                        action.name, NewFunction(action.flags, decompiler)
-                    )
+                    chunk.actions[i] = SetVariableStatement(action.name, NewFunction(action.flags, decompiler))
                 else:
                     # This defines a function object, most likely for attaching to a member of an object.
                     stack.append(NewFunction(action.flags, decompiler))
@@ -2114,11 +1871,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.INSTANCEOF:
                     name_ref = stack.pop()
                     obj_to_check = stack.pop()
-                    stack.append(
-                        FunctionCall(
-                            self.__insertion_id, "isinstance", [obj_to_check, name_ref]
-                        )
-                    )
+                    stack.append(FunctionCall(self.__insertion_id, "isinstance", [obj_to_check, name_ref]))
 
                     chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
                     self.__insertion_id += 1
@@ -2126,9 +1879,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
                 if action.opcode == AP2Action.TYPEOF:
                     obj_to_check = stack.pop()
-                    stack.append(
-                        FunctionCall(self.__insertion_id, "typeof", [obj_to_check])
-                    )
+                    stack.append(FunctionCall(self.__insertion_id, "typeof", [obj_to_check]))
 
                     chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
                     self.__insertion_id += 1
@@ -2145,11 +1896,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     params = []
                     for _ in range(num_params):
                         params.append(stack.pop())
-                    stack.append(
-                        MethodCall(
-                            self.__insertion_id, object_reference, method_name, params
-                        )
-                    )
+                    stack.append(MethodCall(self.__insertion_id, object_reference, method_name, params))
 
                     chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
                     self.__insertion_id += 1
@@ -2165,9 +1912,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     params = []
                     for _ in range(num_params):
                         params.append(stack.pop())
-                    stack.append(
-                        FunctionCall(self.__insertion_id, function_name, params)
-                    )
+                    stack.append(FunctionCall(self.__insertion_id, function_name, params))
 
                     chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
                     self.__insertion_id += 1
@@ -2214,9 +1959,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     else:
                         # This is probably a reference to a variable by
                         # string concatenation.
-                        chunk.actions[i] = SetMemberStatement(
-                            GLOBAL, local_name, set_value
-                        )
+                        chunk.actions[i] = SetMemberStatement(GLOBAL, local_name, set_value)
 
                     continue
 
@@ -2254,9 +1997,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
 
-                    chunk.actions[i] = SetMemberStatement(
-                        object_reference, member_name, set_value
-                    )
+                    chunk.actions[i] = SetMemberStatement(object_reference, member_name, set_value)
                     continue
 
                 if action.opcode == AP2Action.GET_PROPERTY:
@@ -2268,9 +2009,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         # SET_PROPERTY so this is just here for documentation.
                         raise Exception("Logic error!")
                     object_reference = stack.pop()
-                    stack.append(
-                        Member(object_reference, StringConstant(property_int + 0x100))
-                    )
+                    stack.append(Member(object_reference, StringConstant(property_int + 0x100)))
 
                     chunk.actions[i] = NopStatement()
                     continue
@@ -2293,9 +2032,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     set_value = stack.pop()
                     local_name = stack.pop()
                     if not isinstance(local_name, (str, StringConstant)):
-                        raise Exception(
-                            f"Logic error, local name {local_name} is not a string!"
-                        )
+                        raise Exception(f"Logic error, local name {local_name} is not a string!")
 
                     chunk.actions[i] = SetLocalStatement(local_name, set_value)
                     continue
@@ -2303,9 +2040,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.DEFINE_LOCAL2:
                     local_name = stack.pop()
                     if not isinstance(local_name, (str, StringConstant)):
-                        raise Exception(
-                            f"Logic error, local name {local_name} is not a string!"
-                        )
+                        raise Exception(f"Logic error, local name {local_name} is not a string!")
 
                     chunk.actions[i] = SetLocalStatement(local_name, UNDEFINED)
                     continue
@@ -2494,9 +2229,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 if action.opcode == AP2Action.CAST_OP:
                     obj_ref = stack.pop()
                     class_ref = stack.pop()
-                    stack.append(
-                        FunctionCall(self.__insertion_id, "cast", [obj_ref, class_ref])
-                    )
+                    stack.append(FunctionCall(self.__insertion_id, "cast", [obj_ref, class_ref]))
 
                     chunk.actions[i] = OriginalCallLocation(self.__insertion_id)
                     self.__insertion_id += 1
@@ -2567,9 +2300,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 )
                 continue
 
-            raise Exception(
-                f"Unexpected action {action}, the cases above should be exhaustive!"
-            )
+            raise Exception(f"Unexpected action {action}, the cases above should be exhaustive!")
 
         # Now, clean up code generation.
         new_actions: List[ConvertedAction] = []
@@ -2641,14 +2372,8 @@ class ByteCodeDecompiler(VerboseOutput):
                     elif isinstance(statement, OriginalCallLocation):
                         # Convert any orphaned function calls to calls without an assignment.
                         if statement.insertion_id in orphaned_functions:
-                            self.vprint(
-                                f"Inserting orphaned function into insertion location {statement.insertion_id}"
-                            )
-                            new_statements.append(
-                                ExpressionStatement(
-                                    orphaned_functions[statement.insertion_id]
-                                )
-                            )
+                            self.vprint(f"Inserting orphaned function into insertion location {statement.insertion_id}")
+                            new_statements.append(ExpressionStatement(orphaned_functions[statement.insertion_id]))
                             del orphaned_functions[statement.insertion_id]
                     else:
                         new_statements.append(statement)
@@ -2657,9 +2382,7 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = fixup(statements)
 
         if orphaned_functions:
-            raise Exception(
-                f"Unexpected leftover orphan functions {orphaned_functions}!"
-            )
+            raise Exception(f"Unexpected leftover orphan functions {orphaned_functions}!")
 
         # Make sure we consumed the stack.
         for cid, leftovers in stack.items():
@@ -2680,19 +2403,13 @@ class ByteCodeDecompiler(VerboseOutput):
         other_stack_locs: Dict[int, int],
         offset_map: Dict[int, int],
     ) -> List[Statement]:
-        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {
-            chunk.id: chunk for chunk in chunks
-        }
+        chunks_by_id: Dict[int, ArbitraryCodeChunk] = {chunk.id: chunk for chunk in chunks}
         statements: List[Statement] = []
 
-        def reconcile_stacks(
-            cur_chunk: int, new_stack_id: int, new_stack: List[Any]
-        ) -> List[Statement]:
+        def reconcile_stacks(cur_chunk: int, new_stack_id: int, new_stack: List[Any]) -> List[Statement]:
             if new_stack_id in stacks:
                 if cur_chunk == other_stack_locs[new_stack_id]:
-                    raise Exception(
-                        "Logic error, cannot reconcile variable names with self!"
-                    )
+                    raise Exception("Logic error, cannot reconcile variable names with self!")
                 other_chunk = other_stack_locs[new_stack_id]
                 if len(stacks[new_stack_id]) != len(new_stack):
                     min_len = min(len(stacks[new_stack_id]), len(new_stack))
@@ -2704,9 +2421,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # It doesn't matter what it is, just mark the stack entry as being poisoned since
                     # we couldn't reconcile it. We want to throw an exception down the line if we
                     # run into this value, as we needed it but only sometimes got it.
-                    borrow_vals = [
-                        MaybeStackEntry(new_stack_id) for _ in range(borrows)
-                    ]
+                    borrow_vals = [MaybeStackEntry(new_stack_id) for _ in range(borrows)]
 
                     if min_len > 0:
                         stacks[new_stack_id] = [
@@ -2749,9 +2464,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             ]
 
                             stack.append(TempVariable(tmpname))
-                            self.vprint(
-                                f"Reusing temporary variable {tmpname} to hold stack value {new_stack[i]}"
-                            )
+                            self.vprint(f"Reusing temporary variable {tmpname} to hold stack value {new_stack[i]}")
                         else:
                             tmpname = f"tempvar_{self.__tmpvar_id}"
                             self.__tmpvar_id += 1
@@ -2759,9 +2472,9 @@ class ByteCodeDecompiler(VerboseOutput):
                             insertables[cur_chunk] = insertables.get(cur_chunk, []) + [
                                 SetVariableStatement(tmpname, new_entry)
                             ]
-                            insertables[other_chunk] = insertables.get(
-                                other_chunk, []
-                            ) + [SetVariableStatement(tmpname, old_entry)]
+                            insertables[other_chunk] = insertables.get(other_chunk, []) + [
+                                SetVariableStatement(tmpname, old_entry)
+                            ]
 
                             stack.append(TempVariable(tmpname))
                             self.vprint(
@@ -2770,9 +2483,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     else:
                         stack.append(new_entry)
 
-                self.vprint(
-                    f"Redefining stack for chunk ID {new_stack_id} to be {stack} after merging multiple paths"
-                )
+                self.vprint(f"Redefining stack for chunk ID {new_stack_id} to be {stack} after merging multiple paths")
                 stacks[new_stack_id] = stack[::-1]
                 return definitions
             else:
@@ -2817,20 +2528,14 @@ class ByteCodeDecompiler(VerboseOutput):
                 # Grab the computed start stack for this ID
                 if chunk.id not in stacks:
                     # We somehow failed to assign a stack to this chunk but got here anyway?
-                    raise Exception(
-                        f"Logic error, stack for {chunk.id} does not exist!"
-                    )
+                    raise Exception(f"Logic error, stack for {chunk.id} does not exist!")
 
                 stack = stacks[chunk.id]
                 del stacks[chunk.id]
 
                 # Calculate the statements for this chunk, as well as the leftover stack entries.
-                self.vprint(
-                    f"Evaluating graph of ByteCodeChunk {chunk.id} with stack {stack}"
-                )
-                new_statements, stack_leftovers = self.__eval_stack(
-                    chunk, stack, offset_map
-                )
+                self.vprint(f"Evaluating graph of ByteCodeChunk {chunk.id} with stack {stack}")
+                new_statements, stack_leftovers = self.__eval_stack(chunk, stack, offset_map)
 
                 # We need to check and see if the last entry is an IfExpr, and hoist it
                 # into a statement here.
@@ -2840,15 +2545,11 @@ class ByteCodeDecompiler(VerboseOutput):
 
                     if not isinstance(if_body_chunk, IfBody):
                         # IfBody should always follow a chunk that ends with an if.
-                        raise Exception(
-                            f"Logic error, expecting an IfBody chunk but got {if_body_chunk}!"
-                        )
+                        raise Exception(f"Logic error, expecting an IfBody chunk but got {if_body_chunk}!")
 
                     if if_body in stacks:
                         # Nothing should ever create a stack pointing at an IfBody except this code here.
-                        raise Exception(
-                            f"Logic error, IfBody ID {if_body} already has a stack {stacks[if_body]}!"
-                        )
+                        raise Exception(f"Logic error, IfBody ID {if_body} already has a stack {stacks[if_body]}!")
 
                     # Recalculate next chunk ID since we're calculating two chunks here.
                     if len(if_body_chunk.next_chunks) > 1:
@@ -2858,9 +2559,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         next_chunk_id = if_body_chunk.next_chunks[0]
                     else:
                         next_chunk_id = next_id
-                    self.vprint(
-                        f"Recalculated next ID for IfBody {if_body} to be {next_chunk_id}"
-                    )
+                    self.vprint(f"Recalculated next ID for IfBody {if_body} to be {next_chunk_id}")
 
                     # Make sure if its an if with only one body (true/false) that we track
                     # the stack in this case as well.
@@ -2872,9 +2571,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # Evaluate the if body
                     true_statements: List[Statement] = []
                     if if_body_chunk.true_chunks:
-                        self.vprint(
-                            f"Evaluating graph of IfBody {if_body_chunk.id} true case"
-                        )
+                        self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} true case")
                         true_start = self.__get_entry_block(if_body_chunk.true_chunks)
                         if true_start in stacks:
                             raise Exception("Logic error, unexpected stack for if!")
@@ -2882,9 +2579,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
                             stacks[true_start] = [s for s in stack_leftovers]
-                        self.vprint(
-                            f"True start {true_start} of IfBody has stack {stacks[true_start]}"
-                        )
+                        self.vprint(f"True start {true_start} of IfBody has stack {stacks[true_start]}")
                         true_statements = self.__eval_chunks_impl(
                             true_start,
                             if_body_chunk.true_chunks,
@@ -2897,16 +2592,12 @@ class ByteCodeDecompiler(VerboseOutput):
                         )
                     else:
                         if next_chunk_id is None:
-                            raise Exception(
-                                "Logic error, cannot reconcile stacks when next chunk is the end!"
-                            )
+                            raise Exception("Logic error, cannot reconcile stacks when next chunk is the end!")
                         reconcile_stacks(chunk.id, next_chunk_id, stack_leftovers)
 
                     false_statements: List[Statement] = []
                     if if_body_chunk.false_chunks:
-                        self.vprint(
-                            f"Evaluating graph of IfBody {if_body_chunk.id} false case"
-                        )
+                        self.vprint(f"Evaluating graph of IfBody {if_body_chunk.id} false case")
                         false_start = self.__get_entry_block(if_body_chunk.false_chunks)
                         if false_start in stacks:
                             raise Exception("Logic error, unexpected stack for if!")
@@ -2914,9 +2605,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             # The stack for both of these is the leftovers from the previous evaluation as they
                             # rollover.
                             stacks[false_start] = [s for s in stack_leftovers]
-                        self.vprint(
-                            f"False start {false_start} of IfBody has stack {stacks[false_start]}"
-                        )
+                        self.vprint(f"False start {false_start} of IfBody has stack {stacks[false_start]}")
                         false_statements = self.__eval_chunks_impl(
                             false_start,
                             if_body_chunk.false_chunks,
@@ -2929,9 +2618,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         )
                     else:
                         if next_chunk_id is None:
-                            raise Exception(
-                                "Logic error, cannot reconcile stacks when next chunk is the end!"
-                            )
+                            raise Exception("Logic error, cannot reconcile stacks when next chunk is the end!")
                         reconcile_stacks(chunk.id, next_chunk_id, stack_leftovers)
 
                     # Convert this IfExpr to a full-blown IfStatement.
@@ -2972,9 +2659,7 @@ class ByteCodeDecompiler(VerboseOutput):
                                     f"Logic error, expected only one false statement in intermediate if {last_new_statement}!"
                                 )
                             else:
-                                intermediates.extend(
-                                    last_new_statement.false_statements
-                                )
+                                intermediates.extend(last_new_statement.false_statements)
 
                             for stmt in intermediates:
                                 if isinstance(stmt, GotoStatement):
@@ -2997,28 +2682,20 @@ class ByteCodeDecompiler(VerboseOutput):
                                     if next_id is not None:
                                         new_next_ids.add(next_id)
                                 else:
-                                    raise Exception(
-                                        f"Logic error, unexpected statement {stmt}!"
-                                    )
+                                    raise Exception(f"Logic error, unexpected statement {stmt}!")
 
                     if new_next_ids:
                         for new_next_id in new_next_ids:
-                            reconcile_stacks(
-                                chunk.id, new_next_id, [s for s in stack_leftovers]
-                            )
+                            reconcile_stacks(chunk.id, new_next_id, [s for s in stack_leftovers])
 
                         # Insert a sentinel for where temporary variables can be added if we
                         # need to in the future.
-                        sentinels: List[Union[Statement, IntermediateIf]] = [
-                            InsertionLocation(chunk.id)
-                        ]
+                        sentinels: List[Union[Statement, IntermediateIf]] = [InsertionLocation(chunk.id)]
 
                         # If we have a goto or intermediate if, we need to insert the tempvar assignment before it.
                         # This is because in both cases we will redirect control flow, so we need to make sure
                         # tempvar assignment happens before that redirection for the code to make sense.
-                        if new_statements and isinstance(
-                            new_statements[-1], (GotoStatement, IntermediateIf)
-                        ):
+                        if new_statements and isinstance(new_statements[-1], (GotoStatement, IntermediateIf)):
                             sentinels.append(new_statements[-1])
                             new_statements = new_statements[:-1]
 
@@ -3026,23 +2703,13 @@ class ByteCodeDecompiler(VerboseOutput):
                         new_statements.extend(sentinels)
                     else:
                         # We have nowhere else to go, verify that we have an empty stack.
-                        orphans = [
-                            s
-                            for s in stack_leftovers
-                            if isinstance(s, (FunctionCall, MethodCall))
-                        ]
+                        orphans = [s for s in stack_leftovers if isinstance(s, (FunctionCall, MethodCall))]
                         stack_leftovers = [
-                            s
-                            for s in stack_leftovers
-                            if not isinstance(
-                                s, (MaybeStackEntry, FunctionCall, MethodCall)
-                            )
+                            s for s in stack_leftovers if not isinstance(s, (MaybeStackEntry, FunctionCall, MethodCall))
                         ]
                         for func in orphans:
                             if func.insertion_ref in orphaned_functions:
-                                raise Exception(
-                                    f"Logic error, already have an insertion ID {func.insertion_ref}!"
-                                )
+                                raise Exception(f"Logic error, already have an insertion ID {func.insertion_ref}!")
                             orphaned_functions[func.insertion_ref] = func
                         if stack_leftovers:
                             raise Exception(
@@ -3055,17 +2722,10 @@ class ByteCodeDecompiler(VerboseOutput):
                         # Intermediate if conditional (such as a break/return/goto inside
                         # a loop.
                         if not isinstance(statement.parent_action, IfExpr):
-                            raise Exception(
-                                f"Logic error, found unconverted IntermediateIf {statement}!"
-                            )
+                            raise Exception(f"Logic error, found unconverted IntermediateIf {statement}!")
 
-                        if (
-                            not statement.true_statements
-                            and not statement.false_statements
-                        ):
-                            self.vprint(
-                                f"Skipping adding if statement {statement} because it is an empty sentinel!"
-                            )
+                        if not statement.true_statements and not statement.false_statements:
+                            self.vprint(f"Skipping adding if statement {statement} because it is an empty sentinel!")
                         else:
                             statements.append(
                                 IfStatement(
@@ -3101,12 +2761,8 @@ class ByteCodeDecompiler(VerboseOutput):
                 new_statement.body = self.__walk(new_statement.body, do)
                 new_statements.append(new_statement)
             elif isinstance(new_statement, IfStatement):
-                new_statement.true_statements = self.__walk(
-                    new_statement.true_statements, do
-                )
-                new_statement.false_statements = self.__walk(
-                    new_statement.false_statements, do
-                )
+                new_statement.true_statements = self.__walk(new_statement.true_statements, do)
+                new_statement.false_statements = self.__walk(new_statement.false_statements, do)
                 new_statements.append(new_statement)
             elif isinstance(new_statement, SwitchStatement):
                 new_statement.cases = [
@@ -3122,9 +2778,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return new_statements
 
-    def __collapse_identical_labels(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __collapse_identical_labels(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find labels that point at gotos, remove them and point the
         # gotos to those labels at the second gotos.
         statements = list(statements)
@@ -3134,24 +2788,16 @@ class ByteCodeDecompiler(VerboseOutput):
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1] if (i < len(statements) - 1) else None
-                )
-                if isinstance(cur_statement, DefineLabelStatement) and isinstance(
-                    next_statement, GotoStatement
-                ):
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else None
+                if isinstance(cur_statement, DefineLabelStatement) and isinstance(next_statement, GotoStatement):
                     label_and_goto[cur_statement.location] = next_statement.location
 
                 elif isinstance(cur_statement, DoWhileStatement):
                     label_and_goto.update(find_labels_and_gotos(cur_statement.body))
 
                 elif isinstance(cur_statement, IfStatement):
-                    label_and_goto.update(
-                        find_labels_and_gotos(cur_statement.true_statements)
-                    )
-                    label_and_goto.update(
-                        find_labels_and_gotos(cur_statement.false_statements)
-                    )
+                    label_and_goto.update(find_labels_and_gotos(cur_statement.true_statements))
+                    label_and_goto.update(find_labels_and_gotos(cur_statement.false_statements))
 
                 elif isinstance(cur_statement, SwitchStatement):
                     for case in cur_statement.cases:
@@ -3196,38 +2842,24 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return statements, changed
 
-    def __remove_goto_return(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __remove_goto_return(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find labels that point at returns, convert any gotos pointing
         # at them to returns.
-        def find_labels(
-            statements: Sequence[Statement], parent_next_statement: Optional[Statement]
-        ) -> Set[int]:
+        def find_labels(statements: Sequence[Statement], parent_next_statement: Optional[Statement]) -> Set[int]:
             labels: Set[int] = set()
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1]
-                    if (i < len(statements) - 1)
-                    else parent_next_statement
-                )
-                if isinstance(cur_statement, DefineLabelStatement) and isinstance(
-                    next_statement, NullReturnStatement
-                ):
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
+                if isinstance(cur_statement, DefineLabelStatement) and isinstance(next_statement, NullReturnStatement):
                     labels.add(cur_statement.location)
 
                 elif isinstance(cur_statement, DoWhileStatement):
                     labels.update(find_labels(cur_statement.body, next_statement))
 
                 elif isinstance(cur_statement, IfStatement):
-                    labels.update(
-                        find_labels(cur_statement.true_statements, next_statement)
-                    )
-                    labels.update(
-                        find_labels(cur_statement.false_statements, next_statement)
-                    )
+                    labels.update(find_labels(cur_statement.true_statements, next_statement))
+                    labels.update(find_labels(cur_statement.false_statements, next_statement))
 
                 elif isinstance(cur_statement, SwitchStatement):
                     for case in cur_statement.cases:
@@ -3251,39 +2883,25 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, update_gotos)
         return statements, updated
 
-    def __eliminate_useless_returns(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __eliminate_useless_returns(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find returns that are on the "last" line. Basically, any
         # return statement where the next statement is another return statement
         # or the end of a function.
-        def find_returns(
-            statements: Sequence[Statement], parent_next_statement: Statement
-        ) -> Set[NullReturnStatement]:
+        def find_returns(statements: Sequence[Statement], parent_next_statement: Statement) -> Set[NullReturnStatement]:
             returns: Set[NullReturnStatement] = set()
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1]
-                    if (i < len(statements) - 1)
-                    else parent_next_statement
-                )
-                if isinstance(cur_statement, NullReturnStatement) and isinstance(
-                    next_statement, NullReturnStatement
-                ):
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
+                if isinstance(cur_statement, NullReturnStatement) and isinstance(next_statement, NullReturnStatement):
                     returns.add(cur_statement)
 
                 elif isinstance(cur_statement, DoWhileStatement):
                     returns.update(find_returns(cur_statement.body, next_statement))
 
                 elif isinstance(cur_statement, IfStatement):
-                    returns.update(
-                        find_returns(cur_statement.true_statements, next_statement)
-                    )
-                    returns.update(
-                        find_returns(cur_statement.false_statements, next_statement)
-                    )
+                    returns.update(find_returns(cur_statement.true_statements, next_statement))
+                    returns.update(find_returns(cur_statement.false_statements, next_statement))
 
                 elif isinstance(cur_statement, SwitchStatement):
                     for case in cur_statement.cases:
@@ -3309,57 +2927,37 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, remove_returns)
         return statements, updated
 
-    def __remove_useless_gotos(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __remove_useless_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find gotos that point at the very next line and remove them.
         # This can happen due to the way we analyze if statements.
         statements = list(statements)
 
-        def find_goto_next_line(
-            statements: Sequence[Statement], next_instruction: Statement
-        ) -> List[Statement]:
+        def find_goto_next_line(statements: Sequence[Statement], next_instruction: Statement) -> List[Statement]:
             gotos: List[Statement] = []
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1] if (i < len(statements) - 1) else next_instruction
-                )
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else next_instruction
 
-                if isinstance(cur_statement, GotoStatement) and isinstance(
-                    next_statement, DefineLabelStatement
-                ):
+                if isinstance(cur_statement, GotoStatement) and isinstance(next_statement, DefineLabelStatement):
                     if cur_statement.location == next_statement.location:
                         gotos.append(cur_statement)
 
-                if isinstance(cur_statement, GotoStatement) and isinstance(
-                    next_statement, GotoStatement
-                ):
+                if isinstance(cur_statement, GotoStatement) and isinstance(next_statement, GotoStatement):
                     if cur_statement.location == next_statement.location:
                         gotos.append(cur_statement)
 
                 elif isinstance(cur_statement, DoWhileStatement):
                     # Loops do not "flow" into the next line, they can only "break" to the next
                     # line. Goto of the next line has already been converted to a "break" statement.
-                    gotos.extend(
-                        find_goto_next_line(cur_statement.body, NopStatement())
-                    )
+                    gotos.extend(find_goto_next_line(cur_statement.body, NopStatement()))
 
                 elif isinstance(cur_statement, IfStatement):
                     # The next statement for both the if and else body is the next statement we have
                     # looked up, either the next statement in this group of statements, or the next
                     # statement in the parent.
-                    gotos.extend(
-                        find_goto_next_line(
-                            cur_statement.true_statements, next_statement
-                        )
-                    )
-                    gotos.extend(
-                        find_goto_next_line(
-                            cur_statement.false_statements, next_statement
-                        )
-                    )
+                    gotos.extend(find_goto_next_line(cur_statement.true_statements, next_statement))
+                    gotos.extend(find_goto_next_line(cur_statement.false_statements, next_statement))
 
                 elif isinstance(cur_statement, SwitchStatement):
                     # Switch cases do not "flow" into the next line, they flow into the next switch
@@ -3389,20 +2987,10 @@ class ByteCodeDecompiler(VerboseOutput):
                         return NopStatement()
 
                     for case in cases:
-                        if case.statements and isinstance(
-                            case.statements[-1], BreakStatement
-                        ):
-                            gotos.extend(
-                                find_goto_next_line(
-                                    case.statements[:-1], next_statement
-                                )
-                            )
+                        if case.statements and isinstance(case.statements[-1], BreakStatement):
+                            gotos.extend(find_goto_next_line(case.statements[:-1], next_statement))
                         else:
-                            gotos.extend(
-                                find_goto_next_line(
-                                    case.statements, get_next_instruction(case)
-                                )
-                            )
+                            gotos.extend(find_goto_next_line(case.statements, get_next_instruction(case)))
 
             return gotos
 
@@ -3427,9 +3015,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return statements, changed
 
-    def __eliminate_unused_labels(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __eliminate_unused_labels(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find labels that nothing is pointing at, and remove them.
         locations: Set[int] = set()
 
@@ -3452,49 +3038,31 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return self.__walk(statements, remove_label), changed
 
-    def __eliminate_useless_continues(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __eliminate_useless_continues(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find continues that are on the "last" line of a while. Basically, any
         # continue statement where the next statement is another continue statement or the end
         # of a loop.
-        def find_continues(
-            statements: Sequence[Statement], parent_next_statement: Statement
-        ) -> Set[ContinueStatement]:
+        def find_continues(statements: Sequence[Statement], parent_next_statement: Statement) -> Set[ContinueStatement]:
             continues: Set[ContinueStatement] = set()
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1]
-                    if (i < len(statements) - 1)
-                    else parent_next_statement
-                )
-                if isinstance(cur_statement, ContinueStatement) and isinstance(
-                    next_statement, ContinueStatement
-                ):
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
+                if isinstance(cur_statement, ContinueStatement) and isinstance(next_statement, ContinueStatement):
                     continues.add(cur_statement)
 
                 elif isinstance(cur_statement, DoWhileStatement):
                     # Clever hack, where we pretend the next value after the loop is a continue,
                     # because hitting the bottom of a loop is actually a continue.
-                    continues.update(
-                        find_continues(cur_statement.body, ContinueStatement())
-                    )
+                    continues.update(find_continues(cur_statement.body, ContinueStatement()))
 
                 elif isinstance(cur_statement, IfStatement):
-                    continues.update(
-                        find_continues(cur_statement.true_statements, next_statement)
-                    )
-                    continues.update(
-                        find_continues(cur_statement.false_statements, next_statement)
-                    )
+                    continues.update(find_continues(cur_statement.true_statements, next_statement))
+                    continues.update(find_continues(cur_statement.false_statements, next_statement))
 
                 elif isinstance(cur_statement, SwitchStatement):
                     for case in cur_statement.cases:
-                        continues.update(
-                            find_continues(case.statements, next_statement)
-                        )
+                        continues.update(find_continues(case.statements, next_statement))
 
             return continues
 
@@ -3516,25 +3084,15 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, remove_continues)
         return statements, updated
 
-    def __eliminate_useless_breaks(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __eliminate_useless_breaks(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find breaks that show up just before another break logically.
-        def find_breaks(
-            statements: Sequence[Statement], parent_next_statement: Statement
-        ) -> Set[BreakStatement]:
+        def find_breaks(statements: Sequence[Statement], parent_next_statement: Statement) -> Set[BreakStatement]:
             breaks: Set[BreakStatement] = set()
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1]
-                    if (i < len(statements) - 1)
-                    else parent_next_statement
-                )
-                if isinstance(cur_statement, BreakStatement) and isinstance(
-                    next_statement, BreakStatement
-                ):
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
+                if isinstance(cur_statement, BreakStatement) and isinstance(next_statement, BreakStatement):
                     breaks.add(cur_statement)
 
                 elif isinstance(cur_statement, DoWhileStatement):
@@ -3542,12 +3100,8 @@ class ByteCodeDecompiler(VerboseOutput):
                     breaks.update(find_breaks(cur_statement.body, NopStatement()))
 
                 elif isinstance(cur_statement, IfStatement):
-                    breaks.update(
-                        find_breaks(cur_statement.true_statements, next_statement)
-                    )
-                    breaks.update(
-                        find_breaks(cur_statement.false_statements, next_statement)
-                    )
+                    breaks.update(find_breaks(cur_statement.true_statements, next_statement))
+                    breaks.update(find_breaks(cur_statement.false_statements, next_statement))
 
                 elif isinstance(cur_statement, SwitchStatement):
                     # The next entry after a switch can be a break, as it applies to a different statement.
@@ -3629,9 +3183,7 @@ class ByteCodeDecompiler(VerboseOutput):
         self, possible_if: Statement, required_variable: Optional[str]
     ) -> Tuple[Optional[IfExpr], List[Statement]]:
         if isinstance(possible_if, IfStatement):
-            if len(possible_if.true_statements) == 1 and isinstance(
-                possible_if.true_statements[0], BreakStatement
-            ):
+            if len(possible_if.true_statements) == 1 and isinstance(possible_if.true_statements[0], BreakStatement):
                 # This is possibly a candidate, check the condition's variable usage.
                 if isinstance(possible_if.cond, IsUndefinedIf):
                     if required_variable is not None:
@@ -3673,9 +3225,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     return possible_if.cond, possible_if.false_statements
         return None, []
 
-    def __convert_loops(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __convert_loops(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Convert any do {} while loops that resemble for statements into actual for statements.
         # First, we need to hoist any increment to the actual end of the loop in case its in the
         # last statement of some if/else condition. This isn't going to be perfectly accurate because
@@ -3690,20 +3240,14 @@ class ByteCodeDecompiler(VerboseOutput):
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1] if (i < len(statements) - 1) else None
-                )
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else None
 
                 if isinstance(cur_statement, IfStatement):
                     # Don't care about this, but we need to recursively walk its children.
-                    cur_statement.true_statements, new_changed = convert_loops(
-                        cur_statement.true_statements
-                    )
+                    cur_statement.true_statements, new_changed = convert_loops(cur_statement.true_statements)
                     changed = changed or new_changed
 
-                    cur_statement.false_statements, new_changed = convert_loops(
-                        cur_statement.false_statements
-                    )
+                    cur_statement.false_statements, new_changed = convert_loops(cur_statement.false_statements)
                     changed = changed or new_changed
 
                     new_statements.append(cur_statement)
@@ -3725,9 +3269,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         # This might be a candidate for white statement hoisting.
                         if len(cur_statement.body) > 0:
                             # Let's see if the first statement is an if statement with a break.
-                            possible_cond, false_body = self.__extract_condition(
-                                cur_statement.body[0], None
-                            )
+                            possible_cond, false_body = self.__extract_condition(cur_statement.body[0], None)
                         else:
                             possible_cond = None
 
@@ -3761,19 +3303,14 @@ class ByteCodeDecompiler(VerboseOutput):
                     # This is a possible conversion that hasn't been converted yet. Let's try to grab
                     # the increment variable.
                     if next_statement.body:
-                        inc_variable = self.__get_increment_variable(
-                            next_statement.body[-1]
-                        )
+                        inc_variable = self.__get_increment_variable(next_statement.body[-1])
                     else:
                         inc_variable = None
 
                     # Now that we know what's being incremented, let's see if it matches our
                     # initializer.
                     inc_assignment = None
-                    if (
-                        inc_variable is not None
-                        and inc_variable != cur_statement.code_equiv()
-                    ):
+                    if inc_variable is not None and inc_variable != cur_statement.code_equiv():
                         # This doesn't match, so let's kill our reference.
                         inc_variable = None
                     else:
@@ -3787,9 +3324,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             possible_cond = next_statement.cond.invert()
                             if isinstance(possible_cond, TwoParameterIf):
                                 try:
-                                    if_variable = object_ref(
-                                        possible_cond.conditional2, ""
-                                    )
+                                    if_variable = object_ref(possible_cond.conditional2, "")
                                     if inc_variable == if_variable:
                                         possible_cond = possible_cond.swap()
                                 except Exception:
@@ -3797,9 +3332,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             false_body = []
                         else:
                             # Let's see if the first statement is an if statement with a break.
-                            possible_cond, false_body = self.__extract_condition(
-                                next_statement.body[0], inc_variable
-                            )
+                            possible_cond, false_body = self.__extract_condition(next_statement.body[0], inc_variable)
                     else:
                         possible_cond = None
 
@@ -3830,9 +3363,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return convert_loops(statements)
 
-    def __swap_empty_ifs(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __swap_empty_ifs(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Get rid of empty if statements. If statements with empty if bodies and nonempty
         # else bodies will also be swapped.
         changed: bool = False
@@ -3852,9 +3383,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         statement.false_statements,
                         statement.true_statements,
                     )
-                elif (not statement.true_statements) and (
-                    not statement.false_statements
-                ):
+                elif (not statement.true_statements) and (not statement.false_statements):
                     # Drop the if, it has no body.
                     changed = True
                     updated = True
@@ -3867,9 +3396,7 @@ class ByteCodeDecompiler(VerboseOutput):
             if not changed:
                 return statements, updated
 
-    def __swap_ugly_ifexprs(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __swap_ugly_ifexprs(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Swap if expressions that have a constant on the LHS.
         changed: bool = False
 
@@ -3897,9 +3424,7 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, swap_ugly_ifs)
         return statements, changed
 
-    def __drop_unneeded_else(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __drop_unneeded_else(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # If an if has an else, but the last line of the if is a break/continue/return/throw/goto
         # then the else body doesn't need to exist, so hoist it up into the parent. If the false
         # statement also has an exit condition, don't drop it for asthetics.
@@ -3957,14 +3482,10 @@ class ByteCodeDecompiler(VerboseOutput):
                     ):
                         # We need to walk both halves still, but once we're done, hoist the false
                         # statements up to our level.
-                        statement.true_statements, new_changed = update_ifs(
-                            statement.true_statements
-                        )
+                        statement.true_statements, new_changed = update_ifs(statement.true_statements)
                         changed = changed or new_changed
 
-                        new_false_statements, new_changed = update_ifs(
-                            statement.false_statements
-                        )
+                        new_false_statements, new_changed = update_ifs(statement.false_statements)
                         changed = changed or new_changed
                         statement.false_statements = []
 
@@ -3972,14 +3493,10 @@ class ByteCodeDecompiler(VerboseOutput):
                         new_statements.append(statement)
                         new_statements.extend(new_false_statements)
                     else:
-                        statement.true_statements, new_changed = update_ifs(
-                            statement.true_statements
-                        )
+                        statement.true_statements, new_changed = update_ifs(statement.true_statements)
                         changed = changed or new_changed
 
-                        statement.false_statements, new_changed = update_ifs(
-                            statement.false_statements
-                        )
+                        statement.false_statements, new_changed = update_ifs(statement.false_statements)
                         changed = changed or new_changed
 
                         new_statements.append(statement)
@@ -4039,20 +3556,12 @@ class ByteCodeDecompiler(VerboseOutput):
                 if true_cond == IsBooleanIf(False) and false_cond == IsBooleanIf(False):
                     # Both conditionals exited.
                     running_conditional = IsBooleanIf(False)
-                elif true_cond != IsBooleanIf(False) and false_cond == IsBooleanIf(
-                    False
-                ):
+                elif true_cond != IsBooleanIf(False) and false_cond == IsBooleanIf(False):
                     # The subsequent statements are only parented by the true conditional.
-                    running_conditional = AndIf(
-                        true_cond, running_conditional
-                    ).simplify()
-                elif true_cond == IsBooleanIf(False) and false_cond != IsBooleanIf(
-                    False
-                ):
+                    running_conditional = AndIf(true_cond, running_conditional).simplify()
+                elif true_cond == IsBooleanIf(False) and false_cond != IsBooleanIf(False):
                     # The subsequent statements are only parented by the false conditional.
-                    running_conditional = AndIf(
-                        false_cond, running_conditional
-                    ).simplify()
+                    running_conditional = AndIf(false_cond, running_conditional).simplify()
                 else:
                     # We are parented by either of the true/false cases.
                     running_conditional = OrIf(
@@ -4087,9 +3596,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # to which there is no goto.
                     if stmt.location not in gotos:
                         continue
-                    goto_conditional = OrIf(
-                        gotos[stmt.location], goto_conditional
-                    ).simplify()
+                    goto_conditional = OrIf(gotos[stmt.location], goto_conditional).simplify()
                 flowed_statements[i] = (OrIf(cond, goto_conditional).simplify(), stmt)
                 if isinstance(
                     stmt,
@@ -4160,16 +3667,10 @@ class ByteCodeDecompiler(VerboseOutput):
             # Finally, simplify it for ease of comparison.
             return combined.simplify()
 
-        def get_candidate_group(
-            conditional: IfExpr, statement: IfStatement
-        ) -> Optional[List[IfStatement]]:
+        def get_candidate_group(conditional: IfExpr, statement: IfStatement) -> Optional[List[IfStatement]]:
             candidate_statements: List[IfStatement] = [statement]
 
-            if (
-                candidates
-                and (not statement.false_statements)
-                and len(statement.true_statements) == 1
-            ):
+            if candidates and (not statement.false_statements) and len(statement.true_statements) == 1:
                 while True:
                     # First, is the current combination a valid combined or statement?
                     candidate_true_expr = get_compound_if(candidate_statements)
@@ -4198,9 +3699,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
             if isinstance(statement, IfStatement):
                 # See if this is a compound if pattern.
-                candidate_statements = get_candidate_group(
-                    parent_conditional, statement
-                )
+                candidate_statements = get_candidate_group(parent_conditional, statement)
                 if candidate_statements is None:
                     # Move past this statement, we don't care about it.
                     i += 1
@@ -4323,9 +3822,7 @@ class ByteCodeDecompiler(VerboseOutput):
                             )
                             changed = changed or child_changed
                             false_statements, child_changed = self.__hoist_compound_ifs(
-                                AndIf(
-                                    parent_conditional, stmt.cond.invert()
-                                ).simplify(),
+                                AndIf(parent_conditional, stmt.cond.invert()).simplify(),
                                 stmt.false_statements,
                                 candidates,
                                 flow,
@@ -4339,9 +3836,7 @@ class ByteCodeDecompiler(VerboseOutput):
                                 )
                             )
                         elif isinstance(stmt, DoWhileStatement):
-                            new_body, child_changed = self.__rearrange_compound_ifs(
-                                stmt.body
-                            )
+                            new_body, child_changed = self.__rearrange_compound_ifs(stmt.body)
                             changed = changed or child_changed
                             stmt.body = new_body
                             new_statements.append(stmt)
@@ -4351,17 +3846,13 @@ class ByteCodeDecompiler(VerboseOutput):
                     # We hoisted a compound if, so report a change.
                     changed = True
             elif isinstance(statement, DoWhileStatement):
-                statement.body, child_changed = self.__rearrange_compound_ifs(
-                    statement.body
-                )
+                statement.body, child_changed = self.__rearrange_compound_ifs(statement.body)
                 changed = changed or child_changed
                 new_statements.append(statement)
                 i += 1
             elif isinstance(statement, SwitchStatement):
                 for case in statement.cases:
-                    case.statements, new_changed = self.__rearrange_compound_ifs(
-                        case.statements
-                    )
+                    case.statements, new_changed = self.__rearrange_compound_ifs(case.statements)
                     changed = changed or new_changed
                 new_statements.append(statement)
                 i += 1
@@ -4371,22 +3862,16 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return new_statements, changed
 
-    def __rearrange_compound_ifs(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __rearrange_compound_ifs(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         candidates = self.__gather_candidates(statements)
         if candidates:
             _, _, flow = self.__gather_flow(IsBooleanIf(True), statements)
         else:
             flow = []
 
-        return self.__hoist_compound_ifs(
-            IsBooleanIf(True), statements, candidates, flow
-        )
+        return self.__hoist_compound_ifs(IsBooleanIf(True), statements, candidates, flow)
 
-    def __convert_switches(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __convert_switches(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Convert any cascading if statements comparing the same variable/register against a series
         # of constants into switch statements. This relies on a previous run of anohter optimizer
         # that ensures that variables show up on the LHS of if statements.
@@ -4404,9 +3889,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 TwoParameterIf.STRICT_NOT_EQUALS,
             }:
                 return None
-            if not isinstance(
-                statement.cond.conditional1, (Variable, Register, Member)
-            ):
+            if not isinstance(statement.cond.conditional1, (Variable, Register, Member)):
                 return None
             # We intentionally widen this to allow variables, since there are a lot of places in
             # various code that uses variables as constants. We made up the entire language we are
@@ -4419,9 +3902,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
             return statement.cond.conditional1
 
-        def get_next_candidate(
-            statements: List[Statement], lhs: Expression
-        ) -> Optional[IfStatement]:
+        def get_next_candidate(statements: List[Statement], lhs: Expression) -> Optional[IfStatement]:
             if len(statements) != 1:
                 return None
             statement = statements[0]
@@ -4553,9 +4034,7 @@ class ByteCodeDecompiler(VerboseOutput):
                         # This isn't even an if statement. We should never hit
                         # this but the type checker wants to be happy.
                         return statement
-                    if has_break(cur_statement.true_statements) or has_break(
-                        cur_statement.false_statements
-                    ):
+                    if has_break(cur_statement.true_statements) or has_break(cur_statement.false_statements):
                         # This code already uses a 'break' statement. If we stuck it
                         # in a switch, it would change the sematics of this statement
                         # so we have no choice but to ignore this.
@@ -4638,9 +4117,7 @@ class ByteCodeDecompiler(VerboseOutput):
         statements = self.__walk(statements, replace_if_with_switch)
         return statements, changed
 
-    def __convert_if_gotos(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __convert_if_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Find if statements in the middle of a chunk of code whose last true statement is
         # a return/goto/throw. Take all the following statements and put them in the if
         # statement's false clause. We do this because it allows us to recognize other
@@ -4681,9 +4158,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     false_statements: List[Statement] = []
                     while i < len(statements):
                         false_statement = statements[i]
-                        if stop_at_label is not None and isinstance(
-                            false_statement, DefineLabelStatement
-                        ):
+                        if stop_at_label is not None and isinstance(false_statement, DefineLabelStatement):
                             if stop_at_label == false_statement.location:
                                 # Exit early, the rest of the code including this
                                 # label is not part of the else case.
@@ -4701,31 +4176,23 @@ class ByteCodeDecompiler(VerboseOutput):
                     i += 1
 
                 # Regardless of whether we modified the if statement, recurse down its true and false path.
-                cur_statement.true_statements, new_changed = self.__convert_if_gotos(
-                    cur_statement.true_statements
-                )
+                cur_statement.true_statements, new_changed = self.__convert_if_gotos(cur_statement.true_statements)
                 changed = changed or new_changed
 
-                cur_statement.false_statements, new_changed = self.__convert_if_gotos(
-                    cur_statement.false_statements
-                )
+                cur_statement.false_statements, new_changed = self.__convert_if_gotos(cur_statement.false_statements)
                 changed = changed or new_changed
 
                 new_statements.append(cur_statement)
 
             elif isinstance(cur_statement, SwitchStatement):
                 for case in cur_statement.cases:
-                    case.statements, new_changed = self.__convert_if_gotos(
-                        case.statements
-                    )
+                    case.statements, new_changed = self.__convert_if_gotos(case.statements)
                     changed = changed or new_changed
                 new_statements.append(cur_statement)
                 i += 1
 
             elif isinstance(cur_statement, DoWhileStatement):
-                cur_statement.body, new_changed = self.__convert_if_gotos(
-                    cur_statement.body
-                )
+                cur_statement.body, new_changed = self.__convert_if_gotos(cur_statement.body)
                 changed = changed or new_changed
 
                 new_statements.append(cur_statement)
@@ -4737,9 +4204,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         return new_statements, changed
 
-    def __convert_switch_gotos(
-        self, statements: Sequence[Statement]
-    ) -> Tuple[List[Statement], bool]:
+    def __convert_switch_gotos(self, statements: Sequence[Statement]) -> Tuple[List[Statement], bool]:
         # Go through and find switch cases that goto the next line in the switch, replacing those
         # with break statements.
         def find_gotos(
@@ -4751,11 +4216,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
             for i in range(len(statements)):
                 cur_statement = statements[i]
-                next_statement = (
-                    statements[i + 1]
-                    if (i < len(statements) - 1)
-                    else parent_next_statement
-                )
+                next_statement = statements[i + 1] if (i < len(statements) - 1) else parent_next_statement
 
                 if (
                     isinstance(cur_statement, GotoStatement)
@@ -4768,9 +4229,7 @@ class ByteCodeDecompiler(VerboseOutput):
                 elif isinstance(cur_statement, DoWhileStatement):
                     # We don't want to track gotos into while loops because replacing one of
                     # these with a break would change the flow.
-                    gotos.update(
-                        find_gotos(cur_statement.body, next_statement, NopStatement())
-                    )
+                    gotos.update(find_gotos(cur_statement.body, next_statement, NopStatement()))
 
                 elif isinstance(cur_statement, IfStatement):
                     gotos.update(
@@ -4794,9 +4253,7 @@ class ByteCodeDecompiler(VerboseOutput):
                     # We don't care about the semantic next statement for the purposes of this
                     # call, so just set it as a NOP.
                     for case in cur_statement.cases:
-                        gotos.update(
-                            find_gotos(case.statements, NopStatement(), next_statement)
-                        )
+                        gotos.update(find_gotos(case.statements, NopStatement(), next_statement))
 
             return gotos
 
@@ -4895,17 +4352,13 @@ class ByteCodeDecompiler(VerboseOutput):
             )
         if unmatched_labels and self.optimize:
             formatted_labels = ", ".join(f"label_{x}" for x in unmatched_labels)
-            raise Exception(
-                f"Logic error, labels found with no gotos pointing at them: {formatted_labels}"
-            )
+            raise Exception(f"Logic error, labels found with no gotos pointing at them: {formatted_labels}")
 
     def __verify_no_empty_ifs(self, statements: Sequence[Statement]) -> None:
         def check_ifs(statement: Statement) -> Optional[Statement]:
             if isinstance(statement, IfStatement):
                 if (not statement.true_statements) and (not statement.false_statements):
-                    raise Exception(
-                        f"If statement {statement} has no true or false statements inside it!"
-                    )
+                    raise Exception(f"If statement {statement} has no true or false statements inside it!")
             return statement
 
         self.__walk(statements, check_ifs)
@@ -4936,9 +4389,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Now, separate chunks out into chunks and loops.
         self.vprint("Identifying and separating loops...")
-        chunks_and_loops = self.__separate_loops(
-            start_id, chunks, dominators, offset_map
-        )
+        chunks_and_loops = self.__separate_loops(start_id, chunks, dominators, offset_map)
 
         # Now, break the graph anywhere where we have control
         # flow that ends the execution (return, throw, goto end).
@@ -4947,9 +4398,7 @@ class ByteCodeDecompiler(VerboseOutput):
 
         # Now, identify any remaining control flow logic.
         self.vprint("Identifying and separating ifs...")
-        chunks_loops_and_ifs = self.__separate_ifs(
-            start_id, None, chunks_and_loops, offset_map
-        )
+        chunks_loops_and_ifs = self.__separate_ifs(start_id, None, chunks_and_loops, offset_map)
 
         # At this point, we *should* have a directed graph where there are no
         # backwards refs and every fork has been identified as an if. This means

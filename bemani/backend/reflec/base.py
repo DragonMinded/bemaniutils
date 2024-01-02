@@ -26,22 +26,14 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CLEAR_TYPE_NO_PLAY: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_NO_PLAY
     CLEAR_TYPE_FAILED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_FAILED
     CLEAR_TYPE_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_CLEARED
-    CLEAR_TYPE_HARD_CLEARED: Final[
-        int
-    ] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_HARD_CLEARED
-    CLEAR_TYPE_S_HARD_CLEARED: Final[
-        int
-    ] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_S_HARD_CLEARED
+    CLEAR_TYPE_HARD_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_HARD_CLEARED
+    CLEAR_TYPE_S_HARD_CLEARED: Final[int] = DBConstants.REFLEC_BEAT_CLEAR_TYPE_S_HARD_CLEARED
 
     # Combo types, as saved/loaded from the DB
     COMBO_TYPE_NONE: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_NONE
-    COMBO_TYPE_ALMOST_COMBO: Final[
-        int
-    ] = DBConstants.REFLEC_BEAT_COMBO_TYPE_ALMOST_COMBO
+    COMBO_TYPE_ALMOST_COMBO: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_ALMOST_COMBO
     COMBO_TYPE_FULL_COMBO: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO
-    COMBO_TYPE_FULL_COMBO_ALL_JUST: Final[
-        int
-    ] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
+    COMBO_TYPE_FULL_COMBO_ALL_JUST: Final[int] = DBConstants.REFLEC_BEAT_COMBO_TYPE_FULL_COMBO_ALL_JUST
 
     # Return the local2 and lobby2 service so that matching will work on newer
     # Reflec Beat games.
@@ -64,9 +56,7 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void("pc")
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -94,9 +84,7 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
         return self.format_profile(userid, profile)
 
-    def put_profile_by_refid(
-        self, refid: Optional[str], request: Node
-    ) -> Optional[Profile]:
+    def put_profile_by_refid(self, refid: Optional[str], request: Node) -> Optional[Profile]:
         """
         Given a RefID and a request node, unformat the profile and save it.
         """
@@ -192,17 +180,13 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         # Replace clear type with highest value and timestamps
         if clear_type >= scoredata.get_int("clear_type"):
-            scoredata.replace_int(
-                "clear_type", max(scoredata.get_int("clear_type"), clear_type)
-            )
+            scoredata.replace_int("clear_type", max(scoredata.get_int("clear_type"), clear_type))
             scoredata.replace_int("best_clear_type_time", now)
         history.replace_int("clear_type", clear_type)
 
         # Replace combo type with highest value and timestamps
         if combo_type >= scoredata.get_int("combo_type"):
-            scoredata.replace_int(
-                "combo_type", max(scoredata.get_int("combo_type"), combo_type)
-            )
+            scoredata.replace_int("combo_type", max(scoredata.get_int("combo_type"), combo_type))
             scoredata.replace_int("best_clear_type_time", now)
         history.replace_int("combo_type", combo_type)
 
@@ -238,10 +222,7 @@ class ReflecBeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Update the miss count with timestamps, either if it was lowered, or if the old value was blank.
         # If the new value is -1 (we didn't get a miss count this time), never update the old value.
         if miss_count >= 0:
-            if (
-                miss_count <= scoredata.get_int("miss_count", 999999)
-                or scoredata.get_int("miss_count") == -1
-            ):
+            if miss_count <= scoredata.get_int("miss_count", 999999) or scoredata.get_int("miss_count") == -1:
                 scoredata.replace_int(
                     "miss_count",
                     min(scoredata.get_int("miss_count", 999999), miss_count),

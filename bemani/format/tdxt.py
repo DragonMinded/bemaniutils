@@ -136,9 +136,7 @@ class TDXT:
             endian=endian,
             length_fixup=length_fixup,
             raw=raw_data[64:],
-            img=TDXT._rawToImg(
-                width, height, fmt, endian, invert_channels, raw_data[64:]
-            ),
+            img=TDXT._rawToImg(width, height, fmt, endian, invert_channels, raw_data[64:]),
             invert_channels=invert_channels,
         )
 

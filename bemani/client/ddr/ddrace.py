@@ -99,9 +99,7 @@ class DDRAceClient(BaseClient):
 
         return resp.child_value("playerdata/code")
 
-    def verify_playerdata_usergamedata_advanced_ghostload(
-        self, refid: str, ghostid: int
-    ) -> Dict[str, Any]:
+    def verify_playerdata_usergamedata_advanced_ghostload(self, refid: str, ghostid: int) -> Dict[str, Any]:
         call = self.call_node()
 
         # Construct node
@@ -140,9 +138,7 @@ class DDRAceClient(BaseClient):
             "ghost": resp.child_value("playerdata/ghostdata/ghost"),
         }
 
-    def verify_playerdata_usergamedata_advanced_rivalload(
-        self, refid: str, loadflag: int
-    ) -> None:
+    def verify_playerdata_usergamedata_advanced_rivalload(self, refid: str, loadflag: int) -> None:
         call = self.call_node()
 
         # Construct node
@@ -191,9 +187,7 @@ class DDRAceClient(BaseClient):
         if resp.child_value("playerdata/data/recordtype") != loadflag:
             raise Exception("Invalid record type returned!")
 
-    def verify_playerdata_usergamedata_advanced_userload(
-        self, refid: str
-    ) -> Tuple[bool, List[Dict[str, Any]]]:
+    def verify_playerdata_usergamedata_advanced_userload(self, refid: str) -> Tuple[bool, List[Dict[str, Any]]]:
         call = self.call_node()
 
         # Construct node
@@ -252,9 +246,7 @@ class DDRAceClient(BaseClient):
             music,
         )
 
-    def verify_playerdata_usergamedata_advanced_inheritance(
-        self, refid: str, locid: str
-    ) -> None:
+    def verify_playerdata_usergamedata_advanced_inheritance(self, refid: str, locid: str) -> None:
         call = self.call_node()
 
         # Construct node
@@ -454,9 +446,7 @@ class DDRAceClient(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/playerdata/result")
 
-    def verify_usergamedata_send(
-        self, ref_id: str, ext_id: int, msg_type: str, send_only_common: bool = False
-    ) -> None:
+    def verify_usergamedata_send(self, ref_id: str, ext_id: int, msg_type: str, send_only_common: bool = False) -> None:
         call = self.call_node()
 
         # Set up profile write
@@ -720,9 +710,7 @@ class DDRAceClient(BaseClient):
         self.verify_eventlog_write(location)
 
         # Verify the game-wide packets Ace insists on sending before profile load
-        is_new, music = self.verify_playerdata_usergamedata_advanced_userload(
-            "X0000000000000000000000000123456"
-        )
+        is_new, music = self.verify_playerdata_usergamedata_advanced_userload("X0000000000000000000000000123456")
         if not is_new:
             raise Exception("Fake profiles should be new!")
         if len(music) > 0:
@@ -736,18 +724,12 @@ class DDRAceClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             self.verify_system_convcardnumber(card)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             extid = self.verify_playerdata_usergamedata_advanced_usernew(ref_id)
             self.verify_usergamedata_send(ref_id, extid, "new")
@@ -755,30 +737,22 @@ class DDRAceClient(BaseClient):
             name = self.verify_usergamedata_recv(ref_id)
             if name != "":
                 raise Exception("Name stored on profile we just created!")
-            self.verify_usergamedata_send(
-                ref_id, extid, "existing", send_only_common=True
-            )
+            self.verify_usergamedata_send(ref_id, extid, "existing", send_only_common=True)
             name = self.verify_usergamedata_recv(ref_id)
             if name != self.NAME:
                 raise Exception("Name stored on profile is incorrect!")
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         if cardid is None:
-            is_new, music = self.verify_playerdata_usergamedata_advanced_userload(
-                ref_id
-            )
+            is_new, music = self.verify_playerdata_usergamedata_advanced_userload(ref_id)
             if is_new:
                 raise Exception("Profile should not be new!")
             if len(music) > 0:
@@ -862,9 +836,7 @@ class DDRAceClient(BaseClient):
                     )
                     pos = pos + 1
 
-                is_new, scores = self.verify_playerdata_usergamedata_advanced_userload(
-                    ref_id
-                )
+                is_new, scores = self.verify_playerdata_usergamedata_advanced_userload(ref_id)
                 if is_new:
                     raise Exception("Profile should not be new!")
                 if len(scores) == 0:
@@ -873,17 +845,12 @@ class DDRAceClient(BaseClient):
                 for expected in dummyscores:
                     actual = None
                     for received in scores:
-                        if (
-                            received["id"] == expected["id"]
-                            and received["chart"] == expected["chart"]
-                        ):
+                        if received["id"] == expected["id"] and received["chart"] == expected["chart"]:
                             actual = received
                             break
 
                     if actual is None:
-                        raise Exception(
-                            f"Didn't find song {expected['id']} chart {expected['chart']} in response!"
-                        )
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if "expected_score" in expected:
                         expected_score = expected["expected_score"]
@@ -912,9 +879,7 @@ class DDRAceClient(BaseClient):
                         )
 
                     # Now verify that the ghost for this score is what we saved
-                    ghost = self.verify_playerdata_usergamedata_advanced_ghostload(
-                        ref_id, received["ghostid"]
-                    )
+                    ghost = self.verify_playerdata_usergamedata_advanced_ghostload(ref_id, received["ghostid"])
                     if "expected_ghost" in expected:
                         expected_ghost = expected["expected_ghost"]
                     else:
@@ -933,9 +898,7 @@ class DDRAceClient(BaseClient):
                             f'Wrong ghost data \'{ghost["ghost"]}\' returned for ghost, expected \'{expected_ghost}\''
                         )
                     if ghost["extid"] != extid:
-                        raise Exception(
-                            f'Wrong extid \'{ghost["extid"]}\' returned for ghost, expected \'{extid}\''
-                        )
+                        raise Exception(f'Wrong extid \'{ghost["extid"]}\' returned for ghost, expected \'{extid}\'')
 
                 # Sleep so we don't end up putting in score history on the same second
                 time.sleep(1)
@@ -952,15 +915,9 @@ class DDRAceClient(BaseClient):
             print("Skipping score checks for existing card")
 
         # Verify global scores now that we've inserted some
-        self.verify_playerdata_usergamedata_advanced_rivalload(
-            "X0000000000000000000000000123456", 1
-        )
-        self.verify_playerdata_usergamedata_advanced_rivalload(
-            "X0000000000000000000000000123456", 2
-        )
-        self.verify_playerdata_usergamedata_advanced_rivalload(
-            "X0000000000000000000000000123456", 4
-        )
+        self.verify_playerdata_usergamedata_advanced_rivalload("X0000000000000000000000000123456", 1)
+        self.verify_playerdata_usergamedata_advanced_rivalload("X0000000000000000000000000123456", 2)
+        self.verify_playerdata_usergamedata_advanced_rivalload("X0000000000000000000000000123456", 4)
 
         # Verify paseli handling
         if paseli_enabled:

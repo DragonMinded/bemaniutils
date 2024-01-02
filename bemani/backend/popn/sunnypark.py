@@ -126,9 +126,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         base.add_child(Node.u8("mode", profile.get_int("mode", 0)))
         base.add_child(Node.s8("button", profile.get_int("button", 0)))
         base.add_child(Node.s8("last_play_flag", profile.get_int("last_play_flag", -1)))
-        base.add_child(
-            Node.u8("medal_and_friend", profile.get_int("medal_and_friend", 0))
-        )
+        base.add_child(Node.u8("medal_and_friend", profile.get_int("medal_and_friend", 0)))
         base.add_child(Node.s8("category", profile.get_int("category", -1)))
         base.add_child(Node.s8("sub_category", profile.get_int("sub_category", -1)))
         base.add_child(Node.s16("chara", profile.get_int("chara", -1)))
@@ -141,15 +139,9 @@ class PopnMusicSunnyPark(PopnMusicBase):
         base.add_child(Node.s32("option", profile.get_int("option", 0)))
         base.add_child(Node.s16("music", profile.get_int("music", -1)))
         base.add_child(Node.u16("ep", profile.get_int("ep", 0)))
-        base.add_child(
-            Node.s32_array("sp_color_flg", profile.get_int_array("sp_color_flg", 2))
-        )
+        base.add_child(Node.s32_array("sp_color_flg", profile.get_int_array("sp_color_flg", 2)))
         base.add_child(Node.s32("read_news", profile.get_int("read_news", 0)))
-        base.add_child(
-            Node.s16(
-                "consecutive_days_coupon", profile.get_int("consecutive_days_coupon", 0)
-            )
-        )
+        base.add_child(Node.s16("consecutive_days_coupon", profile.get_int("consecutive_days_coupon", 0)))
         base.add_child(Node.s8("staff", 0))
         # These are probably from an old event, but if they aren't present and defaulted,
         # then different songs show up in the Zoo event.
@@ -159,9 +151,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
                 profile.get_int_array("gitadora_point", 3, [2000, 2000, 2000]),
             )
         )
-        base.add_child(
-            Node.u8("gitadora_select", profile.get_int("gitadora_select", 2))
-        )
+        base.add_child(Node.u8("gitadora_select", profile.get_int("gitadora_select", 2)))
 
         # Statistics section and scores section
         statistics = self.get_play_statistics(userid)
@@ -183,18 +173,8 @@ class PopnMusicSunnyPark(PopnMusicBase):
             rivalcount += 1
         base.add_child(Node.u8("active_fr_num", rivalcount))
 
-        last_played = [
-            x[0]
-            for x in self.data.local.music.get_last_played(
-                self.game, self.music_version, userid, 3
-            )
-        ]
-        most_played = [
-            x[0]
-            for x in self.data.local.music.get_most_played(
-                self.game, self.music_version, userid, 20
-            )
-        ]
+        last_played = [x[0] for x in self.data.local.music.get_last_played(self.game, self.music_version, userid, 3)]
+        most_played = [x[0] for x in self.data.local.music.get_most_played(self.game, self.music_version, userid, 20)]
         while len(last_played) < 3:
             last_played.append(-1)
         while len(most_played) < 20:
@@ -204,9 +184,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
         clear_medal_sub = [0] * self.GAME_MAX_MUSIC_ID
 
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -222,9 +200,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
             if score.data.get_int("medal") == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
-            clear_medal[score.id] = clear_medal[
-                score.id
-            ] | self.__format_medal_for_score(score)
+            clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
             hiscore_index = (score.id * 4) + {
                 self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                 self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -234,15 +210,9 @@ class PopnMusicSunnyPark(PopnMusicBase):
             hiscore_byte_pos = int((hiscore_index * 17) / 8)
             hiscore_bit_pos = int((hiscore_index * 17) % 8)
             hiscore_value = score.points << hiscore_bit_pos
-            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (
-                hiscore_value & 0xFF
-            )
-            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[
-                hiscore_byte_pos + 1
-            ] | ((hiscore_value >> 8) & 0xFF)
-            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[
-                hiscore_byte_pos + 2
-            ] | ((hiscore_value >> 16) & 0xFF)
+            hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+            hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | ((hiscore_value >> 8) & 0xFF)
+            hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | ((hiscore_value >> 16) & 0xFF)
 
         hiscore = bytes(hiscore_array)
 
@@ -263,85 +233,37 @@ class PopnMusicSunnyPark(PopnMusicBase):
         avatar.add_child(Node.u8("body", avatar_dict.get_int("body", 0)))
         avatar.add_child(Node.u8("effect", avatar_dict.get_int("effect", 0)))
         avatar.add_child(Node.u8("object", avatar_dict.get_int("object", 0)))
-        avatar.add_child(
-            Node.u8_array("comment", avatar_dict.get_int_array("comment", 2))
-        )
-        avatar.add_child(
-            Node.s32_array("get_hair", avatar_dict.get_int_array("get_hair", 2))
-        )
-        avatar.add_child(
-            Node.s32_array("get_face", avatar_dict.get_int_array("get_face", 2))
-        )
-        avatar.add_child(
-            Node.s32_array("get_body", avatar_dict.get_int_array("get_body", 2))
-        )
-        avatar.add_child(
-            Node.s32_array("get_effect", avatar_dict.get_int_array("get_effect", 2))
-        )
-        avatar.add_child(
-            Node.s32_array("get_object", avatar_dict.get_int_array("get_object", 2))
-        )
-        avatar.add_child(
-            Node.s32_array(
-                "get_comment_over", avatar_dict.get_int_array("get_comment_over", 3)
-            )
-        )
-        avatar.add_child(
-            Node.s32_array(
-                "get_comment_under", avatar_dict.get_int_array("get_comment_under", 3)
-            )
-        )
+        avatar.add_child(Node.u8_array("comment", avatar_dict.get_int_array("comment", 2)))
+        avatar.add_child(Node.s32_array("get_hair", avatar_dict.get_int_array("get_hair", 2)))
+        avatar.add_child(Node.s32_array("get_face", avatar_dict.get_int_array("get_face", 2)))
+        avatar.add_child(Node.s32_array("get_body", avatar_dict.get_int_array("get_body", 2)))
+        avatar.add_child(Node.s32_array("get_effect", avatar_dict.get_int_array("get_effect", 2)))
+        avatar.add_child(Node.s32_array("get_object", avatar_dict.get_int_array("get_object", 2)))
+        avatar.add_child(Node.s32_array("get_comment_over", avatar_dict.get_int_array("get_comment_over", 3)))
+        avatar.add_child(Node.s32_array("get_comment_under", avatar_dict.get_int_array("get_comment_under", 3)))
 
         # Avatar add section
         avatar_add_dict = profile.get_dict("avatar_add")
         avatar_add = Node.void("avatar_add")
         root.add_child(avatar_add)
-        avatar_add.add_child(
-            Node.s32_array("get_hair", avatar_add_dict.get_int_array("get_hair", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("get_face", avatar_add_dict.get_int_array("get_face", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("get_body", avatar_add_dict.get_int_array("get_body", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("get_effect", avatar_add_dict.get_int_array("get_effect", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("get_object", avatar_add_dict.get_int_array("get_object", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array(
-                "get_comment_over", avatar_add_dict.get_int_array("get_comment_over", 2)
-            )
-        )
+        avatar_add.add_child(Node.s32_array("get_hair", avatar_add_dict.get_int_array("get_hair", 2)))
+        avatar_add.add_child(Node.s32_array("get_face", avatar_add_dict.get_int_array("get_face", 2)))
+        avatar_add.add_child(Node.s32_array("get_body", avatar_add_dict.get_int_array("get_body", 2)))
+        avatar_add.add_child(Node.s32_array("get_effect", avatar_add_dict.get_int_array("get_effect", 2)))
+        avatar_add.add_child(Node.s32_array("get_object", avatar_add_dict.get_int_array("get_object", 2)))
+        avatar_add.add_child(Node.s32_array("get_comment_over", avatar_add_dict.get_int_array("get_comment_over", 2)))
         avatar_add.add_child(
             Node.s32_array(
                 "get_comment_under",
                 avatar_add_dict.get_int_array("get_comment_under", 2),
             )
         )
-        avatar_add.add_child(
-            Node.s32_array("new_hair", avatar_add_dict.get_int_array("new_hair", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("new_face", avatar_add_dict.get_int_array("new_face", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("new_body", avatar_add_dict.get_int_array("new_body", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("new_effect", avatar_add_dict.get_int_array("new_effect", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array("new_object", avatar_add_dict.get_int_array("new_object", 2))
-        )
-        avatar_add.add_child(
-            Node.s32_array(
-                "new_comment_over", avatar_add_dict.get_int_array("new_comment_over", 2)
-            )
-        )
+        avatar_add.add_child(Node.s32_array("new_hair", avatar_add_dict.get_int_array("new_hair", 2)))
+        avatar_add.add_child(Node.s32_array("new_face", avatar_add_dict.get_int_array("new_face", 2)))
+        avatar_add.add_child(Node.s32_array("new_body", avatar_add_dict.get_int_array("new_body", 2)))
+        avatar_add.add_child(Node.s32_array("new_effect", avatar_add_dict.get_int_array("new_effect", 2)))
+        avatar_add.add_child(Node.s32_array("new_object", avatar_add_dict.get_int_array("new_object", 2)))
+        avatar_add.add_child(Node.s32_array("new_comment_over", avatar_add_dict.get_int_array("new_comment_over", 2)))
         avatar_add.add_child(
             Node.s32_array(
                 "new_comment_under",
@@ -383,35 +305,17 @@ class PopnMusicSunnyPark(PopnMusicBase):
         zoo = Node.void("zoo")
         root.add_child(zoo)
         zoo.add_child(Node.u16_array("point", zoo_dict.get_int_array("point", 5)))
-        zoo.add_child(
-            Node.s32_array("music_list", zoo_dict.get_int_array("music_list", 2))
-        )
-        zoo.add_child(
-            Node.s8_array(
-                "today_play_flag", zoo_dict.get_int_array("today_play_flag", 4)
-            )
-        )
+        zoo.add_child(Node.s32_array("music_list", zoo_dict.get_int_array("music_list", 2)))
+        zoo.add_child(Node.s8_array("today_play_flag", zoo_dict.get_int_array("today_play_flag", 4)))
 
         # Pop'n Walker event
         personal_event_dict = profile.get_dict("personal_event")
         personal_event = Node.void("personal_event")
         root.add_child(personal_event)
-        personal_event.add_child(
-            Node.s16_array("pos", personal_event_dict.get_int_array("pos", 2))
-        )
-        personal_event.add_child(
-            Node.s16("point", personal_event_dict.get_int("point"))
-        )
-        personal_event.add_child(
-            Node.u32_array(
-                "walk_data", personal_event_dict.get_int_array("walk_data", 128)
-            )
-        )
-        personal_event.add_child(
-            Node.u32_array(
-                "event_data", personal_event_dict.get_int_array("event_data", 4)
-            )
-        )
+        personal_event.add_child(Node.s16_array("pos", personal_event_dict.get_int_array("pos", 2)))
+        personal_event.add_child(Node.s16("point", personal_event_dict.get_int("point")))
+        personal_event.add_child(Node.u32_array("walk_data", personal_event_dict.get_int_array("walk_data", 128)))
+        personal_event.add_child(Node.u32_array("event_data", personal_event_dict.get_int_array("event_data", 4)))
 
         # We don't support triple journey, so this is stubbed out.
         triple = Node.void("triple_journey")
@@ -465,9 +369,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
         clear_medal = [0] * self.GAME_MAX_MUSIC_ID
 
-        scores = self.data.remote.music.get_scores(
-            self.game, self.music_version, userid
-        )
+        scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         for score in scores:
             if score.id > self.GAME_MAX_MUSIC_ID:
                 continue
@@ -483,17 +385,13 @@ class PopnMusicSunnyPark(PopnMusicBase):
             if score.data.get_int("medal") == self.PLAY_MEDAL_NO_PLAY:
                 continue
 
-            clear_medal[score.id] = clear_medal[
-                score.id
-            ] | self.__format_medal_for_score(score)
+            clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
 
         root.add_child(Node.u16_array("clear_medal", clear_medal))
 
         return root
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = oldprofile.clone()
         newprofile.replace_int("option", request.child_value("option"))
         newprofile.replace_int("chara", request.child_value("chara"))
@@ -505,25 +403,15 @@ class PopnMusicSunnyPark(PopnMusicBase):
         newprofile.replace_int("category", request.child_value("category"))
         newprofile.replace_int("sub_category", request.child_value("sub_category"))
         newprofile.replace_int("chara_category", request.child_value("chara_category"))
-        newprofile.replace_int(
-            "medal_and_friend", request.child_value("medal_and_friend")
-        )
+        newprofile.replace_int("medal_and_friend", request.child_value("medal_and_friend"))
         newprofile.replace_int("ep", request.child_value("ep"))
-        newprofile.replace_int_array(
-            "sp_color_flg", 2, request.child_value("sp_color_flg")
-        )
+        newprofile.replace_int_array("sp_color_flg", 2, request.child_value("sp_color_flg"))
         newprofile.replace_int("read_news", request.child_value("read_news"))
-        newprofile.replace_int(
-            "consecutive_days_coupon", request.child_value("consecutive_days_coupon")
-        )
+        newprofile.replace_int("consecutive_days_coupon", request.child_value("consecutive_days_coupon"))
         newprofile.replace_int("tutorial", request.child_value("tutorial"))
         newprofile.replace_int("music_open_pt", request.child_value("music_open_pt"))
-        newprofile.replace_int_array(
-            "gitadora_point", 3, request.child_value("gitadora_point")
-        )
-        newprofile.replace_int(
-            "gitadora_select", request.child_value("gitadora_select")
-        )
+        newprofile.replace_int_array("gitadora_point", 3, request.child_value("gitadora_point"))
+        newprofile.replace_int("gitadora_select", request.child_value("gitadora_select"))
 
         sp_node = request.child("sp_data")
         if sp_node is not None:
@@ -533,29 +421,17 @@ class PopnMusicSunnyPark(PopnMusicBase):
         zoo_node = request.child("zoo")
         if zoo_node is not None:
             zoo_dict.replace_int_array("point", 5, zoo_node.child_value("point"))
-            zoo_dict.replace_int_array(
-                "music_list", 2, zoo_node.child_value("music_list")
-            )
-            zoo_dict.replace_int_array(
-                "today_play_flag", 4, zoo_node.child_value("today_play_flag")
-            )
+            zoo_dict.replace_int_array("music_list", 2, zoo_node.child_value("music_list"))
+            zoo_dict.replace_int_array("today_play_flag", 4, zoo_node.child_value("today_play_flag"))
         newprofile.replace_dict("zoo", zoo_dict)
 
         personal_event_dict = newprofile.get_dict("personal_event")
         personal_event_node = request.child("personal_event")
         if personal_event_node is not None:
-            personal_event_dict.replace_int_array(
-                "pos", 2, personal_event_node.child_value("pos")
-            )
-            personal_event_dict.replace_int(
-                "point", personal_event_node.child_value("point")
-            )
-            personal_event_dict.replace_int_array(
-                "walk_data", 128, personal_event_node.child_value("walk_data")
-            )
-            personal_event_dict.replace_int_array(
-                "event_data", 4, personal_event_node.child_value("event_data")
-            )
+            personal_event_dict.replace_int_array("pos", 2, personal_event_node.child_value("pos"))
+            personal_event_dict.replace_int("point", personal_event_node.child_value("point"))
+            personal_event_dict.replace_int_array("walk_data", 128, personal_event_node.child_value("walk_data"))
+            personal_event_dict.replace_int_array("event_data", 4, personal_event_node.child_value("event_data"))
         newprofile.replace_dict("personal_event", personal_event_dict)
 
         avatar_dict = newprofile.get_dict("avatar")
@@ -568,65 +444,29 @@ class PopnMusicSunnyPark(PopnMusicBase):
         avatar_dict.replace_int_array("get_hair", 2, request.child_value("get_hair"))
         avatar_dict.replace_int_array("get_face", 2, request.child_value("get_face"))
         avatar_dict.replace_int_array("get_body", 2, request.child_value("get_body"))
-        avatar_dict.replace_int_array(
-            "get_effect", 2, request.child_value("get_effect")
-        )
-        avatar_dict.replace_int_array(
-            "get_object", 2, request.child_value("get_object")
-        )
-        avatar_dict.replace_int_array(
-            "get_comment_over", 3, request.child_value("get_comment_over")
-        )
-        avatar_dict.replace_int_array(
-            "get_comment_under", 3, request.child_value("get_comment_under")
-        )
+        avatar_dict.replace_int_array("get_effect", 2, request.child_value("get_effect"))
+        avatar_dict.replace_int_array("get_object", 2, request.child_value("get_object"))
+        avatar_dict.replace_int_array("get_comment_over", 3, request.child_value("get_comment_over"))
+        avatar_dict.replace_int_array("get_comment_under", 3, request.child_value("get_comment_under"))
         newprofile.replace_dict("avatar", avatar_dict)
 
         avatar_add_dict = newprofile.get_dict("avatar_add")
         avatar_add_node = request.child("avatar_add")
         if avatar_add_node is not None:
-            avatar_add_dict.replace_int_array(
-                "get_hair", 2, avatar_add_node.child_value("get_hair")
-            )
-            avatar_add_dict.replace_int_array(
-                "get_face", 2, avatar_add_node.child_value("get_face")
-            )
-            avatar_add_dict.replace_int_array(
-                "get_body", 2, avatar_add_node.child_value("get_body")
-            )
-            avatar_add_dict.replace_int_array(
-                "get_effect", 2, avatar_add_node.child_value("get_effect")
-            )
-            avatar_add_dict.replace_int_array(
-                "get_object", 2, avatar_add_node.child_value("get_object")
-            )
-            avatar_add_dict.replace_int_array(
-                "get_comment_over", 2, avatar_add_node.child_value("get_comment_over")
-            )
-            avatar_add_dict.replace_int_array(
-                "get_comment_under", 2, avatar_add_node.child_value("get_comment_under")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_hair", 2, avatar_add_node.child_value("new_hair")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_face", 2, avatar_add_node.child_value("new_face")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_body", 2, avatar_add_node.child_value("new_body")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_effect", 2, avatar_add_node.child_value("new_effect")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_object", 2, avatar_add_node.child_value("new_object")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_comment_over", 2, avatar_add_node.child_value("new_comment_over")
-            )
-            avatar_add_dict.replace_int_array(
-                "new_comment_under", 2, avatar_add_node.child_value("new_comment_under")
-            )
+            avatar_add_dict.replace_int_array("get_hair", 2, avatar_add_node.child_value("get_hair"))
+            avatar_add_dict.replace_int_array("get_face", 2, avatar_add_node.child_value("get_face"))
+            avatar_add_dict.replace_int_array("get_body", 2, avatar_add_node.child_value("get_body"))
+            avatar_add_dict.replace_int_array("get_effect", 2, avatar_add_node.child_value("get_effect"))
+            avatar_add_dict.replace_int_array("get_object", 2, avatar_add_node.child_value("get_object"))
+            avatar_add_dict.replace_int_array("get_comment_over", 2, avatar_add_node.child_value("get_comment_over"))
+            avatar_add_dict.replace_int_array("get_comment_under", 2, avatar_add_node.child_value("get_comment_under"))
+            avatar_add_dict.replace_int_array("new_hair", 2, avatar_add_node.child_value("new_hair"))
+            avatar_add_dict.replace_int_array("new_face", 2, avatar_add_node.child_value("new_face"))
+            avatar_add_dict.replace_int_array("new_body", 2, avatar_add_node.child_value("new_body"))
+            avatar_add_dict.replace_int_array("new_effect", 2, avatar_add_node.child_value("new_effect"))
+            avatar_add_dict.replace_int_array("new_object", 2, avatar_add_node.child_value("new_object"))
+            avatar_add_dict.replace_int_array("new_comment_over", 2, avatar_add_node.child_value("new_comment_over"))
+            avatar_add_dict.replace_int_array("new_comment_under", 2, avatar_add_node.child_value("new_comment_under"))
         newprofile.replace_dict("avatar_add", avatar_add_dict)
 
         # Keep track of play statistics
@@ -736,9 +576,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         machine = self.get_machine()
 
         root = Node.void("playerdata")
-        root.add_child(
-            Node.s8("pref", machine.data.get_int("pref", self.get_machine_region()))
-        )
+        root.add_child(Node.s8("pref", machine.data.get_int("pref", self.get_machine_region())))
         if refid is None:
             root.add_child(Node.string("name", ""))
             root.add_child(Node.s8("get_coupon_cnt", -1))
@@ -766,9 +604,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
             root.add_child(Node.u8("comment_2", 0))
             return root
 
-        oldprofile = self.get_profile(userid) or Profile(
-            self.game, self.version, refid, 0
-        )
+        oldprofile = self.get_profile(userid) or Profile(self.game, self.version, refid, 0)
         newprofile = self.unformat_profile(userid, request, oldprofile)
 
         if newprofile is not None:
@@ -783,12 +619,8 @@ class PopnMusicSunnyPark(PopnMusicBase):
             root.add_child(Node.u8("body", avatar_dict.get_int("body", 0)))
             root.add_child(Node.u8("effect", avatar_dict.get_int("effect", 0)))
             root.add_child(Node.u8("object", avatar_dict.get_int("object", 0)))
-            root.add_child(
-                Node.u8("comment_1", avatar_dict.get_int_array("comment", 2)[0])
-            )
-            root.add_child(
-                Node.u8("comment_2", avatar_dict.get_int_array("comment", 2)[1])
-            )
+            root.add_child(Node.u8("comment_1", avatar_dict.get_int_array("comment", 2)[0]))
+            root.add_child(Node.u8("comment_2", avatar_dict.get_int_array("comment", 2)[1]))
 
         return root
 
@@ -819,9 +651,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
         for rival in links[:2]:
             rivalid = rival.other_userid
             rivalprofile = profiles[rivalid]
-            scores = self.data.remote.music.get_scores(
-                self.game, self.music_version, rivalid
-            )
+            scores = self.data.remote.music.get_scores(self.game, self.music_version, rivalid)
 
             # First, output general profile info.
             friend = Node.void("friend")
@@ -833,9 +663,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
 
             # Set up some sane defaults.
             friend.add_child(Node.string("name", rivalprofile.get_str("name", "なし")))
-            friend.add_child(
-                Node.string("g_pm_id", ID.format_extid(rivalprofile.extid))
-            )
+            friend.add_child(Node.string("g_pm_id", ID.format_extid(rivalprofile.extid)))
             friend.add_child(Node.s16("chara", rivalprofile.get_int("chara", -1)))
 
             # Set up player avatar.
@@ -845,9 +673,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
             friend.add_child(Node.u8("body", avatar_dict.get_int("body", 0)))
             friend.add_child(Node.u8("effect", avatar_dict.get_int("effect", 0)))
             friend.add_child(Node.u8("object", avatar_dict.get_int("object", 0)))
-            friend.add_child(
-                Node.u8_array("comment", avatar_dict.get_int_array("comment", 2))
-            )
+            friend.add_child(Node.u8_array("comment", avatar_dict.get_int_array("comment", 2)))
 
             # Perform hiscore/medal conversion.
             hiscore_array = [0] * int((((self.GAME_MAX_MUSIC_ID * 4) * 17) + 7) / 8)
@@ -867,9 +693,7 @@ class PopnMusicSunnyPark(PopnMusicBase):
                 if score.data.get_int("medal") == self.PLAY_MEDAL_NO_PLAY:
                     continue
 
-                clear_medal[score.id] = clear_medal[
-                    score.id
-                ] | self.__format_medal_for_score(score)
+                clear_medal[score.id] = clear_medal[score.id] | self.__format_medal_for_score(score)
                 hiscore_index = (score.id * 4) + {
                     self.CHART_TYPE_EASY: self.GAME_CHART_TYPE_EASY_POSITION,
                     self.CHART_TYPE_NORMAL: self.GAME_CHART_TYPE_NORMAL_POSITION,
@@ -879,15 +703,13 @@ class PopnMusicSunnyPark(PopnMusicBase):
                 hiscore_byte_pos = int((hiscore_index * 17) / 8)
                 hiscore_bit_pos = int((hiscore_index * 17) % 8)
                 hiscore_value = score.points << hiscore_bit_pos
-                hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (
-                    hiscore_value & 0xFF
+                hiscore_array[hiscore_byte_pos] = hiscore_array[hiscore_byte_pos] | (hiscore_value & 0xFF)
+                hiscore_array[hiscore_byte_pos + 1] = hiscore_array[hiscore_byte_pos + 1] | (
+                    (hiscore_value >> 8) & 0xFF
                 )
-                hiscore_array[hiscore_byte_pos + 1] = hiscore_array[
-                    hiscore_byte_pos + 1
-                ] | ((hiscore_value >> 8) & 0xFF)
-                hiscore_array[hiscore_byte_pos + 2] = hiscore_array[
-                    hiscore_byte_pos + 2
-                ] | ((hiscore_value >> 16) & 0xFF)
+                hiscore_array[hiscore_byte_pos + 2] = hiscore_array[hiscore_byte_pos + 2] | (
+                    (hiscore_value >> 16) & 0xFF
+                )
 
             hiscore = bytes(hiscore_array)
             friend.add_child(Node.u16_array("clear_medal", clear_medal))

@@ -95,9 +95,7 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         # Now, return it
         return self.format_profile(userid, profile)
 
-    def new_profile_by_refid(
-        self, refid: Optional[str], name: Optional[str], locid: Optional[int]
-    ) -> Node:
+    def new_profile_by_refid(self, refid: Optional[str], name: Optional[str], locid: Optional[int]) -> Node:
         """
         Given a RefID and an optional name, create a profile and then return
         a formatted profile node. Similar rationale to get_profile_by_refid.
@@ -130,9 +128,7 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void("game")
 
-    def unformat_profile(
-        self, userid: UserID, request: Node, oldprofile: Profile
-    ) -> Profile:
+    def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         """
         Base handler for profile parsing. Given a request and an old profile,
         return a new profile that's been updated with the contents of the request.
@@ -177,21 +173,14 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                 }
 
             # We saw an attempt, keep the total attempts in sync.
-            attempts[attempt.id][attempt.chart]["total"] = (
-                attempts[attempt.id][attempt.chart]["total"] + 1
-            )
+            attempts[attempt.id][attempt.chart]["total"] = attempts[attempt.id][attempt.chart]["total"] + 1
 
-            if (
-                attempt.data.get_int("clear_type", self.CLEAR_TYPE_FAILED)
-                != self.CLEAR_TYPE_FAILED
-            ):
+            if attempt.data.get_int("clear_type", self.CLEAR_TYPE_FAILED) != self.CLEAR_TYPE_FAILED:
                 # This attempt was a failure, so don't count it against clears of full combos
                 continue
 
             # It was at least a clear
-            attempts[attempt.id][attempt.chart]["clears"] = (
-                attempts[attempt.id][attempt.chart]["clears"] + 1
-            )
+            attempts[attempt.id][attempt.chart]["clears"] = attempts[attempt.id][attempt.chart]["clears"] + 1
 
         # Merge in remote attempts
         for songid in remote_attempts:
@@ -205,12 +194,8 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
                         "clears": 0,
                     }
 
-                attempts[songid][songchart]["total"] += remote_attempts[songid][
-                    songchart
-                ]["plays"]
-                attempts[songid][songchart]["clears"] += remote_attempts[songid][
-                    songchart
-                ]["clears"]
+                attempts[songid][songchart]["total"] += remote_attempts[songid][songchart]["plays"]
+                attempts[songid][songchart]["clears"] += remote_attempts[songid][songchart]["clears"]
 
         return attempts
 
@@ -280,9 +265,7 @@ class MusecaBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scoredata = oldscore.data
 
         # Replace grade and clear type
-        scoredata.replace_int(
-            "clear_type", max(scoredata.get_int("clear_type"), clear_type)
-        )
+        scoredata.replace_int("clear_type", max(scoredata.get_int("clear_type"), clear_type))
         history.replace_int("clear_type", clear_type)
         scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
         history.replace_int("grade", grade)

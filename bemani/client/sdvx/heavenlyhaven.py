@@ -127,9 +127,7 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
         setting.add_child(Node.string("time_service", "0,0,0"))
         setting.add_child(Node.string("service_value", "10,10,10"))
         setting.add_child(Node.string("service_limit", "10,10,10"))
-        setting.add_child(
-            Node.string("service_time", "07:00-11:00,07:00-11:00,07:00-11:00")
-        )
+        setting.add_child(Node.string("service_time", "07:00-11:00,07:00-11:00,07:00-11:00"))
 
         # Swap with server
         resp = self.exchange("", call)
@@ -171,9 +169,7 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/game/result")
 
-    def verify_game_load(
-        self, cardid: str, refid: str, msg_type: str
-    ) -> Dict[str, Any]:
+    def verify_game_load(self, cardid: str, refid: str, msg_type: str) -> Dict[str, Any]:
         call = self.call_node()
 
         game = Node.void("game")
@@ -268,9 +264,7 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
         else:
             raise Exception(f"Invalid game load type {msg_type}")
 
-    def verify_game_save(
-        self, location: str, refid: str, packet: int, block: int, blaster_energy: int
-    ) -> None:
+    def verify_game_save(self, location: str, refid: str, packet: int, block: int, blaster_energy: int) -> None:
         call = self.call_node()
 
         game = Node.void("game")
@@ -577,9 +571,7 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
 
         return scores
 
-    def verify_game_save_m(
-        self, location: str, refid: str, play_id: int, score: Dict[str, int]
-    ) -> None:
+    def verify_game_save_m(self, location: str, refid: str, play_id: int, score: Dict[str, int]) -> None:
         call = self.call_node()
 
         game = Node.void("game")
@@ -631,9 +623,7 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
         # Verify that response is correct
         self.assert_path(resp, "response/game")
 
-    def verify_game_save_c(
-        self, location: str, refid: str, play_id: int, season: int, course: int
-    ) -> None:
+    def verify_game_save_c(self, location: str, refid: str, play_id: int, season: int, course: int) -> None:
         call = self.call_node()
 
         game = Node.void("game")
@@ -695,17 +685,11 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
             print(f"Generated random card ID {card} for use.")
 
         if cardid is None:
-            self.verify_cardmng_inquire(
-                card, msg_type="unregistered", paseli_enabled=paseli_enabled
-            )
+            self.verify_cardmng_inquire(card, msg_type="unregistered", paseli_enabled=paseli_enabled)
             ref_id = self.verify_cardmng_getrefid(card)
             if len(ref_id) != 16:
-                raise Exception(
-                    f"Invalid refid '{ref_id}' returned when registering card"
-                )
-            if ref_id != self.verify_cardmng_inquire(
-                card, msg_type="new", paseli_enabled=paseli_enabled
-            ):
+                raise Exception(f"Invalid refid '{ref_id}' returned when registering card")
+            if ref_id != self.verify_cardmng_inquire(card, msg_type="new", paseli_enabled=paseli_enabled):
                 raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
             # SDVX doesn't read the new profile, it asks for the profile itself after calling new
             self.verify_game_load(card, ref_id, msg_type="new")
@@ -713,16 +697,12 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
             self.verify_game_load(card, ref_id, msg_type="existing")
         else:
             print("Skipping new card checks for existing card")
-            ref_id = self.verify_cardmng_inquire(
-                card, msg_type="query", paseli_enabled=paseli_enabled
-            )
+            ref_id = self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled)
 
         # Verify pin handling and return card handling
         self.verify_cardmng_authpass(ref_id, correct=True)
         self.verify_cardmng_authpass(ref_id, correct=False)
-        if ref_id != self.verify_cardmng_inquire(
-            card, msg_type="query", paseli_enabled=paseli_enabled
-        ):
+        if ref_id != self.verify_cardmng_inquire(card, msg_type="query", paseli_enabled=paseli_enabled):
             raise Exception(f"Invalid refid '{ref_id}' returned when querying card")
 
         # Verify rivals node (necessary to return but can hold nothing)
@@ -742,17 +722,13 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
             # Verify profile loading and saving
             profile = self.verify_game_load(card, ref_id, msg_type="existing")
             if profile["name"] != self.NAME:
-                raise Exception(
-                    f'Profile has incorrect name {profile["name"]} associated with it!'
-                )
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile["packet"] != 0:
                 raise Exception("Profile has nonzero blocks associated with it!")
             if profile["block"] != 0:
                 raise Exception("Profile has nonzero packets associated with it!")
             if profile["blaster_energy"] != 0:
-                raise Exception(
-                    "Profile has nonzero blaster energy associated with it!"
-                )
+                raise Exception("Profile has nonzero blaster energy associated with it!")
             if profile["items"]:
                 raise Exception("Profile already has purchased items!")
             if profile["courses"]:
@@ -761,39 +737,29 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
             # Verify purchase failure, try buying song we can't afford
             self.verify_game_buy(ref_id, 0, 29, 1, 10, 0, 29, 3, False)
 
-            self.verify_game_save(
-                location, ref_id, packet=123, block=234, blaster_energy=42
-            )
+            self.verify_game_save(location, ref_id, packet=123, block=234, blaster_energy=42)
             profile = self.verify_game_load(card, ref_id, msg_type="existing")
             if profile["name"] != self.NAME:
-                raise Exception(
-                    f'Profile has incorrect name {profile["name"]} associated with it!'
-                )
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile["packet"] != 123:
                 raise Exception("Profile has invalid blocks associated with it!")
             if profile["block"] != 234:
                 raise Exception("Profile has invalid packets associated with it!")
             if profile["blaster_energy"] != 42:
-                raise Exception(
-                    "Profile has invalid blaster energy associated with it!"
-                )
+                raise Exception("Profile has invalid blaster energy associated with it!")
             if profile["courses"]:
                 raise Exception("Profile already has finished courses!")
 
             self.verify_game_save(location, ref_id, packet=1, block=2, blaster_energy=3)
             profile = self.verify_game_load(card, ref_id, msg_type="existing")
             if profile["name"] != self.NAME:
-                raise Exception(
-                    f'Profile has incorrect name {profile["name"]} associated with it!'
-                )
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile["packet"] != 124:
                 raise Exception("Profile has invalid blocks associated with it!")
             if profile["block"] != 236:
                 raise Exception("Profile has invalid packets associated with it!")
             if profile["blaster_energy"] != 45:
-                raise Exception(
-                    "Profile has invalid blaster energy associated with it!"
-                )
+                raise Exception("Profile has invalid blaster energy associated with it!")
             if profile["courses"]:
                 raise Exception("Profile has invalid finished courses!")
 
@@ -801,17 +767,13 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
             self.verify_game_buy(ref_id, 0, 29, 1, 10, 0, 29, 3, True)
             profile = self.verify_game_load(card, ref_id, msg_type="existing")
             if profile["name"] != self.NAME:
-                raise Exception(
-                    f'Profile has incorrect name {profile["name"]} associated with it!'
-                )
+                raise Exception(f'Profile has incorrect name {profile["name"]} associated with it!')
             if profile["packet"] != 124:
                 raise Exception("Profile has invalid blocks associated with it!")
             if profile["block"] != 226:
                 raise Exception("Profile has invalid packets associated with it!")
             if profile["blaster_energy"] != 45:
-                raise Exception(
-                    "Profile has invalid blaster energy associated with it!"
-                )
+                raise Exception("Profile has invalid blaster energy associated with it!")
             if 0 not in profile["items"] or 29 not in profile["items"][0]:
                 raise Exception("Purchase didn't add to profile!")
             if profile["items"][0][29] != 3:
@@ -904,17 +866,12 @@ class SoundVoltexHeavenlyHavenClient(BaseClient):
                 for expected in dummyscores:
                     actual = None
                     for received in scores:
-                        if (
-                            received["id"] == expected["id"]
-                            and received["chart"] == expected["chart"]
-                        ):
+                        if received["id"] == expected["id"] and received["chart"] == expected["chart"]:
                             actual = received
                             break
 
                     if actual is None:
-                        raise Exception(
-                            f"Didn't find song {expected['id']} chart {expected['chart']} in response!"
-                        )
+                        raise Exception(f"Didn't find song {expected['id']} chart {expected['chart']} in response!")
 
                     if "expected_score" in expected:
                         expected_score = expected["expected_score"]
