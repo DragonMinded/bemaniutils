@@ -1934,6 +1934,15 @@ class IIDXPendual(IIDXCourse, IIDXBase):
         be3.set_attribute("music_list", "1")
         be3.set_attribute("bonus_point", str(bossdict.get_int("points")))
 
+        # Old events from Tricoro and Spada, which unlock a bunch of songs that even force unlock won't get.
+        # We didn't implement these as they were cross-cabinet unlocks, so force unlock the songs.
+        old_linked_event = Node.void("old_linked_event")
+        root.add_child(old_linked_event)
+        old_linked_event.set_attribute("gakuen_list", str(-1))
+        old_linked_event.set_attribute("baseball_list", str(-1))
+        old_linked_event.set_attribute("tricolette_list", str(-1))
+        old_linked_event.set_attribute("cafedetran_list", str(-1))
+
         return root
 
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
