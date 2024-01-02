@@ -869,7 +869,6 @@ class IIDXSpada(IIDXBase):
         root = Node.void("IIDX21pc")
         root.set_attribute("expire", "600")
 
-        # TODO: Hook all of these up to config options I guess?
         ir = Node.void("ir")
         root.add_child(ir)
         ir.set_attribute("beat", "2")

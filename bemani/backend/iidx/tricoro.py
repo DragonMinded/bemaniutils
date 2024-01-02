@@ -854,7 +854,6 @@ class IIDXTricoro(IIDXBase):
         root = Node.void("pc")
         root.set_attribute("expire", "600")
 
-        # TODO: Hook all of these up to config options I guess?
         ir = Node.void("ir")
         root.add_child(ir)
         ir.set_attribute("beat", "2")
@@ -874,7 +873,7 @@ class IIDXTricoro(IIDXBase):
         if self.omnimix and (not omni_events):
             boss_phase = 0
         else:
-            # TODO: Figure out what these map to, implement profile round tripping for them.
+            # TODO: Implement profile round tripping for these phases, enable event dropdown on frontend.
             boss_phase = 0
 
             # 1 is red phase
