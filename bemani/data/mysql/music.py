@@ -4,7 +4,7 @@ from sqlalchemy.types import String, Integer, JSON  # type: ignore
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
 from typing import Optional, Dict, List, Tuple, Any
 
-from bemani.common import GameConstants, Time
+from bemani.common import GameConstants, Time, VersionConstants
 from bemani.data.exceptions import ScoreSaveException
 from bemani.data.mysql.base import BaseData, metadata
 from bemani.data.types import Score, Attempt, Song, UserID
@@ -81,6 +81,15 @@ music = Table(
 
 
 class MusicData(BaseData):
+    def __get_next_music_id(self) -> int:
+        cursor = self.execute("SELECT MAX(id) AS next_id FROM `music`")
+        result = cursor.fetchone()
+        try:
+            return result["next_id"] + 1
+        except TypeError:
+            # Nothing in DB
+            return 1
+
     def __get_musicid(self, game: GameConstants, version: int, songid: int, songchart: int) -> int:
         """
         Given a game/version/songid/chart, look up the unique music ID for this song.
@@ -105,8 +114,37 @@ class MusicData(BaseData):
             },
         )
         if cursor.rowcount != 1:
-            # music doesn't exist
-            raise Exception(f"Song {songid} chart {songchart} doesn't exist for game {game} version {version}")
+            if game == GameConstants.DDR and version == VersionConstants.DDR_SUPERNOVA_2:
+                # No currently implemented way to import supernova 2 songlist, so insert records to the DB on the fly
+                insertSql = "INSERT INTO music (id, songid, chart, game, version, name, artist, genre) VALUES (:id, :songid, :chart, :game, :version, :name, :artist, :genre)"
+
+                self.execute(
+                    insertSql,
+                    {
+                        "id": self.__get_next_music_id(),
+                        "songid": songid,
+                        "chart": songchart,
+                        "game": game.value,
+                        "version": version,
+                        "name": "test",
+                        "artist": "artist",
+                        "genre": "genre",
+                    },
+                )
+
+                cursor = self.execute(
+                    sql,
+                    {
+                        "songid": songid,
+                        "chart": songchart,
+                        "game": game.value,
+                        "version": version,
+                    },
+                )
+            else:
+                # music doesn't exist
+                raise Exception(f"Song {songid} chart {songchart} doesn't exist for game {game} version {version}")
+
         result = cursor.fetchone()
         return result["id"]
 
