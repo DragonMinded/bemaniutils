@@ -47,7 +47,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
                     "category": "game_config",
                     "setting": "music_phase",
                     "values": {
-                        # The value goes to 30 now, but it starts where usaneko left off at 23
+                        # The value goes to 30 now, but it starts where peace left off at 23
                         # Unlocks a total of 10 songs
                         23: "No music unlocks",
                         24: "Phase 1",
