@@ -604,6 +604,11 @@ class ImportPopn(ImportBase):
                 "囎": ":",
                 "囂": "♡",
                 "釁": "🐾",
+                "佰": "你",
+                "罕": "έ",
+                "罔": "ς",
+                "彑": "Ø",
+                "冫": "ꓘ",
             }
 
             for orig, rep in accent_lut.items():
@@ -2113,6 +2118,11 @@ class ImportPopn(ImportBase):
                         "囎": ":",
                         "囂": "♡",
                         "釁": "🐾",
+                        "佰": "你",
+                        "罕": "έ",
+                        "罔": "ς",
+                        "彑": "Ø",
+                        "冫": "ꓘ",
                     }
 
                     for orig, rep in accent_lut.items():
