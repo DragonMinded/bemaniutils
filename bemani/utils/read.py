@@ -609,6 +609,7 @@ class ImportPopn(ImportBase):
                 "罔": "ς",
                 "彑": "Ø",
                 "冫": "ꓘ",
+                "炙": "焱",
             }
 
             for orig, rep in accent_lut.items():
@@ -2123,6 +2124,7 @@ class ImportPopn(ImportBase):
                         "罔": "ς",
                         "彑": "Ø",
                         "冫": "ꓘ",
+                        "炙": "焱",
                     }
 
                     for orig, rep in accent_lut.items():
