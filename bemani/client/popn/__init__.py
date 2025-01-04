@@ -6,6 +6,7 @@ from bemani.client.popn.eclale import PopnMusicEclaleClient
 from bemani.client.popn.usaneko import PopnMusicUsaNekoClient
 from bemani.client.popn.peace import PopnMusicPeaceClient
 from bemani.client.popn.kaimei import PopnMusicKaimeiClient
+from bemani.client.popn.unilab import PopnMusicUnilabClient
 
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "PopnMusicUsaNekoClient",
     "PopnMusicPeaceClient",
     "PopnMusicKaimeiClient",
+    "PopnMusicUnilabClient",
 ]

@@ -200,6 +200,7 @@ class APIClient:
                     VersionConstants.POPN_MUSIC_USANEKO: "24",
                     VersionConstants.POPN_MUSIC_PEACE: "25",
                     VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES: "26",
+                    VersionConstants.POPN_MUSIC_UNILAB: "27",
                 },
                 GameConstants.REFLEC_BEAT: {
                     VersionConstants.REFLEC_BEAT: "1",

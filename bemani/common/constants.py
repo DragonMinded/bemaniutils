@@ -125,6 +125,7 @@ class VersionConstants:
     POPN_MUSIC_USANEKO: Final[int] = 24
     POPN_MUSIC_PEACE: Final[int] = 25
     POPN_MUSIC_KAIMEI_RIDDLES: Final[int] = 26
+    POPN_MUSIC_UNILAB: Final[int] = 27
 
     REFLEC_BEAT: Final[int] = 1
     REFLEC_BEAT_LIMELIGHT: Final[int] = 2
