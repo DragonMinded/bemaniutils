@@ -535,6 +535,7 @@ class PopnMusicUnilab(PopnMusicModernBase):
     def unformat_profile(self, userid: UserID, request: Node, oldprofile: Profile) -> Profile:
         newprofile = super().unformat_profile(userid, request, oldprofile)
 
+        game_config = self.get_game_config()
         account = request.child("account")
         if account is not None:
             newprofile.replace_int("card_again_count", account.child_value("card_again_count"))
@@ -570,21 +571,21 @@ class PopnMusicUnilab(PopnMusicModernBase):
                         select_count = 3
                     elif playedRiddle == riddle_id:
                         select_count += 1
-
-                    self.data.local.user.put_achievement(
-                        self.game,
-                        self.version,
-                        userid,
-                        riddle_id,
-                        "riddle",
-                        {
-                            "kaimei_gauge": kaimei_gauge,
-                            "is_cleared": is_cleared,
-                            "riddles_cleared": riddles_cleared,
-                            "select_count": select_count,
-                            "other_count": other_count,
-                        },
-                    )
+                    if not game_config.get_bool("force_unlock_deco"):
+                        self.data.local.user.put_achievement(
+                            self.game,
+                            self.version,
+                            userid,
+                            riddle_id,
+                            "riddle",
+                            {
+                                "kaimei_gauge": kaimei_gauge,
+                                "is_cleared": is_cleared,
+                                "riddles_cleared": riddles_cleared,
+                                "select_count": select_count,
+                                "other_count": other_count,
+                            },
+                        )
                     riddle_id += 1
 
         # Unilab event
@@ -603,19 +604,20 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 ex_no = lab_data.child_value("ex_no")
                 point = lab_data.child_value("point")
                 is_cleared = lab_data.child_value("is_cleared")
-                self.data.local.user.put_achievement(
-                    self.game,
-                    self.version,
-                    userid,
-                    ex_no,
-                    "lab",
-                    {
-                        "team_id": team_id,
-                        "ex_no": ex_no,
-                        "point": point,
-                        "is_cleared": is_cleared,
-                    },
-                )
+                if not game_config.get_bool("force_unlock_deco"):
+                    self.data.local.user.put_achievement(
+                        self.game,
+                        self.version,
+                        userid,
+                        ex_no,
+                        "lab",
+                        {
+                            "team_id": team_id,
+                            "ex_no": ex_no,
+                            "point": point,
+                            "is_cleared": is_cleared,
+                        },
+                    )
 
             # Extract Kakusei no Elem achievements
             battery_data = event_p27.child("battery")
@@ -623,18 +625,18 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 battery_id = battery_data.child_value("battery_id")
                 energy = battery_data.child_value("energy")
                 is_cleared = battery_data.child_value("is_cleared")
-
-                self.data.local.user.put_achievement(
-                    self.game,
-                    self.version,
-                    userid,
-                    battery_id,
-                    "battery",
-                    {
-                        "battery_id": battery_id,
-                        "energy": energy,
-                        "is_cleared": is_cleared,
-                    },
-                )
+                if not game_config.get_bool("force_unlock_deco"):
+                    self.data.local.user.put_achievement(
+                        self.game,
+                        self.version,
+                        userid,
+                        battery_id,
+                        "battery",
+                        {
+                            "battery_id": battery_id,
+                            "energy": energy,
+                            "is_cleared": is_cleared,
+                        },
+                    )
 
         return newprofile
