@@ -283,7 +283,7 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 # 2 - Net taisen + Local mode
                 3: 1 if enable_net_taisen else 0,
                 # Unknown event (0-7)
-                4: 1,
+                4: 7,
                 # Narunaru♪ UniLab jikkenshitsu! (0-48)
                 # 6500 clear points are needed unless otherwise specified
                 #  1 - 2040 - ラブケミ - 1000 points
