@@ -474,8 +474,9 @@ class PopnMusicUnilab(PopnMusicModernBase):
 
         # options
         option = root.child("option")
-        option.add_child(Node.bool("lift", profile.get_bool("lift")))
-        option.add_child(Node.s16("lift_rate", profile.get_int("lift_rate")))
+        option_dict = profile.get_dict("option")
+        option.add_child(Node.bool("lift", option_dict.get_bool("lift")))
+        option.add_child(Node.s16("lift_rate", option_dict.get_int("lift_rate")))
 
         # Kaimei riddles events
         event2021 = Node.void("event2021")
@@ -580,10 +581,12 @@ class PopnMusicUnilab(PopnMusicModernBase):
             newprofile.replace_int("card_again_count", account.child_value("card_again_count"))
             newprofile.replace_int("sp_riddles_id", account.child_value("sp_riddles_id"))
 
+        option_dict = newprofile.get_dict("option")
         option = request.child("option")
         if option is not None:
-            newprofile.replace_bool("lift", option.child_value("lift"))
-            newprofile.replace_int("lift_rate", option.child_value("lift_rate"))
+            option_dict.replace_bool("lift", option.child_value("lift"))
+            option_dict.replace_int("lift_rate", option.child_value("lift_rate"))
+        newprofile.replace_dict("option", option_dict)
 
         # Kaimei riddles events
         event2021 = request.child("event2021")
