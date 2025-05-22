@@ -17,7 +17,7 @@ types-Werkzeug
 types-Flask
 types-freezegun
 flake8
-typed-ast
+typed-ast ; python_version < "3.8"
 freezegun
 pyreact @ git+https://github.com/DragonMinded/react-python@main
 Flask-Caching
@@ -25,7 +25,8 @@ blinker
 pycryptodome
 jaconv
 pefile
-pillow
+pillow<=8.3.2 ; python_version < "3.7"
+pillow>8.3.2 ; python_version >= "3.7"
 discord_webhook
 iced-x86
 python-memcached
