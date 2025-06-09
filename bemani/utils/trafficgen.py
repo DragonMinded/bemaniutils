@@ -315,6 +315,8 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             pcbid,
             config,
         )
+    
+    
 
     raise Exception(f"Unknown game {game}")
 
@@ -543,6 +545,21 @@ def mainloop(
             "model": "MBR:J:A:A:2016100400",
             "avs": "2.15.8 r6631",
         },
+        "gitadora-7": {
+            "name": "Gitadora Nextage",
+            "model": "M32:J:A:A:2021021500",
+            "avs": None,
+        },
+        "gitadora-8": {
+            "name": "Gitadora High Voltage",
+            "model": "M32:J:A:A:2022102400",
+            "avs": None,
+        },
+        "gitadora-9": {
+            "name": "Gitadora Fuzz Up",
+            "model": "M32:J:A:A:2024022000",
+            "avs": None,
+        },
         "metal-gear-arcade": {
             "name": "Metal Gear Arcade",
             "model": "I36:J:A:A:2011092900",
@@ -670,6 +687,9 @@ def main() -> None:
         "reflec-5": "reflec-volzza",
         "reflec-6": "reflec-volzza2",
         "mga": "metal-gear-arcade",
+        "gitadora-7": "gitadora nextage",
+        "gitadora-8": "gitadora high-voltage",
+        "gitadora-9": "gitadora fuzz-up",
     }.get(game, game)
 
     mainloop(args.address, args.port, args.config, action, game, args.cardid, args.verbose)

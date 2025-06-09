@@ -56,3 +56,8 @@ set -e
 ./read --series reflec --version 4 "$@"
 ./read --series reflec --version 5 "$@"
 ./read --series reflec --version 6 "$@"
+
+# Init Gitadora
+./read --series gitadora --version 7 "$@"
+./read --series gitadora --version 8 "$@"
+./read --series gitadora --version 9 "$@"

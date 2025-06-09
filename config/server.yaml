@@ -87,6 +87,8 @@ support:
     reflec: True
     # SDVX frontend/backend enabled.
     sdvx: True
+    # Gitadora frontend/backend enabled
+    gitadora: True
 
 # Key used to encrypt cookies, should be unique per network instance.
 secret_key: 'this_is_a_secret_please_change_me'
