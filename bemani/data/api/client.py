@@ -54,15 +54,20 @@ class APIClient:
     def __repr__(self) -> str:
         # Specifically defined so that two different instances of the same API client
         # cache under the same key, as we want to share results from a given server
-        # to all local requests.
-        return (
+        # to all local requests. We also have to be sensitive to any control character
+        # limitations for memcached.
+        repr_val = (
             "APIClient("
-            + f"base_uri={self.base_uri!r}, "
-            + f"token={self.token!r}, "
-            + f"allow_stats={self.allow_stats!r}, "
+            + f"base_uri={self.base_uri!r},"
+            + f"token={self.token!r},"
+            + f"allow_stats={self.allow_stats!r},"
             + f"allow_scores={self.allow_scores!r}"
             + ")"
         )
+        repr_val = repr_val.replace(" ", "_")
+        repr_val = repr_val.replace("\r", "_")
+        repr_val = repr_val.replace("\n", "_")
+        return repr_val
 
     def _content_type_valid(self, content_type: str) -> bool:
         if ";" in content_type:
@@ -195,6 +200,7 @@ class APIClient:
                     VersionConstants.POPN_MUSIC_USANEKO: "24",
                     VersionConstants.POPN_MUSIC_PEACE: "25",
                     VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES: "26",
+                    VersionConstants.POPN_MUSIC_UNILAB: "27",
                 },
                 GameConstants.REFLEC_BEAT: {
                     VersionConstants.REFLEC_BEAT: "1",

@@ -17,7 +17,7 @@ server {
 
     location ^~ /static/ {
         include  /etc/nginx/mime.types;
-        root /path/to/your/virtualenv/lib/python3.6/site-packages/bemani/frontend/;
+        root /path/to/your/virtualenv/lib/python3.8/site-packages/bemani/frontend/;
     }
 
     location ^~ /jsx/ {

@@ -26,6 +26,9 @@ class FakeCursor:
         self.rowcount = len(rows)
         self.pos = -1
 
+    def mappings(self) -> "FakeCursor":
+        return self
+
     def fetchone(self) -> Dict[str, Any]:
         if len(self.__rows) != 1:
             raise Exception(f"Tried to fetch one row and there are {len(self.__rows)} rows!")

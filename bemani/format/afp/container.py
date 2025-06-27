@@ -1371,8 +1371,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     raise Exception("Cannot update texture with different size!")
 
                 # Now, get the raw image data, and let the TDXT container refresh the raw.
-                img = img.convert("RGBA")
-                texture.img = img
+                texture.img = img.convert("RGBA")
 
                 return
         else:

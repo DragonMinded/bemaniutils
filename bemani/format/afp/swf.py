@@ -377,12 +377,14 @@ class AP2PlaceObjectTag(Tag):
             "blend": self.blend,
             "update": self.update,
             "transform": self.transform.as_dict(*args, **kwargs) if self.transform is not None else None,
-            "rotation_origin": self.rotation_origin.as_dict(*args, **kwargs)
-            if self.rotation_origin is not None
-            else None,
-            "projection": "none"
-            if self.projection == self.PROJECTION_NONE
-            else ("affine" if self.projection == self.PROJECTION_AFFINE else "perspective"),
+            "rotation_origin": (
+                self.rotation_origin.as_dict(*args, **kwargs) if self.rotation_origin is not None else None
+            ),
+            "projection": (
+                "none"
+                if self.projection == self.PROJECTION_NONE
+                else ("affine" if self.projection == self.PROJECTION_AFFINE else "perspective")
+            ),
             "mult_color": self.mult_color.as_dict(*args, **kwargs) if self.mult_color is not None else None,
             "add_color": self.add_color.as_dict(*args, **kwargs) if self.add_color is not None else None,
             "hsl_shift": self.hsl_shift.as_dict(*args, **kwargs) if self.hsl_shift else None,

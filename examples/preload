@@ -5,7 +5,7 @@
 # warm the cache. Note that this isn't necessary if you are compiling
 # JSX files for static serving via nginx.
 
-cd /path/to/your/virtualenv/lib/python3.6/site-packages/bemani/frontend/static
+cd /path/to/your/virtualenv/lib/python3.8/site-packages/bemani/frontend/static
 for url in $(find -name "*.react.js" | sed 's,^\.,https://your-domain.com/jsx,'); do
     echo "Priming $url..."
     curl $url --silent -H 'Cache-Control: no-cache' > /dev/null

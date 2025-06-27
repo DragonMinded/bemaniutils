@@ -280,7 +280,7 @@ This should be given the same config file as "api", "frontend" and "services".
 Development version of an eAmusement protocol server using flask and the protocol
 libraries also used in "bemanishark" and "trafficgen". Currently it lets most modern
 BEMANI games boot and supports full scores, profile and events for Beatmania IIDX 20-26,
-Pop'n Music 19-26, Jubeat Saucer, Saucer Fulfill, Prop, Qubell, Clan and Festo, Sound
+Pop'n Music 19-27, Jubeat Saucer, Saucer Fulfill, Prop, Qubell, Clan and Festo, Sound
 Voltex 1, 2, 3 Season 1/2 and 4, Dance Dance Revolution X2, X3, 2013, 2014 and Ace,
 MÚSECA 1, MÚSECA 1+1/2, MÚSECA Plus, Reflec Beat, Limelight, Colette, groovin'!! Upper,
 Volzza 1 and Volzza 2, Metal Gear Arcade, and finally The\*BishiBashi. Note that it also
@@ -306,7 +306,7 @@ which has the paths set up for correct imports.
 A convenience utility for helping reverse-engineer structures out of game DLLs/EXEs.
 You can give this a physical DLL offset or a virtual memory address for the start and
 end of the data as well as a python struct format (documentation at
-https://docs.python.org/3.6/library/struct.html) and this will print the decoded
+https://docs.python.org/3.8/library/struct.html) and this will print the decoded
 data to the screen one entry per line. It includes several enhancements for decoding
 pointers to sub-structures and pointers to C strings. Note that much like "psmap", this
 has the ability to print out structures that are dynamically constructed at runtime by
@@ -328,7 +328,7 @@ this will run through and attempt to verify simple operation of that service. No
 guarantees are made on the accuracy of the emulation though I've strived to be
 correct. In some cases, I will verify the response, and in other cases I will
 simply verify that certain things exist so as not to crash a real client. This
-currently generates traffic emulating Beatmania IIDX 20-26, Pop'n Music 19-26, Jubeat
+currently generates traffic emulating Beatmania IIDX 20-26, Pop'n Music 19-27, Jubeat
 Saucer, Fulfill, Prop, Qubell, Clan and Festo, Sound Voltex 1, 2, 3 Season 1/2 and 4,
 Dance Dance Revolution X2, X3, 2013, 2014 and Ace, The\*BishiBashi, MÚSECA 1 and MÚSECA
 1+1/2, Reflec Beat, Reflec Beat Limelight, Reflec Beat Colette, groovin'!! Upper,
@@ -379,10 +379,10 @@ you aren't introducing any type errors into the codebase.
 
 ## Dependency Setup
 
-The code contained here assumes Python 3.6 as the base although it should work with
+The code contained here assumes Python 3.8 as the base although it should work with
 any newer version of python as well. If you don't have or don't want to install Python
-3.6 as your system python, it is recommended to use virtualenv to create a virtual
-environment. The rest of the installation will assume you have Python 3.6 working
+3.8 as your system python, it is recommended to use virtualenv to create a virtual
+environment. The rest of the installation will assume you have Python 3.8 working
 properly (and are in an activated virtual environment if this is the route you've
 chosen to go). If you have a newer version of python available this code should be
 compatible with that as well. This code is designed to run on Linux. However, it has
@@ -485,7 +485,7 @@ for how exactly to do that.
 ### Pop'n Music
 
 For Pop'n Music, get the game DLL from the version of the game you want to import and
-run a command like so. This network supports versions 19-26 so you will want to run this
+run a command like so. This network supports versions 19-27 so you will want to run this
 command once for every version, giving the correct DLL file. Note that there are several
 versions of each game floating around and the "read" script attempts to support as many
 as it can but you might encounter a version of the game which hasn't been mapped yet.
@@ -845,7 +845,7 @@ free certificate that you can manage easily. There are other ways to run this so
 and provide SSL credentials but I have no experience with or advice on them.
 
 The easiest way to get up and running is to install MySQL 5.7, nginx and uWSGI along
-with Python 3.6 or higher. Create a directory where the services will live and place
+with Python 3.8 or higher. Create a directory where the services will live and place
 a virtualenv inside it (outside the scope of this document). Then, the wsgi files found
 in `bemani/wsgi/` can be placed in the directory, uWSGI pointed at them and nginx set up.
 The setup for the top-level package will include all of the frontend templates, so you

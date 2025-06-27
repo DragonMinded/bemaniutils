@@ -71,8 +71,7 @@ class TestParallel(unittest.TestCase):
 
     def test_class(self) -> None:
         class Base(ABC):
-            def fun(self, x: int) -> int:
-                ...
+            def fun(self, x: int) -> int: ...
 
         class A(Base):
             def fun(self, x: int) -> int:

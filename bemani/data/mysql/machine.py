@@ -1,6 +1,6 @@
-from sqlalchemy import Table, Column, UniqueConstraint  # type: ignore
-from sqlalchemy.types import String, Integer, JSON  # type: ignore
-from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
+from sqlalchemy import Table, Column, UniqueConstraint
+from sqlalchemy.types import String, Integer, JSON
+from sqlalchemy.dialects.mysql import BIGINT as BigInteger
 from typing import Optional, Dict, List, Tuple, Any
 from typing_extensions import Final
 
@@ -102,7 +102,7 @@ class MachineData(BaseData):
             # Machine doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return result["pcbid"]
 
     def from_machine_id(self, machine_id: int) -> Optional[str]:
@@ -122,7 +122,7 @@ class MachineData(BaseData):
             # Machine doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return result["pcbid"]
 
     def from_userid(self, userid: UserID) -> List[ArcadeID]:
@@ -137,7 +137,7 @@ class MachineData(BaseData):
         """
         sql = "SELECT arcadeid FROM arcade_owner WHERE userid = :userid"
         cursor = self.execute(sql, {"userid": userid})
-        return [ArcadeID(result["arcadeid"]) for result in cursor]
+        return [ArcadeID(result["arcadeid"]) for result in cursor.mappings()]
 
     def from_session(self, session: str) -> Optional[ArcadeID]:
         """
@@ -173,7 +173,7 @@ class MachineData(BaseData):
             # Machine doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return Machine(
             result["id"],
             pcbid,
@@ -212,7 +212,7 @@ class MachineData(BaseData):
                 result["version"],
                 self.deserialize(result["data"]),
             )
-            for result in cursor
+            for result in cursor.mappings()
         ]
 
     def put_machine(self, machine: Machine) -> None:
@@ -279,7 +279,7 @@ class MachineData(BaseData):
                 port = None
             else:
                 # Grab highest port
-                result = cursor.fetchone()
+                result = cursor.mappings().fetchone()  # type: ignore
                 port = result["port"]
                 if port is not None:
                     port = port + 1
@@ -383,7 +383,7 @@ class MachineData(BaseData):
             # Arcade doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
 
         sql = "SELECT userid FROM arcade_owner WHERE arcadeid = :id"
         cursor = self.execute(sql, {"id": arcadeid})
@@ -396,7 +396,7 @@ class MachineData(BaseData):
             result["pref"],
             result["area"] or None,
             self.deserialize(result["data"]),
-            [owner["userid"] for owner in cursor],
+            [owner["userid"] for owner in cursor.mappings()],
         )
 
     def put_arcade(self, arcade: Arcade) -> None:
@@ -464,7 +464,7 @@ class MachineData(BaseData):
         sql = "SELECT userid, arcadeid FROM arcade_owner"
         cursor = self.execute(sql)
         arcade_to_owners: Dict[int, List[UserID]] = {}
-        for row in cursor:
+        for row in cursor.mappings():
             arcade = row["arcadeid"]
             owner = UserID(row["userid"])
             if arcade not in arcade_to_owners:
@@ -484,7 +484,7 @@ class MachineData(BaseData):
                 self.deserialize(result["data"]),
                 arcade_to_owners.get(result["id"], []),
             )
-            for result in cursor
+            for result in cursor.mappings()
         ]
 
     def get_settings(
@@ -512,7 +512,7 @@ class MachineData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return ValidatedDict(self.deserialize(result["data"]))
 
     def put_settings(
@@ -566,7 +566,7 @@ class MachineData(BaseData):
                 UserID(entry["userid"]),
                 entry["balance"],
             )
-            for entry in cursor
+            for entry in cursor.mappings()
         ]
 
     def create_session(self, arcadeid: ArcadeID, expiration: int = (30 * 86400)) -> str:

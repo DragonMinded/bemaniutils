@@ -11,6 +11,7 @@ declare -a arr=(
     "pnm-24"
     "pnm-25"
     "pnm-26"
+    "pnm-27"
     "iidx-20"
     "iidx-21"
     "iidx-22"

@@ -1,8 +1,8 @@
 import copy
 
-from sqlalchemy import Table, Column, UniqueConstraint  # type: ignore
-from sqlalchemy.types import String, Integer, JSON  # type: ignore
-from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
+from sqlalchemy import Table, Column, UniqueConstraint
+from sqlalchemy.types import String, Integer, JSON
+from sqlalchemy.dialects.mysql import BIGINT as BigInteger
 from typing import Optional, Dict, List, Tuple, Any
 
 from bemani.common import GameConstants, ValidatedDict, Time
@@ -82,7 +82,7 @@ class LobbyData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         data = ValidatedDict(self.deserialize(result["data"]))
         data["id"] = result["id"]
         data["time"] = result["time"]
@@ -119,7 +119,7 @@ class LobbyData(BaseData):
             data["time"] = result["time"]
             return data
 
-        return [(UserID(result["userid"]), format_result(result)) for result in cursor]
+        return [(UserID(result["userid"]), format_result(result)) for result in cursor.mappings()]
 
     def put_play_session_info(self, game: GameConstants, version: int, userid: UserID, data: Dict[str, Any]) -> None:
         """
@@ -214,7 +214,7 @@ class LobbyData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         data = ValidatedDict(self.deserialize(result["data"]))
         data["id"] = result["id"]
         data["time"] = result["time"]
@@ -252,7 +252,7 @@ class LobbyData(BaseData):
             data["time"] = result["time"]
             return data
 
-        return [(UserID(result["userid"]), format_result(result)) for result in cursor]
+        return [(UserID(result["userid"]), format_result(result)) for result in cursor.mappings()]
 
     def put_lobby(self, game: GameConstants, version: int, userid: UserID, data: Dict[str, Any]) -> None:
         """

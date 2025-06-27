@@ -167,7 +167,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             return None
 
         cache_key = f"get_scores_by_extid-{extid}"
-        score: Optional[List[Score]]
+        scores: Optional[List[Score]]
 
         if partition == 1:
             # We fetch all scores on the first partition and then divy up
@@ -176,9 +176,13 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
         else:
             # We will want to fetch the remaining scores that were in our
-            # cache.
-            scores = self.cache.get(cache_key)  # type: ignore
+            # cache. If the cache is empty, due to some error, or because
+            # we cached nothing below, then we will end up returning an
+            # empty list. This shouldn't happen, but guard against crashing
+            # if this returns None anyway.
+            scores = self.cache.get(cache_key) or []
 
+        rest: List[Score]
         if len(scores) < 50:
             # We simply return the whole amount for this, and cache nothing.
             rest = []
@@ -360,9 +364,9 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         normalindex = 2
         premiumindex = 1
         if normalemblems:
-            normalindex = random.sample(normalemblems, 1)[0]
+            normalindex = random.sample(list(normalemblems), 1)[0]
         if premiumemblems:
-            premiumindex = random.sample(premiumemblems, 1)[0]
+            premiumindex = random.sample(list(premiumemblems), 1)[0]
 
         return normalindex, premiumindex
 

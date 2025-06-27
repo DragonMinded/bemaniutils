@@ -1,6 +1,6 @@
-from sqlalchemy import Table, Column, UniqueConstraint  # type: ignore
-from sqlalchemy.types import String, Integer, JSON  # type: ignore
-from sqlalchemy.dialects.mysql import BIGINT as BigInteger  # type: ignore
+from sqlalchemy import Table, Column, UniqueConstraint
+from sqlalchemy.types import String, Integer, JSON
+from sqlalchemy.dialects.mysql import BIGINT as BigInteger
 from typing import Any, Dict, List, Optional
 
 from bemani.common import GameConstants, ValidatedDict, Time
@@ -96,7 +96,7 @@ class GameData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return ValidatedDict(self.deserialize(result["data"]))
 
     def put_settings(self, game: GameConstants, userid: UserID, settings: Dict[str, Any]) -> None:
@@ -158,7 +158,7 @@ class GameData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return ValidatedDict(self.deserialize(result["data"]))
 
     def get_achievements(self, game: GameConstants, userid: UserID) -> List[Achievement]:
@@ -182,7 +182,7 @@ class GameData(BaseData):
                 None,
                 self.deserialize(result["data"]),
             )
-            for result in cursor
+            for result in cursor.mappings()
         ]
 
     def put_achievement(
@@ -251,7 +251,7 @@ class GameData(BaseData):
             # setting doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         retval = ValidatedDict(self.deserialize(result["data"]))
         retval["start_time"] = result["start_time"]
         retval["end_time"] = result["end_time"]
@@ -288,7 +288,7 @@ class GameData(BaseData):
                     "end_time": result["end_time"],
                 }
             )
-            for result in cursor
+            for result in cursor.mappings()
         ]
 
     def put_time_sensitive_settings(
@@ -336,7 +336,7 @@ class GameData(BaseData):
                 "end_time": end_time,
             },
         )
-        for result in cursor:
+        for result in cursor.mappings():
             if result["start_time"] == start_time and result["end_time"] == end_time:
                 # This is just this event being updated, that's fine.
                 continue
@@ -387,7 +387,7 @@ class GameData(BaseData):
             # entry doesn't exist
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return ValidatedDict(self.deserialize(result["data"]))
 
     def get_items(self, game: GameConstants, version: int) -> List[Item]:
@@ -410,5 +410,5 @@ class GameData(BaseData):
                 result["id"],
                 self.deserialize(result["data"]),
             )
-            for result in cursor
+            for result in cursor.mappings()
         ]

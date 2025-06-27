@@ -46,7 +46,7 @@ def before_request() -> None:
             authtype = None
             authtoken = None
 
-        if authtype.lower() == "token":
+        if authtype is not None and authtoken is not None and authtype.lower() == "token":
             g.authorized = g.data.local.api.validate_client(authtoken)
 
 
@@ -270,6 +270,7 @@ def lookup(protoversion: str, requestgame: str, requestversion: str) -> Dict[str
                 "24": VersionConstants.POPN_MUSIC_USANEKO,
                 "25": VersionConstants.POPN_MUSIC_PEACE,
                 "26": VersionConstants.POPN_MUSIC_KAIMEI_RIDDLES,
+                "27": VersionConstants.POPN_MUSIC_UNILAB,
             },
             GameConstants.REFLEC_BEAT: {
                 "1": VersionConstants.REFLEC_BEAT,

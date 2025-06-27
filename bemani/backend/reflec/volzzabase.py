@@ -213,6 +213,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
                 self.version,
                 songid=songid,
             )
+            profiles.update({u: p for u, p in self.get_any_profiles([s[0] for s in allscores if s[0] not in profiles])})
 
             for ng in [
                 self.CHART_TYPE_BASIC,

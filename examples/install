@@ -10,8 +10,9 @@ pushd /path/to/git/checkout
 source /path/to/your/virtualenv/bin/activate
 
 # Install dependencies, install this library.
-pip install --upgrade pip
-pip install . -U --force-reinstall
+python3 -m pip install --upgrade pip wheel setuptools
+python3 -m pip install --upgrade -r requirements.txt
+python3 -m pip install --upgrade .
 
 # Copy the WSGI files over the old ones, recompile JSX.
 cp bemani/wsgi/*.wsgi /path/to/your/wsgi/files
@@ -24,3 +25,4 @@ deactivate
 popd
 
 sudo service uwsgi restart && ./preload
+echo "Done!"

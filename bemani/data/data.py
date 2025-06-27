@@ -2,13 +2,13 @@ import os
 
 import alembic.config
 from alembic.migration import MigrationContext
-from alembic.autogenerate import compare_metadata  # type: ignore
-from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.orm import scoped_session  # type: ignore
+from alembic.autogenerate import compare_metadata
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.sql import text  # type: ignore
-from sqlalchemy.exc import ProgrammingError  # type: ignore
+from sqlalchemy.engine import Engine
+from sqlalchemy.sql import text
+from sqlalchemy.exc import ProgrammingError
 
 from bemani.data.api.user import GlobalUserData
 from bemani.data.api.game import GlobalGameData
@@ -97,7 +97,6 @@ class Data:
         session_factory = sessionmaker(
             bind=config.database.engine,
             autoflush=True,
-            autocommit=True,
         )
         self.__config = config
         self.__session = scoped_session(session_factory)
@@ -136,7 +135,7 @@ class Data:
         # See if the DB was already created
         try:
             cursor = self.__session.execute(text("SELECT COUNT(version_num) AS count FROM alembic_version"))
-            return cursor.fetchone()["count"] == 1
+            return cursor.mappings().fetchone()["count"] == 1
         except ProgrammingError:
             return False
 
@@ -153,7 +152,7 @@ class Data:
         ]
         alembicArgs.extend(args)
         os.chdir(base_dir)
-        alembic.config.main(argv=alembicArgs)  # type: ignore
+        alembic.config.main(argv=alembicArgs)
 
     def create(self) -> None:
         """

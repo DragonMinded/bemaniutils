@@ -1,6 +1,6 @@
 import uuid
-from sqlalchemy import Table, Column  # type: ignore
-from sqlalchemy.types import String, Integer  # type: ignore
+from sqlalchemy import Table, Column
+from sqlalchemy.types import String, Integer
 from typing import Any, Dict, List, Optional
 
 from bemani.common import Time
@@ -55,7 +55,7 @@ class APIData(APIProviderInterface, BaseData):
                 result["name"],
                 result["token"],
             )
-            for result in cursor
+            for result in cursor.mappings()
         ]
 
     def validate_client(self, token: str) -> bool:
@@ -70,7 +70,7 @@ class APIData(APIProviderInterface, BaseData):
         """
         sql = "SELECT count(*) AS count FROM client WHERE token = :token"
         cursor = self.execute(sql, {"token": token})
-        return cursor.fetchone()["count"] == 1
+        return cursor.mappings().fetchone()["count"] == 1  # type: ignore
 
     def create_client(self, name: str) -> int:
         """
@@ -109,7 +109,7 @@ class APIData(APIProviderInterface, BaseData):
             # Couldn't find an entry with this ID
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         return Client(
             clientid,
             result["timestamp"],
@@ -159,7 +159,7 @@ class APIData(APIProviderInterface, BaseData):
 
         sql = "SELECT id, timestamp, uri, token, config FROM server ORDER BY timestamp ASC"
         cursor = self.execute(sql)
-        return [format_result(result) for result in cursor]
+        return [format_result(result) for result in cursor.mappings()]
 
     def create_server(self, uri: str, token: str) -> int:
         """
@@ -199,7 +199,7 @@ class APIData(APIProviderInterface, BaseData):
             # Couldn't find an entry with this ID
             return None
 
-        result = cursor.fetchone()
+        result = cursor.mappings().fetchone()  # type: ignore
         allow_stats = (result["config"] & 0x1) == 0
         allow_scores = (result["config"] & 0x2) == 0
         return Server(

@@ -42,7 +42,7 @@ class JubeatSaucer(
         if data.local.network.should_schedule(cls.game, cls.version, "fc_challenge", "daily"):
             # Generate a new list of two FC challenge songs.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version))
+            all_songs = list(set(song.id for song in data.local.music.get_all_songs(cls.game, cls.version)))
             if all_songs:
                 today_song = random.sample(all_songs, 1)[0]
                 data.local.game.put_time_sensitive_settings(

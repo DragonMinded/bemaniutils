@@ -95,10 +95,12 @@ class JubeatClan(
             # range, but it will be a different ID depending on the prefecture set in settings. This means its not safe to send
             # these song IDs, so we explicitly exclude them.
             start_time, end_time = data.local.network.get_schedule_duration("daily")
-            all_songs = set(
-                song.id
-                for song in data.local.music.get_all_songs(cls.game, cls.version)
-                if song.id not in cls.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS
+            all_songs = list(
+                set(
+                    song.id
+                    for song in data.local.music.get_all_songs(cls.game, cls.version)
+                    if song.id not in cls.FIVE_PLAYS_UNLOCK_EVENT_SONG_IDS
+                )
             )
             if len(all_songs) >= 2:
                 daily_songs = random.sample(all_songs, 2)

@@ -1,5 +1,6 @@
+setuptools
 Cython
-SQLAlchemy<2.0.0
+SQLAlchemy
 alembic
 PyYAML
 Flask
@@ -15,11 +16,10 @@ types-PyYAML
 types-Werkzeug
 types-Flask
 types-freezegun
-types-python-dateutil
-flake8==4.0.1
-typed-ast
+flake8
+typed-ast ; python_version < "3.13"
 freezegun
-pyreact
+pyreact @ git+https://github.com/DragonMinded/react-python@main
 Flask-Caching
 blinker
 pycryptodome
@@ -28,4 +28,4 @@ pefile
 pillow
 discord_webhook
 iced-x86
-pylibmc ; sys_platform != 'win32'
+python-memcached

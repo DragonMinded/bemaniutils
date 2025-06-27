@@ -72,7 +72,7 @@ class TrackedCoverage:
     def print_coverage(self, req_start: Optional[int] = None, req_end: Optional[int] = None) -> None:
         for start, offset in self.get_uncovered_chunks(req_start, req_end):
             print(
-                f"Uncovered: {hex(start)} - {hex(offset)} ({offset-start} bytes)",
+                f"Uncovered: {hex(start)} - {hex(offset)} ({offset - start} bytes)",
                 file=sys.stderr,
             )
 

@@ -335,12 +335,12 @@ class GlobalMusicData(BaseGlobalData):
             {
                 "rank": self.__max(oldscore.data["rank"], newscore.data["rank"]),
                 "halo": self.__max(oldscore.data["halo"], newscore.data["halo"]),
-                "ghost": oldscore.data.get("ghost")
-                if oldscore.points > newscore.points
-                else newscore.data.get("ghost"),
-                "trace": oldscore.data.get("trace")
-                if oldscore.points > newscore.points
-                else newscore.data.get("trace"),
+                "ghost": (
+                    oldscore.data.get("ghost") if oldscore.points > newscore.points else newscore.data.get("ghost")
+                ),
+                "trace": (
+                    oldscore.data.get("trace") if oldscore.points > newscore.points else newscore.data.get("trace")
+                ),
                 "combo": self.__max(oldscore.data["combo"], newscore.data["combo"]),
             },
         )
@@ -360,19 +360,23 @@ class GlobalMusicData(BaseGlobalData):
             oldscore.plays + newscore.plays,
             {
                 "clear_status": self.__max(oldscore.data["clear_status"], newscore.data["clear_status"]),
-                "ghost": oldscore.data.get("ghost")
-                if oldscore.points > newscore.points
-                else newscore.data.get("ghost"),
+                "ghost": (
+                    oldscore.data.get("ghost") if oldscore.points > newscore.points else newscore.data.get("ghost")
+                ),
                 "miss_count": self.__min(
                     oldscore.data.get_int("miss_count", -1),
                     newscore.data.get_int("miss_count", -1),
                 ),
-                "pgreats": oldscore.data.get_int("pgreats", -1)
-                if oldscore.points > newscore.points
-                else newscore.data.get_int("pgreats", -1),
-                "greats": oldscore.data.get_int("greats", -1)
-                if oldscore.points > newscore.points
-                else newscore.data.get_int("greats", -1),
+                "pgreats": (
+                    oldscore.data.get_int("pgreats", -1)
+                    if oldscore.points > newscore.points
+                    else newscore.data.get_int("pgreats", -1)
+                ),
+                "greats": (
+                    oldscore.data.get_int("greats", -1)
+                    if oldscore.points > newscore.points
+                    else newscore.data.get_int("greats", -1)
+                ),
             },
         )
 
@@ -392,9 +396,9 @@ class GlobalMusicData(BaseGlobalData):
             oldscore.location,  # Always propagate location from local setup if possible
             oldscore.plays + newscore.plays,
             {
-                "ghost": oldscore.data.get("ghost")
-                if oldscore.points > newscore.points
-                else newscore.data.get("ghost"),
+                "ghost": (
+                    oldscore.data.get("ghost") if oldscore.points > newscore.points else newscore.data.get("ghost")
+                ),
                 "combo": self.__max(oldscore.data["combo"], newscore.data["combo"]),
                 "medal": self.__max(oldscore.data["medal"], newscore.data["medal"]),
                 # Conditionally include this if we have any info for it.

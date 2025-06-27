@@ -20,9 +20,9 @@ class EAmuseProtocol:
     A wrapper object that encapsulates encoding/decoding the E-Amusement protocol by Konami.
     """
 
-    SHARED_SECRET: Final[
-        bytes
-    ] = b"\x69\xD7\x46\x27\xD9\x85\xEE\x21\x87\x16\x15\x70\xD0\x8D\x93\xB1\x24\x55\x03\x5B\x6D\xF0\xD8\x20\x5D\xF5"
+    SHARED_SECRET: Final[bytes] = (
+        b"\x69\xD7\x46\x27\xD9\x85\xEE\x21\x87\x16\x15\x70\xD0\x8D\x93\xB1\x24\x55\x03\x5B\x6D\xF0\xD8\x20\x5D\xF5"
+    )
 
     XML: Final[int] = 1
     BINARY: Final[int] = 2

@@ -10,7 +10,6 @@ from bemani.data import Data, Config, Score, Attempt, Link, Song, UserID, Remote
 
 
 class FrontendBase(ABC):
-
     """
     All subclasses should override this attribute with the string
     the game series uses in the DB.

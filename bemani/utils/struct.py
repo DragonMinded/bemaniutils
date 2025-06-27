@@ -181,9 +181,26 @@ class StructPrinter:
                             raise Exception("Cannot display string as hex!")
                         line.append(bs.decode(self.default_encoding))
                     else:
+                        # Trick python into supporting our "z" format if it has length numbers on it.
+                        nullTerminated = False
+                        if spec[-1] == "z":
+                            nullTerminated = True
+                            spec = spec[:-1] + "s"
+
                         size = struct.calcsize(prefix + spec)
                         chunk = self.pe.data[offset : (offset + size)]
-                        if spec != "x":
+
+                        if spec[-1] == "s":
+                            # Support length for s/z with proper decoding.
+                            if nullTerminated:
+                                # Null-terminated so we should remove any nulls.
+                                while chunk and chunk[-1:] == b"\x00":
+                                    chunk = chunk[:-1]
+
+                            if dohex:
+                                raise Exception("Cannot display string as hex!")
+                            line.append(chunk.decode(self.default_encoding))
+                        elif spec != "x":
                             if dohex:
                                 line.append(hex(struct.unpack(prefix + spec, chunk)[0]))
                             else:
@@ -228,7 +245,7 @@ Some examples of valid format specifiers and what they do are as follows:
 
 *(hbb) = Decodes an array of pointers to a structure containing a short and two bytes, decoding that short and both bytes for each entry in the array.
 
-*z = Decodes an array null-terminated string pointers.
+*z = Decodes an array of null-terminated string pointers.
 
 Ih&h = Decodes an array of structures containing an unsigned integer and two shorts, displaying the second short in hex instead of decimal.
 
@@ -281,10 +298,11 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
             "for details. Additionally, prefixing a format specifier with * allows dereferencing pointers. "
             "Surround a chunk of format specifiers with parenthesis to dereference structures. Note that "
             "structures can be arbitrarily nested to decode complex data types. For ease of unpacking C string "
-            'pointers, the specifier "z" is recognzied to mean null-terminated string. A & preceeding a '
-            "format specifier means that we should convert to hex before displaying. For the ease of decoding "
-            'enumerations, the specifier "#" is recognized to mean entry number. You can provide it an '
-            'offset value such as "+20#" to start at a certain number.'
+            'pointers, the specifier "z" is recognzied to mean null-terminated string. Much like the "s" specifier '
+            'the "z" specifier is allowed an integer prefix for inline length. Both "s" and "z" respect the '
+            "specified encoding. A & preceeding a format specifier means that we should convert to hex before "
+            'displaying. For the ease of decoding enumerations, the specifier "#" is recognized to mean entry '
+            'number. You can provide it an offset value such as "+20#" to start at a certain number.'
         ),
         type=str,
         default=None,
@@ -294,7 +312,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         "--emulate-code",
         help=(
             "Hex offset pair of addresses where we should emulate x86/x64 code to "
-            "reconstuct a dynamic psmap structure, separated by a colon. This can "
+            "reconstuct a dynamic memory structure, separated by a colon. This can "
             "be specified as either a raw offset into the DLL or as a virtual offset. "
             "If multiple sections must be emulated you can specify this multiple times."
         ),
@@ -306,7 +324,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
         "--emulate-function",
         help=(
             "Hex offset address of a function that we should emulate to reconstruct a "
-            "dynamic psmap structure. This can be specified as either a raw offset into "
+            "dynamic memory structure. This can be specified as either a raw offset into "
             "the DLL or as a virtual offset. If multiple functions must be emulated you "
             "can specify this multiple times."
         ),

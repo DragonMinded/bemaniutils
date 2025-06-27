@@ -47,7 +47,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
                     "category": "game_config",
                     "setting": "music_phase",
                     "values": {
-                        # The value goes to 30 now, but it starts where usaneko left off at 23
+                        # The value goes to 30 now, but it starts where peace left off at 23
                         # Unlocks a total of 10 songs
                         23: "No music unlocks",
                         24: "Phase 1",
@@ -149,7 +149,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
                     "category": "game_config",
                     "setting": "peace_soundtrack",
                     "values": {
-                        0: "Not stated",
+                        0: "Not started",
                         1: "Active",
                         2: "Ended",
                     },
@@ -160,7 +160,7 @@ class PopnMusicKaimei(PopnMusicModernBase):
                     "category": "game_config",
                     "setting": "tanteisha_joshu",
                     "values": {
-                        0: "Not stated",
+                        0: "Not started",
                         1: "Active",
                         2: "Ended",
                     },

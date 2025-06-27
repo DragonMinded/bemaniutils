@@ -21,6 +21,7 @@ class CardCipher:
     INTERNAL_CIPHER = DES3.new(DES_KEY, DES3.MODE_ECB)
 
     VALID_CHARS: Final[str] = "0123456789ABCDEFGHJKLMNPRSTUWXYZ"
+    REVERSE_CHARS: Final[Dict[str, int]] = {char: off for off, char in enumerate("0123456789ABCDEFGHJKLMNPRSTUWXYZ")}
     CONV_CHARS: Final[Dict[str, str]] = {
         "I": "1",
         "O": "0",
@@ -28,9 +29,9 @@ class CardCipher:
 
     @staticmethod
     def __type_from_cardid(cardid: str) -> int:
-        if cardid[:2].upper() == "E0":
+        if cardid[:4].upper() == "E004":
             return 1
-        if cardid[:2].upper() == "01":
+        if cardid[:1] == "0":
             return 2
         raise CardCipherException("Unrecognized card type")
 
@@ -123,10 +124,7 @@ class CardCipher:
         groups = [0] * 16
 
         for i in range(0, 16):
-            for j in range(0, 32):
-                if cardid[i] == CardCipher.VALID_CHARS[j]:
-                    groups[i] = j
-                    break
+            groups[i] = CardCipher.REVERSE_CHARS[cardid[i]]
 
         # Verify scheme and checksum
         if groups[14] != 1 and groups[14] != 2:

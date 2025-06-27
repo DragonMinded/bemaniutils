@@ -85,6 +85,10 @@ class PEFile:
     def __init__(self, data: bytes) -> None:
         self.data = data
         self.__pe = pefile.PE(data=data, fast_load=True)
+
+        # Mapping of ad-hoc virtual addresses, which get added to during runtime. For the purpose
+        # of our emulation, we just tack values to the end of the physical binary and add an ad-hoc
+        # mapping. The mapping is indexed by virtual address and points to a physical binary offset.
         self.__adhoc_mapping: Dict[int, int] = {}
 
     def virtual_to_physical(self, offset: int) -> int:
@@ -95,9 +99,8 @@ class PEFile:
             if offset >= start and offset < end:
                 return (offset - start) + section.PointerToRawData
 
-        for virtual, physical in self.__adhoc_mapping.items():
-            if offset == virtual:
-                return physical
+        if offset in self.__adhoc_mapping:
+            return self.__adhoc_mapping[offset]
 
         raise InvalidVirtualOffsetException(f"Couldn't find physical offset for virtual offset 0x{offset:08x}")
 
@@ -360,7 +363,7 @@ class PEFile:
 
                 vprint(f"pop {dest}")
 
-                size = get_size(src)
+                size = get_size(dest)
                 if size is None:
                     raise Exception(f"Could not determine size of {mnemonic} operation!")
                 result = fetch(registers, memory, size, "[rsp]" if self.is_64bit() else "[esp]")

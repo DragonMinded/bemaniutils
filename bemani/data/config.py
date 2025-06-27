@@ -1,6 +1,6 @@
 import copy
 import os
-from sqlalchemy.engine import Engine  # type: ignore
+from sqlalchemy.engine import Engine
 from typing import Any, Dict, Optional, Set
 
 from bemani.common import GameConstants, RegionConstants
