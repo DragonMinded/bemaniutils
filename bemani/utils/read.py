@@ -4520,8 +4520,9 @@ class ImportDDR(ImportBase):
         no_combine: bool,
         update: bool,
     ) -> None:
-        if version in ["12", "13", "14", "15", "16"]:
+        if version in ["10", "12", "13", "14", "15", "16"]:
             actual_version = {
+                "10": VersionConstants.DDR_SUPERNOVA_2,
                 "12": VersionConstants.DDR_X2,
                 "13": VersionConstants.DDR_X3_VS_2NDMIX,
                 "14": VersionConstants.DDR_2013,
@@ -4733,6 +4734,68 @@ class ImportDDR(ImportBase):
                     folder_start=15,
                 )
             )
+        elif self.version == VersionConstants.DDR_SUPERNOVA_2:
+            configurations.append(
+                DDRScrapeConfiguration(
+                    version="GDJ:J:A:A:2007100800",
+                    offset=0x1E7EA0,
+                    size=0x9c,
+                    length=359,
+                    unpackfmt=(
+                        "<xxxxxx" # name
+                        + "x" # kind
+                        + "x" # album
+                        + "xx" # dance num
+                        + "xx" # order
+                        + "xx" # main_track
+                        + "xx" # select_track
+                        + "xx" # unk
+                        + "xx" # unk
+                        + "xx" # verm_num
+                        + "xx" # pcseq_num
+                        + "xxxxxxxx" # hide
+                        + "xxxx" # adjust_mc
+                        + "xxxx" # field13
+                        + "H" # bpm_min 0
+                        + "H" # bpm_max 1
+                        + "I" # id 2
+                        + "B" # single difficult + basic 3
+                        + "B" # single challenge + expert 4
+                        + "B" # single beginner 5
+                        + "x" # padding
+                        + "B" # double difficult + basic 6
+                        + "B" # double challenge + expert 7
+                        + "xxxx" # idk
+                        + "xx" # idk
+                        + ("HHHHHHHHH" * 5)
+                        + "xxxxxx" # idk
+                    ),
+                    id_offset=2,
+                    edit_offset=2,
+                    bpm_min_offset=0,
+                    bpm_max_offset=1,
+                    folder_offset=6,
+                    single_difficulties=3,
+                    double_difficulties=6,
+                    # Groove gauge offsets
+                    groove_single_beginner=16,
+                    groove_single_basic=8,
+                    groove_single_difficult=9,
+                    groove_single_expert=10,
+                    groove_single_challenge=11,
+                    groove_double_basic=12,
+                    groove_double_difficult=13,
+                    groove_double_expert=14,
+                    groove_double_challenge=15,
+                    # Relative offsets for each groove gauge value
+                    voltage=0,
+                    stream=9,
+                    air=18,
+                    chaos=27,
+                    freeze=36,
+                    folder_start=10,
+                )
+            )
         else:
             raise CLIException("Unknown game version {self.version}!")
 
@@ -4752,106 +4815,209 @@ class ImportDDR(ImportBase):
                     if len(ssqcode) == 0:
                         continue
                     unpacked = struct.unpack(config.unpackfmt, chunk)
-                    songinfo = {
-                        "id": unpacked[config.id_offset],
-                        "edit_id": unpacked[config.edit_offset],
-                        "ssqcode": ssqcode,
-                        "difficulty": {
-                            "single": {
-                                "beginner": unpacked[config.single_difficulties + 0],
-                                "basic": unpacked[config.single_difficulties + 1],
-                                "difficult": unpacked[config.single_difficulties + 2],
-                                "expert": unpacked[config.single_difficulties + 3],
-                                "challenge": unpacked[config.single_difficulties + 4],
+
+                    if self.version == VersionConstants.DDR_SUPERNOVA_2:
+                        songinfo = {
+                            "id": unpacked[config.id_offset],
+                            "edit_id": unpacked[config.edit_offset],
+                            "ssqcode": ssqcode,
+                            "difficulty": {
+                                "single": {
+                                    "beginner": unpacked[config.single_difficulties + 2],
+                                    "basic": unpacked[config.single_difficulties] & 0xF,
+                                    "difficult": (unpacked[config.single_difficulties] & 0xF0) >> 4,
+                                    "expert": unpacked[config.single_difficulties + 1] & 0xF,
+                                    "challenge": (unpacked[config.single_difficulties + 1] & 0xF0) >> 4,
+                                },
+                                "double": {
+                                    "beginner": 0,
+                                    "basic": unpacked[config.double_difficulties] & 0xF,
+                                    "difficult": (unpacked[config.double_difficulties] & 0xF0) >> 4,
+                                    "expert": unpacked[config.double_difficulties + 1] & 0xF,
+                                    "challenge": (unpacked[config.double_difficulties + 1] & 0xF0) >> 4,
+                                }
                             },
-                            "double": {
-                                "beginner": unpacked[config.double_difficulties + 0],
-                                "basic": unpacked[config.double_difficulties + 1],
-                                "difficult": unpacked[config.double_difficulties + 2],
-                                "expert": unpacked[config.double_difficulties + 3],
-                                "challenge": unpacked[config.double_difficulties + 4],
-                            },
-                        },
-                        "groove_gauge": {
-                            "single": {
-                                "beginner": {
-                                    "voltage": unpacked[config.groove_single_beginner + config.voltage],
-                                    "stream": unpacked[config.groove_single_beginner + config.stream],
-                                    "air": unpacked[config.groove_single_beginner + config.air],
-                                    "chaos": unpacked[config.groove_single_beginner + config.chaos],
-                                    "freeze": unpacked[config.groove_single_beginner + config.freeze],
+                            "groove_gauge": {
+                                "single": {
+                                    "beginner": {
+                                        "voltage": unpacked[config.groove_single_beginner + config.voltage],
+                                        "stream": unpacked[config.groove_single_beginner + config.stream],
+                                        "air": unpacked[config.groove_single_beginner + config.air],
+                                        "chaos": unpacked[config.groove_single_beginner + config.chaos],
+                                        "freeze": unpacked[config.groove_single_beginner + config.freeze],
+                                    },
+                                    "basic": {
+                                        "voltage": unpacked[config.groove_single_basic + config.voltage],
+                                        "stream": unpacked[config.groove_single_basic + config.stream],
+                                        "air": unpacked[config.groove_single_basic + config.air],
+                                        "chaos": unpacked[config.groove_single_basic + config.chaos],
+                                        "freeze": unpacked[config.groove_single_basic + config.freeze],
+                                    },
+                                    "difficult": {
+                                        "voltage": unpacked[config.groove_single_difficult + config.voltage],
+                                        "stream": unpacked[config.groove_single_difficult + config.stream],
+                                        "air": unpacked[config.groove_single_difficult + config.air],
+                                        "chaos": unpacked[config.groove_single_difficult + config.chaos],
+                                        "freeze": unpacked[config.groove_single_difficult + config.freeze],
+                                    },
+                                    "expert": {
+                                        "voltage": unpacked[config.groove_single_expert + config.voltage],
+                                        "stream": unpacked[config.groove_single_expert + config.stream],
+                                        "air": unpacked[config.groove_single_expert + config.air],
+                                        "chaos": unpacked[config.groove_single_expert + config.chaos],
+                                        "freeze": unpacked[config.groove_single_expert + config.freeze],
+                                    },
+                                    "challenge": {
+                                        "voltage": unpacked[config.groove_single_challenge + config.voltage],
+                                        "stream": unpacked[config.groove_single_challenge + config.stream],
+                                        "air": unpacked[config.groove_single_challenge + config.air],
+                                        "chaos": unpacked[config.groove_single_challenge + config.chaos],
+                                        "freeze": unpacked[config.groove_single_challenge + config.freeze],
+                                    },
                                 },
-                                "basic": {
-                                    "voltage": unpacked[config.groove_single_basic + config.voltage],
-                                    "stream": unpacked[config.groove_single_basic + config.stream],
-                                    "air": unpacked[config.groove_single_basic + config.air],
-                                    "chaos": unpacked[config.groove_single_basic + config.chaos],
-                                    "freeze": unpacked[config.groove_single_basic + config.freeze],
-                                },
-                                "difficult": {
-                                    "voltage": unpacked[config.groove_single_difficult + config.voltage],
-                                    "stream": unpacked[config.groove_single_difficult + config.stream],
-                                    "air": unpacked[config.groove_single_difficult + config.air],
-                                    "chaos": unpacked[config.groove_single_difficult + config.chaos],
-                                    "freeze": unpacked[config.groove_single_difficult + config.freeze],
-                                },
-                                "expert": {
-                                    "voltage": unpacked[config.groove_single_expert + config.voltage],
-                                    "stream": unpacked[config.groove_single_expert + config.stream],
-                                    "air": unpacked[config.groove_single_expert + config.air],
-                                    "chaos": unpacked[config.groove_single_expert + config.chaos],
-                                    "freeze": unpacked[config.groove_single_expert + config.freeze],
-                                },
-                                "challenge": {
-                                    "voltage": unpacked[config.groove_single_challenge + config.voltage],
-                                    "stream": unpacked[config.groove_single_challenge + config.stream],
-                                    "air": unpacked[config.groove_single_challenge + config.air],
-                                    "chaos": unpacked[config.groove_single_challenge + config.chaos],
-                                    "freeze": unpacked[config.groove_single_challenge + config.freeze],
-                                },
-                            },
-                            "double": {
-                                "beginner": {
-                                    "voltage": 0,
-                                    "stream": 0,
-                                    "air": 0,
-                                    "chaos": 0,
-                                    "freeze": 0,
-                                },
-                                "basic": {
-                                    "voltage": unpacked[config.groove_double_basic + config.voltage],
-                                    "stream": unpacked[config.groove_double_basic + config.stream],
-                                    "air": unpacked[config.groove_double_basic + config.air],
-                                    "chaos": unpacked[config.groove_double_basic + config.chaos],
-                                    "freeze": unpacked[config.groove_double_basic + config.freeze],
-                                },
-                                "difficult": {
-                                    "voltage": unpacked[config.groove_double_difficult + config.voltage],
-                                    "stream": unpacked[config.groove_double_difficult + config.stream],
-                                    "air": unpacked[config.groove_double_difficult + config.air],
-                                    "chaos": unpacked[config.groove_double_difficult + config.chaos],
-                                    "freeze": unpacked[config.groove_double_difficult + config.freeze],
-                                },
-                                "expert": {
-                                    "voltage": unpacked[config.groove_double_expert + config.voltage],
-                                    "stream": unpacked[config.groove_double_expert + config.stream],
-                                    "air": unpacked[config.groove_double_expert + config.air],
-                                    "chaos": unpacked[config.groove_double_expert + config.chaos],
-                                    "freeze": unpacked[config.groove_double_expert + config.freeze],
-                                },
-                                "challenge": {
-                                    "voltage": unpacked[config.groove_double_challenge + config.voltage],
-                                    "stream": unpacked[config.groove_double_challenge + config.stream],
-                                    "air": unpacked[config.groove_double_challenge + config.air],
-                                    "chaos": unpacked[config.groove_double_challenge + config.chaos],
-                                    "freeze": unpacked[config.groove_double_challenge + config.freeze],
+                                "double": {
+                                    "beginner": {
+                                        "voltage": 0,
+                                        "stream": 0,
+                                        "air": 0,
+                                        "chaos": 0,
+                                        "freeze": 0,
+                                    },
+                                    "basic": {
+                                        "voltage": unpacked[config.groove_double_basic + config.voltage],
+                                        "stream": unpacked[config.groove_double_basic + config.stream],
+                                        "air": unpacked[config.groove_double_basic + config.air],
+                                        "chaos": unpacked[config.groove_double_basic + config.chaos],
+                                        "freeze": unpacked[config.groove_double_basic + config.freeze],
+                                    },
+                                    "difficult": {
+                                        "voltage": unpacked[config.groove_double_difficult + config.voltage],
+                                        "stream": unpacked[config.groove_double_difficult + config.stream],
+                                        "air": unpacked[config.groove_double_difficult + config.air],
+                                        "chaos": unpacked[config.groove_double_difficult + config.chaos],
+                                        "freeze": unpacked[config.groove_double_difficult + config.freeze],
+                                    },
+                                    "expert": {
+                                        "voltage": unpacked[config.groove_double_expert + config.voltage],
+                                        "stream": unpacked[config.groove_double_expert + config.stream],
+                                        "air": unpacked[config.groove_double_expert + config.air],
+                                        "chaos": unpacked[config.groove_double_expert + config.chaos],
+                                        "freeze": unpacked[config.groove_double_expert + config.freeze],
+                                    },
+                                    "challenge": {
+                                        "voltage": unpacked[config.groove_double_challenge + config.voltage],
+                                        "stream": unpacked[config.groove_double_challenge + config.stream],
+                                        "air": unpacked[config.groove_double_challenge + config.air],
+                                        "chaos": unpacked[config.groove_double_challenge + config.chaos],
+                                        "freeze": unpacked[config.groove_double_challenge + config.freeze],
+                                    },
                                 },
                             },
-                        },
-                        "bpm_min": unpacked[config.bpm_min_offset],
-                        "bpm_max": unpacked[config.bpm_max_offset],
-                        "folder": config.folder_start - chunk[config.folder_offset],
-                    }
+                            "folder": 10,
+                            "bpm_min": unpacked[config.bpm_min_offset],
+                            "bpm_max": unpacked[config.bpm_max_offset],
+                        }
+                    else:
+                        songinfo = {
+                            "id": unpacked[config.id_offset],
+                            "edit_id": unpacked[config.edit_offset],
+                            "ssqcode": ssqcode,
+                            "difficulty": {
+                                "single": {
+                                    "beginner": unpacked[config.single_difficulties + 0],
+                                    "basic": unpacked[config.single_difficulties + 1],
+                                    "difficult": unpacked[config.single_difficulties + 2],
+                                    "expert": unpacked[config.single_difficulties + 3],
+                                    "challenge": unpacked[config.single_difficulties + 4],
+                                },
+                                "double": {
+                                    "beginner": unpacked[config.double_difficulties + 0],
+                                    "basic": unpacked[config.double_difficulties + 1],
+                                    "difficult": unpacked[config.double_difficulties + 2],
+                                    "expert": unpacked[config.double_difficulties + 3],
+                                    "challenge": unpacked[config.double_difficulties + 4],
+                                },
+                            },
+                            "groove_gauge": {
+                                "single": {
+                                    "beginner": {
+                                        "voltage": unpacked[config.groove_single_beginner + config.voltage],
+                                        "stream": unpacked[config.groove_single_beginner + config.stream],
+                                        "air": unpacked[config.groove_single_beginner + config.air],
+                                        "chaos": unpacked[config.groove_single_beginner + config.chaos],
+                                        "freeze": unpacked[config.groove_single_beginner + config.freeze],
+                                    },
+                                    "basic": {
+                                        "voltage": unpacked[config.groove_single_basic + config.voltage],
+                                        "stream": unpacked[config.groove_single_basic + config.stream],
+                                        "air": unpacked[config.groove_single_basic + config.air],
+                                        "chaos": unpacked[config.groove_single_basic + config.chaos],
+                                        "freeze": unpacked[config.groove_single_basic + config.freeze],
+                                    },
+                                    "difficult": {
+                                        "voltage": unpacked[config.groove_single_difficult + config.voltage],
+                                        "stream": unpacked[config.groove_single_difficult + config.stream],
+                                        "air": unpacked[config.groove_single_difficult + config.air],
+                                        "chaos": unpacked[config.groove_single_difficult + config.chaos],
+                                        "freeze": unpacked[config.groove_single_difficult + config.freeze],
+                                    },
+                                    "expert": {
+                                        "voltage": unpacked[config.groove_single_expert + config.voltage],
+                                        "stream": unpacked[config.groove_single_expert + config.stream],
+                                        "air": unpacked[config.groove_single_expert + config.air],
+                                        "chaos": unpacked[config.groove_single_expert + config.chaos],
+                                        "freeze": unpacked[config.groove_single_expert + config.freeze],
+                                    },
+                                    "challenge": {
+                                        "voltage": unpacked[config.groove_single_challenge + config.voltage],
+                                        "stream": unpacked[config.groove_single_challenge + config.stream],
+                                        "air": unpacked[config.groove_single_challenge + config.air],
+                                        "chaos": unpacked[config.groove_single_challenge + config.chaos],
+                                        "freeze": unpacked[config.groove_single_challenge + config.freeze],
+                                    },
+                                },
+                                "double": {
+                                    "beginner": {
+                                        "voltage": 0,
+                                        "stream": 0,
+                                        "air": 0,
+                                        "chaos": 0,
+                                        "freeze": 0,
+                                    },
+                                    "basic": {
+                                        "voltage": unpacked[config.groove_double_basic + config.voltage],
+                                        "stream": unpacked[config.groove_double_basic + config.stream],
+                                        "air": unpacked[config.groove_double_basic + config.air],
+                                        "chaos": unpacked[config.groove_double_basic + config.chaos],
+                                        "freeze": unpacked[config.groove_double_basic + config.freeze],
+                                    },
+                                    "difficult": {
+                                        "voltage": unpacked[config.groove_double_difficult + config.voltage],
+                                        "stream": unpacked[config.groove_double_difficult + config.stream],
+                                        "air": unpacked[config.groove_double_difficult + config.air],
+                                        "chaos": unpacked[config.groove_double_difficult + config.chaos],
+                                        "freeze": unpacked[config.groove_double_difficult + config.freeze],
+                                    },
+                                    "expert": {
+                                        "voltage": unpacked[config.groove_double_expert + config.voltage],
+                                        "stream": unpacked[config.groove_double_expert + config.stream],
+                                        "air": unpacked[config.groove_double_expert + config.air],
+                                        "chaos": unpacked[config.groove_double_expert + config.chaos],
+                                        "freeze": unpacked[config.groove_double_expert + config.freeze],
+                                    },
+                                    "challenge": {
+                                        "voltage": unpacked[config.groove_double_challenge + config.voltage],
+                                        "stream": unpacked[config.groove_double_challenge + config.stream],
+                                        "air": unpacked[config.groove_double_challenge + config.air],
+                                        "chaos": unpacked[config.groove_double_challenge + config.chaos],
+                                        "freeze": unpacked[config.groove_double_challenge + config.freeze],
+                                    },
+                                },
+                            },
+                            "bpm_min": unpacked[config.bpm_min_offset],
+                            "bpm_max": unpacked[config.bpm_max_offset],
+                            "folder": config.folder_start - chunk[config.folder_offset],
+                        }
                     songs.append(songinfo)
 
                 # If we got here, that means we ran into no issues and didn't have to attempt another offset.
@@ -5004,6 +5170,75 @@ class ImportDDR(ImportBase):
             songs.append(songinfo)
 
         return songs
+
+    def scrape_title(self, infile: str, songs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        with open(infile, mode="rb") as myfile:
+            data = myfile.read()
+            myfile.close()
+
+        if self.version == VersionConstants.DDR_SUPERNOVA_2:
+            offset = 0x194654
+            size = 0x14
+            length = 0x3d3
+            relocation_offset = 0x380000
+
+            pack_format = (
+                    "<"
+                    + "I" # id 0
+                    + "I" # ssq code 1
+                    + "I" # title 2
+                    + "I" # short title 3
+                    + "xxxx" # alt title?
+            )
+        else:
+            raise CLIException(f"Unsupported version {self.version} for title scrape!")
+
+        def read_c_str(index: int) -> str:
+            bytestring = []
+            while data[index] != 0:
+                bytestring.append(data[index])
+                index = index + 1
+
+            return bytes(bytestring).decode("cp1252")
+
+        ssqc_map = {}
+
+        for i in range(length):
+            start = offset + (i * size)
+            end = offset + ((i + 1) * size)
+            chunk = data[start:end]
+
+            unpacked = struct.unpack(pack_format, chunk)
+
+            # Not all entries are valid
+            if unpacked[1] == 0 or unpacked[2] == 0:
+                continue
+
+            ssqc_index = unpacked[1] - relocation_offset
+            title_index = unpacked[2] - relocation_offset
+
+            ssqc = read_c_str(ssqc_index)
+            title = read_c_str(title_index)
+
+            ssqc_map[ssqc] = title
+
+        for idx, song in enumerate(songs):
+            ssq_code = song["ssqcode"]
+
+            if ssq_code == "sunk": # Korean version of SUNKiSS DROP? Has file reference but no title
+                ssq_code = "sunj"
+
+            song["title"] = ssqc_map.get(ssq_code)
+            # No artist data for DDR SN2
+            song["artist"] = None
+
+            if song["title"] is None:
+                raise CLIException(f"Missing title for ssqcode {song["ssqcode"]}!")
+
+            songs[idx] = song
+
+        return songs
+
 
     def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
         # Grab music info from remote server
@@ -6354,6 +6589,11 @@ def main() -> None:
                     raise CLIException("No startup.arc provided!")
                 # DDR Ace has a different format altogether
                 songs = ddr.parse_xml(args.bin)
+            if args.version == "10":
+                if args.bin is None:
+                    raise CLIException("No app.bin provided!")
+                songs = ddr.scrape(args.bin)
+                songs = ddr.scrape_title(args.bin, songs)
             else:
                 if args.bin is None:
                     raise CLIException("No game DLL provided!")
