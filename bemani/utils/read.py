@@ -4758,7 +4758,7 @@ class ImportDDR(ImportBase):
                         + "xxxx" # field13
                         + "H" # bpm_min 0
                         + "H" # bpm_max 1
-                        + "I" # id 2
+                        + "I" # edit id 2
                         + "B" # single difficult + basic 3
                         + "B" # single challenge + expert 4
                         + "B" # single beginner 5
@@ -4768,9 +4768,10 @@ class ImportDDR(ImportBase):
                         + "xxxx" # idk
                         + "xx" # idk
                         + ("HHHHHHHHH" * 5)
-                        + "xxxxxx" # idk
+                        + "xx"
+                        + "I" # song_id 53
                     ),
-                    id_offset=2,
+                    id_offset=53,
                     edit_offset=2,
                     bpm_min_offset=0,
                     bpm_max_offset=1,
