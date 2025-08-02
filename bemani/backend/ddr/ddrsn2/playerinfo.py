@@ -70,8 +70,7 @@ class PlayerInfo:
 
         idx = 0
 
-        # Empty option set is a non-zero opt array, unsure how to do this check with validated_dict cleanly?
-        if not profile.has_key("opt"):
+        if "opt" not in profile:
             profile.replace_int_array("opt", 16, [2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 0, 0, 0, 0])
 
         for entry in profile.get_int_array("opt", 16):

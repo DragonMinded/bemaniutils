@@ -444,12 +444,6 @@ class ValidatedDict(dict):
         else:
             self[name] = self[name] + 1
 
-    def has_key(self, name: str) -> bool:
-        if name in self:
-            return True
-
-        return False
-
 
 class Profile(ValidatedDict):
     """
