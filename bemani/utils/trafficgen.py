@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import yaml
 
 from bemani.client import ClientProtocol, BaseClient
+from bemani.client.ddr.ddrsn2 import DDRSN2Client
 from bemani.client.iidx import (
     IIDXTricoroClient,
     IIDXSpadaClient,
@@ -197,6 +198,12 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
         )
     if game == "bishi":
         return TheStarBishiBashiClient(
+            proto,
+            pcbid,
+            config,
+        )
+    if game == "ddr-sn2":
+        return DDRSN2Client(
             proto,
             pcbid,
             config,
@@ -453,6 +460,12 @@ def mainloop(
             "model": "IBB:A:A:A:2009092900",
             "avs": None,
         },
+        "ddr-sn2": {
+            "name": "DanceDanceRevolution SuperNova 2",
+            "model": "GDJ:J:A:A:200710080",
+            "old_profile_model": "GDJ:J:A:A",
+            "avs": None,
+        },
         "ddr-x2": {
             "name": "DanceDanceRevolution X2",
             "model": "JDX:J:A:A:2010111000",
@@ -653,6 +666,7 @@ def main() -> None:
         "jubeat-7": "jubeat-qubell",
         "jubeat-8": "jubeat-clan",
         "jubeat-9": "jubeat-festo",
+        "ddr-10": "ddr-sn2",
         "ddr-12": "ddr-x2",
         "ddr-13": "ddr-x3",
         "ddr-14": "ddr-2013",

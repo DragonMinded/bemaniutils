@@ -377,20 +377,6 @@ class EventInfo:
 
 
 class DDRSuperNova2(
-    DDRGameFriendHandler,
-    DDRGameLockHandler,
-    DDRGameLoadCourseHandler,
-    DDRGameLoadHandler,
-    DDRGameLogHandler,
-    DDRGameMessageHandler,
-    DDRGameOldHandler,
-    DDRGameNewHandler,
-    DDRGameRankingHandler,
-    DDRGameSaveCourseHandler,
-    DDRGameSaveHandler,
-    DDRGameScoreHandler,
-    DDRGameShopHandler,
-    DDRGameTraceHandler,
     DDRBase,
 ):
     name: str = "DanceDanceRevolution SuperNova 2"
@@ -504,157 +490,6 @@ class DDRSuperNova2(
         else:
             combo_type = self.HALO_NONE
         return combo_type
-
-    def handle_game_common_request(self, request: Node) -> Node:
-        game = Node.void("game")
-        for flagid in range(256):
-            flag = Node.void("flag")
-            game.add_child(flag)
-
-            flag.set_attribute("id", str(flagid))
-            flag.set_attribute("s2", "0")
-            flag.set_attribute("s1", "0")
-            flag.set_attribute("t", "0")
-
-        hit_chart = self.data.local.music.get_hit_chart(self.game, self.music_version, self.GAME_MAX_SONGS)
-        counts_by_reflink = [0] * self.GAME_MAX_SONGS
-        for reflink, plays in hit_chart:
-            if reflink >= 0 and reflink < self.GAME_MAX_SONGS:
-                counts_by_reflink[reflink] = plays
-        game.add_child(Node.u32_array("cnt_music", counts_by_reflink))
-
-        return game
-
-    def handle_game_hiscore_request(self, request: Node) -> Node:
-        # This is almost identical to X3 and above, except X3 added a 'code' field
-        # that isn't present here. In the interest of correctness, keep a separate
-        # implementation here.
-        records = self.data.remote.music.get_all_records(self.game, self.music_version)
-
-        sortedrecords: Dict[int, Dict[int, Tuple[UserID, Score]]] = {}
-        missing_profiles = []
-        for userid, score in records:
-            if score.id not in sortedrecords:
-                sortedrecords[score.id] = {}
-            sortedrecords[score.id][score.chart] = (userid, score)
-            missing_profiles.append(userid)
-        users = {userid: profile for (userid, profile) in self.get_any_profiles(missing_profiles)}
-
-        game = Node.void("game")
-        for song in sortedrecords:
-            music = Node.void("music")
-            game.add_child(music)
-            music.set_attribute("reclink_num", str(song))
-
-            for chart in sortedrecords[song]:
-                userid, score = sortedrecords[song][chart]
-                try:
-                    gamechart = self.db_to_game_chart(chart)
-                except KeyError:
-                    # Don't support this chart in this game
-                    continue
-                gamerank = self.db_to_game_rank(score.data.get_int("rank"))
-                combo_type = self.db_to_game_halo(score.data.get_int("halo"))
-
-                typenode = Node.void("type")
-                music.add_child(typenode)
-                typenode.set_attribute("diff", str(gamechart))
-
-                typenode.add_child(Node.string("name", users[userid].get_str("name")))
-                typenode.add_child(Node.u32("score", score.points))
-                typenode.add_child(Node.u16("area", users[userid].get_int("area", self.get_machine_region())))
-                typenode.add_child(Node.u8("rank", gamerank))
-                typenode.add_child(Node.u8("combo_type", combo_type))
-
-        return game
-
-    def handle_game_load_m_request(self, request: Node) -> Node:
-        extid = intish(request.attribute("code"))
-        refid = request.attribute("refid")
-
-        if extid is not None:
-            # Rival score loading
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
-        else:
-            # Self score loading
-            userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-
-        if userid is not None:
-            scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
-        else:
-            scores = []
-
-        sortedscores: Dict[int, Dict[int, Score]] = {}
-        for score in scores:
-            if score.id not in sortedscores:
-                sortedscores[score.id] = {}
-            sortedscores[score.id][score.chart] = score
-
-        game = Node.void("game")
-        for song in sortedscores:
-            music = Node.void("music")
-            game.add_child(music)
-            music.set_attribute("reclink", str(song))
-
-            for chart in sortedscores[song]:
-                score = sortedscores[song][chart]
-                try:
-                    gamechart = self.db_to_game_chart(chart)
-                except KeyError:
-                    # Don't support this chart in this game
-                    continue
-                gamerank = self.db_to_game_rank(score.data.get_int("rank"))
-                combo_type = self.db_to_game_halo(score.data.get_int("halo"))
-
-                typenode = Node.void("type")
-                music.add_child(typenode)
-                typenode.set_attribute("diff", str(gamechart))
-
-                typenode.add_child(Node.u32("score", score.points))
-                typenode.add_child(Node.u16("count", score.plays))
-                typenode.add_child(Node.u8("rank", gamerank))
-                typenode.add_child(Node.u8("combo_type", combo_type))
-
-        return game
-
-    def handle_game_save_m_request(self, request: Node) -> Node:
-        refid = request.attribute("refid")
-        songid = int(request.attribute("mid"))
-        chart = self.game_to_db_chart(int(request.attribute("mtype")))
-
-        # Calculate statistics
-        data = request.child("data")
-        points = int(data.attribute("score"))
-        combo = int(data.attribute("combo"))
-        rank = self.game_to_db_rank(int(data.attribute("rank")))
-        if int(data.attribute("full")) == 0:
-            halo = self.HALO_NONE
-        elif int(data.attribute("perf")) == 0:
-            halo = self.HALO_GREAT_FULL_COMBO
-        elif points < 1000000:
-            halo = self.HALO_PERFECT_FULL_COMBO
-        else:
-            halo = self.HALO_MARVELOUS_FULL_COMBO
-        trace = request.child_value("trace")
-
-        # Save the score, regardless of whether we have a refid. If we save
-        # an anonymous score, it only goes into the DB to count against the
-        # number of plays for that song/chart.
-        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
-        self.update_score(
-            userid,
-            songid,
-            chart,
-            points,
-            rank,
-            halo,
-            combo,
-            trace,
-        )
-
-        # No response needed
-        game = Node.void("game")
-        return game
 
     def format_profile_part(self, userid: UserID, profile: Profile, part: str) -> Node:
         root = Node.void("player")
@@ -906,4 +741,8 @@ class DDRSuperNova2(
 
     def handle_info_tenpo_request(self, request: Node) -> Node:
         root = Node.void("tenpo")
+        return root
+
+    def handle_info_ranking_request(self, request: Node) -> Node:
+        root = Node.void("ranking")
         return root
