@@ -179,22 +179,22 @@ class PlayerInfoStruct(Structure):
         ("last_mode", c_uint8),  # 0x13
         ("last_type", c_uint8),  # 0x14
         ("last_sort", c_uint8),  # 0x15
-        ("last_music", c_uint8),  # 0x16
-        ("_unused1", c_char * 6),  # 0x17 - 0x1b
+        ("last_music", c_uint16),  # 0x16
+        ("unused1", c_char * 5),  # 0x17 - 0x1b
         ("team", c_uint8),  # 0x1c
-        ("_unused2", c_char * 8),  # 0x1d - 0x24
+        ("unused2", c_char * 8),  # 0x1d - 0x24
         ("takeover", c_uint8),  # 0x25
         ("count_b", c_uint8),  # 0x26
-        ("_unused3", c_char * 2),  # 0x27 - 0x29
+        ("unused3", c_char * 2),  # 0x27 - 0x29
         ("groove_radar", c_uint16 * 5),  # 0x2a
         ("options", c_uint8 * 32),  # 0x34
         ("name", c_char * 14),  # 0x54
-        ("_unused4", c_char * 2),  # 0x62 - 0x63
+        ("unused4", c_char * 2),  # 0x62 - 0x63
         # Bit is set to 1 = already displayed, 0 = not yet displayed
         ("unlock_prompt_bits", c_uint8 * 12),  # 0x64 - 0x70
-        ("_unused5", c_char * 20),  # 0x70 - 0x83
+        ("unused5", c_char * 20),  # 0x70 - 0x83
         ("course", c_uint32 * 3),  # 0x84
-        ("_unused6", c_char * (0x1344 - 0x90)),
+        ("unused6", c_char * (0x1344 - 0x90)),
         ("battle_records", BattleRecordStruct * 5),  # 0x1344
     ]
 
@@ -745,4 +745,8 @@ class DDRSuperNova2(
 
     def handle_info_ranking_request(self, request: Node) -> Node:
         root = Node.void("ranking")
+        return root
+
+    def handle_info_score_request(self, request: Node) -> Node:
+        root = Node.void("score")
         return root
