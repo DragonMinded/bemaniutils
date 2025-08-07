@@ -28,7 +28,7 @@ from bemani.backend.ddr.common import (
     DDRGameShopHandler,
     DDRGameTraceHandler,
 )
-from bemani.common import VersionConstants, Profile, PlayStatistics, DBConstants, intish
+from bemani.common import VersionConstants, Profile, PlayStatistics, DBConstants, intish, Time
 from bemani.data import Score, UserID
 from bemani.protocol import Node
 
@@ -180,28 +180,31 @@ class PlayerInfoStruct(Structure):
         ("last_type", c_uint8),  # 0x14
         ("last_sort", c_uint8),  # 0x15
         ("last_music", c_uint16),  # 0x16
-        ("unused1", c_char * 5),  # 0x17 - 0x1b
-        ("team", c_uint8),  # 0x1c
-        ("unused2", c_char * 8),  # 0x1d - 0x24
-        ("takeover", c_uint8),  # 0x25
-        ("count_b", c_uint8),  # 0x26
-        ("unused3", c_char * 2),  # 0x27 - 0x29
-        ("groove_radar", c_uint16 * 5),  # 0x2a
-        ("options", c_uint8 * 32),  # 0x34
-        ("name", c_char * 14),  # 0x54
+        ("unused1", c_char * 5),  # 0x18 - 0x1c
+        ("team", c_uint8),  # 0x1d
+        ("unused2", c_uint8),  # 0x1e - 0x1f
+        ("show_calories", c_uint8),
+        ("calories", c_uint32), # 0x20
+        ("unused7", c_uint8 * 2), # 0x24 - 0x25
+        ("takeover", c_uint8),  # 0x26
+        ("count_b", c_uint8),  # 0x27
+        ("unused3", c_char * 2),  # 0x28 - 0x29
+        ("groove_radar", c_uint16 * 5),  # 0x2a - 0x33
+        ("options", c_uint8 * 32),  # 0x34 - 0x53
+        ("name", c_char * 14),  # 0x54 - 0x61
         ("unused4", c_char * 2),  # 0x62 - 0x63
         # Bit is set to 1 = already displayed, 0 = not yet displayed
-        ("unlock_prompt_bits", c_uint8 * 12),  # 0x64 - 0x70
+        ("unlock_prompt_bits", c_uint8 * 12),  # 0x64 - 0x6f
         ("unused5", c_char * 20),  # 0x70 - 0x83
-        ("course", c_uint32 * 3),  # 0x84
-        ("unused6", c_char * (0x1344 - 0x90)),
+        ("course", c_uint32 * 3),  # 0x84 - 0x8f
+        ("unused6", c_char * (0x1344 - 0x90)), # 0x90 - 0x1343
         ("battle_records", BattleRecordStruct * 5),  # 0x1344
     ]
 
 
 class PlayerInfo:
     @staticmethod
-    def create(play_stats: PlayStatistics, profile: Profile, machine_region: int) -> PlayerInfoStruct:
+    def create(play_stats: PlayStatistics, profile: Profile, total_calories: int, machine_region: int) -> PlayerInfoStruct:
         player = PlayerInfoStruct()
 
         player.count = play_stats.get_int("single_plays")
@@ -211,6 +214,8 @@ class PlayerInfo:
         player.id = profile.extid
         player.exp = play_stats.get_int("exp")
         player.weight = profile.get_int("weight")
+        player.show_calories = 1 if profile.get_bool("show_calories") else 0
+        player.calories = total_calories
 
         lastdict = profile.get_dict("last")
         player.last_cate = lastdict.get_int("cate")
@@ -223,6 +228,7 @@ class PlayerInfo:
 
         player.takeover = profile.get_int("takeover")
         player.count_b = play_stats.get_int("battle_plays")
+
 
         idx = 0
         for entry in profile.get_int_array("gr_s", 5):
@@ -500,9 +506,17 @@ class DDRSuperNova2(
 
         # Load scoring data
         scores = self.data.local.music.get_scores(self.game, self.version, userid)
+        workouts = self.data.local.user.get_time_based_achievements(
+            self.game,
+            self.version,
+            userid,
+            achievementtype="workout",
+            since=Time.now() - Time.SECONDS_IN_DAY,
+        )
+        total_calories = sum([w.data.get_int("calories") for w in workouts])
 
         if part == "0":
-            payload = bytearray(PlayerInfo.create(play_stats, profile, self.get_machine_region()))
+            payload = bytearray(PlayerInfo.create(play_stats, profile, total_calories, self.get_machine_region()))
             size = 6144
 
         elif part == "1":
@@ -587,6 +601,8 @@ class DDRSuperNova2(
         play_stats.increment_int(f"cnt_m{game.attribute('mode')}")
         play_stats.replace_int("exp", play_stats.get_int("exp") + intish(game.attribute("exp")))
 
+        # Always show for now
+        newprofile.replace_bool("show_calories", True)
         if game.attribute("weight"):
             newprofile.replace_int("weight", intish(game.attribute("weight")))
 
