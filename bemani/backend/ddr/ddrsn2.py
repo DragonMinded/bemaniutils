@@ -6,28 +6,12 @@ import logging
 import math
 
 from enum import IntEnum
-from typing import Dict, Optional, Tuple
+from typing import Optional
 from typing_extensions import Final
-from ctypes import *
+from ctypes import Structure, c_int8, c_int16, c_uint8, c_uint16, c_uint32, c_char
 
 from bemani.backend.ddr.base import DDRBase
 from bemani.backend.ddr.stubs import DDRSuperNova
-from bemani.backend.ddr.common import (
-    DDRGameFriendHandler,
-    DDRGameLockHandler,
-    DDRGameLoadCourseHandler,
-    DDRGameLoadHandler,
-    DDRGameLogHandler,
-    DDRGameMessageHandler,
-    DDRGameNewHandler,
-    DDRGameOldHandler,
-    DDRGameRankingHandler,
-    DDRGameSaveCourseHandler,
-    DDRGameSaveHandler,
-    DDRGameScoreHandler,
-    DDRGameShopHandler,
-    DDRGameTraceHandler,
-)
 from bemani.common import VersionConstants, Profile, PlayStatistics, DBConstants, intish, Time
 from bemani.data import Score, UserID
 from bemani.protocol import Node
@@ -655,7 +639,7 @@ class DDRSuperNova2(
                 perf = intish(child.attribute("perf"))
                 rank = intish(child.attribute("rank"))
                 score = intish(child.attribute("score"))
-            except:
+            except ValueError:
                 continue
 
             self.update_score(

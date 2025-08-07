@@ -316,7 +316,7 @@ class DDRSN2Client(BaseClient):
             # Verify empty profile
             (player_info, scores1, scores2) = self.verify_player_get(ref_id)
             if player_info is None:
-                raise Exception(f"Player info should not be None")
+                raise Exception("Player info should not be None")
             if player_info.name.decode("euc-jp").strip() != self.NAME:
                 raise Exception(f"Player info name should be {self.NAME} not {player_info.name}")
             if player_info.count != 0:
@@ -363,7 +363,7 @@ class DDRSN2Client(BaseClient):
 
             (player_info, scores1, scores2) = self.verify_player_get(ref_id)
             if player_info is None:
-                raise Exception(f"Player info should not be None")
+                raise Exception("Player info should not be None")
             if player_info.name.decode("euc-jp").strip() != self.NAME:
                 raise Exception(f"Player info name should be {self.NAME} not {player_info.name}")
             if player_info.count != 1:
