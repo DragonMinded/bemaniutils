@@ -4739,37 +4739,37 @@ class ImportDDR(ImportBase):
                 DDRScrapeConfiguration(
                     version="GDJ:J:A:A:2007100800",
                     offset=0x1E7EA0,
-                    size=0x9c,
+                    size=0x9C,
                     length=359,
                     unpackfmt=(
-                        "<xxxxxx" # name
-                        + "x" # kind
-                        + "x" # album
-                        + "xx" # dance num
-                        + "xx" # order
-                        + "xx" # main_track
-                        + "xx" # select_track
-                        + "xx" # unk
-                        + "xx" # unk
-                        + "xx" # verm_num
-                        + "xx" # pcseq_num
-                        + "xxxxxxxx" # hide
-                        + "xxxx" # adjust_mc
-                        + "xxxx" # field13
-                        + "H" # bpm_min 0
-                        + "H" # bpm_max 1
-                        + "I" # edit id 2
-                        + "B" # single difficult + basic 3
-                        + "B" # single challenge + expert 4
-                        + "B" # single beginner 5
-                        + "x" # padding
-                        + "B" # double difficult + basic 6
-                        + "B" # double challenge + expert 7
-                        + "xxxx" # idk
-                        + "xx" # idk
+                        "<xxxxxx"  # name
+                        + "x"  # kind
+                        + "x"  # album
+                        + "xx"  # dance num
+                        + "xx"  # order
+                        + "xx"  # main_track
+                        + "xx"  # select_track
+                        + "xx"  # unk
+                        + "xx"  # unk
+                        + "xx"  # verm_num
+                        + "xx"  # pcseq_num
+                        + "xxxxxxxx"  # hide
+                        + "xxxx"  # adjust_mc
+                        + "xxxx"  # field13
+                        + "H"  # bpm_min 0
+                        + "H"  # bpm_max 1
+                        + "I"  # edit id 2
+                        + "B"  # single difficult + basic 3
+                        + "B"  # single challenge + expert 4
+                        + "B"  # single beginner 5
+                        + "x"  # padding
+                        + "B"  # double difficult + basic 6
+                        + "B"  # double challenge + expert 7
+                        + "xxxx"  # idk
+                        + "xx"  # idk
                         + ("HHHHHHHHH" * 5)
                         + "xx"
-                        + "I" # song_id 53
+                        + "I"  # song_id 53
                     ),
                     id_offset=53,
                     edit_offset=2,
@@ -4836,7 +4836,7 @@ class ImportDDR(ImportBase):
                                     "difficult": (unpacked[config.double_difficulties] & 0xF0) >> 4,
                                     "expert": unpacked[config.double_difficulties + 1] & 0xF,
                                     "challenge": (unpacked[config.double_difficulties + 1] & 0xF0) >> 4,
-                                }
+                                },
                             },
                             "groove_gauge": {
                                 "single": {
@@ -5180,16 +5180,11 @@ class ImportDDR(ImportBase):
         if self.version == VersionConstants.DDR_SUPERNOVA_2:
             offset = 0x194654
             size = 0x14
-            length = 0x3d3
+            length = 0x3D3
             relocation_offset = 0x380000
 
             pack_format = (
-                    "<"
-                    + "I" # id 0
-                    + "I" # ssq code 1
-                    + "I" # title 2
-                    + "I" # short title 3
-                    + "xxxx" # alt title?
+                "<" + "I" + "I" + "I" + "I" + "xxxx"  # id 0  # ssq code 1  # title 2  # short title 3  # alt title?
             )
         else:
             raise CLIException(f"Unsupported version {self.version} for title scrape!")
@@ -5226,7 +5221,7 @@ class ImportDDR(ImportBase):
         for idx, song in enumerate(songs):
             ssq_code = song["ssqcode"]
 
-            if ssq_code == "sunk": # Korean version of SUNKiSS DROP? Has file reference but no title
+            if ssq_code == "sunk":  # Korean version of SUNKiSS DROP? Has file reference but no title
                 ssq_code = "sunj"
 
             song["title"] = ssqc_map.get(ssq_code)
@@ -5239,7 +5234,6 @@ class ImportDDR(ImportBase):
             songs[idx] = song
 
         return songs
-
 
     def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
         # Grab music info from remote server

@@ -6,8 +6,11 @@ from bemani.backend.ddr.ddrsn2 import PlayerInfoStruct, ScoreInfoStruct
 from bemani.client import BaseClient
 from bemani.protocol import Node
 
+
 class DDRSN2MusicRecord:
-    def __init__(self, combo_length: int, full_combo: bool, song_id: int, mode: int, perfect_combo: bool, rank: int, score: int) -> None:
+    def __init__(
+        self, combo_length: int, full_combo: bool, song_id: int, mode: int, perfect_combo: bool, rank: int, score: int
+    ) -> None:
         self.combo_length = combo_length
         self.full_combo = full_combo
         self.song_id = song_id
@@ -28,8 +31,23 @@ class DDRSN2MusicRecord:
 
         return music
 
+
 class DDRSN2GameRecord:
-    def __init__(self, calories: int, exp: int, gr1: int, gr2: int, gr3: int, gr4: int, gr5: int, mode: int, music: int, sort: int, type: int, weight: int):
+    def __init__(
+        self,
+        calories: int,
+        exp: int,
+        gr1: int,
+        gr2: int,
+        gr3: int,
+        gr4: int,
+        gr5: int,
+        mode: int,
+        music: int,
+        sort: int,
+        type: int,
+        weight: int,
+    ):
         self.calories = calories
         self.exp = exp
         self.gr1 = gr1
@@ -66,39 +84,38 @@ class DDRSN2GameRecord:
         return game
 
 
-
 class DDRSN2Client(BaseClient):
     NAME = "TEST"
 
     def verify_info_tenpo(self):
         call = self.call_node()
-        info = Node.void('info')
+        info = Node.void("info")
         call.add_child(info)
-        info.set_attribute('area', '0')
-        info.set_attribute('coin', '02.01.--.--.01.')
-        info.set_attribute('diff', '3')
-        info.set_attribute('during', '1')
-        info.set_attribute('first', '1')
-        info.set_attribute('ip', '192.0.2.100')
-        info.set_attribute('lancher', '2.4.1:20070608-0')
-        info.set_attribute('loc', 'US-1')
-        info.set_attribute('mac', '00:00:00:00:00:00')
-        info.set_attribute('method', 'tenpo')
-        info.set_attribute('name', '.')
-        info.set_attribute('netid', '014014000001030405D8')
-        info.set_attribute('pcbid', self.pcbid)
-        info.set_attribute('region', '')
-        info.set_attribute('shop', '００Ｍｉ')
-        info.set_attribute('soft', self.config["model"])
-        info.set_attribute('stage', '3')
-        info.set_attribute('ver', '1')
+        info.set_attribute("area", "0")
+        info.set_attribute("coin", "02.01.--.--.01.")
+        info.set_attribute("diff", "3")
+        info.set_attribute("during", "1")
+        info.set_attribute("first", "1")
+        info.set_attribute("ip", "192.0.2.100")
+        info.set_attribute("lancher", "2.4.1:20070608-0")
+        info.set_attribute("loc", "US-1")
+        info.set_attribute("mac", "00:00:00:00:00:00")
+        info.set_attribute("method", "tenpo")
+        info.set_attribute("name", ".")
+        info.set_attribute("netid", "014014000001030405D8")
+        info.set_attribute("pcbid", self.pcbid)
+        info.set_attribute("region", "")
+        info.set_attribute("shop", "００Ｍｉ")
+        info.set_attribute("soft", self.config["model"])
+        info.set_attribute("stage", "3")
+        info.set_attribute("ver", "1")
 
         resp = self.exchange("core/info", call)
         self.assert_path(resp, "response/tenpo/@status")
 
     def verify_info_message(self):
         call = self.call_node()
-        info = Node.void('info')
+        info = Node.void("info")
         call.add_child(info)
         info.set_attribute("method", "message")
         info.set_attribute("ver", "1")
@@ -109,7 +126,7 @@ class DDRSN2Client(BaseClient):
 
     def verify_info_ranking(self):
         call = self.call_node()
-        info = Node.void('info')
+        info = Node.void("info")
         call.add_child(info)
         info.set_attribute("method", "ranking")
         info.set_attribute("ver", "1")
@@ -119,7 +136,7 @@ class DDRSN2Client(BaseClient):
 
     def verify_player_common(self):
         call = self.call_node()
-        player = Node.void('player')
+        player = Node.void("player")
         call.add_child(player)
         player.set_attribute("event", "1")
         player.set_attribute("method", "common")
@@ -132,14 +149,14 @@ class DDRSN2Client(BaseClient):
 
     def verify_player_new(self, ref_id: str) -> None:
         call = self.call_node()
-        player = Node.void('player')
+        player = Node.void("player")
         call.add_child(player)
-        player.set_attribute('area', '11')
-        player.set_attribute('method', 'new')
-        player.set_attribute('name', f'{self.NAME}&#32;&#32;&#32;&#32;')
-        player.set_attribute('pcbid', self.pcbid)
-        player.set_attribute('ref_id', ref_id)
-        player.set_attribute('ver', '1')
+        player.set_attribute("area", "11")
+        player.set_attribute("method", "new")
+        player.set_attribute("name", f"{self.NAME}&#32;&#32;&#32;&#32;")
+        player.set_attribute("pcbid", self.pcbid)
+        player.set_attribute("ref_id", ref_id)
+        player.set_attribute("ver", "1")
 
         resp = self.exchange("core/player", call)
         self.assert_path(resp, "response/player/@status")
@@ -147,25 +164,25 @@ class DDRSN2Client(BaseClient):
 
     def verify_player_get(self, ref_id: str) -> (PlayerInfoStruct, ScoreInfoStruct, ScoreInfoStruct):
         call = self.call_node()
-        player = Node.void('player')
+        player = Node.void("player")
         call.add_child(player)
-        player.set_attribute('method', 'get')
-        player.set_attribute('part', '0')
-        player.set_attribute('ref_id', ref_id)
-        player.set_attribute('ver', '1')
+        player.set_attribute("method", "get")
+        player.set_attribute("part", "0")
+        player.set_attribute("ref_id", ref_id)
+        player.set_attribute("ver", "1")
 
         resp = self.exchange("core/player", call)
         self.assert_path(resp, "response/player/@md5c")
         self.assert_path(resp, "response/player/b")
         chunk0 = base64.b64decode(resp.child_value("player/b"))
 
-        player.set_attribute('part', '1')
+        player.set_attribute("part", "1")
         resp = self.exchange("core/player", call)
         self.assert_path(resp, "response/player/@md5c")
         self.assert_path(resp, "response/player/b")
         chunk1 = base64.b64decode(resp.child_value("player/b"))
 
-        player.set_attribute('part', '2')
+        player.set_attribute("part", "2")
         resp = self.exchange("core/player", call)
         self.assert_path(resp, "response/player/@md5c")
         self.assert_path(resp, "response/player/b")
@@ -179,24 +196,26 @@ class DDRSN2Client(BaseClient):
 
     def verify_player_touch(self):
         call = self.call_node()
-        player = Node.void('player')
+        player = Node.void("player")
         call.add_child(player)
-        player.set_attribute('err', '0')
-        player.set_attribute('method', 'touch')
-        player.set_attribute('mode', '2')
-        player.set_attribute('pcbid', self.pcbid)
-        player.set_attribute('style', '0')
-        player.set_attribute('type', '1')
-        player.set_attribute('ver', '1')
+        player.set_attribute("err", "0")
+        player.set_attribute("method", "touch")
+        player.set_attribute("mode", "2")
+        player.set_attribute("pcbid", self.pcbid)
+        player.set_attribute("style", "0")
+        player.set_attribute("type", "1")
+        player.set_attribute("ver", "1")
 
         resp = self.exchange("core/player", call)
         self.assert_path(resp, "response/player/@status")
 
-    def verify_player_set(self, ref_id: str, music_records: List[DDRSN2MusicRecord], game_record: DDRSN2GameRecord) -> None:
+    def verify_player_set(
+        self, ref_id: str, music_records: List[DDRSN2MusicRecord], game_record: DDRSN2GameRecord
+    ) -> None:
         call = self.call_node()
-        player = Node.void('player')
+        player = Node.void("player")
         call.add_child(player)
-        player.set_attribute('method', 'set')
+        player.set_attribute("method", "set")
         player.set_attribute("pcbid", self.pcbid)
         player.set_attribute("ref_id", ref_id)
         player.set_attribute("ver", "1")
@@ -206,7 +225,7 @@ class DDRSN2Client(BaseClient):
 
         player.add_child(game_record.to_node())
 
-        opt = Node.void('opt')
+        opt = Node.void("opt")
         player.add_child(opt)
         opt.set_attribute("opt1", "3")
         opt.set_attribute("opt2", "0")
@@ -225,7 +244,7 @@ class DDRSN2Client(BaseClient):
         opt.set_attribute("opt15", "0")
         opt.set_attribute("opt16", "0")
 
-        flag = Node.void('flag')
+        flag = Node.void("flag")
         player.add_child(flag)
         flag.set_attribute("off", "48")
 
@@ -252,7 +271,7 @@ class DDRSN2Client(BaseClient):
                 "posevent",
                 "local2",
                 "ntp",
-                "keepalive"
+                "keepalive",
             ]
         )
 
@@ -331,11 +350,12 @@ class DDRSN2Client(BaseClient):
                 if s.challenge.score != 0 or s.challenge.lo_score != 0:
                     raise Exception("Player info has scores already!")
 
-
             # Write scores and verify saving
-            music_records = [DDRSN2MusicRecord(78, False, 316, 2, False, 3, 751030),
-                             DDRSN2MusicRecord(34, False, 305, 2, False, 4, 625140),
-                             DDRSN2MusicRecord(64, False, 2, 2, False, 4, 716040)]
+            music_records = [
+                DDRSN2MusicRecord(78, False, 316, 2, False, 3, 751030),
+                DDRSN2MusicRecord(34, False, 305, 2, False, 4, 625140),
+                DDRSN2MusicRecord(64, False, 2, 2, False, 4, 716040),
+            ]
 
             game_record = DDRSN2GameRecord(32837, 56, 2583, 1012, 680, 239, 181, 2, 2, 1, 2, 333)
 
@@ -362,7 +382,11 @@ class DDRSN2Client(BaseClient):
                 raise Exception("Player info has unexpected groove radar!")
 
             # Verify score set
-            if scores2.records[116].difficult.score == 0 or scores2.records[105].difficult.score == 0 or scores1.records[2].difficult.score == 0:
+            if (
+                scores2.records[116].difficult.score == 0
+                or scores2.records[105].difficult.score == 0
+                or scores1.records[2].difficult.score == 0
+            ):
                 raise Exception("Player info has unexpected scores!")
 
             # Verify other scores unset
@@ -409,7 +433,3 @@ class DDRSN2Client(BaseClient):
         else:
             self.verify_eacoin_consume(sessid, balance, random.randint(0, balance))
         self.verify_eacoin_checkout(sessid)
-
-
-
-

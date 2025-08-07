@@ -184,8 +184,8 @@ class PlayerInfoStruct(Structure):
         ("team", c_uint8),  # 0x1d
         ("unused2", c_uint8),  # 0x1e - 0x1f
         ("show_calories", c_uint8),
-        ("calories", c_uint32), # 0x20
-        ("unused7", c_uint8 * 2), # 0x24 - 0x25
+        ("calories", c_uint32),  # 0x20
+        ("unused7", c_uint8 * 2),  # 0x24 - 0x25
         ("takeover", c_uint8),  # 0x26
         ("count_b", c_uint8),  # 0x27
         ("unused3", c_char * 2),  # 0x28 - 0x29
@@ -197,14 +197,16 @@ class PlayerInfoStruct(Structure):
         ("unlock_prompt_bits", c_uint8 * 12),  # 0x64 - 0x6f
         ("unused5", c_char * 20),  # 0x70 - 0x83
         ("course", c_uint32 * 3),  # 0x84 - 0x8f
-        ("unused6", c_char * (0x1344 - 0x90)), # 0x90 - 0x1343
+        ("unused6", c_char * (0x1344 - 0x90)),  # 0x90 - 0x1343
         ("battle_records", BattleRecordStruct * 5),  # 0x1344
     ]
 
 
 class PlayerInfo:
     @staticmethod
-    def create(play_stats: PlayStatistics, profile: Profile, total_calories: int, machine_region: int) -> PlayerInfoStruct:
+    def create(
+        play_stats: PlayStatistics, profile: Profile, total_calories: int, machine_region: int
+    ) -> PlayerInfoStruct:
         player = PlayerInfoStruct()
 
         player.count = play_stats.get_int("single_plays")
@@ -228,7 +230,6 @@ class PlayerInfo:
 
         player.takeover = profile.get_int("takeover")
         player.count_b = play_stats.get_int("battle_plays")
-
 
         idx = 0
         for entry in profile.get_int_array("gr_s", 5):
