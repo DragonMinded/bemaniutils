@@ -47,6 +47,7 @@ def register_blueprints() -> None:
         app.register_blueprint(reflec_pages)
     if GameConstants.MUSECA in config.support:
         app.register_blueprint(museca_pages)
+    # TODO: DanEvo frontend here.
 
 
 def register_games() -> None:

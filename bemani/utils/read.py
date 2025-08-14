@@ -6106,28 +6106,46 @@ class ImportDanceEvolution(ImportBase):
         for i in range(numsongs):
             offset = (i * 128) + 16
 
-            songcode = get_string(offset + 0)  # noqa: F841
+            songcode = get_string(offset + 0)
             songres1 = get_string(offset + 4)  # noqa: F841
             songres2 = get_string(offset + 8)  # noqa: F841
             bpm_min = get_int(offset + 12)
             bpm_max = get_int(offset + 16)
+
+            # Unknown 4 byte value at offset 20.
+
             copyright = get_string(offset + 24, "")
+
+            # Unknown 4 byte value at offset 28, 36, 40, 44, 48.
+
             title = get_string(offset + 52, "Unknown song")
             artist = get_string(offset + 56, "Unknown artist")
+
+            # Unknown 4 byte value at offset 60.
+
             level = get_int(offset + 64)
+
+            # Unknown 4 byte value at offset 68.
+
             charares1 = get_string(offset + 72)  # noqa: F841
             charares2 = get_string(offset + 76)  # noqa: F841
+
+            # Unknown 4 byte values at offset 80, 84, 88, 92, 96, 100, 104.
+
             kana_sort = get_string(offset + 108)
 
-            flag1 = data[offset + 33] != 0x00  # noqa: F841
-            flag2 = data[offset + 34] == 0x01  # noqa: F841
-            flag3 = data[offset + 34] == 0x02  # noqa: F841
-            flag4 = data[offset + 116] != 0x00  # noqa: F841
+            # Unknown 4 byte value at offset 112.
+
+            flag1 = data[offset + 33] != 0x00
+            flag2 = data[offset + 34] == 0x01
+            flag3 = data[offset + 34] == 0x02
+            flag4 = data[offset + 35] != 0x00
 
             # TODO: Get the real music ID from the data, once we have in-game traffic.
             retval.append(
                 {
                     "id": i,
+                    "code": songcode,
                     "title": title,
                     "artist": artist,
                     "copyright": copyright or None,
@@ -6135,6 +6153,10 @@ class ImportDanceEvolution(ImportBase):
                     "bpm_min": bpm_min,
                     "bpm_max": bpm_max,
                     "level": level,
+                    "flag1": flag1,
+                    "flag2": flag2,
+                    "flag3": flag3,
+                    "flag4": flag4,
                 }
             )
 

@@ -315,6 +315,7 @@ def get_client(proto: ClientProtocol, pcbid: str, game: str, config: Dict[str, A
             pcbid,
             config,
         )
+    # TODO: DanEvo client here.
 
     raise Exception(f"Unknown game {game}")
 

@@ -10,6 +10,7 @@ from bemani.backend.ddr import DDRFactory
 from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
 from bemani.backend.museca import MusecaFactory
+from bemani.backend.danevo import DanceEvolutionFactory
 from bemani.frontend.popn import PopnMusicCache
 from bemani.frontend.iidx import IIDXCache
 from bemani.frontend.jubeat import JubeatCache
@@ -57,6 +58,9 @@ def run_scheduled_work(config: Config) -> None:
     if GameConstants.MUSECA in config.support:
         enabled_factories.append(MusecaFactory)
         enabled_caches.append(MusecaCache)
+    if GameConstants.DANCE_EVOLUTION in config.support:
+        enabled_factories.append(DanceEvolutionFactory)
+        # TODO: Frontend cache here.
 
     # First, run any backend scheduled work
     for factory in enabled_factories:

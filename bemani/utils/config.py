@@ -6,6 +6,7 @@ from bemani.backend.iidx import IIDXFactory
 from bemani.backend.popn import PopnMusicFactory
 from bemani.backend.jubeat import JubeatFactory
 from bemani.backend.bishi import BishiBashiFactory
+from bemani.backend.danevo import DanceEvolutionFactory
 from bemani.backend.ddr import DDRFactory
 from bemani.backend.sdvx import SoundVoltexFactory
 from bemani.backend.reflec import ReflecBeatFactory
@@ -78,3 +79,5 @@ def register_games(config: Config) -> None:
         MusecaFactory.register_all()
     if GameConstants.MGA in config.support:
         MetalGearArcadeFactory.register_all()
+    if GameConstants.DANCE_EVOLUTION in config.support:
+        DanceEvolutionFactory.register_all()

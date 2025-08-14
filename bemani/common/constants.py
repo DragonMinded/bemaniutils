@@ -32,6 +32,8 @@ class VersionConstants:
 
     BISHI_BASHI_TSBB: Final[int] = 1
 
+    DANCE_EVOLUTION: Final[int] = 1
+
     DDR_1STMIX: Final[int] = 1
     DDR_2NDMIX: Final[int] = 2
     DDR_3RDMIX: Final[int] = 3
