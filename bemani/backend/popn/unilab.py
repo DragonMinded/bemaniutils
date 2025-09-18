@@ -20,7 +20,7 @@ class PopnMusicUnilab(PopnMusicModernBase):
     GAME_MAX_MUSIC_ID: int = 2188
 
     # Biggest deco part ID in the game
-    GAME_MAX_DECO_ID: int = 81
+    GAME_MAX_DECO_ID: int = 109
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicKaimei(self.data, self.config, self.model)
@@ -569,6 +569,17 @@ class PopnMusicUnilab(PopnMusicModernBase):
                     battery.add_child(Node.s16("battery_id", battery_id))
                     battery.add_child(Node.u32("energy", energy))
                     battery.add_child(Node.bool("is_cleared", is_cleared))
+
+        # Fake unlock all deco items if enabled
+        if game_config.get_bool("force_unlock_deco"):
+            for deco_id in range(1, self.GAME_MAX_DECO_ID + 1):
+                item = Node.void("item")
+                item.add_child(Node.u8("type", 7))
+                item.add_child(Node.u16("id", deco_id))
+                item.add_child(Node.u16("param", 0))
+                item.add_child(Node.bool("is_new", False))
+                item.add_child(Node.u64("get_time", 0))
+                root.add_child(item)
 
         return root
 
