@@ -1,10 +1,12 @@
 import base64
+import struct
 from typing import Any, Dict
 from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.danevo.base import DanceEvolutionBase
-from bemani.common import VersionConstants, Profile, CardCipher, Time
+from bemani.common import ValidatedDict, VersionConstants, Profile, CardCipher, Time
+from bemani.data import UserID
 from bemani.protocol import Node
 
 
@@ -82,6 +84,21 @@ class DanceEvolution(
 
     DATA04_TOTAL_SCORE_EARNED_OFFSET: Final[int] = 9
 
+    CHART_LIGHT: Final[int] = 0
+    CHART_STANDARD: Final[int] = 1
+    CHART_EXTREME: Final[int] = 2
+    CHART_STEALTH: Final[int] = 3
+    CHART_MASTER: Final[int] = 4
+
+    GAME_GRADE_FAILED: Final[int] = 0
+    GAME_GRADE_E: Final[int] = 1
+    GAME_GRADE_D: Final[int] = 2
+    GAME_GRADE_C: Final[int] = 3
+    GAME_GRADE_B: Final[int] = 4
+    GAME_GRADE_A: Final[int] = 5
+    GAME_GRADE_AA: Final[int] = 6
+    GAME_GRADE_AAA: Final[int] = 7
+
     @classmethod
     def get_settings(cls) -> Dict[str, Any]:
         """
@@ -107,6 +124,82 @@ class DanceEvolution(
         except Exception:
             return
         self.update_machine_name(shopname)
+
+    def update_score(
+        self,
+        userid: UserID,
+        songid: int,
+        chart: int,
+        points: int,
+        grade: int,
+        combo: int,
+        full_combo: bool,
+    ) -> None:
+        """
+        Given various pieces of a score, update the user's high score.
+        """
+        if chart not in {
+            self.CHART_LIGHT,
+            self.CHART_STANDARD,
+            self.CHART_EXTREME,
+            self.CHART_STEALTH,
+            self.CHART_MASTER,
+        }:
+            raise Exception(f"Invalid chart {chart}")
+        if grade not in {
+            self.GAME_GRADE_FAILED,
+            self.GAME_GRADE_E,
+            self.GAME_GRADE_D,
+            self.GAME_GRADE_C,
+            self.GAME_GRADE_B,
+            self.GAME_GRADE_A,
+            self.GAME_GRADE_AA,
+            self.GAME_GRADE_AAA,
+        }:
+            raise Exception(f"Invalid grade {grade}")
+
+        oldscore = self.data.local.music.get_score(
+            self.game,
+            self.version,
+            userid,
+            songid,
+            chart,
+        )
+
+        if oldscore is None:
+            # If it is a new score, create a new dictionary to add to
+            scoredata = ValidatedDict({})
+            highscore = True
+        else:
+            # Set the score to any new record achieved
+            highscore = points >= oldscore.points
+            points = max(oldscore.points, points)
+            scoredata = oldscore.data
+
+        # Save combo
+        scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+
+        # Save grade
+        scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
+
+        # Save full combo indicator.
+        scoredata.replace_bool("full_combo", scoredata.get_bool("full_combo") or full_combo)
+
+        # Look up where this score was earned
+        lid = self.get_machine_id()
+
+        # Write the new score back
+        self.data.local.music.put_score(
+            self.game,
+            self.version,
+            userid,
+            songid,
+            chart,
+            lid,
+            points,
+            scoredata,
+            highscore,
+        )
 
     def handle_tax_get_phase_request(self, request: Node) -> Node:
         tax = Node.void("tax")
@@ -276,6 +369,71 @@ class DanceEvolution(
             # Keep track of play statistics across all versions, but don't do it for the initial profile save.
             if not is_new:
                 self.update_play_statistics(userid)
+
+            # Now that we've got a fully updated profile to look at, let's see if we can't extract the last played songs
+            # and link those to records if they were a record. Unfortunately the game does not specify what chart was
+            # played in RDATA so we can't use that. We can, however, look at the song played positions in DATA03 and
+            # compare the score achieved to the various locations in DATAXX to see if it was a record thie time or not.
+            valid_ids = {song.id for song in self.data.local.music.get_all_songs(self.game, self.version)}
+
+            if "DATA03" in usergamedata:
+                strdatalist = usergamedata["DATA03"]["strdata"].split(b",")
+
+                first_song_played = int(strdatalist[self.DATA03_FIRST_SONG_OFFSET].decode('shift-jis'), 16)
+                second_song_played = int(strdatalist[self.DATA03_SECOND_SONG_OFFSET].decode('shift-jis'), 16)
+                first_song_scored = int(strdatalist[self.DATA03_FIRST_HIGH_SCORE_OFFSET].decode('shift-jis'), 16)
+                second_song_scored = int(strdatalist[self.DATA03_SECOND_HIGH_SCORE_OFFSET].decode('shift-jis'), 16)
+
+                for played, scored in [(first_song_played, first_song_scored), (second_song_played, second_song_scored)]:
+                    if played not in valid_ids:
+                        # Game might be set to 1 song.
+                        continue
+
+                    # First, calculate whether we're going to look at DATA01-05 or DATA11-15.
+                    if played < 63:
+                        mapping = {
+                            "DATA01": self.CHART_LIGHT,
+                            "DATA02": self.CHART_STANDARD,
+                            "DATA03": self.CHART_EXTREME,
+                            "DATA04": self.CHART_STEALTH,
+                            "DATA05": self.CHART_MASTER,
+                        }
+                        offset = played * 8
+                    else:
+                        mapping = {
+                            "DATA11": self.CHART_LIGHT,
+                            "DATA12": self.CHART_STANDARD,
+                            "DATA13": self.CHART_EXTREME,
+                            "DATA14": self.CHART_STEALTH,
+                            "DATA15": self.CHART_MASTER,
+                        }
+                        offset = (played - 63) * 8
+
+                    # Now, grab that data and offset into it to decode the record if it is there.
+                    for key in mapping:
+                        if key not in usergamedata:
+                            # Haven't played any charts that filled this in, so the game never sent it, skip this
+                            # because it couldn't possibly be it.
+                            continue
+
+                        # They could have played some other songs and the game truncated this because it
+                        # only ever sends back until the last nonzero value, so we need to fill in the blanks
+                        # so to speak with all zero bytes.
+                        chunk = usergamedata[key]["bindata"][offset:(offset + 8)]
+                        if len(chunk) < 8:
+                            chunk = chunk + (b"\x00" * (8 - len(chunk)))
+
+                        record, combo, playmarker, _, stats = struct.unpack("<Ibbbb", chunk)
+
+                        if record != scored:
+                            # This wasn't the record we just earned.
+                            continue
+
+                        # Found it!
+                        full_combo = bool(stats & 0x10)
+                        letter_grade = (stats >> 1) & 0x7
+
+                        self.update_score(userid, played, mapping[key], scored, letter_grade, combo, full_combo)
 
         playerdata.add_child(Node.s32("result", 0))
         return playerdata
