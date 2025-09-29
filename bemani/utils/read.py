@@ -6172,7 +6172,7 @@ class ImportDanceEvolution(ImportBase):
             # Import it
             self.start_batch()
 
-            for chart_id in [0, 1, 2, 3, 4]:
+            for chart_id in [0, 1, 2, 3, 4, 5]:
                 # First, try to find in the DB from another version
                 old_id = self.get_music_id_for_song(song["id"], chart_id)
                 if self.no_combine or old_id is None:

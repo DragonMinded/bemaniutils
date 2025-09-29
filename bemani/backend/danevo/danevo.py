@@ -5,8 +5,8 @@ from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.danevo.base import DanceEvolutionBase
-from bemani.common import ValidatedDict, VersionConstants, Profile, CardCipher, Time
-from bemani.data import UserID
+from bemani.common import VersionConstants, Profile, CardCipher, Time
+from bemani.data import ScoreSaveException
 from bemani.protocol import Node
 
 
@@ -84,12 +84,6 @@ class DanceEvolution(
 
     DATA04_TOTAL_SCORE_EARNED_OFFSET: Final[int] = 9
 
-    CHART_LIGHT: Final[int] = 0
-    CHART_STANDARD: Final[int] = 1
-    CHART_EXTREME: Final[int] = 2
-    CHART_STEALTH: Final[int] = 3
-    CHART_MASTER: Final[int] = 4
-
     GAME_GRADE_FAILED: Final[int] = 0
     GAME_GRADE_E: Final[int] = 1
     GAME_GRADE_D: Final[int] = 2
@@ -124,82 +118,6 @@ class DanceEvolution(
         except Exception:
             return
         self.update_machine_name(shopname)
-
-    def update_score(
-        self,
-        userid: UserID,
-        songid: int,
-        chart: int,
-        points: int,
-        grade: int,
-        combo: int,
-        full_combo: bool,
-    ) -> None:
-        """
-        Given various pieces of a score, update the user's high score.
-        """
-        if chart not in {
-            self.CHART_LIGHT,
-            self.CHART_STANDARD,
-            self.CHART_EXTREME,
-            self.CHART_STEALTH,
-            self.CHART_MASTER,
-        }:
-            raise Exception(f"Invalid chart {chart}")
-        if grade not in {
-            self.GAME_GRADE_FAILED,
-            self.GAME_GRADE_E,
-            self.GAME_GRADE_D,
-            self.GAME_GRADE_C,
-            self.GAME_GRADE_B,
-            self.GAME_GRADE_A,
-            self.GAME_GRADE_AA,
-            self.GAME_GRADE_AAA,
-        }:
-            raise Exception(f"Invalid grade {grade}")
-
-        oldscore = self.data.local.music.get_score(
-            self.game,
-            self.version,
-            userid,
-            songid,
-            chart,
-        )
-
-        if oldscore is None:
-            # If it is a new score, create a new dictionary to add to
-            scoredata = ValidatedDict({})
-            highscore = True
-        else:
-            # Set the score to any new record achieved
-            highscore = points >= oldscore.points
-            points = max(oldscore.points, points)
-            scoredata = oldscore.data
-
-        # Save combo
-        scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
-
-        # Save grade
-        scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
-
-        # Save full combo indicator.
-        scoredata.replace_bool("full_combo", scoredata.get_bool("full_combo") or full_combo)
-
-        # Look up where this score was earned
-        lid = self.get_machine_id()
-
-        # Write the new score back
-        self.data.local.music.put_score(
-            self.game,
-            self.version,
-            userid,
-            songid,
-            chart,
-            lid,
-            points,
-            scoredata,
-            highscore,
-        )
 
     def handle_tax_get_phase_request(self, request: Node) -> Node:
         tax = Node.void("tax")
@@ -389,23 +307,64 @@ class DanceEvolution(
                         # Game might be set to 1 song.
                         continue
 
+                    # For the purpose of popularity tracking, save an attempt for this song into the virtual
+                    # attempt chart, since we can't know for certain what chart an attempt was associated with.
+                    now = Time.now()
+                    lid = self.get_machine_id()
+
+                    for bump in range(10):
+                        timestamp = now + bump
+
+                        self.data.local.music.put_score(
+                            self.game,
+                            self.version,
+                            userid,
+                            played,
+                            self.CHART_TYPE_PLAYTRACKING,
+                            lid,
+                            scored,
+                            {},
+                            False,
+                            timestamp=timestamp,
+                        )
+
+                        try:
+                            self.data.local.music.put_attempt(
+                                self.game,
+                                self.version,
+                                userid,
+                                played,
+                                self.CHART_TYPE_PLAYTRACKING,
+                                lid,
+                                scored,
+                                {},
+                                False,
+                                timestamp=timestamp,
+                            )
+                        except ScoreSaveException:
+                            # Try again one second in the future
+                            continue
+
+                        # We saved successfully
+                        break
+
                     # First, calculate whether we're going to look at DATA01-05 or DATA11-15.
                     if played < 63:
                         mapping = {
-                            "DATA01": self.CHART_LIGHT,
-                            "DATA02": self.CHART_STANDARD,
-                            "DATA03": self.CHART_EXTREME,
-                            "DATA04": self.CHART_STEALTH,
-                            "DATA05": self.CHART_MASTER,
+                            "DATA01": self.CHART_TYPE_LIGHT,
+                            "DATA02": self.CHART_TYPE_STANDARD,
+                            "DATA03": self.CHART_TYPE_EXTREME,
+                            "DATA04": self.CHART_TYPE_STEALTH,
+                            "DATA05": self.CHART_TYPE_MASTER,
                         }
                         offset = played * 8
                     else:
                         mapping = {
-                            "DATA11": self.CHART_LIGHT,
-                            "DATA12": self.CHART_STANDARD,
-                            "DATA13": self.CHART_EXTREME,
-                            "DATA14": self.CHART_STEALTH,
-                            "DATA15": self.CHART_MASTER,
+                            "DATA11": self.CHART_TYPE_LIGHT,
+                            "DATA12": self.CHART_TYPE_STANDARD,
+                            "DATA13": self.CHART_TYPE_EXTREME,
+                            "DATA14": self.CHART_TYPE_STEALTH,
+                            "DATA15": self.CHART_TYPE_MASTER,
                         }
                         offset = (played - 63) * 8
 
@@ -432,8 +391,18 @@ class DanceEvolution(
                         # Found it!
                         full_combo = bool(stats & 0x10)
                         letter_grade = (stats >> 1) & 0x7
+                        grade = {
+                            self.GAME_GRADE_FAILED: self.GRADE_FAILED,
+                            self.GAME_GRADE_E: self.GRADE_E,
+                            self.GAME_GRADE_D: self.GRADE_D,
+                            self.GAME_GRADE_C: self.GRADE_C,
+                            self.GAME_GRADE_B: self.GRADE_B,
+                            self.GAME_GRADE_A: self.GRADE_A,
+                            self.GAME_GRADE_AA: self.GRADE_AA,
+                            self.GAME_GRADE_AAA: self.GRADE_AAA,
+                        }[letter_grade]
 
-                        self.update_score(userid, played, mapping[key], scored, letter_grade, combo, full_combo)
+                        self.update_score(userid, played, mapping[key], scored, grade, combo, full_combo)
 
         playerdata.add_child(Node.s32("result", 0))
         return playerdata
