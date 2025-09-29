@@ -412,6 +412,47 @@ def navigation() -> Dict[str, Any]:
             },
         )
 
+    if GameConstants.DANCE_EVOLUTION in g.config.support:
+        # Dance Evolution pages
+        danevo_entries = []
+        if len([p for p in profiles if p[0] == GameConstants.DANCE_EVOLUTION]) > 0:
+            danevo_entries.extend(
+                [
+                    {
+                        "label": "Game Options",
+                        "uri": url_for("danevo_pages.viewsettings"),
+                    },
+                    {
+                        "label": "Personal Profile",
+                        "uri": url_for("danevo_pages.viewplayer", userid=g.userID),
+                    },
+                    {
+                        "label": "Personal Records",
+                        "uri": url_for("danevo_pages.viewrecords", userid=g.userID),
+                    },
+                ]
+            )
+        danevo_entries.extend(
+            [
+                {
+                    "label": "Global Records",
+                    "uri": url_for("danevo_pages.viewnetworkrecords"),
+                },
+                {
+                    "label": "All Players",
+                    "uri": url_for("danevo_pages.viewplayers"),
+                },
+            ]
+        )
+        pages.append(
+            {
+                "label": "Dance Evolution",
+                "entries": danevo_entries,
+                "base_uri": app.blueprints["danevo_pages"].url_prefix,
+                "gamecode": GameConstants.DANCE_EVOLUTION.value,
+            },
+        )
+
     if GameConstants.DDR in g.config.support:
         # DDR pages
         ddr_entries = []

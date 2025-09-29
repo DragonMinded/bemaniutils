@@ -20,6 +20,7 @@ from bemani.frontend.ddr import DDRCache
 from bemani.frontend.sdvx import SoundVoltexCache
 from bemani.frontend.reflec import ReflecBeatCache
 from bemani.frontend.museca import MusecaCache
+from bemani.frontend.danevo import DanceEvolutionCache
 from bemani.common import GameConstants, Time
 from bemani.data import Config, Data
 from bemani.utils.config import load_config, instantiate_cache
@@ -60,7 +61,7 @@ def run_scheduled_work(config: Config) -> None:
         enabled_caches.append(MusecaCache)
     if GameConstants.DANCE_EVOLUTION in config.support:
         enabled_factories.append(DanceEvolutionFactory)
-        # TODO: Frontend cache here.
+        enabled_caches.append(DanceEvolutionCache)
 
     # First, run any backend scheduled work
     for factory in enabled_factories:
