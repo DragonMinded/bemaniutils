@@ -71,7 +71,7 @@ var top_scores = createReactClass({
                     <div className="songname">{window.name}</div>
                     <div className="songartist">{window.artist}</div>
                     <div className="songgenre">{window.genre}</div>
-                    <div className="songlevels">Level {window.levels[chart]}</div>
+                    <div className="songlevels">level {window.levels[chart]} / {window.kcal} kcal</div>
                 </div>
                 <div className="section">
                     {valid_charts.map(function(chart) {

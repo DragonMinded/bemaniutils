@@ -76,6 +76,7 @@ class DanceEvolutionFrontend(FrontendBase):
         formatted_song["levels"] = levels
         formatted_song["bpm_min"] = song.data.get_int("bpm_min")
         formatted_song["bpm_max"] = song.data.get_int("bpm_max")
+        formatted_song["kcal"] = song.data.get_float("kcal")
         return formatted_song
 
     def merge_song(self, existing: Dict[str, Any], new: Song) -> Dict[str, Any]:

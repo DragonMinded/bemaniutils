@@ -110,11 +110,19 @@ var network_records = createReactClass({
         );
     },
 
-    renderLevel: function(songid, chart) {
-        if (this.state.songs[songid].levels[chart] == 0) {
+    renderLevel: function(songid) {
+        if (this.state.songs[songid].levels[0] == 0) {
             return <span className="level">--</span>;
         } else {
-            return <span className="level">{this.state.songs[songid].levels[chart]}</span>;
+            return <span className="level">{this.state.songs[songid].levels[0]}</span>;
+        }
+    },
+
+    renderKcal: function(songid) {
+        if (this.state.songs[songid].kcal <= 0.0) {
+            return <span className="kcal">--</span>;
+        } else {
+            return <span className="kcal">{this.state.songs[songid].kcal}</span>;
         }
     },
 
@@ -180,7 +188,7 @@ var network_records = createReactClass({
                                                 </a>
                                             </div>
                                             <div className="songlevels">
-                                                Level {this.renderLevel(songid, 0)}
+                                                level {this.renderLevel(songid)} / {this.renderKcal(songid)} kcal
                                             </div>
                                         </td>
                                         <td className={levels[0] > 0 ? "" : "nochart"}>
@@ -410,7 +418,7 @@ var network_records = createReactClass({
                                             </a>
                                         </div>
                                         <div className="songlevels">
-                                            Level {this.renderLevel(songid, 0)}
+                                            level {this.renderLevel(songid)} / {this.renderKcal(songid)} kcal
                                         </div>
                                         { showplays ? <div className="songplays">#{index + 1} - {plays}{plays == 1 ? ' play' : ' plays'}</div> : null }
                                     </td>

@@ -107,6 +107,7 @@ def viewtopscores(musicid: int) -> Response:
     name = None
     artist = None
     genre = None
+    kcal = None
     levels = [0, 0, 0, 0, 0]
 
     for version in versions:
@@ -119,6 +120,8 @@ def viewtopscores(musicid: int) -> Response:
                     artist = details.artist
                 if genre is None:
                     genre = details.genre
+                if kcal is None:
+                    kcal = details.data.get_float("kcal")
                 if levels[chart] == 0:
                     levels[chart] = details.data.get_int("level")
 
@@ -136,6 +139,7 @@ def viewtopscores(musicid: int) -> Response:
             "artist": artist,
             "genre": genre,
             "levels": levels,
+            "kcal": kcal,
             "players": top_scores["players"],
             "topscores": top_scores["topscores"],
         },
