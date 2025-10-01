@@ -34,8 +34,8 @@ div.loading {
 
 div.navigation {
     background-color: #1f1f1f;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 0px;
+    padding-right: 0px;
 }
 
 .tinynav {
@@ -193,7 +193,10 @@ ul.navigation li a {
     border: 0px solid #676767;
     display: block;
     text-decoration: none;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 7px;
+    padding-right: 7px;
     color: #b5b5b5;
 }
 

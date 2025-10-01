@@ -28,8 +28,8 @@ div.loading {
 
 div.navigation {
     background-color: whitesmoke;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 0px;
+    padding-right: 0px;
 }
 
 .tinynav {
@@ -179,7 +179,10 @@ ul.navigation li a {
     border: 0px solid #676767;
     display: block;
     text-decoration: none;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 7px;
+    padding-right: 7px;
     color: #676767;
 }
 
