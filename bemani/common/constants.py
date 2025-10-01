@@ -179,6 +179,15 @@ class DBConstants:
 
     OMNIMIX_VERSION_BUMP: Final[int] = 10000
 
+    DANEVO_GRADE_FAILED: Final[int] = 100
+    DANEVO_GRADE_E: Final[int] = 200
+    DANEVO_GRADE_D: Final[int] = 300
+    DANEVO_GRADE_C: Final[int] = 400
+    DANEVO_GRADE_B: Final[int] = 500
+    DANEVO_GRADE_A: Final[int] = 600
+    DANEVO_GRADE_AA: Final[int] = 700
+    DANEVO_GRADE_AAA: Final[int] = 800
+
     DDR_HALO_NONE: Final[int] = 100
     DDR_HALO_GOOD_FULL_COMBO: Final[int] = 200
     DDR_HALO_GREAT_FULL_COMBO: Final[int] = 300

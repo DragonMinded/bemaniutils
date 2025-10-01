@@ -4,7 +4,7 @@ from typing_extensions import Final
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
-from bemani.common import GameConstants, ValidatedDict
+from bemani.common import DBConstants, GameConstants, ValidatedDict
 from bemani.data import UserID
 
 
@@ -22,14 +22,14 @@ class DanceEvolutionBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_TYPE_MASTER: Final[int] = 4
     CHART_TYPE_PLAYTRACKING: Final[int] = 5
 
-    GRADE_FAILED: Final[int] = 100
-    GRADE_E: Final[int] = 200
-    GRADE_D: Final[int] = 300
-    GRADE_C: Final[int] = 400
-    GRADE_B: Final[int] = 500
-    GRADE_A: Final[int] = 600
-    GRADE_AA: Final[int] = 700
-    GRADE_AAA: Final[int] = 800
+    GRADE_FAILED: Final[int] = DBConstants.DANEVO_GRADE_FAILED
+    GRADE_E: Final[int] = DBConstants.DANEVO_GRADE_E
+    GRADE_D: Final[int] = DBConstants.DANEVO_GRADE_D
+    GRADE_C: Final[int] = DBConstants.DANEVO_GRADE_C
+    GRADE_B: Final[int] = DBConstants.DANEVO_GRADE_B
+    GRADE_A: Final[int] = DBConstants.DANEVO_GRADE_A
+    GRADE_AA: Final[int] = DBConstants.DANEVO_GRADE_AA
+    GRADE_AAA: Final[int] = DBConstants.DANEVO_GRADE_AAA
 
     def previous_version(self) -> Optional["DanceEvolutionBase"]:
         """

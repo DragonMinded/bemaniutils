@@ -7,6 +7,14 @@ from bemani.data import Song
 
 
 class CatalogObject(BaseObject):
+    def __format_danevo_song(self, song: Song) -> Dict[str, Any]:
+        return {
+            "level": song.data.get_int("level"),
+            "bpm_min": song.data.get_int("bpm_min"),
+            "bpm_max": song.data.get_int("bpm_max"),
+            "kcal": song.data.get_float("kcal"),
+        }
+
     def __format_ddr_song(self, song: Song) -> Dict[str, Any]:
         groove = song.data.get_dict("groove")
         return {
@@ -122,6 +130,8 @@ class CatalogObject(BaseObject):
             base.update(self.__format_reflec_song(song))
         if self.game == GameConstants.SDVX:
             base.update(self.__format_sdvx_song(song))
+        if self.game == GameConstants.DANCE_EVOLUTION:
+            base.update(self.__format_danevo_song(song))
 
         return base
 
@@ -258,6 +268,12 @@ class CatalogObject(BaseObject):
                             )
                         )
             songs.extend(additions)
+
+        # Always a special case, of course. DanEvo has a virtual chart for play statistics
+        # tracking, so we need to filter that out here.
+        if self.game == GameConstants.DANCE_EVOLUTION:
+            songs = [song for song in songs if song.chart in [0, 1, 2, 3, 4]]
+
         retval = {
             "songs": [self.__format_song(song) for song in songs],
         }

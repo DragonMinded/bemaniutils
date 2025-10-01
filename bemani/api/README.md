@@ -172,6 +172,8 @@ Valid game series and their versions are as follows. Clients and servers should 
     * ``6`` - Jubeat Prop
     * ``7`` - Jubeat Qubell
     * ``8`` - Jubeat Clan
+    * ``9`` - Jubeat Festo
+    * ``10`` - Jubeat Ave
 * ``museca``
     * ``1`` - MUSECA
     * ``1p`` - MUSECA 1+1/2
@@ -185,6 +187,9 @@ Valid game series and their versions are as follows. Clients and servers should 
     * ``22`` - Pop'n Music Lapistoria
     * ``23`` - Pop'n Music Eclale
     * ``24`` - Pop'n Music うさぎと猫と少年の夢
+    * ``25`` - Pop'n Music Peace
+    * ``26`` - Pop'n Music Kaimei Riddles
+    * ``27`` - Pop'n Music Unilab
 * ``reflecbeat``
     * ``1`` - REFLEC BEAT
     * ``2`` - REFLEC BEAT limelight
@@ -241,6 +246,22 @@ Given that a high score, once set, is immutable, records are easily cached on th
 
 * ``since`` – A UTC unix timestamp to constrain the range of records looked up and returned. If provided, records with an update time greater than or equal to this time should be returned, and records less than this time should be excluded.
 * ``until`` – A UTC unix timestamp to constrain the range of records looked up and returned. If provided, records with an update time less than this time should be returned, and records greater than or equal to this time should be excluded.
+
+### Dance Evolution Additional Attributes and Documentation
+
+Valid charts for Dance Evolution according to the game are as follows:
+
+* ``0`` - Light
+* ``1`` - Standard
+* ``2`` - Extreme
+* ``3`` - Stealth
+* ``4`` - Master
+
+The following attributes should be returned (if available) for records belonging to the Dance Evolution series.
+
+* ``grade`` - The letter grade ranking the user has earned, as a string enum. Should be one of the following values: "AAA", "AA", "A", "B", "C", "D", "E", "F".
+* ``combo`` - The highest combo achieved during play, as an integer.
+* ``full_combo`` - Whether the record represents a full combo or not, as a boolean.
 
 ### DDR Additional Attributes and Documentation
 
@@ -457,6 +478,12 @@ The profile request isn't currently meant to allow instantiation of full game pr
    * ``exact`` - This profile is for the requested game/version. Additional attributes specified below are for this game/version.
    * ``partial`` - This profile is for the requested game, but a different version. If the server is capable of doing so, additional attributes should be converted for correct consumption for the game/version requested by the client. If it is not possible, they should be set to -1 to indicate they are not available for the requested game/version.
 
+### Dance Evolution Additional Attributes and Documentation
+
+The following attributes should be returned (if available) by all profiles belonging to the Dance Evolution series.
+
+* ``area`` - The string area as set on the cabinet when creating a profile on DDR. If unavailable, this should be set to "".
+
 ### DDR Additional Attributes and Documentation
 
 The following attributes should be returned (if available) by all profiles belonging to the DDR series.
@@ -510,6 +537,15 @@ Each song object found in the "songs" list should at minimum contain the followi
 * ``title`` - A string specifying the song's title. If this is unavailable for this song, a blank string should be returned.
 * ``artist`` - A string specifying the song's artist. If this is unavailable for this song, a blank string should be returned.
 * ``genre`` - A string specifying the song's genre. If this is unavailable for this song, a blank string should be returned.
+
+### Dance Evolution Additional Attributes and Documentation
+
+The following attributes should be returned (if available) for all songs belonging to the Dance Evolution series.
+
+* ``level`` - An integer representing the in-game level of the song.
+* ``bpm_min`` - An integer representing the minimum BPM of the song.
+* ``bpm_max`` - An integer representing the maximum BPM of the song.
+* ``kcal`` - A float representing the kcal rating of the song.
 
 ### DDR Additional Attributes and Documentation
 
