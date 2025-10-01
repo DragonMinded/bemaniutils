@@ -6162,10 +6162,24 @@ class ImportDanceEvolution(ImportBase):
         return retval
 
     def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
-        # TODO: We never got far enough to support DanEvo in the server, or
-        # specify it in BEMAPI. So this is a dead function for now, but maybe
-        # some year in the future I'll be able to support this.
-        return []
+        # Grab music info from remote server
+        music = self.remote_music(server, token)
+        songs = music.get_all_songs(self.game, self.version)
+        lut: Dict[int, Dict[str, Any]] = {}
+        for song in songs:
+            if song.id not in lut:
+                lut[song.id] = {
+                    "id": song.id,
+                    "title": song.name,
+                    "artist": song.artist,
+                    "level": song.data.get_int("level"),
+                    "bpm_min": song.data.get_int("bpm_min"),
+                    "bpm_max": song.data.get_int("bpm_max"),
+                    "kcal": song.data.get_float("kcal"),
+                }
+
+        # Return the reassembled data
+        return [val for _, val in lut.items()]
 
     def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
         for song in songs:

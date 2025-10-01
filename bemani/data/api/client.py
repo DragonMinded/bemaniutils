@@ -147,6 +147,7 @@ class APIClient:
             GameConstants.POPN_MUSIC: "popnmusic",
             GameConstants.REFLEC_BEAT: "reflecbeat",
             GameConstants.SDVX: "soundvoltex",
+            GameConstants.DANCE_EVOLUTION: "danceevolution",
         }.get(game)
         if servergame is None:
             raise UnsupportedRequestAPIException("The client does not support this game/version!")
@@ -217,6 +218,9 @@ class APIClient:
                     VersionConstants.SDVX_GRAVITY_WARS: "3",
                     VersionConstants.SDVX_HEAVENLY_HAVEN: "4",
                 },
+                GameConstants.DANCE_EVOLUTION: {
+                    VersionConstants.DANCE_EVOLUTION: "1",
+                }
             }
             .get(game, {})
             .get(version)

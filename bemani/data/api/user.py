@@ -13,6 +13,11 @@ class GlobalUserData(BaseGlobalData):
         super().__init__(api)
         self.user = user
 
+    def __format_danevo_profile(self, updates: Profile, profile: Profile) -> None:
+        area = profile.get_str("area", "")
+        if area:
+            updates["area"] = area
+
     def __format_ddr_profile(self, updates: Profile, profile: Profile) -> None:
         area = profile.get_int("area", -1)
         if area != -1:
@@ -86,6 +91,8 @@ class GlobalUserData(BaseGlobalData):
             self.__format_reflec_profile(new, profile)
         if profile.game == GameConstants.SDVX:
             self.__format_sdvx_profile(new, profile)
+        if profile.game == GameConstants.DANCE_EVOLUTION:
+            self.__format_danevo_profile(new, profile)
 
         return new
 
