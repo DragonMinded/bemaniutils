@@ -187,10 +187,11 @@ class DanceEvolution(
             # Dancemates are extremely weird, the game doesn't seem to send the extid or refid of
             # the person you played with, only a space-padded representation of their name. So, we
             # store the name at lookup to correlate names back to profiles on save.
-            name_padded = profile.get_str("name")
-            while len(name_padded) < 10:
-                name_padded += "_"
-            self.cache.set(name_padded.replace(" ", "_"), userid, timeout=30 * Time.SECONDS_IN_MINUTE)
+            if profile:
+                name_padded = profile.get_str("name")
+                while len(name_padded) < 10:
+                    name_padded += "_"
+                self.cache.set(name_padded.replace(" ", "_"), userid, timeout=30 * Time.SECONDS_IN_MINUTE)
 
             records = 0
             record = Node.void("record")
