@@ -282,3 +282,55 @@ def updatename() -> Dict[str, Any]:
         "version": version,
         "name": name,
     }
+
+
+@danevo_pages.route("/dancemates/<int:userid>")
+@loginrequired
+def viewdancemates(userid: UserID) -> Response:
+    frontend = DanceEvolutionFrontend(g.data, g.config, g.cache)
+    info = frontend.get_latest_player_info([userid]).get(userid)
+    if info is None:
+        abort(404)
+
+    # Since we have one version of DanEvo this is an ugly hack.
+    dancemates_by_version, profiles = frontend.get_rivals(userid)
+    dancemates = []
+    for version, actual_dancemates in dancemates_by_version.items():
+        dancemates.extend(actual_dancemates)
+
+    return render_react(
+        f'{info["name"]}\'s Dance Evolution Dance Mates',
+        "danevo/dancemates.react.js",
+        {
+            "name": info["name"],
+            "version": version,
+            "dancemates": dancemates,
+            "profiles": profiles,
+        },
+        {
+            "refresh": url_for("danevo_pages.listdancemates", userid=userid),
+        },
+    )
+
+
+@danevo_pages.route("/dancemates/<int:userid>/list")
+@jsonify
+@loginrequired
+def listdancemates(userid: UserID) -> Dict[str, Any]:
+    frontend = DanceEvolutionFrontend(g.data, g.config, g.cache)
+    info = frontend.get_latest_player_info([userid]).get(userid)
+    if info is None:
+        abort(404)
+
+    # Since we have one version of DanEvo this is an ugly hack.
+    dancemates_by_version, profiles = frontend.get_rivals(userid)
+    dancemates = []
+    for version, actual_dancemates in dancemates_by_version.items():
+        dancemates.extend(actual_dancemates)
+
+    return {
+        "name": info["name"],
+        "version": version,
+        "dancemates": dancemates,
+        "profiles": profiles,
+    }

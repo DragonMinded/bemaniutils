@@ -9,7 +9,7 @@ var Timestamp = createReactClass({
         var t = new Date(this.props.timestamp * 1000);
         var formatted = t.format('Y/m/d @ g:i:s a');
         return (
-            <div className="timestamp">{ formatted }</div>
+            <div className={this.props.className || "timestamp"}>{ formatted }</div>
         );
     },
 });

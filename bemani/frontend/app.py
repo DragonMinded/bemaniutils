@@ -427,6 +427,10 @@ def navigation() -> Dict[str, Any]:
                         "uri": url_for("danevo_pages.viewplayer", userid=g.userID),
                     },
                     {
+                        "label": "Dance Mates",
+                        "uri": url_for("danevo_pages.viewdancemates", userid=g.userID),
+                    },
+                    {
                         "label": "Personal Records",
                         "uri": url_for("danevo_pages.viewrecords", userid=g.userID),
                     },

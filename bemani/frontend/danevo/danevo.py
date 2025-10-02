@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List, Tuple
 
 from bemani.backend.danevo import DanceEvolutionFactory, DanceEvolutionBase
 from bemani.common import Profile, ValidatedDict, GameConstants
-from bemani.data import Attempt, Score, Song, UserID
+from bemani.data import Attempt, Link, Score, Song, UserID
 from bemani.frontend.base import FrontendBase
 
 
@@ -20,7 +20,7 @@ class DanceEvolutionFrontend(FrontendBase):
         DanceEvolutionBase.CHART_TYPE_PLAYTRACKING,
     ]
 
-    valid_rival_types: List[str] = []
+    valid_rival_types: List[str] = ["dancemate"]
 
     def all_games(self) -> Iterator[Tuple[GameConstants, int, str]]:
         yield from DanceEvolutionFactory.all_games()
@@ -87,3 +87,9 @@ class DanceEvolutionFrontend(FrontendBase):
         if existing["levels"][new.chart] == 0:
             new_song["levels"][new.chart] = new.data.get_int("level")
         return new_song
+
+    def format_rival(self, link: Link, profile: Profile) -> Dict[str, Any]:
+        return {
+            "userid": str(link.other_userid),
+            "last_played": link.data.get_int("last_played"),
+        }
