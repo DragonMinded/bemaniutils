@@ -43,19 +43,6 @@ var profile_view = createReactClass({
                 <div>
                     <div className="section">
                         <h3>{player.name}'s profile</h3>
-                        {this.state.profiles.map(function(version) {
-                            return (
-                                <Nav
-                                    title={window.versions[version]}
-                                    active={this.state.version == version}
-                                    onClick={function(event) {
-                                        if (this.state.version == version) { return; }
-                                        this.setState({version: version});
-                                        pagenav.navigate(version);
-                                    }.bind(this)}
-                                />
-                            );
-                        }.bind(this))}
                     </div>
                     <div className="section">
                         <LabelledSection label="User ID">{player.extid}</LabelledSection>

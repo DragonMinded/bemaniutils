@@ -112,25 +112,6 @@ var settings_view = createReactClass({
             return (
                 <div>
                     <div className="section">
-                        {this.state.profiles.map(function(version) {
-                            return (
-                                <Nav
-                                    title={window.versions[version]}
-                                    active={this.state.version == version}
-                                    onClick={function(event) {
-                                        if (this.state.editing_name) { return; }
-                                        if (this.state.version == version) { return; }
-                                        this.setState({
-                                            version: version,
-                                            new_name: this.state.player[version].name,
-                                        });
-                                        pagenav.navigate(version);
-                                    }.bind(this)}
-                                />
-                            );
-                        }.bind(this))}
-                    </div>
-                    <div className="section">
                         <h3>User Profile</h3>
                         {this.renderName(player)}
                     </div>
