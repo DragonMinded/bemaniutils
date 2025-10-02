@@ -77,6 +77,9 @@ class DanceEvolution(
     DATA01_AREA_OFFSET: Final[int] = 26
     DATA01_SHOP_OFFSET: Final[int] = 27
 
+    DATA02_DANCE_MATE_NAME_OFFSET: Final[int] = 25
+
+    DATA03_DANCE_MATE_OFFSET: Final[int] = 8
     DATA03_FIRST_SONG_OFFSET: Final[int] = 13
     DATA03_FIRST_HIGH_SCORE_OFFSET: Final[int] = 14
     DATA03_SECOND_SONG_OFFSET: Final[int] = 15
@@ -178,8 +181,18 @@ class DanceEvolution(
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is not None:
             profile = self.get_profile(userid)
-            records = 0
+            links = self.data.local.user.get_links(self.game, self.version, userid)
+            dancemates = len([l for l in links if l.type == "dancemate"])
 
+            # Dancemates are extremely weird, the game doesn't seem to send the extid or refid of
+            # the person you played with, only a space-padded representation of their name. So, we
+            # store the name at lookup to correlate names back to profiles on save.
+            name_padded = profile.get_str("name")
+            while len(name_padded) < 10:
+                name_padded += "_"
+            self.cache.set(name_padded.replace(" ", "_"), userid, timeout=30 * Time.SECONDS_IN_MINUTE)
+
+            records = 0
             record = Node.void("record")
             player.add_child(record)
 
@@ -208,6 +221,9 @@ class DanceEvolution(
                             splits[self.DATA01_AREA_OFFSET] = profile.get_str("area").encode('shift-jis')
                             splits[self.DATA01_CLASS_OFFSET] = self._to_hex(profile.get_int("class", 1)).encode('shift-jis')
                             splits[self.DATA01_GOLD_OFFSET] = self._to_hex(profile.get_int("gold", 0)).encode('shift-jis')
+                        elif ptype == "DATA03":
+                            # Dance mate stuff, and where scores come back.
+                            splits[self.DATA03_DANCE_MATE_OFFSET] = self._to_hex(dancemates).encode('shift-jis')
                         elif ptype == "DATA04":
                             # Cumulative score.
                             splits[self.DATA04_TOTAL_SCORE_EARNED_OFFSET] = self._to_hex(profile.get_int("cumulative_score", 0)).encode('shift-jis')
@@ -271,6 +287,17 @@ class DanceEvolution(
                     profile.replace_int("class", int(strdatalist[self.DATA01_CLASS_OFFSET].decode('shift-jis'), 16))
                     profile.replace_int("gold", int(strdatalist[self.DATA01_GOLD_OFFSET].decode('shift-jis'), 16))
                     profile.replace_str("area", strdatalist[self.DATA01_AREA_OFFSET].decode('shift-jis'))
+
+                elif profiletype == "DATA02":
+                    # Extract possible dance mate and link it to the player.
+                    potential_dancemate = strdatalist[self.DATA02_DANCE_MATE_NAME_OFFSET].decode('shift-jis')
+                    potential_dancemate = potential_dancemate[:10]
+                    if potential_dancemate.strip():
+                        # First, try to find it in our cache.
+                        other_userid = self.cache.get(potential_dancemate.replace(" ", "_"))
+                        if other_userid:
+                            self.data.local.user.put_link(self.game, self.version, userid, "dancemate", other_userid, {"last_played": Time.now()})
+
                 elif profiletype == "DATA04":
                     # Keep track of this for fun, because hey, why not?
                     profile.replace_int("cumulative_score", int(strdatalist[self.DATA04_TOTAL_SCORE_EARNED_OFFSET].decode('shift-jis'), 16))
@@ -387,6 +414,9 @@ class DanceEvolution(
                         if record != scored:
                             # This wasn't the record we just earned.
                             continue
+                        if not playmarker:
+                            # This wasn't actually played.
+                            continue
 
                         # Found it!
                         full_combo = bool(stats & 0x10)
@@ -403,6 +433,9 @@ class DanceEvolution(
                         }[letter_grade]
 
                         self.update_score(userid, played, mapping[key], scored, grade, combo, full_combo)
+
+                        # Don't need to update anything else now.
+                        break
 
         playerdata.add_child(Node.s32("result", 0))
         return playerdata
