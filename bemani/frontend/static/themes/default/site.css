@@ -203,7 +203,7 @@ ul.navigation > li > a.current {
 ul.navigation > li > ul.navigation_sub > li > a.current {
     border-left-width: 2px;
     border-left-style: solid;
-    padding-left: 8px;
+    padding-left: 5px;
 }
 
 h1, h2, h3, h4, h5 {
