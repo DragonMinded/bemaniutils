@@ -89,20 +89,54 @@ var settings_view = createReactClass({
                                         c = 0xFF0C;
                                     } else if(c == '.'.charCodeAt(0)) {
                                         c = 0xFF0E;
+                                    } else if(c == ':'.charCodeAt(0)) {
+                                       c = 0xFF1A;
+                                    } else if(c == ';'.charCodeAt(0)) {
+                                       c = 0xFF1B;
+                                    } else if(c == '!'.charCodeAt(0)) {
+                                       c = 0xFF01;
+                                    } else if(c == '?'.charCodeAt(0)) {
+                                       c = 0xFF1F;
+                                    } else if(c == '+'.charCodeAt(0)) {
+                                       c = 0xFF0B;
+                                    } else if(c == '-'.charCodeAt(0)) {
+                                       c = 0x2212;
+                                    } else if(c == '#'.charCodeAt(0)) {
+                                       c = 0xFF03;
                                     } else if(c == '_'.charCodeAt(0)) {
                                        c = 0xFF3F;
+                                    } else if(c == '~'.charCodeAt(0)) {
+                                       c = 0x301C;
+                                    } else if(c == '*'.charCodeAt(0)) {
+                                       c = 0xFF0A;
+                                    } else if(c == '`'.charCodeAt(0)) {
+                                       c = 0xFF40;
+                                    } else if(c == '^'.charCodeAt(0)) {
+                                       c = 0xFF3E;
+                                    } else if(c == '<'.charCodeAt(0)) {
+                                       c = 0xFF1C;
+                                    } else if(c == '>'.charCodeAt(0)) {
+                                       c = 0xFF1E;
+                                    } else if(c == '('.charCodeAt(0)) {
+                                       c = 0xFF08;
+                                    } else if(c == ')'.charCodeAt(0)) {
+                                       c = 0xFF09;
+                                    } else if(c == '/'.charCodeAt(0)) {
+                                       c = 0xFF0F;
                                     }
                                     value = value + String.fromCharCode(c);
                                 }
                                 var nameRegex = new RegExp(
                                     "^[" +
                                     "\uFF20-\uFF3A" + // widetext A-Z and @
-                                    "\uFF41-\uFF5A" + // widetext a-z
+                                    "\uFF40-\uFF5A" + // widetext a-z and `
                                     "\uFF10-\uFF19" + // widetext 0-9
-                                    "\uFF0C\uFF0E\uFF3F" + // widetext ,._
+                                    "\uFF0C\uFF0E\uFF3F\u0437\u2200\u2207" + // widetext ,._ and face symbols
                                     "\u3041-\u308D\u308F\u3092\u3093" + // hiragana
                                     "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC" + // katakana
-                                    "\u2605\u266A" + // allowed symbols
+                                    "\u2605\u266A\uff01\uff1f\uff0b\u2212\u00d7\u00f7\uff03\u3002\u2267" + // allowed symbols
+                                    "\u2266\u0434\u0398\u25a1\u76bf\uff1b\uff1a\u301c\uff0a\u00b4\uff3e" + // allowed symbols
+                                    "\u309c\uff1c\uff1e\uff08\uff09\u8278\u30fb\uff0f\u309d\u03c9\u03b5" + // allowed symbols
                                     "]*$"
                                 );
                                 if (value.length <= 10 && nameRegex.test(value)) {
