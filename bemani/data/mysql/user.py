@@ -1387,6 +1387,10 @@ class UserData(BaseData):
         Returns:
             A User ID if creation was successful, or None otherwise.
         """
+        existing = self.from_cardid(cardid)
+        if existing:
+            return None
+
         # First, create a user account
         sql = "INSERT INTO user (pin, admin) VALUES (:pin, 0)"
         cursor = self.execute(sql, {"pin": pin})
