@@ -556,7 +556,7 @@ def mainloop(
             "avs": None,
         },
         "dance-evolution": {
-            "name": "Dance Evolution",
+            "name": "Dance Evolution Arcade",
             "model": "KDM:J:B:A:2016080100",
             "avs": "2.15.5 r6251",
         },
