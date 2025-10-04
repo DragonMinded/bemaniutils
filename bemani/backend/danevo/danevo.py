@@ -205,15 +205,15 @@ class DanceEvolution(
                     self.GRADE_A: self.GAME_GRADE_A,
                     self.GRADE_AA: self.GAME_GRADE_AA,
                     self.GRADE_AAA: self.GAME_GRADE_AAA,
-                }[score.data.get_int('grade')]
+                }[score.data.get_int("grade")]
 
                 scorenode = Node.void("score")
                 scorenode.add_child(Node.u16("id", score.id))
                 scorenode.add_child(Node.u8("chart", score.chart))
                 scorenode.add_child(Node.u32("points", score.points))
                 scorenode.add_child(Node.u8("grade", grade))
-                scorenode.add_child(Node.u8("combo", score.data.get_int('combo')))
-                scorenode.add_child(Node.bool("full_combo", score.data.get_bool('full_combo')))
+                scorenode.add_child(Node.u8("combo", score.data.get_int("combo")))
+                scorenode.add_child(Node.bool("full_combo", score.data.get_bool("full_combo")))
                 scores.add_child(scorenode)
                 scorecount += 1
 
@@ -272,16 +272,22 @@ class DanceEvolution(
 
                         if ptype == "DATA01":
                             # Common profile stuff.
-                            splits[self.DATA01_NAME_OFFSET] = profile.get_str("name").encode('shift-jis')
-                            splits[self.DATA01_AREA_OFFSET] = profile.get_str("area").encode('shift-jis')
-                            splits[self.DATA01_CLASS_OFFSET] = self._to_hex(profile.get_int("class", 1)).encode('shift-jis')
-                            splits[self.DATA01_GOLD_OFFSET] = self._to_hex(profile.get_int("gold", 0)).encode('shift-jis')
+                            splits[self.DATA01_NAME_OFFSET] = profile.get_str("name").encode("shift-jis")
+                            splits[self.DATA01_AREA_OFFSET] = profile.get_str("area").encode("shift-jis")
+                            splits[self.DATA01_CLASS_OFFSET] = self._to_hex(profile.get_int("class", 1)).encode(
+                                "shift-jis"
+                            )
+                            splits[self.DATA01_GOLD_OFFSET] = self._to_hex(profile.get_int("gold", 0)).encode(
+                                "shift-jis"
+                            )
                         elif ptype == "DATA03":
                             # Dance mate stuff, and where scores come back.
-                            splits[self.DATA03_DANCE_MATE_OFFSET] = self._to_hex(dancemates).encode('shift-jis')
+                            splits[self.DATA03_DANCE_MATE_OFFSET] = self._to_hex(dancemates).encode("shift-jis")
                         elif ptype == "DATA04":
                             # Cumulative score.
-                            splits[self.DATA04_TOTAL_SCORE_EARNED_OFFSET] = self._to_hex(profile.get_int("cumulative_score", 0)).encode('shift-jis')
+                            splits[self.DATA04_TOTAL_SCORE_EARNED_OFFSET] = self._to_hex(
+                                profile.get_int("cumulative_score", 0)
+                            ).encode("shift-jis")
 
                         dnode = Node.string(
                             "d",
@@ -338,24 +344,29 @@ class DanceEvolution(
 
                 if profiletype == "DATA01":
                     # Extract relevant info so that it's in the profile normally.
-                    profile.replace_str("name", strdatalist[self.DATA01_NAME_OFFSET].decode('shift-jis'))
-                    profile.replace_int("class", int(strdatalist[self.DATA01_CLASS_OFFSET].decode('shift-jis'), 16))
-                    profile.replace_int("gold", int(strdatalist[self.DATA01_GOLD_OFFSET].decode('shift-jis'), 16))
-                    profile.replace_str("area", strdatalist[self.DATA01_AREA_OFFSET].decode('shift-jis'))
+                    profile.replace_str("name", strdatalist[self.DATA01_NAME_OFFSET].decode("shift-jis"))
+                    profile.replace_int("class", int(strdatalist[self.DATA01_CLASS_OFFSET].decode("shift-jis"), 16))
+                    profile.replace_int("gold", int(strdatalist[self.DATA01_GOLD_OFFSET].decode("shift-jis"), 16))
+                    profile.replace_str("area", strdatalist[self.DATA01_AREA_OFFSET].decode("shift-jis"))
 
                 elif profiletype == "DATA02":
                     # Extract possible dance mate and link it to the player.
-                    potential_dancemate = strdatalist[self.DATA02_DANCE_MATE_NAME_OFFSET].decode('shift-jis')
+                    potential_dancemate = strdatalist[self.DATA02_DANCE_MATE_NAME_OFFSET].decode("shift-jis")
                     potential_dancemate = potential_dancemate[:10]
                     if potential_dancemate.strip():
                         # First, try to find it in our cache.
                         other_userid = self.cache.get(potential_dancemate.replace(" ", "_"))
                         if other_userid:
-                            self.data.local.user.put_link(self.game, self.version, userid, "dancemate", other_userid, {"last_played": Time.now()})
+                            self.data.local.user.put_link(
+                                self.game, self.version, userid, "dancemate", other_userid, {"last_played": Time.now()}
+                            )
 
                 elif profiletype == "DATA04":
                     # Keep track of this for fun, because hey, why not?
-                    profile.replace_int("cumulative_score", int(strdatalist[self.DATA04_TOTAL_SCORE_EARNED_OFFSET].decode('shift-jis'), 16))
+                    profile.replace_int(
+                        "cumulative_score",
+                        int(strdatalist[self.DATA04_TOTAL_SCORE_EARNED_OFFSET].decode("shift-jis"), 16),
+                    )
 
                 usergamedata[profiletype] = {
                     "strdata": b",".join(strdatalist),
@@ -379,12 +390,15 @@ class DanceEvolution(
             if "DATA03" in usergamedata:
                 strdatalist = usergamedata["DATA03"]["strdata"].split(b",")
 
-                first_song_played = int(strdatalist[self.DATA03_FIRST_SONG_OFFSET].decode('shift-jis'), 16)
-                second_song_played = int(strdatalist[self.DATA03_SECOND_SONG_OFFSET].decode('shift-jis'), 16)
-                first_song_scored = int(strdatalist[self.DATA03_FIRST_HIGH_SCORE_OFFSET].decode('shift-jis'), 16)
-                second_song_scored = int(strdatalist[self.DATA03_SECOND_HIGH_SCORE_OFFSET].decode('shift-jis'), 16)
+                first_song_played = int(strdatalist[self.DATA03_FIRST_SONG_OFFSET].decode("shift-jis"), 16)
+                second_song_played = int(strdatalist[self.DATA03_SECOND_SONG_OFFSET].decode("shift-jis"), 16)
+                first_song_scored = int(strdatalist[self.DATA03_FIRST_HIGH_SCORE_OFFSET].decode("shift-jis"), 16)
+                second_song_scored = int(strdatalist[self.DATA03_SECOND_HIGH_SCORE_OFFSET].decode("shift-jis"), 16)
 
-                for played, scored in [(first_song_played, first_song_scored), (second_song_played, second_song_scored)]:
+                for played, scored in [
+                    (first_song_played, first_song_scored),
+                    (second_song_played, second_song_scored),
+                ]:
                     if played not in valid_ids:
                         # Game might be set to 1 song.
                         continue
@@ -460,7 +474,7 @@ class DanceEvolution(
                         # They could have played some other songs and the game truncated this because it
                         # only ever sends back until the last nonzero value, so we need to fill in the blanks
                         # so to speak with all zero bytes.
-                        chunk = usergamedata[key]["bindata"][offset:(offset + 8)]
+                        chunk = usergamedata[key]["bindata"][offset : (offset + 8)]
                         if len(chunk) < 8:
                             chunk = chunk + (b"\x00" * (8 - len(chunk)))
 

@@ -261,13 +261,13 @@ def updatename() -> Dict[str, Any]:
     if (
         re.match(
             "^["
-            + "\uFF20-\uFF3A"  # widetext A-Z and @
-            + "\uFF40-\uFF5A"  # widetext a-z and `
-            + "\uFF10-\uFF19"  # widetext 0-9
-            + "\uFF0C\uFF0E\uFF3F\u0437\u2200\u2207"  # ,._ and face symbols
-            + "\u3041-\u308D\u308F\u3092\u3093"  # hiragana
-            + "\u30A1-\u30ED\u30EF\u30F2\u30F3\u30FC"  # katakana
-            + "\u2605\u266A\uff01\uff1f\uff0b"  # allowed symbols
+            + "\uff20-\uff3a"  # widetext A-Z and @
+            + "\uff40-\uff5a"  # widetext a-z and `
+            + "\uff10-\uff19"  # widetext 0-9
+            + "\uff0c\uff0e\uff3f\u0437\u2200\u2207"  # ,._ and face symbols
+            + "\u3041-\u308d\u308f\u3092\u3093"  # hiragana
+            + "\u30a1-\u30ed\u30ef\u30f2\u30f3\u30fc"  # katakana
+            + "\u2605\u266a\uff01\uff1f\uff0b"  # allowed symbols
             + "\u2212\u00d7\u00f7\uff03\u3002"  # allowed symbols
             + "\u2267\u2266\u0434\u0398\u25a1"  # allowed symbols
             + "\u76bf\uff1b\uff1a\u301c\uff0a"  # allowed symbols

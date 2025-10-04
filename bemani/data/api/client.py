@@ -220,7 +220,7 @@ class APIClient:
                 },
                 GameConstants.DANCE_EVOLUTION: {
                     VersionConstants.DANCE_EVOLUTION: "1",
-                }
+                },
             }
             .get(game, {})
             .get(version)

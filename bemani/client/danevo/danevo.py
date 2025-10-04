@@ -44,9 +44,9 @@ class DanceEvolutionClient(BaseClient):
     def verify_tax_get_phase(self) -> None:
         call = self.call_node()
 
-        tax = Node.void('tax')
+        tax = Node.void("tax")
         call.add_child(tax)
-        tax.set_attribute('method', 'get_phase')
+        tax.set_attribute("method", "get_phase")
 
         # Swap with server
         resp = self.exchange("", call)
@@ -58,14 +58,14 @@ class DanceEvolutionClient(BaseClient):
         for datakey in ["ARK_ARR0", "ARK_HAS0", "SONGOPEN", "INFO", "IRDATA", "EVTMSG3", "WEEKLYSO"]:
             call = self.call_node()
 
-            system = Node.void('system')
+            system = Node.void("system")
             call.add_child(system)
-            system.set_attribute('method', 'getmaster')
-            data = Node.void('data')
+            system.set_attribute("method", "getmaster")
+            data = Node.void("data")
             system.add_child(data)
-            data.add_child(Node.string('gamekind', 'KDM'))
-            data.add_child(Node.string('datatype', 'S_SRVMSG'))
-            data.add_child(Node.string('datakey', datakey))
+            data.add_child(Node.string("gamekind", "KDM"))
+            data.add_child(Node.string("datatype", "S_SRVMSG"))
+            data.add_child(Node.string("datakey", datakey))
 
             # Swap with server
             resp = self.exchange("", call)
@@ -101,218 +101,218 @@ class DanceEvolutionClient(BaseClient):
     def _get_base_profile_data(self, include_secondary: bool) -> Dict[str, List[bytes]]:
         profiledata = {
             "DATA01": [
-                b'1',
-                b'0',
-                b'1',  # Class offset.
-                b'0',  # Earned gold offset.
-                b'0',
-                b'1',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'',  # Name spot, will be filled in later.
-                b'\x96\xa2\x90\xdd\x92\xe8',  # Area spot, hardcoded to "unset".
-                b'',  # Arcade name spot, we don't send this in tests.
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
+                b"1",
+                b"0",
+                b"1",  # Class offset.
+                b"0",  # Earned gold offset.
+                b"0",
+                b"1",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"",  # Name spot, will be filled in later.
+                b"\x96\xa2\x90\xdd\x92\xe8",  # Area spot, hardcoded to "unset".
+                b"",  # Arcade name spot, we don't send this in tests.
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
             ],
             "DATA02": [
-                b'1',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'',  # Dance Mate name spot, will be filled in later.
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
+                b"1",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"",  # Dance Mate name spot, will be filled in later.
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
             ],
             "DATA03": [
-                b'1',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',  # Number of dancemates, ignored on send.
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'ffffffffffffffff',  # First song ID.
-                b'ffffffffffffffff',  # First score ID.
-                b'ffffffffffffffff',  # Second song ID.
-                b'ffffffffffffffff',  # Second score ID.
-                b'-1.000000',
-                b'-1.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
+                b"1",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",  # Number of dancemates, ignored on send.
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"ffffffffffffffff",  # First song ID.
+                b"ffffffffffffffff",  # First score ID.
+                b"ffffffffffffffff",  # Second song ID.
+                b"ffffffffffffffff",  # Second score ID.
+                b"-1.000000",
+                b"-1.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
             ],
             "DATA04": [
-                b'1',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',  # Total points earned cumulative.
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
+                b"1",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",  # Total points earned cumulative.
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
             ],
             "RDAT01": [
-                b'1',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'0.000000',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
-                b'',
+                b"1",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"0.000000",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
+                b"",
             ],
         }
 
         if include_secondary:
             for secondary in ["DATA05", "DATA11", "DATA12", "DATA13", "DATA14", "DATA15"]:
                 profiledata[secondary] = [
-                    b'1',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0',
-                    b'0.000000',
-                    b'0.000000',
-                    b'0.000000',
-                    b'0.000000',
-                    b'0.000000',
-                    b'0.000000',
-                    b'0.000000',
-                    b'0.000000',
-                    b'',
-                    b'',
-                    b'',
-                    b'',
-                    b'',
-                    b'',
-                    b'',
-                    b'',
+                    b"1",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0",
+                    b"0.000000",
+                    b"0.000000",
+                    b"0.000000",
+                    b"0.000000",
+                    b"0.000000",
+                    b"0.000000",
+                    b"0.000000",
+                    b"0.000000",
+                    b"",
+                    b"",
+                    b"",
+                    b"",
+                    b"",
+                    b"",
+                    b"",
+                    b"",
                 ]
 
         return profiledata
@@ -342,7 +342,7 @@ class DanceEvolutionClient(BaseClient):
             if othername:
                 while len(othername) < 10:
                     othername = othername + " "
-                profiledata["DATA02"][25] = othername.encode('shift-jis')
+                profiledata["DATA02"][25] = othername.encode("shift-jis")
             else:
                 profiledata["DATA02"][25] = b""
 
@@ -461,7 +461,7 @@ class DanceEvolutionClient(BaseClient):
         highest_id: int = 0
 
         def _to_hex(number: int) -> bytes:
-            return hex(number)[2:].encode('shift-jis')
+            return hex(number)[2:].encode("shift-jis")
 
         for offset, score in enumerate(scores):
             sid = score["id"]
@@ -540,7 +540,7 @@ class DanceEvolutionClient(BaseClient):
         for ptype in profiledata:
             profile = [b"ffffffff", ptype.encode("shift-jis")] + profiledata[ptype]
             d = Node.string("d", base64.b64encode(b",".join(profile)).decode("ascii"))
-            d.add_child(Node.string("bin1", base64.b64encode(profilebindata[ptype]).decode('ascii')))
+            d.add_child(Node.string("bin1", base64.b64encode(profilebindata[ptype]).decode("ascii")))
             record.add_child(d)
 
         # Swap with server
@@ -579,12 +579,12 @@ class DanceEvolutionClient(BaseClient):
                 continue
 
             score: Dict[str, int] = {}
-            score['id'] = child.child_value("id")
-            score['chart'] = child.child_value("chart")
-            score['points'] = child.child_value("points")
-            score['grade'] = child.child_value("grade")
-            score['combo'] = child.child_value("combo")
-            score['full_combo'] = 1 if child.child_value("full_combo") else 0
+            score["id"] = child.child_value("id")
+            score["chart"] = child.child_value("chart")
+            score["points"] = child.child_value("points")
+            score["grade"] = child.child_value("grade")
+            score["combo"] = child.child_value("combo")
+            score["full_combo"] = 1 if child.child_value("full_combo") else 0
 
             scores.append(score)
 
@@ -779,7 +779,7 @@ class DanceEvolutionClient(BaseClient):
                         },
                     ]
 
-                scorechunks = [dummyscores[x:(x + 2)] for x in range(0, len(dummyscores), 2)]
+                scorechunks = [dummyscores[x : (x + 2)] for x in range(0, len(dummyscores), 2)]
 
                 for chunk in scorechunks:
                     self.verify_scores_send(ref_id, self.NAME1, chunk)
