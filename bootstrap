@@ -14,6 +14,7 @@ set -e
 ./read --series pnm --version 24 "$@"
 ./read --series pnm --version 25 "$@"
 ./read --series pnm --version 26 "$@"
+./read --series pnm --version 27 "$@"
 
 # Init Jubeat
 ./read --series jubeat --version saucer "$@"
@@ -56,3 +57,6 @@ set -e
 ./read --series reflec --version 4 "$@"
 ./read --series reflec --version 5 "$@"
 ./read --series reflec --version 6 "$@"
+
+# Init Dance Evolution
+./read --series danevo --version 1 "$@"
