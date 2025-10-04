@@ -168,6 +168,60 @@ class DanceEvolution(
 
         return root
 
+    def handle_playerdata_usergamedata_recvscores_request(self, request: Node) -> Node:
+        # NOTE: This is an entirely made up endpoint. The game does not call it. This exists
+        # entirely to allow for client integration tests (trafficgen) to verify score saving
+        # because otherwise there's no way to know that the backend actually parsed a score.
+        playerdata = Node.void("playerdata")
+
+        player = Node.void("player")
+        playerdata.add_child(player)
+
+        refid = request.child_value("data/refid")
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        if userid is not None:
+            scorecount = 0
+            scores = Node.void("scores")
+            player.add_child(scores)
+            player.add_child(Node.string("refid", refid))
+
+            for score in self.data.local.music.get_scores(self.game, self.version, userid):
+                if score.chart not in {
+                    self.CHART_TYPE_LIGHT,
+                    self.CHART_TYPE_STANDARD,
+                    self.CHART_TYPE_EXTREME,
+                    self.CHART_TYPE_STEALTH,
+                    self.CHART_TYPE_MASTER,
+                }:
+                    # Skip virtual scores for tracking play counts and popularity.
+                    continue
+
+                grade = {
+                    self.GRADE_FAILED: self.GAME_GRADE_FAILED,
+                    self.GRADE_E: self.GAME_GRADE_E,
+                    self.GRADE_D: self.GAME_GRADE_D,
+                    self.GRADE_C: self.GAME_GRADE_C,
+                    self.GRADE_B: self.GAME_GRADE_B,
+                    self.GRADE_A: self.GAME_GRADE_A,
+                    self.GRADE_AA: self.GAME_GRADE_AA,
+                    self.GRADE_AAA: self.GAME_GRADE_AAA,
+                }[score.data.get_int('grade')]
+
+                scorenode = Node.void("score")
+                scorenode.add_child(Node.u16("id", score.id))
+                scorenode.add_child(Node.u8("chart", score.chart))
+                scorenode.add_child(Node.u32("points", score.points))
+                scorenode.add_child(Node.u8("grade", grade))
+                scorenode.add_child(Node.u8("combo", score.data.get_int('combo')))
+                scorenode.add_child(Node.bool("full_combo", score.data.get_bool('full_combo')))
+                scores.add_child(scorenode)
+                scorecount += 1
+
+            player.add_child(Node.u32("scores_num", scorecount))
+
+        playerdata.add_child(Node.s32("result", 0))
+        return playerdata
+
     def _to_hex(self, number: int) -> str:
         return hex(number)[2:]
 
