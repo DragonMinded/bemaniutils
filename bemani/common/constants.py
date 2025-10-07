@@ -21,6 +21,7 @@ class GameConstants(Enum):
     POPN_MUSIC = "pnm"
     REFLEC_BEAT = "reflec"
     SDVX = "sdvx"
+    BST = "bst"
 
 
 class VersionConstants:
@@ -141,6 +142,9 @@ class VersionConstants:
     SDVX_INFINITE_INFECTION: Final[int] = 2
     SDVX_GRAVITY_WARS: Final[int] = 3
     SDVX_HEAVENLY_HAVEN: Final[int] = 4
+
+    BEATSTREAM: Final[int] = 1
+    BEATSTREAM_2: Final[int] = 2
 
 
 class APIConstants(Enum):
@@ -340,6 +344,17 @@ class BroadcastConstants(Enum):
     COOLS = "Cools"
     COMBO = "Combo"
     MEDAL = "Medal"
+
+    # Added for BST
+    DIFFICULTY_LEVEL = "Difficulty"
+    BEAST_RANK = "Beast Rank"
+    BEST_SCORE = "Best Score"
+    GAUGE = "Gauge"
+    MAX_COMBO = "Max Combo"
+    FANTASTIC = "Fantastic"
+    GREAT = "Great"
+    FINE = "Fine"
+    MISS = "Miss"
 
 
 class _RegionConstants:

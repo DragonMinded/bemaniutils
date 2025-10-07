@@ -6207,6 +6207,168 @@ class ImportDanceEvolution(ImportBase):
             self.finish_batch()
 
 
+class ImportBst(ImportBase):
+    def __init__ (
+        self,
+        config: Config,
+        version: str,
+        no_combine: bool,
+        update: bool
+    ) -> None:
+        if version in ['1', '2']:
+            actual_version = {
+                '1': VersionConstants.BEATSTREAM,
+                '2': VersionConstants.BEATSTREAM_2,
+            }.get(version, -1)
+        elif version == 'all':
+            actual_version = None
+        
+        if actual_version in [
+            None,
+            VersionConstants.BEATSTREAM,
+            VersionConstants.BEATSTREAM_2,
+        ]:
+            self.charts = [0, 1, 2, 3]
+        else:
+            raise Exception("Unsupported Beatstream version! Please use one of the following: 1, 2.")
+        super().__init__(config, GameConstants.BST, actual_version, no_combine, update)
+    
+    def scrape(self, infile:str) -> List[Dict[str, Any]]:
+        if self.version is None:
+            raise Exception('Can\'t scrape database for \'all\' version!')
+        songs = []
+        with open(infile, encoding='utf_16_le') as musicdb:
+            songs = []
+            reader = csv.reader(musicdb, delimiter='｜', quotechar='"')
+            for row in reader:
+                if self.version == VersionConstants.BEATSTREAM:
+                    if 'MusicInfoData' in row[0]:
+                        continue
+                    if 'EOF' in row[0]:
+                        continue
+                    songid = int(row[0])
+                    name = row[1]
+                    genre = row[3]
+                    bpm_min = float(row[7])
+                    bpm_max = float(row[8])
+                    light = (row[9])
+                    medium = (row[10])
+                    beast = (row[11])
+                    nightmare = (row[12])
+                    artist = row[13]
+                if self.version == VersionConstants.BEATSTREAM_2:
+                    if 'MusicInfoData' in row[0]:
+                        continue
+                    if 'EOF' in row[0]:
+                        continue
+                    songid = int(row[0])
+                    name = row[1]
+                    genre = row[4]
+                    bpm_min = float(row[8])
+                    bpm_max = float(row[9])
+                    light = row[10]
+                    medium = row[11]
+                    beast = row[12]
+                    nightmare = row[13]
+                    artist = row[14]
+                song = {
+                    'id': songid,
+                    'title': name,
+                    'artist': artist,
+                    'genre': genre,
+                    'bpm_min': bpm_min,
+                    'bpm_max': bpm_max,
+                    'difficulty': {
+                        'light': light,
+                        'medium': medium,
+                        'beast': beast,
+                        'nightmare': nightmare,
+                    },
+                }
+                songs.append(song)
+        return songs
+    
+    def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
+        if self.version is None:
+            raise Exception('Can\'t look up database for \'all\' version!')
+
+        # Grab music info from remote server
+        music = self.remote_music(server, token)
+        songs = music.get_all_songs(self.game, self.version)
+        lut: Dict[int, Dict[str, Any]] = {}
+        chart_map = {
+            0: 'light',
+            1: 'medium',
+            2: 'beast',
+            3: 'nightmare',
+        }
+
+        # Format it the way we expect
+        for song in songs:
+            if song.chart not in chart_map:
+                # Ignore charts on songs we don't support/care about.
+                continue
+
+            if song.id not in lut:
+                lut[song.id] = {
+                    'id': song.id,
+                    'title': song.name,
+                    'artist': song.artist,
+                    'genre': song.genre,
+                    'bpm_min': song.data.get_int('bpm_min'),
+                    'bpm_max': song.data.get_int('bpm_max'),
+                    'difficulty': {
+                        'light': 0,
+                        'medium': 1,
+                        'beast': 2,
+                        'nightmare': 3,
+                    },
+                }
+            lut[song.id]['difficulty'][chart_map[song.chart]] = song.data.get_int('difficulty')
+
+        # Reassemble the data
+        reassembled_songs = [val for _, val in lut.items()]
+
+
+        return reassembled_songs
+
+    def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
+        if self.version is None:
+            raise Exception('Can\'t import database for \'all\' version!')
+
+        chart_map: Dict[int, str] = {
+            0: 'light',
+            1: 'medium',
+            2: 'beast',
+            3: 'nightmare',
+        }
+        for song in songs:
+            songid = song['id']
+
+            self.start_batch()
+            for chart in self.charts:
+                # First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(songid, chart)
+                
+                # First, try to find in the DB from another version
+                if self.no_combine or old_id is None:
+                    # Insert original
+                    print(f"New entry for {songid} chart {chart}")
+                    next_id = self.get_next_music_id()
+                else:
+                    # Insert pointing at same ID so scores transfer
+                    print(f"Reused entry for {songid} chart {chart}")
+                    next_id = old_id
+                data = {
+                    'difficulty': song['difficulty'][chart_map[chart]],
+                    'bpm_min': song['bpm_min'],
+                    'bpm_max': song['bpm_max'],
+                }
+
+                self.insert_music_id_for_song(next_id, songid, chart, song['title'], song['artist'], song['genre'], data)
+            self.finish_batch()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Import Game Music DB")
     parser.add_argument(
@@ -6464,6 +6626,15 @@ def main() -> None:
             )
         danevo.import_music_db(songs)
         danevo.close()
+
+    if series == GameConstants.BST:
+        bst = ImportBst(config, args.version, args.no_combine, args.update)
+        if args.csv:
+            songs = bst.scrape(args.csv)
+        else:
+            raise Exception('No musicdb.csv provided! Please provide --csv')
+        bst.import_music_db(songs)
+        bst.close()
 
     else:
         raise CLIException("Unsupported game series!")

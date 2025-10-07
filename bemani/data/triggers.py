@@ -27,6 +27,7 @@ class Triggers:
             GameConstants.POPN_MUSIC: "Pop'n Music",
             GameConstants.REFLEC_BEAT: "Reflec Beat",
             GameConstants.SDVX: "Sound Voltex",
+            GameConstants.BST: "BeatStream",
         }.get(game, "Unknown")
 
     def has_broadcast_destination(self, game: GameConstants) -> bool:
@@ -43,7 +44,7 @@ class Triggers:
             self.broadcast_score_discord(data, game, song)
 
     def broadcast_score_discord(self, data: Dict[BroadcastConstants, str], game: GameConstants, song: Song) -> None:
-        if game in {GameConstants.IIDX, GameConstants.POPN_MUSIC}:
+        if game in {GameConstants.IIDX, GameConstants.POPN_MUSIC, GameConstants.BST}:
             now = datetime.now()
 
             webhook = DiscordWebhook(url=self.config.webhooks.discord[game])

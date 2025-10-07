@@ -856,6 +856,23 @@ def navigation() -> Dict[str, Any]:
                 "gamecode": GameConstants.SDVX.value,
             },
         )
+    
+    if GameConstants.BST in g.config.support:
+        bst_entries = []
+        bst_entries.extend([
+        {
+            'label': 'Global Scores',
+            'uri': url_for('bst_pages.viewnetworkscores'),
+        }
+        ])
+        pages.append(
+            {
+                'label': 'BeatStream',
+                'entries': bst_entries,
+                'base_uri': app.blueprints['bst_pages'].url_prefix,
+                'gamecode': GameConstants.BST.value,
+            },
+        )
 
     # Admin pages
     if user.admin:
