@@ -588,11 +588,18 @@ class Beatstream2(EventLogHandler, BSTBase):
 
     # Called when a player registeres a new profile when they have an account
     def handle_player2_succeed_request(self, request: Node) -> Node:
+        player2 = Node.void('player2')
         userid = self.data.local.user.from_refid(self.game, self.version, request.child_value('rid'))
         profile = self.data.local.user.get_profile(self.game, self.version - 1, userid)
-        scores = self.data.local.music.get_scores(self.game, self.version - 1, userid)
-        achievements = self.data.local.user.get_achievements(self.game, self.version - 1, userid)
-        player2 = Node.void('player2')
+        
+        if profile is not None:
+            # We need to check for profile existance before we look up achievements for the previous
+            # version, otherwise we will create a dangling refid
+            scores = self.data.local.music.get_scores(self.game, self.version - 1, userid)
+            achievements = self.data.local.user.get_achievements(self.game, self.version - 1, userid)
+        else:
+            scores = []
+            achievements = []
 
         play = Node.bool('play', profile.get_int('tpc') > 1 if profile else False)
         player2.add_child(play)
