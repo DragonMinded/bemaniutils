@@ -7,6 +7,11 @@ from bemani.data import UserID
 
 
 class ProfileObject(BaseObject):
+    def __format_danevo_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
+        return {
+            "area": profile.get_str("area", "") if exact else "",
+        }
+
     def __format_ddr_profile(self, profile: Profile, exact: bool) -> Dict[str, Any]:
         return {
             "area": profile.get_int("area", -1) if exact else -1,
@@ -71,6 +76,8 @@ class ProfileObject(BaseObject):
             base.update(self.__format_reflec_profile(profile, exact))
         if self.game == GameConstants.SDVX:
             base.update(self.__format_sdvx_profile(profile, exact))
+        if self.game == GameConstants.DANCE_EVOLUTION:
+            base.update(self.__format_danevo_profile(profile, exact))
 
         return base
 

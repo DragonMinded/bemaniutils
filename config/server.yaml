@@ -71,14 +71,16 @@ paseli:
 support:
     # Bishi Bashi frontend/backend enabled.
     bishi: True
-    # Metal Gear Arcade frontend/backend enabled
-    mga: True
+    # Dance Evolution frontend/backend enable.
+    danevo: True
     # DDR frontend/backend enabled
     ddr: True
     # IIDX frontend/backend enabled.
     iidx: True
     # Jubeat frontend/backend enabled.
     jubeat: True
+    # Metal Gear Arcade frontend/backend enabled
+    mga: True
     # Museca frontend/backend enabled.
     museca: True
     # Pop'n Music frontend/backend enabled.

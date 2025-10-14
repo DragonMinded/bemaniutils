@@ -809,17 +809,18 @@ class DDRAce(
                 return hex(val)[2:]
 
             if profile is None:
-                # Just return a default empty node
-                record.add_child(Node.string("d", "<NODATA>"))
-                records = 1
+                # Figure out what profiles are being requested
+                profiletypes = request.child_value("data/recv_csv").split(",")[::2]
+                for ptype in profiletypes:
+                    # Just return a default empty node
+                    record.add_child(Node.string("d", "<NODATA>"))
+                    records += 1
             else:
                 # Figure out what profiles are being requested
                 profiletypes = request.child_value("data/recv_csv").split(",")[::2]
                 usergamedata = profile.get_dict("usergamedata")
                 for ptype in profiletypes:
                     if ptype in usergamedata:
-                        records = records + 1
-
                         if ptype == "COMMON":
                             # Return basic profile options
                             name = profile.get_str("name")
@@ -934,6 +935,12 @@ class DDRAce(
                             )
                         )
                         record.add_child(dnode)
+
+                    else:
+                        # Just return a default empty node
+                        record.add_child(Node.string("d", "<NODATA>"))
+
+                    records += 1
 
             player.add_child(Node.u32("record_num", records))
 

@@ -3,6 +3,9 @@
 set -e
 
 declare -a arr=(
+    "bishi"
+    "mga"
+    "danevo"
     "pnm-19"
     "pnm-20"
     "pnm-21"
@@ -30,7 +33,6 @@ declare -a arr=(
     "ddr-2013"
     "ddr-2014"
     "ddr-ace"
-    "bishi"
     "sdvx-1"
     "sdvx-2"
     "sdvx-3s1"
@@ -44,7 +46,6 @@ declare -a arr=(
     "reflec-4"
     "reflec-5"
     "reflec-6"
-    "mga"
 )
 
 for project in "${arr[@]}"

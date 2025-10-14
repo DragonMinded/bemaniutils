@@ -7,6 +7,24 @@ from bemani.data import Score, UserID
 
 
 class RecordsObject(BaseObject):
+    def __format_danevo_record(self, record: Score) -> Dict[str, Any]:
+        grade = {
+            DBConstants.DANEVO_GRADE_AAA: "AAA",
+            DBConstants.DANEVO_GRADE_AA: "AA",
+            DBConstants.DANEVO_GRADE_A: "A",
+            DBConstants.DANEVO_GRADE_B: "B",
+            DBConstants.DANEVO_GRADE_C: "C",
+            DBConstants.DANEVO_GRADE_D: "D",
+            DBConstants.DANEVO_GRADE_E: "E",
+            DBConstants.DANEVO_GRADE_FAILED: "F",
+        }.get(record.data.get_int("grade"), "F")
+
+        return {
+            "grade": grade,
+            "combo": record.data.get_int("combo"),
+            "full_combo": record.data.get_bool("full_combo"),
+        }
+
     def __format_ddr_record(self, record: Score) -> Dict[str, Any]:
         halo = {
             DBConstants.DDR_HALO_NONE: "none",
@@ -217,6 +235,8 @@ class RecordsObject(BaseObject):
             base.update(self.__format_reflec_record(record))
         if self.game == GameConstants.SDVX:
             base.update(self.__format_sdvx_record(record))
+        if self.game == GameConstants.DANCE_EVOLUTION:
+            base.update(self.__format_danevo_record(record))
 
         return base
 
@@ -308,6 +328,13 @@ class RecordsObject(BaseObject):
                     continue
             if until is not None:
                 if record.update >= until:
+                    continue
+
+            # Dance Evolution is a special case where it stores data in a virtual chart
+            # to keep track of play counts, due to the game not sending chart back with
+            # attempts.
+            if self.game == GameConstants.DANCE_EVOLUTION:
+                if record.chart not in [0, 1, 2, 3, 4]:
                     continue
 
             if userid not in id_to_cards:

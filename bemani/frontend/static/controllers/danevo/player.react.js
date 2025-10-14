@@ -41,7 +41,7 @@ var profile_view = createReactClass({
             var player = this.state.player[this.state.version];
             return (
                 <div>
-                    <div className="section">
+                    <div className="section danevo-nav">
                         <h3>{player.name}'s profile</h3>
                     </div>
                     <div className="section">
@@ -55,10 +55,15 @@ var profile_view = createReactClass({
                         <LabelledSection label="Total Rounds">
                             {player.plays}回
                         </LabelledSection>
+                        <LabelledSection label="Class">
+                            {player.player_class}
+                        </LabelledSection>
                     </div>
                     <div className="section">
-                        <LabelledSection label="Home Shop">{player.shop}</LabelledSection>
-                        <LabelledSection label="Home Shop Area">{player.shop_area}</LabelledSection>
+                        <a href={Link.get('records')}>{ window.own_profile ?
+                            <span>view your records</span> :
+                            <span>view {player.name}'s records</span>
+                        }</a>
                     </div>
                 </div>
             );

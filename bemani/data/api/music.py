@@ -38,6 +38,34 @@ class GlobalMusicData(BaseGlobalData):
     def __max(self, int1: int, int2: int) -> int:
         return max(int1, int2)
 
+    def __format_danevo_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
+        grade = {
+            "AAA": DBConstants.DANEVO_GRADE_AAA,
+            "AA": DBConstants.DANEVO_GRADE_AA,
+            "A": DBConstants.DANEVO_GRADE_A,
+            "B": DBConstants.DANEVO_GRADE_B,
+            "C": DBConstants.DANEVO_GRADE_C,
+            "D": DBConstants.DANEVO_GRADE_D,
+            "E": DBConstants.DANEVO_GRADE_E,
+            "F": DBConstants.DANEVO_GRADE_FAILED,
+        }.get(data.get("grade"), DBConstants.DANEVO_GRADE_FAILED)
+
+        return Score(
+            -1,
+            songid,
+            songchart,
+            int(data.get("points", 0)),
+            int(data.get("timestamp", -1)),
+            self.__max(int(data.get("timestamp", -1)), int(data.get("updated", -1))),
+            -1,  # No location for remote play
+            1,  # No play info for remote play
+            {
+                "combo": int(data.get("combo", -1)),
+                "grade": grade,
+                "full_combo": bool(data.get("full_combo", False)),
+            },
+        )
+
     def __format_ddr_score(self, version: int, songid: int, songchart: int, data: Dict[str, Any]) -> Score:
         halo = {
             "none": DBConstants.DDR_HALO_NONE,
@@ -317,7 +345,29 @@ class GlobalMusicData(BaseGlobalData):
             return self.__format_reflec_score(version, songid, songchart, data)
         if game == GameConstants.SDVX:
             return self.__format_sdvx_score(version, songid, songchart, data)
+        if game == GameConstants.DANCE_EVOLUTION:
+            return self.__format_danevo_score(version, songid, songchart, data)
         return None
+
+    def __merge_danevo_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
+        return Score(
+            -1,
+            oldscore.id,
+            oldscore.chart,
+            self.__max(oldscore.points, newscore.points),
+            self.__max(oldscore.timestamp, newscore.timestamp),
+            self.__max(
+                self.__max(oldscore.update, newscore.update),
+                self.__max(oldscore.timestamp, newscore.timestamp),
+            ),
+            oldscore.location,  # Always propagate location from local setup if possible
+            oldscore.plays + newscore.plays,
+            {
+                "grade": self.__max(oldscore.data["grade"], newscore.data["grade"]),
+                "combo": self.__max(oldscore.data["combo"], newscore.data["combo"]),
+                "full_combo": oldscore.data["full_combo"] or newscore.data["full_combo"],
+            },
+        )
 
     def __merge_ddr_score(self, version: int, oldscore: Score, newscore: Score) -> Score:
         return Score(
@@ -513,6 +563,8 @@ class GlobalMusicData(BaseGlobalData):
             return self.__merge_reflec_score(version, oldscore, newscore)
         if game == GameConstants.SDVX:
             return self.__merge_sdvx_score(version, oldscore, newscore)
+        if game == GameConstants.DANCE_EVOLUTION:
+            return self.__merge_danevo_score(version, oldscore, newscore)
 
         return oldscore
 
@@ -929,6 +981,32 @@ class GlobalMusicData(BaseGlobalData):
 
         return retval
 
+    def __format_danevo_song(
+        self,
+        version: int,
+        songid: int,
+        songchart: int,
+        name: Optional[str],
+        artist: Optional[str],
+        genre: Optional[str],
+        data: Dict[str, Any],
+    ) -> Song:
+        return Song(
+            game=GameConstants.DANCE_EVOLUTION,
+            version=version,
+            songid=songid,
+            songchart=songchart,
+            name=name,
+            artist=artist,
+            genre=genre,
+            data={
+                "bpm_min": int(data["bpm_min"]),
+                "bpm_max": int(data["bpm_max"]),
+                "level": int(data["level"]),
+                "kcal": float(data["kcal"]),
+            },
+        )
+
     def __format_ddr_song(
         self,
         version: int,
@@ -1168,6 +1246,8 @@ class GlobalMusicData(BaseGlobalData):
             return self.__format_reflec_song(version, songid, songchart, name, artist, genre, data)
         if game == GameConstants.SDVX:
             return self.__format_sdvx_song(version, songid, songchart, name, artist, genre, data)
+        if game == GameConstants.DANCE_EVOLUTION:
+            return self.__format_danevo_song(version, songid, songchart, name, artist, genre, data)
         return None
 
     def get_all_songs(

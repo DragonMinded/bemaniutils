@@ -6106,28 +6106,44 @@ class ImportDanceEvolution(ImportBase):
         for i in range(numsongs):
             offset = (i * 128) + 16
 
-            songcode = get_string(offset + 0)  # noqa: F841
+            songcode = get_string(offset + 0)
             songres1 = get_string(offset + 4)  # noqa: F841
             songres2 = get_string(offset + 8)  # noqa: F841
             bpm_min = get_int(offset + 12)
             bpm_max = get_int(offset + 16)
+
+            # Unknown 4 byte value at offset 20.
+
             copyright = get_string(offset + 24, "")
+
+            # Unknown 4 byte value at offset 28, 36, 40, 44, 48.
+
             title = get_string(offset + 52, "Unknown song")
             artist = get_string(offset + 56, "Unknown artist")
+
+            # Unknown 4 byte value at offset 60.
+
             level = get_int(offset + 64)
+            kcal = float(get_int(offset + 68)) / 100.0
             charares1 = get_string(offset + 72)  # noqa: F841
             charares2 = get_string(offset + 76)  # noqa: F841
+
+            # Unknown 4 byte values at offset 80, 84, 88, 92, 96, 100, 104.
+
             kana_sort = get_string(offset + 108)
 
-            flag1 = data[offset + 33] != 0x00  # noqa: F841
-            flag2 = data[offset + 34] == 0x01  # noqa: F841
-            flag3 = data[offset + 34] == 0x02  # noqa: F841
-            flag4 = data[offset + 116] != 0x00  # noqa: F841
+            # Unknown 4 byte value at offset 112.
 
-            # TODO: Get the real music ID from the data, once we have in-game traffic.
+            flag1 = data[offset + 33] != 0x00
+            flag2 = data[offset + 34] == 0x01
+            flag3 = data[offset + 34] == 0x02
+            flag4 = data[offset + 35] != 0x00
+
+            # The music ID is actually, genuinely just the offset into this, from what I can tell.
             retval.append(
                 {
                     "id": i,
+                    "code": songcode,
                     "title": title,
                     "artist": artist,
                     "copyright": copyright or None,
@@ -6135,38 +6151,59 @@ class ImportDanceEvolution(ImportBase):
                     "bpm_min": bpm_min,
                     "bpm_max": bpm_max,
                     "level": level,
+                    "kcal": kcal,
+                    "flag1": flag1,
+                    "flag2": flag2,
+                    "flag3": flag3,
+                    "flag4": flag4,
                 }
             )
 
         return retval
 
     def lookup(self, server: str, token: str) -> List[Dict[str, Any]]:
-        # TODO: We never got far enough to support DanEvo in the server, or
-        # specify it in BEMAPI. So this is a dead function for now, but maybe
-        # some year in the future I'll be able to support this.
-        return []
+        # Grab music info from remote server
+        music = self.remote_music(server, token)
+        songs = music.get_all_songs(self.game, self.version)
+        lut: Dict[int, Dict[str, Any]] = {}
+        for song in songs:
+            if song.id not in lut:
+                lut[song.id] = {
+                    "id": song.id,
+                    "title": song.name,
+                    "artist": song.artist,
+                    "level": song.data.get_int("level"),
+                    "bpm_min": song.data.get_int("bpm_min"),
+                    "bpm_max": song.data.get_int("bpm_max"),
+                    "kcal": song.data.get_float("kcal"),
+                }
+
+        # Return the reassembled data
+        return [val for _, val in lut.items()]
 
     def import_music_db(self, songs: List[Dict[str, Any]]) -> None:
         for song in songs:
             # Import it
             self.start_batch()
 
-            # First, try to find in the DB from another version
-            old_id = self.get_music_id_for_song(song["id"], 0)
-            if self.no_combine or old_id is None:
-                # Insert original
-                print(f"New entry for {song['id']} chart {0}")
-                next_id = self.get_next_music_id()
-            else:
-                # Insert pointing at same ID so scores transfer
-                print(f"Reused entry for {song['id']} chart {0}")
-                next_id = old_id
-            data = {
-                "level": song["level"],
-                "bpm_min": song["bpm_min"],
-                "bpm_max": song["bpm_max"],
-            }
-            self.insert_music_id_for_song(next_id, song["id"], 0, song["title"], song["artist"], None, data)
+            for chart_id in [0, 1, 2, 3, 4, 5]:
+                # First, try to find in the DB from another version
+                old_id = self.get_music_id_for_song(song["id"], chart_id)
+                if self.no_combine or old_id is None:
+                    # Insert original
+                    print(f"New entry for {song['id']} chart {chart_id}")
+                    next_id = self.get_next_music_id()
+                else:
+                    # Insert pointing at same ID so scores transfer
+                    print(f"Reused entry for {song['id']} chart {chart_id}")
+                    next_id = old_id
+                data = {
+                    "level": song["level"],
+                    "kcal": song["kcal"],
+                    "bpm_min": song["bpm_min"],
+                    "bpm_max": song["bpm_max"],
+                }
+                self.insert_music_id_for_song(next_id, song["id"], chart_id, song["title"], song["artist"], None, data)
             self.finish_batch()
 
 

@@ -227,6 +227,7 @@ setup(
         'bemani.frontend.sdvx',
         'bemani.frontend.reflec',
         'bemani.frontend.museca',
+        'bemani.frontend.danevo',
 
         # Backend packages
         'bemani.backend',
@@ -241,6 +242,7 @@ setup(
         'bemani.backend.sdvx',
         'bemani.backend.reflec',
         'bemani.backend.museca',
+        'bemani.backend.danevo',
 
         # API packages
         'bemani.api',
@@ -256,6 +258,7 @@ setup(
         'bemani.client.sdvx',
         'bemani.client.reflec',
         'bemani.client.museca',
+        'bemani.client.danevo',
     ],
     install_requires=[
         req for req in open('requirements.txt').read().split('\n') if len(req) > 0
