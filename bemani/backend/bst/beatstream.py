@@ -233,7 +233,7 @@ class Beatstream(EventLogHandler, BSTBase):
         self.update_score(userid, musicid, chartid, location, points, gauge, 
         max_combo, grade, medal, fantastic_count, great_count, fine_count, miss_count)
         
-        return Node.void('player2')
+        return Node.void('player')
 
     def handle_pcb_boot_request(self, request: Node) -> Node:
         machine = self.data.local.machine.get_machine(self.config['machine']['pcbid'])
@@ -268,7 +268,7 @@ class Beatstream(EventLogHandler, BSTBase):
 
     # Called after settings_write, not sure what it does
     def handle_info_music_count_read_request(self, request: Node) -> Node:
-        info2 = Node.void('info2')
+        info2 = Node.void('info')
         record = Node.void('record')
         record.add_child(Node.void('rec'))
         record.add_child(Node.void('rate'))
@@ -277,7 +277,7 @@ class Beatstream(EventLogHandler, BSTBase):
     
     # Called after music_count_read. Might have something to do with song popularity?
     def handle_info_music_ranking_read_request(self, Request: Node) -> Node:
-        info2 = Node.void('info2')
+        info2 = Node.void('info')
         ranking = Node.void('ranking')
         ranking.add_child(Node.void('count'))
         info2.add_child(ranking)
@@ -301,26 +301,31 @@ class Beatstream(EventLogHandler, BSTBase):
         return player
     
     def handle_lobby_entry_request(self, request: Node) -> Node:
-        lobby2 = Node.void('lobby2')
-        lobby2.add_child(Node.s32('interval', 120))
-        lobby2.add_child(Node.s32('interval_p', 120))
-
-        global_ip = "".join(str(e) + "." for e in request.child_value('e/ga'))[:-1],
-        local_ip = "".join(str(e) + "." for e in request.child_value('e/la'))[:-1],
-        session = self.data.local.lobby.get_play_session_info_by_ip(self.game, self.version, global_ip, local_ip)
+        lobby = Node.void('lobby')
+        lobby.add_child(Node.s32('interval', 120))
+        lobby.add_child(Node.s32('interval_p', 120))
+        selected_lobby = None
         userid = 0
+
+        sessions = self.data.local.lobby.get_all_play_session_infos(self.game, self.version)
         requested_lobby_id = request.child_value('e/eid')
-        lobby = None
         
-        if userid is not None:            
-            userid = session.get_int("userid")            
+        # Beatstream always sends a uid of 0 in testing, so this is how we have to pull the UserID
+        for usr, sesh in sessions:
+            if sesh.get_str('pcbid') == self.config.machine.pcbid:
+                userid = usr
+                break
 
         if requested_lobby_id > 0:
             # Get the detales of the requested lobby
-            lobby = self.data.local.lobby.get_lobby_by_id(self.game, self.version, requested_lobby_id)
+            for l in self.data.local.lobby.get_all_lobbies(self.game, self.version) or []:
+                if l[1].get_int('id') == requested_lobby_id:
+                    selected_lobby = l
+                    break
 
-        if lobby is None:
+        else:
             # Make a new lobby
+            extid = self.data.local.user.get_extid(self.game, self.version, userid)
             self.data.local.lobby.put_lobby(
                 self.game,
                 self.version,
@@ -329,7 +334,7 @@ class Beatstream(EventLogHandler, BSTBase):
                     'ver': request.child_value('e/ver'),
                     'mid': request.child_value('e/mid'),
                     'rest': request.child_value('e/rest'),
-                    'uid': request.child_value('e/uid'),
+                    'uid': extid,
                     'mmode': request.child_value('e/mmode'),
                     'mg': request.child_value('e/mg'),
                     'mopt': request.child_value('e/mopt'),
@@ -343,45 +348,45 @@ class Beatstream(EventLogHandler, BSTBase):
                 }
             )
 
-            lobby = self.data.local.lobby.get_lobby(self.game, self.version, userid)
+            selected_lobby = self.data.local.lobby.get_lobby(self.game, self.version, userid)
 
-        lobby2.add_child(Node.s32('eid', lobby.get_int('id')))
+        lobby.add_child(Node.s32('eid', selected_lobby.get_int('id')))
         e = Node.void('e')
-        lobby2.add_child(e)
-        e.add_child(Node.s32('eid', lobby.get_int('id')))
-        e.add_child(Node.u8('ver', lobby.get_int('ver')))
-        e.add_child(Node.u16('mid', lobby.get_int('mid')))
-        e.add_child(Node.u8('rest', lobby.get_int('rest')))
-        e.add_child(Node.s32('uid', lobby.get_int('mmode')))
-        e.add_child(Node.s32('mmode', lobby.get_int('mmode')))
-        e.add_child(Node.s16('mg', lobby.get_int('mg')))
-        e.add_child(Node.s32('mopt', lobby.get_int('mopt')))        
-        e.add_child(Node.string('lid', lobby.get_str('lid')))
-        e.add_child(Node.string('sn', lobby.get_str('sn')))
-        e.add_child(Node.u8('pref', lobby.get_int('pref')))
-        e.add_child(Node.s16('eatime', lobby.get_int('eatime')))
-        e.add_child(Node.u8_array('ga', lobby.get_int_array('ga', 4)))
-        e.add_child(Node.u16('gp', lobby.get_int('gp')))
-        e.add_child(Node.u8_array('la', lobby.get_int_array('la', 4)))
+        lobby.add_child(e)
+        e.add_child(Node.s32('eid', selected_lobby.get_int('id')))
+        e.add_child(Node.u8('ver', selected_lobby.get_int('ver')))
+        e.add_child(Node.u16('mid', selected_lobby.get_int('mid')))
+        e.add_child(Node.u8('rest', selected_lobby.get_int('rest')))
+        e.add_child(Node.s32('uid', selected_lobby.get_int('uid')))
+        e.add_child(Node.s32('mmode', selected_lobby.get_int('mmode')))
+        e.add_child(Node.s16('mg', selected_lobby.get_int('mg')))
+        e.add_child(Node.s32('mopt', selected_lobby.get_int('mopt')))        
+        e.add_child(Node.string('lid', selected_lobby.get_str('lid')))
+        e.add_child(Node.string('sn', selected_lobby.get_str('sn')))
+        e.add_child(Node.u8('pref', selected_lobby.get_int('pref')))
+        e.add_child(Node.s16('eatime', selected_lobby.get_int('eatime')))
+        e.add_child(Node.u8_array('ga', selected_lobby.get_int_array('ga', 4)))
+        e.add_child(Node.u16('gp', selected_lobby.get_int('gp')))
+        e.add_child(Node.u8_array('la', selected_lobby.get_int_array('la', 4)))
         
-        return lobby2
+        return lobby
 
     def handle_shop_setting_write_request(self, request: Node) -> Node:
-        shop2 = Node.void('shop2')
+        shop2 = Node.void('shop')
         #TODO: shop settings saving
         return shop2
     
     def handle_player_end_request(self, request: Node) -> Node:
         self.data.local.lobby.destroy_play_session_info(self.game, self.version, 
             self.data.local.user.from_refid(self.game, self.version, request.child_value("rid")))
-        return Node.void('player2')
+        return Node.void('player')
     
     # Called either when carding out or creating a new profile
     def handle_player_write_request(self, request: Node) -> Node:
         refid = request.child_value('pdata/account/rid')
         extid = request.child_value('pdata/account/usrid')
         pdata = request.child('pdata')
-        reply = Node.void('player2')
+        reply = Node.void('player')
 
         profile = self.unformat_player_profile(pdata)
         userid = self.data.remote.user.from_refid(self.game, self.version, refid) # Get the userid for the refid

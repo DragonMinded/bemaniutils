@@ -586,7 +586,7 @@ class Beatstream2(EventLogHandler, BSTBase):
 
         return info2
 
-    # Called when a player registeres a new profile when they have an account
+    # Called when a player registeres a new profile to pull data from Beatstream 1
     def handle_player2_succeed_request(self, request: Node) -> Node:
         player2 = Node.void('player2')
         userid = self.data.local.user.from_refid(self.game, self.version, request.child_value('rid'))
@@ -768,6 +768,7 @@ class Beatstream2(EventLogHandler, BSTBase):
 
         else:
             # Make a new lobby
+            extid = self.data.local.user.get_extid(self.game, self.version, userid)
             self.data.local.lobby.put_lobby(
                 self.game,
                 self.version,
@@ -776,7 +777,7 @@ class Beatstream2(EventLogHandler, BSTBase):
                     'ver': request.child_value('e/ver'),
                     'mid': request.child_value('e/mid'),
                     'rest': request.child_value('e/rest'),
-                    'uid': request.child_value('e/uid'),
+                    'uid': extid,
                     'mmode': request.child_value('e/mmode'),
                     'mg': request.child_value('e/mg'),
                     'mopt': request.child_value('e/mopt'),
@@ -852,7 +853,7 @@ class Beatstream2(EventLogHandler, BSTBase):
     
     # Called when matching
     def handle_player2_matching_data_load_request(self, request: Node) -> Node:
-        root = Node.void('player_matching')
+        root = Node.void('player2')
         data = Node.void('data')
         data.add_child(Node.s32('id', 0)) # player id?
         data.add_child(Node.bool('fl', False)) # First Local
