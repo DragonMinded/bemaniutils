@@ -14,6 +14,7 @@ set -e
 ./read --series pnm --version 24 "$@"
 ./read --series pnm --version 25 "$@"
 ./read --series pnm --version 26 "$@"
+./read --series pnm --version 27 "$@"
 
 # Init Jubeat
 ./read --series jubeat --version saucer "$@"
