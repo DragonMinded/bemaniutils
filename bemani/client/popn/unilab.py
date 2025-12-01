@@ -135,6 +135,20 @@ class PopnMusicUnilabClient(BaseClient):
         self.assert_path(resp, "response/player24/customize")
         self.assert_path(resp, "response/player24/stamp/stamp_id")
         self.assert_path(resp, "response/player24/stamp/cnt")
+        # Kaimei Riddles
+        self.assert_path(resp, "response/player24/event2021/point")
+        self.assert_path(resp, "response/player24/event2021/step")
+        self.assert_path(resp, "response/player24/event2021/quest_point")
+        self.assert_path(resp, "response/player24/event2021/step_nos")
+        self.assert_path(resp, "response/player24/event2021/quest_point_nos")
+        self.assert_path(resp, "response/player24/account/sp_riddles_id")
+        self.assert_path(resp, "response/player24/riddles_data/sh_riddles/sh_riddles_id")
+        # Unilab
+        self.assert_path(resp, "response/player24/event_p27/team_id")
+        self.assert_path(resp, "response/player24/event_p27/first_play")
+        self.assert_path(resp, "response/player24/event_p27/select_battery_id")
+        self.assert_path(resp, "response/player24/event_p27/elem_first_play")
+        self.assert_path(resp, "response/player24/event_p27/today_first_play")
 
     def verify_player24_read(self, ref_id: str, msg_type: str) -> Dict[str, Dict[int, Dict[str, int]]]:
         call = self.call_node()
