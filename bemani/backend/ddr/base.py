@@ -127,6 +127,13 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         return Node.void("game")
 
+    def format_profile_part(self, userid: UserID, profile: Profile, part: str) -> Node:
+        """
+        Base handler for a profile. Given a userid and a profile dictionary,
+        return a Node representing a profile. Should be overridden.
+        """
+        return Node.void("game")
+
     def format_scores(self, userid: UserID, profile: Profile, scores: List[Score]) -> Node:
         """
         Base handler for a score list. Given a userid, profile and a score list,
@@ -141,6 +148,24 @@ class DDRBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         Should be overridden.
         """
         return oldprofile
+
+    def get_profile_by_refid_and_part(self, refid: Optional[str], part: Optional[str]) -> Optional[Node]:
+        """
+        Given a RefID, return a formatted profile node. Basically every game
+        needs a profile lookup, even if it handles where that happens in
+        a different request. This is provided for code deduplication.
+        """
+        if refid is None:
+            return None
+
+        # First try to load the actual profile
+        userid = self.data.remote.user.from_refid(self.game, self.version, refid)
+        profile = self.get_profile(userid)
+        if profile is None:
+            return None
+
+        # Now, return it
+        return self.format_profile_part(userid, profile, part)
 
     def get_profile_by_refid(self, refid: Optional[str]) -> Optional[Node]:
         """

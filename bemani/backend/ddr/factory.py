@@ -1,9 +1,8 @@
 from typing import List, Optional, Type
 
 from bemani.backend.base import Base, Factory
+from bemani.backend.ddr.ddrx import DDRX
 from bemani.backend.ddr.stubs import (
-    DDRX,
-    DDRSuperNova2,
     DDRSuperNova,
     DDRExtreme,
     DDR7thMix,
@@ -14,6 +13,7 @@ from bemani.backend.ddr.stubs import (
     DDR2ndMix,
     DDR1stMix,
 )
+from bemani.backend.ddr.ddrsn2 import DDRSuperNova2
 from bemani.backend.ddr.ddrx2 import DDRX2
 from bemani.backend.ddr.ddrx3 import DDRX3
 from bemani.backend.ddr.ddr2013 import DDR2013
@@ -47,7 +47,7 @@ class DDRFactory(Factory):
 
     @classmethod
     def register_all(cls) -> None:
-        for gamecode in ["HDX", "JDX", "KDX", "MDX"]:
+        for gamecode in ["GDJ", "HDX", "JDX", "KDX", "MDX"]:
             Base.register(gamecode, DDRFactory)
 
     @classmethod
@@ -69,6 +69,8 @@ class DDRFactory(Factory):
                 return VersionConstants.DDR_A20
             return None
 
+        if model.gamecode == "GDJ":
+            return DDRSuperNova2(data, config, model)
         if model.gamecode == "HDX":
             return DDRX(data, config, model)
         if model.gamecode == "JDX":

@@ -5,22 +5,6 @@ from bemani.backend.ddr.base import DDRBase
 from bemani.common import VersionConstants
 
 
-class DDRX(DDRBase):
-    name: str = "DanceDanceRevolution X"
-    version: int = VersionConstants.DDR_X
-
-    def previous_version(self) -> Optional[DDRBase]:
-        return DDRSuperNova2(self.data, self.config, self.model)
-
-
-class DDRSuperNova2(DDRBase):
-    name: str = "DanceDanceRevolution SuperNova 2"
-    version: int = VersionConstants.DDR_SUPERNOVA_2
-
-    def previous_version(self) -> Optional[DDRBase]:
-        return DDRSuperNova(self.data, self.config, self.model)
-
-
 class DDRSuperNova(DDRBase):
     name: str = "DanceDanceRevolution SuperNova"
     version: int = VersionConstants.DDR_SUPERNOVA

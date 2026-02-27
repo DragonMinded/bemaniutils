@@ -3,7 +3,6 @@ from typing import Dict, List, Optional, Tuple
 from typing_extensions import Final
 
 from bemani.backend.ddr.base import DDRBase
-from bemani.backend.ddr.stubs import DDRX
 from bemani.backend.ddr.common import (
     DDRGameFriendHandler,
     DDRGameLockHandler,
@@ -20,6 +19,7 @@ from bemani.backend.ddr.common import (
     DDRGameShopHandler,
     DDRGameTraceHandler,
 )
+from bemani.backend.ddr.ddrx import DDRX
 from bemani.common import Time, VersionConstants, Profile, intish
 from bemani.data import Score, UserID
 from bemani.protocol import Node
