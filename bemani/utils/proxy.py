@@ -342,4 +342,4 @@ if __name__ == "__main__":
     if args.config is not None:
         load_proxy_config(args.config)
 
-    app.run(host="0.0.0.0", port=args.port, debug=True)
+    app.run(host=args.address, port=args.port, debug=True)

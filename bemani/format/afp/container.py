@@ -408,7 +408,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                 if (control & 0x01) != 0:
                     if comp_i >= comp_len:
                         return decomp
-                    
+
                     decomp.append(comp[comp_i])
                     window[window_i] = comp[comp_i]
                     window_i += 1
@@ -421,7 +421,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
 
                     if (len(decomp) + slide_len) > decomp_len:
                         slide_len = decomp_len - len(decomp)
-                    
+
                     while slide_len > 0:
                         decomp.append(window[slide_off])
                         window[window_i] = window[slide_off]
