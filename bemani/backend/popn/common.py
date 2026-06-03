@@ -1075,6 +1075,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
                 if game_config.get_bool("force_unlock_songs") and itemtype == 0:
                     # We already sent song unlocks in the force unlock section above.
                     continue
+                if game_config.get_bool("force_unlock_deco") and itemtype == 7:
+                    # We already sent deco part unlocks in the force unlock section.
+                    continue
 
                 item = Node.void("item")
                 root.add_child(item)
@@ -1330,6 +1333,9 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
 
                 if game_config.get_bool("force_unlock_songs") and itemtype == 0:
                     # If we enabled force song unlocks, don't save songs to the profile.
+                    continue
+                if game_config.get_bool("force_unlock_deco") and itemtype == 7:
+                    # If we enabled force deco parts unlock, don't save deco parts.
                     continue
 
                 self.data.local.user.put_achievement(

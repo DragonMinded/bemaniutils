@@ -187,8 +187,8 @@ Valid game series and their versions are as follows. Clients and servers should 
     * ``22`` - Pop'n Music Lapistoria
     * ``23`` - Pop'n Music Eclale
     * ``24`` - Pop'n Music うさぎと猫と少年の夢
-    * ``25`` - Pop'n Music Peace
-    * ``26`` - Pop'n Music Kaimei Riddles
+    * ``25`` - Pop'n Music peace
+    * ``26`` - Pop'n Music 解明リドルズ
     * ``27`` - Pop'n Music Unilab
 * ``reflecbeat``
     * ``1`` - REFLEC BEAT

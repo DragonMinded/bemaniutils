@@ -335,13 +335,13 @@ def updatename() -> Dict[str, Any]:
     if (
         re.match(
             "^["
-            + "\uff20-\uff3a"
-            + "\uff41-\uff5a"  # widetext A-Z and @
-            + "\uff10-\uff19"  # widetext a-z
-            + "\uff0c\uff0e\uff3f"  # widetext 0-9
-            + "\u3041-\u308d\u308f\u3092\u3093"  # widetext ,._
-            + "\u30a1-\u30ed\u30ef\u30f2\u30f3\u30fc"  # hiragana
-            + "]*$",  # katakana
+            + "\uff20-\uff3a"  # widetext A-Z and @
+            + "\uff41-\uff5a"  # widetext a-z
+            + "\uff10-\uff19"  # widetext 0-9
+            + "\uff0c\uff0e\uff3f"  # widetext ,._
+            + "\u3041-\u308d\u308f\u3092\u3093"  # hiragana
+            + "\u30a1-\u30ed\u30ef\u30f2\u30f3\u30fc"  # katakana
+            + "]*$",
             name,
         )
         is None

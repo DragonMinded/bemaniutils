@@ -20,7 +20,7 @@ class PopnMusicUnilab(PopnMusicModernBase):
     GAME_MAX_MUSIC_ID: int = 2188
 
     # Biggest deco part ID in the game
-    GAME_MAX_DECO_ID: int = 81
+    GAME_MAX_DECO_ID: int = 109
 
     def previous_version(self) -> PopnMusicBase:
         return PopnMusicKaimei(self.data, self.config, self.model)
@@ -50,9 +50,9 @@ class PopnMusicUnilab(PopnMusicModernBase):
                     },
                 },
                 {
-                    # Shutchou! pop'n quest Lively II event
-                    "name": "Shutchou! pop'n quest Lively II phase",
-                    "tip": "Shutchou! pop'n quest Lively II phase for all players.",
+                    # Shutchou! pop'n quest Lively II ~nostalgia~ event
+                    "name": "Shutchou! pop'n quest Lively II 〜nostalgia〜 phase",
+                    "tip": "Shutchou! pop'n quest Lively II 〜nostalgia〜 phase for all players.",
                     "category": "game_config",
                     "setting": "popn_quest_lively_2",
                     "values": {
@@ -291,23 +291,24 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 # 5 - 2172 - レイドバックジャーニー
                 # 6 - 2188 - Super Heroine
                 0: music_phase,
-                # Shutchou! pop'n quest Lively II (0-6)
-                # When active, the following songs are available for unlock
-                # 1 - 1989 - Ketter
-                #     1990 - Petit Queen
-                #     1991 - 波と凪の挟間で
-                # 2 - 1984 - コルドバの女
-                #     1985 - say...but in vain
-                #     1992 - Northern Cross
-                # 3 - 1982 - Surf on the Light
-                #     1983 - バッドエンド・シンドローム
-                #     1988 - Danza Pantera
-                # 4 - 1986 - virkatoの主題によるperson09風超絶技巧変奏曲
-                #     1987 - 水晶塔のオルカ
-                #     1993 - Un Happy Heart
-                # 5 - 2017 - virkatoの主題によるperson09風超絶技巧変奏曲 upper
-                # 6 - Event Ended
-                1: popn_quest_lively_2,
+                # Permanent song unlocks (0-6)
+                # This setting PERMANENTLY unlocks 86 songs by granting them in the database.
+                # Reverting this to a lower number will not remove these songs from the profile.
+                # 1 - Unlock 45 songs from 解明！MN探偵社:
+                #     195, 267, 323, 521, 575, 1894, 1896, 1908, 1914, 1915, 1916, 1924, 1925, 1926, 1927, 1928,
+                #     1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945,
+                #     1946, 1947, 1955, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1965, 1968, 1969, 1970
+                # 2 - Unlock all 6 songs from BEMANI 2021真夏の歌合戦5番勝負:
+                #     1948, 1949, 1950, 1951, 1952, 1953
+                # 3 - Unlock all 11 songs from 冬のポップン！スペシャルコンボ！
+                #     1917, 1918, 1919, 1920, 1921, 1922, 1923, 1971, 1972, 1973, 1974
+                # 4 - Unlock 12 songs from 解明！MN探偵社:
+                #     1976, 1977, 1978, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006
+                # 5 - Unlock the final 10 songs from 解明！MN探偵社:
+                #     2007, 2008, 2009, 2010, 2011, 2012, 2013, 2015, 2016, 2018
+                # 6 - Unlock 2 songs from BPL応援 楽曲解禁スタンプラリー:
+                #     1954, 1956
+                1: 6,
                 # KAC 2023 (0-4) - Please see the site below for what songs are in set A and set B
                 # https://bemaniwiki.com/?%B8%F8%BC%B0%C2%E7%B2%F1/KONAMI+Arcade+Championship%282023%29/%CD%BD%C1%AA%A5%E9%A5%A6%A5%F3%A5%C9#popn
                 # 0 - Disabled
@@ -321,7 +322,16 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 # 1 - Net taisen
                 # 2 - Net taisen + Local mode
                 3: 1 if enable_net_taisen else 0,
-                # Unknown event (0-7)
+                # Paseli Festival Attract mode ads (0-7)
+                # As updates to datecodes happen the older ones are are completely locked out
+                # 0 - Paseli Festival 2022 - 5000 yen gift for 400 winners! - 2022-09-11 through 2022-09-25
+                # 1 - Disabled
+                # 2 - Paseli Festival 2022-2023 - 10,000 yen gift for 1,210 winners! - 2022-12-15 through 2023-01-15
+                # 3 - Appears identical to 2
+                # 4 - Paseli Festival 2023 - 10,000 yen gift for 5,000 winners! - 2023-06-01 through 2023-06-30
+                # 5 - Disabled
+                # 6 - Paseli Festival 2023 - 10,000 yen gift for 5,000 winners! - 2023-11-22 through 2023-12-24
+                # 7 - Disabled
                 4: 7,
                 # Narunaru♪ UniLab jikkenshitsu! (0-48)
                 # 6500 clear points are needed unless otherwise specified
@@ -391,9 +401,27 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 # Super Unilab BOOST! (0-2)
                 # Boost should be 120, 150, or 200, bemaniwiki has the explanation and it's based on the unlocks left to do
                 6: super_unilab_boost,
-                # Unknown event (0-6)
-                7: 6,
-                # Unknown event (0-2)
+                # Shutchou! pop'n quest Lively II ~nostalgia~ (0-6)
+                # When active, the following songs are available for unlock
+                # 1 - 1990 - Petit Queen
+                #     1991 - 波と凪の挟間で
+                #     1989 - Ketter
+                # 2 - 1984 - コルドバの女
+                #     1985 - say...but in vain
+                #     1992 - Northern Cross
+                # 3 - 1982 - Surf on the Light
+                #     1988 - Danza Pantera
+                #     1983 - バッドエンド・シンドローム
+                # 4 - 1993 - Un Happy Heart
+                #     1987 - 水晶塔のオルカ
+                #     1986 - virkatoの主題によるperson09風超絶技巧変奏曲
+                # 5 - 2017 - virkatoの主題によるperson09風超絶技巧変奏曲 upper
+                # 6 - Event Ended
+                7: popn_quest_lively_2,
+                # Attract mode ad campaign (0-2)
+                # 0 - Off
+                # 1 - pop'n PIICA / clear file campaign
+                # 2 - Ended
                 8: 2,
                 # Kakusei no Elem - Awakening Elem (0-44)
                 # Songs are unlocked as a percentage of 280 points unless otherwise specified
@@ -458,7 +486,10 @@ class PopnMusicUnilab(PopnMusicModernBase):
                 10: 1 if (kakusei_phase > 0) else 0,
                 # CanCan's Super Awakening Boost (0-2)
                 11: cancan_boost,
-                # Unknown event (0-2)
+                # BEMANI Pro League 3 ad in attract mode (0-2)
+                # 0 - Off
+                # 1 - Streaming on Youtube every Wednesday
+                # 2 - Ended
                 12: 2,
                 # Unknown event (0-2)
                 13: 2,
@@ -569,6 +600,17 @@ class PopnMusicUnilab(PopnMusicModernBase):
                     battery.add_child(Node.s16("battery_id", battery_id))
                     battery.add_child(Node.u32("energy", energy))
                     battery.add_child(Node.bool("is_cleared", is_cleared))
+
+        # Fake unlock all deco items if enabled
+        if game_config.get_bool("force_unlock_deco"):
+            for deco_id in range(1, self.GAME_MAX_DECO_ID + 1):
+                item = Node.void("item")
+                item.add_child(Node.u8("type", 7))
+                item.add_child(Node.u16("id", deco_id))
+                item.add_child(Node.u16("param", 0))
+                item.add_child(Node.bool("is_new", False))
+                item.add_child(Node.u64("get_time", 0))
+                root.add_child(item)
 
         return root
 
