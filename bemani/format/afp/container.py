@@ -413,10 +413,10 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     window[window_i] = comp[comp_i]
                     window_i += 1
                     comp_i += 1
-                    window_i &= 0xfff
+                    window_i &= 0xFFF
                 else:
-                    slide_off = (((comp[comp_i + 1] & 0xf0) << 4) | comp[comp_i]) & 0xfff
-                    slide_len = (comp[comp_i + 1] & 0x0f) + 3
+                    slide_off = (((comp[comp_i + 1] & 0xF0) << 4) | comp[comp_i]) & 0xFFF
+                    slide_len = (comp[comp_i + 1] & 0x0F) + 3
                     comp_i += 2
 
                     if (len(decomp) + slide_len) > decomp_len:
@@ -427,8 +427,8 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         window[window_i] = window[slide_off]
                         window_i += 1
                         slide_off += 1
-                        window_i &= 0xfff
-                        slide_off &= 0xfff
+                        window_i &= 0xFFF
+                        slide_off &= 0xFFF
                         slide_len -= 1
                 control >>= 1
                 i += 1

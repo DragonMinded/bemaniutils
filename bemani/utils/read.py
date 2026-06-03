@@ -2727,7 +2727,7 @@ class ImportPopn(ImportBase):
                     step=172,
                     length=2139,
                     # Offset and step of file DB
-                    file_offset=0x2Af6C0,
+                    file_offset=0x2AF6C0,
                     file_step=32,
                     # Standard lookups
                     genre_offset=0,
