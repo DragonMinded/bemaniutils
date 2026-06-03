@@ -20,6 +20,84 @@ danevo_pages = Blueprint(
 )
 
 
+@danevo_pages.route("/scores")
+@loginrequired
+def viewnetworkscores() -> Response:
+    # Only load the last 100 results for the initial fetch, so we can render faster
+    frontend = DanceEvolutionFrontend(g.data, g.config, g.cache)
+    network_scores = frontend.get_network_scores(limit=100)
+    if len(network_scores["attempts"]) > 10:
+        network_scores["attempts"] = frontend.round_to_ten(network_scores["attempts"])
+
+    return render_react(
+        "Global Dance Evolution Scores",
+        "danevo/scores.react.js",
+        {
+            "attempts": network_scores["attempts"],
+            "songs": frontend.get_all_songs(),
+            "players": network_scores["players"],
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
+            "shownames": True,
+            "shownewrecords": False,
+        },
+        {
+            "refresh": url_for("danevo_pages.listnetworkscores"),
+            "player": url_for("danevo_pages.viewplayer", userid=-1),
+            "individual_score": url_for("danevo_pages.viewtopscores", musicid=-1),
+        },
+    )
+
+
+@danevo_pages.route("/scores/list")
+@jsonify
+@loginrequired
+def listnetworkscores() -> Dict[str, Any]:
+    frontend = DanceEvolutionFrontend(g.data, g.config, g.cache)
+    return frontend.get_network_scores()
+
+
+@danevo_pages.route("/scores/<int:userid>")
+@loginrequired
+def viewscores(userid: UserID) -> Response:
+    frontend = DanceEvolutionFrontend(g.data, g.config, g.cache)
+    info = frontend.get_latest_player_info([userid]).get(userid)
+    if info is None:
+        abort(404)
+
+    scores = frontend.get_scores(userid, limit=100)
+    if len(scores) > 10:
+        scores = frontend.round_to_ten(scores)
+
+    return render_react(
+        f'{info["name"]}\'s Dance Evolution Scores',
+        "danevo/scores.react.js",
+        {
+            "attempts": scores,
+            "songs": frontend.get_all_songs(),
+            "players": {},
+            "versions": {version: name for (game, version, name) in frontend.all_games()},
+            "shownames": False,
+            "shownewrecords": True,
+        },
+        {
+            "refresh": url_for("danevo_pages.listscores", userid=userid),
+            "player": url_for("danevo_pages.viewplayer", userid=-1),
+            "individual_score": url_for("danevo_pages.viewtopscores", musicid=-1),
+        },
+    )
+
+
+@danevo_pages.route("/scores/<int:userid>/list")
+@jsonify
+@loginrequired
+def listscores(userid: UserID) -> Dict[str, Any]:
+    frontend = DanceEvolutionFrontend(g.data, g.config, g.cache)
+    return {
+        "attempts": frontend.get_scores(userid),
+        "players": {},
+    }
+
+
 @danevo_pages.route("/records")
 @loginrequired
 def viewnetworkrecords() -> Response:
@@ -204,6 +282,7 @@ def viewplayer(userid: UserID) -> Response:
         {
             "refresh": url_for("danevo_pages.listplayer", userid=userid),
             "records": url_for("danevo_pages.viewrecords", userid=userid),
+            "scores": url_for("danevo_pages.viewscores", userid=userid),
         },
     )
 

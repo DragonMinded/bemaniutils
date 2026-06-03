@@ -16,8 +16,6 @@ class DanceEvolutionFrontend(FrontendBase):
         DanceEvolutionBase.CHART_TYPE_EXTREME,
         DanceEvolutionBase.CHART_TYPE_STEALTH,
         DanceEvolutionBase.CHART_TYPE_MASTER,
-        # Only included so that we can grab the play count for this song.
-        DanceEvolutionBase.CHART_TYPE_PLAYTRACKING,
     ]
 
     valid_rival_types: List[str] = ["dancemate"]
@@ -60,7 +58,21 @@ class DanceEvolutionFrontend(FrontendBase):
         return formatted_score
 
     def format_attempt(self, userid: UserID, attempt: Attempt) -> Dict[str, Any]:
-        raise NotImplementedError("Dance Evolution does not have attempts!")
+        formatted_attempt = super().format_attempt(userid, attempt)
+        formatted_attempt["combo"] = attempt.data.get_int("combo")
+        formatted_attempt["full_combo"] = attempt.data.get_bool("full_combo")
+        formatted_attempt["medal"] = attempt.data.get_int("grade")
+        formatted_attempt["grade"] = {
+            DanceEvolutionBase.GRADE_FAILED: "FAILED",
+            DanceEvolutionBase.GRADE_E: "E",
+            DanceEvolutionBase.GRADE_D: "D",
+            DanceEvolutionBase.GRADE_C: "C",
+            DanceEvolutionBase.GRADE_B: "B",
+            DanceEvolutionBase.GRADE_A: "A",
+            DanceEvolutionBase.GRADE_AA: "AA",
+            DanceEvolutionBase.GRADE_AAA: "AAA",
+        }.get(attempt.data.get_int("grade"), "NO PLAY")
+        return formatted_attempt
 
     def format_profile(self, profile: Profile, playstats: ValidatedDict) -> Dict[str, Any]:
         formatted_profile = super().format_profile(profile, playstats)
@@ -80,9 +92,6 @@ class DanceEvolutionFrontend(FrontendBase):
         return formatted_song
 
     def merge_song(self, existing: Dict[str, Any], new: Song) -> Dict[str, Any]:
-        if new.chart == DanceEvolutionBase.CHART_TYPE_PLAYTRACKING:
-            return existing
-
         new_song = super().merge_song(existing, new)
         if existing["levels"][new.chart] == 0:
             new_song["levels"][new.chart] = new.data.get_int("level")

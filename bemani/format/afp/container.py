@@ -372,6 +372,68 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             flags3=flags3,
         )
 
+    def decompress_legacy(self, texture_offset: int, texture_length: int, name: str) -> bytes:
+        # Get size, round up to nearest power of 4
+        decomp_len, comp_len = struct.unpack(
+            ">II",
+            self.data[texture_offset : (texture_offset + 8)],
+        )
+        self.add_coverage(texture_offset, 8)
+        self.vprint(
+            f"    {name}, length: {texture_length}, offset: {hex(texture_offset)}, deflated_size: {comp_len}, inflated_size: {decomp_len}"
+        )
+
+        if comp_len != (texture_length - 8):
+            raise Exception("We got an incorrect length for lz texture!")
+        decomp_len = (decomp_len + 3) & (~3)
+
+        # Get the data offset.
+        lz_data_offset = texture_offset + 8
+        comp = self.data[lz_data_offset : (lz_data_offset + comp_len)]
+        self.add_coverage(lz_data_offset, comp_len)
+
+        # This takes forever, so skip it if we're pretending.
+        if comp_len == 0:
+            data_len = min(decomp_len, texture_length - 8)
+            return self.data[lz_data_offset : (lz_data_offset + data_len)]
+        decomp = bytearray()
+        window = [0] * 4096
+        comp_i, window_i = 0, 4078
+        control = 0
+        while comp_i < comp_len:
+            control = comp[comp_i]
+            comp_i += 1
+            i = 0
+            while i < 8 and len(decomp) < decomp_len:
+                if (control & 0x01) != 0:
+                    if comp_i >= comp_len:
+                        return decomp
+
+                    decomp.append(comp[comp_i])
+                    window[window_i] = comp[comp_i]
+                    window_i += 1
+                    comp_i += 1
+                    window_i &= 0xfff
+                else:
+                    slide_off = (((comp[comp_i + 1] & 0xf0) << 4) | comp[comp_i]) & 0xfff
+                    slide_len = (comp[comp_i + 1] & 0x0f) + 3
+                    comp_i += 2
+
+                    if (len(decomp) + slide_len) > decomp_len:
+                        slide_len = decomp_len - len(decomp)
+
+                    while slide_len > 0:
+                        decomp.append(window[slide_off])
+                        window[window_i] = window[slide_off]
+                        window_i += 1
+                        slide_off += 1
+                        window_i &= 0xfff
+                        slide_off &= 0xfff
+                        slide_len -= 1
+                control >>= 1
+                i += 1
+        return decomp
+
     def __parse(self, verbose: bool) -> None:
         # First, check the signature
         if self.data[0:4] == b"2PXT":
@@ -437,7 +499,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                     if name_offset != 0 and texture_offset != 0:
                         lz_data: Optional[bytes] = None
                         if self.legacy_lz:
-                            raise Exception("We don't support legacy lz mode!")
+                            raw_data = self.decompress_legacy(texture_offset, texture_length, name)
                         elif self.modern_lz:
                             # Get size, round up to nearest power of 4
                             inflated_size, deflated_size = struct.unpack(

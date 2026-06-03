@@ -43,6 +43,7 @@ class StatisticsObject(BaseObject):
             GameConstants.JUBEAT,
             GameConstants.MUSECA,
             GameConstants.POPN_MUSIC,
+            GameConstants.DANCE_EVOLUTION,
         }:
             return True
         if self.game == GameConstants.IIDX:
@@ -81,6 +82,8 @@ class StatisticsObject(BaseObject):
                 DBConstants.SDVX_CLEAR_TYPE_NO_PLAY,
                 DBConstants.SDVX_CLEAR_TYPE_FAILED,
             ]
+        if self.game == GameConstants.DANCE_EVOLUTION:
+            return attempt.data.get_int("grade") != DBConstants.DANEVO_GRADE_FAILED
 
         return False
 
@@ -117,6 +120,8 @@ class StatisticsObject(BaseObject):
                 DBConstants.SDVX_CLEAR_TYPE_ULTIMATE_CHAIN,
                 DBConstants.SDVX_CLEAR_TYPE_PERFECT_ULTIMATE_CHAIN,
             ]
+        if self.game == GameConstants.DANCE_EVOLUTION:
+            return attempt.data.get_bool("full_combo")
 
         return False
 
@@ -187,13 +192,6 @@ class StatisticsObject(BaseObject):
 
     def fetch_v1(self, idtype: APIConstants, ids: List[str], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         retval: List[Dict[str, Any]] = []
-
-        # Special case, Dance Evolution can't track attempts in any meaningful capacity
-        # because the game does not actually send down information about the chart for
-        # given attempts. So, we only know that players plays a song, not what chart or
-        # whether they cleared it or full-combo'd it.
-        if self.game == GameConstants.DANCE_EVOLUTION:
-            return []
 
         # Fetch the attempts
         if idtype == APIConstants.ID_TYPE_SERVER:

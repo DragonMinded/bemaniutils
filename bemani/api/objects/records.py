@@ -330,13 +330,6 @@ class RecordsObject(BaseObject):
                 if record.update >= until:
                     continue
 
-            # Dance Evolution is a special case where it stores data in a virtual chart
-            # to keep track of play counts, due to the game not sending chart back with
-            # attempts.
-            if self.game == GameConstants.DANCE_EVOLUTION:
-                if record.chart not in [0, 1, 2, 3, 4]:
-                    continue
-
             if userid not in id_to_cards:
                 cards = self.data.local.user.get_cards(userid)
                 if len(cards) == 0:

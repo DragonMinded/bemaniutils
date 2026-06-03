@@ -129,10 +129,9 @@ var network_records = createReactClass({
     getPlays: function(record) {
         if (!record) { return 0; }
         var plays = 0;
-
-        // Play counts are only storted in the play statistics chart.
-        if (record[5]) { plays += record[5].plays; }
-
+        for (var i = 0; i < 5; i++) {
+            if (record[i]) { plays += record[i].plays; }
+        }
         return plays;
     },
 
@@ -468,7 +467,7 @@ var network_records = createReactClass({
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colSpan={5}>
+                            <td colSpan={6}>
                                 { this.state.offset > 0 ?
                                     <Prev onClick={function(event) {
                                          var page = this.state.offset - this.state.limit;

@@ -64,6 +64,11 @@ var profile_view = createReactClass({
                             <span>view your records</span> :
                             <span>view {player.name}'s records</span>
                         }</a>
+                        <span className="separator">&middot;</span>
+                        <a href={Link.get('scores')}>{ window.own_profile ?
+                            <span>view all your scores</span> :
+                            <span>view all {player.name}'s scores</span>
+                        }</a>
                     </div>
                 </div>
             );

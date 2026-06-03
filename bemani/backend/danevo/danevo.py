@@ -1,12 +1,11 @@
 import base64
 import struct
-from typing import Any, Dict
+from typing import Any, Dict, List
 from typing_extensions import Final
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.danevo.base import DanceEvolutionBase
 from bemani.common import VersionConstants, Profile, CardCipher, Time
-from bemani.data import ScoreSaveException
 from bemani.protocol import Node
 
 
@@ -33,10 +32,9 @@ class DanceEvolution(
     # never sends trailing zeros for a data structure, even if it internally recognizes them,
     # so this may have length not divisible by 32 if there are no non-zero bytes after a certain
     # location. The correct thing to do is to fill with assumed zero bytes to a 32-byte boundary.
-    # The first 4 bytes of any history chunk are the score in little endian. The next byte is the
-    # song ID. Note that the chart does not appear anywhere in this structure to my knowledge.
-    # I have no idea what the rest of the bytes are, but most stay zeros and many are the same
-    # no matter what.
+    # The first 4 bytes of any history chunk are the score in little endian. The next 4 bytes
+    # is a packed structure containing the song ID, difficulty, score, grade, combo and full
+    # combo indicator. Then, a 64 bit timestamp in milliseconds follows.
 
     # DATA01-05 store the records for songs, including the high score, the letter grade earned,
     # and whether the song has been played (a record exists), cleared and whether a full combo
@@ -384,10 +382,54 @@ class DanceEvolution(
                 self.update_play_statistics(userid)
 
             # Now that we've got a fully updated profile to look at, let's see if we can't extract the last played songs
-            # and link those to records if they were a record. Unfortunately the game does not specify what chart was
-            # played in RDATA so we can't use that. We can, however, look at the song played positions in DATA03 and
-            # compare the score achieved to the various locations in DATAXX to see if it was a record thie time or not.
+            # and link those to records if they were a record.
             valid_ids = {song.id for song in self.data.local.music.get_all_songs(self.game, self.version)}
+
+            # Grab the last three record blobs from the RDATA chunk if it exists.
+            history: List[Dict[str, int]] = []
+
+            if "RDAT01" in usergamedata:
+                historydata = usergamedata["RDAT01"]["bindata"]
+                if len(historydata) < 3 * 32:
+                    historydata += b"\x00" * ((3 * 32) - len(historydata))
+
+                for offset in range(0, 32 * 3, 32):
+                    score, params, ts = struct.unpack("<IIQ", historydata[offset : (offset + 16)])
+                    if not score and not params and not ts:
+                        continue
+
+                    chart = {
+                        0: self.CHART_TYPE_LIGHT,
+                        1: self.CHART_TYPE_STANDARD,
+                        2: self.CHART_TYPE_EXTREME,
+                        3: self.CHART_TYPE_STEALTH,
+                        4: self.CHART_TYPE_MASTER,
+                    }.get((params >> 8) & 0xF)
+                    if chart is None:
+                        continue
+
+                    grade = {
+                        self.GAME_GRADE_FAILED: self.GRADE_FAILED,
+                        self.GAME_GRADE_E: self.GRADE_E,
+                        self.GAME_GRADE_D: self.GRADE_D,
+                        self.GAME_GRADE_C: self.GRADE_C,
+                        self.GAME_GRADE_B: self.GRADE_B,
+                        self.GAME_GRADE_A: self.GRADE_A,
+                        self.GAME_GRADE_AA: self.GRADE_AA,
+                        self.GAME_GRADE_AAA: self.GRADE_AAA,
+                    }[(params >> 27) & 0x7]
+
+                    history.append(
+                        {
+                            "id": params & 0xFF,
+                            "chart": chart,
+                            "score": score,
+                            "grade": grade,
+                            "combo": (params >> 12) & 0x3FF,
+                            "fc": (params >> 30) & 0x3,
+                            "ts": ts // 1000,
+                        }
+                    )
 
             if "DATA03" in usergamedata:
                 strdatalist = usergamedata["DATA03"]["strdata"].split(b",")
@@ -404,55 +446,31 @@ class DanceEvolution(
                     strdatalist[self.DATA03_THIRD_HIGH_SCORE_OFFSET].decode("shift-jis").split(".")[0]
                 )
 
-                for played, scored in [
-                    (first_song_played, first_song_scored),
-                    (second_song_played, second_song_scored),
-                    (third_song_played, third_song_scored),
+                songcount = 0
+                for possible in [first_song_played, second_song_played, third_song_played]:
+                    if possible in valid_ids:
+                        songcount += 1
+
+                # Scores are from newest to oldest.
+                history = list(reversed(history[:songcount]))
+
+                for stage, played, scored in [
+                    (0, first_song_played, first_song_scored),
+                    (1, second_song_played, second_song_scored),
+                    (2, third_song_played, third_song_scored),
                 ]:
                     if played not in valid_ids:
                         # Game might be set to 1 song.
                         continue
 
-                    # For the purpose of popularity tracking, save an attempt for this song into the virtual
-                    # attempt chart, since we can't know for certain what chart an attempt was associated with.
-                    now = Time.now()
-                    lid = self.get_machine_id()
-
-                    for bump in range(10):
-                        timestamp = now + bump
-
-                        self.data.local.music.put_score(
-                            self.game,
-                            self.version,
-                            userid,
-                            played,
-                            self.CHART_TYPE_PLAYTRACKING,
-                            lid,
-                            scored,
-                            {},
-                            False,
-                            timestamp=timestamp,
-                        )
-
-                        try:
-                            self.data.local.music.put_attempt(
-                                self.game,
-                                self.version,
-                                userid,
-                                played,
-                                self.CHART_TYPE_PLAYTRACKING,
-                                lid,
-                                scored,
-                                {},
-                                False,
-                                timestamp=timestamp,
-                            )
-                        except ScoreSaveException:
-                            # Try again one second in the future
-                            continue
-
-                        # We saved successfully
-                        break
+                    # Attempt to find the play in our extracted attempts.
+                    if stage >= len(history):
+                        continue
+                    if history[stage]["id"] != played:
+                        continue
+                    if history[stage]["score"] != scored:
+                        continue
+                    attempt = history[stage]
 
                     # First, calculate whether we're going to look at DATA01-05 or DATA11-15.
                     if played < 63:
@@ -481,6 +499,10 @@ class DanceEvolution(
                             # because it couldn't possibly be it.
                             continue
 
+                        if mapping[key] != attempt["chart"]:
+                            # This isn't the right chart for what was played.
+                            continue
+
                         # They could have played some other songs and the game truncated this because it
                         # only ever sends back until the last nonzero value, so we need to fill in the blanks
                         # so to speak with all zero bytes.
@@ -489,29 +511,20 @@ class DanceEvolution(
                             chunk = chunk + (b"\x00" * (8 - len(chunk)))
 
                         record, combo, playmarker, _, stats = struct.unpack("<Ibbbb", chunk)
-
-                        if record != scored:
-                            # This wasn't the record we just earned.
-                            continue
                         if not playmarker:
                             # This wasn't actually played.
                             continue
 
-                        # Found it!
-                        full_combo = bool(stats & 0x10)
-                        letter_grade = (stats >> 1) & 0x7
-                        grade = {
-                            self.GAME_GRADE_FAILED: self.GRADE_FAILED,
-                            self.GAME_GRADE_E: self.GRADE_E,
-                            self.GAME_GRADE_D: self.GRADE_D,
-                            self.GAME_GRADE_C: self.GRADE_C,
-                            self.GAME_GRADE_B: self.GRADE_B,
-                            self.GAME_GRADE_A: self.GRADE_A,
-                            self.GAME_GRADE_AA: self.GRADE_AA,
-                            self.GAME_GRADE_AAA: self.GRADE_AAA,
-                        }[letter_grade]
-
-                        self.update_score(userid, played, mapping[key], scored, grade, combo, full_combo)
+                        self.update_score(
+                            userid,
+                            attempt["ts"],
+                            attempt["id"],
+                            attempt["chart"],
+                            scored,
+                            attempt["grade"],
+                            attempt["combo"],
+                            attempt["fc"] != 0,
+                        )
 
                         # Don't need to update anything else now.
                         break

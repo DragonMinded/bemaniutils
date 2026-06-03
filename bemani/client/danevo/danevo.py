@@ -457,6 +457,7 @@ class DanceEvolutionClient(BaseClient):
         profiledata["DATA01"][25] = name.encode("shift-jis")
         profiledata["DATA02"][25] = b""
 
+        attempts: bytes = b""
         spots: Dict[int, Dict[int, bytes]] = {}
         highest_id: int = 0
 
@@ -492,6 +493,18 @@ class DanceEvolutionClient(BaseClient):
             else:
                 raise Exception("Logic error, can't save more than three scores!")
 
+            # Game won't save unless we have an attempt in RDAT01 as well.
+            params = (
+                ((sid & 0xFF) << 0)
+                | ((chart & 0xF) << 8)
+                | ((score["combo"] & 0x3FF) << 12)
+                | ((score["grade"] & 0x7) << 27)
+                | (0x40000000 if score["full_combo"] else 0x00000000)
+            )
+
+            chunk = struct.pack("<IIQ", score["points"], params, int(time.time() * 1000)) + (b"\x00" * 16)
+            attempts = chunk + attempts
+
         # Make binary data blobs.
         blobs: Dict[int, bytes] = {}
         for chart in [0, 1, 2, 3, 4]:
@@ -521,7 +534,7 @@ class DanceEvolutionClient(BaseClient):
             "DATA13": trimnulls(blobs[2][504:]),
             "DATA14": trimnulls(blobs[3][504:]),
             "DATA15": trimnulls(blobs[4][504:]),
-            "RDAT01": b"",
+            "RDAT01": trimnulls(attempts),
         }
 
         # Construct node

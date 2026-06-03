@@ -269,11 +269,6 @@ class CatalogObject(BaseObject):
                         )
             songs.extend(additions)
 
-        # Always a special case, of course. DanEvo has a virtual chart for play statistics
-        # tracking, so we need to filter that out here.
-        if self.game == GameConstants.DANCE_EVOLUTION:
-            songs = [song for song in songs if song.chart in [0, 1, 2, 3, 4]]
-
         retval = {
             "songs": [self.__format_song(song) for song in songs],
         }

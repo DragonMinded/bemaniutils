@@ -20,7 +20,6 @@ class DanceEvolutionBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     CHART_TYPE_EXTREME: Final[int] = 2
     CHART_TYPE_STEALTH: Final[int] = 3
     CHART_TYPE_MASTER: Final[int] = 4
-    CHART_TYPE_PLAYTRACKING: Final[int] = 5
 
     GRADE_FAILED: Final[int] = DBConstants.DANEVO_GRADE_FAILED
     GRADE_E: Final[int] = DBConstants.DANEVO_GRADE_E
@@ -41,6 +40,7 @@ class DanceEvolutionBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
     def update_score(
         self,
         userid: UserID,
+        timestamp: int,
         songid: int,
         chart: int,
         points: int,
@@ -79,24 +79,32 @@ class DanceEvolutionBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             chart,
         )
 
+        history = ValidatedDict({})
+        oldpoints = points
+
         if oldscore is None:
             # If it is a new score, create a new dictionary to add to
             scoredata = ValidatedDict({})
             highscore = True
+            raised = True
         else:
             # Set the score to any new record achieved
             highscore = points >= oldscore.points
+            raised = points > oldscore.points
             points = max(oldscore.points, points)
             scoredata = oldscore.data
 
         # Save combo
         scoredata.replace_int("combo", max(scoredata.get_int("combo"), combo))
+        history.replace_int("combo", combo)
 
         # Save grade
         scoredata.replace_int("grade", max(scoredata.get_int("grade"), grade))
+        history.replace_int("grade", grade)
 
         # Save full combo indicator.
         scoredata.replace_bool("full_combo", scoredata.get_bool("full_combo") or full_combo)
+        history.replace_bool("full_combo", full_combo)
 
         # Look up where this score was earned
         lid = self.get_machine_id()
@@ -112,4 +120,18 @@ class DanceEvolutionBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
             points,
             scoredata,
             highscore,
+        )
+
+        # Save the history of this score too
+        self.data.local.music.put_attempt(
+            self.game,
+            self.version,
+            userid,
+            songid,
+            chart,
+            lid,
+            oldpoints,
+            history,
+            raised,
+            timestamp=timestamp,
         )
