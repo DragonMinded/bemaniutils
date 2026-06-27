@@ -11,7 +11,6 @@ from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
 
-
 museca_pages = Blueprint(
     "museca_pages",
     __name__,

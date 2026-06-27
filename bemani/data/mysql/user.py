@@ -3,8 +3,7 @@ from sqlalchemy import Table, Column, UniqueConstraint
 from sqlalchemy.types import String, Integer, JSON
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger
 from sqlalchemy.exc import IntegrityError
-from typing import Optional, Dict, List, Tuple, Any
-from typing_extensions import Final
+from typing import Final, Optional, Dict, List, Tuple, Any
 from passlib.hash import pbkdf2_sha512  # type: ignore
 
 from bemani.common import ValidatedDict, Profile, GameConstants, Time

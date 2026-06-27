@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Tuple
-from typing_extensions import Final
+from typing import Final, Tuple
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.common import ValidatedDict

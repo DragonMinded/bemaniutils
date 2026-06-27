@@ -133,7 +133,7 @@ class IFS:
         otherdata: Dict[str, IFS] = {}
 
         for fn in files:
-            (start, size, pack_time, external_file) = files[fn]
+            start, size, pack_time, external_file = files[fn]
             if external_file is not None:
                 if external_file not in otherdata:
                     if self.__loader is None:

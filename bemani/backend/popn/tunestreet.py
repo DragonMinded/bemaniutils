@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Dict, Any
-from typing_extensions import Final
+from typing import Final, Dict, Any
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.backend.popn.stubs import PopnMusicSengokuRetsuden

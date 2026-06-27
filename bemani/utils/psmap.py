@@ -40,12 +40,12 @@ def parse_psmap(pe: PEFile, offset: str, rootname: str, *, verbose: bool = False
             chunk = pe.data[base : (base + 24)]
             base = base + 24
 
-            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack("<BBHIQQ", chunk)
+            nodetype, mandatory, outoffset, width, nameptr, default = struct.unpack("<BBHIQQ", chunk)
         else:  # 32 bit
             chunk = pe.data[base : (base + 16)]
             base = base + 16
 
-            (nodetype, mandatory, outoffset, width, nameptr, default) = struct.unpack("<BBHIII", chunk)
+            nodetype, mandatory, outoffset, width, nameptr, default = struct.unpack("<BBHIII", chunk)
 
         if nodetype == 0xFF or nodetype == 0x00:  # if nodetype is 0 then we probably read garbage
             # End of nodes, see if we should exit

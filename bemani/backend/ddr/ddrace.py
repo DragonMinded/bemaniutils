@@ -1,7 +1,6 @@
 # vim: set fileencoding=utf-8
 import base64
-from typing import Any, Dict, List, Optional, Tuple
-from typing_extensions import Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.ddr.base import DDRBase

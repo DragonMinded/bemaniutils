@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Optional
-from typing_extensions import Final
+from typing import Final, Optional
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler

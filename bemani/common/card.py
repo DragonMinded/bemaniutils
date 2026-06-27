@@ -1,5 +1,4 @@
-from typing import Dict, List
-from typing_extensions import Final
+from typing import Dict, Final, List
 
 from Crypto.Cipher import DES3
 

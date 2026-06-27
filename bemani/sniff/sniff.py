@@ -1,7 +1,6 @@
 import socket
 import struct
-from typing import Any, Dict, List, Optional, Tuple
-from typing_extensions import Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 
 class InvalidPacketException(Exception):

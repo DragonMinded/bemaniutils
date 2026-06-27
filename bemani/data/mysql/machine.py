@@ -1,8 +1,7 @@
 from sqlalchemy import Table, Column, UniqueConstraint
 from sqlalchemy.types import String, Integer, JSON
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger
-from typing import Optional, Dict, List, Tuple, Any
-from typing_extensions import Final
+from typing import Optional, Dict, Final, List, Tuple, Any
 
 from bemani.common import GameConstants, ValidatedDict
 from bemani.data.mysql.base import BaseData, metadata

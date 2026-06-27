@@ -10,7 +10,6 @@ from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
 
-
 popn_pages = Blueprint(
     "popn_pages",
     __name__,

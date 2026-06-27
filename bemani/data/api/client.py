@@ -1,7 +1,6 @@
 import json
 import requests
-from typing import Tuple, Dict, List, Any, Optional
-from typing_extensions import Final
+from typing import Tuple, Dict, Final, List, Any, Optional
 
 from bemani.common import (
     APIConstants,

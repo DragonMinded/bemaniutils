@@ -1,6 +1,5 @@
 import time
-from typing import Optional, Dict, List, Tuple, Any
-from typing_extensions import Final
+from typing import Optional, Dict, Final, List, Tuple, Any
 
 from bemani.client.common import random_hex_string
 from bemani.client.protocol import ClientProtocol

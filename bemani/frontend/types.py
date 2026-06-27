@@ -1,6 +1,5 @@
 from typing import Optional, TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from flask.ctx import _AppCtxGlobals
     from flask_caching import Cache

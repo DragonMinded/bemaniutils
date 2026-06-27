@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, List, Optional, Tuple
-from typing_extensions import Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase
@@ -3479,7 +3478,7 @@ class SoundVoltexHeavenlyHaven(
         game.add_child(highscores)
         for musicid in records:
             for chart in records[musicid]:
-                (globaluserid, globalscore) = records[musicid][chart]["global"]
+                globaluserid, globalscore = records[musicid][chart]["global"]
 
                 global_profile = users[globaluserid]
                 if clears[musicid][chart]["total"] > 0:
@@ -3498,7 +3497,7 @@ class SoundVoltexHeavenlyHaven(
                 info.add_child(Node.s32("avg_sc", clears[musicid][chart]["average"]))
 
                 if "area" in records[musicid][chart]:
-                    (localuserid, localscore) = records[musicid][chart]["area"]
+                    localuserid, localscore = records[musicid][chart]["area"]
                     local_profile = users[localuserid]
                     info.add_child(Node.string("l_sq", ID.format_extid(local_profile.extid)))
                     info.add_child(Node.string("l_nm", local_profile.get_str("name")))

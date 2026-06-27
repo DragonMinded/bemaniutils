@@ -89,7 +89,6 @@ from .statement import (
 )
 from .aa import AAMode
 
-
 __all__ = [
     "Matrix",
     "Color",

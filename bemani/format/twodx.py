@@ -15,7 +15,7 @@ class TwoDX:
 
     def __parse_file(self, data: bytes) -> None:
         # Parse file header
-        (name, headerSize, numfiles) = struct.unpack("<16sII", data[0:24])
+        name, headerSize, numfiles = struct.unpack("<16sII", data[0:24])
         self.__name = name.split(b"\x00")[0].decode("ascii")
 
         if headerSize != (72 + (4 * numfiles)):

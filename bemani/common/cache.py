@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_caching import Cache
 
-
 # This somewhat breaks convention of trying to keep flask stuff in only the application
 # routing layer, but flask-caching itself is a useful wrapper that supports a ton of
 # backends like in-memory, filesystem, redis, memcached, etc. So, we centralize the

@@ -1,11 +1,9 @@
 import ctypes
 import os
 from collections import defaultdict
-from typing import Generator, List, MutableMapping, Optional, Set, Tuple
-from typing_extensions import Final
+from typing import Final, Generator, List, MutableMapping, Optional, Set, Tuple
 
 from .. import package_root
-
 
 # Attempt to use the faster C++ libraries if they're available
 try:

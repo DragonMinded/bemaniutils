@@ -1,7 +1,6 @@
 # vim: set fileencoding=utf-8
 import random
-from typing import Optional, Dict, List, Tuple, Any
-from typing_extensions import Final
+from typing import Final, Optional, Dict, List, Tuple, Any
 
 from bemani.backend.iidx.base import IIDXBase
 from bemani.backend.iidx.stubs import IIDXLincle

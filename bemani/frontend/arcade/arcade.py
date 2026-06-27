@@ -17,7 +17,6 @@ from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
 
-
 arcade_pages = Blueprint(
     "arcade_pages",
     __name__,

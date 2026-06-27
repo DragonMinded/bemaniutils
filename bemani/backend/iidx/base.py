@@ -1,7 +1,6 @@
 # vim: set fileencoding=utf-8
 import struct
-from typing import Optional, Dict, Any, List, Tuple
-from typing_extensions import Final
+from typing import Final, Optional, Dict, TypedDict, List, Tuple
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler
@@ -15,6 +14,14 @@ from bemani.common import (
 )
 from bemani.data import Config, Data, Score, Machine, UserID
 from bemani.protocol import Node
+
+
+class GhostDict(TypedDict, total=False):
+    score: int
+    ghost: bytes
+    name: str
+    pid: int
+    extid: int
 
 
 class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
@@ -660,8 +667,8 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         musicid: int,
         chart: int,
         userid: UserID,
-    ) -> Optional[Dict[str, Any]]:
-        ghost_score: Dict[str, Any] = None
+    ) -> Optional[GhostDict]:
+        ghost_score: Optional[GhostDict] = None
 
         if ghost_type == self.GHOST_TYPE_RIVAL:
             rival_extid = int(parameter)

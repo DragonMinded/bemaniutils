@@ -1,6 +1,5 @@
 from enum import Enum
-from typing import Dict
-from typing_extensions import Final
+from typing import Dict, Final
 
 
 class GameConstants(Enum):

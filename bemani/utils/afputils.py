@@ -144,18 +144,14 @@ def extract_txp2(
                 else:
                     print(f"Writing {filename}.xml texture info...")
                     with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(
-                            textwrap.dedent(
-                                f"""
+                        sfp.write(textwrap.dedent(f"""
                             <info>
                                 <width>{texture.width}</width>
                                 <height>{texture.height}</height>
                                 <type>{hex(texture.fmt)}</type>
                                 <raw>{filename}.raw</raw>
                             </info>
-                        """
-                            ).strip()
-                        )
+                        """).strip())
 
     if write_mappings:
         if not split_textures:
@@ -171,9 +167,7 @@ def extract_txp2(
                 else:
                     print(f"Writing {filename}.xml region information...")
                     with open(f"{filename}.xml", "w") as sfp:
-                        sfp.write(
-                            textwrap.dedent(
-                                f"""
+                        sfp.write(textwrap.dedent(f"""
                             <info>
                                 <left>{region.left}</left>
                                 <top>{region.top}</top>
@@ -181,9 +175,7 @@ def extract_txp2(
                                 <bottom>{region.bottom}</bottom>
                                 <texture>{texturename}</texture>
                             </info>
-                        """
-                            ).strip()
-                        )
+                        """).strip())
 
         if afpfile.fontdata is not None:
             filename = os.path.join(output_dir, "fontinfo.xml")

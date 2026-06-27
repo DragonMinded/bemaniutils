@@ -5,7 +5,6 @@ from bemani.client.jubeat.qubell import JubeatQubellClient
 from bemani.client.jubeat.clan import JubeatClanClient
 from bemani.client.jubeat.festo import JubeatFestoClient
 
-
 __all__ = [
     "JubeatSaucerClient",
     "JubeatSaucerFulfillClient",

@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, List
-from typing_extensions import Final
+from typing import Any, Dict, Final, List
 
 from bemani.data import UserID
 from bemani.backend.jubeat.base import JubeatBase

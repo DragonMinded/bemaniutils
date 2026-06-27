@@ -1,5 +1,4 @@
-from typing import Optional, Dict, List, Tuple, Any
-from typing_extensions import Final
+from typing import Optional, Dict, Final, List, Tuple, Any
 
 from bemani.backend.reflec.base import ReflecBeatBase
 from bemani.backend.reflec.limelight import ReflecBeatLimelight

@@ -1,7 +1,6 @@
 import json
 import random
-from typing import Dict, Any, Optional
-from typing_extensions import Final
+from typing import Final, Dict, Any, Optional
 
 from bemani.common import Time
 from bemani.data.config import Config

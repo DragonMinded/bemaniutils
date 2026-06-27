@@ -1,5 +1,4 @@
-from typing import Optional, Dict, Any
-from typing_extensions import Final
+from typing import Optional, Final, Dict, Any
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.museca.base import MusecaBase

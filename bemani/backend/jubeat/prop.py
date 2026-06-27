@@ -1,8 +1,7 @@
 # vim: set fileencoding=utf-8
 import math
 import random
-from typing import Optional, Dict, List, Any, Set, Tuple
-from typing_extensions import Final
+from typing import Optional, Dict, Final, List, Any, Set, Tuple
 
 from bemani.backend.base import Status
 from bemani.backend.jubeat.common import (

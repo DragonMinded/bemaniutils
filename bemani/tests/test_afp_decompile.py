@@ -38,7 +38,6 @@ from bemani.format.afp.types import (
     OrIf,
 )
 
-
 OPEN_BRACKET = "{"
 CLOSE_BRACKET = "}"
 

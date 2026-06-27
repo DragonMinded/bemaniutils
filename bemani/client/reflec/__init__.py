@@ -5,7 +5,6 @@ from bemani.client.reflec.groovin import ReflecBeatGroovinUpper
 from bemani.client.reflec.volzza import ReflecBeatVolzza
 from bemani.client.reflec.volzza2 import ReflecBeatVolzza2
 
-
 __all__ = [
     "ReflecBeat",
     "ReflecBeatLimelight",

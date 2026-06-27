@@ -1,4 +1,4 @@
-from typing_extensions import Final
+from typing import Final
 
 from bemani.backend.base import Base, Status
 from bemani.protocol import Node

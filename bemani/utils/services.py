@@ -13,7 +13,6 @@ from bemani.utils.config import (
     register_games as base_register_games,
 )
 
-
 app = Flask(__name__)
 config = Config()
 

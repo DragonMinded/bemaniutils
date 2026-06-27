@@ -1,8 +1,7 @@
 # vim: set fileencoding=utf-8
 import random
 import struct
-from typing import Dict, Iterable, List, Optional, Set, Tuple
-from typing_extensions import Final
+from typing import Dict, Final, Iterable, List, Optional, Set, Tuple
 
 from bemani.backend.base import Base
 from bemani.backend.core import CoreHandler, CardManagerHandler, PASELIHandler

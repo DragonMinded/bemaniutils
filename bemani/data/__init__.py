@@ -20,7 +20,6 @@ from bemani.data.types import (
 from bemani.data.remoteuser import RemoteUser
 from bemani.data.triggers import Triggers
 
-
 __all__ = [
     "Config",
     "Data",

@@ -23,12 +23,12 @@ class ARC:
             raise Exception("Unknown file format!")
 
         # Grab header offsets
-        (_, numfiles, _) = struct.unpack("<III", data[4:16])
+        _, numfiles, _ = struct.unpack("<III", data[4:16])
 
         for fno in range(numfiles):
             start = 16 + (16 * fno)
             end = start + 16
-            (nameoffset, fileoffset, uncompressedsize, compressedsize) = struct.unpack("<IIII", data[start:end])
+            nameoffset, fileoffset, uncompressedsize, compressedsize = struct.unpack("<IIII", data[start:end])
             name = ""
 
             while data[nameoffset] != 0:
@@ -42,7 +42,7 @@ class ARC:
         return [f for f in self.__files]
 
     def read_file(self, filename: str) -> bytes:
-        (fileoffset, uncompressedsize, compressedsize) = self.__files[filename]
+        fileoffset, uncompressedsize, compressedsize = self.__files[filename]
 
         if compressedsize == uncompressedsize:
             # Just stored

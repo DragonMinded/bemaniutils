@@ -237,8 +237,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="A utility to print structs out of a DLL.",
-        epilog=(
-            """
+        epilog=("""
 Some examples of valid format specifiers and what they do are as follows:
 
 *h = Decodes an array of short pointers, decoding the resulting shorts for each pointer in the array.
@@ -256,8 +255,7 @@ Ih&h = Decodes an array of structures containing an unsigned integer and two sho
 *z&+0x200# = Decodes an array of null-terminated string pointers, displaying the array entry number in hex starting at 0x200 and string. Broken down, it has the following parts:
     *z = Dereference the current value (*) and treat that integer as a pointer to a null-terminated string (z).
     &+0x200# = Print the current line number (#), offset by the value 0x200 (+0x200) as a hex number (&).
-"""
-        ),
+"""),
     )
     parser.add_argument(
         "--file",

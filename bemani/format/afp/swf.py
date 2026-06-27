@@ -1,8 +1,7 @@
 import os
 import struct
 import sys
-from typing import Any, Dict, List, Optional, Tuple
-from typing_extensions import Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from .decompile import ByteCode
 from .types import (

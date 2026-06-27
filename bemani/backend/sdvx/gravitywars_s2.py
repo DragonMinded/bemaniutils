@@ -3885,7 +3885,7 @@ class SoundVoltexGravityWarsSeason2(
         game.add_child(highscores)
         for musicid in records:
             for chart in records[musicid]:
-                (globaluserid, globalscore) = records[musicid][chart]["global"]
+                globaluserid, globalscore = records[musicid][chart]["global"]
 
                 global_profile = users[globaluserid]
                 if clears[musicid][chart]["total"] > 0:
@@ -3903,7 +3903,7 @@ class SoundVoltexGravityWarsSeason2(
                 info.add_child(Node.s32("cr", int(clear_rate * 10000)))
 
                 if "area" in records[musicid][chart]:
-                    (localuserid, localscore) = records[musicid][chart]["area"]
+                    localuserid, localscore = records[musicid][chart]["area"]
                     local_profile = users[localuserid]
                     info.add_child(Node.string("l_sq", ID.format_extid(local_profile.extid)))
                     info.add_child(Node.string("l_nm", local_profile.get_str("name")))

@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Any, Dict, List, Optional
-from typing_extensions import Final
+from typing import Any, Dict, Final, List, Optional
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.sdvx.base import SoundVoltexBase

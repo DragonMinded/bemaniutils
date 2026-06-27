@@ -5,7 +5,6 @@ from bemani.format.tdxt import TDXT
 from bemani.format.iidxchart import IIDXChart
 from bemani.format.iidxmusicdb import IIDXMusicDB, IIDXSong
 
-
 __all__ = [
     "IFS",
     "ARC",

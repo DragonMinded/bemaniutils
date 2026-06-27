@@ -4,7 +4,6 @@ from react.jsx import JSXTransformer  # type: ignore
 
 from bemani.frontend.app import polyfill_fragments
 
-
 SCRIPT_PATH: str = os.path.dirname(os.path.realpath(__file__))
 
 

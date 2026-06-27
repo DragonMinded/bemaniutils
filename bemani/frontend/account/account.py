@@ -25,7 +25,6 @@ from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
 
-
 account_pages = Blueprint(
     "account_pages",
     __name__,

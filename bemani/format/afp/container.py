@@ -407,7 +407,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
             while i < 8 and len(decomp) < decomp_len:
                 if (control & 0x01) != 0:
                     if comp_i >= comp_len:
-                        return decomp
+                        return bytes(decomp)
 
                     decomp.append(comp[comp_i])
                     window[window_i] = comp[comp_i]
@@ -432,7 +432,7 @@ class TXP2File(TrackedCoverage, VerboseOutput):
                         slide_len -= 1
                 control >>= 1
                 i += 1
-        return decomp
+        return bytes(decomp)
 
     def __parse(self, verbose: bool) -> None:
         # First, check the signature

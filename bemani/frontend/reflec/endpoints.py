@@ -1,7 +1,6 @@
 # vim: set fileencoding=utf-8
 import re
-from typing import Any, Dict, List
-from typing_extensions import Final
+from typing import Any, Dict, Final, List
 from flask import Blueprint, request, Response, url_for, abort
 
 from bemani.common import ID, GameConstants
@@ -11,7 +10,6 @@ from bemani.frontend.reflec.reflec import ReflecBeatFrontend
 from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
-
 
 reflec_pages = Blueprint(
     "reflec_pages",

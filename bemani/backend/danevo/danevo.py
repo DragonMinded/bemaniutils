@@ -1,7 +1,6 @@
 import base64
 import struct
-from typing import Any, Dict, List
-from typing_extensions import Final
+from typing import Any, Dict, Final, List
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.danevo.base import DanceEvolutionBase

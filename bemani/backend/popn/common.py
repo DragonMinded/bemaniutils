@@ -2,8 +2,7 @@
 from abc import ABC, abstractmethod
 import binascii
 import random
-from typing import Any, Dict, List, Optional, Tuple
-from typing_extensions import Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from bemani.backend.popn.base import PopnMusicBase
 from bemani.common import Time, ID, Profile, ValidatedDict, Parallel

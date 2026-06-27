@@ -4023,10 +4023,6 @@ class ByteCodeDecompiler(VerboseOutput):
                     if new_batch[i] is not cur_statement:
                         raise Exception("Logic error!")
 
-                    if not isinstance(cur_statement, IfStatement):
-                        # This isn't even an if statement. We should never hit
-                        # this but the type checker wants to be happy.
-                        return statement
                     if has_break(cur_statement.true_statements) or has_break(cur_statement.false_statements):
                         # This code already uses a 'break' statement. If we stuck it
                         # in a switch, it would change the sematics of this statement

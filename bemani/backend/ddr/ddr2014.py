@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
-from typing import Dict, List, Optional
-from typing_extensions import Final
+from typing import Dict, Final, List, Optional
 
 from bemani.backend.ddr.base import DDRBase
 from bemani.backend.ddr.ddr2013 import DDR2013

@@ -32,7 +32,6 @@ from .types import (
 )
 from .decompile import ByteCode, ByteCodeDecompiler
 
-
 __all__ = [
     "Shape",
     "DrawParams",

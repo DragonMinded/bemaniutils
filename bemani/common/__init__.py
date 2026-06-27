@@ -17,7 +17,6 @@ from bemani.common.parallel import Parallel
 from bemani.common.pe import PEFile, InvalidOffsetException
 from bemani.common.cache import cache
 
-
 __all__ = [
     "Model",
     "ValidatedDict",

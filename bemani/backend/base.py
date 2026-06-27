@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import traceback
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Type
-from typing_extensions import Final
+from typing import Any, Dict, Final, Iterator, List, Optional, Set, Tuple, Type
 
 from bemani.common import (
     Model,

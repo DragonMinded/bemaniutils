@@ -7,7 +7,6 @@ from bemani.frontend.templates import templates_location
 from bemani.frontend.static import static_location
 from bemani.frontend.types import g
 
-
 home_pages = Blueprint(
     "home_pages",
     __name__,

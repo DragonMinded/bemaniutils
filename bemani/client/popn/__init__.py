@@ -8,7 +8,6 @@ from bemani.client.popn.peace import PopnMusicPeaceClient
 from bemani.client.popn.kaimei import PopnMusicKaimeiClient
 from bemani.client.popn.unilab import PopnMusicUnilabClient
 
-
 __all__ = [
     "PopnMusicTuneStreetClient",
     "PopnMusicFantasiaClient",

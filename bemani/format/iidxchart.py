@@ -1,6 +1,5 @@
 import struct
-from typing import List, Optional, Tuple
-from typing_extensions import Final
+from typing import Final, List, Optional, Tuple
 
 
 class IIDXChart:

@@ -4,7 +4,6 @@ import sys
 import unittest
 from typing import Iterable, List, Dict, Any
 
-
 # Supress custom handler tracebacks inside handler frames
 __unittest = True
 
