@@ -140,7 +140,7 @@ class MachineData(BaseData):
 
     def from_session(self, session: str) -> Optional[ArcadeID]:
         """
-        Given a previously-opened session, look up a user ID.
+        Given a previously-opened session, look up an arcade ID.
 
         Parameters:
             session - String identifying a session that was opened by create_session.
@@ -150,6 +150,10 @@ class MachineData(BaseData):
         """
         arcadeid = self._from_session(session, "arcadeid")
         if arcadeid is None:
+            return None
+        sql = "SELECT id FROM arcade WHERE id = :arcadeid LIMIT 1"
+        cursor = self.execute(sql, {"arcadeid": arcadeid})
+        if cursor.rowcount != 1:
             return None
         return ArcadeID(arcadeid)
 
@@ -570,7 +574,7 @@ class MachineData(BaseData):
 
     def create_session(self, arcadeid: ArcadeID, expiration: int = (30 * 86400)) -> str:
         """
-        Given a user ID, create a session string.
+        Given an arcade ID, create a session string.
 
         Parameters:
             arcadeid - Arcade ID we wish to start a session for.

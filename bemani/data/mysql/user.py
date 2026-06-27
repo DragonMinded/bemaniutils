@@ -278,6 +278,11 @@ class UserData(BaseData):
         userid = self._from_session(session, "userid")
         if userid is None:
             return None
+        sql = "SELECT id FROM user WHERE id = :userid LIMIT 1"
+        cursor = self.execute(sql, {"userid": userid})
+        if cursor.rowcount != 1:
+            return None
+
         return UserID(userid)
 
     def get_user(self, userid: UserID) -> Optional[User]:
