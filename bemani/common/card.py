@@ -46,12 +46,17 @@ class CardCipher:
         Returns:
             String representation of the card string.
         """
+        cardid = cardid.replace(" ", "")
+        cardid = cardid.replace("-", "")
         if len(cardid) != 16:
             raise CardCipherException(
                 f"Expected 16-character card ID, got {len(cardid)}",
             )
 
-        cardbytes = bytes.fromhex(cardid)
+        try:
+            cardbytes = bytes.fromhex(cardid)
+        except ValueError:
+            raise CardCipherException("Unrecognized card ID")
 
         # Reverse bytes
         reverse = cardbytes[::-1]
