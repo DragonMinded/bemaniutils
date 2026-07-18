@@ -574,7 +574,7 @@ class DDRAce(
         ]:
             # Load up this user's highscores, format the way the below code expects it
             extid = requestdata.child_value("ddrcode")
-            otherid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            otherid = self.data.remote.user.from_extid(self.game, extid)
             userscores = self.data.remote.music.get_scores(self.game, self.music_version, otherid)
             scores = [(otherid, score) for score in userscores]
         else:
@@ -665,7 +665,7 @@ class DDRAce(
         userid = self.data.remote.user.from_refid(self.game, self.version, refid)
         if userid is None:
             # Possibly look up by extid instead
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
 
         if mode == "userload":
             self.__handle_userload(userid, request.child("data"), playerdata)

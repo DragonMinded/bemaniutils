@@ -744,7 +744,7 @@ class JubeatProp(
                 music_index = music_index + 1
 
         # Look up profile so we can load the last course played
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         profile = self.get_profile(userid)
         if profile is None:
             profile = Profile(self.game, self.version, "", extid)
@@ -788,7 +788,7 @@ class JubeatProp(
         extid = player.child_value("jid")
 
         # Look up profile so we can load the last course played
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         profile = self.get_profile(userid)
         if profile is None:
             profile = Profile(self.game, self.version, "", extid)

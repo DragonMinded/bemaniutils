@@ -213,7 +213,7 @@ class DDRX2(
 
         if extid is not None:
             # Rival score loading
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
         else:
             # Self score loading
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
@@ -729,7 +729,7 @@ class DDRX2(
                     newfriends[pos] = None
                 else:
                     # Try looking up the userid
-                    newfriends[pos] = self.data.remote.user.from_extid(self.game, self.version, code)
+                    newfriends[pos] = self.data.remote.user.from_extid(self.game, code)
 
         # Diff the set of links to determine updates
         for i in range(10):

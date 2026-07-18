@@ -75,7 +75,7 @@ var card_management = createReactClass({
                 <div className="section">
                     <h3>User Search</h3>
                     <form onSubmit={this.searchUsers}>
-                        <label htmlFor="card">Card Number:</label>
+                        <label htmlFor="card">Card Number or Game ID:</label>
                         <br />
                         <input
                             type="text"

@@ -196,7 +196,7 @@ class DDR2014(
 
         if extid is not None:
             # Rival score loading
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
         else:
             # Self score loading
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
@@ -300,7 +300,7 @@ class DDR2014(
         game = Node.void("game")
 
         # Rival trace loading
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             # Nothing to load
             return game
@@ -731,7 +731,7 @@ class DDR2014(
                     newfriends[pos] = None
                 else:
                     # Try looking up the userid
-                    newfriends[pos] = self.data.remote.user.from_extid(self.game, self.version, code)
+                    newfriends[pos] = self.data.remote.user.from_extid(self.game, code)
 
         # Diff the set of links to determine updates
         for i in range(10):

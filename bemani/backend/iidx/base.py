@@ -182,7 +182,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         """
         Given an ExtID and a request node, unformat the profile and save it.
         """
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             return
 
@@ -672,7 +672,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         if ghost_type == self.GHOST_TYPE_RIVAL:
             rival_extid = int(parameter)
-            rival_userid = self.data.remote.user.from_extid(self.game, self.version, rival_extid)
+            rival_userid = self.data.remote.user.from_extid(self.game, rival_extid)
             if rival_userid is not None:
                 rival_profile = self.get_profile(rival_userid)
                 rival_score = self.data.remote.music.get_score(
@@ -827,9 +827,7 @@ class IIDXBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
 
         if ghost_type == self.GHOST_TYPE_RIVAL_TOP or ghost_type == self.GHOST_TYPE_RIVAL_AVERAGE:
             rival_extids = [int(e[1:-1]) for e in parameter.split(",")]
-            rival_userids = [
-                self.data.remote.user.from_extid(self.game, self.version, rival_extid) for rival_extid in rival_extids
-            ]
+            rival_userids = [self.data.remote.user.from_extid(self.game, rival_extid) for rival_extid in rival_extids]
 
             all_scores = sorted(
                 [

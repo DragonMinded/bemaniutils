@@ -142,8 +142,8 @@ class GlobalUserData(BaseGlobalData):
     def from_refid(self, game: GameConstants, version: int, refid: str) -> Optional[UserID]:
         return self.user.from_refid(game, version, refid)
 
-    def from_extid(self, game: GameConstants, version: int, extid: int) -> Optional[UserID]:
-        return self.user.from_extid(game, version, extid)
+    def from_extid(self, game: GameConstants, extid: int) -> Optional[UserID]:
+        return self.user.from_extid(game, extid)
 
     def get_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         if RemoteUser.is_remote(userid):

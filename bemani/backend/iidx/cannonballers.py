@@ -506,7 +506,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         else:
             raise Exception("Unknown registration type for course entry!")
 
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             # Update achievement to track course statistics
             self.update_course(
@@ -534,7 +534,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         pgreats = int(request.attribute("pgnum"))
         greats = int(request.attribute("gnum"))
 
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             # Update achievement to track course statistics
             self.update_course(
@@ -595,7 +595,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
             except Exception:
                 # Invalid extid
                 continue
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
             if userid is not None:
                 scores = self.data.remote.music.get_scores(self.game, self.music_version, userid)
 
@@ -631,7 +631,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         chart = self.game_to_db_chart(int(request.attribute("clid")))
         ghost_type = int(request.attribute("ctype"))
         extid = int(request.attribute("iidxid"))
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
 
         root = Node.void("IIDX25music")
 
@@ -679,7 +679,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
     def handle_IIDX25music_breg_request(self, request: Node) -> Node:
         extid = int(request.attribute("iidxid"))
         musicid = int(request.attribute("mid"))
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
 
         if userid is not None:
             clear_status = self.game_to_db_status(int(request.attribute("cflg")))
@@ -705,7 +705,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         extid = int(request.attribute("iidxid"))
         musicid = int(request.attribute("mid"))
         chart = self.game_to_db_chart(int(request.attribute("clid")))
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
 
         # See if we need to report global or shop scores
         if self.machine_joined_arcade():
@@ -966,7 +966,7 @@ class IIDXCannonBallers(IIDXCourse, IIDXBase):
         cltype = int(request.attribute("gtype"))
         rank = self.game_to_db_rank(int(request.attribute("gid")), cltype)
 
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             percent = int(request.attribute("achi"))
             stages_cleared = int(request.attribute("cstage"))

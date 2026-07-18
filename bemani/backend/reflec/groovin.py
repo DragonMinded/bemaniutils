@@ -127,7 +127,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
         # Create a lobby entry for this user
         extid = request.child_value("e/uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             profile = self.get_profile(userid)
             info = self.data.local.lobby.get_play_session_info(self.game, self.version, userid)
@@ -196,7 +196,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         mg = request.child_value("m_grade")  # noqa: F841
         extid = request.child_value("uid")
         limit = request.child_value("max")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
             for user, lobby in lobbies:
@@ -471,7 +471,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         extid = request.child_value("uid")
         locid = ID.parse_machine_id(request.child_value("lid"))
         limit = request.child_value("limit")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
 
         comments = [
             achievement
@@ -532,7 +532,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
     def handle_info_rb4pzlcmt_write_request(self, request: Node) -> Node:
         extid = request.child_value("uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             # Anonymous comment
             userid = UserID(0)
@@ -619,7 +619,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
 
     def handle_player_rb4readepisode_request(self, request: Node) -> Node:
         extid = request.child_value("user_id")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             achievements = self.data.local.user.get_achievements(self.game, self.version, userid)
         else:
@@ -691,7 +691,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
         extid = request.child_value("uid")
         songid = request.child_value("music_id")
         chart = request.child_value("note_grade")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             score = None
             profile = None
@@ -1456,7 +1456,7 @@ class ReflecBeatGroovin(ReflecBeatBase):
                     continue
 
                 extid = child.child_value("id")
-                other_userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+                other_userid = self.data.remote.user.from_extid(self.game, extid)
                 if other_userid is None:
                     continue
 

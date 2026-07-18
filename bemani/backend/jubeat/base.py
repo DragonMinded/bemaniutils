@@ -160,7 +160,7 @@ class JubeatBase(CoreHandler, CardManagerHandler, PASELIHandler, Base):
         if extid is None:
             return None
 
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         profile = self.get_profile(userid)
         if profile is None:
             return None

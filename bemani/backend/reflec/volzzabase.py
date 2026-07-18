@@ -258,7 +258,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
 
         # Create a lobby entry for this user
         extid = request.child_value("e/uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             profile = self.get_profile(userid)
             info = self.data.local.lobby.get_play_session_info(self.game, self.version, userid)
@@ -325,7 +325,7 @@ class ReflecBeatVolzzaBase(ReflecBeatBase):
         mg = request.child_value("m_grade")  # noqa: F841
         extid = request.child_value("uid")
         limit = request.child_value("max")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
             for user, lobby in lobbies:

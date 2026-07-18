@@ -99,7 +99,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
         extid = request.child_value("uid")
         songid = request.child_value("music_id")
         chart = request.child_value("note_grade")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             score = None
             profile = None
@@ -121,7 +121,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
 
     def handle_player_rb5_player_read_rival_ranking_data_request(self, request: Node) -> Node:
         extid = request.child_value("uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
 
         root = Node.void("player")
         rival_data = Node.void("rival_data")
@@ -783,7 +783,7 @@ class ReflecBeatVolzza(ReflecBeatVolzzaBase):
                     continue
 
                 extid = child.child_value("id")
-                other_userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+                other_userid = self.data.remote.user.from_extid(self.game, extid)
                 if other_userid is None:
                     continue
 

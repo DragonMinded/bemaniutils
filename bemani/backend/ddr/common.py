@@ -198,7 +198,7 @@ class DDRGameTraceHandler(DDRBase):
         game = Node.void("game")
 
         # Rival trace loading
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             # Nothing to load
             return game
@@ -254,7 +254,7 @@ class DDRGameLoadDailyHandler(DDRBase):
 
         if extid is not None:
             # Rival daily loading
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
         else:
             # Self daily loading
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)
@@ -329,7 +329,7 @@ class DDRGameFriendHandler(DDRBase):
 
         if extid is not None:
             # Rival score loading
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             friend = self.get_profile(userid)
             play_stats = self.get_play_statistics(userid)
@@ -394,7 +394,7 @@ class DDRGameLoadCourseHandler(DDRBase):
 
         if extid is not None:
             # Rival score loading
-            userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+            userid = self.data.remote.user.from_extid(self.game, extid)
         else:
             # Self score loading
             userid = self.data.remote.user.from_refid(self.game, self.version, refid)

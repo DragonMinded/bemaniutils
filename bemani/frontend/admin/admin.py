@@ -1,5 +1,5 @@
 import random
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional
 from flask import Blueprint, request, Response, render_template, url_for
 
 from bemani.backend.base import Base
@@ -853,21 +853,52 @@ def addcard() -> Dict[str, Any]:
 def searchusers() -> Dict[str, Any]:
     # Grab card, convert it
     searchdetails = request.get_json()["user_search"]
+    actual_users: Optional[List[UserID]] = None
+
     if len(searchdetails["card"]) > 0:
+        card = searchdetails["card"]
+        if " " in card:
+            card = card.replace(" ", "")
+        if "-" in card:
+            card = card.replace("-", "")
+
+        # First, try by ciphered card ID.
         try:
-            cardid = CardCipher.decode(searchdetails["card"])
+            cardid = CardCipher.decode(card)
             actual_userid = g.data.local.user.from_cardid(cardid)
-            if actual_userid is None:
-                # Force a non-match below
-                actual_userid = UserID(-1)
+            if actual_userid is not None:
+                actual_users = [actual_userid]
+
         except CardCipherException:
-            actual_userid = UserID(-1)
-    else:
-        actual_userid = None
+            pass
+
+        # Now try by raw card ID.
+        if actual_users is None:
+            actual_userid = g.data.local.user.from_cardid(card)
+            if actual_userid is not None:
+                actual_users = [actual_userid]
+
+        # Now try by extid.
+        if actual_users is None:
+            try:
+                extid = int(card)
+                actual_users = []
+
+                for game in GameConstants:
+                    actual_userid = g.data.local.user.from_extid(game, extid)
+                    if actual_userid is not None:
+                        actual_users.append(actual_userid)
+
+            except ValueError:
+                pass
+
+        # Finally, give up and return no results.
+        if actual_users is None:
+            actual_users = []
 
     def match(user: User) -> bool:
-        if actual_userid is not None:
-            return user.id == actual_userid
+        if actual_users is not None:
+            return user.id in actual_users
         else:
             return True
 

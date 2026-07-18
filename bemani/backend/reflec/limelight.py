@@ -260,7 +260,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
     def handle_event_w_add_comment_request(self, request: Node) -> Node:
         extid = request.child_value("uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is None:
             # Anonymous comment
             userid = UserID(0)
@@ -296,7 +296,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
     def handle_event_w_update_status_request(self, request: Node) -> Node:
         # Update user status so puzzle comments can show it
         extid = request.child_value("uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             customize = request.child_value("customize")
             status = request.child_value("status")
@@ -329,7 +329,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
 
         # Create a lobby entry for this user
         extid = request.child_value("e/uid")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             profile = self.get_profile(userid)
             self.data.local.lobby.put_lobby(
@@ -394,7 +394,7 @@ class ReflecBeatLimelight(ReflecBeatBase):
         mg = request.child_value("m_grade")  # noqa: F841
         extid = request.child_value("uid")
         limit = request.child_value("max")
-        userid = self.data.remote.user.from_extid(self.game, self.version, extid)
+        userid = self.data.remote.user.from_extid(self.game, extid)
         if userid is not None:
             lobbies = self.data.local.lobby.get_all_lobbies(self.game, self.version)
             for user, lobby in lobbies:
