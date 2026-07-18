@@ -324,7 +324,7 @@ def viewsettings() -> Response:
         "iidx/settings.react.js",
         {
             "player": djinfo,
-            "regions": RegionConstants.LUT,
+            "regions": RegionConstants.LUT(),
             "versions": {version: name for (game, version, name) in frontend.all_games()},
             "qpros": frontend.get_all_items(versions),
         },

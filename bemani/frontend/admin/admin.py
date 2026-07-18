@@ -9,6 +9,8 @@ from bemani.common import (
     GameConstants,
     RegionConstants,
     ValidatedDict,
+    Profile,
+    ID,
 )
 from bemani.data import Arcade, Machine, User, UserID, News, Event, Server, Client
 from bemani.data.api.client import APIClient, NotAuthorizedAPIException, APIException
@@ -98,6 +100,16 @@ def format_user(user: User) -> Dict[str, Any]:
     }
 
 
+def format_profile(profile: Profile) -> Dict[str, object]:
+    return {
+        "game": profile.game.value,
+        "version": profile.version,
+        "extid": ID.format_extid(profile.extid),
+        "refid": profile.refid,
+        "name": profile.get_str("name", ""),
+    }
+
+
 def format_news(news: News) -> Dict[str, Any]:
     return {
         "id": news.id,
@@ -145,7 +157,7 @@ def viewsettings() -> Response:
             **{
                 "title": "Network Settings",
                 "config": g.config,
-                "region": RegionConstants.LUT,
+                "region": RegionConstants.LUT(),
             },
         )
     )
@@ -240,7 +252,7 @@ def viewarcades() -> Response:
         "admin/arcades.react.js",
         {
             "arcades": [format_arcade(arcade) for arcade in g.data.local.machine.get_all_arcades()],
-            "regions": RegionConstants.LUT,
+            "regions": RegionConstants.LUT(),
             "usernames": g.data.local.user.get_all_usernames(),
             "paseli_enabled": g.config.paseli.enabled,
             "paseli_infinite": g.config.paseli.infinite,
@@ -271,17 +283,7 @@ def viewmachines() -> Response:
         {
             "machines": [format_machine(machine) for machine in g.data.local.machine.get_all_machines()],
             "arcades": {arcade.id: arcade.name for arcade in g.data.local.machine.get_all_arcades()},
-            "series": {
-                GameConstants.BISHI_BASHI.value: "BishiBashi",
-                GameConstants.DDR.value: "DDR",
-                GameConstants.IIDX.value: "IIDX",
-                GameConstants.JUBEAT.value: "Jubeat",
-                GameConstants.MGA.value: "Metal Gear Arcade",
-                GameConstants.MUSECA.value: "MÚSECA",
-                GameConstants.POPN_MUSIC.value: "Pop'n Music",
-                GameConstants.REFLEC_BEAT.value: "Reflec Beat",
-                GameConstants.SDVX.value: "SDVX",
-            },
+            "series": GameConstants.LUT(),
             "games": games,
             "enforcing": g.config.server.enforce_pcbid,
         },
@@ -374,7 +376,15 @@ def viewuser(userid: int) -> Response:
         except CardCipherException:
             return "????????????????"
 
+    # Get list of all game names and versions.
+    games: Dict[str, Dict[int, str]] = {}
+    for game, version, name in Base.all_games():
+        if game.value not in games:
+            games[game.value] = {}
+        games[game.value][version] = name
+
     cards = [__format_card(card) for card in g.data.local.user.get_cards(userid)]
+    profiles = [format_profile(profile) for profile in g.data.local.user.get_profiles(userid)]
     arcades = g.data.local.machine.get_all_arcades()
     return render_react(
         "User",
@@ -384,7 +394,9 @@ def viewuser(userid: int) -> Response:
                 "email": user.email,
                 "username": user.username,
             },
+            "games": games,
             "cards": cards,
+            "profiles": profiles,
             "arcades": {arcade.id: arcade.name for arcade in arcades},
             "balances": {arcade.id: g.data.local.user.get_balance(userid, arcade.id) for arcade in arcades},
             "events": [
@@ -395,6 +407,7 @@ def viewuser(userid: int) -> Response:
         {
             "refresh": url_for("admin_pages.listuser", userid=userid),
             "removeusercard": url_for("admin_pages.removeusercard", userid=userid),
+            "removeuserprofile": url_for("admin_pages.removeuserprofile", userid=userid),
             "addusercard": url_for("admin_pages.addusercard", userid=userid),
             "updatebalance": url_for("admin_pages.updatebalance", userid=userid),
             "updateusername": url_for("admin_pages.updateusername", userid=userid),
@@ -1076,6 +1089,34 @@ def removeusercard(userid: int) -> Dict[str, Any]:
     return {
         "cards": [CardCipher.encode(card) for card in g.data.local.user.get_cards(userid)],
     }
+
+
+@admin_pages.route("/users/<int:userid>/profiles/remove", methods=["POST"])
+@jsonify
+@adminrequired
+def removeuserprofile(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+
+    # Grab refid, see if it exists.
+    refid = request.get_json()["refid"]
+    user = g.data.local.user.get_user(userid)
+
+    # Make sure the user ID is valid
+    if user is None:
+        raise Exception("Cannot find user to update!")
+
+    # Make sure the profile is valid.
+    profiles = [p for p in g.data.local.user.get_profiles(userid) if p.refid == refid]
+    if len(profiles) != 1:
+        raise Exception("Cannot find profile to delete!")
+    profile = profiles[0]
+
+    # Remove it from the user's account
+    g.data.local.user.delete_profile(profile.game, profile.version, userid)
+
+    # Return new profile list
+    return {"profiles": [format_profile(profile) for profile in g.data.local.user.get_profiles(userid)]}
 
 
 @admin_pages.route("/users/<int:userid>/cards/add", methods=["POST"])

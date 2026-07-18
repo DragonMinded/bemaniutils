@@ -105,7 +105,7 @@ def viewarcade(arcadeid: int) -> Response:
         "arcade/arcade.react.js",
         {
             "arcade": format_arcade(arcade),
-            "regions": RegionConstants.LUT,
+            "regions": RegionConstants.LUT(),
             "machines": machines,
             "game_settings": get_game_settings(g.data, arcadeid),
             "balances": {balance[0]: balance[1] for balance in g.data.local.machine.get_balances(arcadeid)},

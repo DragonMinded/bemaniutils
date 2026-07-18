@@ -19,6 +19,7 @@ var user_management = createReactClass({
             new_password1: '',
             new_password2: '',
             cards: window.cards,
+            profiles: window.profiles,
             new_card: '',
             balances: window.balances,
             credits: credits,
@@ -392,6 +393,49 @@ var user_management = createReactClass({
         );
     },
 
+    deleteExistingProfile: function(event, refid) {
+        $.confirm({
+            escapeKey: 'Cancel',
+            animation: 'none',
+            closeAnimation: 'none',
+            title: 'Delete Profile',
+            content: 'Are you sure you want to delete this profile?',
+            buttons: {
+                Delete: {
+                    btnClass: 'delete',
+                    action: function() {
+                        AJAX.post(
+                            Link.get('removeuserprofile'),
+                            {refid: refid},
+                            function(response) {
+                                // Kill the entry we no longer need
+                                var profiles = this.state.profiles;
+                                this.setState({
+                                    profiles: profiles.filter((prof) => prof.refid != refid),
+                                });
+                            }.bind(this)
+                        );
+                    }.bind(this),
+                },
+                Cancel: function() {
+                },
+            }
+        });
+        event.preventDefault();
+    },
+
+    renderDeleteProfileButton: function(profile) {
+        return (
+            <>
+                <Delete
+                    onClick={function(event) {
+                        this.deleteExistingProfile(event, profile.refid);
+                    }.bind(this)}
+                />
+            </>
+        );
+    },
+
     render: function() {
         return (
             <div>
@@ -429,6 +473,47 @@ var user_management = createReactClass({
                         />
                         <input type="submit" value="add card" />
                     </form>
+                </div>
+                <div className="section">
+                    <h3>Profiles</h3>
+                    { this.state.profiles.length == 0 ?
+                        <div>
+                            <span className="placeholder">No profiles present!</span>
+                        </div> :
+                        <Table
+                            className="list profile"
+                            columns={[
+                                {
+                                    name: 'Game',
+                                    render: function(profile) {
+                                        return window.games[profile.game][profile.version]
+                                    }.bind(this),
+                                    sort: function(a, b) {
+                                        return a.game.localeCompare(b.game);
+                                    }.bind(this),
+                                },
+                                {
+                                    name: 'Game ID',
+                                    render: function(profile) {
+                                        return profile.extid;
+                                    }.bind(this),
+                                },
+                                {
+                                    name: 'Name',
+                                    render: function(profile) {
+                                        return profile.name;
+                                    }.bind(this),
+                                },
+                                {
+                                    name: '',
+                                    render: this.renderDeleteProfileButton,
+                                    action: true,
+                                },
+                            ]}
+                            rows={this.state.profiles}
+                            emptymessage="There are no profiles associated with this user."
+                        />
+                    }
                 </div>
                 <div className="section">
                     <h3>PASELI Balance</h3>

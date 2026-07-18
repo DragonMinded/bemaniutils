@@ -21,6 +21,21 @@ class GameConstants(Enum):
     REFLEC_BEAT = "reflec"
     SDVX = "sdvx"
 
+    @classmethod
+    def LUT(cls) -> Dict[str, str]:
+        return {
+            cls.BISHI_BASHI.value: "BishiBashi",
+            cls.DANCE_EVOLUTION.value: "Dance Evolution",
+            cls.DDR.value: "DDR",
+            cls.IIDX.value: "IIDX",
+            cls.JUBEAT.value: "Jubeat",
+            cls.MGA.value: "Metal Gear Arcade",
+            cls.MUSECA.value: "MÚSECA",
+            cls.POPN_MUSIC.value: "Pop'n Music",
+            cls.REFLEC_BEAT.value: "Reflec Beat",
+            cls.SDVX.value: "SDVX",
+        }
+
 
 class VersionConstants:
     """
@@ -476,7 +491,7 @@ class _RegionConstants:
 
             raise Exception(f"Unexpected value {region} for game region!")
 
-    @property
+    @classmethod
     def LUT(cls) -> Dict[int, str]:
         return {
             cls.HOKKAIDO: "北海道 (Hokkaido)",

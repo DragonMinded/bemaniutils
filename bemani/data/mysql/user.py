@@ -529,6 +529,38 @@ class UserData(BaseData):
             self.deserialize(result["data"]),
         )
 
+    def get_profiles(self, userid: UserID) -> List[Profile]:
+        """
+        Given a user ID, look up all associated profiles across all games and versions. If the user
+        does not have any profiles then returns an empty list.
+
+        Parameters:
+            userid - Integer user ID, as looked up by one of the above functions.
+
+        Returns:
+            A list of valid profiles that were pulled from the DB.
+        """
+        sql = """
+            SELECT refid.refid AS refid, extid.extid AS extid, refid.game AS game, refid.version AS version, profile.data AS data
+            FROM refid, extid, profile
+            WHERE
+                refid.userid = :userid AND
+                extid.userid = refid.userid AND
+                extid.game = refid.game AND
+                profile.refid = refid.refid
+        """
+        cursor = self.execute(sql, {"userid": userid})
+        return [
+            Profile(
+                GameConstants(result["game"]),
+                result["version"],
+                result["refid"],
+                result["extid"],
+                self.deserialize(result["data"]),
+            )
+            for result in cursor.mappings()
+        ]
+
     def get_any_profile(self, game: GameConstants, version: int, userid: UserID) -> Optional[Profile]:
         """
         Given a game/version/userid, look up the associated profile. If the profile for that version
@@ -778,6 +810,12 @@ class UserData(BaseData):
 
         # Delete profile JSON to unlink the profile for this game/version.
         sql = "DELETE FROM profile WHERE refid = :refid LIMIT 1"
+        self.execute(sql, {"refid": refid})
+
+        # Now delete any associated data items that went with that profile.
+        sql = "DELETE FROM achievement WHERE refid = :refid"
+        self.execute(sql, {"refid": refid})
+        sql = "DELETE FROM time_based_achievement WHERE refid = :refid"
         self.execute(sql, {"refid": refid})
 
     def get_achievement(
