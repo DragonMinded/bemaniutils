@@ -273,6 +273,7 @@ pre {
 
 span.sort {
     float: right;
+    cursor: pointer;
 }
 
 span.checkbox {
@@ -284,6 +285,7 @@ div.slider {
     display: inline-flex;
     height: 18px;
     border-radius: 10px;
+    cursor: pointer;
 }
 
 div.slider.on {
