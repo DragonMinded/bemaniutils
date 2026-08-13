@@ -3,6 +3,15 @@
     <div class="section">
         To change any of these settings, edit <span class="file">{{ config.filename }}</span>.
     </div>
+    {% if config.debug %}
+    <div class="section">
+        <h3>Debug Settings</h3>
+        <p>
+            This server is running in debug mode, most likely launched from development utilities.
+            Do not serve production traffic with this instance.
+        </p>
+    </div>
+    {% endif %}
     <div class="section">
         <h3>Database Settings</h3>
         <dl>
