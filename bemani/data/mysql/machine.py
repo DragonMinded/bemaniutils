@@ -101,7 +101,7 @@ class MachineData(BaseData):
             # Machine doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return result["pcbid"]
 
     def from_machine_id(self, machine_id: int) -> Optional[str]:
@@ -121,7 +121,7 @@ class MachineData(BaseData):
             # Machine doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return result["pcbid"]
 
     def from_userid(self, userid: UserID) -> List[ArcadeID]:
@@ -176,7 +176,7 @@ class MachineData(BaseData):
             # Machine doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return Machine(
             result["id"],
             pcbid,
@@ -282,7 +282,7 @@ class MachineData(BaseData):
                 port = None
             else:
                 # Grab highest port
-                result = cursor.mappings().fetchone()  # type: ignore
+                result = cursor.mappings().fetchone()
                 port = result["port"]
                 if port is not None:
                     port = port + 1
@@ -355,7 +355,7 @@ class MachineData(BaseData):
         )
         if cursor.rowcount != 1:
             raise ArcadeCreationException("Failed to create arcade!")
-        arcadeid = cursor.lastrowid
+        arcadeid = ArcadeID(cursor.lastrowid)
         for owner in owners:
             sql = """
                 INSERT INTO arcade_owner (userid, arcadeid)
@@ -386,7 +386,7 @@ class MachineData(BaseData):
             # Arcade doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
 
         sql = "SELECT userid FROM arcade_owner WHERE arcadeid = :id"
         cursor = self.execute(sql, {"id": arcadeid})
@@ -515,7 +515,7 @@ class MachineData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
     def put_settings(

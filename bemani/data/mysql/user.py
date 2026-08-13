@@ -193,7 +193,7 @@ class UserData(BaseData):
             # Couldn't find a user with this card
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return UserID(result["userid"])
 
     def from_username(self, username: str) -> Optional[UserID]:
@@ -212,7 +212,7 @@ class UserData(BaseData):
             # Couldn't find this username
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return UserID(result["id"])
 
     def from_refid(self, game: GameConstants, version: int, refid: str) -> Optional[UserID]:
@@ -237,7 +237,7 @@ class UserData(BaseData):
             # Couldn't find a user with this refid
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return UserID(result["userid"])
 
     def from_extid(self, game: GameConstants, extid: int) -> Optional[UserID]:
@@ -261,7 +261,7 @@ class UserData(BaseData):
             # Couldn't find a user with this refid
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return UserID(result["userid"])
 
     def from_session(self, session: str) -> Optional[UserID]:
@@ -300,7 +300,7 @@ class UserData(BaseData):
             # User doesn't exist, but we have a reference?
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return User(userid, result["username"], result["email"], result["admin"] == 1)
 
     def get_all_users(self) -> List[User]:
@@ -440,7 +440,7 @@ class UserData(BaseData):
             # User doesn't exist, but we have a reference?
             return False
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return pin == result["pin"]
 
     def update_pin(self, userid: UserID, pin: str) -> None:
@@ -471,7 +471,7 @@ class UserData(BaseData):
             # User doesn't exist, but we have a reference?
             return False
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         passhash = result["password"]
 
         try:
@@ -520,7 +520,7 @@ class UserData(BaseData):
             # Profile doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return Profile(
             game,
             version,
@@ -849,7 +849,7 @@ class UserData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
     def get_achievements(self, game: GameConstants, version: int, userid: UserID) -> List[Achievement]:
@@ -1115,7 +1115,7 @@ class UserData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
     def get_links(self, game: GameConstants, version: int, userid: UserID) -> List[Link]:
@@ -1237,7 +1237,7 @@ class UserData(BaseData):
         sql = "SELECT balance FROM balance WHERE userid = :userid AND arcadeid = :arcadeid"
         cursor = self.execute(sql, {"userid": userid, "arcadeid": arcadeid})
         if cursor.rowcount == 1:
-            result = cursor.mappings().fetchone()  # type: ignore
+            result = cursor.mappings().fetchone()
             return result["balance"]
         else:
             return 0
@@ -1283,7 +1283,7 @@ class UserData(BaseData):
         sql = "SELECT refid FROM refid WHERE userid = :userid AND game = :game AND version = :version"
         cursor = self.execute(sql, {"userid": userid, "game": game.value, "version": version})
         if cursor.rowcount == 1:
-            result = cursor.mappings().fetchone()  # type: ignore
+            result = cursor.mappings().fetchone()
             return result["refid"]
         else:
             return self.create_refid(game, version, userid)
@@ -1306,7 +1306,7 @@ class UserData(BaseData):
             sql = "SELECT extid FROM extid WHERE userid = :userid AND game = :game"
             cursor = self.execute(sql, {"userid": userid, "game": game.value})
             if cursor.rowcount == 1:
-                result = cursor.mappings().fetchone()  # type: ignore
+                result = cursor.mappings().fetchone()
                 return result["extid"]
             else:
                 return None
@@ -1412,7 +1412,7 @@ class UserData(BaseData):
             sql = "SELECT refid FROM refid WHERE userid = :userid AND game = :game AND version = :version"
             cursor = self.execute(sql, {"userid": userid, "game": game.value, "version": version})
             if cursor.rowcount == 1:
-                result = cursor.mappings().fetchone()  # type: ignore
+                result = cursor.mappings().fetchone()
                 return result["refid"]
             # Shouldn't be possible, but here we are
             raise AccountCreationException("Failed to recover lost race refid!")
@@ -1459,4 +1459,4 @@ class UserData(BaseData):
             self.execute(sql, {"newid": userid, "oldid": oldid})
 
         # Finally, return the user ID
-        return userid
+        return UserID(userid)

@@ -107,7 +107,7 @@ class NetworkData(BaseData):
             # Couldn't find an entry with this ID
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return News(
             newsid,
             result["timestamp"],
@@ -181,7 +181,7 @@ class NetworkData(BaseData):
             # No scheduled work was registered, so time to get going!
             return True
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
 
         if schedule == "daily":
             # Just look at the day and year, make sure it matches

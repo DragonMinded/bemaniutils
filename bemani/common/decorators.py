@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def debugonly(func: T) -> T:

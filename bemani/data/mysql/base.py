@@ -1,6 +1,6 @@
 import json
 import random
-from typing import Final, Dict, Any, Optional
+from typing import Final, Dict, Any, Optional, cast
 
 from bemani.common import Time
 from bemani.data.config import Config
@@ -86,7 +86,7 @@ class BaseData:
             params if params is not None else {},
         )
         self.__conn.commit()
-        return result
+        return cast(CursorResult, result)
 
     def serialize(self, data: Dict[str, Any]) -> str:
         """
@@ -142,7 +142,7 @@ class BaseData:
             # Couldn't find a user with this session
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return result["id"]
 
     def _create_session(self, opid: int, optype: str, expiration: int = (30 * 86400)) -> str:

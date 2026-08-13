@@ -96,7 +96,7 @@ class GameData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
     def put_settings(self, game: GameConstants, userid: UserID, settings: Dict[str, Any]) -> None:
@@ -158,7 +158,7 @@ class GameData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
     def get_achievements(self, game: GameConstants, userid: UserID) -> List[Achievement]:
@@ -251,7 +251,7 @@ class GameData(BaseData):
             # setting doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         retval = ValidatedDict(self.deserialize(result["data"]))
         retval["start_time"] = result["start_time"]
         retval["end_time"] = result["end_time"]
@@ -387,7 +387,7 @@ class GameData(BaseData):
             # entry doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
     def get_items(self, game: GameConstants, version: int) -> List[Item]:

@@ -1,6 +1,7 @@
 import copy
 
 from sqlalchemy import Table, Column, UniqueConstraint
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.types import String, Integer, JSON
 from sqlalchemy.dialects.mysql import BIGINT as BigInteger
 from typing import Optional, Dict, List, Tuple, Any
@@ -82,7 +83,7 @@ class LobbyData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         data = ValidatedDict(self.deserialize(result["data"]))
         data["id"] = result["id"]
         data["time"] = result["time"]
@@ -113,7 +114,7 @@ class LobbyData(BaseData):
             },
         )
 
-        def format_result(result: Dict[str, Any]) -> ValidatedDict:
+        def format_result(result: RowMapping) -> ValidatedDict:
             data = ValidatedDict(self.deserialize(result["data"]))
             data["id"] = result["id"]
             data["time"] = result["time"]
@@ -214,7 +215,7 @@ class LobbyData(BaseData):
             # Settings doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         data = ValidatedDict(self.deserialize(result["data"]))
         data["id"] = result["id"]
         data["time"] = result["time"]
@@ -246,7 +247,7 @@ class LobbyData(BaseData):
             },
         )
 
-        def format_result(result: Dict[str, Any]) -> ValidatedDict:
+        def format_result(result: RowMapping) -> ValidatedDict:
             data = ValidatedDict(self.deserialize(result["data"]))
             data["id"] = result["id"]
             data["time"] = result["time"]

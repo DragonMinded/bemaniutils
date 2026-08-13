@@ -107,7 +107,7 @@ class MusicData(BaseData):
         if cursor.rowcount != 1:
             # music doesn't exist
             raise Exception(f"Song {songid} chart {songchart} doesn't exist for game {game} version {version}")
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return result["id"]
 
     def put_score(
@@ -296,7 +296,7 @@ class MusicData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return Score(
             result["scorekey"],
             result["songid"],
@@ -356,7 +356,7 @@ class MusicData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return (
             UserID(result["userid"]),
             Score(
@@ -597,7 +597,7 @@ class MusicData(BaseData):
         if cursor.rowcount != 1:
             # music doesn't exist
             return None
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return Song(
             game,
             version,
@@ -908,7 +908,7 @@ class MusicData(BaseData):
             # score doesn't exist
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return (
             UserID(result["userid"]),
             Attempt(

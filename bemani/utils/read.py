@@ -14,7 +14,7 @@ from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.sql import text
 from sqlalchemy.exc import IntegrityError
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from bemani.common import (
     GameConstants,
@@ -97,7 +97,7 @@ class ImportBase:
             ]:
                 if write_statement in sql.lower():
                     raise Exception("Read-only mode is active!")
-        return self.__conn.execute(text(sql), params if params is not None else {})
+        return cast(CursorResult, self.__conn.execute(text(sql), params if params is not None else {}))
 
     def remote_music(self, server: str, token: str) -> GlobalMusicData:
         api = ReadAPI(server, token)
@@ -111,7 +111,7 @@ class ImportBase:
 
     def get_next_music_id(self) -> int:
         cursor = self.execute("SELECT MAX(id) AS next_id FROM `music`")
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         try:
             return result["next_id"] + 1
         except TypeError:
@@ -139,7 +139,7 @@ class ImportBase:
             },
         )
         if cursor.rowcount != 0:
-            result = cursor.mappings().fetchone()  # type: ignore
+            result = cursor.mappings().fetchone()
             return result["id"]
         else:
             return None
@@ -184,7 +184,7 @@ class ImportBase:
             },
         )
         if cursor.rowcount != 0:
-            result = cursor.mappings().fetchone()  # type: ignore
+            result = cursor.mappings().fetchone()
             return result["id"]
         else:
             return None

@@ -1,7 +1,8 @@
 import uuid
 from sqlalchemy import Table, Column
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.types import String, Integer
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from bemani.common import Time
 from bemani.data.mysql.base import BaseData, metadata
@@ -70,7 +71,7 @@ class APIData(APIProviderInterface, BaseData):
         """
         sql = "SELECT count(*) AS count FROM client WHERE token = :token"
         cursor = self.execute(sql, {"token": token})
-        return cursor.mappings().fetchone()["count"] == 1  # type: ignore
+        return cursor.mappings().fetchone()["count"] == 1
 
     def create_client(self, name: str) -> int:
         """
@@ -109,7 +110,7 @@ class APIData(APIProviderInterface, BaseData):
             # Couldn't find an entry with this ID
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         return Client(
             clientid,
             result["timestamp"],
@@ -145,7 +146,7 @@ class APIData(APIProviderInterface, BaseData):
             A list of Server objects sorted by add time.
         """
 
-        def format_result(result: Dict[str, Any]) -> Server:
+        def format_result(result: RowMapping) -> Server:
             allow_stats = (result["config"] & 0x1) == 0
             allow_scores = (result["config"] & 0x2) == 0
             return Server(
@@ -199,7 +200,7 @@ class APIData(APIProviderInterface, BaseData):
             # Couldn't find an entry with this ID
             return None
 
-        result = cursor.mappings().fetchone()  # type: ignore
+        result = cursor.mappings().fetchone()
         allow_stats = (result["config"] & 0x1) == 0
         allow_scores = (result["config"] & 0x2) == 0
         return Server(
