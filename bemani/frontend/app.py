@@ -119,10 +119,12 @@ def loginprohibited(func: Callable) -> Callable:
 def jsonify(func: Callable) -> Callable:
     @wraps(func)
     def decoratedfunction(*args: Any, **kwargs: Any) -> Response:
+        resp = func(*args, **kwargs)
         try:
-            return flask_jsonify(func(*args, **kwargs))
+            return flask_jsonify(resp)
         except Exception as e:
             print(traceback.format_exc())
+            print(f"Failed to serialize object {type(resp)}: {resp}")
             return flask_jsonify(
                 {
                     "error": True,
