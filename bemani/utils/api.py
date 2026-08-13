@@ -40,12 +40,17 @@ def main() -> None:
         action="store_true",
         help="Force the database into read-only mode.",
     )
+    parser.add_argument("-v", "--verbose", help="Display verbose API info.", action="store_true")
     args = parser.parse_args()
 
     # Set up app
     load_config(args.config)
     if args.read_only:
         config["database"]["read_only"] = True
+
+    # Force full verbose output when running as a debug app.
+    config["verbose"] = args.verbose
+    config["debug"] = True
 
     if args.profile:
         from werkzeug.middleware.profiler import ProfilerMiddleware

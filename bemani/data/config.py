@@ -244,3 +244,11 @@ class Config(dict):
     def event_log_duration(self) -> Optional[int]:
         duration = self.get("event_log_duration")
         return int(duration) if duration else None
+
+    @property
+    def verbose(self) -> bool:
+        return bool(self.get("verbose", False))
+
+    @property
+    def debug(self) -> bool:
+        return bool(self.get("debug", False))

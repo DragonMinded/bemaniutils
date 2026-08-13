@@ -333,6 +333,7 @@ if __name__ == "__main__":
                 },
             },
             "verbose": args.verbose,
+            "debug": True,
             "timeout": args.timeout,
             "keepalive": args.keepalive,
         }

@@ -4,7 +4,7 @@ from typing import Any, Dict, Final, List
 
 from bemani.backend.ess import EventLogHandler
 from bemani.backend.danevo.base import DanceEvolutionBase
-from bemani.common import VersionConstants, Profile, CardCipher, Time
+from bemani.common import VersionConstants, Profile, CardCipher, Time, debugonly
 from bemani.protocol import Node
 
 
@@ -167,6 +167,7 @@ class DanceEvolution(
 
         return root
 
+    @debugonly
     def handle_playerdata_usergamedata_recvscores_request(self, request: Node) -> Node:
         # NOTE: This is an entirely made up endpoint. The game does not call it. This exists
         # entirely to allow for client integration tests (trafficgen) to verify score saving

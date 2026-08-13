@@ -58,7 +58,7 @@ def receive_request(path: str) -> Response:
 
     dataprovider = Data(requestconfig)
     try:
-        dispatch = Dispatch(requestconfig, dataprovider, config["verbose"])
+        dispatch = Dispatch(requestconfig, dataprovider)
         resp = dispatch.handle(req)
 
         if resp is None:
@@ -149,6 +149,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Force the database into read-only mode.",
     )
+    parser.add_argument("-q", "--quiet", help="Do not display verbose packet info.", action="store_true")
     args = parser.parse_args()
 
     # Set up global configuration, overriding config port for convenience in debugging.
@@ -158,7 +159,8 @@ if __name__ == "__main__":
         config["database"]["read_only"] = True
 
     # Force full verbose output when running as a debug app.
-    config["verbose"] = True
+    config["verbose"] = not args.quiet
+    config["debug"] = True
 
     # Register game handlers
     register_games()

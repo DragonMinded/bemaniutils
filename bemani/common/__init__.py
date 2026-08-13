@@ -10,6 +10,7 @@ from bemani.common.constants import (
     RegionConstants,
 )
 from bemani.common.card import CardCipher, CardCipherException
+from bemani.common.decorators import debugonly
 from bemani.common.id import ID
 from bemani.common.aes import AESCipher
 from bemani.common.time import Time
@@ -39,4 +40,5 @@ __all__ = [
     "PEFile",
     "InvalidOffsetException",
     "cache",
+    "debugonly",
 ]

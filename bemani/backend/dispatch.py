@@ -20,7 +20,7 @@ class Dispatch:
     class and then returning a response.
     """
 
-    def __init__(self, config: Config, data: Data, verbose: bool) -> None:
+    def __init__(self, config: Config, data: Data) -> None:
         """
         Initialize the Dispatch object.
 
@@ -29,7 +29,8 @@ class Dispatch:
             data - A Data singleton for DB access.
             verbose - Whether we get chatty to stdout or not.
         """
-        self.__verbose = verbose
+        self.__verbose = config.verbose
+        self.__debug = config.debug
         self.__data = data
         self.__config = config
 
@@ -144,6 +145,9 @@ class Dispatch:
         # First, try to handle with specific service/method function
         try:
             handler = getattr(game, f"handle_{request.name}_{method}_request")
+            if not self.__debug and getattr(handler, "__debug_only__", False):
+                # This is a debug-only endpoint, and we're in production mode.
+                handler = None
         except AttributeError:
             handler = None
         if handler is not None:
@@ -153,6 +157,9 @@ class Dispatch:
             # Now, try to pass it off to a generic service handler
             try:
                 handler = getattr(game, f"handle_{request.name}_requests")
+                if not self.__debug and getattr(handler, "__debug_only__", False):
+                    # This is a debug-only endpoint, and we're in production mode.
+                    handler = None
             except AttributeError:
                 handler = None
             if handler is not None:
