@@ -85,6 +85,18 @@ var card_management = createReactClass({
                 </div>
                 <div className="section">
                     <h3>Add Card</h3>
+                    {
+                        window.config['allow_raw_ids'] ?
+                            <p>
+                                Enter the 16 digit code found on the back of an e-AMUSEMENT card or displayed
+                                in-game when you scan an Amusement IC card. For convenience, you can also enter
+                                the raw 16 digit card ID usually starting with <code>E004</code>.
+                            </p> :
+                            <p>
+                                Enter the 16 digit code found on the back of an e-AMUSEMENT card or displayed
+                                in-game when you scan an Amusement IC card.
+                            </p>
+                    }
                     <form onSubmit={this.addNewCard}>
                         <input
                             type="text"

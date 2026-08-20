@@ -353,6 +353,9 @@ def navigation() -> Dict[str, Any]:
         for f in os.listdir(os.path.join(static_location, "components"))
         if re.search(r"\.react\.js$", f)
     ]
+    custom_config = {}
+    if g.config.server.allow_raw_ids:
+        custom_config['allow_raw_ids'] = True
 
     # Look up the logged in user ID.
     try:
@@ -366,6 +369,7 @@ def navigation() -> Dict[str, Any]:
                 "assets": f"themes/{config.theme}/",
                 "theme_url": jinja2_theme,
                 "cache_bust": f"v={FRONTEND_CACHE_BUST}",
+                "custom_config": custom_config,
             }
     except AttributeError:
         # If we are trying to render a 500 error and we couldn't even run the
@@ -377,6 +381,7 @@ def navigation() -> Dict[str, Any]:
             "assets": f"themes/{config.theme}/",
             "theme_url": jinja2_theme,
             "cache_bust": f"v={FRONTEND_CACHE_BUST}",
+            "custom_config": custom_config,
         }
 
     pages: List[Dict[str, Any]] = []
@@ -985,4 +990,5 @@ def navigation() -> Dict[str, Any]:
         "assets": f"themes/{config.theme}/",
         "theme_url": jinja2_theme,
         "cache_bust": f"v={FRONTEND_CACHE_BUST}",
+        "custom_config": custom_config,
     }

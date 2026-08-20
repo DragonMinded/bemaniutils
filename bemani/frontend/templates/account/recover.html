@@ -11,6 +11,16 @@
                     Enter the card number and PIN of a card that you've previously linked
                     to your account. Any linked card will work as long as you also enter
                     the correct PIN and the username of the account the card is linked to.
+                    {% if custom_config.get("allow_raw_ids", False) %}
+                         The card number is the 16 digit code found on the back of an
+                         e-AMUSEMENT card or displayed in-game when you scan an Amusement
+                         IC card. For convenience, you can also enter the raw 16 digit card
+                         ID usually starting with <code>E004</code>.
+                    {% else %}
+                         The card number is the 16 digit code found on the back of an
+                         e-AMUSEMENT card or displayed in-game when you scan an Amusement
+                         IC card.
+                    {% endif %}
                 </p>
             {% endif %}
             <dl>

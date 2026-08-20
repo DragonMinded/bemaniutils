@@ -152,6 +152,7 @@
                 {% endfor %}
             {% endif %}
             window.assets = {{ assets|tojson|safe }};
+            window.config = {{ custom_config|tojson|safe }};
         </script>
         <script type="text/javascript">
             $(function () {
