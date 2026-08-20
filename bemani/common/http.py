@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bemani.data import Config
 
 
 class HTTP:
@@ -160,3 +163,12 @@ class HTTP:
 
         # Concatenate it with the binary data
         return "\r\n".join(out).encode("ascii") + b"\r\n\r\n" + data
+
+
+def format_recovery_link(config: "Config", token: str) -> str:
+    url = f"{config.server.uri}/recover/{token}"
+    while "//" in url:
+        url = url.replace("//", "/")
+    url = url.replace("http:/", "http://")
+    url = url.replace("https:/", "https://")
+    return url

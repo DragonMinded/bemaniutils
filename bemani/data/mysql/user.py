@@ -284,6 +284,26 @@ class UserData(BaseData):
 
         return UserID(userid)
 
+    def from_recovery(self, recovery: str) -> Optional[UserID]:
+        """
+        Given a previously-generated recovery token, look up a user ID.
+
+        Parameters:
+            recovery - String identifying a password recovery token that was returned by create_recovery.
+
+        Returns:
+            User ID as an integer if found, or None if the recovery is expired or doesn't exist.
+        """
+        userid = self._from_session(recovery, "recovery")
+        if userid is None:
+            return None
+        sql = "SELECT id FROM user WHERE id = :userid LIMIT 1"
+        cursor = self.execute(sql, {"userid": userid})
+        if cursor.rowcount != 1:
+            return None
+
+        return UserID(userid)
+
     def get_user(self, userid: UserID) -> Optional[User]:
         """
         Given a userid, look up details about the account.
@@ -1343,6 +1363,28 @@ class UserData(BaseData):
             session - A session string as returned from create_session.
         """
         self._destroy_session(session, "userid")
+
+    def create_recovery(self, userid: UserID, expiration: int = (1 * 86400)) -> str:
+        """
+        Given a user ID, create a recovery string for password recovery.
+
+        Parameters:
+            userid - User ID we wish to generate a recovery token for.
+            expiration - Number of seconds before this recovery token is invalid.
+
+        Returns:
+            A string that can be used as a recovery token.
+        """
+        return self._create_session(userid, "recovery", expiration)
+
+    def destroy_recovery(self, recovery: str) -> None:
+        """
+        Destroy a previously-created recovery token.
+
+        Parameters:
+            recovery - A recovery token as returned from create_recovery.
+        """
+        self._destroy_session(recovery, "recovery")
 
     def create_refid(self, game: GameConstants, version: int, userid: UserID) -> str:
         """

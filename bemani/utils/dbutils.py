@@ -3,6 +3,7 @@ import getpass
 import sys
 from typing import Optional
 
+from bemani.common import format_recovery_link
 from bemani.data import Config, Data, DBCreateException
 from bemani.utils.config import load_config
 
@@ -30,16 +31,28 @@ def upgrade(config: Config) -> None:
 def change_password(config: Config, username: Optional[str]) -> None:
     if username is None:
         raise Exception("Please provide a username!")
-    password1 = getpass.getpass("Password: ")
-    password2 = getpass.getpass("Re-enter password: ")
-    if password1 != password2:
-        raise Exception("Passwords don't match!")
     data = Data(config)
     userid = data.local.user.from_username(username)
     if userid is None:
         raise Exception("User not found!")
+    password1 = getpass.getpass("Password: ")
+    password2 = getpass.getpass("Re-enter password: ")
+    if password1 != password2:
+        raise Exception("Passwords don't match!")
     data.local.user.update_password(userid, password1)
     print(f"User {username} changed password.")
+
+
+def generate_recovery(config: Config, username: Optional[str]) -> None:
+    if username is None:
+        raise Exception("Please provide a username!")
+    data = Data(config)
+    userid = data.local.user.from_username(username)
+    if userid is None:
+        raise Exception("User not found!")
+    token = data.local.user.create_recovery(userid)
+    url = format_recovery_link(config, token)
+    print(f"User {username} can use the following URL for password recovery: {url}")
 
 
 def add_admin(config: Config, username: Optional[str]) -> None:
@@ -72,7 +85,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="A utility for working with databases created with this codebase.")
     parser.add_argument(
         "operation",
-        help="Operation to perform, options include 'create', 'generate', 'upgrade', 'change-password', 'add-admin' and 'remove-admin'.",
+        help="Operation to perform, options include 'create', 'generate', 'upgrade', 'change-password', 'generate-recovery', 'add-admin' and 'remove-admin'.",
         type=str,
     )
     parser.add_argument(
@@ -118,6 +131,8 @@ def main() -> None:
             remove_admin(config, args.username)
         elif args.operation == "change-password":
             change_password(config, args.username)
+        elif args.operation == "generate-recovery":
+            generate_recovery(config, args.username)
         else:
             raise Exception(f"Unknown operation '{args.operation}'")
     except DBCreateException as e:

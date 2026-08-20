@@ -1,5 +1,6 @@
 import json
 import random
+import string
 from typing import Final, Dict, Any, Optional, cast
 
 from bemani.common import Time
@@ -37,7 +38,8 @@ class _BytesEncoder(json.JSONEncoder):
 
 
 class BaseData:
-    SESSION_LENGTH: Final[int] = 32
+    # Chosen to have 512 unique bits of information.
+    SESSION_LENGTH: Final[int] = 24
 
     def __init__(self, config: Config, conn: scoped_session) -> None:
         """
@@ -158,7 +160,7 @@ class BaseData:
         """
         # Create a new session that is unique
         while True:
-            session = "".join(random.choice("0123456789ABCDEF") for _ in range(BaseData.SESSION_LENGTH))
+            session = "".join(random.choice(string.digits + string.ascii_lowercase) for _ in range(BaseData.SESSION_LENGTH))
             sql = "SELECT session FROM session WHERE session = :session"
             cursor = self.execute(sql, {"session": session})
             if cursor.rowcount == 0:

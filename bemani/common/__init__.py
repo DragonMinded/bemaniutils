@@ -1,6 +1,6 @@
 from bemani.common.model import Model
 from bemani.common.validateddict import ValidatedDict, Profile, PlayStatistics, intish
-from bemani.common.http import HTTP
+from bemani.common.http import HTTP, format_recovery_link
 from bemani.common.constants import (
     APIConstants,
     GameConstants,
@@ -41,4 +41,5 @@ __all__ = [
     "InvalidOffsetException",
     "cache",
     "debugonly",
+    "format_recovery_link",
 ]

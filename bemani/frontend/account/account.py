@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from flask import (
     Blueprint,
     request,
@@ -73,6 +73,66 @@ def login() -> Response:
 @loginprohibited
 def viewlogin() -> Response:
     return Response(render_template("account/login.html", **{"title": "Log In", "show_navigation": False}))
+
+
+def recover_display(username: str, token: Optional[str]) -> Response:
+    return Response(render_template(
+        "account/recover.html",
+        **{"title": "Recover Password", "show_navigation": False, "token": token, "username": username},
+    ))
+
+
+@account_pages.route("/recover", methods=["POST"])
+@loginprohibited
+def recover() -> Response:
+    username = request.form["username"]
+    token = request.form.get("token", "")
+    password1 = request.form["password1"]
+    password2 = request.form["password2"]
+
+    # Now, make sure this account recovery token is valid.
+    if token:
+        userid = g.data.local.user.from_recovery(token)
+    else:
+        userid = None
+    if userid is None:
+        error("Recovery token is invalid or expired!")
+        return recover_display(username, token)
+
+    # And make sure the user is valid and matches this recovery token.
+    user = g.data.local.user.get_user(userid)
+    if user is None:
+        error("Recovery token is invalid or expired!")
+        return recover_display(username, token)
+
+    # Be a little lenient with username spelling here.
+    if user.username.lower() != username.lower():
+        error("Recovery token is not for this account!")
+        return recover_display(username, token)
+
+    # Now, make sure that the passwords match
+    if password1 != password2:
+        error("Passwords do not match each other!")
+        return recover_display(username, token)
+
+    # Now, make sure passwords are long enough
+    if len(password1) < 6:
+        error("Password is not long enough!")
+        return recover_display(username, token)
+
+    # Now, update the account.
+    g.data.local.user.update_password(userid, password1)
+    g.data.local.user.destroy_recovery(token)
+    success("Successfully updated password!")
+    response = make_response(redirect(url_for("account_pages.login")))
+    return response
+
+
+@account_pages.route("/recover/", defaults={"recovery": None})
+@account_pages.route("/recover/<recovery>")
+@loginprohibited
+def viewrecover(recovery: Optional[str]) -> Response:
+    return recover_display("", recovery)
 
 
 def register_display(card_number: str, username: str, email: str) -> Response:
