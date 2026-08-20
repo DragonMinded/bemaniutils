@@ -11,6 +11,7 @@ from bemani.common import (
     ValidatedDict,
     Profile,
     ID,
+    format_recovery_link,
 )
 from bemani.data import Arcade, Machine, User, UserID, News, Event, Server, Client
 from bemani.data.api.client import APIClient, NotAuthorizedAPIException, APIException
@@ -406,6 +407,7 @@ def viewuser(userid: int) -> Response:
         },
         {
             "refresh": url_for("admin_pages.listuser", userid=userid),
+            "generaterecovery": url_for("admin_pages.generaterecovery", userid=userid),
             "removeusercard": url_for("admin_pages.removeusercard", userid=userid),
             "removeuserprofile": url_for("admin_pages.removeuserprofile", userid=userid),
             "addusercard": url_for("admin_pages.addusercard", userid=userid),
@@ -1062,6 +1064,28 @@ def updatepassword(userid: int) -> Dict[str, Any]:
     g.data.local.user.update_password(userid, new1)
 
     return {}
+
+
+@admin_pages.route("/users/<int:userid>/password/recovery", methods=["POST"])
+@jsonify
+@adminrequired
+def generaterecovery(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+    user = g.data.local.user.get_user(userid)
+
+    # Make sure the user ID is valid
+    if user is None:
+        raise Exception("Cannot find user to generate recovery link for!")
+
+    # Generate a new recovery link.
+    token = g.data.local.user.create_recovery(userid)
+    url = format_recovery_link(g.config, token)
+
+    # Return new card list
+    return {
+        "url": url,
+    }
 
 
 @admin_pages.route("/users/<int:userid>/cards/remove", methods=["POST"])

@@ -18,6 +18,7 @@ var user_management = createReactClass({
             editing_password: false,
             new_password1: '',
             new_password2: '',
+            generating_recovery: false,
             cards: window.cards,
             profiles: window.profiles,
             new_card: '',
@@ -192,6 +193,30 @@ var user_management = createReactClass({
         event.preventDefault();
     },
 
+    generateRecovery: function(event) {
+        this.setState({generating_recovery: true});
+
+        AJAX.post(
+            Link.get('generaterecovery'),
+            {},
+            function(response) {
+                this.setState({generating_recovery: false});
+                $.confirm({
+                    escapeKey: 'Done',
+                    animation: 'none',
+                    closeAnimation: 'none',
+                    title: 'Recovery Link',
+                    content: response.url,
+                    buttons: {
+                        Done: function() {
+                        },
+                    }
+                });
+            }.bind(this)
+        );
+        event.preventDefault();
+    },
+
     renderUsername: function() {
         return (
             <LabelledSection vertical={true} label="Username">{
@@ -250,6 +275,10 @@ var user_management = createReactClass({
                                 this.setState({editing_password: true});
                             }.bind(this)}
                         />
+                        { this.state.generating_recovery ?
+                            <img className="loading" src={Link.get('static', window.assets + 'loading-16.gif')} /> :
+                            <Edit title="generate recovery link" onClick={this.generateRecovery} />
+                        }
                     </> :
                     <form className="inline" onSubmit={this.savePassword}>
                         <div>
