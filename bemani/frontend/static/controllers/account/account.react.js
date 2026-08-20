@@ -9,7 +9,8 @@ var account_management = createReactClass({
             editing_email: false,
             username: window.username,
             editing_pin: false,
-            new_pin: '',
+            new_pin1: '',
+            new_pin2: '',
             editing_password: false,
             old_password: '',
             new_password1: '',
@@ -38,6 +39,7 @@ var account_management = createReactClass({
                     email_password: '',
                     editing_email: false,
                 });
+                Messages.success("Your email address has been updated!")
             }.bind(this)
         );
         event.preventDefault();
@@ -46,12 +48,19 @@ var account_management = createReactClass({
     savePin: function(event) {
         AJAX.post(
             Link.get('updatepin'),
-            {pin: this.state.new_pin},
+            {
+                old: this.state.old_password,
+                pin1: this.state.new_pin1,
+                pin2: this.state.new_pin2,
+            },
             function(response) {
                 this.setState({
-                    new_pin: '',
+                    old_password: '',
+                    new_pin1: '',
+                    new_pin2: '',
                     editing_pin: false,
                 });
+                Messages.success("Your PIN has been updated!")
             }.bind(this)
         );
         event.preventDefault();
@@ -72,6 +81,7 @@ var account_management = createReactClass({
                     new_password2: '',
                     editing_password: false,
                 });
+                Messages.success("Your password has been updated!")
             }.bind(this)
         );
         event.preventDefault();
@@ -91,7 +101,7 @@ var account_management = createReactClass({
                         <span>&bull;&bull;&bull;&bull;&bull;&bull;</span>
                         <Edit
                             onClick={function(event) {
-                                this.setState({editing_password: true});
+                                this.setState({editing_password: true, editing_pin: false, editing_email: false});
                             }.bind(this)}
                         />
                     </> :
@@ -113,6 +123,7 @@ var account_management = createReactClass({
                             <label for="new1">New password:</label>
                             <input
                                 type="password"
+                                autocomplete="new-password"
                                 value={this.state.new_password1}
                                 onChange={function(event) {
                                     this.setState({new_password1: event.target.value});
@@ -124,6 +135,7 @@ var account_management = createReactClass({
                             <label for="new2">New password (again):</label>
                             <input
                                 type="password"
+                                autocomplete="new-password"
                                 value={this.state.new_password2}
                                 onChange={function(event) {
                                     this.setState({new_password2: event.target.value});
@@ -162,7 +174,7 @@ var account_management = createReactClass({
                         <span>{ this.state.email }</span>
                         <Edit
                             onClick={function(event) {
-                                this.setState({editing_email: true});
+                                this.setState({editing_email: true, editing_pin: false, editing_password: false});
                             }.bind(this)}
                         />
                     </> :
@@ -221,41 +233,78 @@ var account_management = createReactClass({
                         <span>&bull;&bull;&bull;&bull;</span>
                         <Edit
                             onClick={function(event) {
-                                this.setState({editing_pin: true});
+                                this.setState({editing_pin: true, editing_password: false, editing_email: false});
                             }.bind(this)}
                         />
                     </> :
                     <form className="inline" onSubmit={this.savePin}>
-                        <input
-                            type="text"
-                            className="inline"
-                            maxlength="4"
-                            size="4"
-                            autofocus="true"
-                            ref={c => (this.focus_element = c)}
-                            value={this.state.new_pin}
-                            onChange={function(event) {
-                                var intRegex = /^\d*$/;
-                                if (event.target.value.length <= 4 && intRegex.test(event.target.value)) {
-                                    this.setState({new_pin: event.target.value});
-                                }
-                            }.bind(this)}
-                            name="pin"
-                        />
-                        <input
-                            type="submit"
-                            value="save"
-                        />
-                        <input
-                            type="button"
-                            value="cancel"
-                            onClick={function(event) {
-                                this.setState({
-                                    new_pin: '',
-                                    editing_pin: false,
-                                });
-                            }.bind(this)}
-                        />
+                        <div>
+                            <label for="old">Current password:</label>
+                            <input
+                                type="password"
+                                autofocus="true"
+                                ref={c => (this.focus_element = c)}
+                                value={this.state.old_password}
+                                onChange={function(event) {
+                                    this.setState({old_password: event.target.value});
+                                }.bind(this)}
+                                name="old"
+                            />
+                        </div>
+                        <div>
+                            <label for="pin1">New pin:</label>
+                            <input
+                                type="password"
+                                className="inline"
+                                maxlength="4"
+                                autofocus="true"
+                                autocomplete="new-password"
+                                ref={c => (this.focus_element = c)}
+                                value={this.state.new_pin1}
+                                onChange={function(event) {
+                                    var intRegex = /^\d*$/;
+                                    if (event.target.value.length <= 4 && intRegex.test(event.target.value)) {
+                                        this.setState({new_pin1: event.target.value});
+                                    }
+                                }.bind(this)}
+                                name="pin1"
+                            />
+                        </div>
+                        <div>
+                            <label for="pin2">New pin (again):</label>
+                            <input
+                                type="password"
+                                className="inline"
+                                maxlength="4"
+                                autofocus="true"
+                                autocomplete="new-password"
+                                ref={c => (this.focus_element = c)}
+                                value={this.state.new_pin2}
+                                onChange={function(event) {
+                                    var intRegex = /^\d*$/;
+                                    if (event.target.value.length <= 4 && intRegex.test(event.target.value)) {
+                                        this.setState({new_pin2: event.target.value});
+                                    }
+                                }.bind(this)}
+                                name="pin2"
+                            />
+                        </div>
+                        <div className="buttons">
+                            <input
+                                type="submit"
+                                value="save"
+                            />
+                            <input
+                                type="button"
+                                value="cancel"
+                                onClick={function(event) {
+                                    this.setState({
+                                        new_pin: '',
+                                        editing_pin: false,
+                                    });
+                                }.bind(this)}
+                            />
+                        </div>
                     </form>
             }</LabelledSection>
         );

@@ -119,7 +119,15 @@ def loginprohibited(func: Callable) -> Callable:
 def jsonify(func: Callable) -> Callable:
     @wraps(func)
     def decoratedfunction(*args: Any, **kwargs: Any) -> Response:
-        resp = func(*args, **kwargs)
+        try:
+            resp = func(*args, **kwargs)
+        except Exception as e:
+            print(traceback.format_exc())
+            resp = {
+                "error": True,
+                "message": str(e),
+            }
+
         try:
             return flask_jsonify(resp)
         except Exception as e:

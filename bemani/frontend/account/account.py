@@ -411,16 +411,29 @@ def updateemail() -> Dict[str, Any]:
 @jsonify
 @loginrequired
 def updatepin() -> Dict[str, Any]:
-    pin = request.get_json()["pin"]
+    old = request.get_json()["old"]
+    pin1 = request.get_json()["pin1"]
+    pin2 = request.get_json()["pin2"]
     user = g.data.local.user.get_user(g.userID)
     if user is None:
         raise Exception("Unable to find user to update!")
 
-    if not valid_pin(pin, "card"):
+    # Make sure current password matches
+    if not g.data.local.user.validate_password(g.userID, old):
+        raise Exception("Current password is not correct!")
+
+    # Make sure the PIN is valid.
+    if not valid_pin(pin1, "card"):
+        raise Exception("Invalid PIN, must be exactly 4 digits!")
+    if not valid_pin(pin2, "card"):
         raise Exception("Invalid PIN, must be exactly 4 digits!")
 
+    # Make sure it was confirmed twice.
+    if pin1 != pin2:
+        raise Exception("PINs do not match each other!")
+
     # Update and save
-    g.data.local.user.update_pin(g.userID, pin)
+    g.data.local.user.update_pin(g.userID, pin1)
 
     # Return nothing
     return {}
