@@ -128,7 +128,7 @@ def recover() -> Response:
     return response
 
 
-@account_pages.route("/recover/", defaults={"recovery": None})
+@account_pages.route("/recover", defaults={"recovery": None})
 @account_pages.route("/recover/<recovery>")
 @loginprohibited
 def viewrecover(recovery: Optional[str]) -> Response:
