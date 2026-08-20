@@ -14,6 +14,9 @@
         </form>
     </div>
     <div class="section">
+        Forgot your password? <a href="{{ url_for('account_pages.viewrecover') }}">Recover it!</a>
+    </div>
+    <div class="section">
         Don't have an account? <a href="{{ url_for('account_pages.viewregister') }}">Create one!</a>
     </div>
 {% endblock %}

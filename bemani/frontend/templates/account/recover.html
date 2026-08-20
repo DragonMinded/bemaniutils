@@ -6,14 +6,29 @@
         <form action="{{ url_for('account_pages.recover') }}" method=post>
             {% if token %}
                 <input type="hidden" name="token" value="{{ token }}" />
+            {% else %}
+                <p>
+                    Enter the card number and PIN of a card that you've previously linked
+                    to your account. Any linked card will work as long as you also enter
+                    the correct PIN and the username of the account the card is linked to.
+                </p>
             {% endif %}
             <dl>
-                <dt>Username</dt>
+                {% if token %}
+                {% else %}
+                    <dt>Card Number (found on back of e-AMUSEMENT card)</dt>
+                    <dd><input type="text" name="card_number" value="{{ card_number }}" autocomplete="off" /></dd>
+                    <dt>PIN</dt>
+                    <dd><input type="password" name="pin" autocomplete="off" /></dd>
+                    <dt>&nbsp;</dt>
+                    <dd></dd>
+                {% endif %}
+                <dt>Existing Username</dt>
                 <dd><input type="text" name="username" value="{{ username }}" /></dd>
                 <dt>Desired Password</dt>
-                <dd><input type="password" name="password1" /></dd>
+                <dd><input type="password" name="password1" autocomplete="new-password" /></dd>
                 <dt>Desired Password (again)</dt>
-                <dd><input type="password" name="password2" /></dd>
+                <dd><input type="password" name="password2" autocomplete="new-password" /></dd>
                 <dt></dt>
                 <dd><input type="submit" value="update password" /></dd>
             </dl>

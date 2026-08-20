@@ -4,11 +4,17 @@
         <h2>Register New Account</h2>
 
         <form action="{{ url_for('account_pages.register') }}" method=post>
+            <p>
+                To register an account on this network you will need to have played at least
+                one credit on a game linked to this network. If you have not done so you cannot
+                register an account. Enter the card number and PIN of the card you have used to
+                play on this network.
+            </p>
             <dl>
                 <dt>Card Number (found on back of e-AMUSEMENT card)</dt>
-                <dd><input type="text" name="card_number" value="{{ card_number }}" /></dd>
+                <dd><input type="text" name="card_number" value="{{ card_number }}" autocomplete="off" /></dd>
                 <dt>PIN</dt>
-                <dd><input type="password" name="pin" /></dd>
+                <dd><input type="password" name="pin" autocomplete="new-password" /></dd>
                 <dt>&nbsp;</dt>
                 <dd></dd>
                 <dt>Desired Username</dt>
@@ -16,9 +22,9 @@
                 <dt>Email Address (used for password and pin resetting)</dt>
                 <dd><input type="text" name="email" value="{{ email }}" /></dd>
                 <dt>Desired Password</dt>
-                <dd><input type="password" name="password1" /></dd>
+                <dd><input type="password" name="password1" autocomplete="new-password" /></dd>
                 <dt>Desired Password (again)</dt>
-                <dd><input type="password" name="password2" /></dd>
+                <dd><input type="password" name="password2" autocomplete="new-password" /></dd>
                 <dt></dt>
                 <dd><input type="submit" value="create account" /></dd>
             </dl>

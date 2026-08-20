@@ -75,10 +75,10 @@ def viewlogin() -> Response:
     return Response(render_template("account/login.html", **{"title": "Log In", "show_navigation": False}))
 
 
-def recover_display(username: str, token: Optional[str]) -> Response:
+def recover_display(username: str, token: Optional[str], card_number: Optional[str]) -> Response:
     return Response(render_template(
         "account/recover.html",
-        **{"title": "Recover Password", "show_navigation": False, "token": token, "username": username},
+        **{"title": "Recover Password", "show_navigation": False, "token": token, "card_number": card_number, "username": username},
     ))
 
 
@@ -89,36 +89,71 @@ def recover() -> Response:
     token = request.form.get("token", "")
     password1 = request.form["password1"]
     password2 = request.form["password2"]
+    card_number = request.form.get("card_number", "")
+    pin = request.form.get("pin", "")
 
-    # Now, make sure this account recovery token is valid.
+    # Figure out what style of recovery it is.
     if token:
+        # Now, make sure this account recovery token is valid.
         userid = g.data.local.user.from_recovery(token)
+        if userid is None:
+            error("Recovery token is invalid or expired!")
+            return recover_display(username, token, card_number)
+
+        # And make sure the user is valid and matches this recovery token.
+        user = g.data.local.user.get_user(userid)
+        if user is None:
+            error("Recovery token is invalid or expired!")
+            return recover_display(username, token, card_number)
+
+        # Be a little lenient with username spelling here.
+        if user.username.lower() != username.lower():
+            error("Recovery token is not for this account!")
+            return recover_display(username, token, card_number)
+
+    elif card_number:
+        # First, try to convert the card to a valid E004 ID
+        try:
+            cardid = CardCipher.decode(card_number)
+        except CardCipherException:
+            error("Invalid card number!")
+            return recover_display(username, token, card_number)
+
+        # Now, see if this card ID exists already
+        userid = g.data.local.user.from_cardid(cardid)
+        if userid is None:
+            error("The specified card is not for this account!")
+            return recover_display(username, token, card_number)
+
+        # Now, make sure this card and user are linked
+        user = g.data.local.user.get_user(userid)
+        if user is None:
+            error("The specified card is not for this account!")
+            return recover_display(username, token, card_number)
+
+        # Be a little lenient with username spelling here.
+        if user.username.lower() != username.lower():
+            error("The specified card is not for this account!")
+            return recover_display(username, token, card_number)
+
+        # Now, see if the pin is correct
+        if not g.data.local.user.validate_pin(userid, pin):
+            error("The entered PIN does not match the PIN on the card!")
+            return recover_display(username, token, card_number)
+
     else:
-        userid = None
-    if userid is None:
         error("Recovery token is invalid or expired!")
-        return recover_display(username, token)
-
-    # And make sure the user is valid and matches this recovery token.
-    user = g.data.local.user.get_user(userid)
-    if user is None:
-        error("Recovery token is invalid or expired!")
-        return recover_display(username, token)
-
-    # Be a little lenient with username spelling here.
-    if user.username.lower() != username.lower():
-        error("Recovery token is not for this account!")
-        return recover_display(username, token)
+        return recover_display(username, token, card_number)
 
     # Now, make sure that the passwords match
     if password1 != password2:
         error("Passwords do not match each other!")
-        return recover_display(username, token)
+        return recover_display(username, token, card_number)
 
     # Now, make sure passwords are long enough
     if len(password1) < 6:
         error("Password is not long enough!")
-        return recover_display(username, token)
+        return recover_display(username, token, card_number)
 
     # Now, update the account.
     g.data.local.user.update_password(userid, password1)
@@ -132,7 +167,7 @@ def recover() -> Response:
 @account_pages.route("/recover/<recovery>")
 @loginprohibited
 def viewrecover(recovery: Optional[str]) -> Response:
-    return recover_display("", recovery)
+    return recover_display("", recovery, "")
 
 
 def register_display(card_number: str, username: str, email: str) -> Response:
