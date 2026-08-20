@@ -1,6 +1,9 @@
-from typing import Dict, Final, List
+from typing import Dict, Final, List, TYPE_CHECKING
 
 from Crypto.Cipher import DES3
+
+if TYPE_CHECKING:
+    from bemani.data import Config
 
 
 class CardCipherException(Exception):
@@ -174,3 +177,17 @@ class CardCipher:
             checksum = sum(divmod(checksum, 0x20))
 
         return checksum
+
+
+def decode_user_provided(config: "Config", cardid: str) -> str:
+    # First, try to decode the card ID as if it was encoded.
+    try:
+        return CardCipher.decode(cardid)
+    except CardCipherException:
+        if not config.server.allow_raw_ids:
+            raise
+
+    # Now, assume it is already raw. We round trip it because
+    # this will check for ID validity even with the raw ID.
+    enc = CardCipher.encode(cardid)
+    return CardCipher.decode(enc)

@@ -9,7 +9,7 @@ from flask import (
     render_template,
 )
 
-from bemani.common import CardCipher, CardCipherException, AESCipher, Time
+from bemani.common import CardCipher, CardCipherException, AESCipher, Time, decode_user_provided
 from bemani.frontend.app import (
     loginrequired,
     loginprohibited,
@@ -114,7 +114,7 @@ def recover() -> Response:
     elif card_number:
         # First, try to convert the card to a valid E004 ID
         try:
-            cardid = CardCipher.decode(card_number)
+            cardid = decode_user_provided(g.config, card_number)
         except CardCipherException:
             error("Invalid card number!")
             return recover_display(username, token, card_number)
@@ -197,7 +197,7 @@ def register() -> Response:
 
     # First, try to convert the card to a valid E004 ID
     try:
-        cardid = CardCipher.decode(card_number)
+        cardid = decode_user_provided(g.config, card_number)
     except CardCipherException:
         error("Invalid card number!")
         return register_display(card_number, username, email)
@@ -335,7 +335,7 @@ def addcard() -> Dict[str, Any]:
     # Grab card, convert it
     card = request.get_json()["card"]
     try:
-        cardid = CardCipher.decode(card)
+        cardid = decode_user_provided(g.config, card)
     except CardCipherException:
         raise Exception("Invalid card number!")
 
@@ -361,7 +361,7 @@ def removecard() -> Dict[str, Any]:
     # Grab card, convert it
     card = request.get_json()["card"]
     try:
-        cardid = CardCipher.decode(card)
+        cardid = decode_user_provided(g.config, card)
     except CardCipherException:
         raise Exception("Invalid card number!")
 

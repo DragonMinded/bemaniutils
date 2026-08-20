@@ -9,7 +9,7 @@ from bemani.common.constants import (
     BroadcastConstants,
     RegionConstants,
 )
-from bemani.common.card import CardCipher, CardCipherException
+from bemani.common.card import CardCipher, CardCipherException, decode_user_provided
 from bemani.common.decorators import debugonly
 from bemani.common.id import ID
 from bemani.common.aes import AESCipher
@@ -41,5 +41,6 @@ __all__ = [
     "InvalidOffsetException",
     "cache",
     "debugonly",
+    "decode_user_provided",
     "format_recovery_link",
 ]

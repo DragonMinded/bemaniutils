@@ -11,6 +11,7 @@ from bemani.common import (
     ValidatedDict,
     Profile,
     ID,
+    decode_user_provided,
     format_recovery_link,
 )
 from bemani.data import Arcade, Machine, User, UserID, News, Event, Server, Client
@@ -816,7 +817,7 @@ def removecard() -> Dict[str, Any]:
     # Grab card, convert it
     card = request.get_json()["card"]
     try:
-        cardid = CardCipher.decode(card)
+        cardid = decode_user_provided(g.config, card)
     except CardCipherException:
         raise Exception("Invalid card number!")
 
@@ -839,7 +840,7 @@ def addcard() -> Dict[str, Any]:
     # Grab card, convert it
     card = request.get_json()["card"]
     try:
-        cardid = CardCipher.decode(card["number"])
+        cardid = decode_user_provided(g.config, card["number"])
     except CardCipherException:
         raise Exception("Invalid card number!")
 
@@ -1098,7 +1099,7 @@ def removeusercard(userid: int) -> Dict[str, Any]:
     # Grab card, convert it
     card = request.get_json()["card"]
     try:
-        cardid = CardCipher.decode(card)
+        cardid = decode_user_provided(g.config, card)
     except CardCipherException:
         raise Exception("Invalid card number!")
     user = g.data.local.user.get_user(userid)
@@ -1153,7 +1154,7 @@ def addusercard(userid: int) -> Dict[str, Any]:
     # Grab card, convert it
     card = request.get_json()["card"]
     try:
-        cardid = CardCipher.decode(card)
+        cardid = decode_user_provided(g.config, card)
     except CardCipherException:
         raise Exception("Invalid card number!")
     user = g.data.local.user.get_user(userid)

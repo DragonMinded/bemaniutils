@@ -36,6 +36,11 @@ server:
     # page. Note that this setting is irrelevant if PCBID enforcing is off.
     # Set to 0 or delete this setting to disable self-granting PCBIDs.
     pcbid_self_grant_limit: 0
+    # Whether frontend text boxes that accept a Card ID will accept a raw ID
+    # starting with E004 or 0XXX. With this enabled, while the frontend will
+    # still display Card IDs as they appear in-game and on the back of actual
+    # cards, users can type in the raw ID as a convenience.
+    allow_raw_ids: False
     # Default region for this network (set to USA by default). See RegionConstants
     # for details on acceptible values. The range of accepted values is 1-56 matching
     # the 56 normal regions found in RegionConstants, and 1000 for "Europe" and

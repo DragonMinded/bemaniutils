@@ -4,11 +4,11 @@ from flask import Blueprint, request, Response, abort, url_for
 
 from bemani.backend.base import Base
 from bemani.common import (
-    CardCipher,
     CardCipherException,
     ValidatedDict,
     GameConstants,
     RegionConstants,
+    decode_user_provided,
 )
 from bemani.data import Arcade, ArcadeID, Event, Machine
 from bemani.frontend.app import loginrequired, jsonify, render_react, valid_pin
@@ -186,7 +186,7 @@ def addbalance(arcadeid: int) -> Dict[str, Any]:
         raise Exception("You don't own this arcade, refusing to update!")
 
     try:
-        cardid = CardCipher.decode(card)
+        cardid = decode_user_provided(g.config, card)
         userid = g.data.local.user.from_cardid(cardid)
     except CardCipherException:
         userid = None
