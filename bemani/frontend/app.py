@@ -355,7 +355,7 @@ def navigation() -> Dict[str, Any]:
     ]
     custom_config = {}
     if g.config.server.allow_raw_ids:
-        custom_config['allow_raw_ids'] = True
+        custom_config["allow_raw_ids"] = True
 
     # Look up the logged in user ID.
     try:

@@ -160,7 +160,9 @@ class BaseData:
         """
         # Create a new session that is unique
         while True:
-            session = "".join(random.choice(string.digits + string.ascii_lowercase) for _ in range(BaseData.SESSION_LENGTH))
+            session = "".join(
+                random.choice(string.digits + string.ascii_lowercase) for _ in range(BaseData.SESSION_LENGTH)
+            )
             sql = "SELECT session FROM session WHERE session = :session"
             cursor = self.execute(sql, {"session": session})
             if cursor.rowcount == 0:

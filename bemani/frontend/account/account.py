@@ -76,10 +76,18 @@ def viewlogin() -> Response:
 
 
 def recover_display(username: str, token: Optional[str], card_number: Optional[str]) -> Response:
-    return Response(render_template(
-        "account/recover.html",
-        **{"title": "Recover Password", "show_navigation": False, "token": token, "card_number": card_number, "username": username},
-    ))
+    return Response(
+        render_template(
+            "account/recover.html",
+            **{
+                "title": "Recover Password",
+                "show_navigation": False,
+                "token": token,
+                "card_number": card_number,
+                "username": username,
+            },
+        )
+    )
 
 
 @account_pages.route("/recover", methods=["POST"])
