@@ -367,75 +367,6 @@ class Base(ABC):
             raise Exception("Trying to save a remote profile locally!")
         self.data.local.user.put_profile(self.game, self.version, userid, profile)
 
-    def update_play_statistics(self, userid: UserID, stats: Optional[PlayStatistics] = None) -> None:
-        """
-        Given a user ID, calculate new play statistics.
-
-        Handles keeping track of statistics such as consecutive days played, last
-        play date, times played today, times played total, etc.
-
-        Parameters:
-            userid - The user ID we are binding the profile for.
-            stats - A play statistics object we should store extra data from.
-        """
-        if RemoteUser.is_remote(userid):
-            raise Exception("Trying to save remote statistics locally!")
-
-        # We store the play statistics in a series-wide settings blob so its available
-        # across all game versions, since it isn't game-specific.
-        settings = self.data.local.game.get_settings(self.game, userid) or ValidatedDict({})
-
-        if stats is not None:
-            for key in stats:
-                # Make sure we don't override anything we manage here
-                if key in {
-                    "total_plays",
-                    "today_plays",
-                    "total_days",
-                    "first_play_timestamp",
-                    "last_play_timestamp",
-                    "last_play_date",
-                    "consecutive_days",
-                }:
-                    continue
-                # Safe to copy over
-                settings[key] = stats[key]
-
-        settings.replace_int("total_plays", settings.get_int("total_plays") + 1)
-        settings.replace_int("first_play_timestamp", settings.get_int("first_play_timestamp", Time.now()))
-        settings.replace_int("last_play_timestamp", Time.now())
-
-        last_play_date = settings.get_int_array("last_play_date", 3)
-        today_play_date = Time.todays_date()
-        yesterday_play_date = Time.yesterdays_date()
-        if (
-            last_play_date[0] == today_play_date[0]
-            and last_play_date[1] == today_play_date[1]
-            and last_play_date[2] == today_play_date[2]
-        ):
-            # We already played today, add one.
-            settings.replace_int("today_plays", settings.get_int("today_plays") + 1)
-        else:
-            # We played on a new day, so count total days up.
-            settings.replace_int("total_days", settings.get_int("total_days") + 1)
-
-            # We played only once today (the play we are saving).
-            settings.replace_int("today_plays", 1)
-            if (
-                last_play_date[0] == yesterday_play_date[0]
-                and last_play_date[1] == yesterday_play_date[1]
-                and last_play_date[2] == yesterday_play_date[2]
-            ):
-                # We played yesterday, add one to consecutive days
-                settings.replace_int("consecutive_days", settings.get_int("consecutive_days") + 1)
-            else:
-                # We haven't played yesterday, so we have only one consecutive day.
-                settings.replace_int("consecutive_days", 1)
-        settings.replace_int_array("last_play_date", 3, today_play_date)
-
-        # Save back
-        self.data.local.game.put_settings(self.game, userid, settings)
-
     def get_machine_id(self) -> int:
         machine = self.data.local.machine.get_machine(self.config.machine.pcbid)
         return machine.id
@@ -500,22 +431,34 @@ class Base(ABC):
 
     def get_play_statistics(self, userid: UserID) -> PlayStatistics:
         """
-        Given a user ID, get the play statistics.
+        Given a user ID, get the play statistics for the current game series.
 
         Note that games wishing to use this when generating profiles to send to
         a game should call update_play_statistics when parsing a profile save.
+        You can call this function as many times as you want during profile load
+        or during any other user-based packet handler and it will return you
+        the calculated statistics for the game series including the current play.
 
         Parameters:
             userid - The user ID we are binding the profile for.
 
         Returns a dictionary optionally containing the following attributes:
-            total_plays - Integer count of total plays for this game series
-            first_play_timestamp - Unix timestamp of first play time
-            last_play_timestamp - Unix timestamp of last play time
-            last_play_date - List of ints in the form of [YYYY, MM, DD] of last play date
-            today_plays - Number of times played today
-            total_days - Total individual days played
-            consecutive_days - Number of consecutive days played at this time.
+            total_plays - Integer count of total plays for this game series,
+                          including the current play. A fresh profile that has
+                          had no profile saves performed against it will have
+                          a total plays of 1.
+            first_play_timestamp - Integer Unix timestamp of first play time.
+            last_play_timestamp - Integer Unix timestamp of last play time.
+            last_play_date - List of ints in the form of [YYYY, MM, DD] of last play date.
+            today_plays - Number of times played today, including the current play.
+                          The first play of the day will have a value of 1 here.
+            total_days - Total individual days played, including the current play.
+                         A fresh profile will have a total days of 1 since the play
+                         this is looked up for includes the current day.
+            consecutive_days - Number of consecutive days played at this time. If
+                               this is the first day in a streak, this will be 1.
+                               Otherwise this will be the number of days in a row
+                               the user has played this series, including today.
         """
         if RemoteUser.is_remote(userid):
             return PlayStatistics(
@@ -606,3 +549,79 @@ class Base(ABC):
             settings.get_int("last_play_timestamp", Time.now()),
             extra_settings,
         )
+
+    def update_play_statistics(self, userid: UserID, stats: Optional[PlayStatistics] = None) -> None:
+        """
+        Given a user ID, calculate new play statistics for the current game series.
+
+        Handles keeping track of statistics such as consecutive days played, last
+        play date, times played today, times played total, etc. Note that this
+        modifies the user's profile to update play statistics at the time of call
+        so you should only call it once on profile save at the end of a round.
+        Optionally you can provide a PlayStatistics that you looked up from
+        get_play_statistics if you are keeping extra data in the series statistics.
+        If you are not doing that and don't have any existing PlayStatistics to
+        persist then you can call this with just the userid and the user's game
+        series statistics will be updated properly.
+
+        Parameters:
+            userid - The user ID we are binding the profile for.
+            stats - A play statistics object we should store extra data from.
+        """
+        if RemoteUser.is_remote(userid):
+            raise Exception("Trying to save remote statistics locally!")
+
+        # We store the play statistics in a series-wide settings blob so its available
+        # across all game versions, since it isn't game-specific.
+        settings = self.data.local.game.get_settings(self.game, userid) or ValidatedDict({})
+
+        if stats is not None:
+            for key in stats:
+                # Make sure we don't override anything we manage here
+                if key in {
+                    "total_plays",
+                    "today_plays",
+                    "total_days",
+                    "first_play_timestamp",
+                    "last_play_timestamp",
+                    "last_play_date",
+                    "consecutive_days",
+                }:
+                    continue
+                # Safe to copy over
+                settings[key] = stats[key]
+
+        settings.replace_int("total_plays", settings.get_int("total_plays") + 1)
+        settings.replace_int("first_play_timestamp", settings.get_int("first_play_timestamp", Time.now()))
+        settings.replace_int("last_play_timestamp", Time.now())
+
+        last_play_date = settings.get_int_array("last_play_date", 3)
+        today_play_date = Time.todays_date()
+        yesterday_play_date = Time.yesterdays_date()
+        if (
+            last_play_date[0] == today_play_date[0]
+            and last_play_date[1] == today_play_date[1]
+            and last_play_date[2] == today_play_date[2]
+        ):
+            # We already played today, add one.
+            settings.replace_int("today_plays", settings.get_int("today_plays") + 1)
+        else:
+            # We played on a new day, so count total days up.
+            settings.replace_int("total_days", settings.get_int("total_days") + 1)
+
+            # We played only once today (the play we are saving).
+            settings.replace_int("today_plays", 1)
+            if (
+                last_play_date[0] == yesterday_play_date[0]
+                and last_play_date[1] == yesterday_play_date[1]
+                and last_play_date[2] == yesterday_play_date[2]
+            ):
+                # We played yesterday, add one to consecutive days
+                settings.replace_int("consecutive_days", settings.get_int("consecutive_days") + 1)
+            else:
+                # We haven't played yesterday, so we have only one consecutive day.
+                settings.replace_int("consecutive_days", 1)
+        settings.replace_int_array("last_play_date", 3, today_play_date)
+
+        # Save back
+        self.data.local.game.put_settings(self.game, userid, settings)

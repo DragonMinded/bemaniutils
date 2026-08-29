@@ -5,6 +5,13 @@ from bemani.common.constants import GameConstants
 
 
 def intish(val: Any, base: int = 10) -> Optional[int]:
+    """
+    Given a value of any type, if it can be interpreted as an int, do so.
+    This includes native integers, floats as well as strings that contain
+    only an integer value. If the input turns out not to be an integer,
+    returns None instead.
+    """
+
     if val is None:
         return None
     try:
@@ -20,11 +27,14 @@ class ValidatedDict(dict):
     non-default values when data is good. Used primarily for storing data pulled
     directly from game responses, or reading data to echo to a game.
 
-    All of the get functions will verify that the attribute exists and is the right
-    type. If it is not, the default value is returned.
+    All the get functions will verify that the attribute exists and is the right
+    type. If it is not, the default value is returned. This is a strict check, so
+    for instance if you need an int and the type is a float, this will choose the
+    default value instead of coercing the float to an int.
 
-    all of the set functions will verify that the to-be-stored value matches the
-    type. If it does not, the value is not updated.
+    All the set functions will verify that the to-be-stored value matches the
+    type. If it does not, the value is not updated. This is a strict check, just like
+    the various get functions.
     """
 
     def clone(self) -> "ValidatedDict":
@@ -449,7 +459,10 @@ class Profile(ValidatedDict):
     """
     A special case of a ValidatedDict, a profile is guaranteed to also contain
     references to how it was created or loaded, including the game/version
-    combo and the refid and extid associated wit the profile.
+    combo and the refid and extid associated with the profile. This is normally
+    fetched by calling get_profile, get_any_profile, or get_any_profiles from
+    within a game's handler. This is normally persisted by calling put_profile
+    from within the same game's handler.
     """
 
     def __init__(
@@ -472,9 +485,18 @@ class Profile(ValidatedDict):
 
 class PlayStatistics(ValidatedDict):
     """
-    A special case of a ValidatedDict, a play statistics object is guaranteed
-    to also contain several values representing last play times, total play times,
-    and the like.
+    A special case of a ValidatedDict, a play statistics object is guaranteed to
+    also contain several values representing last play times, total play times,
+    and the like. This structure represents per-series play statistics in a consistent
+    manner across all game series. To fetch play statistics for a given game you
+    should call get_play_statistics. To update play statistics for a given game you
+    should call update_play_statistics.
+
+    You can keep extra values in this structure just like any other ValidatedDict.
+    You might want to do that if you have settings, statistics or options that span
+    an entire game series. To do that, you can use this like any other ValidatedDict
+    after calling get_play_statistics, and you can include a PlayStatistics with extra
+    values in an update_play_statistics call.
     """
 
     def __init__(
@@ -491,12 +513,18 @@ class PlayStatistics(ValidatedDict):
         super().__init__(extra_values or {})
         self.game = game
         # How many actual profiles saves have we registered across all games in this series.
+        # Note that on a fresh profile this will be 1, not 0, because it reflects the assumption
+        # that you are looking up the PlayStatistics for a user during profile load.
         self.total_plays = total_plays
-        # How many actual profile saves have we registered today, so far.
+        # How many actual profile saves have we registered today, so far. Note that on the first
+        # play of the day this will be 1, not 0.
         self.today_plays = today_plays
-        # How many total days that we have registered at least one profile save.
+        # How many total days that we have registered at least one profile save. Note that on
+        # a fresh profile this will be 1 because it includes today in that count.
         self.total_days = total_days
-        # How many consecutive days in a row we registered at least one profile save.
+        # How many consecutive days in a row we registered at least one profile save. Note that
+        # if this is the first consective day (either due to a new profile or they haven't played
+        # in awhile) this will be 1.
         self.consecutive_days = consecutive_days
         # The timestamp of the very first play session, in seconds.
         self.first_play_timestamp = first_play_timestamp
