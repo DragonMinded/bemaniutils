@@ -876,7 +876,7 @@ class PopnMusicModernBase(PopnMusicBase, ABC):
         # have ever played Pop'n Music also factors in, as the game will only attempt
         # to offer you the basic "how to play" tutorial screen and song on the playthrough
         # attempt where the "total_play_cnt" value is 1. The game expects this to be 1-based,
-        # and if you set it to 0 for the first playthorough then it will play a mandatory
+        # and if you set it to 0 for the first playthrough then it will play a mandatory
         # cursed tutorial stage on the second profile load using the chart of your last
         # played song and keysounds of system menu entries. Valid values for each of the
         # two tutorial values is as follows:
