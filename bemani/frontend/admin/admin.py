@@ -100,6 +100,7 @@ def format_user(user: User) -> Dict[str, Any]:
         "email": user.email,
         "admin": user.admin,
         "linked_cards": user.linked_cards,
+        "last_played": user.last_play_timestamp,
     }
 
 
@@ -333,6 +334,7 @@ def viewusers() -> Response:
         {
             "searchusers": url_for("admin_pages.searchusers"),
             "viewuser": url_for("admin_pages.viewuser", userid=-1),
+            "removeuser": url_for("admin_pages.removeuser", userid=-1),
         },
     )
 

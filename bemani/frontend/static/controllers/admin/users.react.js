@@ -70,15 +70,76 @@ var card_management = createReactClass({
         return ac - bc;
     },
 
-    renderEditButton: function(user) {
-        return (
+    renderLastPlayed: function(user) {
+        return user.last_played ?
+            <Timestamp className="lastplayed" timestamp={user.last_played} /> :
+            <span className="placeholder">never</span>;
+    },
+
+    sortLastPlayed: function(a, b) {
+        var ap = a.last_played ? a.last_played : 0;
+        var bp = b.last_played ? b.last_played : 0;
+        return ap - bp;
+    },
+
+    renderEditDeleteButton: function(user) {
+        return <>
             <Nav
                 title="view/edit"
                 onClick={function(event) {
                     window.location=Link.get('viewuser', user.id);
                 }.bind(this)}
             />
-        );
+            <Delete
+                onClick={function(event) {
+			        this.deleteUser(user.id);
+                    event.preventDefault();
+                }.bind(this)}
+            />
+        </>;
+    },
+
+    deleteUser: function(userid) {
+        $.confirm({
+            escapeKey: 'Cancel',
+            animation: 'none',
+            closeAnimation: 'none',
+            title: 'Delete User',
+            content: (
+                'Are you sure you want to delete this user? All of their game profiles, scores, ' +
+                'PASELI balances and settings will be deleted along with the account itself.'
+            ),
+            buttons: {
+                Delete: {
+                    btnClass: 'delete',
+                    action: function() {
+                        AJAX.post(
+                            Link.get('removeuser', userid),
+                            {},
+                            function(response) {
+                                // If it succeeded, make an instant update request.
+                                if (response.success) {
+                                    this.setState({searching: true});
+                                    AJAX.post(
+                                        Link.get('searchusers'),
+                                        {user_search: this.state.user_search},
+                                        function(response) {
+                                            this.setState({
+                                                users: response.users,
+                                                searching: false,
+                                            });
+                                        }.bind(this)
+                                    );
+                                }
+                            }.bind(this)
+                        );
+                    }.bind(this),
+                },
+                Cancel: function() {
+                },
+            }
+        });
+        event.preventDefault();
     },
 
     render: function() {
@@ -133,9 +194,14 @@ var card_management = createReactClass({
                                 sort: this.sortLinkedCards,
                             },
                             {
+                                name: 'Last Played',
+                                render: this.renderLastPlayed,
+                                sort: this.sortLastPlayed,
+                            },
+                            {
                                 name: '',
                                 action: true,
-                                render: this.renderEditButton,
+                                render: this.renderEditDeleteButton,
                             }
                         ]}
                         rows={this.state.users}

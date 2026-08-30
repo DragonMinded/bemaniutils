@@ -330,8 +330,19 @@ class UserData(BaseData):
         Returns:
             A list of User objects representing all users.
         """
+        sql = "SELECT userid, data FROM game_settings"
+        settingscursor = self.execute(sql)
+
+        latest_by_id: Dict[UserID, int] = {}
+        for result in settingscursor.mappings():
+            userid = UserID(result["userid"])
+            data = ValidatedDict(self.deserialize(result["data"]))
+            last_played = data.get_int("last_play_timestamp", 0)
+            latest_by_id[userid] = max(last_played, latest_by_id.get(userid, 0))
+
         sql = "SELECT id, username, email, admin, (SELECT COUNT(id) FROM card WHERE card.userid = user.id) AS linked_cards FROM user"
-        cursor = self.execute(sql)
+        usercursor = self.execute(sql)
+
         return [
             User(
                 UserID(result["id"]),
@@ -339,8 +350,9 @@ class UserData(BaseData):
                 result["email"],
                 result["admin"] == 1,
                 result["linked_cards"],
+                latest_by_id.get(UserID(result["id"])),
             )
-            for result in cursor.mappings()
+            for result in usercursor.mappings()
         ]
 
     def get_all_usernames(self) -> List[str]:

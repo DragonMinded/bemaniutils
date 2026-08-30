@@ -22,6 +22,7 @@ class User:
         email: Optional[str],
         admin: bool,
         linked_cards: Optional[int] = None,
+        last_play_timestamp: Optional[int] = None,
     ) -> None:
         """
         Initialize the user object.
@@ -33,16 +34,20 @@ class User:
             email - An optional string, set if the user has claimed their account on the
                     web UI.
             admin - Whether this user is an admin or not.
-            linked_cards - The count of cards linked to this account. Not always provided.
+            linked_cards - The count of cards linked to this account. Only provided when
+                           fetching users with get_all_users.
+            last_play_timestamp - The last play time as a Unix timestamp for this account. Only
+                                  provided when fetching users with get_all_users.
         """
         self.id = userid
         self.username = username
         self.email = email
         self.admin = admin
         self.linked_cards = linked_cards
+        self.last_play_timestamp = last_play_timestamp
 
     def __repr__(self) -> str:
-        return f"User(userid={self.id}, username={self.username}, email={self.email}, admin={self.admin}, linked_cards={self.linked_cards})"
+        return f"User(userid={self.id}, username={self.username}, email={self.email}, admin={self.admin}, linked_cards={self.linked_cards}, last_play_timestamp={self.last_play_timestamp})"
 
 
 class Achievement:
