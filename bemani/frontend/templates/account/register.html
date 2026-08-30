@@ -5,19 +5,23 @@
 
         <form action="{{ url_for('account_pages.register') }}" method=post>
             <p>
-                To register an account on this network you will need to have played at least
-                one credit on a game linked to this network. If you have not done so you cannot
-                register an account. Enter the card number and PIN of the card you have used to
-                play on this network.
-                {% if custom_config.get("allow_raw_ids", False) %}
-                    The card number is the 16 digit code found on the back of an
-                    e-AMUSEMENT card or displayed in-game when you scan an Amusement
-                    IC card. For convenience, you can also enter the raw 16 digit card
-                    ID usually starting with <code>E004</code>.
+                {% if custom_config.get("allow_unlinked_signups", False) %}
+                    If you have played one or more credits on a game linked to this network you can
+                    claim that card when creating your account. Enter the card number which is the
+                    16 digit code found on the back of an e-AMUSEMENT card or displayed in-game when
+                    you scan an Amusement IC card. Make sure you use the same PIN as you did when
+                    you registered your card in-game. If you haven't played yet, enter the card
+                    number and desired PIN for the card you want to use.
                 {% else %}
-                    The card number is the 16 digit code found on the back of an
-                    e-AMUSEMENT card or displayed in-game when you scan an Amusement
-                    IC card.
+                    To register an account on this network you will need to have played at least
+                    one credit on a game linked to this network. If you have not done so you cannot
+                    register an account. Enter the card number and PIN of the card you have used to
+                    play on this network. The card number is the 16 digit code found on the back of
+                    an e-AMUSEMENT card or displayed in-game when you scan an Amusement IC card.
+                {% endif %}
+                {% if custom_config.get("allow_raw_ids", False) %}
+                    For convenience, you can also enter the raw 16 digit card ID usually starting
+                    with <code>E004</code>.
                 {% endif %}
             </p>
             <dl>

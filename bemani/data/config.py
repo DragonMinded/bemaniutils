@@ -84,6 +84,10 @@ class Server:
         return bool(self.__config.get("server", {}).get("allow_raw_ids", False))
 
     @property
+    def allow_unlinked_signups(self) -> bool:
+        return bool(self.__config.get("server", {}).get("allow_unlinked_signups", False))
+
+    @property
     def region(self) -> int:
         region = int(self.__config.get("server", {}).get("region", RegionConstants.USA))
         if region in {RegionConstants.EUROPE, RegionConstants.NO_MAPPING}:

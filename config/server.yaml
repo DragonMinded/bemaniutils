@@ -8,29 +8,37 @@ database:
     user: "bemani"
     # Password of said user.
     password: "bemani"
-    # Force the network to read-only mode, refusing to write to the DB
-    # except for creating/destroying frontend sessions to enable login.
-    # Set this to False or delete this to run in production mode.
+    # Force the network to read-only mode, refusing to write to the DB except
+    # for creating/destroying frontend sessions to enable login. Set this to
+    # False or delete this to run in production mode. Can be useful when testing
+    # bug fixes against a production database safely.
     read_only: False
 
 # Core server settings, required so that the backend knows what to tell games for core
 # routing and server URLs.
 server:
-    # Advertised server IP or DNS entry games will connect to.
+    # Advertised server IP or DNS entry games will connect to. Should be routable
+    # from a connecting game's perspective and ideally match the DNS entry or IP
+    # placed in the game's ea3 config.
     address: "192.168.0.1"
-    # Advertised keepalive address, must be globally pingable. Delete
-    # this to use the address above instead of a unique keepalive address.
+    # Advertised keepalive address, must be globally pingable. Delete this to
+    # use the address above instead of a unique keepalive address.
     keepalive: "127.0.0.1"
-    # What port on the above address games will connect to.
+    # What port on the above address games will connect to. Should be the public
+    # port for the server hosting this instance.
     port: 80
     # Whether games should connect over HTTPS.
     https: False
-    # Advertised frontend URI. Delete this to mask the frontend address.
+    # Advertised frontend URI, displayed on the login screen of many games. Delete
+    # this to mask the frontend address.
     uri: "https://eagate.573.jp"
-    # URI that users hitting the GET interface will be redirected to.
-    # Delete this to return an HTTP error instead of redirecting.
+    # URI that users hitting the GET interface will be redirected to. Delete this
+    # to return an HTTP error instead of redirecting.
     redirect: "https://eagate.573.jp"
-    # Whether PCBIDs must be added to the network before games will work.
+    # Whether PCBIDs must be added to the network before games will work. If set
+    # to True, all PCBIDs must be recognized or the game will be denied access to
+    # this instance. If set to False, unrecognized PCBIDs will be added to the
+    # internal list of known PCBIDs as they connect.
     enforce_pcbid: False
     # How many PCBIDs an arcade owner can grant to themselves on the arcade
     # page. Note that this setting is irrelevant if PCBID enforcing is off.
@@ -41,6 +49,13 @@ server:
     # still display Card IDs as they appear in-game and on the back of actual
     # cards, users can type in the raw ID as a convenience.
     allow_raw_ids: False
+    # Whether the register new account page allows for unlinked sign-ups or not.
+    # With this enabled, somebody can enter any valid card ID to create an
+    # account associated with that card, even if the card hasn't been used to
+    # play on the network yet. Only when entering an existing card will the
+    # system check the PIN to verify that they are the owner of the card. With
+    # this disabled, accounts must be linked to an existing card and valid PIN.
+    allow_unlinked_signups: False
     # Default region for this network (set to USA by default). See RegionConstants
     # for details on acceptible values. The range of accepted values is 1-56 matching
     # the 56 normal regions found in RegionConstants, and 1000 for "Europe" and
@@ -50,8 +65,8 @@ server:
     # Delete this setting to force games to display "Unobtained" instead.
     area: "USA"
 
-# Webhook URLs. These allow for game scores from games with scorecard support to be broadcasted to outside services.
-# Delete this to disable this support.
+# Webhook URLs. These allow for game scores from games with scorecard support to be
+# broadcasted to outside services. Delete this to disable this support.
 webhooks:
     discord:
         iidx: 
@@ -59,20 +74,22 @@ webhooks:
         pnm: 
         - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
 
-# Assets URLs. These allow for in-game asset rendering on the front end. Delete this to disable asset rendering.
+# Assets URLs. These allow for in-game asset rendering on the front end. Delete this
+# to disable asset rendering.
 assets:
     jubeat:
         emblems: "/directory/where/you/output/emblem/assets"
 
-# Global PASESLI settings, which can be overridden on a per-arcade basis. These form the default settings.
+# Global PASESLI settings, which can be overridden on a per-arcade basis. These form
+# the default settings and are mainly useful when PCBID enforcement is disabled.
 paseli:
     # Whether PASELI is enabled on the network.
     enabled: True
     # Whether infinite PASELI balance is enabled on the network.
     infinite: True
 
-# Game series to provide support for. Disabling something here hides it from the frontend and makes the backend
-# ignore games coming from that series.
+# Game series to provide support for. Disabling something here hides it from the
+# frontend and makes the backend ignore games coming from that series.
 support:
     # Bishi Bashi frontend/backend enabled.
     bishi: True
@@ -95,11 +112,14 @@ support:
     # SDVX frontend/backend enabled.
     sdvx: True
 
-# Key used to encrypt cookies, should be unique per network instance.
+# Key used to encrypt cookies, should be unique per network instance. Once chosen
+# you should not change this unless you want to invalidate every existing login.
 secret_key: 'this_is_a_secret_please_change_me'
-# Name of this network.
+# Name of this network, displayed in various places on the frontend and on the admin
+# page when federating with another instance on the Data API page.
 name: 'e-AMUSEMENT Network'
-# Administrative contact for this network.
+# Administrative contact for this network, displayed when federating with other instances
+# using the Data API.
 email: 'nobody@nowhere.com'
 # Cache DIR, should point somewhere other than /tmp for production instances that wish
 # to use filesystem caching. For memcached, delete this value.
@@ -107,10 +127,16 @@ cache_dir: '/tmp'
 # memcached server, should point somewhere other than this bogus value for production
 # instances that wish to use memcached backend. For filesystem caching, delete this value.
 memcached_server: 1.2.3.4:5678
-# Number of seconds to preserve event logs before deleting them.
-# Set to zero or delete to disable deleting logs.
+# Number of seconds to preserve event logs before deleting them. Set to zero or delete
+# this to disable deleting logs.
 event_log_duration: 2592000
 # Whether we log verbosely (full packet request and response) to web server logs or not.
-verbose: true
-# Frontend theme directory where sitewide CSS and favicon should be found.
+# Keeping this on is recommended because you can often replay packets found in the logs
+# in specific circumstances after fixing a bug or dealing with a temporary outage. Turn
+# this off if you are dealing with excessive log files on a larger instance.
+verbose: True
+# Frontend theme directory where sitewide CSS and favicon should be found. A "default"
+# and a "dark" theme ship standard, as found in the "bemani/frontend/static/themes"
+# directory. If you want to create your own theme but don't want to deal with merge
+# conflicts you can copy one of these as the base and place it in a new directory.
 theme: "default"

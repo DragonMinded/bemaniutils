@@ -2,7 +2,7 @@ import mimetypes
 import os
 import re
 import traceback
-from typing import Callable, Dict, Any, Optional, List
+from typing import Callable, Dict, Any, Optional, List, Literal
 from react.jsx import JSXTransformer  # type: ignore
 from flask import (
     Flask,
@@ -320,13 +320,13 @@ def valid_username(username: str) -> bool:
     return re.match(r"^[a-zA-Z0-9_]+$", username) is not None
 
 
-def valid_pin(pin: str, type: str) -> bool:
+def valid_pin(pin: str, type: Literal["card", "arcade"]) -> bool:
     if type == "card":
         return re.match(r"^\d\d\d\d$", pin) is not None
     elif type == "arcade":
         return re.match(r"^\d\d\d\d\d\d\d\d$", pin) is not None
     else:
-        return False
+        return False  # type: ignore
 
 
 # Define useful functions for jnija2
@@ -356,6 +356,8 @@ def navigation() -> Dict[str, Any]:
     custom_config = {}
     if g.config.server.allow_raw_ids:
         custom_config["allow_raw_ids"] = True
+    if g.config.server.allow_unlinked_signups:
+        custom_config["allow_unlinked_signups"] = True
 
     # Look up the logged in user ID.
     try:

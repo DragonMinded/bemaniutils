@@ -210,22 +210,48 @@ def register() -> Response:
         error("Invalid card number!")
         return register_display(card_number, username, email)
 
-    # Now, see if this card ID exists already
-    userid = g.data.local.user.from_cardid(cardid)
-    if userid is None:
-        error("This card has not been used on the network yet!")
-        return register_display(card_number, username, email)
+    if g.config.server.allow_unlinked_signups:
+        # We only need to check if the card is in use already
+        # by another user, or if the PIN was invalid on a card
+        # the user is trying to claim. We don't need to verify
+        # that the card has been seen yet.
+        userid = g.data.local.user.from_cardid(cardid)
+        if userid is not None:
+            # Now, make sure this user doesn't already have an account
+            user = g.data.local.user.get_user(userid)
+            if user.username is not None or user.email is not None:
+                error("This card is already in use!")
+                return register_display(card_number, username, email)
 
-    # Now, make sure this user doesn't already have an account
-    user = g.data.local.user.get_user(userid)
-    if user.username is not None or user.email is not None:
-        error("This card is already in use!")
-        return register_display(card_number, username, email)
+            # Now, see if the pin is correct
+            if not g.data.local.user.validate_pin(userid, pin):
+                error("The entered PIN does not match the PIN on the card!")
+                return register_display(card_number, username, email)
 
-    # Now, see if the pin is correct
-    if not g.data.local.user.validate_pin(userid, pin):
-        error("The entered PIN does not match the PIN on the card!")
-        return register_display(card_number, username, email)
+        else:
+            # We need to make sure the PIN they proposed is at least
+            # valid, because we're going to create a card with this PIN.
+            if not valid_pin(pin, "card"):
+                error("Invalid PIN, must be exactly 4 digits!")
+                return register_display(card_number, username, email)
+
+    else:
+        # Now, see if this card ID exists already
+        userid = g.data.local.user.from_cardid(cardid)
+        if userid is None:
+            error("This card has not been used on the network yet!")
+            return register_display(card_number, username, email)
+
+        # Now, make sure this user doesn't already have an account
+        user = g.data.local.user.get_user(userid)
+        if user.username is not None or user.email is not None:
+            error("This card is already in use!")
+            return register_display(card_number, username, email)
+
+        # Now, see if the pin is correct
+        if not g.data.local.user.validate_pin(userid, pin):
+            error("The entered PIN does not match the PIN on the card!")
+            return register_display(card_number, username, email)
 
     # Now, see if the username is valid
     if not valid_username(username):
@@ -251,6 +277,14 @@ def register() -> Response:
     if len(password1) < 6:
         error("Password is not long enough!")
         return register_display(card_number, username, email)
+
+    if g.config.server.allow_unlinked_signups:
+        if userid is None:
+            userid = g.data.local.user.create_account(cardid, pin)
+            user = g.data.local.user.get_user(userid)
+
+    if userid is None or user is None:
+        raise Exception("Logic error, shouldn't get to this point without a user!")
 
     # Now, create the account.
     user.username = username
