@@ -103,13 +103,16 @@ def format_user(user: User) -> Dict[str, Any]:
     }
 
 
-def format_profile(profile: Profile) -> Dict[str, object]:
+def format_profile(profile: Profile, stats: Dict[GameConstants, ValidatedDict]) -> Dict[str, object]:
+    gamestats = stats.get(profile.game) or ValidatedDict()
+
     return {
         "game": profile.game.value,
         "version": profile.version,
         "extid": ID.format_extid(profile.extid),
         "refid": profile.refid,
         "name": profile.get_str("name", ""),
+        "last_played": gamestats.get_int("last_play_timestamp", 0),
     }
 
 
@@ -387,7 +390,12 @@ def viewuser(userid: int) -> Response:
         games[game.value][version] = name
 
     cards = [__format_card(card) for card in g.data.local.user.get_cards(userid)]
-    profiles = [format_profile(profile) for profile in g.data.local.user.get_profiles(userid)]
+    stats = g.data.local.game.get_all_settings(userid)
+    newest = 0
+    for _, playstats in stats.items():
+        newest = max(newest, playstats.get_int("last_play_timestamp", 0))
+
+    profiles = [format_profile(profile, stats) for profile in g.data.local.user.get_profiles(userid)]
     arcades = g.data.local.machine.get_all_arcades()
     return render_react(
         "User",
@@ -396,6 +404,7 @@ def viewuser(userid: int) -> Response:
             "user": {
                 "email": user.email,
                 "username": user.username,
+                "last_played": newest,
             },
             "games": games,
             "cards": cards,
@@ -435,9 +444,20 @@ def listuser(userid: int) -> Dict[str, Any]:
         except CardCipherException:
             return "????????????????"
 
+    user = g.data.local.user.get_user(userid)
     cards = [__format_card(card) for card in g.data.local.user.get_cards(userid)]
     arcades = g.data.local.machine.get_all_arcades()
+    stats = g.data.local.game.get_all_settings(userid)
+    newest = 0
+    for _, playstats in stats.items():
+        newest = max(newest, playstats.get_int("last_play_timestamp", 0))
+
     return {
+        "user": {
+            "email": user.email,
+            "username": user.username,
+            "last_played": newest,
+        },
         "cards": cards,
         "arcades": {arcade.id: arcade.name for arcade in arcades},
         "balances": {arcade.id: g.data.local.user.get_balance(userid, arcade.id) for arcade in arcades},
@@ -1142,7 +1162,8 @@ def removeuserprofile(userid: int) -> Dict[str, Any]:
     g.data.local.user.delete_profile(profile.game, profile.version, userid)
 
     # Return new profile list
-    return {"profiles": [format_profile(profile) for profile in g.data.local.user.get_profiles(userid)]}
+    stats = g.data.local.game.get_all_settings(userid)
+    return {"profiles": [format_profile(profile, stats) for profile in g.data.local.user.get_profiles(userid)]}
 
 
 @admin_pages.route("/users/<int:userid>/cards/add", methods=["POST"])

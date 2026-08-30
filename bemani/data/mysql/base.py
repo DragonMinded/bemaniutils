@@ -131,8 +131,8 @@ class BaseData:
         Given a previously-opened session, look up an ID.
 
         Parameters:
-            session - String identifying a session that was opened by create_session.
-            sesstype - Arbitrary string identifying the session type.
+            session - String identifying a session that was opened by _create_session.
+            sesstype - Arbitrary string identifying the session type, given as the optype to _create_session.
 
         Returns:
             ID as an integer if found, or None if the session is expired or doesn't exist.
@@ -153,6 +153,7 @@ class BaseData:
 
         Parameters:
             opid - ID we wish to start a session for.
+            optype - The session type, which helps distinguish the ID from an identical one of a different ID type.
             expiration - Number of seconds before this session is invalid.
 
         Returns:
@@ -192,11 +193,28 @@ class BaseData:
         Destroy a previously-created session.
 
         Parameters:
-            session - A session string as returned from create_session.
+            session - A session string as returned from _create_session.
+            sesstype - Arbitrary string identifying the session type, given as the optype to _create_session.
         """
         # Remove the session token
         sql = "DELETE FROM session WHERE session = :session AND type = :sesstype"
         self.execute(sql, {"session": session, "sesstype": sesstype}, safe_write_operation=True)
+
+        # Also weed out any other defunct sessions
+        sql = "DELETE FROM session WHERE expiration < :timestamp"
+        self.execute(sql, {"timestamp": Time.now()}, safe_write_operation=True)
+
+    def _destroy_sessions(self, opid: int, optype: str) -> None:
+        """
+        Destroy any previously created sessions based on ID and type.
+
+        Parameters:
+            opid - A session's associated ID, the same as would be given to _create_session.
+            optype - A session's associated type, which segments IDs, the same as would be given to _create_session.
+        """
+        # Remove the session token
+        sql = "DELETE FROM session WHERE id = :opid AND type = :optype"
+        self.execute(sql, {"opid": opid, "optype": optype})
 
         # Also weed out any other defunct sessions
         sql = "DELETE FROM session WHERE expiration < :timestamp"

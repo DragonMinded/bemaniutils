@@ -18,6 +18,7 @@ var user_management = createReactClass({
             editing_password: false,
             new_password1: '',
             new_password2: '',
+            last_played: window.user.last_played,
             generating_recovery: false,
             cards: window.cards,
             profiles: window.profiles,
@@ -46,12 +47,21 @@ var user_management = createReactClass({
         AJAX.get(
             Link.get('refresh'),
             function(response) {
+                // Update key things about the user in case it changes.
                 this.setState({
+                    last_played: response.user.last_played,
                     cards: response.cards,
                     balances: response.balances,
                     arcades: response.arcades,
                     events: response.events,
                 });
+                // Only update values if they aren't being edited.
+                if (!this.state.editing_email) {
+                    this.setState({email: response.user.email});
+                }
+                if (!this.state.editing_username) {
+                    this.setState({username: response.user.username});
+                }
                 // Refresh every 15 seconds
                 setTimeout(this.refreshUser, 5000);
             }.bind(this)
@@ -422,6 +432,14 @@ var user_management = createReactClass({
         );
     },
 
+    renderLastPlayed: function() {
+        return (
+            <LabelledSection vertical={true} label="Last Seen">
+                <Timestamp timestamp={this.state.last_played} className="lastseen" />
+            </LabelledSection>
+        );
+    },
+
     deleteExistingProfile: function(event, refid) {
         $.confirm({
             escapeKey: 'Cancel',
@@ -474,6 +492,7 @@ var user_management = createReactClass({
                     {this.renderPassword()}
                     {this.renderEmail()}
                     {this.renderPIN()}
+                    {this.renderLastPlayed()}
                 </div>
                 <div className="section">
                     <h3>Cards</h3>
@@ -531,6 +550,12 @@ var user_management = createReactClass({
                                     name: 'Name',
                                     render: function(profile) {
                                         return profile.name;
+                                    }.bind(this),
+                                },
+                                {
+                                    name: 'Last Played',
+                                    render: function(profile) {
+                                        return <Timestamp timestamp={profile.last_played} className="lastseen" />;
                                     }.bind(this),
                                 },
                                 {

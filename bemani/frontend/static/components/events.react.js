@@ -168,13 +168,17 @@ var PASELITransactionEvent = createReactClass({
         var username = null;
         var user = null;
         if (this.props.users) {
-            if (this.props.users[event.userid]) {
-                username = this.props.users[event.userid];
-            }
-            if (username == null) {
-                user = <span className="placeholder">anonymous account</span>;
+            if (event.userid == null) {
+                user = <span className="placeholder">deleted account</span>;
             } else {
-                user = <span>{username}</span>;
+                if (this.props.users[event.userid]) {
+                    username = this.props.users[event.userid];
+                }
+                if (username == null) {
+                    user = <span className="placeholder">anonymous account</span>;
+                } else {
+                    user = <span>{username}</span>;
+                }
             }
         }
 

@@ -99,6 +99,29 @@ class GameData(BaseData):
         result = cursor.mappings().fetchone()
         return ValidatedDict(self.deserialize(result["data"]))
 
+    def get_all_settings(self, userid: UserID) -> Dict[GameConstants, ValidatedDict]:
+        """
+        Given a user ID, look up all game-wide settings as a dictionary.
+
+        This is mostly used for the frontend for admins to be able to see when a profile was
+        last played.
+
+        Parameters:
+            userid - Integer identifying a user, as possibly looked up by UserData.
+
+        Returns:
+            A dictionary keyed by GameConstant whose value is a game settings dictionary
+            as returned by get_settings for that game.
+        """
+        sql = "SELECT game, data FROM game_settings WHERE userid = :userid"
+        cursor = self.execute(sql, {"userid": userid})
+
+        return {
+            GameConstants(result["game"]): ValidatedDict(self.deserialize(result["data"]))
+            for result in cursor.mappings()
+            if result["game"] in GameConstants
+        }
+
     def put_settings(self, game: GameConstants, userid: UserID, settings: Dict[str, Any]) -> None:
         """
         Given a game and a user ID, save game-wide settings to the DB.
