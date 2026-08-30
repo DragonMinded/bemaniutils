@@ -41,8 +41,8 @@ var card_management = createReactClass({
     },
 
     sortUsername: function(a, b) {
-        var au = a.username ? a.username : '';
-        var bu = b.username ? b.username : '';
+        var au = a.username ? a.username : '\u10FFFF';
+        var bu = b.username ? b.username : '\u10FFFF';
         return au.localeCompare(bu);
     },
 
@@ -53,9 +53,21 @@ var card_management = createReactClass({
     },
 
     sortEmail: function(a, b) {
-        var ae = a.email ? a.email : '';
-        var be = b.email ? b.email : '';
+        var ae = a.email ? a.email : '\u10FFFF';
+        var be = b.email ? b.email : '\u10FFFF';
         return ae.localeCompare(be);
+    },
+
+    renderLinkedCards: function(user) {
+        return user.linked_cards ?
+            <span>{user.linked_cards}</span> :
+            <span className="placeholder">none</span>;
+    },
+
+    sortLinkedCards: function(a, b) {
+        var ac = a.linked_cards ? a.linked_cards : 0;
+        var bc = b.linked_cards ? b.linked_cards : 0;
+        return ac - bc;
     },
 
     renderEditButton: function(user) {
@@ -114,6 +126,11 @@ var card_management = createReactClass({
                                 name: 'Email',
                                 render: this.renderEmail,
                                 sort: this.sortEmail,
+                            },
+                            {
+                                name: 'Linked Cards',
+                                render: this.renderLinkedCards,
+                                sort: this.sortLinkedCards,
                             },
                             {
                                 name: '',

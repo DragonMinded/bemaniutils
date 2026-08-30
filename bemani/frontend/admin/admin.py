@@ -99,6 +99,7 @@ def format_user(user: User) -> Dict[str, Any]:
         "username": user.username,
         "email": user.email,
         "admin": user.admin,
+        "linked_cards": user.linked_cards,
     }
 
 

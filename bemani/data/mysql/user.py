@@ -330,7 +330,7 @@ class UserData(BaseData):
         Returns:
             A list of User objects representing all users.
         """
-        sql = "SELECT id, username, email, admin FROM user"
+        sql = "SELECT id, username, email, admin, (SELECT COUNT(id) FROM card WHERE card.userid = user.id) AS linked_cards FROM user"
         cursor = self.execute(sql)
         return [
             User(
@@ -338,6 +338,7 @@ class UserData(BaseData):
                 result["username"],
                 result["email"],
                 result["admin"] == 1,
+                result["linked_cards"],
             )
             for result in cursor.mappings()
         ]

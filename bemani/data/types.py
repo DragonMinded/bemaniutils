@@ -15,7 +15,14 @@ class User:
     more cards, or swap out a card for a new one.
     """
 
-    def __init__(self, userid: UserID, username: Optional[str], email: Optional[str], admin: bool) -> None:
+    def __init__(
+        self,
+        userid: UserID,
+        username: Optional[str],
+        email: Optional[str],
+        admin: bool,
+        linked_cards: Optional[int] = None,
+    ) -> None:
         """
         Initialize the user object.
 
@@ -25,14 +32,17 @@ class User:
                        the web UI.
             email - An optional string, set if the user has claimed their account on the
                     web UI.
+            admin - Whether this user is an admin or not.
+            linked_cards - The count of cards linked to this account. Not always provided.
         """
         self.id = userid
         self.username = username
         self.email = email
         self.admin = admin
+        self.linked_cards = linked_cards
 
     def __repr__(self) -> str:
-        return f"User(userid={self.id}, username={self.username}, email={self.email}, admin={self.admin})"
+        return f"User(userid={self.id}, username={self.username}, email={self.email}, admin={self.admin}, linked_cards={self.linked_cards})"
 
 
 class Achievement:

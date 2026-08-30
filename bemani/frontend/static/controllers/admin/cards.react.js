@@ -39,7 +39,10 @@ var card_management = createReactClass({
             animation: 'none',
             closeAnimation: 'none',
             title: 'Delete Card',
-            content: 'Are you sure you want to delete this card?',
+            content: (
+                'Are you sure you want to delete this card? Doing so will remove the card from the ' +
+                'user account but will not delete the account itself.'
+            ),
             buttons: {
                 Delete: {
                     btnClass: 'delete',
@@ -93,12 +96,12 @@ var card_management = createReactClass({
         return (
             <>
                 <Edit
-                    title="view/edit"
+                    title="view/edit user"
                     onClick={function(event) {
                         window.location=Link.get('viewuser', card.id);
                     }.bind(this)}
                 />
-                <Delete onClick={this.deleteExistingCard.bind(this, card.number)} />
+                <Delete title="remove card" onClick={this.deleteExistingCard.bind(this, card.number)} />
             </>
         );
     },
