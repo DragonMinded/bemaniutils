@@ -320,6 +320,14 @@ class NetworkData(BaseData):
             for result in cursor.mappings()
         ]
 
+    def delete_user(self, userid: UserID) -> None:
+        """
+        Given a user ID, make sure all network-related things are unlinked from
+        the user or deleted from the DB, whichever relevant.
+        """
+        sql = "UPDATE audit SET userid = NULL WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+
     def delete_events(self, oldest_event_ts: int) -> None:
         """
         Given a timestamp of the oldset event we should keep around, delete

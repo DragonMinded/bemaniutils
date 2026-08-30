@@ -471,6 +471,39 @@ var user_management = createReactClass({
         event.preventDefault();
     },
 
+    deleteUser: function(event) {
+        $.confirm({
+            escapeKey: 'Cancel',
+            animation: 'none',
+            closeAnimation: 'none',
+            title: 'Delete User',
+            content: (
+                'Are you sure you want to delete this user? All of their game profiles, scores, ' +
+                'PASELI balances and settings will be deleted along with the account itself.'
+            ),
+            buttons: {
+                Delete: {
+                    btnClass: 'delete',
+                    action: function() {
+                        AJAX.post(
+                            Link.get('removeuser'),
+                            {},
+                            function(response) {
+                                // If it succeeded, redirect back to users.
+                                if (response.success) {
+                                    window.location = Link.get('viewusers');
+                                }
+                            }.bind(this)
+                        );
+                    }.bind(this),
+                },
+                Cancel: function() {
+                },
+            }
+        });
+        event.preventDefault();
+    },
+
     renderDeleteProfileButton: function(profile) {
         return (
             <>
@@ -493,6 +526,9 @@ var user_management = createReactClass({
                     {this.renderEmail()}
                     {this.renderPIN()}
                     {this.renderLastPlayed()}
+                </div>
+                <div className="section">
+                    <Delete title="delete user" onClick={this.deleteUser.bind(this)} />
                 </div>
                 <div className="section">
                     <h3>Cards</h3>

@@ -435,3 +435,14 @@ class GameData(BaseData):
             )
             for result in cursor.mappings()
         ]
+
+    def delete_user(self, userid: UserID) -> None:
+        """
+        Given a user ID, make sure all game-related things are unlinked from
+        the user or deleted from the DB, whichever relevant.
+        """
+        sql = "DELETE FROM series_achievement WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+
+        sql = "DELETE FROM game_settings WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})

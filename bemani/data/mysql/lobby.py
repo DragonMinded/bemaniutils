@@ -302,3 +302,14 @@ class LobbyData(BaseData):
         # Prune any orphaned lobbies too
         sql = "DELETE FROM lobby WHERE time <= :time"
         self.execute(sql, {"time": Time.now() - Time.SECONDS_IN_HOUR})
+
+    def delete_user(self, userid: UserID) -> None:
+        """
+        Given a user ID, make sure all lobby-related things are unlinked from
+        the user or deleted from the DB, whichever relevant.
+        """
+        sql = "DELETE FROM playsession WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+
+        sql = "DELETE FROM lobby WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})

@@ -572,6 +572,14 @@ class MachineData(BaseData):
             for entry in cursor.mappings()
         ]
 
+    def delete_user(self, userid: UserID) -> None:
+        """
+        Given a user ID, make sure all machine-related things are unlinked from
+        the user or deleted from the DB, whichever relevant.
+        """
+        sql = "DELETE FROM arcade_owner WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+
     def create_session(self, arcadeid: ArcadeID, expiration: int = (30 * 86400)) -> str:
         """
         Given an arcade ID, create a session string.

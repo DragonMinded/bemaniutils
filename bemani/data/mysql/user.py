@@ -1503,3 +1503,39 @@ class UserData(BaseData):
 
         # Finally, return the user ID
         return UserID(userid)
+
+    def delete_user(self, userid: UserID) -> None:
+        """
+        Given a user ID, make sure all user-related things are unlinked from
+        the user or deleted from the DB, whichever relevant.
+        """
+        sql = "SELECT COUNT(refid) AS refcount FROM refid WHERE userid = :userid"
+        cursor = self.execute(sql, {"userid": userid})
+
+        # First nuke all profiles, and things related to a player's refid (profile ID basically).
+        if cursor.rowcount == 1 and cursor.mappings().fetchone()["refcount"] > 0:
+            sql = "DELETE FROM time_based_achievement WHERE refid IN (SELECT refid FROM refid WHERE userid = :userid)"
+            self.execute(sql, {"userid": userid})
+            sql = "DELETE FROM achievement WHERE refid IN (SELECT refid FROM refid WHERE userid = :userid)"
+            self.execute(sql, {"userid": userid})
+            sql = "DELETE FROM profile WHERE refid IN (SELECT refid FROM refid WHERE userid = :userid)"
+            self.execute(sql, {"userid": userid})
+
+        # Now nuke any active sessions for the user.
+        self._destroy_sessions(userid, "userid")
+
+        # Finally, nuke anything we own that points at the user.
+        sql = "DELETE FROM link WHERE userid = :userid OR other_userid = :userid"
+        self.execute(sql, {"userid": userid})
+        sql = "DELETE FROM balance WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+        sql = "DELETE FROM extid WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+        sql = "DELETE FROM refid WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+        sql = "DELETE FROM card WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+
+        # And finally, nuke the user themselves.
+        sql = "DELETE FROM user WHERE id = :userid"
+        self.execute(sql, {"userid": userid})

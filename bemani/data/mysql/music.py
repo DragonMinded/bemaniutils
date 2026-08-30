@@ -1021,3 +1021,14 @@ class MusicData(BaseData):
             )
             for result in cursor.mappings()
         ]
+
+    def delete_user(self, userid: UserID) -> None:
+        """
+        Given a user ID, make sure all music-related things are unlinked from
+        the user or deleted from the DB, whichever relevant.
+        """
+        sql = "DELETE FROM score_history WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})
+
+        sql = "DELETE FROM score WHERE userid = :userid"
+        self.execute(sql, {"userid": userid})

@@ -427,6 +427,8 @@ def viewuser(userid: int) -> Response:
             "updateemail": url_for("admin_pages.updateemail", userid=userid),
             "updatepin": url_for("admin_pages.updatepin", userid=userid),
             "updatepassword": url_for("admin_pages.updatepassword", userid=userid),
+            "removeuser": url_for("admin_pages.removeuser", userid=userid),
+            "viewusers": url_for("admin_pages.viewusers"),
         },
     )
 
@@ -465,6 +467,31 @@ def listuser(userid: int) -> Dict[str, Any]:
             format_event(event) for event in g.data.local.network.get_events(userid=userid, event="paseli_transaction")
         ],
     }
+
+
+@admin_pages.route("/users/<int:userid>/remove", methods=["POST"])
+@jsonify
+@adminrequired
+def removeuser(userid: int) -> Dict[str, Any]:
+    # Cast the userID.
+    userid = UserID(userid)
+    user = g.data.local.user.get_user(userid)
+
+    # We only try to run through deleting if the user exists, to avoid
+    # somebody accidentally putting a bad user ID in here.
+    if not user:
+        return {"success": False}
+
+    # Now, go through and delete them from everything that matters.
+    g.data.local.network.delete_user(userid)
+    g.data.local.machine.delete_user(userid)
+    g.data.local.lobby.delete_user(userid)
+    g.data.local.music.delete_user(userid)
+    g.data.local.game.delete_user(userid)
+    g.data.local.user.delete_user(userid)
+
+    # And return nothing, since this can be called multiple places.
+    return {"success": True}
 
 
 @admin_pages.route("/arcades/list")
