@@ -60,6 +60,8 @@
             <dd>{{ config.name }}</dd>
             <dt>Raw Card IDs Accepted</dt>
             <dd>{{ 'yes' if config.server.allow_raw_ids else 'no' }}</dd>
+            <dt>Unlinked Card IDs Allowed During Signup</dt>
+            <dd>{{ 'yes' if config.server.allow_unlinked_signups else 'no' }}</dd>
         </dl>
     </div>
     <div class="section">
