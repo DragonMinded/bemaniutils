@@ -17,6 +17,7 @@ from bemani.frontend.sdvx import sdvx_pages
 from bemani.frontend.reflec import reflec_pages
 from bemani.frontend.museca import museca_pages
 from bemani.frontend.danevo import danevo_pages
+from bemani.frontend.bst import bst_pages
 from bemani.utils.config import (
     load_config as base_load_config,
     instantiate_cache as base_instantiate_cache,
@@ -50,6 +51,8 @@ def register_blueprints() -> None:
         app.register_blueprint(museca_pages)
     if GameConstants.DANCE_EVOLUTION in config.support:
         app.register_blueprint(danevo_pages)
+    if GameConstants.BST in config.support:
+        app.register_blueprint(bst_pages)
 
 
 def register_games() -> None:

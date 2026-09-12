@@ -69,10 +69,9 @@ server:
 # broadcasted to outside services. Delete this to disable this support.
 webhooks:
     discord:
-        iidx: 
-        - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
-        pnm: 
-        - "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
+        iidx: "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
+        pnm: "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
+        bst: "https://discord.com/api/webhooks/1232122131321321321/eauihfafaewfhjaveuijaewuivhjawueihoi"
 
 # Assets URLs. These allow for in-game asset rendering on the front end. Delete this
 # to disable asset rendering.
@@ -111,6 +110,8 @@ support:
     reflec: True
     # SDVX frontend/backend enabled.
     sdvx: True
+    # Beatstream frontend/backend enable.
+    bst: True
 
 # Key used to encrypt cookies, should be unique per network instance. Once chosen
 # you should not change this unless you want to invalidate every existing login.
