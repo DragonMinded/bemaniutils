@@ -6188,7 +6188,11 @@ class ImportDanceEvolution(ImportBase):
 
             copyright = get_string(offset + 24, "")
 
-            # Unknown 4 byte value at offset 28, 36, 40, 44, 48.
+            # Unknown 4 byte value at offset 28.
+
+            songcat = get_int(offset + 36)
+
+            # Unknown 4 byte value at offsets 40, 44, 48.
 
             title = get_string(offset + 52, "Unknown song")
             artist = get_string(offset + 56, "Unknown artist")
@@ -6211,25 +6215,34 @@ class ImportDanceEvolution(ImportBase):
             flag3 = data[offset + 34] == 0x02
             flag4 = data[offset + 35] != 0x00
 
-            # The music ID is actually, genuinely just the offset into this, from what I can tell.
-            retval.append(
-                {
-                    "id": i,
-                    "code": songcode,
-                    "title": title,
-                    "artist": artist,
-                    "copyright": copyright or None,
-                    "sort_key": kana_sort,
-                    "bpm_min": bpm_min,
-                    "bpm_max": bpm_max,
-                    "level": level,
-                    "kcal": kcal,
-                    "flag1": flag1,
-                    "flag2": flag2,
-                    "flag3": flag3,
-                    "flag4": flag4,
-                }
-            )
+            # Song category seems to be a way to control how a song works in-game.
+            # 0 and 1 both seem to be for default songs.
+            # 2 seems to be used for unlockable songs.
+            # 3 seems to be used for songs that get removed when not installing an offline kit.
+            # 5 seems to be used for songs that were in the CHALLENGE events.
+            # 100 is for the how to play song.
+            # 999 is for removed songs.
+
+            if songcat != 999:
+                # The music ID is actually, genuinely just the offset into this, from what I can tell.
+                retval.append(
+                    {
+                        "id": i,
+                        "code": songcode,
+                        "title": title,
+                        "artist": artist,
+                        "copyright": copyright or None,
+                        "sort_key": kana_sort,
+                        "bpm_min": bpm_min,
+                        "bpm_max": bpm_max,
+                        "level": level,
+                        "kcal": kcal,
+                        "flag1": flag1,
+                        "flag2": flag2,
+                        "flag3": flag3,
+                        "flag4": flag4,
+                    }
+                )
 
         return retval
 
