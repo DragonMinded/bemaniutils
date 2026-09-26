@@ -6216,8 +6216,9 @@ class ImportDanceEvolution(ImportBase):
             flag4 = data[offset + 35] != 0x00
 
             # Song category seems to be a way to control how a song works in-game.
-            # 0 and 1 both seem to be for default songs.
-            # 2 seems to be used for unlockable songs.
+            # 0 seems to be for Konami original songs, always enabled.
+            # 1 seems to be for licenses or covers, always enabled.
+            # 2 seems to be used for unlockable songs, enabled by default in an offline kit.
             # 3 seems to be used for songs that get removed when not installing an offline kit.
             # 5 seems to be used for songs that were in the CHALLENGE events.
             # 100 is for the how to play song.
